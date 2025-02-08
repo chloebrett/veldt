@@ -1,2 +1,2 @@
 # veldt
-Collaborative, self-hosted digital audio workstation built in Rust
+Collaborative, self-hosted, web-based digital audio workstation built in Rust
