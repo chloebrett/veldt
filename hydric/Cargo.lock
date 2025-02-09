@@ -290,6 +290,16 @@ dependencies = [
 ]
 
 [[package]]
+name = "console_error_panic_hook"
+version = "0.1.7"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "a06aeb73f470f66dcdbf7223caeebb85984942f22f1adb2a088cf9668146bbbc"
+dependencies = [
+ "cfg-if",
+ "wasm-bindgen",
+]
+
+[[package]]
 name = "const_format"
 version = "0.2.34"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -646,6 +656,19 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "f2d708df4e7140240a16cd6ab0ab65c972d7433ab77819ea693fde9c43811e2a"
 
 [[package]]
+name = "hydric"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "clap",
+ "console_error_panic_hook",
+ "http",
+ "leptos",
+ "shared",
+ "tonic-web-wasm-client",
+]
+
+[[package]]
 name = "icu_collections"
 version = "1.5.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -864,19 +887,6 @@ dependencies = [
  "typed-builder-macro",
  "wasm-bindgen",
  "web-sys",
-]
-
-[[package]]
-name = "leptos-example"
-version = "0.1.0"
-dependencies = [
- "anyhow",
- "clap",
- "http",
- "leptos",
- "shared",
- "tokio",
- "tonic-web-wasm-client",
 ]
 
 [[package]]
@@ -1762,18 +1772,6 @@ checksum = "3d61fa4ffa3de412bfea335c6ecff681de2b609ba3c77ef3e00e521813a9ed9e"
 dependencies = [
  "backtrace",
  "pin-project-lite",
- "tokio-macros",
-]
-
-[[package]]
-name = "tokio-macros"
-version = "2.5.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "6e06d43f1345a3bcd39f6a56dbb7dcab2ba47e68e8ac134855e7e2bdbaf8cab8"
-dependencies = [
- "proc-macro2",
- "quote",
- "syn",
 ]
 
 [[package]]

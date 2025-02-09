@@ -1,4 +1,5 @@
 use leptos::*;
+use std::panic;
 
 pub mod ping;
 
@@ -6,26 +7,22 @@ use crate::ping::ping;
 
 #[component]
 pub fn App() -> impl IntoView {
-    let ping_action = Action::new(|input: &()| async {
-        ping();
+    let ping_action = Action::new(|_| async {
+        ping().await;
     });
 
     view! {
-        <html>
-            <head>
-                <title>My Leptos App</title>
-            </head>
-            <body>
-                <p>"Hello, world!"</p>
-                <input type="button" on:click=move |ev| {
-                   ping_action.dispatch(()); 
-                } />
-                <script type="module" src="script.mjs"></script>
-            </body>
-        </html>
+        <div>
+            <p>"Hello, world!"</p>
+            <button on:click=move |_| {
+                ping_action.dispatch(());
+            }>Ping</button>
+        </div>
     }
 }
 
 fn main() {
+    panic::set_hook(Box::new(console_error_panic_hook::hook));
+
     mount_to_body(|| view! { <App/> });
 }
