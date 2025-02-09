@@ -36,6 +36,19 @@ cargo build --target=wasm32-unknown-unknown # for hydric
 ```
 ### Experiments / demos
 
-GRPC with envoy proxy: see instructions: https://github.com/grpc/grpc-web/blob/master/net/grpc/gateway/examples/helloworld/README.md
+#### GRPC with envoy proxy
+
+see instructions: https://github.com/grpc/grpc-web/blob/master/net/grpc/gateway/examples/helloworld/README.md
 
 grpc-web is in the experimental folder.
+
+#### Play rendered sounds
+
+Install ffplay first.
+
+```
+cd mesic
+ffplay -f f32le -ar 48000 -showmode 1 out.bin
+```
+```
+```
