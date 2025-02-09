@@ -1,0 +1,53 @@
+syntax = "proto3";
+
+package model;
+
+message Track {
+  float bpm = 1;
+
+  repeated Synth synth = 2;
+
+  repeated Sequence sequence = 3;
+}
+
+message Sequence {
+  float offset = 1;
+
+  float volume = 2;
+
+  uint32 synth_index = 3;
+
+  repeated Note note = 4;
+}
+
+message Synth {
+  WaveType wave = 1;
+
+  AsdrEnvelope envelope = 2;
+
+  float volume = 3;
+}
+
+message Note {
+  float semitones = 1;
+
+  float beats = 2;
+}
+
+message AsdrEnvelope {
+  float attack = 1;
+
+  float decay = 2;
+
+  float sustain = 3;
+
+  float release = 4;
+}
+
+enum WaveType {
+  UNASSIGNED = 0;
+  SINE = 1;
+  SQUARE = 2;
+  SAW = 3;
+  TRIANGLE = 4;
+}
