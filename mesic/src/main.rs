@@ -4,7 +4,7 @@ use std::io::Write;
 use std::f32::consts::PI;
 
 fn main() -> Result<(), std::io::Error> {
-    let floats = sine_wave(7.0, 2.0);
+    let floats = wave(7.0, 2.0, WaveType::Triangle);
 
     let filename = "out.bin".to_string();
     write_as_bytes(&floats, filename)?;
@@ -28,14 +28,61 @@ fn freq(semitones: Semitones) -> Freq {
     REFERENCE_FREQUENCY * semitone_increment.powf(semitones)
 }
 
-fn sine_wave(semitones: Semitones, duration: Seconds) -> Vec<f32> {
+enum WaveType {
+    Sine,
+    Square,
+    Saw,
+    Triangle
+    // TODO: also add a generator for white noise - but it's not constrained by freq.
+}
+
+fn square_wave(x: f32) -> f32 {
+    let x = x % (2.0 * PI);
+
+    if x > PI {
+        -1.0
+    } else {
+        1.0
+    }
+}
+
+fn saw_wave(x: f32) -> f32 {
+    let x = x % (2.0 * PI);
+
+    if x > PI {
+        x / PI - 2.0
+    } else {
+        x / PI
+    }
+}
+
+fn triangle_wave(x: f32) -> f32 {
+    let x = x % (2.0 * PI);
+
+    if x <= PI / 2.0 {
+        x * 2.0 / PI
+    } else if x <= 1.5 * PI {
+        2.0 * (1.0 - x / PI)
+    } else {
+        2.0 * (x / PI) - 4.0
+    }
+}
+
+fn wave(semitones: Semitones, duration: Seconds, wave_type: WaveType) -> Vec<f32> {
     let volume = 0.5;
 
     let step = freq(semitones) * 2.0 * PI / (SAMPLE_RATE as f32);
     let range = 0 .. (SAMPLE_RATE as f32 * duration) as i32;
 
+    let wave = match wave_type {
+        WaveType::Sine => |x: f32| x.sin(),
+        WaveType::Square => |x: f32| square_wave(x),
+        WaveType::Saw => |x: f32| saw_wave(x),
+        WaveType::Triangle => |x: f32| triangle_wave(x)
+    };
+
     range
-        .map(|x: i32| (x as f32 * step).sin() * volume)
+        .map(|x: i32| wave(x as f32 * step) * volume)
         .collect()
 }
 
