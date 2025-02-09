@@ -1,3 +1,4 @@
 [submodule "experimental/tonic-example"]
 	path = experimental/tonic-example
-	url = git@github.com:snoyberg/tonic-example.git
+	url = git@github.com:chloebrett/tonic-example.git
+	branch = update-deps
