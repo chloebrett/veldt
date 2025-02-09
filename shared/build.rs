@@ -1,5 +1,7 @@
 fn main() {
     tonic_build::configure()
-        .compile(&["proto/echo.proto"], &["proto"])
+        .build_server(true)
+        .build_client(true)
+        .compile_protos(&["proto/echo.proto"], &["proto"])
         .unwrap();
 }
