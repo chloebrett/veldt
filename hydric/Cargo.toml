@@ -4,3 +4,8 @@ version = "0.1.0"
 edition = "2024"
 
 [dependencies]
+anyhow = "1.0.95"
+clap = { version = "4.5.28", features = ["derive"] }
+tokio = { version = "1.43.0", features = ["rt-multi-thread"] }
+tonic = "0.12.3"
+shared = { path = "../shared" }
