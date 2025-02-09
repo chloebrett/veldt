@@ -5,3 +5,6 @@
 [submodule "experimental/trunk"]
 	path = experimental/trunk
 	url = git@github.com:trunk-rs/trunk.git
+[submodule "experimental/grpc-web"]
+	path = experimental/grpc-web
+	url = git@github.com:grpc/grpc-web.git

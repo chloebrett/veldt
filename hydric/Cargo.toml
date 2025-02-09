@@ -1,5 +1,5 @@
 [package]
-name = "leptos-example"
+name = "hydric"
 version = "0.1.0"
 edition = "2024"
 
@@ -10,4 +10,4 @@ leptos = { version = "0.6.11", features = ["csr"] }
 shared = { path = "../shared" }
 http = "1.2.0"
 tonic-web-wasm-client = "0.6.1"
-tokio = { version = "1.43.0", features = ["rt", "macros"] }
+console_error_panic_hook = "0.1.7"

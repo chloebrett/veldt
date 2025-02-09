@@ -4,9 +4,8 @@ use shared::echo_server::{Echo, EchoServer};
 use shared::{EchoReply, EchoRequest};
 use tonic::async_trait;
 use tonic_web::GrpcWebLayer;
-use tower_http::cors::Any;
+use tower_http::cors::AllowHeaders;
 use http::{Method, HeaderValue};
-use http::header::{AUTHORIZATION, ACCEPT};
 
 struct MyEcho;
 
@@ -27,11 +26,6 @@ async fn main() -> anyhow::Result<()> {
     let addr = SocketAddr::from(([0, 0, 0, 0], 3000)).into();
 
     let echo = EchoServer::new(MyEcho);
-    //let echo = tower::ServiceBuilder::new()
-    //    .layer(tower_http::cors::CorsLayer::new())
-    //   .layer(tonic_web::GrpcWebLayer::new())
-    //  .into_inner()
-    // .named_layer(EchoServer::new(echo));
 
     tonic::transport::Server::builder()
         .accept_http1(true)
@@ -39,7 +33,8 @@ async fn main() -> anyhow::Result<()> {
             tower_http::cors::CorsLayer::new()
                 .allow_methods([Method::GET, Method::POST, Method::OPTIONS])
                 .allow_origin("http://127.0.0.1:8080".parse::<HeaderValue>().unwrap())
-                .allow_headers([AUTHORIZATION, ACCEPT]).allow_credentials(true),
+                .allow_headers(AllowHeaders::mirror_request())
+                .allow_credentials(true),
         )
         .layer(GrpcWebLayer::new())
         .add_service(echo)

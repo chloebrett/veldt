@@ -1,28 +1,18 @@
-use clap::Parser;
-use shared::{echo_client::EchoClient, EchoRequest};
+use leptos::logging::log;
+use shared::{EchoRequest, echo_client::EchoClient};
 use tonic_web_wasm_client::Client;
 
-#[derive(Parser, Debug)]
-struct Opt {
-    /// Server to connect to
-    #[clap(long, default_value = "http://localhost:3000")]
-    server: String,
-    /// Message to send
-    message: String,
-}
-
-#[tokio::main(flavor = "current_thread")]
 pub async fn ping() {
     let base_url = "http://127.0.0.1:3000".to_string();
     let wasm_client = Client::new(base_url);
     let mut grpc = EchoClient::new(wasm_client);
 
-    let res = grpc
+    let result = grpc
         .echo(EchoRequest {
             message: "PING".to_string(),
         })
         .await
         .unwrap();
 
-    println!("{:?}", res);
+    log!("{:?}", result);
 }
