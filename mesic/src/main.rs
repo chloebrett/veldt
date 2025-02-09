@@ -2,6 +2,7 @@ use byteorder::{ByteOrder, LittleEndian};
 use std::f32::consts::PI;
 use std::fs;
 use std::io::Write;
+use std::cmp::max;
 
 fn main() -> Result<(), std::io::Error> {
     let envelope = AdsrEnvelope {
@@ -10,39 +11,45 @@ fn main() -> Result<(), std::io::Error> {
         sustain: 0.2,
         release: 0.2,
     };
-    let wave_1 = wave(0.0, 2.0, 120.0, 0.2, &envelope, WaveType::Triangle);
-
     let synth = Synth {
         wave: WaveType::Sine,
         envelope: envelope,
         volume: 1.,
     };
-    let sequence = Sequence {
+    let sequence_1 = Sequence {
         offset: 0.,
         volume: 1.,
         synth: &synth,
-        notes: vec!(Note(0., 1.),
-        Note(1., 1.),
-        Note(2., 1.),
-        Note(3., 1.),
-        Note(4., 1.),
-        Note(5., 1.),
-        Note(6., 1.),
-        Note(7., 1.),
-        Note(8., 1.),
-        Note(9., 1.),
-        Note(10., 1.),
-        Note(11., 1.),
-        Note(12., 1.),
-        ),
+        notes: vec![
+            Note(0., 1.),
+            Note(2., 1.),
+            Note(4., 1.),
+            Note(5., 1.),
+            Note(7., 1.),
+            Note(9., 1.),
+            Note(11., 1.),
+            Note(12., 1.),
+        ],
+    };
+    let sequence_2 = Sequence {
+        offset: 0.,
+        volume: 1.,
+        synth: &synth,
+        notes: vec![
+            Note(0., 1.),
+            Note(7., 1.),
+            Note(7., 1.),
+            Note(0., 1.),
+            Note(5., 1.),
+            Note(7., 1.),
+            Note(12., 1.),
+        ],
     };
     let track = Track {
         bpm: 120.,
-        sequences: vec!(sequence)
+        sequences: vec![sequence_1, sequence_2],
     };
     let output = render(&track);
-
-    //let combined_wave = sum(wave_1, sum(wave_2, wave_3));
 
     let filename = "out.bin".to_string();
     write_as_bytes(&output, filename)?;
@@ -53,7 +60,7 @@ fn main() -> Result<(), std::io::Error> {
 #[derive(Debug)]
 struct Track<'a> {
     bpm: Beats,
-    sequences: Vec<Sequence<'a>>
+    sequences: Vec<Sequence<'a>>,
 }
 
 #[derive(Debug)]
@@ -61,21 +68,30 @@ struct Sequence<'a> {
     offset: Beats,
     volume: Volume,
     synth: &'a Synth,
-    notes: Vec<Note>
+    notes: Vec<Note>,
 }
 
 #[derive(Debug)]
 struct Synth {
     wave: WaveType,
     envelope: AdsrEnvelope,
-    volume: Volume
+    volume: Volume,
 }
 
 #[derive(Debug)]
 struct Note(Semitones, Beats);
 
 fn sum(a: Vec<f32>, b: Vec<f32>) -> Vec<f32> {
-    a.iter().zip(b.iter()).map(|(&a,&b)| a + b).collect()
+    let max_len = max(a.len(), b.len());
+    let mut output: Vec<f32> = vec![0.0; max_len];
+
+    for i in 0..max_len {
+        let ai = a.get(i).unwrap_or(&0.0);
+        let bi = b.get(i).unwrap_or(&0.0);
+        output[i] = ai + bi;
+    }
+
+    output
 }
 
 type Volume = f32;
@@ -138,35 +154,53 @@ fn triangle_wave(x: f32) -> f32 {
 
 fn apply_envelope(x: f32, envelope: &AdsrEnvelope, duration: Beats) -> f32 {
     if duration < envelope.attack + envelope.decay + envelope.release {
-        panic!("Envelope {:?} was too short for duration {}", envelope, duration);
+        panic!(
+            "Envelope {:?} was too short for duration {}",
+            envelope, duration
+        );
     }
 
     let x = x / SAMPLE_RATE as f32;
 
-    if x < envelope.attack { // in attack
+    if x < envelope.attack {
+        // in attack
         x / envelope.attack
-    } else if x < envelope.attack + envelope.decay { // in decay
+    } else if x < envelope.attack + envelope.decay {
+        // in decay
         (envelope.attack - x) / envelope.decay * (1.0 - envelope.sustain) + 1.0
-    } else if x < duration - envelope.release { // in sustain
+    } else if x < duration - envelope.release {
+        // in sustain
         envelope.sustain
-    } else { // in release
+    } else {
+        // in release
         (duration - x) / envelope.release * envelope.sustain
     }
 }
 
 fn render(track: &Track) -> Vec<f32> {
     let bpm = track.bpm;
-    let sequences = &track.sequences;
-    // TODO: render all sequences and add them together.
-    let sequence = sequences.iter().next().unwrap();
-    let synth = &sequence.synth;
-    println!("{:?}", sequence);
+    let mut total_wave: Vec<f32> = vec![];
 
-    let mut total_wave: Vec<f32> = vec!();
-    for note in &sequence.notes {
-        println!("{:?}", note);
-        let mut wave = wave(note.0, note.1, bpm, sequence.volume * synth.volume, &synth.envelope, synth.wave);
-        total_wave.append(&mut wave);
+    for sequence in &track.sequences {
+        // TODO: use the offset value instead of ignoring.
+        let synth = &sequence.synth;
+        println!("{:?}", sequence);
+
+        let mut sequence_wave: Vec<f32> = vec![];
+        for note in &sequence.notes {
+            println!("{:?}", note);
+            let mut wave = wave(
+                note.0,
+                note.1,
+                bpm,
+                sequence.volume * synth.volume,
+                &synth.envelope,
+                synth.wave,
+            );
+            sequence_wave.append(&mut wave);
+        }
+
+        total_wave = sum(total_wave, sequence_wave);
     }
 
     total_wave
@@ -190,7 +224,9 @@ fn wave(
         WaveType::Triangle => |x: f32| triangle_wave(x),
     };
 
-    range.map(|x: i32| wave(x as f32 * step) * volume * apply_envelope(x as f32, envelope, beats)).collect()
+    range
+        .map(|x: i32| wave(x as f32 * step) * volume * apply_envelope(x as f32, envelope, beats))
+        .collect()
 }
 
 fn write_as_bytes(floats: &Vec<f32>, filename: String) -> Result<(), std::io::Error> {
