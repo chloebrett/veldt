@@ -30,6 +30,7 @@ There are some limitations to be aware of when working with WASM:
 * Tokio doesn't work. Anything multi-threaded *especially* doesn't work.
 * Communication with the server needs to account for CORS.
 * Some dependencies aren't WASM-friendly. Default features need to be disabled, or sometimes the dependencies can't be used at all.
+* The client has only 4 GB of memory.
 
 ## Commands
 
