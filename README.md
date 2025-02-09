@@ -9,14 +9,6 @@ Collaborative, self-hosted, web-based digital audio workstation built in Rust
 
 ## Commands
 
-### Build shared
-
-```
-cd shared
-cargo build # for xeric
-cargo build --target=wasm32-unknown-unknown # for hydric
-```
-
 ### Build and run hydric
 
 ```
@@ -32,3 +24,14 @@ cd xeric
 cargo build
 cargo run
 ```
+
+### Build shared
+
+Only if necessary - it will be built transitively by xeric/hydric when needed.
+
+```
+cd shared
+cargo build # for xeric
+cargo build --target=wasm32-unknown-unknown # for hydric
+```
+

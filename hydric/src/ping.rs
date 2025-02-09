@@ -13,7 +13,7 @@ struct Opt {
 
 #[tokio::main(flavor = "current_thread")]
 pub async fn ping() {
-    let base_url = "http://localhost:3000".to_string();
+    let base_url = "http://127.0.0.1:3000".to_string();
     let wasm_client = Client::new(base_url);
     let mut grpc = EchoClient::new(wasm_client);
 
