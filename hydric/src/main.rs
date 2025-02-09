@@ -6,6 +6,10 @@ use crate::ping::ping;
 
 #[component]
 pub fn App() -> impl IntoView {
+    let ping_action = Action::new(|input: &()| async {
+        ping();
+    });
+
     view! {
         <html>
             <head>
@@ -13,6 +17,9 @@ pub fn App() -> impl IntoView {
             </head>
             <body>
                 <p>"Hello, world!"</p>
+                <input type="button" on:click=move |ev| {
+                   ping_action.dispatch(()); 
+                } />
                 <script type="module" src="script.mjs"></script>
             </body>
         </html>
@@ -21,8 +28,4 @@ pub fn App() -> impl IntoView {
 
 fn main() {
     mount_to_body(|| view! { <App/> });
-
-    let action = Action::new(|input: &()| async {
-        ping();
-    });
 }
