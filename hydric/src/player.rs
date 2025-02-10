@@ -1,11 +1,8 @@
 use wasm_bindgen::prelude::*;
 use web_sys::{AudioContext};
-use shared::model::wave_type::WaveType;
 
 pub struct AudioPlayer {
     ctx: AudioContext,
-
-    buffer: web_sys::AudioBuffer,
 }
 
 impl Drop for AudioPlayer {
@@ -15,7 +12,7 @@ impl Drop for AudioPlayer {
 }
 
 impl AudioPlayer {
-    pub fn new(wave: WaveType) -> Result<AudioPlayer, JsValue> {
+    pub fn new(audio: &Vec<f32>) -> Result<AudioPlayer, JsValue> {
         let sample_rate = 44_100;
         let seconds = 10;
         let channels = 1;
@@ -23,8 +20,8 @@ impl AudioPlayer {
         let ctx = AudioContext::new()?;
 
         let buffer = ctx.create_buffer(channels, seconds * sample_rate, sample_rate as f32)?;
-        let mesic_out: Vec<f32> = mesic::demo_floats(wave);
-        buffer.copy_to_channel(&mesic_out.as_slice(), 0)?;
+        // TODO: support dual channel
+        buffer.copy_to_channel(&audio.as_slice(), 0)?;
 
         let source = ctx.create_buffer_source()?;
         source.set_buffer(Some(&buffer));
@@ -35,7 +32,6 @@ impl AudioPlayer {
 
         Ok(AudioPlayer {
             ctx,
-            buffer,
         })
     }
 }

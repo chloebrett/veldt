@@ -27,7 +27,7 @@ pub fn demo_floats(wave: WaveType) -> Vec<f32> {
     render(&create_demo_track(wave))
 }
 
-fn create_demo_track(wave: WaveType) -> Track {
+pub fn create_demo_track(wave: WaveType) -> Track {
     let envelope = AdsrEnvelope {
         attack: 0.05,
         decay: 0.1,

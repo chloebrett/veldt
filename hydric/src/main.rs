@@ -1,6 +1,7 @@
 use leptos::prelude::*;
 
 pub mod ping;
+pub mod render;
 pub mod app;
 pub mod player;
 

@@ -9,6 +9,13 @@ pub fn as_bytes(floats: &Vec<f32>) -> Vec<u8> {
     bytes
 }
 
+pub fn as_floats(bytes: &Vec<u8>) -> Vec<f32> {
+    let mut floats: Vec<f32> = vec![0.0; bytes.len() / 4];
+    LittleEndian::read_f32_into(&bytes.as_slice(), &mut floats);
+
+    floats
+}
+
 pub fn write_as_bytes(floats: &Vec<f32>, filename: String) -> Result<(), std::io::Error> {
     let bytes = as_bytes(floats);
 

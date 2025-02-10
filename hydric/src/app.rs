@@ -5,6 +5,7 @@ use shared::model::wave_type::WaveType;
 use std::str::FromStr;
 
 use crate::ping::ping;
+use crate::render::render;
 use crate::player::AudioPlayer;
 
 #[component]
@@ -20,6 +21,11 @@ pub fn App() -> impl IntoView {
         ping().await;
     });
 
+    // Continually re-request audio from the server then the wave type changes.
+    let server_audio = LocalResource::new(move || {
+        render(wave())
+    });
+
     view! {
         <ConfigProvider>
             <h1>"Veldt"</h1>
@@ -28,10 +34,11 @@ pub fn App() -> impl IntoView {
                     <Button
                         appearance=ButtonAppearance::Primary
                         on_click=move |_| {
-                            set_player.set(AudioPlayer::new(wave()).unwrap().into());
+                            set_player
+                                .set(AudioPlayer::new(&mesic::demo_floats(wave())).unwrap().into());
                         }
                     >
-                        "Play"
+                        "Play (rendered in browser)"
                     </Button>
                     <Button
                         appearance=ButtonAppearance::Secondary
@@ -39,13 +46,38 @@ pub fn App() -> impl IntoView {
                             ping_action.dispatch(());
                         }
                     >
-                        "Ping"
+                        "Ping server (check network tab)"
                     </Button>
+                    <Suspense fallback=move || {
+                        view! {
+                            <Button disabled=true appearance=ButtonAppearance::Secondary>
+                                "Play (rendered on server)"
+                            </Button>
+                        }
+                    }>
+                        {move || {
+                            server_audio
+                                .get()
+                                .map(move |audio| {
+                                    view! {
+                                        <Button
+                                            appearance=ButtonAppearance::Secondary
+                                            on_click=move |_| {
+                                                let audio = audio.clone().take();
+                                                set_player.set(AudioPlayer::new(&audio).unwrap().into());
+                                            }
+                                        >
+                                            "Play (rendered on server)"
+                                        </Button>
+                                    }
+                                })
+                        }}
+                    </Suspense>
                     <Select value=wave_string>
-                    <option>Sine</option>
-                    <option>Square</option>
-                    <option>Saw</option>
-                    <option>Triangle</option>
+                        <option>Sine</option>
+                        <option>Square</option>
+                        <option>Saw</option>
+                        <option>Triangle</option>
                     </Select>
                 </Space>
             </Card>
