@@ -1,12 +1,11 @@
 use std::cmp::max;
 use std::f32::consts::PI;
+use shared::model::*;
 
 mod io;
-pub mod model;
 mod wave;
 
 use crate::io::*;
-use crate::model::*;
 use crate::wave::*;
 
 pub fn demo() -> Result<(), std::io::Error> {

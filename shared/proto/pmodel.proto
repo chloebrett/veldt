@@ -1,0 +1,53 @@
+syntax = "proto3";
+
+package pmodel;
+
+message TrackProto {
+  float bpm = 1;
+
+  repeated SynthProto synth = 2;
+
+  repeated SequenceProto sequence = 3;
+}
+
+message SequenceProto {
+  float offset = 1;
+
+  float volume = 2;
+
+  uint32 synth_index = 3;
+
+  repeated NoteProto note = 4;
+}
+
+message SynthProto {
+  WaveTypeProto wave = 1;
+
+  AdsrEnvelopeProto envelope = 2;
+
+  float volume = 3;
+}
+
+message NoteProto {
+  float semitones = 1;
+
+  float beats = 2;
+}
+
+message AdsrEnvelopeProto {
+  float attack = 1;
+
+  float decay = 2;
+
+  float sustain = 3;
+
+  float release = 4;
+}
+
+enum WaveTypeProto {
+  Unknown = 0;
+  Sine = 1;
+  Square = 2;
+  Saw = 3;
+  Triangle = 4;
+}
