@@ -35,8 +35,8 @@ pub fn create_demo_track(wave: WaveType) -> Track {
         release: 0.2,
     };
     let synth = Synth {
-        wave: wave,
-        envelope: envelope,
+        wave,
+        envelope,
         volume: 1.,
     };
     let sequence_1 = Sequence {
@@ -78,10 +78,10 @@ fn sum(a: Vec<f32>, b: Vec<f32>) -> Vec<f32> {
     let max_len = max(a.len(), b.len());
     let mut output: Vec<f32> = vec![0.0; max_len];
 
-    for i in 0..max_len {
+    for (i, item) in output.iter_mut().enumerate() {
         let ai = a.get(i).unwrap_or(&0.0);
         let bi = b.get(i).unwrap_or(&0.0);
-        output[i] = ai + bi;
+        *item = ai + bi;
     }
 
     output
