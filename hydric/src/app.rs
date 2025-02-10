@@ -10,7 +10,7 @@ use crate::player::AudioPlayer;
 
 #[component]
 pub fn App() -> impl IntoView {
-    let (player, set_player) = signal_local(None::<AudioPlayer>);
+    let (_player, set_player) = signal_local(None::<AudioPlayer>);
     let wave_string = RwSignal::new(WaveType::Sine.to_string());
 
     // TODO: instead of using a dependent signal, consider implementing
