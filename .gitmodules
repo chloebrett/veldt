@@ -14,3 +14,6 @@
 [submodule "experimental/leptos"]
 	path = experimental/leptos
 	url = git@github.com:leptos-rs/leptos.git
+[submodule "experimental/eframe_template"]
+	path = experimental/eframe_template
+	url = git@github.com:emilk/eframe_template.git
