@@ -2,7 +2,7 @@ use std::cmp::max;
 use std::f32::consts::PI;
 
 mod io;
-mod model;
+pub mod model;
 mod wave;
 
 use crate::io::*;
@@ -10,7 +10,7 @@ use crate::model::*;
 use crate::wave::*;
 
 pub fn demo() -> Result<(), std::io::Error> {
-    let output = render(&create_demo_track());
+    let output = render(&create_demo_track(WaveType::Sine));
 
     let filename = "out.bin".to_string();
     write_as_bytes(&output, filename)?;
@@ -18,11 +18,11 @@ pub fn demo() -> Result<(), std::io::Error> {
     Ok(())
 }
 
-pub fn demo_floats() -> Vec<f32> {
-    render(&create_demo_track())
+pub fn demo_floats(wave: WaveType) -> Vec<f32> {
+    render(&create_demo_track(wave))
 }
 
-fn create_demo_track() -> Track {
+fn create_demo_track(wave: WaveType) -> Track {
     let envelope = AdsrEnvelope {
         attack: 0.2,
         decay: 0.2,
@@ -30,7 +30,7 @@ fn create_demo_track() -> Track {
         release: 0.2,
     };
     let synth = Synth {
-        wave: WaveType::Sine,
+        wave: wave,
         envelope: envelope,
         volume: 1.,
     };
@@ -84,7 +84,7 @@ fn sum(a: Vec<f32>, b: Vec<f32>) -> Vec<f32> {
 }
 
 const REFERENCE_FREQUENCY: Freq = 440.0; // 440 Hz = A4
-const SAMPLE_RATE: i32 = 48_000;
+const SAMPLE_RATE: i32 = 44_100;
 
 // Returns the frequency a given number of semitones above/below A4.
 fn freq(semitones: Semitones) -> Freq {

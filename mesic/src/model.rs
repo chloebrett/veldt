@@ -1,3 +1,5 @@
+use strum::{EnumString, Display};
+
 pub type Volume = f32;
 pub type Freq = f32;
 pub type Semitones = f32;
@@ -36,7 +38,7 @@ pub struct AdsrEnvelope {
     pub release: Beats,
 }
 
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone, Copy, EnumString, Display)]
 pub enum WaveType {
     Sine,
     Square,
