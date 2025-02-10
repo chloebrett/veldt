@@ -1,6 +1,12 @@
 use std::cmp::max;
 use std::f32::consts::PI;
-use shared::model::*;
+use shared::model::wave_type::WaveType;
+use shared::model::adsr_envelope::AdsrEnvelope;
+use shared::model::synth::Synth;
+use shared::model::sequence::Sequence;
+use shared::model::track::Track;
+use shared::model::note::Note;
+use shared::types::*;
 
 mod io;
 mod wave;

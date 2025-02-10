@@ -1,5 +1,6 @@
+pub mod types;
 pub mod model;
-pub mod serialize;
+mod serialize;
 
 pub mod echo {
     tonic::include_proto!("echo");
