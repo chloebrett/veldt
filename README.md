@@ -94,3 +94,14 @@ sudo npm i -g webpack
 npm run serve
 # go to localhost:8080
 ```
+
+#### Format code
+
+```
+cargo fmt
+cargo install leptosfmt
+cd hydric
+leptosfmt *
+```
+```
+```
