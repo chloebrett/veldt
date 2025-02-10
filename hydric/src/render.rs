@@ -10,16 +10,18 @@ pub async fn render(wave: WaveType) -> Vec<f32> {
     let wasm_client = Client::new(base_url);
     let mut grpc = RenderClient::new(wasm_client);
 
-    let result: RenderReply = grpc
+    let result = grpc
         .render(RenderRequest {
             track: Some(create_demo_track(wave).into()),
         })
-        .await
-        .unwrap().into_inner();
+        .await;
 
-    log!("{:?}", result);
+    // TODO: proper error handling
+    let audio = result.map(|it| it.into_inner().audio).unwrap_or(vec!());
+
+    log!("{:?}", audio);
 
     // TODO: consider if we should just send the Vec<f32> directly over the wire
     // instead of serializing to bytes first?
-    as_floats(&result.audio)
+    as_floats(&audio)
 }
