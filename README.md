@@ -105,3 +105,10 @@ leptosfmt *
 ```
 ```
 ```
+
+#### Lint
+
+```
+rustup component add clippy
+cargo clippy -- -W clippy::all # in appropriate folder
+```

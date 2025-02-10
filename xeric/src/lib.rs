@@ -44,7 +44,7 @@ impl Echo for MyEcho {
 }
 
 pub async fn start_server() -> anyhow::Result<()> {
-    let addr = SocketAddr::from(([0, 0, 0, 0], 3000)).into();
+    let addr = SocketAddr::from(([0, 0, 0, 0], 3000));
 
     let echo = EchoServer::new(MyEcho);
     let render = RenderServer::new(MyRender);
