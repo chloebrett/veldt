@@ -1,6 +1,6 @@
 use wasm_bindgen::prelude::*;
 use web_sys::{AudioContext};
-use mesic::model::WaveType;
+use shared::model::wave_type::WaveType;
 
 pub struct AudioPlayer {
     ctx: AudioContext,

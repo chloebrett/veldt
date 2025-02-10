@@ -1,7 +1,7 @@
 use std::net::SocketAddr;
 
-use shared::echo_server::{Echo, EchoServer};
-use shared::{EchoReply, EchoRequest};
+use shared::echo::echo_server::{Echo, EchoServer};
+use shared::echo::{EchoReply, EchoRequest};
 use tonic::async_trait;
 use tonic_web::GrpcWebLayer;
 use tower_http::cors::AllowHeaders;

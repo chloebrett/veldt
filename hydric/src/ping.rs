@@ -1,5 +1,5 @@
 use leptos::logging::log;
-use shared::{EchoRequest, echo_client::EchoClient};
+use shared::echo::{EchoRequest, echo_client::EchoClient};
 use tonic_web_wasm_client::Client;
 
 pub async fn ping() {

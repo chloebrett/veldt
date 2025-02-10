@@ -1,7 +1,7 @@
 use leptos::*;
 use leptos::prelude::*;
 use thaw::{Card, Button, Space, ConfigProvider, ButtonAppearance, Select};
-use mesic::model::WaveType;
+use shared::model::wave_type::WaveType;
 use std::str::FromStr;
 
 use crate::ping::ping;
