@@ -6,8 +6,11 @@ edition = "2024"
 [dependencies]
 anyhow = "1.0.95"
 clap = { version = "4.5.28", features = ["derive"] }
-leptos = { version = "0.6.11", features = ["csr"] }
+leptos = { version = "0.7.5", features = ["csr"] }
 shared = { path = "../shared" }
+mesic = { path = "../mesic" }
 http = "1.2.0"
 tonic-web-wasm-client = "0.6.1"
 console_error_panic_hook = "0.1.7"
+web-sys = { version = "0.3.77", features = ["AudioBuffer", "AudioContext", "AudioBufferSourceNode", "AudioDestinationNode", "AudioNode"] }
+wasm-bindgen = "0.2.100"

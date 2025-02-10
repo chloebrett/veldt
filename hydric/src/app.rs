@@ -1,10 +1,14 @@
 use leptos::*;
+use leptos::prelude::*;
 
 use crate::ping::ping;
+use crate::player::AudioPlayer;
 
 #[component]
 pub fn App() -> impl IntoView {
-    let ping_action = Action::new(|_| async {
+    let (player, set_player) = signal_local(None::<AudioPlayer>);
+
+    let ping_action = Action::new_local(|input: &()| async {
         ping().await;
     });
 
@@ -14,6 +18,9 @@ pub fn App() -> impl IntoView {
             <button on:click=move |_| {
                 ping_action.dispatch(());
             }>Ping</button>
+            <button on:click=move |_| {
+                set_player.set(AudioPlayer::new().unwrap().into());
+            }>Play</button>
         </div>
     }
 }

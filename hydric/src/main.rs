@@ -1,13 +1,13 @@
-use leptos::*;
-use std::panic;
+use leptos::prelude::*;
 
 pub mod ping;
 pub mod app;
+pub mod player;
 
 use crate::app::App;
 
 fn main() {
-    panic::set_hook(Box::new(console_error_panic_hook::hook));
+    console_error_panic_hook::set_once();
 
     mount_to_body(|| view! { <App/> });
 }
