@@ -24,9 +24,9 @@ pub fn demo_floats(wave: WaveType) -> Vec<f32> {
 
 fn create_demo_track(wave: WaveType) -> Track {
     let envelope = AdsrEnvelope {
-        attack: 0.2,
-        decay: 0.2,
-        sustain: 0.2,
+        attack: 0.05,
+        decay: 0.1,
+        sustain: 0.6,
         release: 0.2,
     };
     let synth = Synth {
@@ -39,32 +39,31 @@ fn create_demo_track(wave: WaveType) -> Track {
         volume: 1.,
         synth_index: 0,
         notes: vec![
-            Note(0., 1.),
-            Note(2., 1.),
-            Note(4., 1.),
-            Note(5., 1.),
+            Note(7., 0.5),
             Note(7., 1.),
-            Note(9., 1.),
-            Note(11., 1.),
-            Note(12., 1.),
+            Note(7., 1.),
+            Note(3., 0.5),
+            Note(7., 1.),
+            Note(10., 2.),
+            Note(-2., 2.),
         ],
     };
     let sequence_2 = Sequence {
         offset: 0.,
-        volume: 1.,
+        volume: 0.5,
         synth_index: 0,
         notes: vec![
-            Note(0., 1.),
-            Note(7., 1.),
-            Note(7., 1.),
-            Note(0., 1.),
-            Note(5., 1.),
-            Note(7., 1.),
-            Note(12., 1.),
+            Note(-19., 0.5),
+            Note(-19., 1.),
+            Note(-19., 1.),
+            Note(-19., 0.5),
+            Note(-19., 1.),
+            Note(-14., 2.),
+            Note(-26., 2.),
         ],
     };
     Track {
-        bpm: 120.,
+        bpm: 160.,
         synths: vec![synth],
         sequences: vec![sequence_1, sequence_2],
     }
