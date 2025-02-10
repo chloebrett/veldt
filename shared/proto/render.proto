@@ -1,0 +1,17 @@
+syntax = "proto3";
+
+package render;
+
+import "pmodel.proto";
+
+service Render {
+  rpc Render (RenderRequest) returns (RenderReply) {}
+}
+
+message RenderRequest {
+  pmodel.TrackProto track = 1;
+}
+
+message RenderReply {
+  bytes audio = 1;
+}

@@ -1,13 +1,36 @@
 use std::net::SocketAddr;
 
+use http::{HeaderValue, Method};
+use mesic::io::as_bytes;
+use mesic::render;
 use shared::echo::echo_server::{Echo, EchoServer};
 use shared::echo::{EchoReply, EchoRequest};
+use shared::render::render_server::{Render, RenderServer};
+use shared::render::{RenderReply, RenderRequest};
 use tonic::async_trait;
 use tonic_web::GrpcWebLayer;
 use tower_http::cors::AllowHeaders;
-use http::{Method, HeaderValue};
+
+struct MyRender;
 
 struct MyEcho;
+
+#[async_trait]
+impl Render for MyRender {
+    async fn render(
+        &self,
+        request: tonic::Request<RenderRequest>,
+    ) -> Result<tonic::Response<RenderReply>, tonic::Status> {
+        let track = request
+            .get_ref()
+            .track
+            .clone()
+            .ok_or(tonic::Status::invalid_argument("Track must be supplied"))?;
+        let bytes = as_bytes(&render(&track.into()));
+
+        Ok(tonic::Response::new(RenderReply { audio: bytes }))
+    }
+}
 
 #[async_trait]
 impl Echo for MyEcho {
@@ -25,6 +48,7 @@ pub async fn start_server() -> anyhow::Result<()> {
     let addr = SocketAddr::from(([0, 0, 0, 0], 3000)).into();
 
     let echo = EchoServer::new(MyEcho);
+    let render = RenderServer::new(MyRender);
 
     tonic::transport::Server::builder()
         .accept_http1(true)
@@ -37,6 +61,7 @@ pub async fn start_server() -> anyhow::Result<()> {
         )
         .layer(GrpcWebLayer::new())
         .add_service(echo)
+        .add_service(render)
         .serve(addr)
         .await?;
 

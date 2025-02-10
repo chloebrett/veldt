@@ -8,7 +8,7 @@ use shared::model::track::Track;
 use shared::model::note::Note;
 use shared::types::*;
 
-mod io;
+pub mod io;
 mod wave;
 
 use crate::io::*;
@@ -124,7 +124,7 @@ fn apply_envelope(x: f32, envelope: &AdsrEnvelope, duration: Beats) -> f32 {
     }
 }
 
-fn render(track: &Track) -> Vec<f32> {
+pub fn render(track: &Track) -> Vec<f32> {
     let bpm = track.bpm;
     let mut total_wave: Vec<f32> = vec![];
 
