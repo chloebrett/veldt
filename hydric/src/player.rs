@@ -21,7 +21,7 @@ impl AudioPlayer {
 
         let buffer = ctx.create_buffer(channels, seconds * sample_rate, sample_rate as f32)?;
         // TODO: support dual channel
-        buffer.copy_to_channel(&audio.as_slice(), 0)?;
+        buffer.copy_to_channel(audio.as_slice(), 0)?;
 
         let source = ctx.create_buffer_source()?;
         source.set_buffer(Some(&buffer));
