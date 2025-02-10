@@ -8,3 +8,9 @@
 [submodule "experimental/grpc-web"]
 	path = experimental/grpc-web
 	url = git@github.com:grpc/grpc-web.git
+[submodule "experimental/wasm-bindgen"]
+	path = experimental/wasm-bindgen
+	url = git@github.com:rustwasm/wasm-bindgen.git
+[submodule "experimental/leptos"]
+	path = experimental/leptos
+	url = git@github.com:leptos-rs/leptos.git

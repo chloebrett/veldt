@@ -51,8 +51,6 @@ cargo build
 cargo run
 # then see 'play rendered sounds' below
 ```
-```
-```
 
 ### Build and run xeric
 
@@ -86,4 +84,13 @@ Install ffplay first.
 ```
 cd mesic
 ffplay -f f32le -ar 48000 -showmode 1 out.bin
+```
+
+#### Web audio demo
+
+```
+cd experimental/wasm-bindgen/examples/webaudio
+sudo npm i -g webpack
+npm run serve
+# go to localhost:8080
 ```

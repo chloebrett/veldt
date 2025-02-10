@@ -18,6 +18,10 @@ pub fn demo() -> Result<(), std::io::Error> {
     Ok(())
 }
 
+pub fn demo_floats() -> Vec<f32> {
+    render(&create_demo_track())
+}
+
 fn create_demo_track() -> Track {
     let envelope = AdsrEnvelope {
         attack: 0.2,
