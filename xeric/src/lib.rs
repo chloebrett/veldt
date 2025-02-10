@@ -22,9 +22,8 @@ impl Render for MyRender {
         request: tonic::Request<RenderRequest>,
     ) -> Result<tonic::Response<RenderReply>, tonic::Status> {
         let track = request
-            .get_ref()
+            .into_inner()
             .track
-            .clone()
             .ok_or(tonic::Status::invalid_argument("Track must be supplied"))?;
         let bytes = as_bytes(&render(&track.into()));
 
