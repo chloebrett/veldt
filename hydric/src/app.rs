@@ -28,7 +28,7 @@ pub fn App() -> impl IntoView {
 
     view! {
         <ConfigProvider>
-            <canvas id="egui_canvas"></canvas>
+            <div id="egui_canvas_parent"><canvas id="egui_canvas"></canvas></div>
             <h1>"Veldt"</h1>
             <Card>
                 <Space>
