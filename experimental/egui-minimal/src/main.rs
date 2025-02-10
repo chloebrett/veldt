@@ -1,3 +1,5 @@
+mod app;
+
 #[cfg(target_arch = "wasm32")]
 fn main() {
     use eframe::wasm_bindgen::JsCast as _;
@@ -23,7 +25,7 @@ fn main() {
             .start(
                 canvas,
                 web_options,
-                Box::new(|cc| Ok(Box::new(egui_minimal::TemplateApp::new(cc)))),
+                Box::new(|cc| Ok(Box::new(crate::app::TemplateApp::new(cc)))),
             )
             .await;
 
