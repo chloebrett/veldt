@@ -80,6 +80,10 @@ pub fn App() -> impl IntoView {
                         <option>Saw</option>
                         <option>Triangle</option>
                     </Select>
+                    <Select>
+                        <option>"Demo 1"</option>
+                        <option>"Demo 2"</option>
+                    </Select>
                 </Space>
             </Card>
         </ConfigProvider>
