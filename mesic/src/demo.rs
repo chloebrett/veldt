@@ -1,13 +1,7 @@
-use strum::{Display, EnumString};
-
 use shared::model::note::Note;
 use shared::model::sequence::Sequence;
 
-#[derive(EnumString, Display)]
-pub enum DemoOption {
-    Demo1,
-    Demo2,
-}
+use crate::DemoOption;
 
 pub struct Demo {
     pub sequences: Vec<Sequence>,
