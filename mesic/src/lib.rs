@@ -20,91 +20,91 @@ pub enum DemoOption {
     Demo1,
     Demo2,
 }
+
 pub struct Demo {
     sequences: Vec<Sequence>,
     bpm: f32,
 }
 
-fn choose_demo_sequence(demo_option: DemoOption) -> Demo {
-    match demo_option {
-        DemoOption::Demo1 => { 
-            Demo {
-                sequences: vec! [
-                    Sequence {
-                        offset: 0.,
-                        volume: 1.,
-                        synth_index: 0,
-                        notes: vec![
-                            Note(7., 0.5),
-                            Note(7., 1.),
-                            Note(7., 1.),
-                            Note(3., 0.5),
-                            Note(7., 1.),
-                            Note(10., 2.),
-                            Note(-2., 2.),
-                        ],
-                    },
-                    Sequence {
-                        offset: 0.,
+impl Demo {
+    pub fn new(demo_option: DemoOption) -> Self {
+        match demo_option {
+            DemoOption::Demo1 => { 
+                Self {
+                    sequences: vec! [
+                        Sequence {
+                            offset: 0.,
+                            volume: 1.,
+                            synth_index: 0,
+                            notes: vec![
+                                Note(7., 0.5),
+                                Note(7., 1.),
+                                Note(7., 1.),
+                                Note(3., 0.5),
+                                Note(7., 1.),
+                                Note(10., 2.),
+                                Note(-2., 2.),
+                            ],
+                        },
+                        Sequence {
+                            offset: 0.,
+                                volume: 0.5,
+                            synth_index: 0,
+                            notes: vec![
+                                Note(-19., 0.5),
+                                Note(-19., 1.),
+                                Note(-19., 1.),
+                                Note(-19., 0.5),
+                               Note(-19., 1.),
+                                Note(-14., 2.),
+                                Note(-26., 2.),
+                            ],
+                        }
+                    ],
+                    bpm:160.
+                }
+            }
+            DemoOption::Demo2 => {
+                Self {
+                    sequences: vec! [
+                        Sequence {
+                            offset: 0.,
+                            volume: 1.,
+                            synth_index: 0,
+                            notes: vec![
+                                Note(7., 0.5),
+                                Note(6., 0.5),
+                                Note(7., 0.5),
+                                Note(6., 0.5),
+                                Note(7., 0.5),
+                                Note(2., 0.5),
+                                Note(5., 0.5),
+                                Note(3., 0.5),
+                                Note(0., 2.0),
+                            ],
+                        },
+                        Sequence {
+                            offset: 0.,
                             volume: 0.5,
-                        synth_index: 0,
-                        notes: vec![
-                            Note(-19., 0.5),
-                            Note(-19., 1.),
-                            Note(-19., 1.),
-                            Note(-19., 0.5),
-                           Note(-19., 1.),
-                            Note(-14., 2.),
-                            Note(-26., 2.),
-                        ],
-                    }
-                ],
-                bpm:160.
-            }
+                            synth_index: 0,
+                            notes: vec![
+                                Note(-5., 2.0),
+                                Note(-10., 2.0),
+                                Note(-12., 2.0),
+                            ],
+                        }
+                    ],
+                    bpm: 120.
+                }
+            } 
         }
-        DemoOption::Demo2 => {
-            Demo {
-                sequences: vec! [
-                    Sequence {
-                        offset: 0.,
-                        volume: 1.,
-                        synth_index: 0,
-                        notes: vec![
-                            Note(7., 0.5),
-                            Note(6., 0.5),
-                            Note(7., 0.5),
-                            Note(6., 0.5),
-                            Note(7., 0.5),
-                            Note(2., 0.5),
-                            Note(5., 0.5),
-                            Note(3., 0.5),
-                            Note(0., 2.0),
-                        ],
-                    },
-                    Sequence {
-                        offset: 0.,
-                        volume: 0.5,
-                        synth_index: 0,
-                        notes: vec![
-                            Note(-5., 2.0),
-                            Note(-10., 2.0),
-                            Note(-12., 2.0),
-                        ],
-                    }
-                ],
-                bpm: 120.
-            }
-        } 
     }
 }
 
-
 pub fn demo() -> Result<(), std::io::Error> {
     let output = render(&create_demo_track(DemoOption::Demo1, WaveType::Sine));
-
     let filename = "out.bin".to_string();
     write_as_bytes(&output, filename)?;
-
     Ok(())
 }
 
@@ -113,7 +113,7 @@ pub fn demo_floats(demo_option: DemoOption, wave: WaveType) -> Vec<f32> {
 }
 
 pub fn create_demo_track(demo_option: DemoOption, wave: WaveType) -> Track {
-    let demo = choose_demo_sequence(demo_option);
+    let demo = Demo::new(demo_option);
     let envelope = AdsrEnvelope {
         attack: 0.05,
         decay: 0.1,
