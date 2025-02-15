@@ -5,6 +5,7 @@ use shared::model::adsr_envelope::AdsrEnvelope;
 use shared::model::synth::Synth;
 use shared::model::track::Track;
 use shared::types::*;
+use shared::model::demo_option::DemoOption;
 
 pub mod io;
 mod wave;
@@ -12,7 +13,7 @@ mod demo;
 
 use crate::io::*;
 use crate::wave::*;
-pub use crate::demo::*;
+use crate::demo::*;
 
 pub fn demo() -> Result<(), std::io::Error> {
     let output = render(&create_demo_track(DemoOption::Demo1, WaveType::Sine));

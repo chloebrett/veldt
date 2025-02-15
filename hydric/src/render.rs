@@ -2,7 +2,7 @@ use leptos::logging::log;
 use shared::render::{RenderRequest, RenderReply, render_client::RenderClient};
 use tonic_web_wasm_client::Client;
 use shared::model::wave_type::WaveType;
-use mesic::DemoOption;
+use shared::model::demo_option::DemoOption;
 use mesic::create_demo_track;
 use mesic::io::as_floats;
 
