@@ -13,7 +13,7 @@ use crate::player::AudioPlayer;
 pub fn App() -> impl IntoView {
     let (_player, set_player) = signal_local(None::<AudioPlayer>);
     let wave_string = RwSignal::new(WaveType::Sine.to_string());
-    let demo_string = RwSignal::new(DemoOption::Demo1.to_string());
+    let demo_string = RwSignal::new(DemoOption::Overworld.to_string());
 
     // TODO: instead of using a dependent signal, consider implementing
     // the appropriate From trait.
@@ -84,8 +84,8 @@ pub fn App() -> impl IntoView {
                         <option>Triangle</option>
                     </Select>
                     <Select value=demo_string>
-                        <option>Demo1</option>
-                        <option>Demo2</option>
+                        <option>Overworld</option>
+                        <option>FurElise</option>
                     </Select>
                 </Space>
             </Card>

@@ -11,7 +11,7 @@ pub struct Demo {
 impl Demo {
     pub fn new(demo_option: DemoOption) -> Self {
         match demo_option {
-            DemoOption::Demo1 => { 
+            DemoOption::Overworld=> { 
                 Self {
                     sequences: vec! [
                         Sequence {
@@ -46,7 +46,7 @@ impl Demo {
                     bpm:160.
                 }
             }
-            DemoOption::Demo2 => {
+            DemoOption::FurElise=> {
                 Self {
                     sequences: vec! [
                         Sequence {

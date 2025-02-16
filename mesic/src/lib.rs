@@ -16,7 +16,7 @@ use crate::wave::*;
 use crate::demo::*;
 
 pub fn demo() -> Result<(), std::io::Error> {
-    let output = render(&create_demo_track(DemoOption::Demo1, WaveType::Sine));
+    let output = render(&create_demo_track(DemoOption::Overworld, WaveType::Sine));
     let filename = "out.bin".to_string();
     write_as_bytes(&output, filename)?;
     Ok(())
