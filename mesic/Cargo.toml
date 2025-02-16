@@ -6,3 +6,4 @@ edition = "2024"
 [dependencies]
 byteorder = "1.5.0"
 shared = { path = "../shared" }
+strum = { version = "0.27.0", features = ["strum_macros", "derive"] }

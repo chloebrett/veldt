@@ -3,31 +3,31 @@ use std::f32::consts::PI;
 use shared::model::wave_type::WaveType;
 use shared::model::adsr_envelope::AdsrEnvelope;
 use shared::model::synth::Synth;
-use shared::model::sequence::Sequence;
 use shared::model::track::Track;
-use shared::model::note::Note;
 use shared::types::*;
+use shared::model::demo_option::DemoOption;
 
 pub mod io;
 mod wave;
+mod demo;
 
 use crate::io::*;
 use crate::wave::*;
+use crate::demo::*;
 
 pub fn demo() -> Result<(), std::io::Error> {
-    let output = render(&create_demo_track(WaveType::Sine));
-
+    let output = render(&create_demo_track(DemoOption::Overworld, WaveType::Sine));
     let filename = "out.bin".to_string();
     write_as_bytes(&output, filename)?;
-
     Ok(())
 }
 
-pub fn demo_floats(wave: WaveType) -> Vec<f32> {
-    render(&create_demo_track(wave))
+pub fn demo_floats(demo_option: DemoOption, wave: WaveType) -> Vec<f32> {
+    render(&create_demo_track(demo_option, wave))
 }
 
-pub fn create_demo_track(wave: WaveType) -> Track {
+pub fn create_demo_track(demo_option: DemoOption, wave: WaveType) -> Track {
+    let demo = Demo::new(demo_option);
     let envelope = AdsrEnvelope {
         attack: 0.05,
         decay: 0.1,
@@ -39,38 +39,10 @@ pub fn create_demo_track(wave: WaveType) -> Track {
         envelope,
         volume: 1.,
     };
-    let sequence_1 = Sequence {
-        offset: 0.,
-        volume: 1.,
-        synth_index: 0,
-        notes: vec![
-            Note(7., 0.5),
-            Note(7., 1.),
-            Note(7., 1.),
-            Note(3., 0.5),
-            Note(7., 1.),
-            Note(10., 2.),
-            Note(-2., 2.),
-        ],
-    };
-    let sequence_2 = Sequence {
-        offset: 0.,
-        volume: 0.5,
-        synth_index: 0,
-        notes: vec![
-            Note(-19., 0.5),
-            Note(-19., 1.),
-            Note(-19., 1.),
-            Note(-19., 0.5),
-            Note(-19., 1.),
-            Note(-14., 2.),
-            Note(-26., 2.),
-        ],
-    };
     Track {
-        bpm: 160.,
+        bpm: demo.bpm, 
         synths: vec![synth],
-        sequences: vec![sequence_1, sequence_2],
+        sequences: demo.sequences 
     }
 }
 
