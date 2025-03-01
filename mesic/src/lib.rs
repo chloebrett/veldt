@@ -4,6 +4,8 @@ use shared::model::wave_type::WaveType;
 use shared::model::adsr_envelope::AdsrEnvelope;
 use shared::model::synth::Synth;
 use shared::model::track::Track;
+use shared::model::note::Note;
+use shared::model::sequence::Sequence;
 use shared::types::*;
 use shared::model::demo_option::DemoOption;
 
@@ -25,6 +27,32 @@ pub fn demo() -> Result<(), std::io::Error> {
 
 pub fn demo_floats(demo_option: DemoOption, wave: WaveType, volume: Volume, transpose_semitones: i32) -> Vec<f32> {
     render(&create_demo_track(demo_option, wave, volume, transpose_semitones))
+}
+
+pub fn create_track(notes: Vec<i32>, wave: WaveType, volume: Volume, transpose_semitones: i32) -> Track {
+    let envelope = AdsrEnvelope {
+        attack: 0.05,
+        decay: 0.1,
+        sustain: 0.6,
+        release: 0.2,
+    };
+    let synth = Synth {
+        wave,
+        envelope,
+        volume: volume,
+    };
+    Track {
+        bpm: 120.,
+        synths: vec![synth],
+        sequences: vec!(
+            Sequence {
+                offset: 0.,
+                volume: volume,
+                synth_index: 0,
+                notes: vec!(notes.into_iter().map(|note| Note(note as f32, 1.)).collect())
+            }
+            )
+    }
 }
 
 pub fn create_demo_track(demo_option: DemoOption, wave: WaveType, volume: Volume, transpose_semitones: i32) -> Track {
