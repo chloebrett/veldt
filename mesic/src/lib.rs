@@ -49,7 +49,7 @@ pub fn create_track(notes: Vec<i32>, wave: WaveType, volume: Volume, transpose_s
                 offset: 0.,
                 volume: volume,
                 synth_index: 0,
-                notes: vec!(notes.into_iter().map(|note| Note(note as f32, 1.)).collect())
+                notes: notes.into_iter().map(|note| Note((note + transpose_semitones) as f32, 1.)).collect()
             }
             )
     }
