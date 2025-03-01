@@ -17,18 +17,18 @@ use crate::demo::*;
 
 pub fn demo() -> Result<(), std::io::Error> {
     let volume: Volume = 1.0;
-    let output = render(&create_demo_track(DemoOption::Overworld, WaveType::Sine, volume));
+    let output = render(&create_demo_track(DemoOption::Overworld, WaveType::Sine, volume, 0));
     let filename = "out.bin".to_string();
     write_as_bytes(&output, filename)?;
     Ok(())
 }
 
-pub fn demo_floats(demo_option: DemoOption, wave: WaveType, volume: Volume) -> Vec<f32> {
-    render(&create_demo_track(demo_option, wave, volume))
+pub fn demo_floats(demo_option: DemoOption, wave: WaveType, volume: Volume, transpose_semitones: i32) -> Vec<f32> {
+    render(&create_demo_track(demo_option, wave, volume, transpose_semitones))
 }
 
-pub fn create_demo_track(demo_option: DemoOption, wave: WaveType, volume: Volume) -> Track {
-    let demo = Demo::new(demo_option);
+pub fn create_demo_track(demo_option: DemoOption, wave: WaveType, volume: Volume, transpose_semitones: i32) -> Track {
+    let demo = transpose_demo(Demo::new(demo_option), transpose_semitones);
     let envelope = AdsrEnvelope {
         attack: 0.05,
         decay: 0.1,
