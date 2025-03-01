@@ -13,13 +13,14 @@ pub async fn render(
     wave: WaveType,
     bpm: Beats,
     volume: Volume,
+    transpose_semitones: i32
 ) -> Vec<f32> {
     let base_url = "http://127.0.0.1:3000".to_string();
     let wasm_client = Client::new(base_url);
     let mut grpc = RenderClient::new(wasm_client);
     let result = grpc
         .render(RenderRequest {
-            track: Some(create_demo_track(demo_option, wave, bpm, volume).into()),
+            track: Some(create_demo_track(demo_option, wave, bpm, volume, transpose_semitones).into()),
         })
         .await;
 

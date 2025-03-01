@@ -18,12 +18,13 @@ use crate::wave::*;
 pub fn demo() -> Result<(), std::io::Error> {
     let bpm: Beats = 120.0;
     let volume: Volume = 1.0;
+    let transpose_semitones = 0;
     let output = render(&create_demo_track(
         DemoOption::Overworld,
         WaveType::Sine,
         bpm,
         volume,
-    ));
+        transpose_semitones));
     let filename = "out.bin".to_string();
     write_as_bytes(&output, filename)?;
     Ok(())
@@ -34,8 +35,9 @@ pub fn demo_floats(
     wave: WaveType,
     bpm: Beats,
     volume: Volume,
+    transpose_semitones: i32
 ) -> Vec<f32> {
-    render(&create_demo_track(demo_option, wave, bpm, volume))
+    render(&create_demo_track(demo_option, wave, bpm, volume, transpose_semitones))
 }
 
 pub fn create_demo_track(
@@ -43,8 +45,9 @@ pub fn create_demo_track(
     wave: WaveType,
     bpm: Beats,
     volume: Volume,
+    transpose_semitones: i32
 ) -> Track {
-    let demo = Demo::new(demo_option);
+    let demo = transpose_demo(Demo::new(demo_option), transpose_semitones);
     let envelope = AdsrEnvelope {
         attack: 0.05,
         decay: 0.1,

@@ -3,9 +3,9 @@ use shared::model::sequence::Sequence;
 
 use crate::DemoOption;
 
+// Required as waveform is currently seperately configurable.
+// Replace in future.
 pub struct Demo {
-    // Required as waveform is currently seperately configurable.
-    // Replace in future.
     pub sequences: Vec<Sequence>,
 }
 
@@ -71,5 +71,19 @@ impl Demo {
                 ],
             },
         }
+    }
+}
+
+pub fn transpose_demo(demo: Demo, semitones: i32) -> Demo {
+    Demo {
+        sequences: demo.sequences.into_iter().map({|sequence|
+            Sequence {
+                notes: sequence.notes.into_iter().map({|note|
+                    Note(note.0 + semitones as f32, note.1)
+                }).collect(),
+                ..sequence
+            }
+        }).collect(),
+        ..demo
     }
 }

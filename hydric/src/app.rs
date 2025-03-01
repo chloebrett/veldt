@@ -5,7 +5,7 @@ use shared::types::Beats;
 use std::str::FromStr;
 use thaw::{
     Accordion, AccordionHeader, AccordionItem, Button, ButtonAppearance, Card, ConfigProvider,
-    Select, Slider, Space, SpinButton
+    Select, Slider, Space, SpinButton,
 };
 
 use crate::ping::ping;
@@ -19,6 +19,7 @@ pub fn App() -> impl IntoView {
     let demo_string = RwSignal::new(DemoOption::Overworld.to_string());
     let bpm_value = RwSignal::<Beats>::new(120.0);
     let volume_percent = RwSignal::new(100.0f64);
+    let transpose_semitones = RwSignal::new(0);
 
     // TODO: instead of using a dependent signal, consider implementing
     // the appropriate From trait.
@@ -31,7 +32,7 @@ pub fn App() -> impl IntoView {
     });
 
     // Continually re-request audio from the server then the wave type changes.
-    let server_audio = LocalResource::new(move || render(demo_option(), wave(), bpm(), volume()));
+    let server_audio = LocalResource::new(move || render(demo_option(), wave(), bpm(), volume(), transpose_semitones.get()));
 
     view! {
         <ConfigProvider>
@@ -52,7 +53,7 @@ pub fn App() -> impl IntoView {
                             set_player
                                 .set(
                                     AudioPlayer::new(
-                                            &mesic::demo_floats(demo_option(), wave(), bpm(), volume()),
+                                            &mesic::demo_floats(demo_option(), wave(), bpm(), volume(), transpose_semitones.get()),
                                         )
                                         .unwrap()
                                         .into(),
@@ -111,6 +112,9 @@ pub fn App() -> impl IntoView {
                     <SpinButton<f32> step_page=1.0 min=20.0 max=400.0 value=bpm_value/>
                     <Slider value=volume_percent />
                 </Space>
+            </Card>
+            <Card>
+                    <SpinButton<i32> value=transpose_semitones step_page=1 min=-24 max=24 />
             </Card>
         </ConfigProvider>
     }
