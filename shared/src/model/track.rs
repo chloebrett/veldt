@@ -1,7 +1,7 @@
-use crate::serialize::map_vec;
-use crate::pmodel::*;
 use crate::model::sequence::Sequence;
 use crate::model::synth::Synth;
+use crate::pmodel::*;
+use crate::serialize::map_vec;
 use crate::types::*;
 
 #[derive(Clone, Debug, PartialEq)]
@@ -32,4 +32,3 @@ impl From<Track> for TrackProto {
         }
     }
 }
-

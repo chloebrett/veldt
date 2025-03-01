@@ -18,4 +18,3 @@ impl From<Note> for NoteProto {
         }
     }
 }
-

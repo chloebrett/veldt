@@ -1,7 +1,7 @@
-use crate::serialize::map_vec;
-use crate::pmodel::*;
-use crate::types::*;
 use crate::model::note::Note;
+use crate::pmodel::*;
+use crate::serialize::map_vec;
+use crate::types::*;
 
 #[derive(Clone, Debug, PartialEq)]
 pub struct Sequence {
