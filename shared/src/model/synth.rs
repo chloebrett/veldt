@@ -1,7 +1,7 @@
-use crate::pmodel::*;
-use crate::types::*;
 use crate::model::adsr_envelope::AdsrEnvelope;
 use crate::model::wave_type::WaveType;
+use crate::pmodel::*;
+use crate::types::*;
 
 #[derive(Clone, Debug, PartialEq)]
 pub struct Synth {
@@ -15,7 +15,9 @@ pub struct Synth {
 impl From<SynthProto> for Synth {
     fn from(item: SynthProto) -> Self {
         Synth {
-            wave: TryInto::<WaveTypeProto>::try_into(item.wave).unwrap().into(),
+            wave: TryInto::<WaveTypeProto>::try_into(item.wave)
+                .unwrap()
+                .into(),
             envelope: item.envelope.unwrap().into(),
             volume: item.volume,
         }
