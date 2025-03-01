@@ -13,6 +13,7 @@ pub struct Demo {
 impl Demo {
     pub fn new(demo_option: DemoOption) -> Self {
         match demo_option {
+            DemoOption::Custom => panic!(),
             DemoOption::Overworld=> { 
                 Self {
                     sequences: vec! [
