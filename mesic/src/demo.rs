@@ -4,10 +4,9 @@ use shared::model::sequence::Sequence;
 use crate::DemoOption;
 
 pub struct Demo {
-    // Required as waveform is currently seperately configurable.
+    // Required as waveform is currently seperately configurable::.
     // Replace in future.
     pub sequences: Vec<Sequence>,
-    pub bpm: f32,
 }
 
 impl Demo {
@@ -45,7 +44,6 @@ impl Demo {
                             ],
                         }
                     ],
-                    bpm:160.
                 }
             }
             DemoOption::FurElise=> {
@@ -78,7 +76,6 @@ impl Demo {
                             ],
                         }
                     ],
-                    bpm: 120.
                 }
             } 
         }

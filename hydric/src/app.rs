@@ -3,6 +3,7 @@ use leptos::prelude::*;
 use thaw::{Card, Button, Space, ConfigProvider, ButtonAppearance, Select, SpinButton};
 use shared::model::wave_type::WaveType;
 use shared::model::demo_option::DemoOption;
+use shared::types::Beats;
 use std::str::FromStr;
 
 use crate::ping::ping;
@@ -14,20 +15,19 @@ pub fn App() -> impl IntoView {
     let (_player, set_player) = signal_local(None::<AudioPlayer>);
     let wave_string = RwSignal::new(WaveType::Sine.to_string());
     let demo_string = RwSignal::new(DemoOption::Overworld.to_string());
-    let bpm_value = RwSignal::new(Beats);
-
+    let bpm_value = RwSignal::<Beats>::new(120.0);
     // TODO: instead of using a dependent signal, consider implementing
     // the appropriate From trait.
     let wave = move || WaveType::from_str(&wave_string.get()).unwrap();
     let demo_option = move || DemoOption::from_str(&demo_string.get()).unwrap();
-
+    let bpm = move || bpm_value.get();
     let ping_action = Action::new_local(|_: &()| async {
         ping().await;
     });
 
     // Continually re-request audio from the server then the wave type changes.
     let server_audio = LocalResource::new(move || {
-        render(demo_option(), wave())
+        render(demo_option(), wave(), bpm())
     });
 
     view! {
@@ -40,7 +40,7 @@ pub fn App() -> impl IntoView {
                         appearance=ButtonAppearance::Primary
                         on_click=move |_| {
                             set_player
-                                .set(AudioPlayer::new(&mesic::demo_floats(demo_option(), wave())).unwrap().into());
+                                .set(AudioPlayer::new(&mesic::demo_floats(demo_option(), wave(), bpm())).unwrap().into());
                         }
                     >
                         "Play (rendered in browser)"
@@ -88,7 +88,7 @@ pub fn App() -> impl IntoView {
                         <option>Overworld</option>
                         <option>FurElise</option>
                     </Select>
-                    <SpinButton<i32> step_page=1 min=20 max=140 value=bpm_value/>
+                    <SpinButton<f32> step_page=1.0 min=20.0 max=400.0 value=bpm_value/>
                 </Space>
             </Card>
         </ConfigProvider>
