@@ -1,37 +1,45 @@
-use leptos::*;
 use leptos::prelude::*;
-use thaw::{Card, Button, Space, ConfigProvider, ButtonAppearance, Select};
-use shared::model::wave_type::WaveType;
 use shared::model::demo_option::DemoOption;
+use shared::model::wave_type::WaveType;
 use std::str::FromStr;
+use thaw::{
+    Accordion, AccordionHeader, AccordionItem, Button, ButtonAppearance, Card, ConfigProvider,
+    Select, Slider, Space,
+};
 
 use crate::ping::ping;
-use crate::render::render;
 use crate::player::AudioPlayer;
+use crate::render::render;
 
 #[component]
 pub fn App() -> impl IntoView {
     let (_player, set_player) = signal_local(None::<AudioPlayer>);
     let wave_string = RwSignal::new(WaveType::Sine.to_string());
     let demo_string = RwSignal::new(DemoOption::Overworld.to_string());
+    let volume_percent = RwSignal::new(100.0f64);
 
     // TODO: instead of using a dependent signal, consider implementing
     // the appropriate From trait.
     let wave = move || WaveType::from_str(&wave_string.get()).unwrap();
     let demo_option = move || DemoOption::from_str(&demo_string.get()).unwrap();
+    let volume = move || (volume_percent.get() / 100.0f64) as f32;
 
     let ping_action = Action::new_local(|_: &()| async {
         ping().await;
     });
 
     // Continually re-request audio from the server then the wave type changes.
-    let server_audio = LocalResource::new(move || {
-        render(demo_option(), wave())
-    });
+    let server_audio =
+        LocalResource::new(move || render(demo_option(), wave(), volume()));
 
     view! {
         <ConfigProvider>
+            <Accordion collapsible=true>
+            <AccordionItem value="egui">
+            <AccordionHeader slot>egui canvas</AccordionHeader>
             <div id="egui_canvas_parent"><canvas id="egui_canvas"></canvas></div>
+            </AccordionItem>
+            </Accordion>
             <h1>"Veldt"</h1>
             <Card>
                 <Space>
@@ -39,7 +47,7 @@ pub fn App() -> impl IntoView {
                         appearance=ButtonAppearance::Primary
                         on_click=move |_| {
                             set_player
-                                .set(AudioPlayer::new(&mesic::demo_floats(demo_option(), wave())).unwrap().into());
+                                .set(AudioPlayer::new(&mesic::demo_floats(demo_option(), wave(), volume())).unwrap().into());
                         }
                     >
                         "Play (rendered in browser)"
@@ -87,9 +95,9 @@ pub fn App() -> impl IntoView {
                         <option>Overworld</option>
                         <option>FurElise</option>
                     </Select>
+                    <Slider value=volume_percent />
                 </Space>
             </Card>
         </ConfigProvider>
     }
 }
-
