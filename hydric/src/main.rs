@@ -1,11 +1,11 @@
 use leptos::prelude::*;
 
-pub mod ping;
-pub mod render;
 pub mod app;
-pub mod player;
-pub mod egui_init;
 mod egui_app;
+pub mod egui_init;
+pub mod ping;
+pub mod player;
+pub mod render;
 
 use crate::app::App;
 use crate::egui_init::egui_init;
