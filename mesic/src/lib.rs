@@ -32,7 +32,7 @@ pub fn demo() -> Result<(), std::io::Error> {
     Ok(())
 }
 
-pub fn create_track(notes: Vec<i32>, wave: WaveType, bpm: Beats, volume: Volume, transpose_semitones: i32) -> Track {
+pub fn create_track(notes: Vec<Note>, wave: WaveType, bpm: Beats, volume: Volume, transpose_semitones: i32) -> Track {
     let envelope = AdsrEnvelope {
         attack: 0.05,
         decay: 0.1,
@@ -52,10 +52,14 @@ pub fn create_track(notes: Vec<i32>, wave: WaveType, bpm: Beats, volume: Volume,
                 offset: 0.,
                 volume: volume,
                 synth_index: 0,
-                notes: notes.into_iter().map(|note| Note((note + transpose_semitones) as f32, 1.)).collect()
+                notes: notes.into_iter().map(|note| transpose_note(note, transpose_semitones)).collect()
             }
             )
     }
+}
+
+fn transpose_note(note: Note, semitones: i32) -> Note {
+    Note(note.0, note.1 + semitones as f32)
 }
 
 pub fn create_demo_track(
