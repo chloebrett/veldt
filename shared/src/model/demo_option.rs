@@ -4,4 +4,5 @@ use strum::{Display, EnumString};
 pub enum DemoOption {
     Overworld,
     FurElise,
+    Custom
 }
