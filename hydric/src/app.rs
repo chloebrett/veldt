@@ -35,10 +35,12 @@ pub fn App() -> impl IntoView {
     view! {
         <ConfigProvider>
             <Accordion collapsible=true>
-            <AccordionItem value="egui">
-            <AccordionHeader slot>egui canvas</AccordionHeader>
-            <div id="egui_canvas_parent"><canvas id="egui_canvas"></canvas></div>
-            </AccordionItem>
+                <AccordionItem value="egui">
+                    <AccordionHeader slot>egui canvas</AccordionHeader>
+                    <div id="egui_canvas_parent">
+                        <canvas id="egui_canvas"></canvas>
+                    </div>
+                </AccordionItem>
             </Accordion>
             <h1>"Veldt"</h1>
             <Card>
@@ -47,7 +49,13 @@ pub fn App() -> impl IntoView {
                         appearance=ButtonAppearance::Primary
                         on_click=move |_| {
                             set_player
-                                .set(AudioPlayer::new(&mesic::demo_floats(demo_option(), wave(), volume())).unwrap().into());
+                                .set(
+                                    AudioPlayer::new(
+                                            &mesic::demo_floats(demo_option(), wave(), volume()),
+                                        )
+                                        .unwrap()
+                                        .into(),
+                                );
                         }
                     >
                         "Play (rendered in browser)"
