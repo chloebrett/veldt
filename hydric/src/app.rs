@@ -1,6 +1,6 @@
 use leptos::*;
 use leptos::prelude::*;
-use thaw::{Card, Button, Space, ConfigProvider, ButtonAppearance, Select};
+use thaw::{Card, Button, Space, ConfigProvider, ButtonAppearance, Select, SpinButton};
 use shared::model::wave_type::WaveType;
 use shared::model::demo_option::DemoOption;
 use std::str::FromStr;
@@ -14,6 +14,7 @@ pub fn App() -> impl IntoView {
     let (_player, set_player) = signal_local(None::<AudioPlayer>);
     let wave_string = RwSignal::new(WaveType::Sine.to_string());
     let demo_string = RwSignal::new(DemoOption::Overworld.to_string());
+    let bpm_value = RwSignal::new(Beats);
 
     // TODO: instead of using a dependent signal, consider implementing
     // the appropriate From trait.
@@ -87,6 +88,7 @@ pub fn App() -> impl IntoView {
                         <option>Overworld</option>
                         <option>FurElise</option>
                     </Select>
+                    <SpinButton<i32> step_page=1 min=20 max=140 value=bpm_value/>
                 </Space>
             </Card>
         </ConfigProvider>
