@@ -1,5 +1,5 @@
 use wasm_bindgen::prelude::*;
-use web_sys::{AudioContext};
+use web_sys::AudioContext;
 
 pub struct AudioPlayer {
     ctx: AudioContext,
@@ -30,8 +30,6 @@ impl AudioPlayer {
         // Start playing!
         source.start()?;
 
-        Ok(AudioPlayer {
-            ctx,
-        })
+        Ok(AudioPlayer { ctx })
     }
 }

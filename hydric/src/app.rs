@@ -1,14 +1,16 @@
-use leptos::*;
 use leptos::prelude::*;
-use thaw::{Card, Button, Space, ConfigProvider, ButtonAppearance, Select, SpinButton};
-use shared::model::wave_type::WaveType;
 use shared::model::demo_option::DemoOption;
+use shared::model::wave_type::WaveType;
 use shared::types::Beats;
 use std::str::FromStr;
+use thaw::{
+    Accordion, AccordionHeader, AccordionItem, Button, ButtonAppearance, Card, ConfigProvider,
+    Select, Slider, Space, SpinButton
+};
 
 use crate::ping::ping;
-use crate::render::render;
 use crate::player::AudioPlayer;
+use crate::render::render;
 
 #[component]
 pub fn App() -> impl IntoView {
@@ -16,23 +18,31 @@ pub fn App() -> impl IntoView {
     let wave_string = RwSignal::new(WaveType::Sine.to_string());
     let demo_string = RwSignal::new(DemoOption::Overworld.to_string());
     let bpm_value = RwSignal::<Beats>::new(120.0);
+    let volume_percent = RwSignal::new(100.0f64);
+
     // TODO: instead of using a dependent signal, consider implementing
     // the appropriate From trait.
     let wave = move || WaveType::from_str(&wave_string.get()).unwrap();
     let demo_option = move || DemoOption::from_str(&demo_string.get()).unwrap();
     let bpm = move || bpm_value.get();
+    let volume = move || (volume_percent.get() / 100.0f64) as f32;
     let ping_action = Action::new_local(|_: &()| async {
         ping().await;
     });
 
     // Continually re-request audio from the server then the wave type changes.
-    let server_audio = LocalResource::new(move || {
-        render(demo_option(), wave(), bpm())
-    });
+    let server_audio = LocalResource::new(move || render(demo_option(), wave(), bpm(), volume()));
 
     view! {
         <ConfigProvider>
-            <div id="egui_canvas_parent"><canvas id="egui_canvas"></canvas></div>
+            <Accordion collapsible=true>
+                <AccordionItem value="egui">
+                    <AccordionHeader slot>egui canvas</AccordionHeader>
+                    <div id="egui_canvas_parent">
+                        <canvas id="egui_canvas"></canvas>
+                    </div>
+                </AccordionItem>
+            </Accordion>
             <h1>"Veldt"</h1>
             <Card>
                 <Space>
@@ -40,7 +50,13 @@ pub fn App() -> impl IntoView {
                         appearance=ButtonAppearance::Primary
                         on_click=move |_| {
                             set_player
-                                .set(AudioPlayer::new(&mesic::demo_floats(demo_option(), wave(), bpm())).unwrap().into());
+                                .set(
+                                    AudioPlayer::new(
+                                            &mesic::demo_floats(demo_option(), wave(), bpm(), volume()),
+                                        )
+                                        .unwrap()
+                                        .into(),
+                                );
                         }
                     >
                         "Play (rendered in browser)"
@@ -88,10 +104,14 @@ pub fn App() -> impl IntoView {
                         <option>Overworld</option>
                         <option>FurElise</option>
                     </Select>
+                </Space>
+            </Card>
+            <Card>
+                <Space>
                     <SpinButton<f32> step_page=1.0 min=20.0 max=400.0 value=bpm_value/>
+                    <Slider value=volume_percent />
                 </Space>
             </Card>
         </ConfigProvider>
     }
 }
-
