@@ -16,17 +16,18 @@ use crate::wave::*;
 use crate::demo::*;
 
 pub fn demo() -> Result<(), std::io::Error> {
-    let output = render(&create_demo_track(DemoOption::Overworld, WaveType::Sine));
+    let volume: Volume = 1.0;
+    let output = render(&create_demo_track(DemoOption::Overworld, WaveType::Sine, volume));
     let filename = "out.bin".to_string();
     write_as_bytes(&output, filename)?;
     Ok(())
 }
 
-pub fn demo_floats(demo_option: DemoOption, wave: WaveType) -> Vec<f32> {
-    render(&create_demo_track(demo_option, wave))
+pub fn demo_floats(demo_option: DemoOption, wave: WaveType, volume: Volume) -> Vec<f32> {
+    render(&create_demo_track(demo_option, wave, volume))
 }
 
-pub fn create_demo_track(demo_option: DemoOption, wave: WaveType) -> Track {
+pub fn create_demo_track(demo_option: DemoOption, wave: WaveType, volume: Volume) -> Track {
     let demo = Demo::new(demo_option);
     let envelope = AdsrEnvelope {
         attack: 0.05,
@@ -37,7 +38,7 @@ pub fn create_demo_track(demo_option: DemoOption, wave: WaveType) -> Track {
     let synth = Synth {
         wave,
         envelope,
-        volume: 1.,
+        volume: volume,
     };
     Track {
         bpm: demo.bpm, 
