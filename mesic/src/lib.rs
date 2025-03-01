@@ -1,33 +1,52 @@
-use std::cmp::max;
-use std::f32::consts::PI;
-use shared::model::wave_type::WaveType;
 use shared::model::adsr_envelope::AdsrEnvelope;
+use shared::model::demo_option::DemoOption;
 use shared::model::synth::Synth;
 use shared::model::track::Track;
+use shared::model::wave_type::WaveType;
 use shared::types::*;
-use shared::model::demo_option::DemoOption;
+use std::cmp::max;
+use std::f32::consts::PI;
 
+mod demo;
 pub mod io;
 mod wave;
-mod demo;
 
+use crate::demo::*;
 use crate::io::*;
 use crate::wave::*;
-use crate::demo::*;
 
 pub fn demo() -> Result<(), std::io::Error> {
+    let bpm: Beats = 120.0;
     let volume: Volume = 1.0;
-    let output = render(&create_demo_track(DemoOption::Overworld, WaveType::Sine, volume, 0));
+    let transpose_semitones = 0;
+    let output = render(&create_demo_track(
+        DemoOption::Overworld,
+        WaveType::Sine,
+        bpm,
+        volume,
+        transpose_semitones));
     let filename = "out.bin".to_string();
     write_as_bytes(&output, filename)?;
     Ok(())
 }
 
-pub fn demo_floats(demo_option: DemoOption, wave: WaveType, volume: Volume, transpose_semitones: i32) -> Vec<f32> {
-    render(&create_demo_track(demo_option, wave, volume, transpose_semitones))
+pub fn demo_floats(
+    demo_option: DemoOption,
+    wave: WaveType,
+    bpm: Beats,
+    volume: Volume,
+    transpose_semitones: i32
+) -> Vec<f32> {
+    render(&create_demo_track(demo_option, wave, bpm, volume, transpose_semitones))
 }
 
-pub fn create_demo_track(demo_option: DemoOption, wave: WaveType, volume: Volume, transpose_semitones: i32) -> Track {
+pub fn create_demo_track(
+    demo_option: DemoOption,
+    wave: WaveType,
+    bpm: Beats,
+    volume: Volume,
+    transpose_semitones: i32
+) -> Track {
     let demo = transpose_demo(Demo::new(demo_option), transpose_semitones);
     let envelope = AdsrEnvelope {
         attack: 0.05,
@@ -41,9 +60,9 @@ pub fn create_demo_track(demo_option: DemoOption, wave: WaveType, volume: Volume
         volume: volume,
     };
     Track {
-        bpm: demo.bpm, 
+        bpm,
         synths: vec![synth],
-        sequences: demo.sequences 
+        sequences: demo.sequences,
     }
 }
 

@@ -1,6 +1,7 @@
 use leptos::prelude::*;
 use shared::model::demo_option::DemoOption;
 use shared::model::wave_type::WaveType;
+use shared::types::Beats;
 use std::str::FromStr;
 use thaw::{
     Accordion, AccordionHeader, AccordionItem, Button, ButtonAppearance, Card, ConfigProvider,
@@ -16,6 +17,7 @@ pub fn App() -> impl IntoView {
     let (_player, set_player) = signal_local(None::<AudioPlayer>);
     let wave_string = RwSignal::new(WaveType::Sine.to_string());
     let demo_string = RwSignal::new(DemoOption::Overworld.to_string());
+    let bpm_value = RwSignal::<Beats>::new(120.0);
     let volume_percent = RwSignal::new(100.0f64);
     let transpose_semitones = RwSignal::new(0);
 
@@ -23,15 +25,14 @@ pub fn App() -> impl IntoView {
     // the appropriate From trait.
     let wave = move || WaveType::from_str(&wave_string.get()).unwrap();
     let demo_option = move || DemoOption::from_str(&demo_string.get()).unwrap();
+    let bpm = move || bpm_value.get();
     let volume = move || (volume_percent.get() / 100.0f64) as f32;
-
     let ping_action = Action::new_local(|_: &()| async {
         ping().await;
     });
 
     // Continually re-request audio from the server then the wave type changes.
-    let server_audio =
-        LocalResource::new(move || render(demo_option(), wave(), volume(), transpose_semitones.get()));
+    let server_audio = LocalResource::new(move || render(demo_option(), wave(), bpm(), volume(), transpose_semitones.get()));
 
     view! {
         <ConfigProvider>
@@ -52,7 +53,7 @@ pub fn App() -> impl IntoView {
                             set_player
                                 .set(
                                     AudioPlayer::new(
-                                            &mesic::demo_floats(demo_option(), wave(), volume(), transpose_semitones.get()),
+                                            &mesic::demo_floats(demo_option(), wave(), bpm(), volume(), transpose_semitones.get()),
                                         )
                                         .unwrap()
                                         .into(),
@@ -104,6 +105,11 @@ pub fn App() -> impl IntoView {
                         <option>Overworld</option>
                         <option>FurElise</option>
                     </Select>
+                </Space>
+            </Card>
+            <Card>
+                <Space>
+                    <SpinButton<f32> step_page=1.0 min=20.0 max=400.0 value=bpm_value/>
                     <Slider value=volume_percent />
                 </Space>
             </Card>
