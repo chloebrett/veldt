@@ -1,8 +1,7 @@
 use crate::player::AudioPlayer;
 use crate::render::render;
 use leptos::prelude::*;
-use mesic::{create_demo_track, create_track, render as local_render};
-use shared::model::demo_option::DemoOption;
+use mesic::{create_track, render as local_render};
 use shared::model::note::Note;
 use shared::model::wave_type::WaveType;
 use shared::types::Beats;
@@ -16,7 +15,6 @@ use thaw::{
 pub fn App() -> impl IntoView {
     let (_player, set_player) = signal_local(None::<AudioPlayer>);
     let wave_string = RwSignal::new(WaveType::Sine.to_string());
-    let demo_string = RwSignal::new(DemoOption::Overworld.to_string());
     let bpm_value = RwSignal::<Beats>::new(120.0);
     let volume_percent = RwSignal::new(100.0f64);
     let transpose_semitones = RwSignal::new(0);
@@ -30,10 +28,14 @@ pub fn App() -> impl IntoView {
     let (notes, set_notes) = signal_local(initial_notes);
 
     let add_note = move |_| {
-        // Arc so that it gets cleaned up when removed.
-        let note = ArcRwSignal::new(Note(0.0, 1.0));
+        let note = (
+            next_note_id.get(),
+            // Arc so that they get cleaned up when removed.
+            ArcRwSignal::new(0.0),
+            ArcRwSignal::new(1.0),
+        );
 
-        set_notes.update(move |notes| notes.push((next_note_id.get(), ArcRwSignal::new(0.0), ArcRwSignal::new(1.0))));
+        set_notes.update(move |notes| notes.push(note));
 
         next_note_id.update(|it| *it += 1);
     };
@@ -41,12 +43,11 @@ pub fn App() -> impl IntoView {
     // TODO: instead of using a dependent signal, consider implementing
     // the appropriate From trait.
     let wave = move || WaveType::from_str(&wave_string.get()).unwrap();
-    let demo_option = move || DemoOption::from_str(&demo_string.get()).unwrap();
     let bpm = move || bpm_value.get();
     let volume = move || (volume_percent.get() / 100.0f64) as f32;
 
-    let track = move || match demo_option() {
-        DemoOption::Custom => create_track(
+    let track = move || {
+        create_track(
             notes
                 .get()
                 .into_iter()
@@ -56,14 +57,7 @@ pub fn App() -> impl IntoView {
             bpm(),
             volume(),
             transpose_semitones.get(),
-        ),
-        _ => create_demo_track(
-            demo_option(),
-            wave(),
-            bpm(),
-            volume(),
-            transpose_semitones.get(),
-        ),
+        )
     };
 
     // Continually re-request audio from the server then the wave type changes.
@@ -121,11 +115,6 @@ pub fn App() -> impl IntoView {
                         <option>Square</option>
                         <option>Saw</option>
                         <option>Triangle</option>
-                    </Select>
-                    <Select value=demo_string>
-                        <option>Overworld</option>
-                        <option>FurElise</option>
-                        <option>Custom</option>
                     </Select>
                 </Space>
             </Card>
