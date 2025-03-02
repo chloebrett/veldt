@@ -1,7 +1,8 @@
 use std::fmt;
 use crate::{pmodel::*, types::PitchValue};
+use strum::EnumString;
 
-#[derive(Clone, Debug, PartialEq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, PartialOrd, Ord, EnumString)]
 pub enum ScaleValue {
     A,
     ASharp,
