@@ -4,7 +4,6 @@ fn main() {
         .build_client(true)
         .compile_protos(
             &[
-                "proto/echo.proto",
                 "proto/pmodel.proto",
                 "proto/render.proto",
             ],

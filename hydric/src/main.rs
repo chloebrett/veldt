@@ -3,7 +3,6 @@ use leptos::prelude::*;
 pub mod app;
 mod egui_app;
 pub mod egui_init;
-pub mod ping;
 pub mod player;
 pub mod render;
 
