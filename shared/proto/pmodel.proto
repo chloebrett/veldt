@@ -47,7 +47,7 @@ message AdsrEnvelopeProto {
 message PitchNameProto {
   ScaleValueProto scale_value = 1;
 
-  uint32 octave = 2;
+  int32 octave = 2;
 }
 
 enum WaveTypeProto {

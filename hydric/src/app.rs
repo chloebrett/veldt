@@ -4,6 +4,8 @@ use leptos::prelude::*;
 use mesic::{create_track, render as local_render};
 use shared::model::note::Note;
 use shared::model::wave_type::WaveType;
+use shared::model::pitch_name::PitchName;
+use shared::model::scale_value::ScaleValue;
 use shared::types::Beats;
 use std::str::FromStr;
 use thaw::{
@@ -17,12 +19,13 @@ pub fn App() -> impl IntoView {
     let wave_string = RwSignal::new(WaveType::Sine.to_string());
     let bpm_value = RwSignal::<Beats>::new(120.0);
     let volume_percent = RwSignal::new(100.0f64);
-    let transpose_semitones = RwSignal::new(0);
+    let transpose_semitones: RwSignal<i32> = RwSignal::new(0);
 
     let initial_notes = vec![
-        (0, ArcRwSignal::new(0.0), ArcRwSignal::new(1.0)),
-        (1, ArcRwSignal::new(1.0), ArcRwSignal::new(1.0)),
-        (2, ArcRwSignal::new(2.0), ArcRwSignal::new(2.0)),
+        (0, ArcRwSignal::new(ScaleValue::A.to_string()), ArcRwSignal::new(4i32), ArcRwSignal::new(1.0)),
+        (1, ArcRwSignal::new(ScaleValue::A.to_string()), ArcRwSignal::new(4i32), ArcRwSignal::new(1.0)),
+        (2, ArcRwSignal::new(ScaleValue::A.to_string()), ArcRwSignal::new(4i32), ArcRwSignal::new(1.0)),
+        (3, ArcRwSignal::new(ScaleValue::A.to_string()), ArcRwSignal::new(4i32), ArcRwSignal::new(1.0)),
     ];
     let next_note_id = RwSignal::new(initial_notes.len());
     let (notes, set_notes) = signal_local(initial_notes);
@@ -31,8 +34,9 @@ pub fn App() -> impl IntoView {
         let note = (
             next_note_id.get(),
             // Arc so that they get cleaned up when removed.
-            ArcRwSignal::new(0.0),
-            ArcRwSignal::new(1.0),
+            ArcRwSignal::new(ScaleValue::A.to_string()),
+            ArcRwSignal::new(4i32),
+            ArcRwSignal::new(2.0),
         );
 
         set_notes.update(move |notes| notes.push(note));
@@ -55,7 +59,13 @@ pub fn App() -> impl IntoView {
             notes
                 .get()
                 .into_iter()
-                .map(|(_, pitch, duration)| Note(pitch.get(), duration.get()))
+                .map(|(_, scale_value, octave, duration)| Note{
+                    pitch_name: PitchName {
+                        scale_value: ScaleValue::from_str(&scale_value.get()).unwrap(),
+                        octave: octave.get()
+                    },
+                    beats: duration.get()
+                })
                 .collect(),
             wave(),
             bpm(),
@@ -139,13 +149,18 @@ pub fn App() -> impl IntoView {
                 <For
                     each=move || notes.get()
                     key=|note| note.0
-                    children=move |(id, pitch, duration)| {
-                        let pitch = RwSignal::from(pitch);
+                    children=move |(id, scale_value, octave, duration)| {
+                        let scale_value = RwSignal::from(scale_value);
+                        let octave = RwSignal::from(octave);
                         let duration = RwSignal::from(duration);
 
                         view! {
                             <Space>
-                                <SpinButton<f32> value=pitch step_page=1.0 min=-24.0 max=24.0 />
+                                <Select value=scale_value>
+                                    <option>A</option>
+                                    <option>B</option>
+                                </Select>
+                                <SpinButton<i32> value=octave step_page=1 min=0 max=12 />
                                 <SpinButton<f32> value=duration step_page=0.25 min=0.5 max=16.0 />
                                 <Button appearance=ButtonAppearance::Secondary on_click=move |_| delete_note(id)>"Delete"</Button>
                             </Space>
