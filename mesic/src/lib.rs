@@ -75,11 +75,10 @@ fn apply_envelope(x: f32, envelope: &AdsrEnvelope, duration: Beats, bpm: Beats) 
         );
     }
 
-    let x = x / SAMPLE_RATE as f32;
     let scale = bpm / 60.0 / duration;
-    let x = x * scale; // scale by BPM
+    let x = x * scale / (SAMPLE_RATE as f32) * scale as f32;
 
-    let output = if x < envelope.attack {
+    if x < envelope.attack {
         // in attack
         x / envelope.attack
     } else if x < envelope.attack + envelope.decay {
@@ -92,8 +91,6 @@ fn apply_envelope(x: f32, envelope: &AdsrEnvelope, duration: Beats, bpm: Beats) 
         // in release
         (duration - x) / envelope.release * envelope.sustain
     };
-
-    output
 }
 
 pub fn render(track: &Track) -> Vec<f32> {
