@@ -1,4 +1,4 @@
-use crate::pmodel::*;
+use crate::{pmodel::*, types::PitchValue};
 
 #[derive(Clone, Debug, PartialEq)]
 pub enum ScaleValue {
@@ -14,6 +14,25 @@ pub enum ScaleValue {
     FSharp,
     G,
     GSharp,
+}
+
+impl Into<PitchValue> for ScaleValue {
+    fn into(self: Self) -> PitchValue {
+        match self {
+            ScaleValue::A => 0 as PitchValue,
+            ScaleValue::ASharp => 1 as PitchValue,
+            ScaleValue::B => 2 as PitchValue,
+            ScaleValue::C => 3 as PitchValue,
+            ScaleValue::CSharp => 4 as PitchValue,
+            ScaleValue::D => 5 as PitchValue,
+            ScaleValue::DSharp => 6 as PitchValue,
+            ScaleValue::E => 7 as PitchValue,
+            ScaleValue::F => 8 as PitchValue,
+            ScaleValue::FSharp => 9 as PitchValue,
+            ScaleValue::G => 10 as PitchValue,
+            ScaleValue::GSharp => 11 as PitchValue
+        }
+    }
 }
 
 impl From<ScaleValueProto> for ScaleValue {
