@@ -35,6 +35,26 @@ impl Into<PitchValue> for ScaleValue {
     }
 }
 
+impl From<PitchValue> for ScaleValue {
+    fn from(pitch_value: PitchValue) -> Self {
+        match pitch_value % 12 {
+            0 => ScaleValue::A,
+            1 => ScaleValue::ASharp,
+            2 => ScaleValue::B,
+            3 => ScaleValue::C,
+            4 => ScaleValue::CSharp,
+            5 => ScaleValue::D,
+            6 => ScaleValue::DSharp,
+            7 => ScaleValue::E,
+            8 => ScaleValue::F,
+            9 => ScaleValue::FSharp,
+            10 => ScaleValue::G,
+            11 => ScaleValue::GSharp,
+            _ => panic!("")
+        }
+    }
+}
+
 impl From<ScaleValueProto> for ScaleValue {
     fn from(item: ScaleValueProto) -> Self {
         match item {
