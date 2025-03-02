@@ -1,5 +1,5 @@
 pub mod model;
-mod serialize;
+pub mod serialize;
 pub mod types;
 pub mod bytes;
 
