@@ -5,10 +5,9 @@ use mesic::render as local_render;
 use shared::model::track::Track;
 use thaw::{Button, ButtonAppearance, Card, Space};
 
-// TODO: put the track in a read signal / memoize
 #[component]
 pub fn Playback(track: Memo<Track>) -> impl IntoView {
-    let (_player, set_player) = signal_local(None::<AudioPlayer>);
+    let (_, set_player) = signal_local(None::<AudioPlayer>);
 
     // Continually re-request audio from the server then the wave type changes.
     let server_audio = LocalResource::new(move || server_render(track.get().clone()));
