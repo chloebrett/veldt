@@ -68,7 +68,7 @@ struct ReferencePitch <'a> {
 const REFERENCE_PITCH: ReferencePitch<'static> = ReferencePitch {
     pitch_name: &PitchName {
         scale_value: ScaleValue::A,
-        octave: 4u32
+        octave: 4
     },
     frequency: 440.0
 };
