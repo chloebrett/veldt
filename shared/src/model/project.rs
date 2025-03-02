@@ -62,6 +62,8 @@ struct GeneratorInstance {
 
 struct GeneratorMeta {
     volume: Volume,
+
+    // TODO: pan
 }
 
 struct TrackPlacement {
