@@ -158,7 +158,17 @@ pub fn App() -> impl IntoView {
                             <Space>
                                 <Select value=scale_value>
                                     <option>A</option>
+                                    <option>ASharp</option>
                                     <option>B</option>
+                                    <option>C</option>
+                                    <option>CSharp</option>
+                                    <option>D</option>
+                                    <option>DSharp</option>
+                                    <option>E</option>
+                                    <option>F</option>
+                                    <option>FSharp</option>
+                                    <option>G</option>
+                                    <option>GSharp</option>
                                 </Select>
                                 <SpinButton<i32> value=octave step_page=1 min=0 max=12 />
                                 <SpinButton<f32> value=duration step_page=0.25 min=0.5 max=16.0 />
