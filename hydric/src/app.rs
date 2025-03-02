@@ -125,12 +125,9 @@ pub fn App() -> impl IntoView {
                     <Select value=demo_string>
                         <option>Overworld</option>
                         <option>FurElise</option>
-                        veldt
-                        veldt
                         <option>Custom</option>
                     </Select>
                 </Space>
-                veldt
             </Card>
             <Card>
                 <Space>
