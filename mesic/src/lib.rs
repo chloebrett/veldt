@@ -12,7 +12,7 @@ mod wave;
 
 use crate::wave::*;
 
-pub fn create_track(notes: Vec<Note>, wave: WaveType, bpm: Beats, volume: Volume, transpose_semitones: i32) -> Track {
+pub fn create_track(notes: Vec<Note>, wave: WaveType, bpm: Beats, volume: Volume, transpose: Semitones) -> Track {
     let envelope = AdsrEnvelope {
         attack: 0.05,
         decay: 0.1,
@@ -32,14 +32,14 @@ pub fn create_track(notes: Vec<Note>, wave: WaveType, bpm: Beats, volume: Volume
                 offset: 0.,
                 volume: volume,
                 synth_index: 0,
-                notes: notes.into_iter().map(|note| transpose_note(note, transpose_semitones)).collect()
+                notes: notes.into_iter().map(|note| transpose_note(note, transpose)).collect()
             }
             )
     }
 }
 
-fn transpose_note(note: Note, semitones: i32) -> Note {
-    Note(note.0, note.1 + semitones as f32)
+fn transpose_note(note: Note, semitones: Semitones) -> Note {
+    Note(note.0, note.1 + semitones)
 }
 
 fn sum(a: Vec<f32>, b: Vec<f32>) -> Vec<f32> {
