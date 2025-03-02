@@ -1,5 +1,5 @@
 use leptos::logging::log;
-use mesic::io::as_floats;
+use shared::bytes::as_floats;
 use shared::model::track::Track;
 use shared::render::{RenderRequest, render_client::RenderClient};
 use tonic_web_wasm_client::Client;

@@ -1893,9 +1893,7 @@ dependencies = [
 name = "mesic"
 version = "0.1.0"
 dependencies = [
- "byteorder",
  "shared",
- "strum",
 ]
 
 [[package]]
@@ -2934,6 +2932,7 @@ dependencies = [
 name = "shared"
 version = "0.1.0"
 dependencies = [
+ "byteorder",
  "prost",
  "strum",
  "tonic",
