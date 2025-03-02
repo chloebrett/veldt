@@ -1,3 +1,4 @@
+use std::fmt;
 use crate::{pmodel::*, types::PitchValue};
 
 #[derive(Clone, Debug, PartialEq)]
@@ -51,6 +52,25 @@ impl From<PitchValue> for ScaleValue {
             10 => ScaleValue::G,
             11 => ScaleValue::GSharp,
             _ => panic!("") // This should never happen.
+        }
+    }
+}
+
+impl fmt::Display for ScaleValue {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            ScaleValue::A => write!(f, "A"),
+            ScaleValue::ASharp => write!(f, "A#"),
+            ScaleValue::B => write!(f, "B"),
+            ScaleValue::C => write!(f, "C"),
+            ScaleValue::CSharp => write!(f, "C#"),
+            ScaleValue::D => write!(f, "D"),
+            ScaleValue::DSharp => write!(f, "D#"),
+            ScaleValue::E => write!(f, "E"),
+            ScaleValue::F => write!(f, "F"),
+            ScaleValue::FSharp => write!(f, "F#"),
+            ScaleValue::G => write!(f, "G"),
+            ScaleValue::GSharp => write!(f, "G#")
         }
     }
 }
