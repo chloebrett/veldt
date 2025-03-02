@@ -1,7 +1,7 @@
 use std::net::SocketAddr;
 
 use http::{HeaderValue, Method};
-use mesic::io::as_bytes;
+use shared::bytes::as_bytes;
 use mesic::render;
 use shared::render::render_server::{Render, RenderServer};
 use shared::render::{RenderReply, RenderRequest};
