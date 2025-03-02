@@ -50,7 +50,7 @@ impl From<PitchValue> for ScaleValue {
             9 => ScaleValue::FSharp,
             10 => ScaleValue::G,
             11 => ScaleValue::GSharp,
-            _ => panic!("")
+            _ => panic!("") // This should never happen.
         }
     }
 }

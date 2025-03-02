@@ -8,6 +8,14 @@ pub struct PitchName {
     pub octave: Octave
 }
 
+impl Into<PitchValue> for PitchName {
+    fn into(self: Self) -> PitchValue {
+        let scale_value_pitch = self.scale_value as PitchValue;
+        let octave_pitch = self.octave * 12;
+        scale_value_pitch + octave_pitch
+    }
+}
+
 impl From<PitchNameProto> for PitchName {
     fn from(item: PitchNameProto) -> Self {
         PitchName {
