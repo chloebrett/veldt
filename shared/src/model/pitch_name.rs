@@ -1,3 +1,4 @@
+use std::fmt;
 use crate::pmodel::*;
 use crate::model::scale_value::ScaleValue;
 use crate::types::*;
@@ -23,6 +24,12 @@ impl From<PitchValue> for PitchName {
             octave: pitch_value / 12  
         }
     }
+}
+
+impl fmt::Display for PitchName {
+   fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+       write!(f, "{}{}", self.scale_value, self.octave)
+   } 
 }
 
 impl From<PitchNameProto> for PitchName {
