@@ -14,10 +14,10 @@ use crate::wave::*;
 
 pub fn create_track(notes: Vec<Note>, wave: WaveType, bpm: Beats, volume: Volume, transpose: Semitones) -> Track {
     let envelope = AdsrEnvelope {
-        attack: 0.05,
-        decay: 0.1,
-        sustain: 0.6,
-        release: 0.2,
+        attack: 0.0,
+        decay: 0.3,
+        sustain: 0.0,
+        release: 0.0,
     };
     let synth = Synth {
         wave,
@@ -67,7 +67,7 @@ fn freq(semitones: Semitones) -> Freq {
     REFERENCE_FREQUENCY * semitone_increment.powf(semitones)
 }
 
-fn apply_envelope(x: f32, envelope: &AdsrEnvelope, duration: Beats) -> f32 {
+fn apply_envelope(x: f32, envelope: &AdsrEnvelope, duration: Beats, bpm: Beats) -> f32 {
     if duration < envelope.attack + envelope.decay + envelope.release {
         panic!(
             "Envelope {:?} was too short for duration {}",
@@ -76,8 +76,10 @@ fn apply_envelope(x: f32, envelope: &AdsrEnvelope, duration: Beats) -> f32 {
     }
 
     let x = x / SAMPLE_RATE as f32;
+    let scale = bpm / 60.0 / duration;
+    let x = x * scale; // scale by BPM
 
-    if x < envelope.attack {
+    let output = if x < envelope.attack {
         // in attack
         x / envelope.attack
     } else if x < envelope.attack + envelope.decay {
@@ -89,7 +91,9 @@ fn apply_envelope(x: f32, envelope: &AdsrEnvelope, duration: Beats) -> f32 {
     } else {
         // in release
         (duration - x) / envelope.release * envelope.sustain
-    }
+    };
+
+    output
 }
 
 pub fn render(track: &Track) -> Vec<f32> {
@@ -136,7 +140,7 @@ fn wave(
         .map(|x: i32| {
             make_wave(x as f32 * step, wave_type)
                 * volume
-                * apply_envelope(x as f32, envelope, beats)
+                * apply_envelope(x as f32, envelope, beats, bpm)
         })
         .collect()
 }
