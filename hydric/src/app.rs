@@ -40,6 +40,10 @@ pub fn App() -> impl IntoView {
         next_note_id.update(|it| *it += 1);
     };
 
+    let delete_note = move |id| {
+        set_notes.update(move |notes| notes.retain(|note| note.0 != id));
+    };
+
     // TODO: instead of using a dependent signal, consider implementing
     // the appropriate From trait.
     let wave = move || WaveType::from_str(&wave_string.get()).unwrap();
@@ -135,7 +139,7 @@ pub fn App() -> impl IntoView {
                 <For
                     each=move || notes.get()
                     key=|note| note.0
-                    children=move |(_, pitch, duration)| {
+                    children=move |(id, pitch, duration)| {
                         let pitch = RwSignal::from(pitch);
                         let duration = RwSignal::from(duration);
 
@@ -143,6 +147,7 @@ pub fn App() -> impl IntoView {
                             <Space>
                                 <SpinButton<f32> value=pitch step_page=1.0 min=-24.0 max=24.0 />
                                 <SpinButton<f32> value=duration step_page=0.25 min=0.5 max=16.0 />
+                                <Button appearance=ButtonAppearance::Secondary on_click=move |_| delete_note(id)>"Delete"</Button>
                             </Space>
                         }
                     }
