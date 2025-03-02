@@ -1,12 +1,12 @@
 use leptos::prelude::*;
 
-pub mod app;
+mod audio_player;
+mod audio_render;
+mod components;
 mod egui_app;
-pub mod egui_init;
-pub mod player;
-pub mod render;
+mod egui_init;
 
-use crate::app::App;
+use crate::components::app::App;
 use crate::egui_init::egui_init;
 
 fn main() {
