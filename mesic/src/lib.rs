@@ -1,5 +1,4 @@
 use shared::model::adsr_envelope::AdsrEnvelope;
-use shared::model::demo_option::DemoOption;
 use shared::model::synth::Synth;
 use shared::model::track::Track;
 use shared::model::note::Note;
@@ -9,28 +8,9 @@ use shared::types::*;
 use std::cmp::max;
 use std::f32::consts::PI;
 
-mod demo;
-pub mod io;
 mod wave;
 
-use crate::demo::*;
-use crate::io::*;
 use crate::wave::*;
-
-pub fn demo() -> Result<(), std::io::Error> {
-    let bpm: Beats = 120.0;
-    let volume: Volume = 1.0;
-    let transpose_semitones = 0;
-    let output = render(&create_demo_track(
-        DemoOption::Overworld,
-        WaveType::Sine,
-        bpm,
-        volume,
-        transpose_semitones));
-    let filename = "out.bin".to_string();
-    write_as_bytes(&output, filename)?;
-    Ok(())
-}
 
 pub fn create_track(notes: Vec<Note>, wave: WaveType, bpm: Beats, volume: Volume, transpose_semitones: i32) -> Track {
     let envelope = AdsrEnvelope {
@@ -60,32 +40,6 @@ pub fn create_track(notes: Vec<Note>, wave: WaveType, bpm: Beats, volume: Volume
 
 fn transpose_note(note: Note, semitones: i32) -> Note {
     Note(note.0, note.1 + semitones as f32)
-}
-
-pub fn create_demo_track(
-    demo_option: DemoOption,
-    wave: WaveType,
-    bpm: Beats,
-    volume: Volume,
-    transpose_semitones: i32
-) -> Track {
-    let demo = transpose_demo(Demo::new(demo_option), transpose_semitones);
-    let envelope = AdsrEnvelope {
-        attack: 0.05,
-        decay: 0.1,
-        sustain: 0.6,
-        release: 0.2,
-    };
-    let synth = Synth {
-        wave,
-        envelope,
-        volume: volume,
-    };
-    Track {
-        bpm,
-        synths: vec![synth],
-        sequences: demo.sequences,
-    }
 }
 
 fn sum(a: Vec<f32>, b: Vec<f32>) -> Vec<f32> {
