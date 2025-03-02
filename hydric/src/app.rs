@@ -7,7 +7,6 @@ use thaw::{
     Accordion, AccordionHeader, AccordionItem, Button, ButtonAppearance, Card, ConfigProvider,
     Select, Slider, Space, SpinButton,
 };
-use crate::ping::ping;
 use crate::player::AudioPlayer;
 use crate::render::render;
 use mesic::{create_demo_track, create_track, render as local_render};
@@ -44,9 +43,6 @@ pub fn App() -> impl IntoView {
         ]
     };
 
-    let ping_action = Action::new_local(|_: &()| async {
-        ping().await;
-    });
     let track = move || match demo_option() {
         DemoOption::Custom => {
             create_track(notes(), wave(), bpm(), volume(), transpose_semitones.get())
@@ -92,14 +88,6 @@ pub fn App() -> impl IntoView {
                         }
                     >
                         "Play (rendered in browser)"
-                    </Button>
-                    <Button
-                        appearance=ButtonAppearance::Secondary
-                        on_click=move |_| {
-                            ping_action.dispatch(());
-                        }
-                    >
-                        "Ping server (check network tab)"
                     </Button>
                     <Suspense fallback=move || {
                         view! {
