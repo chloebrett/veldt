@@ -29,7 +29,7 @@ message SynthProto {
 }
 
 message NoteProto {
-  float semitones = 1;
+  PitchNameProto pitch_name = 3;
 
   float beats = 2;
 }
