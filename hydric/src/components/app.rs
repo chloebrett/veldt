@@ -1,19 +1,17 @@
-use crate::player::AudioPlayer;
-use crate::render::render;
 use leptos::prelude::*;
-use mesic::{create_track, render as local_render};
 use shared::model::note::Note;
 use shared::model::wave_type::WaveType;
 use shared::types::Beats;
 use std::str::FromStr;
+use mesic::create_track;
 use thaw::{
     Accordion, AccordionHeader, AccordionItem, Button, ButtonAppearance, Card, ConfigProvider,
     Select, Slider, Space, SpinButton,
 };
+use crate::components::playback::Playback;
 
 #[component]
 pub fn App() -> impl IntoView {
-    let (_player, set_player) = signal_local(None::<AudioPlayer>);
     let wave_string = RwSignal::new(WaveType::Sine.to_string());
     let bpm_value = RwSignal::<Beats>::new(120.0);
     let volume_percent = RwSignal::new(100.0f64);
@@ -50,7 +48,7 @@ pub fn App() -> impl IntoView {
     let bpm = move || bpm_value.get();
     let volume = move || (volume_percent.get() / 100.0f64) as f32;
 
-    let track = move || {
+    let track = Memo::new(move |_| {
         create_track(
             notes
                 .get()
@@ -62,10 +60,7 @@ pub fn App() -> impl IntoView {
             volume(),
             transpose_semitones.get(),
         )
-    };
-
-    // Continually re-request audio from the server then the wave type changes.
-    let server_audio = LocalResource::new(move || render(track()));
+    });
 
     view! {
         <ConfigProvider>
@@ -78,51 +73,14 @@ pub fn App() -> impl IntoView {
                 </AccordionItem>
             </Accordion>
             <h1>"Veldt"</h1>
+            <Playback track=track />
             <Card>
-                <Space>
-                    <Button
-                        appearance=ButtonAppearance::Primary
-                        on_click=move |_| {
-                            set_player
-                                .set(AudioPlayer::new(&local_render(&track())).unwrap().into());
-                        }
-                    >
-                        "Play (rendered in browser)"
-                    </Button>
-                    <Suspense fallback=move || {
-                        view! {
-                            <Button disabled=true appearance=ButtonAppearance::Secondary>
-                                "Play (rendered on server)"
-                            </Button>
-                        }
-                    }>
-                        {move || {
-                            server_audio
-                                .get()
-                                .map(move |audio| {
-                                    view! {
-                                        <Button
-                                            appearance=ButtonAppearance::Secondary
-                                            on_click=move |_| {
-                                                let audio = audio.clone().take();
-                                                set_player.set(AudioPlayer::new(&audio).unwrap().into());
-                                            }
-                                        >
-                                            "Play (rendered on server)"
-                                        </Button>
-                                    }
-                                })
-                        }}
-                    </Suspense>
                     <Select value=wave_string>
                         <option>Sine</option>
                         <option>Square</option>
                         <option>Saw</option>
                         <option>Triangle</option>
                     </Select>
-                </Space>
-            </Card>
-            <Card>
                 <Space>
                     <p>BPM</p>
                     <SpinButton<f32> step_page=1.0 min=20.0 max=400.0 value=bpm_value />
