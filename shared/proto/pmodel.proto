@@ -44,6 +44,12 @@ message AdsrEnvelopeProto {
   float release = 4;
 }
 
+message PitchNameProto {
+  ScaleValueProto scale_value = 1;
+
+  uint32 octave = 2;
+}
+
 enum WaveTypeProto {
   Unknown = 0;
   Sine = 1;
@@ -67,3 +73,4 @@ enum ScaleValueProto {
   GScaleValue = 11;
   GSharpScaleValue = 12;
 }
+
