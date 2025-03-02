@@ -16,6 +16,15 @@ impl Into<PitchValue> for PitchName {
     }
 }
 
+impl From<PitchValue> for PitchName {
+    fn from(pitch_value: PitchValue) -> Self {
+        Self {
+            scale_value: ScaleValue::from(pitch_value),
+            octave: pitch_value / 12  
+        }
+    }
+}
+
 impl From<PitchNameProto> for PitchName {
     fn from(item: PitchNameProto) -> Self {
         PitchName {
