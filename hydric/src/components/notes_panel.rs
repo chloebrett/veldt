@@ -20,7 +20,7 @@ impl From<NoteSignal> for Note {
 
 #[component]
 pub fn NotesPanel(notes: RwSignal<Vec<NoteSignal>>) -> impl IntoView {
-    let next_note_id = RwSignal::new(notes.get().len() as u32);
+    let next_note_id = RwSignal::new(notes.get_untracked().len() as u32);
 
     let add_note = move |_| {
         let note = NoteSignal {
