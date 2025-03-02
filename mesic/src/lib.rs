@@ -82,7 +82,7 @@ fn freq(pitch_name: &PitchName) -> Freq {
 
     let reference_value = <PitchName as Into<PitchValue>>::into(REFERENCE_PITCH.pitch_name.clone());
     let other_value = <PitchName as Into<PitchValue>>::into(pitch_name.clone());
-    let interval = reference_value - other_value;
+    let interval = other_value - reference_value;
     let semitone_increment: f32 = 2.0_f32.powf(1.0 / 12.0);
     REFERENCE_PITCH.frequency * semitone_increment.powf(interval as f32)
 }
