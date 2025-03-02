@@ -1,5 +1,9 @@
+use crate::player::AudioPlayer;
+use crate::render::render;
 use leptos::prelude::*;
+use mesic::{create_demo_track, create_track, render as local_render};
 use shared::model::demo_option::DemoOption;
+use shared::model::note::Note;
 use shared::model::wave_type::WaveType;
 use shared::types::Beats;
 use std::str::FromStr;
@@ -7,10 +11,6 @@ use thaw::{
     Accordion, AccordionHeader, AccordionItem, Button, ButtonAppearance, Card, ConfigProvider,
     Select, Slider, Space, SpinButton,
 };
-use crate::player::AudioPlayer;
-use crate::render::render;
-use mesic::{create_demo_track, create_track, render as local_render};
-use shared::model::note::Note;
 
 #[component]
 pub fn App() -> impl IntoView {
@@ -21,13 +21,22 @@ pub fn App() -> impl IntoView {
     let volume_percent = RwSignal::new(100.0f64);
     let transpose_semitones = RwSignal::new(0);
 
-    // Hard coded as three for now; will be generalized into N soon
-    let note1 = RwSignal::new(0);
-    let note2 = RwSignal::new(1);
-    let note3 = RwSignal::new(2);
-    let duration1 = RwSignal::new(1.0);
-    let duration2 = RwSignal::new(1.0);
-    let duration3 = RwSignal::new(2.0);
+    let initial_notes = vec![
+        (0, ArcRwSignal::new(0.0), ArcRwSignal::new(1.0)),
+        (1, ArcRwSignal::new(1.0), ArcRwSignal::new(1.0)),
+        (2, ArcRwSignal::new(2.0), ArcRwSignal::new(2.0)),
+    ];
+    let next_note_id = RwSignal::new(initial_notes.len());
+    let (notes, set_notes) = signal_local(initial_notes);
+
+    let add_note = move |_| {
+        // Arc so that it gets cleaned up when removed.
+        let note = ArcRwSignal::new(Note(0.0, 1.0));
+
+        set_notes.update(move |notes| notes.push((next_note_id.get(), ArcRwSignal::new(0.0), ArcRwSignal::new(1.0))));
+
+        next_note_id.update(|it| *it += 1);
+    };
 
     // TODO: instead of using a dependent signal, consider implementing
     // the appropriate From trait.
@@ -35,18 +44,19 @@ pub fn App() -> impl IntoView {
     let demo_option = move || DemoOption::from_str(&demo_string.get()).unwrap();
     let bpm = move || bpm_value.get();
     let volume = move || (volume_percent.get() / 100.0f64) as f32;
-    let notes = move || {
-        vec![
-            Note(note1.get() as f32, duration1.get()),
-            Note(note2.get() as f32, duration2.get()),
-            Note(note3.get() as f32, duration3.get()),
-        ]
-    };
 
     let track = move || match demo_option() {
-        DemoOption::Custom => {
-            create_track(notes(), wave(), bpm(), volume(), transpose_semitones.get())
-        }
+        DemoOption::Custom => create_track(
+            notes
+                .get()
+                .into_iter()
+                .map(|(_, pitch, duration)| Note(pitch.get(), duration.get()))
+                .collect(),
+            wave(),
+            bpm(),
+            volume(),
+            transpose_semitones.get(),
+        ),
         _ => create_demo_track(
             demo_option(),
             wave(),
@@ -57,9 +67,7 @@ pub fn App() -> impl IntoView {
     };
 
     // Continually re-request audio from the server then the wave type changes.
-    let server_audio = LocalResource::new(move || {
-        render(track())
-    });
+    let server_audio = LocalResource::new(move || render(track()));
 
     view! {
         <ConfigProvider>
@@ -78,13 +86,7 @@ pub fn App() -> impl IntoView {
                         appearance=ButtonAppearance::Primary
                         on_click=move |_| {
                             set_player
-                                .set(
-                                    AudioPlayer::new(
-                                            &local_render(&track())
-                                        )
-                                        .unwrap()
-                                        .into(),
-                                );
+                                .set(AudioPlayer::new(&local_render(&track())).unwrap().into());
                         }
                     >
                         "Play (rendered in browser)"
@@ -123,32 +125,42 @@ pub fn App() -> impl IntoView {
                     <Select value=demo_string>
                         <option>Overworld</option>
                         <option>FurElise</option>
+                        veldt
+                        veldt
                         <option>Custom</option>
                     </Select>
                 </Space>
+                veldt
             </Card>
             <Card>
                 <Space>
-                    <SpinButton<f32> step_page=1.0 min=20.0 max=400.0 value=bpm_value/>
+                    <p>BPM</p>
+                    <SpinButton<f32> step_page=1.0 min=20.0 max=400.0 value=bpm_value />
+                    <p>Volume</p>
                     <Slider value=volume_percent />
+                    <p>Transpose</p>
+                    <SpinButton<i32> value=transpose_semitones step_page=1 min=-24 max=24 />
                 </Space>
             </Card>
             <Card>
-                    <SpinButton<i32> value=transpose_semitones step_page=1 min=-24 max=24 />
-            </Card>
-            <Card>
-            <Space>
-                    <SpinButton<i32> value=note1 step_page=1 min=-24 max=24 />
-                    <SpinButton<f32> value=duration1 step_page=0.25 min=0.5 max=16.0 />
-                    </Space>
-            <Space>
-                    <SpinButton<i32> value=note2 step_page=1 min=-24 max=24 />
-                    <SpinButton<f32> value=duration2 step_page=0.25 min=0.5 max=16.0 />
-                    </Space>
-                    <Space>
-                    <SpinButton<i32> value=note3 step_page=1 min=-24 max=24 />
-                    <SpinButton<f32> value=duration3 step_page=0.25 min=0.5 max=16.0 />
-                    </Space>
+                <Button appearance=ButtonAppearance::Secondary on_click=add_note>
+                    "Add note"
+                </Button>
+                <For
+                    each=move || notes.get()
+                    key=|note| note.0
+                    children=move |(_, pitch, duration)| {
+                        let pitch = RwSignal::from(pitch);
+                        let duration = RwSignal::from(duration);
+
+                        view! {
+                            <Space>
+                                <SpinButton<f32> value=pitch step_page=1.0 min=-24.0 max=24.0 />
+                                <SpinButton<f32> value=duration step_page=0.25 min=0.5 max=16.0 />
+                            </Space>
+                        }
+                    }
+                />
             </Card>
         </ConfigProvider>
     }
