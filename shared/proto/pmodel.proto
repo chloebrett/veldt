@@ -51,3 +51,19 @@ enum WaveTypeProto {
   Saw = 3;
   Triangle = 4;
 }
+
+enum ScaleValueProto {
+  UnknownScaleValue = 0;
+  AScaleValue = 1;
+  ASharpScaleValue = 2;
+  BScaleValue = 3;
+  CScaleValue = 4;
+  CSharpScaleValue = 5;
+  DScaleValue = 6;
+  DSharpScaleValue = 7;
+  EScaleValue = 8;
+  FScaleValue = 9;
+  FSharpScaleValue = 10;
+  GScaleValue = 11;
+  GSharpScaleValue = 12;
+}
