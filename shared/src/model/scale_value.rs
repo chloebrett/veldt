@@ -1,8 +1,8 @@
 use std::fmt;
+use std::str;
 use crate::{pmodel::*, types::PitchValue};
-use strum::EnumString;
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, PartialOrd, Ord, EnumString)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, PartialOrd, Ord)]
 pub enum ScaleValue {
     A,
     ASharp,
@@ -73,6 +73,31 @@ impl fmt::Display for ScaleValue {
             ScaleValue::G => write!(f, "G"),
             ScaleValue::GSharp => write!(f, "G#")
         }
+    }
+}
+
+#[derive(Debug, PartialEq)]
+pub struct ParseScaleValueError;
+
+impl str::FromStr for ScaleValue {
+    type Err = ParseScaleValueError;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+       match s {
+           "A" => Ok(ScaleValue::A),
+           "A#" => Ok(ScaleValue::ASharp),
+           "B" => Ok(ScaleValue::B),
+           "C" => Ok(ScaleValue::C),
+           "C#" => Ok(ScaleValue::CSharp),
+           "D" => Ok(ScaleValue::D),
+           "D#" => Ok(ScaleValue::DSharp),
+           "E" => Ok(ScaleValue::E),
+           "F" => Ok(ScaleValue::F),
+           "F#" => Ok(ScaleValue::FSharp),
+           "G" => Ok(ScaleValue::G),
+           "G#" => Ok(ScaleValue::GSharp),
+           _ => panic!("Invalid Scale Value.")
+       } 
     }
 }
 
