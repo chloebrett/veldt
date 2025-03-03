@@ -63,7 +63,7 @@ pub fn NotesPanel(notes: RwSignal<Vec<NoteSignal>>) -> impl IntoView {
 
                     view! {
                         <Space>
-                            <Tooltip content="Scale value">
+                            <Tooltip content="Note">
                                 <Select value=scale_value>
                                     <option>{ScaleValue::A.to_string()}</option>
                                     <option>{ScaleValue::ASharp.to_string()}</option>
