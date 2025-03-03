@@ -4,7 +4,7 @@ use crate::pmodel::*;
 use crate::model::scale_value::ScaleValue;
 use crate::types::*;
 
-#[derive(Clone, Debug, PartialEq)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord)]
 pub struct PitchName {
     pub scale_value: ScaleValue,
     pub octave: Octave
