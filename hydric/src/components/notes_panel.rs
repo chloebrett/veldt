@@ -77,7 +77,7 @@ pub fn NotesPanel(notes: RwSignal<Vec<NoteSignal>>) -> impl IntoView {
                                 <option>{ScaleValue::G.to_string()}</option>
                                 <option>{ScaleValue::GSharp.to_string()}</option>
                             </Select>
-                            <SpinButton<i32> value=octave step_page=1 min=0 max=12 />
+                            <SpinButton<i32> value=octave step_page=1 min=0 max=8 />
                             <SpinButton<f32> value=duration step_page=0.25 min=0.5 max=16.0 />
                             <Button
                                 appearance=ButtonAppearance::Secondary

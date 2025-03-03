@@ -21,18 +21,18 @@ pub enum ScaleValue {
 impl Into<PitchValue> for ScaleValue {
     fn into(self: Self) -> PitchValue {
         match self {
-            ScaleValue::A => 0 as PitchValue,
-            ScaleValue::ASharp => 1 as PitchValue,
-            ScaleValue::B => 2 as PitchValue,
-            ScaleValue::C => 3 as PitchValue,
-            ScaleValue::CSharp => 4 as PitchValue,
-            ScaleValue::D => 5 as PitchValue,
-            ScaleValue::DSharp => 6 as PitchValue,
-            ScaleValue::E => 7 as PitchValue,
-            ScaleValue::F => 8 as PitchValue,
-            ScaleValue::FSharp => 9 as PitchValue,
-            ScaleValue::G => 10 as PitchValue,
-            ScaleValue::GSharp => 11 as PitchValue
+            ScaleValue::A => 0,
+            ScaleValue::ASharp => 1,
+            ScaleValue::B => 2,
+            ScaleValue::C => 3,
+            ScaleValue::CSharp => 4,
+            ScaleValue::D => 5,
+            ScaleValue::DSharp => 6,
+            ScaleValue::E => 7,
+            ScaleValue::F => 8,
+            ScaleValue::FSharp => 9,
+            ScaleValue::G => 10,
+            ScaleValue::GSharp => 11
         }
     }
 }
@@ -59,20 +59,21 @@ impl From<PitchValue> for ScaleValue {
 
 impl fmt::Display for ScaleValue {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        match self {
-            ScaleValue::A => write!(f, "A"),
-            ScaleValue::ASharp => write!(f, "A#"),
-            ScaleValue::B => write!(f, "B"),
-            ScaleValue::C => write!(f, "C"),
-            ScaleValue::CSharp => write!(f, "C#"),
-            ScaleValue::D => write!(f, "D"),
-            ScaleValue::DSharp => write!(f, "D#"),
-            ScaleValue::E => write!(f, "E"),
-            ScaleValue::F => write!(f, "F"),
-            ScaleValue::FSharp => write!(f, "F#"),
-            ScaleValue::G => write!(f, "G"),
-            ScaleValue::GSharp => write!(f, "G#")
-        }
+        let string_value = match self {
+            ScaleValue::A => "A",
+            ScaleValue::ASharp => "A#",
+            ScaleValue::B => "B",
+            ScaleValue::C => "C",
+            ScaleValue::CSharp => "C#",
+            ScaleValue::D => "D",
+            ScaleValue::DSharp => "D#",
+            ScaleValue::E => "E",
+            ScaleValue::F => "F",
+            ScaleValue::FSharp => "F#",
+            ScaleValue::G => "G",
+            ScaleValue::GSharp => "G#"
+        };
+        write!(f, "{}", string_value)
     }
 }
 
