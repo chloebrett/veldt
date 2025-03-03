@@ -4,7 +4,7 @@ use shared::model::pitch_name::PitchName;
 use shared::model::scale_value::ScaleValue;
 use shared::model::note::Note;
 use shared::types::{Beats, Octave};
-use thaw::{Button, ButtonAppearance, Card, Select, Space, SpinButton};
+use thaw::{Button, ButtonAppearance, Card, Select, Space, SpinButton, Tooltip};
 
 #[derive(Clone)]
 pub struct NoteSignal {
@@ -63,22 +63,28 @@ pub fn NotesPanel(notes: RwSignal<Vec<NoteSignal>>) -> impl IntoView {
 
                     view! {
                         <Space>
-                            <Select value=scale_value>
-                                <option>{ScaleValue::A.to_string()}</option>
-                                <option>{ScaleValue::ASharp.to_string()}</option>
-                                <option>{ScaleValue::B.to_string()}</option>
-                                <option>{ScaleValue::C.to_string()}</option>
-                                <option>{ScaleValue::CSharp.to_string()}</option>
-                                <option>{ScaleValue::D.to_string()}</option>
-                                <option>{ScaleValue::DSharp.to_string()}</option>
-                                <option>{ScaleValue::E.to_string()}</option>
-                                <option>{ScaleValue::F.to_string()}</option>
-                                <option>{ScaleValue::FSharp.to_string()}</option>
-                                <option>{ScaleValue::G.to_string()}</option>
-                                <option>{ScaleValue::GSharp.to_string()}</option>
-                            </Select>
-                            <SpinButton<i32> value=octave step_page=1 min=0 max=8 />
-                            <SpinButton<f32> value=duration step_page=0.25 min=0.5 max=16.0 />
+                            <Tooltip content="Scale value">
+                                <Select value=scale_value>
+                                    <option>{ScaleValue::A.to_string()}</option>
+                                    <option>{ScaleValue::ASharp.to_string()}</option>
+                                    <option>{ScaleValue::B.to_string()}</option>
+                                    <option>{ScaleValue::C.to_string()}</option>
+                                    <option>{ScaleValue::CSharp.to_string()}</option>
+                                    <option>{ScaleValue::D.to_string()}</option>
+                                    <option>{ScaleValue::DSharp.to_string()}</option>
+                                    <option>{ScaleValue::E.to_string()}</option>
+                                    <option>{ScaleValue::F.to_string()}</option>
+                                    <option>{ScaleValue::FSharp.to_string()}</option>
+                                    <option>{ScaleValue::G.to_string()}</option>
+                                    <option>{ScaleValue::GSharp.to_string()}</option>
+                                </Select>
+                            </Tooltip>
+                            <Tooltip content="Octave">
+                                <SpinButton<i32> value=octave step_page=1 min=0 max=8 />
+                            </Tooltip>
+                            <Tooltip content="Duration">
+                                <SpinButton<f32> value=duration step_page=0.25 min=0.5 max=16.0 />
+                            </Tooltip>
                             <Button
                                 appearance=ButtonAppearance::Secondary
                                 on_click=move |_| delete_note(signal.id)
