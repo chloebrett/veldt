@@ -16,7 +16,7 @@ pub fn App() -> impl IntoView {
     let wave_string = RwSignal::new(WaveType::Sine.to_string());
     let bpm_value = RwSignal::<Beats>::new(120.0);
     let volume_percent = RwSignal::new(100.0f64);
-    let transpose_semitones = RwSignal::new(0.0);
+    let transpose_semitones = RwSignal::new(0);
 
     // TODO: instead of using a dependent signal, consider implementing
     // the appropriate From trait.
