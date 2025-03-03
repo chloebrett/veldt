@@ -8,7 +8,7 @@ pub fn ConfigPanel(
     wave: RwSignal<String>,
     bpm: RwSignal<Beats>,
     volume: RwSignal<f64>,
-    transpose: RwSignal<f32>,
+    transpose: RwSignal<i32>,
 ) -> impl IntoView {
     view! {
         <Card>
@@ -24,7 +24,7 @@ pub fn ConfigPanel(
                 <p>Volume</p>
                 <Slider value=volume />
                 <p>Transpose</p>
-                <SpinButton<f32> value=transpose step_page=1.0 min=-24.0 max=24.0 />
+                <SpinButton<i32> value=transpose step_page=1 min=-24 max=24 />
             </Space>
         </Card>
     }
