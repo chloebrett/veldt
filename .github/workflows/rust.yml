@@ -25,7 +25,7 @@ jobs:
     - name: Build-mesic
       run: cd mesic && cargo build --verbose && cargo fmt --check
     - name: Build-hydric
-      run: cd hydric && cargo build --verbose && cargo fmt --check
+      run: cd hydric && cargo build --verbose --target=wasm32-unknown-unknown && cargo fmt --check
     - name: Leptosfmt
       run: cd hydric && leptosfmt * --check
     # TODO: run tests when we have them
