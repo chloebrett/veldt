@@ -1,5 +1,6 @@
 use strum::{Display, EnumString};
 use crate::{pmodel::*, types::PitchValue};
+use crate::model::scale_value::ScaleValue;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, EnumString, Display)]
 pub enum Scale {
@@ -9,4 +10,15 @@ pub enum Scale {
     HarmonicMinor = ScaleNotes::new([0, 2, 3, 5, 7, 8, 10])
 }
 
-pub type ScaleNotes = Vec<PitchValue>;
+pub type ScaleNoteValues = Vec<PitchValue>;
+
+impl Scale {
+    fn get_scale_values(self: Self, key: ScaleValue) -> Vec<ScaleValue> {
+        let mut output_values = vec![];
+        let key_pitch_value = Into<PitchValue>>::into(self);
+        for pitch_value in self.iter() {
+            ScaleValue::from(output_values.push(key_pitch_value + pitch_value))
+        }
+        output_values
+    }
+}
