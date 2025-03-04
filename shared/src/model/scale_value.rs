@@ -1,20 +1,26 @@
 use std::fmt;
 use std::str;
+use strum::{Display, EnumString};
 use crate::{pmodel::*, types::PitchValue};
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, PartialOrd, Ord)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, PartialOrd, Ord, EnumString)]
 pub enum ScaleValue {
     A,
+    #[strum(serialize = "A#")]
     ASharp,
     B,
     C,
+    #[strum(serialize = "C#")]
     CSharp,
     D,
+    #[strum(serialize = "D#")]
     DSharp,
     E,
     F,
+    #[strum(serialize = "F#")]
     FSharp,
     G,
+    #[strum(serialize = "G#")]
     GSharp,
 }
 
@@ -77,30 +83,6 @@ impl fmt::Display for ScaleValue {
     }
 }
 
-#[derive(Debug, PartialEq)]
-pub struct ParseScaleValueError;
-
-impl str::FromStr for ScaleValue {
-    type Err = ParseScaleValueError;
-
-    fn from_str(s: &str) -> Result<Self, Self::Err> {
-       match s {
-           "A" => Ok(ScaleValue::A),
-           "A#" => Ok(ScaleValue::ASharp),
-           "B" => Ok(ScaleValue::B),
-           "C" => Ok(ScaleValue::C),
-           "C#" => Ok(ScaleValue::CSharp),
-           "D" => Ok(ScaleValue::D),
-           "D#" => Ok(ScaleValue::DSharp),
-           "E" => Ok(ScaleValue::E),
-           "F" => Ok(ScaleValue::F),
-           "F#" => Ok(ScaleValue::FSharp),
-           "G" => Ok(ScaleValue::G),
-           "G#" => Ok(ScaleValue::GSharp),
-           _ => panic!("Invalid Scale Value.")
-       } 
-    }
-}
 
 impl From<ScaleValueProto> for ScaleValue {
     fn from(item: ScaleValueProto) -> Self {
