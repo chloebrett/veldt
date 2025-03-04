@@ -1,6 +1,6 @@
+use crate::{pmodel::*, types::PitchValue};
 use std::str;
 use strum::{Display, EnumString};
-use crate::{pmodel::*, types::PitchValue};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, PartialOrd, Ord, EnumString, Display)]
 pub enum ScaleValue {
@@ -37,7 +37,7 @@ impl Into<PitchValue> for ScaleValue {
             ScaleValue::F => 8,
             ScaleValue::FSharp => 9,
             ScaleValue::G => 10,
-            ScaleValue::GSharp => 11
+            ScaleValue::GSharp => 11,
         }
     }
 }
@@ -57,7 +57,7 @@ impl From<PitchValue> for ScaleValue {
             9 => ScaleValue::FSharp,
             10 => ScaleValue::G,
             11 => ScaleValue::GSharp,
-            _ => panic!("") // This should never happen.
+            _ => panic!(""), // This should never happen.
         }
     }
 }
@@ -77,7 +77,7 @@ impl From<ScaleValueProto> for ScaleValue {
             ScaleValueProto::FScaleValue => ScaleValue::F,
             ScaleValueProto::FSharpScaleValue => ScaleValue::FSharp,
             ScaleValueProto::GScaleValue => ScaleValue::G,
-            ScaleValueProto::GSharpScaleValue => ScaleValue::GSharp
+            ScaleValueProto::GSharpScaleValue => ScaleValue::GSharp,
         }
     }
 }
@@ -96,7 +96,7 @@ impl From<ScaleValue> for ScaleValueProto {
             ScaleValue::F => ScaleValueProto::FScaleValue,
             ScaleValue::FSharp => ScaleValueProto::FSharpScaleValue,
             ScaleValue::G => ScaleValueProto::GScaleValue,
-            ScaleValue::GSharp => ScaleValueProto::GSharpScaleValue
+            ScaleValue::GSharp => ScaleValueProto::GSharpScaleValue,
         }
     }
 }
