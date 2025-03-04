@@ -1,9 +1,11 @@
 use crate::components::config_panel::ConfigPanel;
 use crate::components::notes_panel::{NoteSignal, NotesPanel};
+use crate::components::envelope_panel::{EnvelopePanel};
 use crate::components::playback::Playback;
 use leptos::prelude::*;
 use mesic::create_track;
 use shared::model::wave_type::WaveType;
+use shared::model::adsr_envelope::AdsrEnvelope;
 use shared::serialize::map_vec;
 use shared::types::{Beats, PitchValue};
 use std::str::FromStr;
@@ -18,11 +20,22 @@ pub fn App() -> impl IntoView {
     let volume_percent = RwSignal::new(100.0f64);
     let transpose_interval = RwSignal::<PitchValue>::new(0);
 
+    let attack = RwSignal::new(0.0);
+    let decay = RwSignal::new(0.0);
+    let sustain = RwSignal::new(1.0);
+    let release = RwSignal::new(0.0);
+
     // TODO: instead of using a dependent signal, consider implementing
     // the appropriate From trait.
     let wave = move || WaveType::from_str(&wave_string.get()).unwrap();
     let bpm = move || bpm_value.get();
     let volume = move || (volume_percent.get() / 100.0f64) as f32;
+    let envelope = move || AdsrEnvelope {
+        attack: attack.get(),
+        decay: decay.get(),
+        sustain: sustain.get(),
+        release: release.get(),
+    };
 
     let track = Memo::new(move |_| {
         create_track(
@@ -31,6 +44,7 @@ pub fn App() -> impl IntoView {
             bpm(),
             volume(),
             transpose_interval.get(),
+            envelope(),
         )
     });
 
@@ -51,6 +65,12 @@ pub fn App() -> impl IntoView {
                 bpm=bpm_value
                 volume=volume_percent
                 transpose=transpose_interval
+            />
+            <EnvelopePanel
+                attack=attack
+                decay=decay
+                sustain=sustain
+                release=release
             />
             <NotesPanel notes=notes />
         </ConfigProvider>
