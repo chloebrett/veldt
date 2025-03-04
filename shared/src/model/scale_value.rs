@@ -1,20 +1,26 @@
 use std::fmt;
+use std::str;
+use strum::{Display, EnumString};
 use crate::{pmodel::*, types::PitchValue};
-use strum::EnumString;
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, PartialOrd, Ord, EnumString)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, PartialOrd, Ord, EnumString, Display)]
 pub enum ScaleValue {
     A,
+    #[strum(serialize = "A#")]
     ASharp,
     B,
     C,
+    #[strum(serialize = "C#")]
     CSharp,
     D,
+    #[strum(serialize = "D#")]
     DSharp,
     E,
     F,
+    #[strum(serialize = "F#")]
     FSharp,
     G,
+    #[strum(serialize = "G#")]
     GSharp,
 }
 
@@ -54,26 +60,6 @@ impl From<PitchValue> for ScaleValue {
             11 => ScaleValue::GSharp,
             _ => panic!("") // This should never happen.
         }
-    }
-}
-
-impl fmt::Display for ScaleValue {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        let string_value = match self {
-            ScaleValue::A => "A",
-            ScaleValue::ASharp => "A#",
-            ScaleValue::B => "B",
-            ScaleValue::C => "C",
-            ScaleValue::CSharp => "C#",
-            ScaleValue::D => "D",
-            ScaleValue::DSharp => "D#",
-            ScaleValue::E => "E",
-            ScaleValue::F => "F",
-            ScaleValue::FSharp => "F#",
-            ScaleValue::G => "G",
-            ScaleValue::GSharp => "G#"
-        };
-        write!(f, "{}", string_value)
     }
 }
 
