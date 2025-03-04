@@ -75,7 +75,7 @@ const REFERENCE_PITCH: ReferencePitch<'static> = ReferencePitch {
 
 const SAMPLE_RATE: i32 = 44_100;
 
-// Returns the frequency based on they distance from reference pitch.
+// Returns the frequency based on the distance from reference pitch.
 fn freq(pitch_name: &PitchName) -> Freq {
     // powf can't be run at compile time.
     // TODO: make this only run once.
