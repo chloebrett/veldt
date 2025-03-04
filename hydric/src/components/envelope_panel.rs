@@ -1,7 +1,6 @@
 use leptos::prelude::*;
 
-use shared::types::{Beats, PitchValue};
-use thaw::{Card, Space, SpinButton};
+use thaw::{Card, Space, SpinButton, Tooltip};
 
 #[component]
 pub fn EnvelopePanel(
@@ -13,14 +12,18 @@ pub fn EnvelopePanel(
     view! {
         <Card>
             <Space>
-                <p>Attack</p>
-                <SpinButton<f32> step_page=0.05 min=0.0 max=1.0 value=attack />
-                <p>Decay</p>
-                <SpinButton<f32> step_page=0.05 min=0.0 max=1.0 value=decay />
-                <p>Sustain</p>
-                <SpinButton<f32> step_page=0.05 min=0.0 max=1.0 value=sustain />
-                <p>Release</p>
-                <SpinButton<f32> step_page=0.05 min=0.0 max=1.0 value=release />
+                <Tooltip content="Attack">
+                    <SpinButton<f32> step_page=0.05 min=0.0 max=1.0 value=attack />
+                </Tooltip>
+                <Tooltip content="Decay">
+                    <SpinButton<f32> step_page=0.05 min=0.0 max=1.0 value=decay />
+                </Tooltip>
+                <Tooltip content="Sustain">
+                    <SpinButton<f32> step_page=0.05 min=0.0 max=1.0 value=sustain />
+                </Tooltip>
+                <Tooltip content="Release">
+                    <SpinButton<f32> step_page=0.05 min=0.0 max=1.0 value=release />
+                </Tooltip>
             </Space>
         </Card>
     }
