@@ -20,13 +20,8 @@ pub fn create_track(
     bpm: Beats,
     volume: Volume,
     transpose_interval: PitchValue,
+    envelope: AdsrEnvelope,
 ) -> Track {
-    let envelope = AdsrEnvelope {
-        attack: 0.0,
-        decay: 0.3,
-        sustain: 0.0,
-        release: 0.0,
-    };
     let synth = Synth {
         wave,
         envelope,
