@@ -6,3 +6,4 @@ pub mod track;
 pub mod wave_type;
 pub mod scale_value;
 pub mod pitch_name;
+pub mod scale;
