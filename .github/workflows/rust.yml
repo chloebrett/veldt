@@ -1,0 +1,32 @@
+name: Rust
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  build:
+
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v4
+    - name: Install deps
+      run: rustup target add wasm32-unknown-unknown && sudo apt-get install protobuf-compiler && cargo install leptosfmt
+    - name: Build-shared
+      run: cd shared && cargo build --verbose && cargo fmt --check
+    - name: Build-xeric
+      run: cd xeric && cargo build --verbose && cargo fmt --check
+    - name: Build-mesic
+      run: cd mesic && cargo build --verbose && cargo fmt --check
+    - name: Build-hydric
+      run: cd hydric && cargo build --verbose --target=wasm32-unknown-unknown && cargo fmt --check
+    - name: Leptosfmt
+      run: cd hydric && leptosfmt * --check
+    # TODO: run tests when we have them
+    
