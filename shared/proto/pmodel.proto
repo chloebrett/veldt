@@ -29,7 +29,7 @@ message SynthProto {
 }
 
 message NoteProto {
-  float semitones = 1;
+  PitchNameProto pitch_name = 3;
 
   float beats = 2;
 }
@@ -44,6 +44,12 @@ message AdsrEnvelopeProto {
   float release = 4;
 }
 
+message PitchNameProto {
+  ScaleValueProto scale_value = 1;
+
+  int32 octave = 2;
+}
+
 enum WaveTypeProto {
   Unknown = 0;
   Sine = 1;
@@ -51,3 +57,20 @@ enum WaveTypeProto {
   Saw = 3;
   Triangle = 4;
 }
+
+enum ScaleValueProto {
+  UnknownScaleValue = 0;
+  AScaleValue = 1;
+  ASharpScaleValue = 2;
+  BScaleValue = 3;
+  CScaleValue = 4;
+  CSharpScaleValue = 5;
+  DScaleValue = 6;
+  DSharpScaleValue = 7;
+  EScaleValue = 8;
+  FScaleValue = 9;
+  FSharpScaleValue = 10;
+  GScaleValue = 11;
+  GSharpScaleValue = 12;
+}
+

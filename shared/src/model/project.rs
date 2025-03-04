@@ -142,9 +142,15 @@ enum ShelfType {
 }
 
 enum PassType {
-    Low { algorithm: LowHighPassAlgorithm },
-    High { algorithm: LowHighPassAlgorithm },
-    Band { algorithm: BandPassAlgorithm },
+    Low {
+        algorithm: LowHighPassAlgorithm,
+    },
+    High {
+        algorithm: LowHighPassAlgorithm,
+    },
+    Band {
+        algorithm: BandPassAlgorithm,
+    },
 
     /// All-pass filter: flat frequency response, but has a phase response.
     /// Used as an intermediate component in some phasers and reverb.

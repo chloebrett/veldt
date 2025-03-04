@@ -5,7 +5,7 @@ use leptos::prelude::*;
 use mesic::create_track;
 use shared::model::wave_type::WaveType;
 use shared::serialize::map_vec;
-use shared::types::Beats;
+use shared::types::{Beats, PitchValue};
 use std::str::FromStr;
 use thaw::{Accordion, AccordionHeader, AccordionItem, ConfigProvider};
 
@@ -16,7 +16,7 @@ pub fn App() -> impl IntoView {
     let wave_string = RwSignal::new(WaveType::Sine.to_string());
     let bpm_value = RwSignal::<Beats>::new(120.0);
     let volume_percent = RwSignal::new(100.0f64);
-    let transpose_semitones = RwSignal::new(0.0);
+    let transpose_interval = RwSignal::<PitchValue>::new(0);
 
     // TODO: instead of using a dependent signal, consider implementing
     // the appropriate From trait.
@@ -30,7 +30,7 @@ pub fn App() -> impl IntoView {
             wave(),
             bpm(),
             volume(),
-            transpose_semitones.get(),
+            transpose_interval.get(),
         )
     });
 
@@ -50,7 +50,7 @@ pub fn App() -> impl IntoView {
                 wave=wave_string
                 bpm=bpm_value
                 volume=volume_percent
-                transpose=transpose_semitones
+                transpose=transpose_interval
             />
             <NotesPanel notes=notes />
         </ConfigProvider>

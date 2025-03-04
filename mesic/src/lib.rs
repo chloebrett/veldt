@@ -1,8 +1,10 @@
 use shared::model::adsr_envelope::AdsrEnvelope;
+use shared::model::note::Note;
+use shared::model::pitch_name::PitchName;
+use shared::model::scale_value::ScaleValue;
+use shared::model::sequence::Sequence;
 use shared::model::synth::Synth;
 use shared::model::track::Track;
-use shared::model::note::Note;
-use shared::model::sequence::Sequence;
 use shared::model::wave_type::WaveType;
 use shared::types::*;
 use std::cmp::max;
@@ -12,7 +14,13 @@ mod wave;
 
 use crate::wave::*;
 
-pub fn create_track(notes: Vec<Note>, wave: WaveType, bpm: Beats, volume: Volume, transpose: Semitones) -> Track {
+pub fn create_track(
+    notes: Vec<Note>,
+    wave: WaveType,
+    bpm: Beats,
+    volume: Volume,
+    transpose_interval: PitchValue,
+) -> Track {
     let envelope = AdsrEnvelope {
         attack: 0.0,
         decay: 0.3,
@@ -27,19 +35,23 @@ pub fn create_track(notes: Vec<Note>, wave: WaveType, bpm: Beats, volume: Volume
     Track {
         bpm,
         synths: vec![synth],
-        sequences: vec!(
-            Sequence {
-                offset: 0.,
-                volume: volume,
-                synth_index: 0,
-                notes: notes.into_iter().map(|note| transpose_note(note, transpose)).collect()
-            }
-            )
+        sequences: vec![Sequence {
+            offset: 0.,
+            volume: volume,
+            synth_index: 0,
+            notes: notes
+                .into_iter()
+                .map(|note| transpose_note(note, transpose_interval))
+                .collect(),
+        }],
     }
 }
 
-fn transpose_note(note: Note, semitones: Semitones) -> Note {
-    Note(note.0, note.1 + semitones)
+fn transpose_note(note: Note, interval: PitchValue) -> Note {
+    Note {
+        pitch_name: note.pitch_name + interval,
+        beats: note.beats,
+    }
 }
 
 fn sum(a: Vec<f32>, b: Vec<f32>) -> Vec<f32> {
@@ -55,16 +67,31 @@ fn sum(a: Vec<f32>, b: Vec<f32>) -> Vec<f32> {
     output
 }
 
-const REFERENCE_FREQUENCY: Freq = 440.0; // 440 Hz = A4
+struct ReferencePitch<'a> {
+    pitch_name: &'a PitchName,
+    frequency: Freq,
+}
+
+const REFERENCE_PITCH: ReferencePitch<'static> = ReferencePitch {
+    pitch_name: &PitchName {
+        scale_value: ScaleValue::A,
+        octave: 4,
+    },
+    frequency: 440.0,
+};
+
 const SAMPLE_RATE: i32 = 44_100;
 
-// Returns the frequency a given number of semitones above/below A4.
-fn freq(semitones: Semitones) -> Freq {
+// Returns the frequency based on the distance from reference pitch.
+fn freq(pitch_name: &PitchName) -> Freq {
     // powf can't be run at compile time.
     // TODO: make this only run once.
-    let semitone_increment: f32 = 2.0_f32.powf(1.0 / 12.0);
 
-    REFERENCE_FREQUENCY * semitone_increment.powf(semitones)
+    let reference_value = <PitchName as Into<PitchValue>>::into(REFERENCE_PITCH.pitch_name.clone());
+    let other_value = <PitchName as Into<PitchValue>>::into(pitch_name.clone());
+    let interval = other_value - reference_value;
+    let semitone_increment: f32 = 2.0_f32.powf(1.0 / 12.0);
+    REFERENCE_PITCH.frequency * semitone_increment.powf(interval as f32)
 }
 
 fn apply_envelope(x: f32, envelope: &AdsrEnvelope, duration: Beats, bpm: Beats) -> f32 {
@@ -90,7 +117,7 @@ fn apply_envelope(x: f32, envelope: &AdsrEnvelope, duration: Beats, bpm: Beats) 
     } else {
         // in release
         (duration - x) / envelope.release * envelope.sustain
-    };
+    }
 }
 
 pub fn render(track: &Track) -> Vec<f32> {
@@ -106,8 +133,8 @@ pub fn render(track: &Track) -> Vec<f32> {
         for note in &sequence.notes {
             println!("{:?}", note);
             let mut wave = wave(
-                note.0,
-                note.1,
+                &note.pitch_name,
+                note.beats,
                 bpm,
                 sequence.volume * synth.volume,
                 &synth.envelope,
@@ -123,14 +150,14 @@ pub fn render(track: &Track) -> Vec<f32> {
 }
 
 fn wave(
-    semitones: Semitones,
+    pitch_name: &PitchName,
     beats: Beats,
     bpm: Beats,
     volume: f32,
     envelope: &AdsrEnvelope,
     wave_type: WaveType,
 ) -> Vec<f32> {
-    let step = freq(semitones) * 2.0 * PI / (SAMPLE_RATE as f32);
+    let step = freq(pitch_name) * 2.0 * PI / (SAMPLE_RATE as f32);
     let range = 0..(SAMPLE_RATE as f32 * beats / bpm * 60.0) as i32;
 
     range
