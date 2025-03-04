@@ -1,8 +1,8 @@
-use chrono::NaiveDateTime;
-use crate::types::{Decibels, KnobPosition, Seconds, Volume, Beats, Freq};
-use std::collections::BTreeSet;
-use crate::model::wave_type::WaveType;
 use crate::model::adsr_envelope::AdsrEnvelope;
+use crate::model::wave_type::WaveType;
+use crate::types::{Beats, Decibels, Freq, KnobPosition, Seconds, Volume};
+use chrono::NaiveDateTime;
+use std::collections::BTreeSet;
 
 type TrackId = usize;
 type SampleId = usize;
@@ -24,7 +24,6 @@ struct Project {
     pub last_modified: NaiveDateTime,
 
     // TODO: info about user who owns and share permissions
-
     /// Ordered based on start_position.
     pub track_placements: BTreeSet<TrackPlacement>,
 
@@ -37,13 +36,9 @@ struct Project {
 }
 
 enum Generator {
-    SingleWave {
-        wave_generator: WaveGenerator,
-    },
+    SingleWave { wave_generator: WaveGenerator },
 
-    MultiWave {
-        wave_generators: Vec<WaveGenerator>,
-    }
+    MultiWave { wave_generators: Vec<WaveGenerator> },
 }
 
 struct WaveGenerator {
@@ -62,7 +57,6 @@ struct GeneratorInstance {
 
 struct GeneratorMeta {
     volume: Volume,
-
     // TODO: pan
 }
 
@@ -85,7 +79,6 @@ struct Sample {
 
     // TODO: instead store sample rate, and then derive this from the size of the data vec?
     pub duration_seconds: f32,
-
     // TODO: consider sample-specific sample rate.
     // TODO: consider multi-channel samples.
 }
@@ -94,7 +87,6 @@ struct EffectInstance {
     effect: Effect,
 
     meta: EffectMeta,
-
     // TODO: automation links
 }
 
@@ -104,8 +96,7 @@ enum Effect {
     // Speed shifting is another interesting one.
     // Phase inversion would be easy (just invert the amplitude) but hard to actually hear the
     // difference.
-    // More complex: reverb, EQ, compressor, distortion, resampling.
-
+    // More complex: reverb, EQ, compressor, distortion, phaser, resampling, and more...
     Delay {
         /// Volume of the first delayed repeat.
         volume: Volume,
@@ -135,15 +126,14 @@ enum Effect {
         ratio: KnobPosition,
 
         gain: Decibels,
-    }
+    },
 }
 
 enum EqType {
-    Pass {
-        kind: PassType,
-    },
+    Pass { kind: PassType },
     Notch,
-    Shelf{kind: ShelfType, amount: Decibels}
+    Shelf { kind: ShelfType, amount: Decibels },
+    BandStop,
 }
 
 enum ShelfType {
@@ -152,19 +142,40 @@ enum ShelfType {
 }
 
 enum PassType {
-    Low,
-    High,
-    Band
+    Low { algorithm: LowHighPassAlgorithm },
+    High { algorithm: LowHighPassAlgorithm },
+    Band { algorithm: BandPassAlgorithm },
+
+    /// All-pass filter: flat frequency response, but has a phase response.
+    /// Used as an intermediate component in some phasers and reverb.
+    /// Designed using pole-zero pairs with reciprocal radii.
+    All,
+}
+
+enum BandPassAlgorithm {
+    /// A simple an efficient conjugate pole resonator. Suffers from asymmetry in its response.
+    SimpleResonator,
+
+    /// Smith-Angell resonator, which adds two zeros (at z=-1 and z=1) to limit asymmetry
+    /// and make the band pass even more selective.
+    SmithAngell,
+}
+
+enum LowHighPassAlgorithm {
+    /// Standard filter with -3dB attenuation.
+    ButterWorth,
+
+    /// Linkwitz-Riley with -6dB attenuation.
+    LinkwitzRiley,
 }
 
 struct EffectMeta {
     id: EffectId,
 
     wet: KnobPosition,
-
     // TODO: pan
 }
 
 struct MixerChannel {
-    effects: Vec<EffectInstance>
+    effects: Vec<EffectInstance>,
 }
