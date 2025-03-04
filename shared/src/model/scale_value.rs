@@ -3,7 +3,7 @@ use std::str;
 use strum::{Display, EnumString};
 use crate::{pmodel::*, types::PitchValue};
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, PartialOrd, Ord, EnumString)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, PartialOrd, Ord, EnumString, Display)]
 pub enum ScaleValue {
     A,
     #[strum(serialize = "A#")]
@@ -62,27 +62,6 @@ impl From<PitchValue> for ScaleValue {
         }
     }
 }
-
-impl fmt::Display for ScaleValue {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        let string_value = match self {
-            ScaleValue::A => "A",
-            ScaleValue::ASharp => "A#",
-            ScaleValue::B => "B",
-            ScaleValue::C => "C",
-            ScaleValue::CSharp => "C#",
-            ScaleValue::D => "D",
-            ScaleValue::DSharp => "D#",
-            ScaleValue::E => "E",
-            ScaleValue::F => "F",
-            ScaleValue::FSharp => "F#",
-            ScaleValue::G => "G",
-            ScaleValue::GSharp => "G#"
-        };
-        write!(f, "{}", string_value)
-    }
-}
-
 
 impl From<ScaleValueProto> for ScaleValue {
     fn from(item: ScaleValueProto) -> Self {
