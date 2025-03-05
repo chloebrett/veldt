@@ -4,7 +4,6 @@ use crate::components::notes_panel::{NoteSignal, NotesPanel};
 use crate::components::playback::Playback;
 use leptos::prelude::*;
 use mesic::create_track;
-use mesic::scale::create_scale_values;
 use shared::model::adsr_envelope::AdsrEnvelope;
 use shared::model::scale::Scale;
 use shared::model::wave_type::WaveType;
@@ -35,8 +34,6 @@ pub fn App() -> impl IntoView {
     let wave = move || WaveType::from_str(&wave_string.get()).unwrap();
     let bpm = move || bpm_value.get();
     let volume = move || (volume_percent.get() / 100.0f64) as f32;
-    let key = move || ScaleValue::from_str(&key_string.get()).unwrap();
-    let scale_values = move || create_scale_values(Scale::from_str(&scale_string.get()).unwrap(), ScaleValue::from_str(&key_string.get()).unwrap());
     let envelope = move || AdsrEnvelope {
         attack: attack.get(),
         decay: decay.get(),
@@ -76,7 +73,7 @@ pub fn App() -> impl IntoView {
                 scale=scale_string
             />
             <EnvelopePanel attack=attack decay=decay sustain=sustain release=release />
-            <NotesPanel notes=notes />
+            <NotesPanel notes=notes scale_string=scale_string key_string=key_string/>
         </ConfigProvider>
     }
 }
