@@ -79,5 +79,7 @@ enum ScaleProto {
     Chromatic = 1;
     Major = 2;
     HarmonicMinor = 3;
+    NaturalMinor = 4;
+    Pentatonic = 5;
 }
 
