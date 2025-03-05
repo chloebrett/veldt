@@ -5,6 +5,8 @@ use crate::components::playback::Playback;
 use leptos::prelude::*;
 use mesic::create_track;
 use shared::model::adsr_envelope::AdsrEnvelope;
+use shared::model::scale::Scale;
+use shared::model::scale_value::ScaleValue;
 use shared::model::wave_type::WaveType;
 use shared::serialize::map_vec;
 use shared::types::{Beats, PitchValue};
@@ -19,6 +21,8 @@ pub fn App() -> impl IntoView {
     let bpm_value = RwSignal::<Beats>::new(120.0);
     let volume_percent = RwSignal::new(100.0f64);
     let transpose_interval = RwSignal::<PitchValue>::new(0);
+    let key_string = RwSignal::new(ScaleValue::A.to_string());
+    let scale_string = RwSignal::new(Scale::Chromatic.to_string());
 
     let attack = RwSignal::new(0.1);
     let decay = RwSignal::new(0.1);
@@ -65,9 +69,11 @@ pub fn App() -> impl IntoView {
                 bpm=bpm_value
                 volume=volume_percent
                 transpose=transpose_interval
+                key=key_string
+                scale=scale_string
             />
             <EnvelopePanel attack=attack decay=decay sustain=sustain release=release />
-            <NotesPanel notes=notes />
+            <NotesPanel notes=notes scale_string=scale_string key_string=key_string />
         </ConfigProvider>
     }
 }

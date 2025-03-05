@@ -74,3 +74,12 @@ enum ScaleValueProto {
   GSharpScaleValue = 12;
 }
 
+enum ScaleProto {
+    UnknownScale = 0;
+    ChromaticScale = 1;
+    MajorScale = 2;
+    HarmonicMinorScale = 3;
+    NaturalMinorScale = 4;
+    PentatonicScale = 5;
+}
+
