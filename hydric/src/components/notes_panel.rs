@@ -1,6 +1,8 @@
 use leptos::prelude::*;
+use mesic::scale::create_scale_values;
 use shared::model::note::Note;
 use shared::model::pitch_name::PitchName;
+use shared::model::scale::Scale;
 use shared::model::scale_value::ScaleValue;
 use shared::types::{Beats, Octave};
 use std::str::FromStr;
@@ -28,9 +30,18 @@ impl From<NoteSignal> for Note {
 }
 
 #[component]
-pub fn NotesPanel(notes: RwSignal<Vec<NoteSignal>>) -> impl IntoView {
+pub fn NotesPanel(
+    notes: RwSignal<Vec<NoteSignal>>,
+    scale_string: RwSignal<String>,
+    key_string: RwSignal<String>,
+) -> impl IntoView {
     let next_note_id = RwSignal::new(notes.get_untracked().len() as u32);
-
+    let scale_notes = move || {
+        create_scale_values(
+            Scale::from_str(&scale_string.get()).unwrap(),
+            ScaleValue::from_str(&key_string.get()).unwrap(),
+        )
+    };
     let add_note = move |_| {
         let note = NoteSignal {
             id: next_note_id.get(),
@@ -65,18 +76,13 @@ pub fn NotesPanel(notes: RwSignal<Vec<NoteSignal>>) -> impl IntoView {
                         <Space>
                             <Tooltip content="Note">
                                 <Select value=scale_value>
-                                    <option>{ScaleValue::A.to_string()}</option>
-                                    <option>{ScaleValue::ASharp.to_string()}</option>
-                                    <option>{ScaleValue::B.to_string()}</option>
-                                    <option>{ScaleValue::C.to_string()}</option>
-                                    <option>{ScaleValue::CSharp.to_string()}</option>
-                                    <option>{ScaleValue::D.to_string()}</option>
-                                    <option>{ScaleValue::DSharp.to_string()}</option>
-                                    <option>{ScaleValue::E.to_string()}</option>
-                                    <option>{ScaleValue::F.to_string()}</option>
-                                    <option>{ScaleValue::FSharp.to_string()}</option>
-                                    <option>{ScaleValue::G.to_string()}</option>
-                                    <option>{ScaleValue::GSharp.to_string()}</option>
+                                    <For
+                                        each=scale_notes
+                                        key=|value| value.to_string()
+                                        children=move |value| {
+                                            view! { <option>{value.to_string()}</option> }
+                                        }
+                                    />
                                 </Select>
                             </Tooltip>
                             <Tooltip content="Octave">
