@@ -3,6 +3,7 @@ use leptos::prelude::*;
 use shared::types::{Beats, PitchValue};
 use shared::model::scale_value::ScaleValue;
 use thaw::{Card, Select, Slider, Space, SpinButton};
+use strum::IntoEnumIterator;
 
 #[component]
 pub fn ConfigPanel(
@@ -28,8 +29,11 @@ pub fn ConfigPanel(
                 <p>Transpose</p>
                 <SpinButton<PitchValue> value=transpose step_page=1 min=-24 max=24 />
                 <Select value=key>
-                    <option>{ScaleValue::A.to_string()}</option>
-                    <option>{ScaleValue::C.to_string()}</option>
+                    {
+                        ScaleValue::iter()
+                            .map(|scale_value| view! {<option>{scale_value.to_string()}</option>})
+                            .collect_view()
+                    }
                 </Select>
             </Space>
         </Card>
