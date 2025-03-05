@@ -98,7 +98,7 @@ fn apply_envelope(x: f32, envelope: &AdsrEnvelope, duration: Beats, bpm: Beats) 
     }
 
     let scale = bpm / 60.0 / duration;
-    let x = x * scale / (SAMPLE_RATE as f32) * scale as f32;
+    let x = x * scale / (SAMPLE_RATE as f32) as f32;
 
     if x < envelope.attack {
         // in attack
