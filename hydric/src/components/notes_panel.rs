@@ -36,7 +36,10 @@ pub fn NotesPanel(
     key_string: RwSignal<String>
     )-> impl IntoView {
     let next_note_id = RwSignal::new(notes.get_untracked().len() as u32);
-    let scale_notes= move || create_scale_values(Scale::from_str(&scale_string.get()).unwrap(), ScaleValue::from_str(&key_string.get()).unwrap());
+    let scale_notes= move || create_scale_values(
+        Scale::from_str(&scale_string.get()).unwrap(), 
+        ScaleValue::from_str(&key_string.get()).unwrap()
+    );
     let add_note = move |_| {
         let note = NoteSignal {
             id: next_note_id.get(),
