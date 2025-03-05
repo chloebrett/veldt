@@ -1,10 +1,10 @@
 use leptos::prelude::*;
 
-use shared::types::{Beats, PitchValue};
-use shared::model::scale_value::ScaleValue;
 use shared::model::scale::Scale;
-use thaw::{Card, Select, Slider, Space, SpinButton};
+use shared::model::scale_value::ScaleValue;
+use shared::types::{Beats, PitchValue};
 use strum::IntoEnumIterator;
+use thaw::{Card, Select, Slider, Space, SpinButton};
 
 #[component]
 pub fn ConfigPanel(
@@ -40,7 +40,7 @@ pub fn ConfigPanel(
                 <Select value=scale>
                     {
                         Scale::iter()
-                            .map(|scale_name| view! {<option>{scale_name.to_string()}</option>}) 
+                            .map(|scale_name| view! {<option>{scale_name.to_string()}</option>})
                             .collect_view()
                     }
                 </Select>

@@ -1,10 +1,12 @@
 use crate::pmodel::*;
 
-use strum::{Display, EnumString, EnumIter, IntoEnumIterator};
+use strum::{Display, EnumIter, EnumString, IntoEnumIterator};
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, PartialOrd, Ord, EnumString, Display, EnumIter)]
+#[derive(
+    Debug, Clone, Copy, PartialEq, Eq, Hash, PartialOrd, Ord, EnumString, Display, EnumIter,
+)]
 pub enum Scale {
-    Chromatic, 
+    Chromatic,
     Major,
     #[strum(serialize = "Natural Minor")]
     NaturalMinor,
@@ -21,7 +23,7 @@ impl From<ScaleProto> for Scale {
             ScaleProto::HarmonicMinor => Scale::HarmonicMinor,
             ScaleProto::NaturalMinor => Scale::NaturalMinor,
             ScaleProto::Pentatonic => Scale::Pentatonic,
-            ScaleProto::UnknownScale => panic!()
+            ScaleProto::UnknownScale => panic!(),
         }
     }
 }
@@ -33,7 +35,7 @@ impl From<Scale> for ScaleProto {
             Scale::Major => ScaleProto::Major,
             Scale::HarmonicMinor => ScaleProto::HarmonicMinor,
             Scale::NaturalMinor => ScaleProto::NaturalMinor,
-            Scale::Pentatonic => ScaleProto::Pentatonic
+            Scale::Pentatonic => ScaleProto::Pentatonic,
         }
     }
 }

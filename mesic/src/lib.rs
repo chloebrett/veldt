@@ -10,8 +10,8 @@ use shared::types::*;
 use std::cmp::max;
 use std::f32::consts::PI;
 
-mod wave;
 pub mod scale;
+mod wave;
 
 use crate::wave::*;
 
