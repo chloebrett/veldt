@@ -77,10 +77,10 @@ pub fn NotesPanel(
                             <Tooltip content="Note">
                                 <Select value=scale_value>
                                     <For
-                                        each = scale_notes
-                                        key = |value| value.to_string()
-                                        children = move |value| {
-                                            view! {<option>{value.to_string()}</option>}
+                                        each=scale_notes
+                                        key=|value| value.to_string()
+                                        children=move |value| {
+                                            view! { <option>{value.to_string()}</option> }
                                         }
                                     />
                                 </Select>

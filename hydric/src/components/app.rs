@@ -73,7 +73,7 @@ pub fn App() -> impl IntoView {
                 scale=scale_string
             />
             <EnvelopePanel attack=attack decay=decay sustain=sustain release=release />
-            <NotesPanel notes=notes scale_string=scale_string key_string=key_string/>
+            <NotesPanel notes=notes scale_string=scale_string key_string=key_string />
         </ConfigProvider>
     }
 }
