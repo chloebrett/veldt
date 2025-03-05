@@ -11,6 +11,7 @@ use std::cmp::max;
 use std::f32::consts::PI;
 
 mod wave;
+mod scale;
 
 use crate::wave::*;
 
