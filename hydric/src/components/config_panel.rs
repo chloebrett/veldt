@@ -31,18 +31,14 @@ pub fn ConfigPanel(
                 <p>Transpose</p>
                 <SpinButton<PitchValue> value=transpose step_page=1 min=-24 max=24 />
                 <Select value=key>
-                    {
-                        ScaleValue::iter()
-                            .map(|scale_value| view! {<option>{scale_value.to_string()}</option>})
-                            .collect_view()
-                    }
+                    {ScaleValue::iter()
+                        .map(|scale_value| view! { <option>{scale_value.to_string()}</option> })
+                        .collect_view()}
                 </Select>
                 <Select value=scale>
-                    {
-                        Scale::iter()
-                            .map(|scale_name| view! {<option>{scale_name.to_string()}</option>})
-                            .collect_view()
-                    }
+                    {Scale::iter()
+                        .map(|scale_name| view! { <option>{scale_name.to_string()}</option> })
+                        .collect_view()}
                 </Select>
             </Space>
         </Card>
