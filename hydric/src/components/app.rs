@@ -1,9 +1,10 @@
 use crate::components::config_panel::ConfigPanel;
+use crate::components::detune_panel::DetunePanel;
 use crate::components::envelope_panel::EnvelopePanel;
 use crate::components::notes_panel::{NoteSignal, NotesPanel};
 use crate::components::playback::Playback;
 use leptos::prelude::*;
-use mesic::create_track;
+use mesic::{SupersawConfig, create_track};
 use shared::model::adsr_envelope::AdsrEnvelope;
 use shared::model::scale::Scale;
 use shared::model::scale_value::ScaleValue;
@@ -29,6 +30,9 @@ pub fn App() -> impl IntoView {
     let sustain = RwSignal::new(0.8);
     let release = RwSignal::new(0.2);
 
+    let osc_count = RwSignal::new(4u32);
+    let detune_cents = RwSignal::new(5.0);
+
     // TODO: instead of using a dependent signal, consider implementing
     // the appropriate From trait.
     let wave = move || WaveType::from_str(&wave_string.get()).unwrap();
@@ -40,6 +44,12 @@ pub fn App() -> impl IntoView {
         sustain: sustain.get(),
         release: release.get(),
     };
+    // TODO: put the supersaw config in Track, etc.
+    // Really this is a generator config.
+    let supersaw_config = Memo::new(move |_| SupersawConfig {
+        osc_count: osc_count.get(),
+        detune_cents: detune_cents.get(),
+    });
 
     let track = Memo::new(move |_| {
         create_track(
@@ -63,7 +73,7 @@ pub fn App() -> impl IntoView {
                 </AccordionItem>
             </Accordion>
             <h1>"Veldt"</h1>
-            <Playback track=track />
+            <Playback track=track supersaw_config=supersaw_config />
             <ConfigPanel
                 wave=wave_string
                 bpm=bpm_value
@@ -73,6 +83,7 @@ pub fn App() -> impl IntoView {
                 scale=scale_string
             />
             <EnvelopePanel attack=attack decay=decay sustain=sustain release=release />
+            <DetunePanel osc_count=osc_count detune_cents=detune_cents />
             <NotesPanel notes=notes scale_string=scale_string key_string=key_string />
         </ConfigProvider>
     }

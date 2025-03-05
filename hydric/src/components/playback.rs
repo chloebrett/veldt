@@ -1,12 +1,12 @@
 use crate::audio_player::AudioPlayer;
 use crate::audio_render::render as server_render;
 use leptos::prelude::*;
-use mesic::render as local_render;
+use mesic::{SupersawConfig, render as local_render};
 use shared::model::track::Track;
 use thaw::{Button, ButtonAppearance, Card, Space};
 
 #[component]
-pub fn Playback(track: Memo<Track>) -> impl IntoView {
+pub fn Playback(track: Memo<Track>, supersaw_config: Memo<SupersawConfig>) -> impl IntoView {
     let (_, set_player) = signal_local(None::<AudioPlayer>);
 
     // Continually re-request audio from the server then the wave type changes.
@@ -19,7 +19,11 @@ pub fn Playback(track: Memo<Track>) -> impl IntoView {
                     appearance=ButtonAppearance::Primary
                     on_click=move |_| {
                         set_player
-                            .set(AudioPlayer::new(&local_render(&track.get())).unwrap().into());
+                            .set(
+                                AudioPlayer::new(&local_render(&track.get(), supersaw_config.get()))
+                                    .unwrap()
+                                    .into(),
+                            );
                     }
                 >
                     "Play (rendered in browser)"
