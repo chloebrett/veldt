@@ -1,12 +1,12 @@
 use shared::model::adsr_envelope::AdsrEnvelope;
-use shared::model::synth::Synth;
-use shared::model::track::Track;
 use shared::model::note::Note;
-use shared::model::sequence::Sequence;
-use shared::model::wave_type::WaveType;
-use shared::types::*;
 use shared::model::pitch_name::PitchName;
 use shared::model::scale_value::ScaleValue;
+use shared::model::sequence::Sequence;
+use shared::model::synth::Synth;
+use shared::model::track::Track;
+use shared::model::wave_type::WaveType;
+use shared::types::*;
 use std::cmp::max;
 use std::f32::consts::PI;
 
@@ -14,13 +14,14 @@ mod wave;
 
 use crate::wave::*;
 
-pub fn create_track(notes: Vec<Note>, wave: WaveType, bpm: Beats, volume: Volume, transpose_interval: PitchValue) -> Track {
-    let envelope = AdsrEnvelope {
-        attack: 0.0,
-        decay: 0.3,
-        sustain: 0.0,
-        release: 0.0,
-    };
+pub fn create_track(
+    notes: Vec<Note>,
+    wave: WaveType,
+    bpm: Beats,
+    volume: Volume,
+    transpose_interval: PitchValue,
+    envelope: AdsrEnvelope,
+) -> Track {
     let synth = Synth {
         wave,
         envelope,
@@ -29,21 +30,22 @@ pub fn create_track(notes: Vec<Note>, wave: WaveType, bpm: Beats, volume: Volume
     Track {
         bpm,
         synths: vec![synth],
-        sequences: vec!(
-            Sequence {
-                offset: 0.,
-                volume: volume,
-                synth_index: 0,
-                notes: notes.into_iter().map(|note| transpose_note(note, transpose_interval)).collect()
-            }
-        )
+        sequences: vec![Sequence {
+            offset: 0.,
+            volume: volume,
+            synth_index: 0,
+            notes: notes
+                .into_iter()
+                .map(|note| transpose_note(note, transpose_interval))
+                .collect(),
+        }],
     }
 }
 
 fn transpose_note(note: Note, interval: PitchValue) -> Note {
     Note {
         pitch_name: note.pitch_name + interval,
-        beats: note.beats
+        beats: note.beats,
     }
 }
 
@@ -60,17 +62,17 @@ fn sum(a: Vec<f32>, b: Vec<f32>) -> Vec<f32> {
     output
 }
 
-struct ReferencePitch <'a> {
+struct ReferencePitch<'a> {
     pitch_name: &'a PitchName,
-    frequency: Freq
+    frequency: Freq,
 }
 
 const REFERENCE_PITCH: ReferencePitch<'static> = ReferencePitch {
     pitch_name: &PitchName {
         scale_value: ScaleValue::A,
-        octave: 4
+        octave: 4,
     },
-    frequency: 440.0
+    frequency: 440.0,
 };
 
 const SAMPLE_RATE: i32 = 44_100;

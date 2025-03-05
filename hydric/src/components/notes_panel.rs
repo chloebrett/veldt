@@ -1,9 +1,9 @@
 use leptos::prelude::*;
-use std::str::FromStr;
+use shared::model::note::Note;
 use shared::model::pitch_name::PitchName;
 use shared::model::scale_value::ScaleValue;
-use shared::model::note::Note;
 use shared::types::{Beats, Octave};
+use std::str::FromStr;
 use thaw::{Button, ButtonAppearance, Card, Select, Space, SpinButton, Tooltip};
 
 #[derive(Clone)]
@@ -20,9 +20,9 @@ impl From<NoteSignal> for Note {
         Note {
             pitch_name: PitchName {
                 scale_value: ScaleValue::from_str(&item.scale_value.get()).unwrap(),
-                octave: item.octave.get()
+                octave: item.octave.get(),
             },
-            beats: item.duration.get()
+            beats: item.duration.get(),
         }
     }
 }
