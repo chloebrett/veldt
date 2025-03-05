@@ -1,7 +1,7 @@
 use std::net::SocketAddr;
 
 use http::{HeaderValue, Method};
-use mesic::render;
+use mesic::{SupersawConfig, render};
 use shared::bytes::as_bytes;
 use shared::render::render_server::{Render, RenderServer};
 use shared::render::{RenderReply, RenderRequest};
@@ -17,11 +17,17 @@ impl Render for MyRender {
         &self,
         request: tonic::Request<RenderRequest>,
     ) -> Result<tonic::Response<RenderReply>, tonic::Status> {
+        let supersaw_config = SupersawConfig {
+            osc_count: 1,
+
+            detune_cents: 0.0,
+        };
+
         let track = request
             .into_inner()
             .track
             .ok_or(tonic::Status::invalid_argument("Track must be supplied"))?;
-        let bytes = as_bytes(&render(&track.into()));
+        let bytes = as_bytes(&render(&track.into(), supersaw_config));
 
         Ok(tonic::Response::new(RenderReply { audio: bytes }))
     }
