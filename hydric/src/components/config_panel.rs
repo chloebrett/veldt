@@ -1,6 +1,7 @@
 use leptos::prelude::*;
 
 use shared::types::{Beats, PitchValue};
+use shared::model::scale_value::ScaleValue;
 use thaw::{Card, Select, Slider, Space, SpinButton};
 
 #[component]
@@ -9,6 +10,7 @@ pub fn ConfigPanel(
     bpm: RwSignal<Beats>,
     volume: RwSignal<f64>,
     transpose: RwSignal<PitchValue>,
+    key: RwSignal<String>,
 ) -> impl IntoView {
     view! {
         <Card>
@@ -25,6 +27,10 @@ pub fn ConfigPanel(
                 <Slider value=volume />
                 <p>Transpose</p>
                 <SpinButton<PitchValue> value=transpose step_page=1 min=-24 max=24 />
+                <Select value=key>
+                    <option>{ScaleValue::A.to_string()}</option>
+                    <option>{ScaleValue::C.to_string()}</option>
+                </Select>
             </Space>
         </Card>
     }

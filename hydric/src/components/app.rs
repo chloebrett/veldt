@@ -5,7 +5,9 @@ use crate::components::playback::Playback;
 use leptos::prelude::*;
 use mesic::create_track;
 use shared::model::adsr_envelope::AdsrEnvelope;
+use shared::model::scale::Scale;
 use shared::model::wave_type::WaveType;
+use shared::model::scale_value::ScaleValue;
 use shared::serialize::map_vec;
 use shared::types::{Beats, PitchValue};
 use std::str::FromStr;
@@ -19,6 +21,7 @@ pub fn App() -> impl IntoView {
     let bpm_value = RwSignal::<Beats>::new(120.0);
     let volume_percent = RwSignal::new(100.0f64);
     let transpose_interval = RwSignal::<PitchValue>::new(0);
+    let key_string = RwSignal::new(ScaleValue::A.to_string());
 
     let attack = RwSignal::new(0.1);
     let decay = RwSignal::new(0.1);
@@ -30,6 +33,7 @@ pub fn App() -> impl IntoView {
     let wave = move || WaveType::from_str(&wave_string.get()).unwrap();
     let bpm = move || bpm_value.get();
     let volume = move || (volume_percent.get() / 100.0f64) as f32;
+    let key = move || ScaleValue::from_str(&key_string.get()).unwrap();
     let envelope = move || AdsrEnvelope {
         attack: attack.get(),
         decay: decay.get(),
@@ -65,6 +69,7 @@ pub fn App() -> impl IntoView {
                 bpm=bpm_value
                 volume=volume_percent
                 transpose=transpose_interval
+                key=key_string
             />
             <EnvelopePanel attack=attack decay=decay sustain=sustain release=release />
             <NotesPanel notes=notes />
