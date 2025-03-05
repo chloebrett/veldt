@@ -2,6 +2,7 @@ pub mod adsr_envelope;
 pub mod note;
 pub mod pitch_name;
 pub mod project;
+pub mod scale;
 pub mod scale_value;
 pub mod sequence;
 pub mod synth;

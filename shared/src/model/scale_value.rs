@@ -1,8 +1,10 @@
 use crate::{pmodel::*, types::PitchValue};
 use std::str;
-use strum::{Display, EnumString};
+use strum::{Display, EnumIter, EnumString, IntoEnumIterator};
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, PartialOrd, Ord, EnumString, Display)]
+#[derive(
+    Debug, Clone, Copy, PartialEq, Eq, Hash, PartialOrd, Ord, EnumString, Display, EnumIter,
+)]
 pub enum ScaleValue {
     A,
     #[strum(serialize = "A#")]

@@ -1,6 +1,9 @@
 use leptos::prelude::*;
 
+use shared::model::scale::Scale;
+use shared::model::scale_value::ScaleValue;
 use shared::types::{Beats, PitchValue};
+use strum::IntoEnumIterator;
 use thaw::{Card, Select, Slider, Space, SpinButton};
 
 #[component]
@@ -9,6 +12,8 @@ pub fn ConfigPanel(
     bpm: RwSignal<Beats>,
     volume: RwSignal<f64>,
     transpose: RwSignal<PitchValue>,
+    key: RwSignal<String>,
+    scale: RwSignal<String>,
 ) -> impl IntoView {
     view! {
         <Card>
@@ -25,6 +30,16 @@ pub fn ConfigPanel(
                 <Slider value=volume />
                 <p>Transpose</p>
                 <SpinButton<PitchValue> value=transpose step_page=1 min=-24 max=24 />
+                <Select value=key>
+                    {ScaleValue::iter()
+                        .map(|scale_value| view! { <option>{scale_value.to_string()}</option> })
+                        .collect_view()}
+                </Select>
+                <Select value=scale>
+                    {Scale::iter()
+                        .map(|scale_name| view! { <option>{scale_name.to_string()}</option> })
+                        .collect_view()}
+                </Select>
             </Space>
         </Card>
     }
