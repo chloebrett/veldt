@@ -79,14 +79,22 @@ const SAMPLE_RATE: i32 = 44_100;
 
 // Returns the frequency based on the distance from reference pitch.
 fn freq(pitch_name: &PitchName) -> Freq {
-    // powf can't be run at compile time.
-    // TODO: make this only run once.
-
     let reference_value = <PitchName as Into<PitchValue>>::into(REFERENCE_PITCH.pitch_name.clone());
     let other_value = <PitchName as Into<PitchValue>>::into(pitch_name.clone());
     let interval = other_value - reference_value;
+
+    // powf can't be run at compile time.
+    // TODO: make this only run once.
     let semitone_increment: f32 = 2.0_f32.powf(1.0 / 12.0);
     REFERENCE_PITCH.frequency * semitone_increment.powf(interval as f32)
+}
+
+fn detune_multiplier(cents: f32) -> Freq {
+    let interval = cents / 100.0;
+
+    // TODO: de-duplicate this.
+    let semitone_increment: f32 = 2.0_f32.powf(1.0 / 12.0);
+    semitone_increment.powf(interval)
 }
 
 fn apply_envelope(x: f32, envelope: &AdsrEnvelope, duration: Beats, bpm: Beats) -> f32 {
@@ -115,7 +123,7 @@ fn apply_envelope(x: f32, envelope: &AdsrEnvelope, duration: Beats, bpm: Beats) 
     }
 }
 
-pub fn render(track: &Track) -> Vec<f32> {
+pub fn render(track: &Track, supersaw_config: SupersawConfig) -> Vec<f32> {
     let bpm = track.bpm;
     let mut total_wave: Vec<f32> = vec![];
 
@@ -127,13 +135,14 @@ pub fn render(track: &Track) -> Vec<f32> {
         let mut sequence_wave: Vec<f32> = vec![];
         for note in &sequence.notes {
             println!("{:?}", note);
-            let mut wave = wave(
+            let mut wave = polyphonic_wave(
                 &note.pitch_name,
                 note.beats,
                 bpm,
                 sequence.volume * synth.volume,
                 &synth.envelope,
                 synth.wave,
+                supersaw_config.clone(),
             );
             sequence_wave.append(&mut wave);
         }
@@ -144,6 +153,13 @@ pub fn render(track: &Track) -> Vec<f32> {
     total_wave
 }
 
+#[derive(Clone, PartialEq)]
+pub struct SupersawConfig {
+    pub osc_count: u32,
+
+    pub detune_cents: f32,
+}
+
 fn wave(
     pitch_name: &PitchName,
     beats: Beats,
@@ -151,8 +167,9 @@ fn wave(
     volume: f32,
     envelope: &AdsrEnvelope,
     wave_type: WaveType,
+    detune_cents: f32,
 ) -> Vec<f32> {
-    let step = freq(pitch_name) * 2.0 * PI / (SAMPLE_RATE as f32);
+    let step = freq(pitch_name) * detune_multiplier(detune_cents) * 2.0 * PI / (SAMPLE_RATE as f32);
     let range = 0..(SAMPLE_RATE as f32 * beats / bpm * 60.0) as i32;
 
     range
@@ -162,4 +179,63 @@ fn wave(
                 * apply_envelope(x as f32, envelope, beats, bpm)
         })
         .collect()
+}
+
+fn polyphonic_wave(
+    pitch_name: &PitchName,
+    beats: Beats,
+    bpm: Beats,
+    volume: f32,
+    envelope: &AdsrEnvelope,
+    wave_type: WaveType,
+    supersaw_config: SupersawConfig,
+) -> Vec<f32> {
+    let detune = supersaw_config.detune_cents;
+    let osc_count = supersaw_config.osc_count;
+    let partial_volume = volume / (osc_count as f32);
+
+    let detune_amounts = linspace(-detune, detune, osc_count);
+
+    let outputs: Vec<Vec<f32>> = detune_amounts
+        .iter()
+        .map(|det| {
+            wave(
+                pitch_name,
+                beats,
+                bpm,
+                partial_volume,
+                envelope,
+                wave_type,
+                *det,
+            )
+        })
+        .collect();
+
+    multi_sum(outputs)
+}
+
+/// Returns a vec range with `count` evenly spaced values from `low` to `high`.
+fn linspace(low: f32, high: f32, count: u32) -> Vec<f32> {
+    if count == 0 {
+        panic!("Tried to linspace with count == 0");
+    }
+    if count == 1 {
+        let mid = (high + low) / 2.0;
+        return vec![mid];
+    }
+
+    (0..count)
+        .map(|x| (x as f32) * (high - low) / (count as f32 - 1.0) - low)
+        .collect()
+}
+
+fn multi_sum(buffers: Vec<Vec<f32>>) -> Vec<f32> {
+    let max_len = buffers.iter().map(|it| it.len()).max().unwrap();
+    let mut output: Vec<f32> = vec![0.0; max_len];
+
+    for buf in buffers {
+        output = sum(output, buf);
+    }
+
+    output
 }
