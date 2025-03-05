@@ -1,9 +1,9 @@
 use leptos::prelude::*;
+use mesic::scale::create_scale_values;
 use shared::model::note::Note;
 use shared::model::pitch_name::PitchName;
-use shared::model::scale_value::ScaleValue;
 use shared::model::scale::Scale;
-use mesic::scale::create_scale_values;
+use shared::model::scale_value::ScaleValue;
 use shared::types::{Beats, Octave};
 use std::str::FromStr;
 use thaw::{Button, ButtonAppearance, Card, Select, Space, SpinButton, Tooltip};
@@ -31,15 +31,17 @@ impl From<NoteSignal> for Note {
 
 #[component]
 pub fn NotesPanel(
-    notes: RwSignal<Vec<NoteSignal>>, 
+    notes: RwSignal<Vec<NoteSignal>>,
     scale_string: RwSignal<String>,
-    key_string: RwSignal<String>
-    )-> impl IntoView {
+    key_string: RwSignal<String>,
+) -> impl IntoView {
     let next_note_id = RwSignal::new(notes.get_untracked().len() as u32);
-    let scale_notes= move || create_scale_values(
-        Scale::from_str(&scale_string.get()).unwrap(), 
-        ScaleValue::from_str(&key_string.get()).unwrap()
-    );
+    let scale_notes = move || {
+        create_scale_values(
+            Scale::from_str(&scale_string.get()).unwrap(),
+            ScaleValue::from_str(&key_string.get()).unwrap(),
+        )
+    };
     let add_note = move |_| {
         let note = NoteSignal {
             id: next_note_id.get(),
