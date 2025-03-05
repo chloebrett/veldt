@@ -1,7 +1,8 @@
-use strum::{Display, EnumString};
 use crate::pmodel::*;
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, EnumString, Display)]
+use strum::{Display, EnumString, EnumIter, IntoEnumIterator};
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, PartialOrd, Ord, EnumString, Display, EnumIter)]
 pub enum Scale {
     Chromatic, 
     Major, 
