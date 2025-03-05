@@ -76,10 +76,10 @@ enum ScaleValueProto {
 
 enum ScaleProto {
     UnknownScale = 0;
-    Chromatic = 1;
-    Major = 2;
-    HarmonicMinor = 3;
-    NaturalMinor = 4;
-    Pentatonic = 5;
+    ChromaticScale = 1;
+    MajorScale = 2;
+    HarmonicMinorScale = 3;
+    NaturalMinorScale = 4;
+    PentatonicScale = 5;
 }
 
