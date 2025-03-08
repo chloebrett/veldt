@@ -285,7 +285,8 @@ fn wave(
     wave_type: WaveType,
     detune_cents: f32,
 ) -> Vec<f32> {
-    let step = freq(*pitch_name) * detune_multiplier(detune_cents) * 2.0 * PI / (SAMPLE_RATE as f32);
+    let step =
+        freq(*pitch_name) * detune_multiplier(detune_cents) * 2.0 * PI / (SAMPLE_RATE as f32);
     let range = 0..(SAMPLE_RATE as f32 * beats / bpm * 60.0) as i32;
 
     range
