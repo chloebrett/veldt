@@ -1,6 +1,6 @@
 use leptos::prelude::*;
 
-use shared::types::{KnobPosition,Freq};
+use shared::types::{Freq, KnobPosition};
 use thaw::{Card, Space, SpinButton, Tooltip};
 
 #[component]

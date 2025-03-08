@@ -127,7 +127,13 @@ fn apply_envelope(x: f32, envelope: &AdsrEnvelope, duration: Beats, bpm: Beats) 
     }
 }
 
-pub fn render(track: &Track, supersaw_config: SupersawConfig, resonant_freq: Freq, resonance_q: KnobPosition, resonance_wet: KnobPosition) -> Vec<f32> {
+pub fn render(
+    track: &Track,
+    supersaw_config: SupersawConfig,
+    resonant_freq: Freq,
+    resonance_q: KnobPosition,
+    resonance_wet: KnobPosition,
+) -> Vec<f32> {
     let bpm = track.bpm;
     let mut total_wave: Vec<f32> = vec![];
 
@@ -151,7 +157,10 @@ pub fn render(track: &Track, supersaw_config: SupersawConfig, resonant_freq: Fre
 
             q_value: resonance_q, // demonstrative range: 1.0 to 10.0 - but can go lower or higher.
         },
-        meta: EffectMeta { id: 1, wet: resonance_wet },
+        meta: EffectMeta {
+            id: 1,
+            wet: resonance_wet,
+        },
     };
     let effects = vec![simple_resonator];
 
