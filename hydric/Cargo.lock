@@ -1366,6 +1366,7 @@ dependencies = [
  "shared",
  "strum",
  "thaw",
+ "thaw_utils",
  "tonic-web-wasm-client",
  "wasm-bindgen",
  "wasm-bindgen-futures",

@@ -8,7 +8,7 @@ use shared::types::KnobPosition;
 /// Trait corresponding to something that knows how to apply an effect.
 /// Implemented for the various effect config types by the various effect plugins.
 pub trait ApplyEffect {
-    fn apply(&self, input: &Vec<f32>) -> Vec<f32>;
+    fn apply(&self, input: &[f32]) -> Vec<f32>;
 }
 
 pub fn apply_effects(signal: Vec<f32>, effects: Vec<EffectInstance>) -> Vec<f32> {

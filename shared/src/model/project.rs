@@ -1,5 +1,5 @@
 use crate::model::{AdsrEnvelope, EqType, WaveType};
-use crate::types::{Beats, Decibels, Freq, KnobPosition, Milliseconds, Seconds, Volume};
+use crate::types::{Beats, Decibels, Freq, KnobPosition, Milliseconds, Volume};
 use chrono::NaiveDateTime;
 use std::collections::BTreeSet;
 
@@ -117,9 +117,9 @@ pub struct EqConfig {
 pub struct _CompressorConfig {
     _threshold: Decibels,
 
-    _attack: Seconds,
+    _attack: Milliseconds,
 
-    _release: Seconds,
+    _release: Milliseconds,
 
     _ratio: KnobPosition,
 
