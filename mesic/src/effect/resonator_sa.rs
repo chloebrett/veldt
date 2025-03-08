@@ -1,3 +1,4 @@
+use super::filter::second_degree_filter;
 use crate::consts::SAMPLE_RATE;
 use shared::types::{Freq, KnobPosition};
 use std::f32::consts::TAU;
@@ -15,20 +16,8 @@ pub fn apply_smith_angell_resonator(
     let b2 = (-TAU * bandwidth / fs).exp();
     let b1 = (-4.0 * b2) / (1.0 + b2) * theta.cos();
     let a0 = 1.0 - b2.sqrt();
+    let a1 = 0.0;
     let a2 = -a0;
 
-    // Pre-fill with two zero values as filling the vec depends on its previous values.
-    let mut output: Vec<f32> = vec![0.0, 0.0];
-    for i in 2..dry_signal.len() {
-        let xn = dry_signal[i];
-        let xn2 = dry_signal[i - 2];
-        let yn1 = output[i - 1];
-        let yn2 = output[i - 2];
-        let yn = a0 * xn + a2 * xn2 - b1 * yn1 - b2 * yn2;
-
-        output.push(yn);
-    }
-
-    output.drain(0..2);
-    output
+    second_degree_filter(dry_signal, a0, a1, a2, b1, b2)
 }
