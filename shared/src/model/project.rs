@@ -1,6 +1,6 @@
 use crate::model::adsr_envelope::AdsrEnvelope;
 use crate::model::wave_type::WaveType;
-use crate::types::{Beats, Decibels, Freq, KnobPosition, Seconds, Volume};
+use crate::types::{Beats, Decibels, Freq, KnobPosition, Milliseconds, Seconds, Volume};
 use chrono::NaiveDateTime;
 use std::collections::BTreeSet;
 
@@ -83,31 +83,26 @@ struct Sample {
     // TODO: consider multi-channel samples.
 }
 
-struct EffectInstance {
-    effect: Effect,
+pub struct EffectInstance {
+    pub effect: Effect,
 
-    meta: EffectMeta,
+    pub meta: EffectMeta,
     // TODO: automation links
 }
 
-enum Effect {
+pub enum Effect {
     // TODO: add basic effects with hard coded params.
     // Delay could be a good first one.
     // Speed shifting is another interesting one.
     // Phase inversion would be easy (just invert the amplitude) but hard to actually hear the
     // difference.
     // More complex: reverb, EQ, compressor, distortion, phaser, resampling, and more...
-    Delay {
-        /// Volume of the first delayed repeat.
-        volume: Volume,
+    SimpleDelay {
+        // Note: for now, only feed-forward (i.e. one repeat).
+        // In future: support feedback delay, with multiple repeats.
+        amplitude: Volume,
 
-        /// Proportional reduction of subsequent repeats.
-        /// e.g. if volume = 0.8 and multiplier = 0.5, then the delay would be:
-        /// 0.8 -> 0.4 -> 0.2 -> ...
-        multiplier: KnobPosition,
-
-        /// Limit to the number of delayed repeats.
-        count: Option<u32>,
+        delay_ms: Milliseconds,
     },
     SimpleEq {
         kind: EqType,
@@ -159,7 +154,7 @@ enum PassType {
 }
 
 enum BandPassAlgorithm {
-    /// A simple an efficient conjugate pole resonator. Suffers from asymmetry in its response.
+    /// A simple and efficient conjugate pole resonator. Suffers from asymmetry in its response.
     SimpleResonator,
 
     /// Smith-Angell resonator, which adds two zeros (at z=-1 and z=1) to limit asymmetry
@@ -175,10 +170,10 @@ enum LowHighPassAlgorithm {
     LinkwitzRiley,
 }
 
-struct EffectMeta {
-    id: EffectId,
+pub struct EffectMeta {
+    pub id: EffectId,
 
-    wet: KnobPosition,
+    pub wet: KnobPosition,
     // TODO: pan
 }
 

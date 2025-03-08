@@ -1,6 +1,7 @@
 use shared::model::adsr_envelope::AdsrEnvelope;
 use shared::model::note::Note;
 use shared::model::pitch_name::PitchName;
+use shared::model::project::{Effect, EffectInstance, EffectMeta};
 use shared::model::scale_value::ScaleValue;
 use shared::model::sequence::Sequence;
 use shared::model::synth::Synth;
@@ -128,6 +129,16 @@ pub fn render(track: &Track, supersaw_config: SupersawConfig) -> Vec<f32> {
     let bpm = track.bpm;
     let mut total_wave: Vec<f32> = vec![];
 
+    let delay = EffectInstance {
+        effect: Effect::SimpleDelay {
+            amplitude: 0.5,
+
+            delay_ms: 250.0,
+        },
+        meta: EffectMeta { id: 0, wet: 0.5 },
+    };
+    let effects = vec![delay];
+
     for sequence in &track.sequences {
         // TODO: use the offset value instead of ignoring.
         let synth = &track.synths.get(sequence.synth_index).unwrap();
@@ -151,7 +162,48 @@ pub fn render(track: &Track, supersaw_config: SupersawConfig) -> Vec<f32> {
         total_wave = sum(total_wave, sequence_wave);
     }
 
-    total_wave
+    apply_effects(total_wave, effects)
+}
+
+fn apply_effects(signal: Vec<f32>, effects: Vec<EffectInstance>) -> Vec<f32> {
+    let mut output = signal.clone();
+
+    for effect in effects {
+        output = apply_effect(output, effect);
+    }
+
+    output
+}
+
+fn apply_effect(dry_signal: Vec<f32>, effect: EffectInstance) -> Vec<f32> {
+    let wet_signal = match effect.effect {
+        Effect::SimpleDelay {
+            amplitude,
+            delay_ms,
+        } => apply_delay(dry_signal.clone(), amplitude, delay_ms),
+        _ => panic!("Effect not implemented yet!"),
+    };
+
+    mix(dry_signal, wet_signal, effect.meta.wet)
+}
+
+/// Mixes two signals in the given dry/wet ratio.
+fn mix(dry: Vec<f32>, wet: Vec<f32>, ratio: f32) -> Vec<f32> {
+    sum(mult(wet, ratio), mult(dry, 1.0 - ratio))
+}
+
+fn mult(vec: Vec<f32>, scalar: f32) -> Vec<f32> {
+    vec.into_iter().map(|it| it * scalar).collect()
+}
+
+fn apply_delay(dry_signal: Vec<f32>, amplitude: Volume, delay_ms: Milliseconds) -> Vec<f32> {
+    // TODO: consider if fractional samples / interpolation make sense here.
+    let sample_count = (delay_ms * (SAMPLE_RATE as f32) / 1000.0) as usize;
+    let mut wet_signal = vec![0.0; sample_count];
+
+    wet_signal.extend(dry_signal);
+
+    mult(wet_signal, amplitude)
 }
 
 #[derive(Clone, PartialEq)]
