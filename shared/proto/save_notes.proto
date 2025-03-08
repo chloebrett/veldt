@@ -14,5 +14,4 @@ message SaveNotesRequest {
 }
 
 message SaveNotesReply {
-  // Unsure how to best handle empty responses.
 }
