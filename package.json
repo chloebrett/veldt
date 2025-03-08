@@ -9,6 +9,6 @@
   "author": "Chloe Brett <chloebrett@users.noreply.github.com>",
   "license": "MIT",
   "scripts": {
-    "prepare": "husky"
+    "prepare": "./.husky/pre-commit"
   }
 }
