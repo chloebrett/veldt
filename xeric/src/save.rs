@@ -23,6 +23,6 @@ impl SaveNotes for MySaveNotes {
             notes.clone()
             ); 
         println!("Saved {}", name.clone());
-        Ok(tonic::Response::new(SaveNotesReply {reply: String::from("Ok")}))
+        Ok(tonic::Response::new(SaveNotesReply {}))
     }
 }
