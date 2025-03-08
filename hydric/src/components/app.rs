@@ -78,7 +78,13 @@ pub fn App() -> impl IntoView {
                 </AccordionItem>
             </Accordion>
             <h1>"Veldt"</h1>
-            <Playback track=track supersaw_config=supersaw_config resonant_freq=resonant_freq resonance_q=resonance_q resonance_wet=resonance_wet />
+            <Playback
+                track=track
+                supersaw_config=supersaw_config
+                resonant_freq=resonant_freq
+                resonance_q=resonance_q
+                resonance_wet=resonance_wet
+            />
             <ConfigPanel
                 wave=wave_string
                 bpm=bpm_value
@@ -89,7 +95,11 @@ pub fn App() -> impl IntoView {
             />
             <EnvelopePanel attack=attack decay=decay sustain=sustain release=release />
             <DetunePanel osc_count=osc_count detune_cents=detune_cents />
-            <ResonancePanel resonant_freq=resonant_freq resonance_q=resonance_q resonance_wet=resonance_wet />
+            <ResonancePanel
+                resonant_freq=resonant_freq
+                resonance_q=resonance_q
+                resonance_wet=resonance_wet
+            />
             <NotesPanel notes=notes scale_string=scale_string key_string=key_string />
         </ConfigProvider>
     }
