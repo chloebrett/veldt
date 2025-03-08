@@ -2,7 +2,7 @@ use crate::effect::apply_effects;
 use crate::sig::sum;
 use crate::wave::{SupersawConfig, polyphonic_wave};
 use shared::model::{
-    BandPassAlgorithm, Effect, EffectInstance, EffectMeta, EqType, MixerChannel, PassType, Track,
+    BandStopAlgorithm, Effect, EffectInstance, EffectMeta, EqType, MixerChannel, Track,
 };
 use shared::types::{Freq, KnobPosition};
 
@@ -24,24 +24,22 @@ pub fn render(
         },
         meta: EffectMeta { id: 0, wet: 0.5 },
     };
-    let simple_resonator = EffectInstance {
+    let eq = EffectInstance {
         effect: Effect::SimpleEq {
-            kind: EqType::Pass {
-                kind: PassType::Band {
-                    algorithm: BandPassAlgorithm::SimpleResonator,
-                },
+            kind: EqType::BandStop {
+                algorithm: BandStopAlgorithm::SimpleSecondOrder,
             },
 
             freq: resonant_freq,
 
-            q_value: resonance_q, // demonstrative range: 1.0 to 10.0 - but can go lower or higher.
+            q_value: resonance_q,
         },
         meta: EffectMeta {
             id: 1,
             wet: resonance_wet,
         },
     };
-    let effects = vec![delay, simple_resonator];
+    let effects = vec![delay, eq];
     let mixer_channel = MixerChannel { effects };
 
     for sequence in &track.sequences {
