@@ -8,10 +8,6 @@ service SaveNotes {
   rpc SaveNotes (SaveNotesRequest) returns (SaveNotesReply) {}
 }
 
-service LoadNotesList {
-  rpc LoadNotesList (LoadNotesListRequest) returns (LoadNotesListReply) {}
-}
-
 message SaveNotesRequest {
   string name = 1;
   repeated pmodel.NoteProto notes = 2;
@@ -20,11 +16,4 @@ message SaveNotesRequest {
 message SaveNotesReply {
   // Unsure how to best handle empty responses.
   string reply = 1; 
-}
-
-message LoadNotesListRequest {
-}
-
-message LoadNotesListReply {
-    repeated string names = 1;
 }
