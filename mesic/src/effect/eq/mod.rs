@@ -16,7 +16,7 @@ use resonator_simple::*;
 use shared::model::{EqConfig, EqType};
 
 impl ApplyEffect for EqConfig {
-    fn apply(&self, input: &Vec<f32>) -> Vec<f32> {
+    fn apply(&self, input: &[f32]) -> Vec<f32> {
         let filter: Box<dyn ApplyEffect> = match self.kind {
             EqType::SimpleResonator => Box::new(resonator_simple(self)),
             EqType::SmithAngellResonator => Box::new(resonator_smith_angell(self)),

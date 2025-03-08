@@ -7,7 +7,7 @@ pub struct FirstOrderFilter {
 }
 
 impl ApplyEffect for FirstOrderFilter {
-    fn apply(&self, input: &Vec<f32>) -> Vec<f32> {
+    fn apply(&self, input: &[f32]) -> Vec<f32> {
         let mut output: Vec<f32> = vec![0.0];
         for i in 1..input.len() {
             let xn = input[i];
@@ -32,7 +32,7 @@ pub struct SecondOrderFilter {
 }
 
 impl ApplyEffect for SecondOrderFilter {
-    fn apply(&self, input: &Vec<f32>) -> Vec<f32> {
+    fn apply(&self, input: &[f32]) -> Vec<f32> {
         let mut output: Vec<f32> = vec![0.0, 0.0];
         for i in 2..input.len() {
             let xn = input[i];
@@ -59,7 +59,7 @@ pub struct SecondOrderFeedbackFilter {
 }
 
 impl ApplyEffect for SecondOrderFeedbackFilter {
-    fn apply(&self, input: &Vec<f32>) -> Vec<f32> {
+    fn apply(&self, input: &[f32]) -> Vec<f32> {
         let mut output: Vec<f32> = vec![0.0, 0.0];
         for i in 2..input.len() {
             let xn = input[i];

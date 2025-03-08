@@ -1,13 +1,13 @@
 use super::config_panel::ConfigPanel;
 use super::detune_panel::DetunePanel;
-use super::envelope_panel::EnvelopePanel;
+use super::envelope_panel::{EnvelopePanel, TrackedAdsrEnvelope};
 use super::notes_panel::{NoteSignal, NotesPanel};
 use super::playback::Playback;
 use super::resonance_panel::ResonancePanel;
 use super::save_panel::SavePanel;
 use leptos::prelude::*;
 use mesic::{SupersawConfig, create_track};
-use shared::model::{AdsrEnvelope, Scale, ScaleValue, WaveType};
+use shared::model::{Scale, ScaleValue, WaveType};
 use shared::serialize::map_vec;
 use shared::types::{Beats, PitchValue};
 use std::str::FromStr;
@@ -25,11 +25,6 @@ pub fn App() -> impl IntoView {
     let key_string = RwSignal::new(ScaleValue::A.to_string());
     let scale_string = RwSignal::new(Scale::Chromatic.to_string());
 
-    let attack = RwSignal::new(0.1);
-    let decay = RwSignal::new(0.1);
-    let sustain = RwSignal::new(0.8);
-    let release = RwSignal::new(0.2);
-
     let osc_count = RwSignal::new(4u32);
     let detune_cents = RwSignal::new(5.0);
 
@@ -42,12 +37,12 @@ pub fn App() -> impl IntoView {
     let wave = move || WaveType::from_str(&wave_string.get()).unwrap();
     let bpm = move || bpm_value.get();
     let volume = move || (volume_percent.get() / 100.0f64) as f32;
-    let envelope = move || AdsrEnvelope {
-        attack: attack.get(),
-        decay: decay.get(),
-        sustain: sustain.get(),
-        release: release.get(),
-    };
+    let envelope = RwSignal::new_local(TrackedAdsrEnvelope {
+        attack: RwSignal::new(0.1),
+        decay: RwSignal::new(0.1),
+        sustain: RwSignal::new(0.8),
+        release: RwSignal::new(0.2),
+    });
     // TODO: put the supersaw config in Track, etc.
     // Really this is a generator config.
     let supersaw_config = Memo::new(move |_| SupersawConfig {
@@ -62,7 +57,7 @@ pub fn App() -> impl IntoView {
             bpm(),
             volume(),
             transpose_interval.get(),
-            envelope(),
+            envelope.get().into(),
         )
     });
 
@@ -93,7 +88,7 @@ pub fn App() -> impl IntoView {
                 key=key_string
                 scale=scale_string
             />
-            <EnvelopePanel attack=attack decay=decay sustain=sustain release=release />
+            <EnvelopePanel envelope=envelope />
             <DetunePanel osc_count=osc_count detune_cents=detune_cents />
             <ResonancePanel
                 resonant_freq=resonant_freq
