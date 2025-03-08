@@ -1,9 +1,9 @@
-use super::filter::second_order;
+use super::filter::SecondOrderFilter;
 use crate::consts::SAMPLE_RATE;
 use shared::model::EqConfig;
 use std::f32::consts::PI;
 
-pub fn band_pass_basic(config: EqConfig, input: Vec<f32>) -> Vec<f32> {
+pub fn band_pass_basic(config: &EqConfig) -> SecondOrderFilter {
     let fc = config.fc;
     let q = config.q;
     let fs = SAMPLE_RATE as f32;
@@ -20,10 +20,10 @@ pub fn band_pass_basic(config: EqConfig, input: Vec<f32>) -> Vec<f32> {
     let b1: f32 = 2.0 * (k2_q - q) * delta_recip;
     let b2: f32 = (k2_q - k + q) * delta_recip;
 
-    second_order(input, a0, a1, a2, b1, b2)
+    SecondOrderFilter { a0, a1, a2, b1, b2 }
 }
 
-pub fn band_stop_basic(config: EqConfig, input: Vec<f32>) -> Vec<f32> {
+pub fn band_stop_basic(config: &EqConfig) -> SecondOrderFilter {
     let fc = config.fc;
     let q = config.q;
     let fs = SAMPLE_RATE as f32;
@@ -40,5 +40,5 @@ pub fn band_stop_basic(config: EqConfig, input: Vec<f32>) -> Vec<f32> {
     let b1: f32 = a1;
     let b2: f32 = (k2_q - k + q) * delta_recip;
 
-    second_order(input, a0, a1, a2, b1, b2)
+    SecondOrderFilter { a0, a1, a2, b1, b2 }
 }
