@@ -1,0 +1,28 @@
+{
+  "devDependencies": {
+    "concurrently": "^9.1.2",
+    "husky": "^9.1.7"
+  },
+  "name": "veldt",
+  "version": "0.0.1",
+  "main": "index.js",
+  "repository": "git@github.com:chloebrett/veldt.git",
+  "author": "Chloe Brett <chloebrett@users.noreply.github.com>",
+  "license": "MIT",
+  "scripts": {
+    "b": "yarn hb; yarn mb; yarn sb; yarn xb",
+    "l": "yarn hl; yarn ml; yarn sl; yarn xl",
+    "p": "./.husky/pre-commit",
+    "r": "yarn concurrently 'yarn xr' 'yarn hr'",
+    "hb": "cd hydric; cargo build --target=wasm32-unknown-unknown",
+    "hr": "cd hydric; cargo build --target=wasm32-unknown-unknown && trunk serve",
+    "hl": "cd hydric; cargo clippy --target=wasm32-unknown-unknown -- -W clippy:all",
+    "mb": "cd mesic; cargo build",
+    "ml": "cd mesic; cargo clippy -- -W clippy:all",
+    "sb": "cd shared; cargo build",
+    "sl": "cd shared; cargo clippy -- -W clippy:all",
+    "xb": "cd xeric; cargo build",
+    "xr": "cd xeric; cargo run",
+    "xl": "cd xeric; cargo clippy -- -W clippy:all"
+  }
+}
