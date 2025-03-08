@@ -32,83 +32,56 @@ There are some limitations to be aware of when working with WASM:
 * Some dependencies aren't WASM-friendly. Default features need to be disabled, or sometimes the dependencies can't be used at all.
 * The client has only 4 GB of memory.
 
+## Install dependencies
+
+```
+# Protobuf compiler
+apt install -y protobuf-compiler # OS dependent, see https://grpc.io/docs/protoc-installation/
+
+# Yarn (used for easy pre-commit hooks and other commands only)
+npm i -g yarn
+
+# Yarn deps
+yarn
+
+# Rust
+curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh # Or see https://www.rust-lang.org/tools/install
+# Then run `rustup` and follow instructions to install latest rust.
+
+# WASM target
+rustup target add wasm32-unknown-unknown
+
+# Clippy
+rustup component add clippy
+
+# Trunk
+cargo install trunk
+```
+
 ## Commands
 
-### Build and run hydric
-
 ```
-cd hydric
-cargo build --target=wasm32-unknown-unknown
-trunk serve --open # note: need to `cargo install trunk` first
-```
+# Pre-commit hook (will also run automatically before each commit)
+yarn p
 
+# Building
+yarn b # everything
+yarn hb # hydric
+yarn mb # mesic
+yarn sb # shared
+yarn xb # xeric
 
-### Build and run mesic
+# Running
+yarn r # everything (hydric and xeric)
+yarn hr # hydric - note: visit localhost:8080
+yarn xr # xeric
+# Note: mesic and shared can't be run as they're libraries.
+# They get built by implication when hydric/xeric are run.
 
-```
-cd mesic
-cargo build
-cargo run
-# then see 'play rendered sounds' below
-```
-
-### Build and run xeric
-
-```
-cd xeric
-cargo build
-cargo run
-```
-
-### Build shared
-
-Only if necessary - it will be built transitively by xeric/hydric when needed.
-
-```
-cd shared
-cargo build # for xeric
-cargo build --target=wasm32-unknown-unknown # for hydric
-```
-### Experiments / demos
-
-#### GRPC with envoy proxy
-
-see instructions: https://github.com/grpc/grpc-web/blob/master/net/grpc/gateway/examples/helloworld/README.md
-
-grpc-web is in the experimental folder.
-
-#### Play rendered sounds
-
-Install ffplay first.
-
-```
-cd mesic
-ffplay -f f32le -ar 48000 -showmode 1 out.bin
-```
-
-#### Web audio demo
-
-```
-cd experimental/wasm-bindgen/examples/webaudio
-sudo npm i -g webpack
-npm run serve
-# go to localhost:8080
-```
-
-#### Format code
-
-```
-cargo fmt
-cargo install leptosfmt
-cd hydric
-leptosfmt *
-```
-```
-```
-
-#### Lint
-
-```
-rustup component add clippy
-cargo clippy -- -W clippy::all # in appropriate folder
+# Lint
+yarn hl # hydric
+yarn ml # mesic
+yarn sl # shared
+yarn xl # xeric
+yarn l # all
 ```
