@@ -1,4 +1,4 @@
-use crate::model::pitch_name::PitchName;
+use super::pitch_name::PitchName;
 use crate::pmodel::*;
 use crate::types::*;
 

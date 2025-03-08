@@ -1,5 +1,5 @@
 use crate::ScaleValue;
-use shared::model::scale::Scale;
+use shared::model::Scale;
 use shared::types::*;
 
 pub fn create_scale_values(scale: Scale, key: ScaleValue) -> Vec<ScaleValue> {

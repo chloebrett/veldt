@@ -1,14 +1,7 @@
-use shared::model::adsr_envelope::AdsrEnvelope;
-use shared::model::note::Note;
-use shared::model::pitch_name::PitchName;
-use shared::model::project::{
-    BandPassAlgorithm, Effect, EffectInstance, EffectMeta, EqType, MixerChannel, PassType,
+use shared::model::{
+    AdsrEnvelope, BandPassAlgorithm, Effect, EffectInstance, EffectMeta, EqType, MixerChannel,
+    Note, PassType, PitchName, ScaleValue, Sequence, Synth, Track, WaveType,
 };
-use shared::model::scale_value::ScaleValue;
-use shared::model::sequence::Sequence;
-use shared::model::synth::Synth;
-use shared::model::track::Track;
-use shared::model::wave_type::WaveType;
 use shared::types::*;
 use std::cmp::max;
 use std::f32::consts::PI;
