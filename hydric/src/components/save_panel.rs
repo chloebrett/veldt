@@ -1,7 +1,7 @@
-use crate::components::notes_panel::NoteSignal;
+use super::notes_panel::NoteSignal;
 use crate::note_save::save_notes;
 use leptos::prelude::*;
-use shared::model::note::Note;
+use shared::model::Note;
 use shared::serialize::map_vec;
 use thaw::{Button, ButtonAppearance, Card, Field, Input};
 
