@@ -1,7 +1,9 @@
 use shared::model::adsr_envelope::AdsrEnvelope;
 use shared::model::note::Note;
 use shared::model::pitch_name::PitchName;
-use shared::model::project::{Effect, EffectInstance, EffectMeta};
+use shared::model::project::{
+    BandPassAlgorithm, Effect, EffectInstance, EffectMeta, EqType, PassType,
+};
 use shared::model::scale_value::ScaleValue;
 use shared::model::sequence::Sequence;
 use shared::model::synth::Synth;
@@ -125,7 +127,13 @@ fn apply_envelope(x: f32, envelope: &AdsrEnvelope, duration: Beats, bpm: Beats) 
     }
 }
 
-pub fn render(track: &Track, supersaw_config: SupersawConfig) -> Vec<f32> {
+pub fn render(
+    track: &Track,
+    supersaw_config: SupersawConfig,
+    resonant_freq: Freq,
+    resonance_q: KnobPosition,
+    resonance_wet: KnobPosition,
+) -> Vec<f32> {
     let bpm = track.bpm;
     let mut total_wave: Vec<f32> = vec![];
 
@@ -137,7 +145,24 @@ pub fn render(track: &Track, supersaw_config: SupersawConfig) -> Vec<f32> {
         },
         meta: EffectMeta { id: 0, wet: 0.5 },
     };
-    let effects = vec![delay];
+    let simple_resonator = EffectInstance {
+        effect: Effect::SimpleEq {
+            kind: EqType::Pass {
+                kind: PassType::Band {
+                    algorithm: BandPassAlgorithm::SimpleResonator,
+                },
+            },
+
+            freq: resonant_freq,
+
+            q_value: resonance_q, // demonstrative range: 1.0 to 10.0 - but can go lower or higher.
+        },
+        meta: EffectMeta {
+            id: 1,
+            wet: resonance_wet,
+        },
+    };
+    let effects = vec![simple_resonator];
 
     for sequence in &track.sequences {
         // TODO: use the offset value instead of ignoring.
@@ -181,6 +206,17 @@ fn apply_effect(dry_signal: Vec<f32>, effect: EffectInstance) -> Vec<f32> {
             amplitude,
             delay_ms,
         } => apply_delay(dry_signal.clone(), amplitude, delay_ms),
+        Effect::SimpleEq {
+            kind:
+                EqType::Pass {
+                    kind:
+                        PassType::Band {
+                            algorithm: BandPassAlgorithm::SimpleResonator,
+                        },
+                },
+            freq,
+            q_value,
+        } => apply_simple_resonator(dry_signal.clone(), freq, q_value),
         _ => panic!("Effect not implemented yet!"),
     };
 
@@ -204,6 +240,31 @@ fn apply_delay(dry_signal: Vec<f32>, amplitude: Volume, delay_ms: Milliseconds) 
     wet_signal.extend(dry_signal);
 
     mult(wet_signal, amplitude)
+}
+
+fn apply_simple_resonator(dry_signal: Vec<f32>, fc: Freq, q_value: KnobPosition) -> Vec<f32> {
+    let fs = SAMPLE_RATE as f32;
+    let theta = TAU * fc / fs;
+    let bandwidth = fc / q_value;
+
+    // See "Designing Audio Effect Plugins in C++", W. Pirkle, p259
+    let b2 = (-TAU * bandwidth / fs).exp();
+    let b1 = (-4.0 * b2) / (1.0 + b2) * theta.cos();
+    let a0 = (1.0 - b2) * (1.0 - ((b1 * b1) / (4.0 * b2))).sqrt();
+
+    // Pre-fill with two zero values as filling the vec depends on its previous values.
+    let mut output: Vec<f32> = vec![0.0, 0.0];
+    for i in 2..dry_signal.len() {
+        let xn = dry_signal[i];
+        let yn1 = output[i - 1];
+        let yn2 = output[i - 2];
+        let yn = a0 * xn - b1 * yn1 - b2 * yn2;
+
+        output.push(yn);
+    }
+
+    output.drain(0..2);
+    output
 }
 
 #[derive(Clone, PartialEq)]

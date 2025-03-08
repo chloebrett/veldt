@@ -2,7 +2,7 @@ use std::f32::consts::PI;
 
 use crate::WaveType;
 
-const TAU: f32 = 2.0 * PI;
+pub const TAU: f32 = 2.0 * PI;
 const HALF_PI: f32 = 0.5 * PI;
 const INV_HALF_PI: f32 = HALF_PI.recip();
 
