@@ -1,5 +1,5 @@
-use shared::model::pitch_name::PitchName;
-use shared::model::scale_value::ScaleValue;
+use shared::model::PitchName;
+use shared::model::ScaleValue;
 use shared::types::Freq;
 
 pub struct ReferencePitch<'a> {

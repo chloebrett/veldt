@@ -1,4 +1,4 @@
-use shared::model::note::Note;
+use shared::model::Note;
 use shared::save_notes::{SaveNotesRequest, save_notes_client::SaveNotesClient};
 use tonic_web_wasm_client::Client;
 
