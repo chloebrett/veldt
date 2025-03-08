@@ -26,7 +26,15 @@ pub fn Playback(
                     on_click=move |_| {
                         set_player
                             .set(
-                                AudioPlayer::new(&local_render(&track.get(), supersaw_config.get(), resonant_freq.get(), resonance_q.get(), resonance_wet.get()))
+                                AudioPlayer::new(
+                                        &local_render(
+                                            &track.get(),
+                                            supersaw_config.get(),
+                                            resonant_freq.get(),
+                                            resonance_q.get(),
+                                            resonance_wet.get(),
+                                        ),
+                                    )
                                     .unwrap()
                                     .into(),
                             );
