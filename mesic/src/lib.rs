@@ -2,7 +2,7 @@ use shared::model::adsr_envelope::AdsrEnvelope;
 use shared::model::note::Note;
 use shared::model::pitch_name::PitchName;
 use shared::model::project::{
-    BandPassAlgorithm, Effect, EffectInstance, EffectMeta, EqType, PassType,
+    BandPassAlgorithm, Effect, EffectInstance, EffectMeta, EqType, MixerChannel, PassType,
 };
 use shared::model::scale_value::ScaleValue;
 use shared::model::sequence::Sequence;
@@ -13,9 +13,13 @@ use shared::types::*;
 use std::cmp::max;
 use std::f32::consts::PI;
 
+mod consts;
+mod envelope;
 pub mod scale;
 mod wave;
 
+use crate::consts::*;
+use crate::envelope::*;
 use crate::wave::*;
 
 pub fn create_track(
@@ -29,14 +33,14 @@ pub fn create_track(
     let synth = Synth {
         wave,
         envelope,
-        volume: volume,
+        volume,
     };
     Track {
         bpm,
         synths: vec![synth],
         sequences: vec![Sequence {
             offset: 0.,
-            volume: volume,
+            volume,
             synth_index: 0,
             notes: notes
                 .into_iter()
@@ -66,26 +70,11 @@ fn sum(a: Vec<f32>, b: Vec<f32>) -> Vec<f32> {
     output
 }
 
-struct ReferencePitch<'a> {
-    pitch_name: &'a PitchName,
-    frequency: Freq,
-}
-
-const REFERENCE_PITCH: ReferencePitch<'static> = ReferencePitch {
-    pitch_name: &PitchName {
-        scale_value: ScaleValue::A,
-        octave: 4,
-    },
-    frequency: 440.0,
-};
-
-const SAMPLE_RATE: i32 = 44_100;
-
 // Returns the frequency based on the distance from reference pitch.
-fn freq(pitch_name: &PitchName) -> Freq {
-    let reference_value = <PitchName as Into<PitchValue>>::into(REFERENCE_PITCH.pitch_name.clone());
-    let other_value = <PitchName as Into<PitchValue>>::into(pitch_name.clone());
-    let interval = other_value - reference_value;
+fn freq(pitch_name: PitchName) -> Freq {
+    let pitch: PitchValue = pitch_name.into();
+    let reference: PitchValue = (*REFERENCE_PITCH.pitch_name).into();
+    let interval: PitchValue = pitch - reference;
 
     // powf can't be run at compile time.
     // TODO: make this only run once.
@@ -99,32 +88,6 @@ fn detune_multiplier(cents: f32) -> Freq {
     // TODO: de-duplicate this.
     let semitone_increment: f32 = 2.0_f32.powf(1.0 / 12.0);
     semitone_increment.powf(interval)
-}
-
-fn apply_envelope(x: f32, envelope: &AdsrEnvelope, duration: Beats, bpm: Beats) -> f32 {
-    if duration < envelope.attack + envelope.decay + envelope.release {
-        panic!(
-            "Envelope {:?} was too short for duration {}",
-            envelope, duration
-        );
-    }
-
-    let scale = bpm / 60.0 / duration;
-    let x = x * scale / (SAMPLE_RATE as f32) as f32;
-
-    if x < envelope.attack {
-        // in attack
-        x / envelope.attack
-    } else if x < envelope.attack + envelope.decay {
-        // in decay
-        (envelope.attack - x) / envelope.decay * (1.0 - envelope.sustain) + 1.0
-    } else if x < duration - envelope.release {
-        // in sustain
-        envelope.sustain
-    } else {
-        // in release
-        (duration - x) / envelope.release * envelope.sustain
-    }
 }
 
 pub fn render(
@@ -162,7 +125,8 @@ pub fn render(
             wet: resonance_wet,
         },
     };
-    let effects = vec![simple_resonator];
+    let effects = vec![delay, simple_resonator];
+    let mixer_channel = MixerChannel { effects };
 
     for sequence in &track.sequences {
         // TODO: use the offset value instead of ignoring.
@@ -187,7 +151,7 @@ pub fn render(
         total_wave = sum(total_wave, sequence_wave);
     }
 
-    apply_effects(total_wave, effects)
+    apply_effects(total_wave, mixer_channel.effects)
 }
 
 fn apply_effects(signal: Vec<f32>, effects: Vec<EffectInstance>) -> Vec<f32> {
@@ -321,7 +285,8 @@ fn wave(
     wave_type: WaveType,
     detune_cents: f32,
 ) -> Vec<f32> {
-    let step = freq(pitch_name) * detune_multiplier(detune_cents) * 2.0 * PI / (SAMPLE_RATE as f32);
+    let step =
+        freq(*pitch_name) * detune_multiplier(detune_cents) * 2.0 * PI / (SAMPLE_RATE as f32);
     let range = 0..(SAMPLE_RATE as f32 * beats / bpm * 60.0) as i32;
 
     range
