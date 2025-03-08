@@ -1,7 +1,7 @@
 use super::filter::second_order_feedback;
 use crate::consts::SAMPLE_RATE;
-use std::f32::consts::TAU;
 use shared::model::EqConfig;
+use std::f32::consts::TAU;
 
 pub fn resonator_simple(config: EqConfig, input: Vec<f32>) -> Vec<f32> {
     let fs = SAMPLE_RATE as f32;

@@ -1,7 +1,7 @@
 use super::filter::second_order;
-use std::f32::consts::PI;
 use crate::consts::SAMPLE_RATE;
 use shared::model::EqConfig;
+use std::f32::consts::PI;
 
 pub fn band_pass_basic(config: EqConfig, input: Vec<f32>) -> Vec<f32> {
     let fc = config.fc;

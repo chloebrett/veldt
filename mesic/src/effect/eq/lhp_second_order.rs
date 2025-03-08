@@ -1,8 +1,8 @@
-use super::low_high::LowHigh;
 use super::filter::second_order;
-use std::f32::consts::TAU;
+use super::low_high::LowHigh;
 use crate::consts::SAMPLE_RATE;
 use shared::model::EqConfig;
+use std::f32::consts::TAU;
 
 pub fn lhp_second_order(config: EqConfig, input: Vec<f32>, low_high: LowHigh) -> Vec<f32> {
     let fs = SAMPLE_RATE as f32;
