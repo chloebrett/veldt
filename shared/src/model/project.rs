@@ -124,7 +124,7 @@ pub enum Effect {
     },
 }
 
-enum EqType {
+pub enum EqType {
     Pass { kind: PassType },
     Notch,
     Shelf { kind: ShelfType, amount: Decibels },
@@ -136,7 +136,7 @@ enum ShelfType {
     High,
 }
 
-enum PassType {
+pub enum PassType {
     Low {
         algorithm: LowHighPassAlgorithm,
     },
@@ -153,7 +153,7 @@ enum PassType {
     All,
 }
 
-enum BandPassAlgorithm {
+pub enum BandPassAlgorithm {
     /// A simple and efficient conjugate pole resonator. Suffers from asymmetry in its response.
     SimpleResonator,
 
