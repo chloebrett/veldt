@@ -6,6 +6,7 @@ mod components;
 mod egui_app;
 mod egui_init;
 mod note_save;
+mod state;
 
 use crate::components::App;
 use crate::egui_init::egui_init;
