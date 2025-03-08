@@ -1,5 +1,8 @@
 use shared::model::Note;
-use shared::save_notes::{SaveNotesRequest, save_notes_client::SaveNotesClient};
+use shared::save_notes::{
+    LoadNotesListRequest, SaveNotesRequest, load_notes_list_client::LoadNotesListClient,
+    save_notes_client::SaveNotesClient,
+};
 use tonic_web_wasm_client::Client;
 
 pub async fn save_notes(name: String, notes: Vec<Note>) {
@@ -13,4 +16,13 @@ pub async fn save_notes(name: String, notes: Vec<Note>) {
             notes: notes.iter().map(|&note| note.into()).collect(),
         })
         .await;
+}
+
+pub async fn load_note_list() -> Vec<String> {
+    let base_url = "http://127.0.0.1:3000".to_string();
+    let wasm_client = Client::new(base_url);
+    let mut grpc = LoadNotesListClient::new(wasm_client);
+
+    let result = grpc.load_notes_list(LoadNotesListRequest {}).await;
+    result.unwrap().into_inner().names
 }

@@ -4,6 +4,7 @@ use mesic::{SupersawConfig, render};
 use shared::bytes::as_bytes;
 use shared::render::render_server::{Render, RenderServer};
 use shared::render::{RenderReply, RenderRequest};
+use shared::save_notes::load_notes_list_server::LoadNotesListServer;
 use shared::save_notes::save_notes_server::SaveNotesServer;
 use shared::types::{Freq, KnobPosition};
 use std::collections::HashMap;
@@ -56,6 +57,9 @@ pub async fn start_server() -> anyhow::Result<()> {
     let save_notes = SaveNotesServer::new(MySaveNotes {
         values: Arc::clone(&saved_notes),
     });
+    let load_notes_list = LoadNotesListServer::new(MySaveNotes {
+        values: Arc::clone(&saved_notes),
+    });
 
     tonic::transport::Server::builder()
         .accept_http1(true)
@@ -69,6 +73,7 @@ pub async fn start_server() -> anyhow::Result<()> {
         .layer(GrpcWebLayer::new())
         .add_service(render)
         .add_service(save_notes)
+        .add_service(load_notes_list)
         .serve(addr)
         .await?;
 

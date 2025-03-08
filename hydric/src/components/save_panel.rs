@@ -1,18 +1,27 @@
 use super::notes_panel::NoteSignal;
-use crate::note_save::save_notes;
+use crate::note_save::{load_note_list, save_notes};
 use leptos::prelude::*;
 use shared::model::Note;
 use shared::serialize::map_vec;
 use thaw::{Button, ButtonAppearance, Card, Field, Input};
 
 #[component]
-pub fn SavePanel(notes: RwSignal<Vec<NoteSignal>>) -> impl IntoView {
+pub fn SavePanel(
+    notes: RwSignal<Vec<NoteSignal>>,
+    saved_note_names: RwSignal<Vec<String>>,
+) -> impl IntoView {
     let save_string = RwSignal::new(String::from("My Song"));
 
     let save = Action::new_local(|input: &(String, Vec<Note>)| {
         let input = input.to_owned();
         async move { save_notes(input.0, input.1).await }
     });
+
+    let load =
+        Action::new_local(
+            move |_: &()| async move { saved_note_names.set(load_note_list().await) },
+        );
+
     view! {
         <Card>
             <Field label="Save Name">
@@ -24,6 +33,7 @@ pub fn SavePanel(notes: RwSignal<Vec<NoteSignal>>) -> impl IntoView {
                     let save_name = save_string.get();
                     let save_notes = map_vec::<NoteSignal, Note>(notes.get());
                     save.dispatch((save_name, save_notes));
+                    load.dispatch(());
                 }
             >
                 "Save"

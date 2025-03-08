@@ -16,6 +16,7 @@ use thaw::{Accordion, AccordionHeader, AccordionItem, ConfigProvider};
 #[component]
 pub fn App() -> impl IntoView {
     let notes = RwSignal::<Vec<NoteSignal>>::new(vec![]);
+    let saved_notes_names = RwSignal::<Vec<String>>::new(vec![String::from("My Song")]);
 
     let wave_string = RwSignal::new(WaveType::Sine.to_string());
     let bpm_value = RwSignal::<Beats>::new(120.0);
@@ -78,6 +79,7 @@ pub fn App() -> impl IntoView {
             <h1>"Veldt"</h1>
             <Playback
                 track=track
+                saved_notes_names=saved_notes_names
                 supersaw_config=supersaw_config
                 resonant_freq=resonant_freq
                 resonance_q=resonance_q
@@ -99,7 +101,7 @@ pub fn App() -> impl IntoView {
                 resonance_wet=resonance_wet
             />
             <NotesPanel notes=notes scale_string=scale_string key_string=key_string />
-            <SavePanel notes=notes />
+            <SavePanel notes=notes saved_note_names=saved_notes_names />
         </ConfigProvider>
     }
 }
