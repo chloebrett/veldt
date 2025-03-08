@@ -1,14 +1,19 @@
-use std::net::SocketAddr;
-
+use crate::save::MySaveNotes;
 use http::{HeaderValue, Method};
 use mesic::{SupersawConfig, render};
 use shared::bytes::as_bytes;
 use shared::render::render_server::{Render, RenderServer};
 use shared::render::{RenderReply, RenderRequest};
+use shared::save_notes::save_notes_server::SaveNotesServer;
 use shared::types::{Freq, KnobPosition};
+use std::collections::HashMap;
+use std::net::SocketAddr;
+use std::sync::{Arc, Mutex};
 use tonic::async_trait;
 use tonic_web::GrpcWebLayer;
 use tower_http::cors::AllowHeaders;
+
+pub mod save;
 
 struct MyRender;
 
@@ -47,6 +52,10 @@ pub async fn start_server() -> anyhow::Result<()> {
     let addr = SocketAddr::from(([0, 0, 0, 0], 3000));
 
     let render = RenderServer::new(MyRender);
+    let saved_notes = Arc::new(Mutex::new(HashMap::new()));
+    let save_notes = SaveNotesServer::new(MySaveNotes {
+        values: Arc::clone(&saved_notes),
+    });
 
     tonic::transport::Server::builder()
         .accept_http1(true)
@@ -59,6 +68,7 @@ pub async fn start_server() -> anyhow::Result<()> {
         )
         .layer(GrpcWebLayer::new())
         .add_service(render)
+        .add_service(save_notes)
         .serve(addr)
         .await?;
 

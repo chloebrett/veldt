@@ -4,6 +4,7 @@ use crate::components::envelope_panel::EnvelopePanel;
 use crate::components::notes_panel::{NoteSignal, NotesPanel};
 use crate::components::playback::Playback;
 use crate::components::resonance_panel::ResonancePanel;
+use crate::components::save_panel::SavePanel;
 use leptos::prelude::*;
 use mesic::{SupersawConfig, create_track};
 use shared::model::adsr_envelope::AdsrEnvelope;
@@ -101,6 +102,7 @@ pub fn App() -> impl IntoView {
                 resonance_wet=resonance_wet
             />
             <NotesPanel notes=notes scale_string=scale_string key_string=key_string />
+            <SavePanel notes=notes />
         </ConfigProvider>
     }
 }
