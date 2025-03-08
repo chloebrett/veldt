@@ -1,5 +1,5 @@
 use crate::consts::SAMPLE_RATE;
-use shared::model::adsr_envelope::AdsrEnvelope;
+use shared::model::AdsrEnvelope;
 use shared::types::Beats;
 
 pub fn apply_envelope(x: f32, envelope: &AdsrEnvelope, duration: Beats, bpm: Beats) -> f32 {
