@@ -1,4 +1,4 @@
-pub fn first_degree_filter(input: Vec<f32>, a0: f32, a1: f32, b1: f32) -> Vec<f32> {
+pub fn first_order(input: Vec<f32>, a0: f32, a1: f32, b1: f32) -> Vec<f32> {
     let mut output: Vec<f32> = vec![0.0];
     for i in 1..input.len() {
         let xn = input[i];
@@ -13,14 +13,7 @@ pub fn first_degree_filter(input: Vec<f32>, a0: f32, a1: f32, b1: f32) -> Vec<f3
     output
 }
 
-pub fn second_degree_filter(
-    input: Vec<f32>,
-    a0: f32,
-    a1: f32,
-    a2: f32,
-    b1: f32,
-    b2: f32,
-) -> Vec<f32> {
+pub fn second_order(input: Vec<f32>, a0: f32, a1: f32, a2: f32, b1: f32, b2: f32) -> Vec<f32> {
     let mut output: Vec<f32> = vec![0.0, 0.0];
     for i in 2..input.len() {
         let xn = input[i];
@@ -38,8 +31,8 @@ pub fn second_degree_filter(
 }
 
 /// A second degree filter which doesn't rely on previous input values.
-/// Special case of second_degree_filter.
-pub fn second_degree_feedback_filter(input: Vec<f32>, a0: f32, b1: f32, b2: f32) -> Vec<f32> {
+/// Special case of second_order.
+pub fn second_order_feedback(input: Vec<f32>, a0: f32, b1: f32, b2: f32) -> Vec<f32> {
     let mut output: Vec<f32> = vec![0.0, 0.0];
     for i in 2..input.len() {
         let xn = input[i];
