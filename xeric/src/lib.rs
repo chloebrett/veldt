@@ -8,6 +8,7 @@ use shared::save_notes::save_notes_server::SaveNotesServer;
 use std::collections::HashMap;
 use std::net::SocketAddr;
 use std::sync::{Arc, Mutex};
+use shared::types::{Freq, KnobPosition};
 use tonic::async_trait;
 use tonic_web::GrpcWebLayer;
 use tower_http::cors::AllowHeaders;
@@ -27,12 +28,21 @@ impl Render for MyRender {
 
             detune_cents: 0.0,
         };
+        let resonant_freq: Freq = 1000.0;
+        let resonance_q: KnobPosition = 1.0;
+        let resonance_wet: KnobPosition = 1.0;
 
         let track = request
             .into_inner()
             .track
             .ok_or(tonic::Status::invalid_argument("Track must be supplied"))?;
-        let bytes = as_bytes(&render(&track.into(), supersaw_config));
+        let bytes = as_bytes(&render(
+            &track.into(),
+            supersaw_config,
+            resonant_freq,
+            resonance_q,
+            resonance_wet,
+        ));
 
         Ok(tonic::Response::new(RenderReply { audio: bytes }))
     }

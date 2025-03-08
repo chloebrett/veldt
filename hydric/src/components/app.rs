@@ -4,6 +4,7 @@ use crate::components::envelope_panel::EnvelopePanel;
 use crate::components::notes_panel::{NoteSignal, NotesPanel};
 use crate::components::playback::Playback;
 use crate::components::save_panel::SavePanel;
+use crate::components::resonance_panel::ResonancePanel;
 use leptos::prelude::*;
 use mesic::{SupersawConfig, create_track};
 use shared::model::adsr_envelope::AdsrEnvelope;
@@ -33,6 +34,10 @@ pub fn App() -> impl IntoView {
 
     let osc_count = RwSignal::new(4u32);
     let detune_cents = RwSignal::new(5.0);
+
+    let resonant_freq = RwSignal::new(2000.0);
+    let resonance_q = RwSignal::new(1.0);
+    let resonance_wet = RwSignal::new(1.0);
 
     // TODO: instead of using a dependent signal, consider implementing
     // the appropriate From trait.
@@ -74,7 +79,13 @@ pub fn App() -> impl IntoView {
                 </AccordionItem>
             </Accordion>
             <h1>"Veldt"</h1>
-            <Playback track=track supersaw_config=supersaw_config />
+            <Playback
+                track=track
+                supersaw_config=supersaw_config
+                resonant_freq=resonant_freq
+                resonance_q=resonance_q
+                resonance_wet=resonance_wet
+            />
             <ConfigPanel
                 wave=wave_string
                 bpm=bpm_value
@@ -85,6 +96,11 @@ pub fn App() -> impl IntoView {
             />
             <EnvelopePanel attack=attack decay=decay sustain=sustain release=release />
             <DetunePanel osc_count=osc_count detune_cents=detune_cents />
+            <ResonancePanel
+                resonant_freq=resonant_freq
+                resonance_q=resonance_q
+                resonance_wet=resonance_wet
+            />
             <NotesPanel notes=notes scale_string=scale_string key_string=key_string />
             <SavePanel notes=notes />
         </ConfigProvider>

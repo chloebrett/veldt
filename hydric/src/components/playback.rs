@@ -6,7 +6,13 @@ use shared::model::track::Track;
 use thaw::{Button, ButtonAppearance, Card, Space};
 
 #[component]
-pub fn Playback(track: Memo<Track>, supersaw_config: Memo<SupersawConfig>) -> impl IntoView {
+pub fn Playback(
+    track: Memo<Track>,
+    supersaw_config: Memo<SupersawConfig>,
+    resonant_freq: RwSignal<f32>,
+    resonance_q: RwSignal<f32>,
+    resonance_wet: RwSignal<f32>,
+) -> impl IntoView {
     let (_, set_player) = signal_local(None::<AudioPlayer>);
 
     // Continually re-request audio from the server then the wave type changes.
@@ -20,7 +26,15 @@ pub fn Playback(track: Memo<Track>, supersaw_config: Memo<SupersawConfig>) -> im
                     on_click=move |_| {
                         set_player
                             .set(
-                                AudioPlayer::new(&local_render(&track.get(), supersaw_config.get()))
+                                AudioPlayer::new(
+                                        &local_render(
+                                            &track.get(),
+                                            supersaw_config.get(),
+                                            resonant_freq.get(),
+                                            resonance_q.get(),
+                                            resonance_wet.get(),
+                                        ),
+                                    )
                                     .unwrap()
                                     .into(),
                             );

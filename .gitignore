@@ -29,3 +29,5 @@ hydric/dist/
 
 # Temp files
 out.bin
+
+node_modules/
