@@ -1,10 +1,5 @@
-<<<<<<< HEAD
 use shared::model::note::Note;
 use shared::save_notes::{LoadNotesListRequest, load_notes_list_client::LoadNotesListClient, SaveNotesRequest, save_notes_client::SaveNotesClient};
-=======
-use shared::model::Note;
-use shared::save_notes::{SaveNotesRequest, save_notes_client::SaveNotesClient};
->>>>>>> main
 use tonic_web_wasm_client::Client;
 
 pub async fn save_notes(name: String, notes: Vec<Note>) {
