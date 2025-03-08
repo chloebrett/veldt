@@ -1,7 +1,7 @@
-use std::f32::consts::PI;
-use shared::types::Freq;
-use shared::model::adsr_envelope::AdsrEnvelope;
 use crate::WaveType;
+use shared::model::adsr_envelope::AdsrEnvelope;
+use shared::types::Freq;
+use std::f32::consts::PI;
 
 pub const TAU: f32 = 2.0 * PI;
 const HALF_PI: f32 = 0.5 * PI;
