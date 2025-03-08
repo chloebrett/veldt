@@ -1,16 +1,16 @@
-use std::net::SocketAddr;
-use shared::save_notes::save_notes_server::SaveNotesServer;
+use crate::save::MySaveNotes;
 use http::{HeaderValue, Method};
 use mesic::{SupersawConfig, render};
 use shared::bytes::as_bytes;
 use shared::render::render_server::{Render, RenderServer};
 use shared::render::{RenderReply, RenderRequest};
+use shared::save_notes::save_notes_server::SaveNotesServer;
+use std::collections::HashMap;
+use std::net::SocketAddr;
+use std::sync::{Arc, Mutex};
 use tonic::async_trait;
 use tonic_web::GrpcWebLayer;
 use tower_http::cors::AllowHeaders;
-use crate::save::MySaveNotes;
-use std::collections::HashMap;
-use std::sync::{Arc, Mutex};
 
 pub mod save;
 
@@ -43,8 +43,8 @@ pub async fn start_server() -> anyhow::Result<()> {
 
     let render = RenderServer::new(MyRender);
     let saved_notes = Arc::new(Mutex::new(HashMap::new()));
-    let save_notes = SaveNotesServer::new(MySaveNotes{
-        values: Arc::clone(&saved_notes)
+    let save_notes = SaveNotesServer::new(MySaveNotes {
+        values: Arc::clone(&saved_notes),
     });
 
     tonic::transport::Server::builder()
