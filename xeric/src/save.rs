@@ -1,7 +1,6 @@
 use shared::save_notes::save_notes_server::SaveNotes;
-use shared::save_notes::load_notes_list_server::LoadNotesList;
 use shared::pmodel::NoteProto;
-use shared::save_notes::{SaveNotesReply, SaveNotesRequest, LoadNotesListRequest, LoadNotesListReply};
+use shared::save_notes::{SaveNotesReply, SaveNotesRequest};
 use std::collections::HashMap;
 use tonic::async_trait;
 use std::sync::{Arc, Mutex};
@@ -25,16 +24,5 @@ impl SaveNotes for MySaveNotes {
             ); 
         println!("Saved {}", name.clone());
         Ok(tonic::Response::new(SaveNotesReply {reply: String::from("Ok")}))
-    }
-}
-
-#[async_trait]
-impl LoadNotesList for MySaveNotes {
-    async fn load_notes_list(
-        self: & Self,
-        _request: tonic::Request<LoadNotesListRequest>,
-    ) -> Result<tonic::Response<LoadNotesListReply>, tonic::Status> {
-        let list = self.values.lock().unwrap().keys().cloned().collect();
-        Ok(tonic::Response::new(LoadNotesListReply {names: list}))
     }
 }

@@ -3,7 +3,7 @@ use shared::model::note::Note;
 use leptos::prelude::*;
 use crate::components::notes_panel::NoteSignal;
 use crate::note_save::save_notes;
-use thaw::{Button, FieldContextProvider, ButtonAppearance, Input, Field, Card, Space};
+use thaw::{Button, ButtonAppearance, Input, Field, Card};
 
 #[component]
 pub fn SavePanel (
