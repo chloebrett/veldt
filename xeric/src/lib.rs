@@ -1,41 +1,21 @@
 use std::net::SocketAddr;
-use std::collections::HashMap;
-use std::sync::Mutex;
-
+use shared::save_notes::save_notes_server::SaveNotesServer;
+use shared::save_notes::load_notes_list_server::LoadNotesListServer;
 use http::{HeaderValue, Method};
 use mesic::{SupersawConfig, render};
 use shared::bytes::as_bytes;
 use shared::render::render_server::{Render, RenderServer};
-use shared::save_notes::save_notes_server::{SaveNotes, SaveNotesServer};
-use shared::pmodel::NoteProto;
-use shared::save_notes::{SaveNotesReply, SaveNotesRequest};
 use shared::render::{RenderReply, RenderRequest};
 use tonic::async_trait;
 use tonic_web::GrpcWebLayer;
 use tower_http::cors::AllowHeaders;
+use crate::save::MySaveNotes;
+use std::collections::HashMap;
+use std::sync::{Arc, Mutex};
 
+pub mod save;
 
 struct MyRender;
-struct MySaveNotes {
-    values: SavedNotes
-}
-type SavedNotes = Mutex<HashMap::<String, Vec<NoteProto>>>;
-
-#[async_trait]
-impl SaveNotes for MySaveNotes {
-    async fn save_notes(
-        self: & Self,
-        request: tonic::Request<SaveNotesRequest>,
-    ) -> Result<tonic::Response<SaveNotesReply>, tonic::Status> {
-        let SaveNotesRequest {name, notes} = request
-            .into_inner();
-        self.values.lock().unwrap().insert(
-            name,
-            notes
-            ); 
-        Ok(tonic::Response::new(SaveNotesReply {reply: String::from("Ok")}))
-    }
-}
 
 #[async_trait]
 impl Render for MyRender {
@@ -63,8 +43,12 @@ pub async fn start_server() -> anyhow::Result<()> {
     let addr = SocketAddr::from(([0, 0, 0, 0], 3000));
 
     let render = RenderServer::new(MyRender);
-    let save_notes = SaveNotesServer::new(MySaveNotes {
-        values: Mutex::new(HashMap::new())
+    let saved_notes = Arc::new(Mutex::new(HashMap::new()));
+    let save_notes = SaveNotesServer::new(MySaveNotes{
+        values: Arc::clone(&saved_notes)
+    });
+    let load_notes_list = LoadNotesListServer::new(MySaveNotes{
+        values: Arc::clone(&saved_notes)
     });
 
     tonic::transport::Server::builder()
@@ -79,6 +63,7 @@ pub async fn start_server() -> anyhow::Result<()> {
         .layer(GrpcWebLayer::new())
         .add_service(render)
         .add_service(save_notes)
+        .add_service(load_notes_list)
         .serve(addr)
         .await?;
 
