@@ -5,8 +5,10 @@ use crate::sig::{mult, sum};
 use shared::model::{Effect, EffectInstance};
 use shared::types::KnobPosition;
 
-pub trait EffectFilter {
-    fn apply(self, input: Vec<f32>) -> Vec<f32>;
+/// Trait corresponding to something that knows how to apply an effect.
+/// Implemented for the various effect config types by the various effect plugins.
+pub trait ApplyEffect {
+    fn apply(&self, input: &Vec<f32>) -> Vec<f32>;
 }
 
 pub fn apply_effects(signal: Vec<f32>, effects: Vec<EffectInstance>) -> Vec<f32> {
@@ -26,8 +28,8 @@ fn mix(dry: Vec<f32>, wet: Vec<f32>, ratio: KnobPosition) -> Vec<f32> {
 
 fn apply_effect(dry_signal: Vec<f32>, effect: EffectInstance) -> Vec<f32> {
     let wet_signal = match effect.effect {
-        Effect::SimpleDelay { config } => config.apply(dry_signal.clone()),
-        Effect::SimpleEq { config } => config.apply(dry_signal.clone()),
+        Effect::SimpleDelay { config } => config.apply(&dry_signal),
+        Effect::SimpleEq { config } => config.apply(&dry_signal),
         _ => panic!("Effect not implemented yet!"),
     };
 
