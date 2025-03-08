@@ -1,9 +1,9 @@
-use crate::audio_player::AudioPlayer;
+use crate::{audio_player::AudioPlayer, note_save::load_note_list};
 use crate::audio_render::render as server_render;
 use leptos::prelude::*;
 use mesic::{SupersawConfig, render as local_render};
 use shared::model::track::Track;
-use thaw::{Button, ButtonAppearance, Card, Space};
+use thaw::{Button, ButtonAppearance, Card, Select, Space};
 
 #[component]
 pub fn Playback(
@@ -17,6 +17,16 @@ pub fn Playback(
 
     // Continually re-request audio from the server then the wave type changes.
     let server_audio = LocalResource::new(move || server_render(track.get().clone()));
+
+    let saved_notes_name = RwSignal::new(String::from("My Song")); 
+    
+    let load_saved_names = LocalResource::new(move || load_note_list());
+    let load = move || {
+        load_saved_names
+            .get()
+            .map(|name| name.take())
+            .unwrap_or_else(|| vec!(saved_notes_name.get()))
+    };
 
     view! {
         <Card>
@@ -66,6 +76,25 @@ pub fn Playback(
                                 }
                             })
                     }}
+                </Suspense>
+                <Suspense fallback=move || {
+                    view! {
+                        <Select disabled=true value=saved_notes_name>
+                            <option>{saved_notes_name.get()}</option>
+                        </Select>
+                    }
+                }>
+                    <Select value=saved_notes_name>
+                        <For
+                            each=load
+                            key=|name| name.clone()
+                            children= move |name| {
+                                view! {
+                                    <option>{name}</option>
+                                }
+                            }
+                        />
+                    </Select>
                 </Suspense>
             </Space>
         </Card>
