@@ -1,10 +1,14 @@
 use super::filter::first_degree_filter;
+use super::low_high::LowHigh;
 use crate::consts::SAMPLE_RATE;
 use shared::types::Freq;
 use std::f32::consts::TAU;
-use super::low_high::LowHigh;
 
-pub fn apply_low_high_pass_basic_first_order(dry_signal: Vec<f32>, fc: Freq, low_high: LowHigh) -> Vec<f32> {
+pub fn apply_low_high_pass_basic_first_order(
+    dry_signal: Vec<f32>,
+    fc: Freq,
+    low_high: LowHigh,
+) -> Vec<f32> {
     let fs = SAMPLE_RATE as f32;
     let theta = TAU * fc / fs;
 

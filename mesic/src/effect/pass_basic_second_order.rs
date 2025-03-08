@@ -1,8 +1,8 @@
 use super::filter::second_degree_filter;
+use super::low_high::LowHigh;
 use crate::consts::SAMPLE_RATE;
 use shared::types::{Freq, KnobPosition};
 use std::f32::consts::{PI, TAU};
-use super::low_high::LowHigh;
 
 pub fn apply_low_high_pass_basic_second_order(
     dry_signal: Vec<f32>,

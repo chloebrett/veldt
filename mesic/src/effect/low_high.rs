@@ -3,4 +3,3 @@ pub enum LowHigh {
     Low,
     High,
 }
-
