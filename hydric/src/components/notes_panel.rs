@@ -1,9 +1,6 @@
 use leptos::prelude::*;
 use mesic::scale::create_scale_values;
-use shared::model::note::Note;
-use shared::model::pitch_name::PitchName;
-use shared::model::scale::Scale;
-use shared::model::scale_value::ScaleValue;
+use shared::model::{Note, PitchName, Scale, ScaleValue};
 use shared::types::{Beats, Octave};
 use std::str::FromStr;
 use thaw::{Button, ButtonAppearance, Card, Select, Space, SpinButton, Tooltip};
