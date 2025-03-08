@@ -1,13 +1,14 @@
 mod delay;
 mod filter;
+mod low_high;
 mod pass_basic_first_order;
 mod pass_basic_second_order;
 mod resonator_sa;
 mod resonator_simple;
-mod low_high;
 
 use crate::sig::{mult, sum};
 use delay::*;
+use low_high::LowHigh;
 use pass_basic_first_order::*;
 use pass_basic_second_order::*;
 use resonator_sa::*;
@@ -17,7 +18,6 @@ use shared::model::{
     PassType,
 };
 use shared::types::{Freq, KnobPosition};
-use low_high::LowHigh;
 
 pub fn apply_effects(signal: Vec<f32>, effects: Vec<EffectInstance>) -> Vec<f32> {
     let mut output = signal.clone();
