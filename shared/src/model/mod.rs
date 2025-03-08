@@ -1,4 +1,5 @@
 mod adsr_envelope;
+mod eq;
 mod note;
 mod pitch_name;
 mod project;
@@ -10,6 +11,7 @@ mod track;
 mod wave_type;
 
 pub use adsr_envelope::*;
+pub use eq::*;
 pub use note::*;
 pub use pitch_name::*;
 pub use project::*;

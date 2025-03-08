@@ -1,16 +1,12 @@
-use super::filter::second_degree_filter;
+use super::filter::second_order;
 use crate::consts::SAMPLE_RATE;
-use shared::types::{Freq, KnobPosition};
+use shared::model::EqConfig;
 use std::f32::consts::TAU;
 
-pub fn apply_smith_angell_resonator(
-    dry_signal: Vec<f32>,
-    fc: Freq,
-    q_value: KnobPosition,
-) -> Vec<f32> {
+pub fn resonator_smith_angell(config: EqConfig, input: Vec<f32>) -> Vec<f32> {
     let fs = SAMPLE_RATE as f32;
-    let theta = TAU * fc / fs;
-    let bandwidth = fc / q_value;
+    let theta = TAU * config.fc / fs;
+    let bandwidth = config.fc / config.q;
 
     // See "Designing Audio Effect Plugins in C++", W. Pirkle, p260
     let b2 = (-TAU * bandwidth / fs).exp();
@@ -19,5 +15,5 @@ pub fn apply_smith_angell_resonator(
     let a1 = 0.0;
     let a2 = -a0;
 
-    second_degree_filter(dry_signal, a0, a1, a2, b1, b2)
+    second_order(input, a0, a1, a2, b1, b2)
 }

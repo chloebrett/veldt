@@ -2,7 +2,7 @@ use crate::effect::apply_effects;
 use crate::sig::sum;
 use crate::wave::{SupersawConfig, polyphonic_wave};
 use shared::model::{
-    BandStopAlgorithm, Effect, EffectInstance, EffectMeta, EqType, MixerChannel, Track,
+    DelayConfig, Effect, EffectInstance, EffectMeta, EqConfig, EqType, MixerChannel, Track,
 };
 use shared::types::{Freq, KnobPosition};
 
@@ -18,21 +18,23 @@ pub fn render(
 
     let delay = EffectInstance {
         effect: Effect::SimpleDelay {
-            amplitude: 0.5,
+            config: DelayConfig {
+                amplitude: 0.5,
 
-            delay_ms: 250.0,
+                delay_ms: 250.0,
+            },
         },
         meta: EffectMeta { id: 0, wet: 0.5 },
     };
     let eq = EffectInstance {
         effect: Effect::SimpleEq {
-            kind: EqType::BandStop {
-                algorithm: BandStopAlgorithm::SimpleSecondOrder,
+            config: EqConfig {
+                kind: EqType::SimpleSecondOrderBandStop,
+
+                fc: resonant_freq,
+
+                q: resonance_q,
             },
-
-            freq: resonant_freq,
-
-            q_value: resonance_q,
         },
         meta: EffectMeta {
             id: 1,
