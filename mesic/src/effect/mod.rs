@@ -1,4 +1,7 @@
 mod delay;
+mod filter;
+mod pass_basic_first_order;
+mod pass_basic_second_order;
 mod resonator_sa;
 mod resonator_simple;
 
