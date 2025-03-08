@@ -1,5 +1,5 @@
 use leptos::prelude::*;
-use mesic::scale::create_scale_values;
+use mesic::create_scale_values;
 use shared::model::{Note, PitchName, Scale, ScaleValue};
 use shared::types::{Beats, Octave};
 use std::str::FromStr;

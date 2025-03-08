@@ -39,7 +39,9 @@ There are some limitations to be aware of when working with WASM:
 apt install -y protobuf-compiler # OS dependent, see https://grpc.io/docs/protoc-installation/
 
 # Yarn (used for easy pre-commit hooks and other commands only)
-npm i -g yarn
+sudo npm i -g yarn
+# Note: on Linux you may have the "wrong yarn" to begin with.
+# If this happens, uninstall it: https://stackoverflow.com/questions/53471063/yarn-error-there-are-no-scenarios-must-have-at-least-one
 
 # Yarn deps
 yarn
