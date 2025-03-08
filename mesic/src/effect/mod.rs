@@ -4,6 +4,7 @@ mod pass_basic_first_order;
 mod pass_basic_second_order;
 mod resonator_sa;
 mod resonator_simple;
+mod low_high;
 
 use crate::sig::{mult, sum};
 use delay::*;
@@ -16,6 +17,7 @@ use shared::model::{
     PassType,
 };
 use shared::types::{Freq, KnobPosition};
+use low_high::LowHigh;
 
 pub fn apply_effects(signal: Vec<f32>, effects: Vec<EffectInstance>) -> Vec<f32> {
     let mut output = signal.clone();
@@ -44,14 +46,14 @@ fn apply_effect(dry_signal: Vec<f32>, effect: EffectInstance) -> Vec<f32> {
             },
             freq,
             q_value,
-        } => apply_low_pass(dry_signal.clone(), freq, q_value, algorithm),
+        } => apply_low_high_pass(dry_signal.clone(), freq, q_value, algorithm, LowHigh::Low),
         Effect::SimpleEq {
             kind: EqType::Pass {
                 kind: PassType::High { algorithm },
             },
             freq,
             q_value,
-        } => apply_high_pass(dry_signal.clone(), freq, q_value, algorithm),
+        } => apply_low_high_pass(dry_signal.clone(), freq, q_value, algorithm, LowHigh::High),
         Effect::SimpleEq {
             kind: EqType::Pass {
                 kind: PassType::Band { algorithm },
@@ -73,35 +75,19 @@ fn apply_effect(dry_signal: Vec<f32>, effect: EffectInstance) -> Vec<f32> {
     mix(dry_signal, wet_signal, effect.meta.wet)
 }
 
-fn apply_low_pass(
+fn apply_low_high_pass(
     dry_signal: Vec<f32>,
     freq: Freq,
     q_value: KnobPosition,
     algorithm: LowHighPassAlgorithm,
+    low_high: LowHigh,
 ) -> Vec<f32> {
     match algorithm {
         LowHighPassAlgorithm::SimpleFirstOrder => {
-            apply_low_pass_basic_first_order(dry_signal.clone(), freq)
+            apply_low_high_pass_basic_first_order(dry_signal.clone(), freq, low_high)
         }
         LowHighPassAlgorithm::SimpleSecondOrder => {
-            apply_low_pass_basic_second_order(dry_signal.clone(), freq, q_value)
-        }
-        _ => panic!("Unimplemented!"),
-    }
-}
-
-fn apply_high_pass(
-    dry_signal: Vec<f32>,
-    freq: Freq,
-    q_value: KnobPosition,
-    algorithm: LowHighPassAlgorithm,
-) -> Vec<f32> {
-    match algorithm {
-        LowHighPassAlgorithm::SimpleFirstOrder => {
-            apply_high_pass_basic_first_order(dry_signal.clone(), freq)
-        }
-        LowHighPassAlgorithm::SimpleSecondOrder => {
-            apply_high_pass_basic_second_order(dry_signal.clone(), freq, q_value)
+            apply_low_high_pass_basic_second_order(dry_signal.clone(), freq, q_value, low_high)
         }
         _ => panic!("Unimplemented!"),
     }

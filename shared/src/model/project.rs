@@ -128,6 +128,22 @@ pub enum Effect {
     },
 }
 
+// Somewhat duplicates the EqType hierarchy, but flattens it for display.
+pub enum EqName {
+    SimpleResonator,
+    SmithAngellResonator,
+    SimpleFirstOrderLowPass,
+    SimpleFirstOrderHighPass,
+    SimpleSecondOrderLowPass,
+    SimpleSecondOrderHighPass,
+    SimpleSecondOrderResonator,
+    SimpleSecondOrderBandStop,
+    ButterworthLowPass,
+    ButterworthHighPass,
+    ButterworthResonator,
+    ButterworthBandStop,
+}
+
 pub enum EqType {
     Pass { kind: PassType },
     _Notch,
