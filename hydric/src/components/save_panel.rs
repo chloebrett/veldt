@@ -1,12 +1,15 @@
-use crate::note_save::{save_notes, load_note_list};
-use shared::model::Note;
+use super::notes_panel::NoteSignal;
+use crate::note_save::{load_note_list, save_notes};
 use leptos::prelude::*;
+use shared::model::Note;
 use shared::serialize::map_vec;
-use super::notes_pane::NoteSignal;
 use thaw::{Button, ButtonAppearance, Card, Field, Input};
 
 #[component]
-pub fn SavePanel(notes: RwSignal<Vec<NoteSignal>>, saved_note_names: RwSignal<Vec<String>>) -> impl IntoView {
+pub fn SavePanel(
+    notes: RwSignal<Vec<NoteSignal>>,
+    saved_note_names: RwSignal<Vec<String>>,
+) -> impl IntoView {
     let save_string = RwSignal::new(String::from("My Song"));
 
     let save = Action::new_local(|input: &(String, Vec<Note>)| {
@@ -14,9 +17,10 @@ pub fn SavePanel(notes: RwSignal<Vec<NoteSignal>>, saved_note_names: RwSignal<Ve
         async move { save_notes(input.0, input.1).await }
     });
 
-    let load = Action::new_local(|_: &()| {
-        async move { save_string.set(load_note_list().await) }
-    });
+    let load =
+        Action::new_local(
+            move |_: &()| async move { saved_note_names.set(load_note_list().await) },
+        );
 
     view! {
         <Card>
