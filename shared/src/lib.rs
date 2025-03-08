@@ -10,3 +10,7 @@ pub mod render {
 pub mod pmodel {
     tonic::include_proto!("pmodel");
 }
+
+pub mod save_notes {
+    tonic::include_proto!("save_notes");
+}

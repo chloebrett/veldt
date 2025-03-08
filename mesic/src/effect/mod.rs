@@ -1,12 +1,15 @@
-pub mod resonator_sa;
-pub mod resonator_simple;
+mod delay;
+mod resonator_sa;
+mod resonator_simple;
 
-/// Mixes two signals in the given dry/wet ratio.
-fn mix(dry: Vec<f32>, wet: Vec<f32>, ratio: f32) -> Vec<f32> {
-    sum(mult(wet, ratio), mult(dry, 1.0 - ratio))
-}
+use crate::sig::{mult, sum};
+use delay::*;
+use resonator_sa::*;
+use resonator_simple::*;
+use shared::model::{BandPassAlgorithm, Effect, EffectInstance, EqType, PassType};
+use shared::types::KnobPosition;
 
-fn apply_effects(signal: Vec<f32>, effects: Vec<EffectInstance>) -> Vec<f32> {
+pub fn apply_effects(signal: Vec<f32>, effects: Vec<EffectInstance>) -> Vec<f32> {
     let mut output = signal.clone();
 
     for effect in effects {
@@ -14,6 +17,11 @@ fn apply_effects(signal: Vec<f32>, effects: Vec<EffectInstance>) -> Vec<f32> {
     }
 
     output
+}
+
+/// Mixes two signals in the given dry/wet ratio.
+fn mix(dry: Vec<f32>, wet: Vec<f32>, ratio: KnobPosition) -> Vec<f32> {
+    sum(mult(wet, ratio), mult(dry, 1.0 - ratio))
 }
 
 fn apply_effect(dry_signal: Vec<f32>, effect: EffectInstance) -> Vec<f32> {
@@ -49,4 +57,3 @@ fn apply_effect(dry_signal: Vec<f32>, effect: EffectInstance) -> Vec<f32> {
 
     mix(dry_signal, wet_signal, effect.meta.wet)
 }
-

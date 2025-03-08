@@ -1,4 +1,9 @@
-fn sum(a: Vec<f32>, b: Vec<f32>) -> Vec<f32> {
+use crate::consts::REFERENCE_PITCH;
+use shared::model::PitchName;
+use shared::types::{Freq, PitchValue};
+use std::cmp::max;
+
+pub fn sum(a: Vec<f32>, b: Vec<f32>) -> Vec<f32> {
     let max_len = max(a.len(), b.len());
     let mut output: Vec<f32> = vec![0.0; max_len];
 
@@ -11,23 +16,12 @@ fn sum(a: Vec<f32>, b: Vec<f32>) -> Vec<f32> {
     output
 }
 
-fn multi_sum(buffers: Vec<Vec<f32>>) -> Vec<f32> {
-    let max_len = buffers.iter().map(|it| it.len()).max().unwrap();
-    let mut output: Vec<f32> = vec![0.0; max_len];
-
-    for buf in buffers {
-        output = sum(output, buf);
-    }
-
-    output
-}
-
-fn mult(vec: Vec<f32>, scalar: f32) -> Vec<f32> {
+pub fn mult(vec: Vec<f32>, scalar: f32) -> Vec<f32> {
     vec.into_iter().map(|it| it * scalar).collect()
 }
 
 // Returns the frequency based on the distance from reference pitch.
-fn freq(pitch_name: PitchName) -> Freq {
+pub fn freq(pitch_name: PitchName) -> Freq {
     let pitch: PitchValue = pitch_name.into();
     let reference: PitchValue = (*REFERENCE_PITCH.pitch_name).into();
     let interval: PitchValue = pitch - reference;

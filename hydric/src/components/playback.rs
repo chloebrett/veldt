@@ -2,7 +2,7 @@ use crate::audio_player::AudioPlayer;
 use crate::audio_render::render as server_render;
 use leptos::prelude::*;
 use mesic::{SupersawConfig, render as local_render};
-use shared::model::track::Track;
+use shared::model::Track;
 use thaw::{Button, ButtonAppearance, Card, Space};
 
 #[component]

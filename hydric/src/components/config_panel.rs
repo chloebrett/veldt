@@ -1,7 +1,6 @@
 use leptos::prelude::*;
 
-use shared::model::scale::Scale;
-use shared::model::scale_value::ScaleValue;
+use shared::model::{Scale, ScaleValue};
 use shared::types::{Beats, PitchValue};
 use strum::IntoEnumIterator;
 use thaw::{Card, Select, Slider, Space, SpinButton};

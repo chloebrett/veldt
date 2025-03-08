@@ -1,4 +1,12 @@
-fn apply_smith_angell_resonator(dry_signal: Vec<f32>, fc: Freq, q_value: KnobPosition) -> Vec<f32> {
+use crate::consts::SAMPLE_RATE;
+use shared::types::{Freq, KnobPosition};
+use std::f32::consts::TAU;
+
+pub fn apply_smith_angell_resonator(
+    dry_signal: Vec<f32>,
+    fc: Freq,
+    q_value: KnobPosition,
+) -> Vec<f32> {
     let fs = SAMPLE_RATE as f32;
     let theta = TAU * fc / fs;
     let bandwidth = fc / q_value;

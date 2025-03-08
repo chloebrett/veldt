@@ -1,3 +1,6 @@
+use shared::model::{AdsrEnvelope, Note, Sequence, Synth, Track, WaveType};
+use shared::types::{Beats, PitchValue, Volume};
+
 pub fn create_track(
     notes: Vec<Note>,
     wave: WaveType,

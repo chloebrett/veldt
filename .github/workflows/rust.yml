@@ -16,6 +16,8 @@ jobs:
 
     steps:
     - uses: actions/checkout@v4
+    - name: Rust cache
+      uses: Swatinem/rust-cache@v2
     - name: Install deps
       run: rustup target add wasm32-unknown-unknown && sudo apt-get install protobuf-compiler && cargo install leptosfmt
     - name: Build-shared
