@@ -4,17 +4,17 @@ use crate::types::{Beats, Decibels, Freq, KnobPosition, Milliseconds, Seconds, V
 use chrono::NaiveDateTime;
 use std::collections::BTreeSet;
 
-type TrackId = usize;
-type SampleId = usize;
+type _TrackId = usize;
+type _SampleId = usize;
 type EffectId = usize;
-type GeneratorInstanceId = usize;
-type EffectInstanceId = usize;
+type _GeneratorInstanceId = usize;
+type _EffectInstanceId = usize;
 
-struct AppConfig {
+struct _AppConfig {
     sample_rate: u32,
 }
 
-struct Project {
+struct _Project {
     pub name: String,
 
     pub filename: String,
@@ -25,43 +25,47 @@ struct Project {
 
     // TODO: info about user who owns and share permissions
     /// Ordered based on start_position.
-    pub track_placements: BTreeSet<TrackPlacement>,
+    pub track_placements: BTreeSet<_TrackPlacement>,
 
-    pub samples: Vec<Sample>,
+    pub samples: Vec<_Sample>,
 
     // Maybe should be Vec<Box<dyn Generator>>?
-    pub generators: Vec<GeneratorInstance>,
+    pub generators: Vec<_GeneratorInstance>,
 
     pub mixer: Vec<MixerChannel>,
 }
 
-enum Generator {
-    SingleWave { wave_generator: WaveGenerator },
+enum _Generator {
+    SingleWave {
+        wave_generator: _WaveGenerator,
+    },
 
-    MultiWave { wave_generators: Vec<WaveGenerator> },
+    MultiWave {
+        wave_generators: Vec<_WaveGenerator>,
+    },
 }
 
-struct WaveGenerator {
+struct _WaveGenerator {
     kind: WaveType,
 
     envelope: AdsrEnvelope,
 }
 
-struct GeneratorInstance {
-    id: GeneratorInstanceId,
+struct _GeneratorInstance {
+    id: _GeneratorInstanceId,
 
-    generator: Generator,
+    generator: _Generator,
 
-    meta: GeneratorMeta,
+    meta: _GeneratorMeta,
 }
 
-struct GeneratorMeta {
+struct _GeneratorMeta {
     volume: Volume,
     // TODO: pan
 }
 
-struct TrackPlacement {
-    track_id: TrackId,
+struct _TrackPlacement {
+    track_id: _TrackId,
 
     /// The time that the track starts within the arrangement.
     start_position: Beats,
@@ -74,7 +78,7 @@ struct TrackPlacement {
     visual_placement: u32,
 }
 
-struct Sample {
+struct _Sample {
     pub data: Vec<f32>,
 
     // TODO: instead store sample rate, and then derive this from the size of the data vec?
@@ -126,14 +130,14 @@ pub enum Effect {
 
 pub enum EqType {
     Pass { kind: PassType },
-    Notch,
-    Shelf { kind: ShelfType, amount: Decibels },
-    BandStop,
+    _Notch,
+    _Shelf { kind: _ShelfType, amount: Decibels },
+    _BandStop,
 }
 
-enum ShelfType {
-    Low,
-    High,
+pub enum _ShelfType {
+    _Low,
+    _High,
 }
 
 pub enum PassType {
@@ -162,7 +166,7 @@ pub enum BandPassAlgorithm {
     SmithAngell,
 }
 
-enum LowHighPassAlgorithm {
+pub enum LowHighPassAlgorithm {
     /// Standard filter with -3dB attenuation.
     ButterWorth,
 
@@ -177,6 +181,6 @@ pub struct EffectMeta {
     // TODO: pan
 }
 
-struct MixerChannel {
-    effects: Vec<EffectInstance>,
+pub struct MixerChannel {
+    pub effects: Vec<EffectInstance>,
 }
