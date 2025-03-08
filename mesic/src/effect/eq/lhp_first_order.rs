@@ -1,8 +1,8 @@
-use super::low_high::LowHigh;
 use super::filter::first_order;
-use std::f32::consts::TAU;
+use super::low_high::LowHigh;
 use crate::consts::SAMPLE_RATE;
 use shared::model::EqConfig;
+use std::f32::consts::TAU;
 
 /// Simple first order low/high pass.
 /// Ignores Q value - this is the equivalent of the second order l/h p with Q = 0.707.

@@ -6,14 +6,14 @@ mod low_high;
 mod resonator_sa;
 mod resonator_simple;
 
+use super::EffectFilter;
 use bps_basic::*;
 use lhp_first_order::*;
 use lhp_second_order::*;
-use resonator_simple::*;
-use resonator_sa::*;
 use low_high::LowHigh;
+use resonator_sa::*;
+use resonator_simple::*;
 use shared::model::{EqConfig, EqType};
-use super::EffectFilter;
 
 impl EffectFilter for EqConfig {
     fn apply(self: EqConfig, input: Vec<f32>) -> Vec<f32> {

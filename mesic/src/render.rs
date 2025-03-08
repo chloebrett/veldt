@@ -2,7 +2,7 @@ use crate::effect::apply_effects;
 use crate::sig::sum;
 use crate::wave::{SupersawConfig, polyphonic_wave};
 use shared::model::{
-    Effect, EffectInstance, EffectMeta, EqType, MixerChannel, Track, DelayConfig, EqConfig,
+    DelayConfig, Effect, EffectInstance, EffectMeta, EqConfig, EqType, MixerChannel, Track,
 };
 use shared::types::{Freq, KnobPosition};
 
