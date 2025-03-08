@@ -10,10 +10,10 @@ pub struct PitchName {
     pub octave: Octave,
 }
 
-impl Into<PitchValue> for PitchName {
-    fn into(self: Self) -> PitchValue {
-        let scale_value_pitch = self.scale_value as PitchValue;
-        let octave_pitch = self.octave * 12;
+impl From<PitchName> for PitchValue {
+    fn from(val: PitchName) -> Self {
+        let scale_value_pitch = val.scale_value as PitchValue;
+        let octave_pitch = val.octave * 12;
         scale_value_pitch + octave_pitch
     }
 }

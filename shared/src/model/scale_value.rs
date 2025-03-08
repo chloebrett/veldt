@@ -1,6 +1,6 @@
 use crate::{pmodel::*, types::PitchValue};
 use std::str;
-use strum::{Display, EnumIter, EnumString, IntoEnumIterator};
+use strum::{Display, EnumIter, EnumString};
 
 #[derive(
     Debug, Clone, Copy, PartialEq, Eq, Hash, PartialOrd, Ord, EnumString, Display, EnumIter,
@@ -25,9 +25,9 @@ pub enum ScaleValue {
     GSharp,
 }
 
-impl Into<PitchValue> for ScaleValue {
-    fn into(self: Self) -> PitchValue {
-        match self {
+impl From<ScaleValue> for PitchValue {
+    fn from(val: ScaleValue) -> Self {
+        match val {
             ScaleValue::A => 0,
             ScaleValue::ASharp => 1,
             ScaleValue::B => 2,
