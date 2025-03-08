@@ -1,5 +1,6 @@
 {
   "devDependencies": {
+    "concurrently": "^9.1.2",
     "husky": "^9.1.7"
   },
   "name": "veldt",
@@ -9,6 +10,9 @@
   "author": "Chloe Brett <chloebrett@users.noreply.github.com>",
   "license": "MIT",
   "scripts": {
-    "prepare": "./.husky/pre-commit"
+    "p": "./.husky/pre-commit",
+    "h": "cd hydric; cargo build --target=wasm32-unknown-unknown && trunk serve --open",
+    "x": "cd xeric; cargo run",
+    "a": "yarn concurrently 'yarn x' 'yarn h'"
   }
 }
