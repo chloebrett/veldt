@@ -132,7 +132,7 @@ pub enum EqType {
     Pass { kind: PassType },
     _Notch,
     _Shelf { kind: _ShelfType, amount: Decibels },
-    _BandStop,
+    BandStop { algorithm: BandStopAlgorithm },
 }
 
 pub enum _ShelfType {
@@ -164,11 +164,23 @@ pub enum BandPassAlgorithm {
     /// Smith-Angell resonator, which adds two zeros (at z=-1 and z=1) to limit asymmetry
     /// and make the band pass even more selective.
     SmithAngell,
+
+    /// Band pass variant of the second-order low/high pass algorithm.
+    SimpleSecondOrder,
+}
+
+pub enum BandStopAlgorithm {
+    // TODO: consolidate all the "simple second order" algorithms, etc.
+    // Repeating their names in the type system could probably be avoided.
+    SimpleSecondOrder,
 }
 
 pub enum LowHighPassAlgorithm {
+    /// Standard filter with -3dB attenuation. Q is fixed at 0.707 and changing it has no effect.
+    SimpleFirstOrder,
+
     /// Standard filter with -3dB attenuation.
-    ButterWorth,
+    SimpleSecondOrder,
 
     /// Linkwitz-Riley with -6dB attenuation.
     LinkwitzRiley,
