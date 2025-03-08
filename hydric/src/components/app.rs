@@ -1,6 +1,7 @@
 use crate::components::config_panel::ConfigPanel;
 use crate::components::detune_panel::DetunePanel;
 use crate::components::envelope_panel::EnvelopePanel;
+use crate::components::save_panel::SavePanel;
 use crate::components::notes_panel::{NoteSignal, NotesPanel};
 use crate::components::playback::Playback;
 use leptos::prelude::*;
@@ -85,6 +86,7 @@ pub fn App() -> impl IntoView {
             <EnvelopePanel attack=attack decay=decay sustain=sustain release=release />
             <DetunePanel osc_count=osc_count detune_cents=detune_cents />
             <NotesPanel notes=notes scale_string=scale_string key_string=key_string />
+            <SavePanel notes=notes />
         </ConfigProvider>
     }
 }

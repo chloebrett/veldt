@@ -5,6 +5,7 @@ mod audio_render;
 mod components;
 mod egui_app;
 mod egui_init;
+mod note_save;
 
 use crate::components::app::App;
 use crate::egui_init::egui_init;
