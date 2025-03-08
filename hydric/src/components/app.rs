@@ -9,7 +9,7 @@ use leptos::prelude::*;
 use mesic::{SupersawConfig, create_track};
 use shared::model::{Scale, ScaleValue, WaveType};
 use shared::serialize::map_vec;
-use shared::types::{Beats, PitchValue};
+use shared::types::Beats;
 use std::str::FromStr;
 use thaw::{Accordion, AccordionHeader, AccordionItem, ConfigProvider};
 
@@ -21,7 +21,6 @@ pub fn App() -> impl IntoView {
     let wave_string = RwSignal::new(WaveType::Sine.to_string());
     let bpm_value = RwSignal::<Beats>::new(120.0);
     let volume_percent = RwSignal::new(100.0f64);
-    let transpose_interval = RwSignal::<PitchValue>::new(0);
     let key_string = RwSignal::new(ScaleValue::A.to_string());
     let scale_string = RwSignal::new(Scale::Chromatic.to_string());
 
@@ -56,7 +55,6 @@ pub fn App() -> impl IntoView {
             wave(),
             bpm(),
             volume(),
-            transpose_interval.get(),
             envelope.get().into(),
         )
     });
@@ -84,7 +82,6 @@ pub fn App() -> impl IntoView {
                 wave=wave_string
                 bpm=bpm_value
                 volume=volume_percent
-                transpose=transpose_interval
                 key=key_string
                 scale=scale_string
             />
