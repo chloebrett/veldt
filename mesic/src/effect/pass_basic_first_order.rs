@@ -9,7 +9,7 @@ pub fn apply_low_pass_basic_first_order(dry_signal: Vec<f32>, fc: Freq) -> Vec<f
 
     // See "Designing Audio Effect Plugins in C++", W. Pirkle, p271
     let gamma: f32 = theta.cos() / (1.0 + theta.sin());
-    let a0: f32 = (1.0 - gamma) / 2.0;
+    let a0: f32 = 0.5 * (1.0 - gamma);
     let a1: f32 = a0;
     let b1: f32 = -gamma;
 
@@ -23,7 +23,7 @@ pub fn apply_high_pass_basic_first_order(dry_signal: Vec<f32>, fc: Freq) -> Vec<
 
     // See "Designing Audio Effect Plugins in C++", W. Pirkle, p271
     let gamma: f32 = theta.cos() / (1.0 + theta.sin());
-    let a0: f32 = (1.0 + gamma) / 2.0;
+    let a0: f32 = 0.5 * (1.0 + gamma);
     let a1: f32 = -a0;
     let b1: f32 = -gamma;
 
