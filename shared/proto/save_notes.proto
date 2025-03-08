@@ -1,0 +1,17 @@
+syntax = "proto3";
+
+package save_notes;
+
+import "pmodel.proto";
+
+service SaveNotes {
+  rpc SaveNotes (SaveNotesRequest) returns (SaveNotesReply) {}
+}
+
+message SaveNotesRequest {
+  string name = 1;
+  repeated pmodel.NoteProto notes = 2;
+}
+
+message SaveNotesReply {
+}

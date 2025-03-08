@@ -1,8 +1,8 @@
-use crate::model::pitch_name::PitchName;
+use super::pitch_name::PitchName;
 use crate::pmodel::*;
 use crate::types::*;
 
-#[derive(Clone, Debug, PartialEq)]
+#[derive(Copy, Clone, Debug, PartialEq)]
 pub struct Note {
     pub pitch_name: PitchName,
     pub beats: Beats,

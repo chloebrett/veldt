@@ -1,6 +1,5 @@
-use crate::ScaleValue;
-use shared::model::scale::Scale;
-use shared::types::*;
+use shared::model::{Scale, ScaleValue};
+use shared::types::PitchValue;
 
 pub fn create_scale_values(scale: Scale, key: ScaleValue) -> Vec<ScaleValue> {
     let pitch_values = match scale {
@@ -11,7 +10,7 @@ pub fn create_scale_values(scale: Scale, key: ScaleValue) -> Vec<ScaleValue> {
         Scale::Pentatonic => vec![0, 2, 4, 7, 9],
     };
 
-    let key_value = <ScaleValue as Into<PitchValue>>::into(key);
+    let key_value: PitchValue = key.into();
     pitch_values
         .iter()
         .map(|pitch_value| ScaleValue::from(pitch_value + key_value))

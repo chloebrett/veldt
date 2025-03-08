@@ -1,9 +1,11 @@
-use crate::WaveType;
-use shared::model::adsr_envelope::AdsrEnvelope;
+use crate::consts::SAMPLE_RATE;
+use crate::envelope::apply_envelope;
+use crate::sig::{freq, sum};
+use shared::model::{AdsrEnvelope, PitchName, WaveType};
+use shared::types::Beats;
 use shared::types::Freq;
-use std::f32::consts::PI;
+use std::f32::consts::{PI, TAU};
 
-pub const TAU: f32 = 2.0 * PI;
 const HALF_PI: f32 = 0.5 * PI;
 const INV_HALF_PI: f32 = HALF_PI.recip();
 
@@ -36,7 +38,7 @@ fn wave(
         .collect()
 }
 
-fn polyphonic_wave(
+pub fn polyphonic_wave(
     pitch_name: &PitchName,
     beats: Beats,
     bpm: Beats,

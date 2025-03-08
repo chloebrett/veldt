@@ -1,3 +1,11 @@
+use crate::effect::apply_effects;
+use crate::sig::sum;
+use crate::wave::{SupersawConfig, polyphonic_wave};
+use shared::model::{
+    BandPassAlgorithm, Effect, EffectInstance, EffectMeta, EqType, MixerChannel, PassType, Track,
+};
+use shared::types::{Freq, KnobPosition};
+
 pub fn render(
     track: &Track,
     supersaw_config: SupersawConfig,
