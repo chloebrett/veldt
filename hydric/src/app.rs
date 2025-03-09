@@ -281,7 +281,7 @@ impl App {
                     config: SimpleWaveConfig {
                         wave: self.wave_type,
 
-                        envelope: envelope,
+                        envelope,
                     },
                 },
 

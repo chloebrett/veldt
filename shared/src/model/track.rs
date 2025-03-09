@@ -55,7 +55,7 @@ pub struct PlacedNote {
 
 impl PartialOrd for PlacedNote {
     fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
-        self.offset.partial_cmp(&other.offset)
+        Some(self.cmp(other))
     }
 }
 
