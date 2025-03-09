@@ -9,13 +9,18 @@
     <link data-trunk rel="copy-file" href="src/script.mjs" />
 
     <style>
-        #egui_canvas_parent, #egui_canvas {
-            width: 500px;
-            height: 500px;
+        body {
+            margin: 0;
+        }
+
+        #egui_canvas {
+            width: 100vw;
+            height: 100vh;
         }
     </style>
 </head>
 <body>
     <link data-trunk rel="rust" href="Cargo.toml"/>
+    <canvas id="egui_canvas"></canvas>
 </body>
 </html>
