@@ -12,7 +12,7 @@ impl Drop for AudioPlayer {
 }
 
 impl AudioPlayer {
-    pub fn new(audio: &Vec<f32>) -> Result<AudioPlayer, JsValue> {
+    pub fn new(audio: &[f32]) -> Result<AudioPlayer, JsValue> {
         let sample_rate = 44_100;
         let seconds = 10;
         let channels = 1;
@@ -21,7 +21,7 @@ impl AudioPlayer {
 
         let buffer = ctx.create_buffer(channels, seconds * sample_rate, sample_rate as f32)?;
         // TODO: support dual channel
-        buffer.copy_to_channel(audio.as_slice(), 0)?;
+        buffer.copy_to_channel(audio, 0)?;
 
         let source = ctx.create_buffer_source()?;
         source.set_buffer(Some(&buffer));
