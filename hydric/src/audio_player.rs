@@ -31,7 +31,6 @@ where
 {
     let channels = config.channels as usize;
 
-    // Produce a sinusoid of maximum amplitude.
     let mut sample_clock: usize = 0;
     let audio = audio.to_owned();
     let mut next_value = move || {
