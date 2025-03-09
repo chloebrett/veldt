@@ -1,39 +1,36 @@
 use crate::effect::apply_effects;
-use crate::sig::sum;
 use crate::wave::{SupersawConfig, polyphonic_wave};
-use shared::model::{EffectInstance, MixerChannel, Track};
+use shared::model::{EffectInstance, GeneratorInstance, GeneratorType, MixerChannel, Track};
+use shared::types::Beats;
 
 pub fn render(
     track: &Track,
     supersaw_config: SupersawConfig,
     effects: Vec<EffectInstance>,
+    generator: GeneratorInstance,
+    bpm: Beats,
 ) -> Vec<f32> {
-    let bpm = track.bpm;
     let mut total_wave: Vec<f32> = vec![];
 
     let mixer_channel = MixerChannel { effects };
 
-    for sequence in &track.sequences {
-        // TODO: use the offset value instead of ignoring.
-        let synth = &track.synths.get(sequence.synth_index).unwrap();
-        println!("{:?}", sequence);
+    let generator_config = match generator.kind {
+        GeneratorType::SimpleWave { config } => config,
+    };
 
-        let mut sequence_wave: Vec<f32> = vec![];
-        for note in &sequence.notes {
-            println!("{:?}", note);
-            let mut wave = polyphonic_wave(
-                &note.pitch_name,
-                note.beats,
-                bpm,
-                sequence.volume * synth.volume,
-                &synth.envelope,
-                synth.wave,
-                supersaw_config.clone(),
-            );
-            sequence_wave.append(&mut wave);
-        }
+    for note in &track.notes {
+        let mut wave = polyphonic_wave(
+            &note.note.pitch_name,
+            note.note.beats,
+            bpm,
+            generator.meta.volume,
+            &generator_config.envelope,
+            generator_config.wave,
+            supersaw_config.clone(),
+        );
 
-        total_wave = sum(total_wave, sequence_wave);
+        // TODO: account for offsets properly, instead of just appending here.
+        total_wave.append(&mut wave);
     }
 
     apply_effects(total_wave, mixer_channel.effects)
