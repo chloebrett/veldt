@@ -4,6 +4,7 @@ use shared::model::{
     AdsrEnvelope, DelayConfig, Effect, EffectInstance, EffectMeta, EqConfig, EqType, Note,
     PitchName, Scale, ScaleValue, WaveType,
 };
+use poll_promise::Promise;
 use strum::IntoEnumIterator;
 
 pub struct App {
@@ -200,7 +201,10 @@ impl eframe::App for App {
             if ui.button("Save").clicked() {
                 let save_name = self.track_name.clone();
                 let notes_to_save = self.notes.clone();
-                let _ = async move || save_notes(save_name, notes_to_save).await;
+                let save_thread = Promise::spawn_local(async move {save_notes(save_name, notes_to_save).await});
+                if let Some(result) = save_thread.ready() {
+                } else {
+                }
             }
 
             if ui.button("Play (local)").clicked() {
