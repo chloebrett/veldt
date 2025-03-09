@@ -4,9 +4,6 @@ version = "0.1.0"
 edition = "2024"
 
 [dependencies]
-anyhow = "1.0.95"
-clap = { version = "4.5.28", features = ["derive"] }
-leptos = { version = "0.7.5", features = ["csr"] }
 shared = { path = "../shared" }
 mesic = { path = "../mesic" }
 http = "1.2.0"
@@ -14,9 +11,6 @@ tonic-web-wasm-client = "0.6.1"
 console_error_panic_hook = "0.1.7"
 web-sys = { version = "0.3.77", features = ["AudioBuffer", "AudioContext", "AudioBufferSourceNode", "AudioDestinationNode", "AudioNode"] }
 wasm-bindgen = "0.2.100"
-thaw = { version = "0.4.2", features = ["csr"] }
-
-# egui
 egui = "0.31"
 eframe = { version = "0.31", default-features = false, features = [
     "default_fonts", # Embed the default egui fonts.
@@ -25,4 +19,3 @@ eframe = { version = "0.31", default-features = false, features = [
 log = "0.4"
 wasm-bindgen-futures = "0.4.50"
 strum = "0.27.1"
-thaw_utils = "0.1.1"
