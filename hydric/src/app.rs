@@ -13,6 +13,7 @@ use strum::IntoEnumIterator;
 
 pub struct App {
     track_name: String,
+    track_list: Vec<String>,
     volume: f32,
     bpm: f32,
     attack: f32,
@@ -39,6 +40,7 @@ impl Default for App {
     fn default() -> Self {
         Self {
             track_name: "My Track".to_owned(),
+            track_list: vec![],
             volume: 1.0,
             bpm: 120.0,
             attack: 0.1,
@@ -233,22 +235,15 @@ impl App {
         }
         let load_thread = Promise::spawn_local(async move { load_note_list().await });
         if let Some(list) = load_thread.ready() {
-            egui::ComboBox::from_label("Tracks")
-                .selected_text(self.track_name.clone())
-                .show_ui(ui, |ui| {
-                    for name in list.iter() {
-                        ui.selectable_value(&mut self.track_name.clone(), name.clone(), name);
-                    }
-                });
-        } else {
-            egui::ComboBox::from_label("Tracks")
-                .selected_text(self.track_name.clone())
-                .show_ui(ui, |ui| {
-                    for name in vec![self.track_name.clone()].iter() {
-                        ui.selectable_value(&mut self.track_name.clone(), name.clone(), name);
-                    }
-                });
+            self.track_list = list.to_vec();
         }
+        egui::ComboBox::from_label("Saved Tracks")
+            .selected_text(String::from(""))
+            .show_ui(ui, |ui| {
+            for name in self.track_list.iter() {
+                ui.selectable_value(&mut self.track_name.clone(), name.clone(), name);
+            }
+        });
     }
 
     fn play_control(&mut self, ui: &mut Ui) {
