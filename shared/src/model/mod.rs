@@ -9,7 +9,11 @@ mod sequence;
 mod synth;
 mod track;
 mod wave_type;
+mod effect;
+mod generator;
 
+pub use effect::*;
+pub use generator::*;
 pub use adsr_envelope::*;
 pub use eq::*;
 pub use note::*;
