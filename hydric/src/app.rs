@@ -1,4 +1,8 @@
 use crate::{audio_player::AudioPlayer, note_save::save_notes};
+use egui::{
+    Color32, Pos2, Rect, ScrollArea, Ui, containers::Frame, emath, epaint, epaint::PathStroke,
+    pos2, scroll_area::ScrollBarVisibility, vec2,
+};
 use mesic::{SupersawConfig, create_scale_values, create_track, render as local_render};
 use poll_promise::Promise;
 use shared::model::{
@@ -73,197 +77,262 @@ impl App {
 
         Default::default()
     }
+
+    fn envelope_control(&mut self, ui: &mut Ui) {
+        let headroom = 1.0 - self.attack - self.decay - self.release;
+        let max_attack = headroom + self.attack;
+        let max_decay = headroom + self.decay;
+        let max_release = headroom + self.release;
+
+        if self.attack > max_attack {
+            self.attack = max_attack;
+        }
+        if self.decay > max_decay {
+            self.decay = max_decay;
+        }
+        if self.release > max_release {
+            self.release = max_release;
+        }
+
+        ui.add(egui::Slider::new(&mut self.attack, 0.0..=1.0).text("Attack"));
+        ui.add(egui::Slider::new(&mut self.decay, 0.0..=1.0).text("Decay"));
+        ui.add(egui::Slider::new(&mut self.sustain, 0.0..=1.0).text("Sustain"));
+        ui.add(egui::Slider::new(&mut self.release, 0.0..=1.0).text("Release"));
+
+        Frame::canvas(ui.style()).show(ui, |ui| {
+            ui.ctx().request_repaint();
+            let desired_size = vec2(100.0, 50.0);
+            let (_id, rect) = ui.allocate_space(desired_size);
+            let to_screen =
+                emath::RectTransform::from_to(Rect::from_x_y_ranges(0.0..=1.0, 1.0..=0.0), rect);
+
+            let mut points = vec![];
+            if self.attack > 0.0 {
+                points.push(pos2(0.0, 0.0));
+            }
+            points.push(pos2(self.attack, 1.0));
+            points.push(pos2(self.attack + self.decay, self.sustain));
+            points.push(pos2(1.0 - self.release, self.sustain));
+            if self.release > 0.0 {
+                points.push(pos2(1.0, 0.0));
+            }
+
+            let thickness = 2.0;
+            let mut shapes = vec![];
+            shapes.push(epaint::Shape::line(
+                points.into_iter().map(|it| to_screen * it).collect(),
+                PathStroke::new(thickness, Color32::WHITE),
+            ));
+            ui.painter().extend(shapes);
+        });
+    }
+
+    fn generator_control(&mut self, ui: &mut Ui) {
+        egui::ComboBox::from_label("Wave type")
+            .selected_text(self.wave_type.to_string())
+            .show_ui(ui, |ui| {
+                ui.selectable_value(&mut self.wave_type, WaveType::Sine, "Sine");
+                ui.selectable_value(&mut self.wave_type, WaveType::Square, "Square");
+                ui.selectable_value(&mut self.wave_type, WaveType::Saw, "Saw");
+                ui.selectable_value(&mut self.wave_type, WaveType::Triangle, "Triangle");
+            });
+        ui.add(
+            egui::Slider::new(&mut self.osc_count, 1..=24)
+                .text("Osc count")
+                .logarithmic(true),
+        );
+        ui.add(
+            egui::Slider::new(&mut self.detune, 0.0..=100.0)
+                .text("Osc detune")
+                .logarithmic(true),
+        );
+    }
+
+    fn eq_control(&mut self, ui: &mut Ui) {
+        ui.add(
+            egui::Slider::new(&mut self.resonant_freq, 20.0..=20000.0)
+                .text("Resonant frequency")
+                .logarithmic(true),
+        );
+        ui.add(
+            egui::Slider::new(&mut self.q, 0.1..=100.0)
+                .text("Q value")
+                .logarithmic(true),
+        );
+        egui::ComboBox::from_label("EQ type")
+            .selected_text(format!("{}", self.eq_type))
+            .show_ui(ui, |ui| {
+                for eq_type in EqType::iter() {
+                    ui.selectable_value(&mut self.eq_type, eq_type.clone(), eq_type.to_string());
+                }
+            });
+        ui.add(egui::Slider::new(&mut self.eq_wet, 0.0..=1.0).text("EQ wet"));
+    }
+
+    fn delay_control(&mut self, ui: &mut Ui) {
+        ui.add(egui::Slider::new(&mut self.delay_amplitude, 0.0..=1.0).text("Delay amplitude"));
+        ui.add(
+            egui::Slider::new(&mut self.delay_ms, 1.0..=1000.0)
+                .text("Delay ms")
+                .logarithmic(true),
+        );
+        ui.add(egui::Slider::new(&mut self.delay_wet, 0.0..=1.0).text("Delay wet"));
+    }
+
+    fn key_control(&mut self, ui: &mut Ui) {
+        egui::ComboBox::from_label("Key")
+            .selected_text(self.key.to_string())
+            .show_ui(ui, |ui| {
+                for scale_note in ScaleValue::iter() {
+                    ui.selectable_value(&mut self.key, scale_note, scale_note.to_string());
+                }
+            });
+        egui::ComboBox::from_label("Scale")
+            .selected_text(self.scale.to_string())
+            .show_ui(ui, |ui| {
+                for scale in Scale::iter() {
+                    ui.selectable_value(&mut self.scale, scale, scale.to_string());
+                }
+            });
+    }
+
+    fn notes_control(&mut self, ui: &mut Ui) {
+        let scale_options = create_scale_values(self.scale, self.key);
+        for i in 0..self.notes.len() {
+            let note = &mut self.notes[i];
+            let scale_value = &mut note.pitch_name.scale_value;
+            egui::ComboBox::from_id_salt(i)
+                .selected_text(scale_value.to_string())
+                .show_ui(ui, |ui| {
+                    for scale_note in scale_options.iter() {
+                        ui.selectable_value(scale_value, *scale_note, scale_note.to_string());
+                    }
+                });
+            ui.add(egui::Slider::new(&mut note.pitch_name.octave, 0..=8).text("Octave"));
+            if ui.button("Delete").clicked() {
+                self.notes.remove(i);
+            }
+        }
+        if ui.button("New note").clicked() {
+            self.notes.push(Note {
+                pitch_name: PitchName {
+                    scale_value: ScaleValue::A,
+                    octave: 4,
+                },
+                beats: 1.0,
+            });
+        }
+    }
+
+    fn save_control(&mut self, ui: &mut Ui) {
+        if ui.button("Save").clicked() {
+            let save_name = self.track_name.clone();
+            let notes_to_save = self.notes.clone();
+            let _save_thread =
+                Promise::spawn_local(async move { save_notes(save_name, notes_to_save).await });
+        }
+    }
+
+    fn play_control(&mut self, ui: &mut Ui) {
+        if ui.button("Play (local)").clicked() {
+            let envelope = AdsrEnvelope {
+                attack: self.attack,
+                decay: self.decay,
+                sustain: self.sustain,
+                release: self.release,
+            };
+            let track = create_track(
+                self.notes.clone(),
+                self.wave_type,
+                self.bpm,
+                self.volume,
+                envelope,
+            );
+            let delay = EffectInstance {
+                effect: Effect::SimpleDelay {
+                    config: DelayConfig {
+                        amplitude: self.delay_amplitude,
+
+                        delay_ms: self.delay_ms,
+                    },
+                },
+                meta: EffectMeta {
+                    id: 0,
+                    wet: self.delay_wet,
+                },
+            };
+            let eq = EffectInstance {
+                effect: Effect::SimpleEq {
+                    config: EqConfig {
+                        kind: self.eq_type.clone(),
+                        fc: self.resonant_freq,
+                        q: self.q,
+                    },
+                },
+                meta: EffectMeta {
+                    id: 1,
+                    wet: self.eq_wet,
+                },
+            };
+            let effects = vec![delay, eq];
+            let audio = local_render(
+                &track,
+                SupersawConfig {
+                    osc_count: self.osc_count,
+                    detune_cents: self.detune,
+                },
+                effects,
+            );
+
+            self.audio_player = AudioPlayer::new(&audio).unwrap().into();
+        }
+    }
 }
 
 impl eframe::App for App {
     fn update(&mut self, ctx: &egui::Context, _frame: &mut eframe::Frame) {
         egui::CentralPanel::default().show(ctx, |ui| {
-            ui.heading("Veldt");
+            ScrollArea::vertical()
+                .auto_shrink(false)
+                .scroll_bar_visibility(ScrollBarVisibility::VisibleWhenNeeded)
+                .show(ui, |ui| {
+                    ui.heading("Veldt");
 
-            ui.horizontal(|ui| {
-                ui.label("Track name: ");
-                ui.text_edit_singleline(&mut self.track_name);
-            });
-
-            ui.add(egui::Slider::new(&mut self.volume, 0.0..=1.0).text("Volume"));
-            ui.add(
-                egui::Slider::new(&mut self.bpm, 20.0..=200.0)
-                    .text("BPM")
-                    .logarithmic(true),
-            );
-            ui.add(
-                egui::Slider::new(&mut self.attack, 0.0..=10.0)
-                    .text("Attack")
-                    .logarithmic(true),
-            );
-            ui.add(
-                egui::Slider::new(&mut self.decay, 0.0..=10.0)
-                    .text("Decay")
-                    .logarithmic(true),
-            );
-            ui.add(
-                egui::Slider::new(&mut self.sustain, 0.0..=1.0)
-                    .text("Sustain")
-                    .logarithmic(true),
-            );
-            ui.add(
-                egui::Slider::new(&mut self.release, 0.0..=10.0)
-                    .text("Release")
-                    .logarithmic(true),
-            );
-            ui.add(
-                egui::Slider::new(&mut self.osc_count, 1..=24)
-                    .text("Osc count")
-                    .logarithmic(true),
-            );
-            ui.add(
-                egui::Slider::new(&mut self.detune, 0.0..=100.0)
-                    .text("Osc detune")
-                    .logarithmic(true),
-            );
-            ui.add(
-                egui::Slider::new(&mut self.resonant_freq, 20.0..=20000.0)
-                    .text("Resonant frequency")
-                    .logarithmic(true),
-            );
-            ui.add(
-                egui::Slider::new(&mut self.q, 0.1..=100.0)
-                    .text("Q value")
-                    .logarithmic(true),
-            );
-            egui::ComboBox::from_label("EQ type")
-                .selected_text(format!("{}", self.eq_type))
-                .show_ui(ui, |ui| {
-                    for eq_type in EqType::iter() {
-                        ui.selectable_value(
-                            &mut self.eq_type,
-                            eq_type.clone(),
-                            eq_type.to_string(),
-                        );
-                    }
-                });
-            ui.add(egui::Slider::new(&mut self.eq_wet, 0.0..=1.0).text("EQ wet"));
-            ui.add(egui::Slider::new(&mut self.delay_amplitude, 0.0..=1.0).text("Delay amplitude"));
-            ui.add(
-                egui::Slider::new(&mut self.delay_ms, 1.0..=1000.0)
-                    .text("Delay ms")
-                    .logarithmic(true),
-            );
-            ui.add(egui::Slider::new(&mut self.delay_wet, 0.0..=1.0).text("Delay wet"));
-            egui::ComboBox::from_label("Key")
-                .selected_text(self.key.to_string())
-                .show_ui(ui, |ui| {
-                    for scale_note in ScaleValue::iter() {
-                        ui.selectable_value(&mut self.key, scale_note, scale_note.to_string());
-                    }
-                });
-            egui::ComboBox::from_label("Scale")
-                .selected_text(self.scale.to_string())
-                .show_ui(ui, |ui| {
-                    for scale in Scale::iter() {
-                        ui.selectable_value(&mut self.scale, scale, scale.to_string());
-                    }
-                });
-            egui::ComboBox::from_label("Wave type")
-                .selected_text(self.wave_type.to_string())
-                .show_ui(ui, |ui| {
-                    ui.selectable_value(&mut self.wave_type, WaveType::Sine, "Sine");
-                    ui.selectable_value(&mut self.wave_type, WaveType::Square, "Square");
-                    ui.selectable_value(&mut self.wave_type, WaveType::Saw, "Saw");
-                    ui.selectable_value(&mut self.wave_type, WaveType::Triangle, "Triangle");
-                });
-
-            let scale_options = create_scale_values(self.scale, self.key);
-            for i in 0..self.notes.len() {
-                let note = &mut self.notes[i];
-                let scale_value = &mut note.pitch_name.scale_value;
-                egui::ComboBox::from_id_salt(i)
-                    .selected_text(scale_value.to_string())
-                    .show_ui(ui, |ui| {
-                        for scale_note in scale_options.iter() {
-                            ui.selectable_value(scale_value, *scale_note, scale_note.to_string());
-                        }
+                    ui.horizontal(|ui| {
+                        ui.label("Track name: ");
+                        ui.text_edit_singleline(&mut self.track_name);
                     });
-                ui.add(egui::Slider::new(&mut note.pitch_name.octave, 0..=8).text("Octave"));
-                if ui.button("Delete").clicked() {
-                    self.notes.remove(i);
-                }
-            }
-            if ui.button("New note").clicked() {
-                self.notes.push(Note {
-                    pitch_name: PitchName {
-                        scale_value: ScaleValue::A,
-                        octave: 4,
-                    },
-                    beats: 1.0,
+
+                    ui.add(egui::Slider::new(&mut self.volume, 0.0..=1.0).text("Volume"));
+                    ui.add(
+                        egui::Slider::new(&mut self.bpm, 20.0..=200.0)
+                            .text("BPM")
+                            .logarithmic(true),
+                    );
+
+                    ui.separator();
+                    self.envelope_control(ui);
+                    ui.separator();
+                    self.generator_control(ui);
+                    ui.separator();
+                    self.eq_control(ui);
+                    ui.separator();
+                    self.delay_control(ui);
+                    ui.separator();
+                    self.key_control(ui);
+                    ui.separator();
+                    self.notes_control(ui);
+                    ui.separator();
+                    self.save_control(ui);
+                    ui.separator();
+                    self.play_control(ui);
+
+                    ui.separator();
+
+                    ui.with_layout(egui::Layout::bottom_up(egui::Align::LEFT), |ui| {
+                        egui::warn_if_debug_build(ui);
+                    });
                 });
-            }
-            let mut save_status = "Save";
-            if ui.button(save_status).clicked() {
-                let save_name = self.track_name.clone();
-                let notes_to_save = self.notes.clone();
-                let save_thread =
-                    Promise::spawn_local(async move { save_notes(save_name, notes_to_save).await });
-            }
-
-            if ui.button("Play (local)").clicked() {
-                let envelope = AdsrEnvelope {
-                    attack: self.attack,
-                    decay: self.decay,
-                    sustain: self.sustain,
-                    release: self.release,
-                };
-                let track = create_track(
-                    self.notes.clone(),
-                    self.wave_type,
-                    self.bpm,
-                    self.volume,
-                    envelope,
-                );
-                let delay = EffectInstance {
-                    effect: Effect::SimpleDelay {
-                        config: DelayConfig {
-                            amplitude: self.delay_amplitude,
-
-                            delay_ms: self.delay_ms,
-                        },
-                    },
-                    meta: EffectMeta {
-                        id: 0,
-                        wet: self.delay_wet,
-                    },
-                };
-                let eq = EffectInstance {
-                    effect: Effect::SimpleEq {
-                        config: EqConfig {
-                            kind: self.eq_type.clone(),
-                            fc: self.resonant_freq,
-                            q: self.q,
-                        },
-                    },
-                    meta: EffectMeta {
-                        id: 1,
-                        wet: self.eq_wet,
-                    },
-                };
-                let effects = vec![delay, eq];
-                let audio = local_render(
-                    &track,
-                    SupersawConfig {
-                        osc_count: self.osc_count,
-                        detune_cents: self.detune,
-                    },
-                    effects,
-                );
-
-                self.audio_player = AudioPlayer::new(&audio).unwrap().into();
-            }
-
-            ui.separator();
-
-            ui.with_layout(egui::Layout::bottom_up(egui::Align::LEFT), |ui| {
-                egui::warn_if_debug_build(ui);
-            });
         });
     }
 }
