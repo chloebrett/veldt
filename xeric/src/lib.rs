@@ -6,7 +6,6 @@ use shared::render::render_server::{Render, RenderServer};
 use shared::render::{RenderReply, RenderRequest};
 use shared::save_notes::load_notes_list_server::LoadNotesListServer;
 use shared::save_notes::save_notes_server::SaveNotesServer;
-use shared::types::{Freq, KnobPosition};
 use std::collections::HashMap;
 use std::net::SocketAddr;
 use std::sync::{Arc, Mutex};
@@ -29,21 +28,12 @@ impl Render for MyRender {
 
             detune_cents: 0.0,
         };
-        let resonant_freq: Freq = 1000.0;
-        let resonance_q: KnobPosition = 1.0;
-        let resonance_wet: KnobPosition = 1.0;
 
         let track = request
             .into_inner()
             .track
             .ok_or(tonic::Status::invalid_argument("Track must be supplied"))?;
-        let bytes = as_bytes(&render(
-            &track.into(),
-            supersaw_config,
-            resonant_freq,
-            resonance_q,
-            resonance_wet,
-        ));
+        let bytes = as_bytes(&render(&track.into(), supersaw_config, vec![]));
 
         Ok(tonic::Response::new(RenderReply { audio: bytes }))
     }
