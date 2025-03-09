@@ -1,4 +1,4 @@
-use crate::model::{WaveType, AdsrEnvelope};
+use crate::model::{AdsrEnvelope, WaveType};
 use crate::types::Volume;
 
 type _GeneratorInstanceId = usize;
@@ -31,4 +31,3 @@ pub struct _GeneratorMeta {
     _volume: Volume,
     // TODO: pan
 }
-

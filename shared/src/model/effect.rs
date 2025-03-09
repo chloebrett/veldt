@@ -1,5 +1,5 @@
-use crate::types::{Decibels, KnobPosition, Milliseconds, Volume};
 use crate::model::EqConfig;
+use crate::types::{Decibels, KnobPosition, Milliseconds, Volume};
 
 type EffectId = usize;
 type _EffectInstanceId = usize;
