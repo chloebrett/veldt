@@ -1,17 +1,24 @@
 use crate::audio_player::AudioPlayer;
 use mesic::{SupersawConfig, create_track, render as local_render};
 use shared::model::{AdsrEnvelope, Note, PitchName, ScaleValue, WaveType};
+use strum::IntoEnumIterator;
 
 pub struct TemplateApp {
     track_name: String,
     volume: f32,
+    bpm: f32,
     attack: f32,
     decay: f32,
     sustain: f32,
     release: f32,
     osc_count: u32,
     detune: f32,
+    resonant_freq: f32,
+    q: f32,
+    eq_wet: f32,
+    wave_type: WaveType,
     audio_player: Option<AudioPlayer>,
+    notes: Vec<Note>,
 }
 
 impl Default for TemplateApp {
@@ -19,13 +26,25 @@ impl Default for TemplateApp {
         Self {
             track_name: "My Track".to_owned(),
             volume: 1.0,
+            bpm: 120.0,
             attack: 0.1,
             decay: 0.1,
             sustain: 0.8,
             release: 0.1,
             osc_count: 4,
             detune: 5.0,
+            resonant_freq: 1000.0,
+            q: 1.0,
+            eq_wet: 1.0,
+            wave_type: WaveType::Sine,
             audio_player: None,
+            notes: vec![Note {
+                pitch_name: PitchName {
+                    scale_value: ScaleValue::A,
+                    octave: 4,
+                },
+                beats: 1.0,
+            }],
         }
     }
 }
@@ -41,7 +60,6 @@ impl TemplateApp {
 }
 
 impl eframe::App for TemplateApp {
-    /// Called each time the UI needs repainting, which may be many times per second.
     fn update(&mut self, ctx: &egui::Context, _frame: &mut eframe::Frame) {
         egui::CentralPanel::default().show(ctx, |ui| {
             ui.heading("Veldt");
@@ -52,39 +70,110 @@ impl eframe::App for TemplateApp {
             });
 
             ui.add(egui::Slider::new(&mut self.volume, 0.0..=1.0).text("Volume"));
-            ui.add(egui::Slider::new(&mut self.attack, 0.0..=10.0).text("Attack"));
-            ui.add(egui::Slider::new(&mut self.decay, 0.0..=10.0).text("Decay"));
-            ui.add(egui::Slider::new(&mut self.sustain, 0.0..=1.0).text("Sustain"));
-            ui.add(egui::Slider::new(&mut self.release, 0.0..=10.0).text("Release"));
-            ui.add(egui::Slider::new(&mut self.osc_count, 0..=24).text("Osc count"));
-            ui.add(egui::Slider::new(&mut self.detune, 0.0..=100.0).text("Osc detune"));
+            ui.add(
+                egui::Slider::new(&mut self.bpm, 20.0..=200.0)
+                    .text("BPM")
+                    .logarithmic(true),
+            );
+            ui.add(
+                egui::Slider::new(&mut self.attack, 0.0..=10.0)
+                    .text("Attack")
+                    .logarithmic(true),
+            );
+            ui.add(
+                egui::Slider::new(&mut self.decay, 0.0..=10.0)
+                    .text("Decay")
+                    .logarithmic(true),
+            );
+            ui.add(
+                egui::Slider::new(&mut self.sustain, 0.0..=1.0)
+                    .text("Sustain")
+                    .logarithmic(true),
+            );
+            ui.add(
+                egui::Slider::new(&mut self.release, 0.0..=10.0)
+                    .text("Release")
+                    .logarithmic(true),
+            );
+            ui.add(
+                egui::Slider::new(&mut self.osc_count, 1..=24)
+                    .text("Osc count")
+                    .logarithmic(true),
+            );
+            ui.add(
+                egui::Slider::new(&mut self.detune, 0.0..=100.0)
+                    .text("Osc detune")
+                    .logarithmic(true),
+            );
+            ui.add(
+                egui::Slider::new(&mut self.resonant_freq, 20.0..=20000.0)
+                    .text("Resonant frequency")
+                    .logarithmic(true),
+            );
+            ui.add(
+                egui::Slider::new(&mut self.q, 0.1..=100.0)
+                    .text("Q value")
+                    .logarithmic(true),
+            );
+            ui.add(egui::Slider::new(&mut self.eq_wet, 0.0..=1.0).text("EQ wet"));
+            egui::ComboBox::from_label("Wave type")
+                .selected_text(format!("{:?}", self.wave_type))
+                .show_ui(ui, |ui| {
+                    ui.selectable_value(&mut self.wave_type, WaveType::Sine, "Sine");
+                    ui.selectable_value(&mut self.wave_type, WaveType::Square, "Square");
+                    ui.selectable_value(&mut self.wave_type, WaveType::Saw, "Saw");
+                    ui.selectable_value(&mut self.wave_type, WaveType::Triangle, "Triangle");
+                });
 
-            if ui.button("Play").clicked() {
+            for i in 0..self.notes.len() {
+                let note = &mut self.notes[i];
+                let scale_value = &mut note.pitch_name.scale_value;
+                egui::ComboBox::from_id_salt(i)
+                    .selected_text(scale_value.to_string())
+                    .show_ui(ui, |ui| {
+                        for scale_note in ScaleValue::iter() {
+                            ui.selectable_value(scale_value, scale_note, scale_note.to_string());
+                        }
+                    });
+                ui.add(egui::Slider::new(&mut note.pitch_name.octave, 0..=8).text("Octave"));
+                if ui.button("Delete").clicked() {
+                    self.notes.remove(i);
+                }
+            }
+            if ui.button("New note").clicked() {
+                self.notes.push(Note {
+                    pitch_name: PitchName {
+                        scale_value: ScaleValue::A,
+                        octave: 4,
+                    },
+                    beats: 1.0,
+                });
+            }
+
+            if ui.button("Play (local)").clicked() {
                 let envelope = AdsrEnvelope {
                     attack: self.attack,
                     decay: self.decay,
                     sustain: self.sustain,
                     release: self.release,
                 };
-                let notes = vec![Note {
-                    pitch_name: PitchName {
-                        scale_value: ScaleValue::A,
-                        octave: 4,
-                    },
-                    beats: 1.0,
-                }];
-                let track = create_track(notes, WaveType::Saw, 120.0, self.volume, envelope);
+                let track = create_track(
+                    self.notes.clone(),
+                    self.wave_type,
+                    self.bpm,
+                    self.volume,
+                    envelope,
+                );
                 let audio = local_render(
                     &track,
                     SupersawConfig {
                         osc_count: self.osc_count,
                         detune_cents: self.detune,
                     },
-                    10000.0,
-                    10.0,
-                    0.0,
+                    self.resonant_freq,
+                    self.q,
+                    self.eq_wet,
                 );
-                log::info!("Track {:?}, audio {:?}", track, audio);
 
                 self.audio_player = AudioPlayer::new(&audio).unwrap().into();
             }
