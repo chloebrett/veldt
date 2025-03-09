@@ -150,21 +150,21 @@ impl eframe::App for App {
             );
             ui.add(egui::Slider::new(&mut self.delay_wet, 0.0..=1.0).text("Delay wet"));
             egui::ComboBox::from_label("Key")
-                .selected_text(format!("{}", self.key.to_string()))
+                .selected_text(self.key.to_string())
                 .show_ui(ui, |ui| {
                     for scale_note in ScaleValue::iter() {
                         ui.selectable_value(&mut self.key, scale_note, scale_note.to_string());
                     }
                 });
             egui::ComboBox::from_label("Scale")
-                .selected_text(format!("{}", self.scale.to_string()))
+                .selected_text(self.scale.to_string())
                 .show_ui(ui, |ui| {
                     for scale in Scale::iter() {
                         ui.selectable_value(&mut self.scale, scale, scale.to_string());
                     }
                 });
             egui::ComboBox::from_label("Wave type")
-                .selected_text(format!("{:?}", self.wave_type))
+                .selected_text(self.wave_type.to_string())
                 .show_ui(ui, |ui| {
                     ui.selectable_value(&mut self.wave_type, WaveType::Sine, "Sine");
                     ui.selectable_value(&mut self.wave_type, WaveType::Square, "Square");
