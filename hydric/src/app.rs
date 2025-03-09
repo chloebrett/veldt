@@ -1,10 +1,10 @@
 use crate::{audio_player::AudioPlayer, note_save::save_notes};
 use mesic::{SupersawConfig, create_scale_values, create_track, render as local_render};
+use poll_promise::Promise;
 use shared::model::{
     AdsrEnvelope, DelayConfig, Effect, EffectInstance, EffectMeta, EqConfig, EqType, Note,
     PitchName, Scale, ScaleValue, WaveType,
 };
-use poll_promise::Promise;
 use strum::IntoEnumIterator;
 
 pub struct App {
@@ -202,7 +202,8 @@ impl eframe::App for App {
             if ui.button(save_status).clicked() {
                 let save_name = self.track_name.clone();
                 let notes_to_save = self.notes.clone();
-                let save_thread = Promise::spawn_local(async move {save_notes(save_name, notes_to_save).await});
+                let save_thread =
+                    Promise::spawn_local(async move { save_notes(save_name, notes_to_save).await });
             }
 
             if ui.button("Play (local)").clicked() {
