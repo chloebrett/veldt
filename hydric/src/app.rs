@@ -1,6 +1,6 @@
 use crate::audio_player::AudioPlayer;
-use egui::{Ui, ScrollArea};
 use egui::scroll_area::ScrollBarVisibility;
+use egui::{ScrollArea, Ui};
 use mesic::{SupersawConfig, create_scale_values, create_track, render as local_render};
 use shared::model::{
     AdsrEnvelope, DelayConfig, Effect, EffectInstance, EffectMeta, EqConfig, EqType, Note,
