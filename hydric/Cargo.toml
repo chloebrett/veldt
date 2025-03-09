@@ -6,9 +6,8 @@ edition = "2024"
 [dependencies]
 shared = { path = "../shared" }
 mesic = { path = "../mesic" }
-http = "1.2.0"
 tonic-web-wasm-client = "0.6.1"
-web-sys = { version = "0.3.77", features = ["AudioBuffer", "AudioContext", "AudioBufferSourceNode", "AudioDestinationNode", "AudioNode"] }
+web-sys = { version = "0.3.77" }
 wasm-bindgen = "0.2.100"
 egui = "0.31"
 eframe = { version = "0.31", default-features = false, features = [

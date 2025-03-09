@@ -1029,7 +1029,6 @@ dependencies = [
  "cpal",
  "eframe",
  "egui",
- "http",
  "log",
  "mesic",
  "shared",

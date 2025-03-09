@@ -1,8 +1,9 @@
+use eframe::web_sys;
+
 pub fn init() {
     use eframe::wasm_bindgen::JsCast as _;
 
     // Redirect `log` message to `console.log` and friends:
-    // TODO: use the leptos logger instead?
     eframe::WebLogger::init(log::LevelFilter::Debug).ok();
 
     let web_options = eframe::WebOptions::default();
