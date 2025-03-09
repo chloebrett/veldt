@@ -1,21 +1,11 @@
-use leptos::prelude::*;
-
+mod app;
 mod audio_player;
 mod audio_render;
-mod components;
-mod egui_app;
-mod egui_init;
+mod init;
 mod note_save;
-mod state;
 
-use crate::components::App;
-use crate::egui_init::egui_init;
+use crate::init::init;
 
 fn main() {
-    console_error_panic_hook::set_once();
-
-    mount_to_body(|| view! { <App /> });
-
-    // Init the embedded immediate-mode canvas app
-    egui_init();
+    init();
 }
