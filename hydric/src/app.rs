@@ -1,6 +1,9 @@
 use crate::audio_player::AudioPlayer;
 use mesic::{SupersawConfig, create_track, render as local_render};
-use shared::model::{EqType, EqConfig, DelayConfig, Effect, AdsrEnvelope, Note, PitchName, ScaleValue, WaveType, EffectInstance, EffectMeta};
+use shared::model::{
+    AdsrEnvelope, DelayConfig, Effect, EffectInstance, EffectMeta, EqConfig, EqType, Note,
+    PitchName, ScaleValue, WaveType,
+};
 use strum::IntoEnumIterator;
 
 pub struct App {
@@ -127,22 +130,21 @@ impl eframe::App for App {
                 .selected_text(format!("{}", self.eq_type))
                 .show_ui(ui, |ui| {
                     for eq_type in EqType::iter() {
-                        ui.selectable_value(&mut self.eq_type, eq_type.clone(), eq_type.to_string());
+                        ui.selectable_value(
+                            &mut self.eq_type,
+                            eq_type.clone(),
+                            eq_type.to_string(),
+                        );
                     }
                 });
             ui.add(egui::Slider::new(&mut self.eq_wet, 0.0..=1.0).text("EQ wet"));
-            ui.add(
-                egui::Slider::new(&mut self.delay_amplitude, 0.0..=1.0)
-                    .text("Delay amplitude")
-            );
+            ui.add(egui::Slider::new(&mut self.delay_amplitude, 0.0..=1.0).text("Delay amplitude"));
             ui.add(
                 egui::Slider::new(&mut self.delay_ms, 1.0..=1000.0)
-                    .text("Delay ms").logarithmic(true)
+                    .text("Delay ms")
+                    .logarithmic(true),
             );
-            ui.add(
-                egui::Slider::new(&mut self.delay_wet, 0.0..=1.0)
-                    .text("Delay wet")
-            );
+            ui.add(egui::Slider::new(&mut self.delay_wet, 0.0..=1.0).text("Delay wet"));
             egui::ComboBox::from_label("Wave type")
                 .selected_text(format!("{:?}", self.wave_type))
                 .show_ui(ui, |ui| {

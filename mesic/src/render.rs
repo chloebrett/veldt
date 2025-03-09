@@ -1,9 +1,7 @@
 use crate::effect::apply_effects;
 use crate::sig::sum;
 use crate::wave::{SupersawConfig, polyphonic_wave};
-use shared::model::{
-    EffectInstance, MixerChannel, Track,
-};
+use shared::model::{EffectInstance, MixerChannel, Track};
 
 pub fn render(
     track: &Track,
