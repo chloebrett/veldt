@@ -16,7 +16,7 @@
     "p": "./.husky/pre-commit",
     "r": "yarn concurrently 'yarn xr' 'yarn hr'",
     "hb": "cd hydric; cargo build --target=wasm32-unknown-unknown",
-    "hf": "cd hydric; cargo fmt; leptosfmt *",
+    "hf": "cd hydric; cargo fmt",
     "hr": "cd hydric; cargo build --target=wasm32-unknown-unknown && trunk serve",
     "hl": "cd hydric; cargo clippy --target=wasm32-unknown-unknown -- -W clippy::all",
     "mb": "cd mesic; cargo build",

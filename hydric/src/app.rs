@@ -1,6 +1,9 @@
 use crate::{audio_player::AudioPlayer, note_save::save_notes};
 use mesic::{SupersawConfig, create_scale_values, create_track, render as local_render};
-use shared::model::{AdsrEnvelope, Note, PitchName, Scale, ScaleValue, WaveType};
+use shared::model::{
+    AdsrEnvelope, DelayConfig, Effect, EffectInstance, EffectMeta, EqConfig, EqType, Note,
+    PitchName, Scale, ScaleValue, WaveType,
+};
 use strum::IntoEnumIterator;
 
 pub struct App {
@@ -16,11 +19,15 @@ pub struct App {
     resonant_freq: f32,
     q: f32,
     eq_wet: f32,
+    eq_type: EqType,
     wave_type: WaveType,
     audio_player: Option<AudioPlayer>,
     notes: Vec<Note>,
     key: ScaleValue,
     scale: Scale,
+    delay_ms: f32,
+    delay_wet: f32,
+    delay_amplitude: f32,
 }
 
 impl Default for App {
@@ -38,6 +45,7 @@ impl Default for App {
             resonant_freq: 1000.0,
             q: 1.0,
             eq_wet: 1.0,
+            eq_type: EqType::SimpleResonator,
             wave_type: WaveType::Sine,
             audio_player: None,
             notes: vec![Note {
@@ -49,6 +57,9 @@ impl Default for App {
             }],
             key: ScaleValue::A,
             scale: Scale::Chromatic,
+            delay_ms: 250.0,
+            delay_wet: 0.5,
+            delay_amplitude: 0.5,
         }
     }
 }
@@ -119,23 +130,41 @@ impl eframe::App for App {
                     .text("Q value")
                     .logarithmic(true),
             );
+            egui::ComboBox::from_label("EQ type")
+                .selected_text(format!("{}", self.eq_type))
+                .show_ui(ui, |ui| {
+                    for eq_type in EqType::iter() {
+                        ui.selectable_value(
+                            &mut self.eq_type,
+                            eq_type.clone(),
+                            eq_type.to_string(),
+                        );
+                    }
+                });
             ui.add(egui::Slider::new(&mut self.eq_wet, 0.0..=1.0).text("EQ wet"));
+            ui.add(egui::Slider::new(&mut self.delay_amplitude, 0.0..=1.0).text("Delay amplitude"));
+            ui.add(
+                egui::Slider::new(&mut self.delay_ms, 1.0..=1000.0)
+                    .text("Delay ms")
+                    .logarithmic(true),
+            );
+            ui.add(egui::Slider::new(&mut self.delay_wet, 0.0..=1.0).text("Delay wet"));
             egui::ComboBox::from_label("Key")
-                .selected_text(format!("{}", self.key.to_string()))
+                .selected_text(self.key.to_string())
                 .show_ui(ui, |ui| {
                     for scale_note in ScaleValue::iter() {
                         ui.selectable_value(&mut self.key, scale_note, scale_note.to_string());
                     }
                 });
             egui::ComboBox::from_label("Scale")
-                .selected_text(format!("{}", self.scale.to_string()))
+                .selected_text(self.scale.to_string())
                 .show_ui(ui, |ui| {
                     for scale in Scale::iter() {
                         ui.selectable_value(&mut self.scale, scale, scale.to_string());
                     }
                 });
             egui::ComboBox::from_label("Wave type")
-                .selected_text(format!("{:?}", self.wave_type))
+                .selected_text(self.wave_type.to_string())
                 .show_ui(ui, |ui| {
                     ui.selectable_value(&mut self.wave_type, WaveType::Sine, "Sine");
                     ui.selectable_value(&mut self.wave_type, WaveType::Square, "Square");
@@ -188,15 +217,40 @@ impl eframe::App for App {
                     self.volume,
                     envelope,
                 );
+                let delay = EffectInstance {
+                    effect: Effect::SimpleDelay {
+                        config: DelayConfig {
+                            amplitude: self.delay_amplitude,
+
+                            delay_ms: self.delay_ms,
+                        },
+                    },
+                    meta: EffectMeta {
+                        id: 0,
+                        wet: self.delay_wet,
+                    },
+                };
+                let eq = EffectInstance {
+                    effect: Effect::SimpleEq {
+                        config: EqConfig {
+                            kind: self.eq_type.clone(),
+                            fc: self.resonant_freq,
+                            q: self.q,
+                        },
+                    },
+                    meta: EffectMeta {
+                        id: 1,
+                        wet: self.eq_wet,
+                    },
+                };
+                let effects = vec![delay, eq];
                 let audio = local_render(
                     &track,
                     SupersawConfig {
                         osc_count: self.osc_count,
                         detune_cents: self.detune,
                     },
-                    self.resonant_freq,
-                    self.q,
-                    self.eq_wet,
+                    effects,
                 );
 
                 self.audio_player = AudioPlayer::new(&audio).unwrap().into();
