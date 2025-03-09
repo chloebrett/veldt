@@ -1,5 +1,5 @@
+use crate::model::{_GeneratorInstance, EffectInstance};
 use crate::types::Beats;
-use crate::model::{EffectInstance, _GeneratorInstance};
 use chrono::{DateTime, Utc};
 use std::collections::BTreeSet;
 

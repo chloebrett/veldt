@@ -1,5 +1,5 @@
-use strum::{Display, EnumIter, EnumString};
 use crate::types::{Freq, KnobPosition};
+use strum::{Display, EnumIter, EnumString};
 
 #[derive(Clone, EnumIter, EnumString, Display, PartialEq)]
 pub enum EqType {
@@ -24,4 +24,3 @@ pub struct EqConfig {
 
     pub q: KnobPosition,
 }
-
