@@ -1,4 +1,4 @@
-use crate::{audio_player::AudioPlayer, note_save::save_notes};
+use crate::{audio_player::AudioPlayer, note_save::{load_note_list, save_notes}};
 use egui::{
     Color32, Pos2, Rect, ScrollArea, Ui, containers::Frame, emath, epaint, epaint::PathStroke,
     pos2, scroll_area::ScrollBarVisibility, vec2,
@@ -230,6 +230,24 @@ impl App {
             let notes_to_save = self.notes.clone();
             let _save_thread =
                 Promise::spawn_local(async move { save_notes(save_name, notes_to_save).await });
+        }
+        let load_thread = Promise::spawn_local(async move { load_note_list().await });
+        if let Some(list) = load_thread.ready() {
+            egui::ComboBox::from_label("Tracks")
+                .selected_text(self.track_name.clone())
+                .show_ui(ui, |ui| {
+                    for name in list.iter() {
+                        ui.selectable_value(&mut self.track_name.clone(), name.clone(), name);
+                    }
+                });
+        } else {
+            egui::ComboBox::from_label("Tracks")
+                .selected_text(self.track_name.clone())
+                .show_ui(ui, |ui| {
+                    for name in vec![self.track_name.clone()].iter() {
+                        ui.selectable_value(&mut self.track_name.clone(), name.clone(), name);
+                    }
+                });
         }
     }
 
