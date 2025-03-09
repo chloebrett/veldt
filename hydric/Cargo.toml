@@ -19,3 +19,4 @@ log = "0.4"
 wasm-bindgen-futures = "0.4.50"
 strum = "0.27.1"
 chrono = "0.4.40"
+poll-promise = { version = "0.3.0", features = ["web"] }
