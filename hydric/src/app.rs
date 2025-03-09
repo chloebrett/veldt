@@ -1,5 +1,5 @@
 use crate::audio_player::AudioPlayer;
-use mesic::{SupersawConfig, create_track, render as local_render, create_scale_values};
+use mesic::{SupersawConfig, create_scale_values, create_track, render as local_render};
 use shared::model::{AdsrEnvelope, Note, PitchName, Scale, ScaleValue, WaveType};
 use strum::IntoEnumIterator;
 
@@ -20,7 +20,7 @@ pub struct App {
     audio_player: Option<AudioPlayer>,
     notes: Vec<Note>,
     key: ScaleValue,
-    scale: Scale
+    scale: Scale,
 }
 
 impl Default for App {
@@ -123,9 +123,9 @@ impl eframe::App for App {
             egui::ComboBox::from_label("Key")
                 .selected_text(format!("{}", self.key.to_string()))
                 .show_ui(ui, |ui| {
-                        for scale_note in ScaleValue::iter() {
-                            ui.selectable_value(&mut self.key, scale_note, scale_note.to_string());
-                        }
+                    for scale_note in ScaleValue::iter() {
+                        ui.selectable_value(&mut self.key, scale_note, scale_note.to_string());
+                    }
                 });
             egui::ComboBox::from_label("Scale")
                 .selected_text(format!("{}", self.scale.to_string()))
