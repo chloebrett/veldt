@@ -11,6 +11,7 @@ use shared::model::{
     PitchName, Scale, ScaleValue, WaveType,
 };
 use strum::IntoEnumIterator;
+use crate::audio_player_cpal::{beep, Handle};
 
 pub struct App {
     track_name: String,
@@ -35,6 +36,7 @@ pub struct App {
     delay_ms: f32,
     delay_wet: f32,
     delay_amplitude: f32,
+    handle: Option<Handle>,
 }
 
 impl Default for App {
@@ -68,6 +70,7 @@ impl Default for App {
             delay_ms: 250.0,
             delay_wet: 0.5,
             delay_amplitude: 0.5,
+            handle: None,
         }
     }
 }
@@ -286,6 +289,9 @@ impl App {
         }
         if ui.button("Stop").clicked() {
             self.audio_player.stop().expect("Couldn't stop");
+        }
+        if ui.button("Beep").clicked() {
+            self.handle = Some(beep());
         }
         self.audio_vis(ui);
     }
