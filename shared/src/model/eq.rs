@@ -1,3 +1,6 @@
+use strum::{Display, EnumIter, EnumString};
+
+#[derive(Clone, EnumIter, EnumString, Display, PartialEq)]
 pub enum EqType {
     SimpleResonator,
     SmithAngellResonator,
