@@ -198,13 +198,11 @@ impl eframe::App for App {
                     beats: 1.0,
                 });
             }
-            if ui.button("Save").clicked() {
+            let mut save_status = "Save";
+            if ui.button(save_status).clicked() {
                 let save_name = self.track_name.clone();
                 let notes_to_save = self.notes.clone();
                 let save_thread = Promise::spawn_local(async move {save_notes(save_name, notes_to_save).await});
-                if let Some(result) = save_thread.ready() {
-                } else {
-                }
             }
 
             if ui.button("Play (local)").clicked() {
