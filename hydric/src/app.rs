@@ -1,6 +1,8 @@
 use crate::audio_player::AudioPlayer;
-use egui::scroll_area::ScrollBarVisibility;
-use egui::{ScrollArea, Ui};
+use egui::{
+    Color32, Pos2, Rect, ScrollArea, Ui, containers::Frame, emath, epaint, epaint::PathStroke,
+    pos2, scroll_area::ScrollBarVisibility, vec2,
+};
 use mesic::{SupersawConfig, create_scale_values, create_track, render as local_render};
 use shared::model::{
     AdsrEnvelope, DelayConfig, Effect, EffectInstance, EffectMeta, EqConfig, EqType, Note,
@@ -76,26 +78,50 @@ impl App {
     }
 
     fn envelope_control(&mut self, ui: &mut Ui) {
-        ui.add(
-            egui::Slider::new(&mut self.attack, 0.0..=10.0)
-                .text("Attack")
-                .logarithmic(true),
-        );
-        ui.add(
-            egui::Slider::new(&mut self.decay, 0.0..=10.0)
-                .text("Decay")
-                .logarithmic(true),
-        );
-        ui.add(
-            egui::Slider::new(&mut self.sustain, 0.0..=1.0)
-                .text("Sustain")
-                .logarithmic(true),
-        );
-        ui.add(
-            egui::Slider::new(&mut self.release, 0.0..=10.0)
-                .text("Release")
-                .logarithmic(true),
-        );
+        let headroom = 1.0 - self.attack - self.decay - self.release;
+        let max_attack = headroom + self.attack;
+        let max_decay = headroom + self.decay;
+        let max_release = headroom + self.release;
+
+        if self.attack > max_attack {
+            self.attack = max_attack;
+        }
+        if self.decay > max_decay {
+            self.decay = max_decay;
+        }
+        if self.release > max_release {
+            self.release = max_release;
+        }
+
+        ui.add(egui::Slider::new(&mut self.attack, 0.0..=1.0).text("Attack"));
+        ui.add(egui::Slider::new(&mut self.decay, 0.0..=1.0).text("Decay"));
+        ui.add(egui::Slider::new(&mut self.sustain, 0.0..=1.0).text("Sustain"));
+        ui.add(egui::Slider::new(&mut self.release, 0.0..=1.0).text("Release"));
+        Frame::canvas(ui.style()).show(ui, |ui| {
+            ui.ctx().request_repaint();
+            let desired_size = vec2(100.0, 50.0);
+            let (_id, rect) = ui.allocate_space(desired_size);
+            let to_screen =
+                emath::RectTransform::from_to(Rect::from_x_y_ranges(0.0..=1.0, 1.0..=0.0), rect);
+
+            let mut points = vec![
+                pos2(0.0, 0.0),
+                pos2(self.attack, 1.0),
+                pos2(self.attack + self.decay, self.sustain),
+                pos2(1.0 - self.release, self.sustain),
+                pos2(1.0, 0.0),
+            ]
+            .into_iter()
+            .map(|it| to_screen * it)
+            .collect();
+            let thickness = 2.0;
+            let mut shapes = vec![];
+            shapes.push(epaint::Shape::line(
+                points,
+                PathStroke::new(thickness, Color32::WHITE),
+            ));
+            ui.painter().extend(shapes);
+        });
     }
 
     fn generator_control(&mut self, ui: &mut Ui) {
