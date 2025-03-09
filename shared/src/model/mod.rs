@@ -1,5 +1,7 @@
 mod adsr_envelope;
+mod effect;
 mod eq;
+mod generator;
 mod note;
 mod pitch_name;
 mod project;
@@ -11,7 +13,9 @@ mod track;
 mod wave_type;
 
 pub use adsr_envelope::*;
+pub use effect::*;
 pub use eq::*;
+pub use generator::*;
 pub use note::*;
 pub use pitch_name::*;
 pub use project::*;

@@ -1,13 +1,10 @@
-use crate::model::{AdsrEnvelope, EqType, WaveType};
-use crate::types::{Beats, Decibels, Freq, KnobPosition, Milliseconds, Volume};
-use chrono::NaiveDateTime;
+use crate::model::{_GeneratorInstance, EffectInstance};
+use crate::types::Beats;
+use chrono::{DateTime, Utc};
 use std::collections::BTreeSet;
 
 type _TrackId = usize;
 type _SampleId = usize;
-type EffectId = usize;
-type _GeneratorInstanceId = usize;
-type _EffectInstanceId = usize;
 
 struct _AppConfig {
     sample_rate: u32,
@@ -18,9 +15,9 @@ struct _Project {
 
     pub filename: String,
 
-    pub created: NaiveDateTime,
+    pub created: DateTime<Utc>,
 
-    pub last_modified: NaiveDateTime,
+    pub last_modified: DateTime<Utc>,
 
     // TODO: info about user who owns and share permissions
     /// Ordered based on start_position.
@@ -32,35 +29,6 @@ struct _Project {
     pub generators: Vec<_GeneratorInstance>,
 
     pub mixer: Vec<MixerChannel>,
-}
-
-enum _Generator {
-    SingleWave {
-        wave_generator: _WaveGenerator,
-    },
-
-    MultiWave {
-        wave_generators: Vec<_WaveGenerator>,
-    },
-}
-
-struct _WaveGenerator {
-    kind: WaveType,
-
-    envelope: AdsrEnvelope,
-}
-
-struct _GeneratorInstance {
-    id: _GeneratorInstanceId,
-
-    generator: _Generator,
-
-    meta: _GeneratorMeta,
-}
-
-struct _GeneratorMeta {
-    volume: Volume,
-    // TODO: pan
 }
 
 struct _TrackPlacement {
@@ -84,53 +52,6 @@ struct _Sample {
     pub duration_seconds: f32,
     // TODO: consider sample-specific sample rate.
     // TODO: consider multi-channel samples.
-}
-
-pub struct EffectInstance {
-    pub effect: Effect,
-
-    pub meta: EffectMeta,
-    // TODO: automation links
-}
-
-pub enum Effect {
-    SimpleDelay { config: DelayConfig },
-    // simple as opposed to parametric.
-    SimpleEq { config: EqConfig },
-    SimpleCompressor { config: _CompressorConfig },
-}
-
-pub struct DelayConfig {
-    pub amplitude: Volume,
-
-    pub delay_ms: Milliseconds,
-}
-
-pub struct EqConfig {
-    pub kind: EqType,
-
-    pub fc: Freq,
-
-    pub q: KnobPosition,
-}
-
-pub struct _CompressorConfig {
-    _threshold: Decibels,
-
-    _attack: Milliseconds,
-
-    _release: Milliseconds,
-
-    _ratio: KnobPosition,
-
-    _gain: Decibels,
-}
-
-pub struct EffectMeta {
-    pub id: EffectId,
-
-    pub wet: KnobPosition,
-    // TODO: pan
 }
 
 pub struct MixerChannel {
