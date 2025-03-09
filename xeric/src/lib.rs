@@ -33,11 +33,7 @@ impl Render for MyRender {
             .into_inner()
             .track
             .ok_or(tonic::Status::invalid_argument("Track must be supplied"))?;
-        let bytes = as_bytes(&render(
-            &track.into(),
-            supersaw_config,
-            vec!(),
-        ));
+        let bytes = as_bytes(&render(&track.into(), supersaw_config, vec![]));
 
         Ok(tonic::Response::new(RenderReply { audio: bytes }))
     }
