@@ -1,4 +1,4 @@
-use crate::audio_player::AudioPlayer;
+use crate::{audio_player::AudioPlayer, note_save::save_notes};
 use mesic::{SupersawConfig, create_scale_values, create_track, render as local_render};
 use shared::model::{AdsrEnvelope, Note, PitchName, Scale, ScaleValue, WaveType};
 use strum::IntoEnumIterator;
@@ -167,6 +167,11 @@ impl eframe::App for App {
                     },
                     beats: 1.0,
                 });
+            }
+            if ui.button("Save").clicked() {
+                let save_name = self.track_name.clone();
+                let notes_to_save = self.notes.clone();
+                let _ = async move || save_notes(save_name, notes_to_save).await;
             }
 
             if ui.button("Play (local)").clicked() {
