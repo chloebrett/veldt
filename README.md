@@ -9,12 +9,12 @@ Collaborative, self-hosted, web-based digital audio workstation built in Rust
 
 ...yes, the three app layers are named after [habitat classifications](https://en.wikipedia.org/wiki/Mesic_habitat) :)
 
-* `shared/` currently just protos
+* `shared/` contains the data model
 * `experimental` misc experiments and dependency try-ons
 
 ## Architecture
 
-Hydric is a Leptos web app, which runs in WASM context. This means it's single threaded, limited to 4GB of RAM, and has limited access to OS APIs like the filesystem. Hydric is just the UI: it talks to mesic in order to make synthesis happen.
+Hydric is a egui web app, which runs in WASM. This means it's single threaded, limited to 4GB of RAM, and has limited access to OS APIs like the filesystem. Hydric is just the UI: it talks to mesic in order to make synthesis happen.
 
 Mesic needs to run in both a WASM context - when it's running directly in a browser and talking to hydric - as well as generic server context when it's communicating with xeric, the server. It is therefore agnostic as to the specific build target.
 
