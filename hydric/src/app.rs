@@ -97,6 +97,7 @@ impl App {
         ui.add(egui::Slider::new(&mut self.decay, 0.0..=1.0).text("Decay"));
         ui.add(egui::Slider::new(&mut self.sustain, 0.0..=1.0).text("Sustain"));
         ui.add(egui::Slider::new(&mut self.release, 0.0..=1.0).text("Release"));
+
         Frame::canvas(ui.style()).show(ui, |ui| {
             ui.ctx().request_repaint();
             let desired_size = vec2(100.0, 50.0);
@@ -104,20 +105,21 @@ impl App {
             let to_screen =
                 emath::RectTransform::from_to(Rect::from_x_y_ranges(0.0..=1.0, 1.0..=0.0), rect);
 
-            let mut points = vec![
-                pos2(0.0, 0.0),
-                pos2(self.attack, 1.0),
-                pos2(self.attack + self.decay, self.sustain),
-                pos2(1.0 - self.release, self.sustain),
-                pos2(1.0, 0.0),
-            ]
-            .into_iter()
-            .map(|it| to_screen * it)
-            .collect();
+            let mut points = vec![];
+            if self.attack > 0.0 {
+                points.push(pos2(0.0, 0.0));
+            }
+            points.push(pos2(self.attack, 1.0));
+            points.push(pos2(self.attack + self.decay, self.sustain));
+            points.push(pos2(1.0 - self.release, self.sustain));
+            if self.release > 0.0 {
+                points.push(pos2(1.0, 0.0));
+            }
+
             let thickness = 2.0;
             let mut shapes = vec![];
             shapes.push(epaint::Shape::line(
-                points,
+                points.into_iter().map(|it| to_screen * it).collect(),
                 PathStroke::new(thickness, Color32::WHITE),
             ));
             ui.painter().extend(shapes);
