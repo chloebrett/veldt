@@ -1,6 +1,6 @@
 use crate::audio_player::AudioPlayer;
 use mesic::{SupersawConfig, create_track, render as local_render};
-use shared::model::{AdsrEnvelope, Note, PitchName, ScaleValue, WaveType};
+use shared::model::{AdsrEnvelope, Note, PitchName, Scale, ScaleValue, WaveType};
 use strum::IntoEnumIterator;
 
 pub struct TemplateApp {
@@ -19,6 +19,8 @@ pub struct TemplateApp {
     wave_type: WaveType,
     audio_player: Option<AudioPlayer>,
     notes: Vec<Note>,
+    key: ScaleValue,
+    scale: Scale
 }
 
 impl Default for TemplateApp {
@@ -45,6 +47,8 @@ impl Default for TemplateApp {
                 },
                 beats: 1.0,
             }],
+            key: ScaleValue::A,
+            scale: Scale::Chromatic,
         }
     }
 }
@@ -116,6 +120,20 @@ impl eframe::App for TemplateApp {
                     .logarithmic(true),
             );
             ui.add(egui::Slider::new(&mut self.eq_wet, 0.0..=1.0).text("EQ wet"));
+            egui::ComboBox::from_label("Key")
+                .selected_text(format!("{}", self.key.to_string()))
+                .show_ui(ui, |ui| {
+                        for scale_note in ScaleValue::iter() {
+                            ui.selectable_value(&mut self.key, scale_note, scale_note.to_string());
+                        }
+                });
+            egui::ComboBox::from_label("Scale")
+                .selected_text(format!("{}", self.scale.to_string()))
+                .show_ui(ui, |ui| {
+                    for scale in Scale::iter() {
+                        ui.selectable_value(&mut self.scale, scale, scale.to_string());
+                    }
+                });
             egui::ComboBox::from_label("Wave type")
                 .selected_text(format!("{:?}", self.wave_type))
                 .show_ui(ui, |ui| {
