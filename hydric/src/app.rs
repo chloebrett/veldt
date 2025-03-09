@@ -1,9 +1,10 @@
-use crate::audio_player::AudioPlayer;
+use crate::{audio_player::AudioPlayer, note_save::save_notes};
 use egui::{
     Color32, Pos2, Rect, ScrollArea, Ui, containers::Frame, emath, epaint, epaint::PathStroke,
     pos2, scroll_area::ScrollBarVisibility, vec2,
 };
 use mesic::{SupersawConfig, create_scale_values, create_track, render as local_render};
+use poll_promise::Promise;
 use shared::model::{
     AdsrEnvelope, DelayConfig, Effect, EffectInstance, EffectMeta, EqConfig, EqType, Note,
     PitchName, Scale, ScaleValue, WaveType,
@@ -223,6 +224,15 @@ impl App {
         }
     }
 
+    fn save_control(&mut self, ui: &mut Ui) {
+        if ui.button("Save").clicked() {
+            let save_name = self.track_name.clone();
+            let notes_to_save = self.notes.clone();
+            let _save_thread =
+                Promise::spawn_local(async move { save_notes(save_name, notes_to_save).await });
+        }
+    }
+
     fn play_control(&mut self, ui: &mut Ui) {
         if ui.button("Play (local)").clicked() {
             let envelope = AdsrEnvelope {
@@ -312,6 +322,8 @@ impl eframe::App for App {
                     self.key_control(ui);
                     ui.separator();
                     self.notes_control(ui);
+                    ui.separator();
+                    self.save_control(ui);
                     ui.separator();
                     self.play_control(ui);
 
