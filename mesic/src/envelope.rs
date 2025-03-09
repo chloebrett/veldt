@@ -3,13 +3,6 @@ use shared::model::AdsrEnvelope;
 use shared::types::Beats;
 
 pub fn apply_envelope(x: f32, envelope: &AdsrEnvelope, duration: Beats, bpm: Beats) -> f32 {
-    if duration < envelope.attack + envelope.decay + envelope.release {
-        panic!(
-            "Envelope {:?} was too short for duration {}",
-            envelope, duration
-        );
-    }
-
     let scale = bpm / 60.0 / duration;
     let x = x * scale / (SAMPLE_RATE as f32);
 
