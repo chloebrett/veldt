@@ -10,7 +10,6 @@ Collaborative, self-hosted, web-based digital audio workstation built in Rust
 ...yes, the three app layers are named after [habitat classifications](https://en.wikipedia.org/wiki/Mesic_habitat) :)
 
 * `shared/` contains the data model
-* `experimental` misc experiments and dependency try-ons
 
 ## Architecture
 
