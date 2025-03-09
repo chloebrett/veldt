@@ -1,8 +1,8 @@
 use crate::audio_player::AudioPlayer;
-use mesic::{SupersawConfig, create_track, render as local_render};
+use mesic::{SupersawConfig, create_scale_values, create_track, render as local_render};
 use shared::model::{
     AdsrEnvelope, DelayConfig, Effect, EffectInstance, EffectMeta, EqConfig, EqType, Note,
-    PitchName, ScaleValue, WaveType,
+    PitchName, Scale, ScaleValue, WaveType,
 };
 use strum::IntoEnumIterator;
 
@@ -23,6 +23,8 @@ pub struct App {
     wave_type: WaveType,
     audio_player: Option<AudioPlayer>,
     notes: Vec<Note>,
+    key: ScaleValue,
+    scale: Scale,
     delay_ms: f32,
     delay_wet: f32,
     delay_amplitude: f32,
@@ -53,6 +55,8 @@ impl Default for App {
                 },
                 beats: 1.0,
             }],
+            key: ScaleValue::A,
+            scale: Scale::Chromatic,
             delay_ms: 250.0,
             delay_wet: 0.5,
             delay_amplitude: 0.5,
@@ -145,8 +149,22 @@ impl eframe::App for App {
                     .logarithmic(true),
             );
             ui.add(egui::Slider::new(&mut self.delay_wet, 0.0..=1.0).text("Delay wet"));
+            egui::ComboBox::from_label("Key")
+                .selected_text(self.key.to_string())
+                .show_ui(ui, |ui| {
+                    for scale_note in ScaleValue::iter() {
+                        ui.selectable_value(&mut self.key, scale_note, scale_note.to_string());
+                    }
+                });
+            egui::ComboBox::from_label("Scale")
+                .selected_text(self.scale.to_string())
+                .show_ui(ui, |ui| {
+                    for scale in Scale::iter() {
+                        ui.selectable_value(&mut self.scale, scale, scale.to_string());
+                    }
+                });
             egui::ComboBox::from_label("Wave type")
-                .selected_text(format!("{:?}", self.wave_type))
+                .selected_text(self.wave_type.to_string())
                 .show_ui(ui, |ui| {
                     ui.selectable_value(&mut self.wave_type, WaveType::Sine, "Sine");
                     ui.selectable_value(&mut self.wave_type, WaveType::Square, "Square");
@@ -154,14 +172,15 @@ impl eframe::App for App {
                     ui.selectable_value(&mut self.wave_type, WaveType::Triangle, "Triangle");
                 });
 
+            let scale_options = create_scale_values(self.scale, self.key);
             for i in 0..self.notes.len() {
                 let note = &mut self.notes[i];
                 let scale_value = &mut note.pitch_name.scale_value;
                 egui::ComboBox::from_id_salt(i)
                     .selected_text(scale_value.to_string())
                     .show_ui(ui, |ui| {
-                        for scale_note in ScaleValue::iter() {
-                            ui.selectable_value(scale_value, scale_note, scale_note.to_string());
+                        for scale_note in scale_options.iter() {
+                            ui.selectable_value(scale_value, *scale_note, scale_note.to_string());
                         }
                     });
                 ui.add(egui::Slider::new(&mut note.pitch_name.octave, 0..=8).text("Octave"));
