@@ -1,4 +1,4 @@
-pub fn egui_init() {
+pub fn init() {
     use eframe::wasm_bindgen::JsCast as _;
 
     // Redirect `log` message to `console.log` and friends:
@@ -23,7 +23,7 @@ pub fn egui_init() {
             .start(
                 canvas,
                 web_options,
-                Box::new(|cc| Ok(Box::new(crate::egui_app::TemplateApp::new(cc)))),
+                Box::new(|cc| Ok(Box::new(crate::app::App::new(cc)))),
             )
             .await;
 
