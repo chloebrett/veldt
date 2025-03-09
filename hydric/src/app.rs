@@ -9,8 +9,9 @@ use mesic::{
 };
 use poll_promise::Promise;
 use shared::model::{
-    AdsrEnvelope, DelayConfig, Effect, EffectInstance, EffectMeta, EqConfig, EqType, GeneratorMeta,
-    GeneratorType, Note, PitchName, Scale, ScaleValue, SimpleWaveConfig, WaveType, GeneratorInstance,
+    AdsrEnvelope, DelayConfig, Effect, EffectInstance, EffectMeta, EqConfig, EqType,
+    GeneratorInstance, GeneratorMeta, GeneratorType, Note, PitchName, Scale, ScaleValue,
+    SimpleWaveConfig, WaveType,
 };
 use strum::IntoEnumIterator;
 
