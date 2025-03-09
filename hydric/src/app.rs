@@ -3,7 +3,7 @@ use mesic::{SupersawConfig, create_track, render as local_render};
 use shared::model::{AdsrEnvelope, Note, PitchName, ScaleValue, WaveType};
 use strum::IntoEnumIterator;
 
-pub struct TemplateApp {
+pub struct App {
     track_name: String,
     volume: f32,
     bpm: f32,
@@ -21,7 +21,7 @@ pub struct TemplateApp {
     notes: Vec<Note>,
 }
 
-impl Default for TemplateApp {
+impl Default for App {
     fn default() -> Self {
         Self {
             track_name: "My Track".to_owned(),
@@ -49,7 +49,7 @@ impl Default for TemplateApp {
     }
 }
 
-impl TemplateApp {
+impl App {
     /// Called once before the first frame.
     pub fn new(_cc: &eframe::CreationContext<'_>) -> Self {
         // This is also where you can customize the look and feel of egui using
@@ -59,7 +59,7 @@ impl TemplateApp {
     }
 }
 
-impl eframe::App for TemplateApp {
+impl eframe::App for App {
     fn update(&mut self, ctx: &egui::Context, _frame: &mut eframe::Frame) {
         egui::CentralPanel::default().show(ctx, |ui| {
             ui.heading("Veldt");
