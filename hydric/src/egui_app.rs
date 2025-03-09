@@ -125,7 +125,7 @@ impl eframe::App for TemplateApp {
                     ui.selectable_value(&mut self.wave_type, WaveType::Triangle, "Triangle");
                 });
 
-            for i in 0 .. self.notes.len() {
+            for i in 0..self.notes.len() {
                 let note = &mut self.notes[i];
                 let scale_value = &mut note.pitch_name.scale_value;
                 egui::ComboBox::from_id_salt(i)
@@ -142,12 +142,12 @@ impl eframe::App for TemplateApp {
             }
             if ui.button("New note").clicked() {
                 self.notes.push(Note {
-                pitch_name: PitchName {
-                    scale_value: ScaleValue::A,
-                    octave: 4,
-                },
-                beats: 1.0,
-            });
+                    pitch_name: PitchName {
+                        scale_value: ScaleValue::A,
+                        octave: 4,
+                    },
+                    beats: 1.0,
+                });
             }
 
             if ui.button("Play (local)").clicked() {
