@@ -1,26 +1,20 @@
-use shared::model::{AdsrEnvelope, Note, Sequence, Synth, Track, WaveType};
-use shared::types::{Beats, Volume};
+use ordered_float::OrderedFloat;
+use shared::model::{Note, PlacedNote, Track};
+use std::collections::BTreeSet;
 
-pub fn create_track(
-    notes: Vec<Note>,
-    wave: WaveType,
-    bpm: Beats,
-    volume: Volume,
-    envelope: AdsrEnvelope,
-) -> Track {
-    let synth = Synth {
-        wave,
-        envelope,
-        volume,
-    };
+pub fn create_track(notes: Vec<Note>) -> Track {
+    let mut current_beat = 0.0;
+    let mut placed_notes = BTreeSet::new();
+
+    for note in notes {
+        placed_notes.insert(PlacedNote {
+            note,
+            offset: OrderedFloat(current_beat),
+        });
+        current_beat += note.beats;
+    }
+
     Track {
-        bpm,
-        synths: vec![synth],
-        sequences: vec![Sequence {
-            offset: 0.,
-            volume,
-            synth_index: 0,
-            notes,
-        }],
+        notes: placed_notes,
     }
 }

@@ -7,8 +7,6 @@ mod pitch_name;
 mod project;
 mod scale;
 mod scale_value;
-mod sequence;
-mod synth;
 mod track;
 mod wave_type;
 
@@ -21,7 +19,5 @@ pub use pitch_name::*;
 pub use project::*;
 pub use scale::*;
 pub use scale_value::*;
-pub use sequence::*;
-pub use synth::*;
 pub use track::*;
 pub use wave_type::*;

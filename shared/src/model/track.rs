@@ -1,34 +1,75 @@
-use crate::model::sequence::Sequence;
-use crate::model::synth::Synth;
-use crate::pmodel::*;
-use crate::serialize::map_vec;
+use crate::model::Note;
+use crate::pmodel::{PlacedNoteProto, TrackProto};
 use crate::types::*;
+use ordered_float::OrderedFloat;
+use std::cmp::Ordering;
+use std::collections::BTreeSet;
 
 #[derive(Clone, Debug, PartialEq)]
 pub struct Track {
-    pub bpm: Beats,
-
-    pub synths: Vec<Synth>,
-
-    pub sequences: Vec<Sequence>,
+    /// Ordered by offset.
+    pub notes: BTreeSet<PlacedNote>,
 }
 
 impl From<TrackProto> for Track {
-    fn from(item: TrackProto) -> Self {
+    fn from(item: TrackProto) -> Track {
         Track {
-            bpm: item.bpm,
-            synths: map_vec(item.synth),
-            sequences: map_vec(item.sequence),
+            notes: item.notes.into_iter().map(|it| it.into()).collect(),
         }
     }
 }
 
 impl From<Track> for TrackProto {
-    fn from(item: Track) -> Self {
+    fn from(item: Track) -> TrackProto {
         TrackProto {
-            bpm: item.bpm,
-            synth: map_vec(item.synths),
-            sequence: map_vec(item.sequences),
+            notes: item.notes.into_iter().map(|it| it.into()).collect(),
         }
     }
 }
+
+impl From<PlacedNoteProto> for PlacedNote {
+    fn from(item: PlacedNoteProto) -> PlacedNote {
+        PlacedNote {
+            note: item.note.unwrap().into(),
+            offset: OrderedFloat(item.offset),
+        }
+    }
+}
+
+impl From<PlacedNote> for PlacedNoteProto {
+    fn from(item: PlacedNote) -> PlacedNoteProto {
+        PlacedNoteProto {
+            note: Some(item.note.into()),
+            offset: *item.offset,
+        }
+    }
+}
+
+/// Ordered by offset.
+#[derive(Clone, Debug)]
+pub struct PlacedNote {
+    pub note: Note,
+
+    pub offset: OrderedFloat<Beats>,
+}
+
+impl PartialOrd for PlacedNote {
+    fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
+        self.offset.partial_cmp(&other.offset)
+    }
+}
+
+impl Ord for PlacedNote {
+    fn cmp(&self, other: &Self) -> Ordering {
+        self.offset.cmp(&other.offset)
+    }
+}
+
+// TODO: consider including note identity in this definition.
+impl PartialEq for PlacedNote {
+    fn eq(&self, other: &Self) -> bool {
+        self.offset == other.offset
+    }
+}
+
+impl Eq for PlacedNote {}
