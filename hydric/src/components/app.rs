@@ -11,7 +11,7 @@ use shared::model::{Scale, ScaleValue, WaveType};
 use shared::serialize::map_vec;
 use shared::types::Beats;
 use std::str::FromStr;
-use thaw::{Accordion, AccordionHeader, AccordionItem, ConfigProvider};
+use thaw::ConfigProvider;
 
 #[component]
 pub fn App() -> impl IntoView {
@@ -61,14 +61,9 @@ pub fn App() -> impl IntoView {
 
     view! {
         <ConfigProvider>
-            <Accordion collapsible=true>
-                <AccordionItem value="egui">
-                    <AccordionHeader slot>egui canvas</AccordionHeader>
-                    <div id="egui_canvas_parent">
-                        <canvas id="egui_canvas"></canvas>
-                    </div>
-                </AccordionItem>
-            </Accordion>
+            <div id="egui_canvas_parent">
+                <canvas id="egui_canvas"></canvas>
+            </div>
             <h1>"Veldt"</h1>
             <Playback
                 track=track
