@@ -1391,7 +1391,6 @@ dependencies = [
  "http",
  "mesic",
  "shared",
- "tokio",
  "tonic",
  "tonic-web",
  "tower 0.5.2",
