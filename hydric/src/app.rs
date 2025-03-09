@@ -1,4 +1,5 @@
-use crate::{audio_player::AudioPlayer, note_save::save_notes};
+use crate::audio_player::{Handle, play};
+use crate::note_save::save_notes;
 use egui::{
     Color32, Rect, ScrollArea, Ui, containers::Frame, emath, epaint, epaint::PathStroke, pos2,
     scroll_area::ScrollBarVisibility, vec2,
@@ -28,7 +29,6 @@ pub struct App {
     eq_wet: f32,
     eq_type: EqType,
     wave_type: WaveType,
-    audio_player: AudioPlayer,
     audio: Vec<f32>,
     notes: Vec<Note>,
     key: ScaleValue,
@@ -36,6 +36,7 @@ pub struct App {
     delay_ms: f32,
     delay_wet: f32,
     delay_amplitude: f32,
+    handle: Option<Handle>,
 }
 
 impl Default for App {
@@ -55,7 +56,6 @@ impl Default for App {
             eq_wet: 1.0,
             eq_type: EqType::SimpleResonator,
             wave_type: WaveType::Sine,
-            audio_player: AudioPlayer::new().unwrap(),
             audio: vec![],
             notes: vec![Note {
                 pitch_name: PitchName {
@@ -69,6 +69,7 @@ impl Default for App {
             delay_ms: 250.0,
             delay_wet: 0.5,
             delay_amplitude: 0.5,
+            handle: None,
         }
     }
 }
@@ -289,13 +290,7 @@ impl App {
             .into_iter()
             .map(|sample| sample.clamp(-1.0, 1.0))
             .collect();
-            self.audio_player
-                .set_audio(&self.audio)
-                .expect("Couldn't set audio");
-            self.audio_player.play().expect("Couldn't play");
-        }
-        if ui.button("Stop").clicked() {
-            self.audio_player.stop().expect("Couldn't stop");
+            self.handle = Some(play(&self.audio));
         }
         self.audio_vis(ui);
     }
@@ -325,10 +320,10 @@ impl App {
                 points.into_iter().map(|it| to_screen * it).collect(),
                 PathStroke::new(thickness, Color32::WHITE),
             ));
-            if let Some(playback_start_timestamp) = self.audio_player.playback_start_timestamp {
+            if let Some(handle) = &self.handle {
                 let current_timestamp = chrono::offset::Utc::now();
                 let time_delta_ms: i64 =
-                    (current_timestamp - playback_start_timestamp).num_milliseconds();
+                    (current_timestamp - handle.start_timestamp).num_milliseconds();
                 let audio_duration_ms: f32 = audio_len / (SAMPLE_RATE as f32) * 1000.0;
                 let playthrough_ratio: f32 = (time_delta_ms as f32) / audio_duration_ms;
                 let playthrough_samples: f32 = playthrough_ratio * audio_len;
