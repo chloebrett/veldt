@@ -12,6 +12,10 @@ service LoadNotesList {
   rpc LoadNotesList (LoadNotesListRequest) returns (LoadNotesListReply) {}
 }
 
+service LoadNotes {
+  rpc LoadNotes (LoadNotesRequest) returns (LoadNotesReply) {}
+}
+
 message SaveNotesRequest {
   string name = 1;
   repeated pmodel.NoteProto notes = 2;
@@ -24,5 +28,13 @@ message LoadNotesListRequest {
 }
 
 message LoadNotesListReply {
-    repeated string names = 1;
+  repeated string names = 1;
+}
+
+message LoadNotesRequest {
+  string name = 1;
+}
+
+message LoadNotesReply {
+  repeated pmodel.NoteProto notes = 1;
 }
