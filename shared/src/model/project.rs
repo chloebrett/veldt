@@ -1,4 +1,4 @@
-use crate::model::{_GeneratorInstance, EffectInstance};
+use crate::model::{EffectInstance, GeneratorInstance, Track};
 use crate::types::Beats;
 use chrono::{DateTime, Utc};
 use std::collections::BTreeSet;
@@ -19,14 +19,15 @@ struct _Project {
 
     pub last_modified: DateTime<Utc>,
 
+    pub tracks: Vec<Track>,
+
     // TODO: info about user who owns and share permissions
     /// Ordered based on start_position.
     pub track_placements: BTreeSet<_TrackPlacement>,
 
     pub samples: Vec<_Sample>,
 
-    // Maybe should be Vec<Box<dyn Generator>>?
-    pub generators: Vec<_GeneratorInstance>,
+    pub generators: Vec<GeneratorInstance>,
 
     pub mixer: Vec<MixerChannel>,
 }
