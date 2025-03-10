@@ -333,6 +333,67 @@ impl App {
             .collect();
             self.handle = Some(play(&self.audio));
         }
+        if let Some(render_promise) = &self.server_render_promise {
+           if let Some(server_audio) = render_promise.ready() {
+               if ui.button("Play (server)").clicked() {
+                   let audio = server_audio.to_vec().into_iter()
+                       .map(|sample| sample.clamp(-1.0, 1.0))
+                       .collect::<Vec<f32>>();
+                    self.handle = Some(play(&audio))
+               }
+           } 
+        } else {
+            if ui.button("Load audio (server)").clicked() {
+
+                let envelope = AdsrEnvelope {
+                    attack: self.attack,
+                    decay: self.decay,
+                    sustain: self.sustain,
+                    release: self.release,
+                };
+                let track = create_track(self.notes.clone());
+                let delay = EffectInstance {
+                    effect: Effect::SimpleDelay {
+                        config: DelayConfig {
+                            amplitude: self.delay_amplitude,
+
+                            delay_ms: self.delay_ms,
+                        },
+                    },
+                    meta: EffectMeta {
+                        id: 0,
+                        wet: self.delay_wet,
+                    },
+                };
+                let eq = EffectInstance {
+                    effect: Effect::SimpleEq {
+                        config: EqConfig {
+                            kind: self.eq_type.clone(),
+                            fc: self.resonant_freq,
+                            q: self.q,
+                        },
+                    },
+                    meta: EffectMeta {
+                        id: 1,
+                        wet: self.eq_wet,
+                    },
+                };
+                let effects = vec![delay, eq];
+                let generator = GeneratorInstance {
+                    id: 0,
+
+                    kind: GeneratorType::SimpleWave {
+                        config: SimpleWaveConfig {
+                            wave: self.wave_type,
+
+                            envelope,
+                        },
+                    },
+
+                    meta: GeneratorMeta { volume: 1.0 },
+                };
+            }
+        }
         self.audio_vis(ui);
     }
 
