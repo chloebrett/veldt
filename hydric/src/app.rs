@@ -256,7 +256,9 @@ impl App {
             });
         if ui.button("Load").clicked() {
             let load_name = self.track_name.clone();
-            self.notes_promise = Some(Promise::spawn_local(async move { load_notes(load_name).await}))
+            self.notes_promise = Some(Promise::spawn_local(
+                async move { load_notes(load_name).await },
+            ))
         }
         if let Some(notes_promise) = &self.notes_promise {
             if let Some(notes) = notes_promise.ready() {

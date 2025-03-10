@@ -1,9 +1,10 @@
 use shared::pmodel::NoteProto;
-use shared::save_notes::load_notes_server::LoadNotes;
 use shared::save_notes::load_notes_list_server::LoadNotesList;
+use shared::save_notes::load_notes_server::LoadNotes;
 use shared::save_notes::save_notes_server::SaveNotes;
 use shared::save_notes::{
-    LoadNotesListReply, LoadNotesListRequest, LoadNotesReply, LoadNotesRequest, SaveNotesReply, SaveNotesRequest
+    LoadNotesListReply, LoadNotesListRequest, LoadNotesReply, LoadNotesRequest, SaveNotesReply,
+    SaveNotesRequest,
 };
 use std::collections::HashMap;
 use std::sync::{Arc, Mutex};
@@ -47,9 +48,11 @@ impl LoadNotes for MySaveNotes {
         self: &Self,
         request: tonic::Request<LoadNotesRequest>,
     ) -> Result<tonic::Response<LoadNotesReply>, tonic::Status> {
-        let name = request.into_inner().name; 
+        let name = request.into_inner().name;
         if let Some(notes) = self.values.lock().unwrap().get(&name) {
-            Ok(tonic::Response::new(LoadNotesReply {notes: notes.to_vec()}))
+            Ok(tonic::Response::new(LoadNotesReply {
+                notes: notes.to_vec(),
+            }))
         } else {
             // TODO Handle error better.
             Ok(tonic::Response::new(LoadNotesReply { notes: vec![] }))
