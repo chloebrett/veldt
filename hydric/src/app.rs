@@ -1,5 +1,5 @@
 use crate::audio_player::{Handle, play};
-use crate::note_save::{load_note_list, save_notes};
+use crate::note_save::{load_note_list, load_notes, save_notes};
 use egui::{
     Color32, Rect, ScrollArea, Ui, containers::Frame, emath, epaint, epaint::PathStroke, pos2,
     scroll_area::ScrollBarVisibility, vec2,
@@ -40,6 +40,7 @@ pub struct App {
     delay_amplitude: f32,
     handle: Option<Handle>,
     load_promise: Promise<Vec<String>>,
+    notes_promise: Option<Promise<Vec<Note>>>,
 }
 
 impl Default for App {
@@ -75,6 +76,7 @@ impl Default for App {
             delay_amplitude: 0.5,
             handle: None,
             load_promise: Promise::spawn_local(async move { load_note_list().await }),
+            notes_promise: None,
         }
     }
 }
@@ -252,6 +254,10 @@ impl App {
                     ui.selectable_value(&mut self.track_name, name.clone(), name);
                 }
             });
+        if ui.button("Load").clicked() {
+            let load_name = self.track_name.clone();
+            self.notes_promise = Some(Promise::spawn_local(async move { load_notes(load_name).await}))
+        }
     }
 
     fn play_control(&mut self, ui: &mut Ui) {
