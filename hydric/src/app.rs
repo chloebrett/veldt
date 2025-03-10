@@ -13,6 +13,7 @@ use shared::model::{
     PitchName, Scale, ScaleValue, WaveType,
 };
 use strum::IntoEnumIterator;
+use web_sys::console;
 
 pub struct App {
     track_name: String,
@@ -38,6 +39,7 @@ pub struct App {
     delay_wet: f32,
     delay_amplitude: f32,
     handle: Option<Handle>,
+    load_promise: Promise<Vec<String>>
 }
 
 impl Default for App {
@@ -72,6 +74,7 @@ impl Default for App {
             delay_wet: 0.5,
             delay_amplitude: 0.5,
             handle: None,
+            load_promise: Promise::spawn_local(async move { load_note_list().await }),
         }
     }
 }
@@ -236,16 +239,17 @@ impl App {
             let notes_to_save = self.notes.clone();
             let _save_thread =
                 Promise::spawn_local(async move { save_notes(save_name, notes_to_save).await });
+            self.load_promise = Promise::spawn_local(async move { load_note_list().await });
         }
-        let load_thread = Promise::spawn_local(async move { load_note_list().await });
-        if let Some(list) = load_thread.ready() {
-            self.track_list = list.to_vec();
+
+        if let Some(list) = self.load_promise.ready() {
+            self.track_list = list.to_vec()
         }
         egui::ComboBox::from_label("Saved Tracks")
-            .selected_text(String::from(""))
+            .selected_text(self.track_name.clone())
             .show_ui(ui, |ui| {
             for name in self.track_list.iter() {
-                ui.selectable_value(&mut self.track_name.clone(), name.clone(), name);
+                ui.selectable_value(&mut self.track_name, name.clone(), name);
             }
         });
     }
