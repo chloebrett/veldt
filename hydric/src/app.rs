@@ -258,6 +258,11 @@ impl App {
             let load_name = self.track_name.clone();
             self.notes_promise = Some(Promise::spawn_local(async move { load_notes(load_name).await}))
         }
+        if let Some(notes_promise) = &self.notes_promise {
+            if let Some(notes) = notes_promise.ready() {
+                self.notes = notes.to_vec()
+            }
+        }
     }
 
     fn play_control(&mut self, ui: &mut Ui) {
