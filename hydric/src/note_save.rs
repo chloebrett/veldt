@@ -1,7 +1,7 @@
 use shared::model::Note;
 use shared::save_notes::{
-    LoadNotesRequest, LoadNotesListRequest, SaveNotesRequest, load_notes_client::LoadNotesClient, load_notes_list_client::LoadNotesListClient,
-    save_notes_client::SaveNotesClient,
+    LoadNotesListRequest, LoadNotesRequest, SaveNotesRequest, load_notes_client::LoadNotesClient,
+    load_notes_list_client::LoadNotesListClient, save_notes_client::SaveNotesClient,
 };
 use tonic_web_wasm_client::Client;
 
@@ -32,12 +32,11 @@ pub async fn load_notes(name: String) -> Vec<Note> {
     let wasm_client = Client::new(base_url);
     let mut grpc = LoadNotesClient::new(wasm_client);
 
-    let result = grpc.load_notes(LoadNotesRequest {name})
+    let result = grpc
+        .load_notes(LoadNotesRequest { name })
         .await
         .unwrap()
         .into_inner()
         .notes;
-    result.iter().map(|&note| {
-        Note::from(note)
-    }).collect()
+    result.iter().map(|&note| Note::from(note)).collect()
 }

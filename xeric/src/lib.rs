@@ -7,8 +7,8 @@ use shared::model::{
 };
 use shared::render::render_server::{Render, RenderServer};
 use shared::render::{RenderReply, RenderRequest};
-use shared::save_notes::load_notes_server::LoadNotesServer;
 use shared::save_notes::load_notes_list_server::LoadNotesListServer;
+use shared::save_notes::load_notes_server::LoadNotesServer;
 use shared::save_notes::save_notes_server::SaveNotesServer;
 use std::collections::HashMap;
 use std::net::SocketAddr;
@@ -79,7 +79,7 @@ pub async fn start_server() -> anyhow::Result<()> {
     let load_notes_list = LoadNotesListServer::new(MySaveNotes {
         values: Arc::clone(&saved_notes),
     });
-    let load_notes= LoadNotesServer::new(MySaveNotes {
+    let load_notes = LoadNotesServer::new(MySaveNotes {
         values: Arc::clone(&saved_notes),
     });
 
