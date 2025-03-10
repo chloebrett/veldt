@@ -1,33 +1,27 @@
 use crate::model::{AdsrEnvelope, WaveType};
 use crate::types::Volume;
 
-type _GeneratorInstanceId = usize;
+type GeneratorInstanceId = usize;
 
-pub enum _Generator {
-    SingleWave {
-        wave_generator: _WaveGenerator,
-    },
+pub struct GeneratorInstance {
+    pub id: GeneratorInstanceId,
 
-    MultiWave {
-        wave_generators: Vec<_WaveGenerator>,
-    },
+    pub kind: GeneratorType,
+
+    pub meta: GeneratorMeta,
 }
 
-pub struct _WaveGenerator {
-    _kind: WaveType,
-
-    _envelope: AdsrEnvelope,
+pub enum GeneratorType {
+    SimpleWave { config: SimpleWaveConfig },
 }
 
-pub struct _GeneratorInstance {
-    _id: _GeneratorInstanceId,
+pub struct SimpleWaveConfig {
+    pub wave: WaveType,
 
-    _generator: _Generator,
-
-    _meta: _GeneratorMeta,
+    pub envelope: AdsrEnvelope,
 }
 
-pub struct _GeneratorMeta {
-    _volume: Volume,
+pub struct GeneratorMeta {
+    pub volume: Volume,
     // TODO: pan
 }

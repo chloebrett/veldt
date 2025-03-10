@@ -25,7 +25,7 @@ pub fn play(audio: &[f32]) -> Handle {
     }
 }
 
-fn run<'a, T>(device: &cpal::Device, config: &cpal::StreamConfig, audio: &'a [f32]) -> Handle
+fn run<T>(device: &cpal::Device, config: &cpal::StreamConfig, audio: &[f32]) -> Handle
 where
     T: SizedSample + FromSample<f32>,
 {

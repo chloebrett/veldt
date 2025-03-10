@@ -9,8 +9,9 @@ use mesic::{
 };
 use poll_promise::Promise;
 use shared::model::{
-    AdsrEnvelope, DelayConfig, Effect, EffectInstance, EffectMeta, EqConfig, EqType, Note,
-    PitchName, Scale, ScaleValue, WaveType,
+    AdsrEnvelope, DelayConfig, Effect, EffectInstance, EffectMeta, EqConfig, EqType,
+    GeneratorInstance, GeneratorMeta, GeneratorType, Note, PitchName, Scale, ScaleValue,
+    SimpleWaveConfig, WaveType,
 };
 use strum::IntoEnumIterator;
 
@@ -245,13 +246,7 @@ impl App {
                 sustain: self.sustain,
                 release: self.release,
             };
-            let track = create_track(
-                self.notes.clone(),
-                self.wave_type,
-                self.bpm,
-                self.volume,
-                envelope,
-            );
+            let track = create_track(self.notes.clone());
             let delay = EffectInstance {
                 effect: Effect::SimpleDelay {
                     config: DelayConfig {
@@ -279,6 +274,19 @@ impl App {
                 },
             };
             let effects = vec![delay, eq];
+            let generator = GeneratorInstance {
+                id: 0,
+
+                kind: GeneratorType::SimpleWave {
+                    config: SimpleWaveConfig {
+                        wave: self.wave_type,
+
+                        envelope,
+                    },
+                },
+
+                meta: GeneratorMeta { volume: 1.0 },
+            };
             self.audio = local_render(
                 &track,
                 SupersawConfig {
@@ -286,6 +294,8 @@ impl App {
                     detune_cents: self.detune,
                 },
                 effects,
+                generator,
+                self.bpm,
             )
             .into_iter()
             .map(|sample| sample.clamp(-1.0, 1.0))
