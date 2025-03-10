@@ -1,9 +1,12 @@
-use crate::{audio_player::AudioPlayer, note_save::{load_note_list, save_notes}};
+use crate::audio_player::{Handle, play};
+use crate::note_save::{load_note_list, save_notes};
 use egui::{
-    Color32, Pos2, Rect, ScrollArea, Ui, containers::Frame, emath, epaint, epaint::PathStroke,
-    pos2, scroll_area::ScrollBarVisibility, vec2,
+    Color32, Rect, ScrollArea, Ui, containers::Frame, emath, epaint, epaint::PathStroke, pos2,
+    scroll_area::ScrollBarVisibility, vec2,
 };
-use mesic::{SupersawConfig, create_scale_values, create_track, render as local_render};
+use mesic::{
+    SAMPLE_RATE, SupersawConfig, create_scale_values, create_track, render as local_render,
+};
 use poll_promise::Promise;
 use shared::model::{
     AdsrEnvelope, DelayConfig, Effect, EffectInstance, EffectMeta, EqConfig, EqType, Note,
@@ -27,13 +30,14 @@ pub struct App {
     eq_wet: f32,
     eq_type: EqType,
     wave_type: WaveType,
-    audio_player: Option<AudioPlayer>,
+    audio: Vec<f32>,
     notes: Vec<Note>,
     key: ScaleValue,
     scale: Scale,
     delay_ms: f32,
     delay_wet: f32,
     delay_amplitude: f32,
+    handle: Option<Handle>,
 }
 
 impl Default for App {
@@ -54,7 +58,7 @@ impl Default for App {
             eq_wet: 1.0,
             eq_type: EqType::SimpleResonator,
             wave_type: WaveType::Sine,
-            audio_player: None,
+            audio: vec![],
             notes: vec![Note {
                 pitch_name: PitchName {
                     scale_value: ScaleValue::A,
@@ -67,6 +71,7 @@ impl Default for App {
             delay_ms: 250.0,
             delay_wet: 0.5,
             delay_amplitude: 0.5,
+            handle: None,
         }
     }
 }
@@ -120,11 +125,10 @@ impl App {
             }
 
             let thickness = 2.0;
-            let mut shapes = vec![];
-            shapes.push(epaint::Shape::line(
+            let shapes = vec![epaint::Shape::line(
                 points.into_iter().map(|it| to_screen * it).collect(),
                 PathStroke::new(thickness, Color32::WHITE),
-            ));
+            )];
             ui.painter().extend(shapes);
         });
     }
@@ -288,17 +292,68 @@ impl App {
                 },
             };
             let effects = vec![delay, eq];
-            let audio = local_render(
+            self.audio = local_render(
                 &track,
                 SupersawConfig {
                     osc_count: self.osc_count,
                     detune_cents: self.detune,
                 },
                 effects,
+            )
+            .into_iter()
+            .map(|sample| sample.clamp(-1.0, 1.0))
+            .collect();
+            self.handle = Some(play(&self.audio));
+        }
+        self.audio_vis(ui);
+    }
+
+    fn audio_vis(&self, ui: &mut Ui) {
+        let audio_len = self.audio.len() as f32;
+
+        Frame::canvas(ui.style()).show(ui, |ui| {
+            ui.ctx().request_repaint();
+            let desired_size = vec2(500.0, 100.0);
+            let (_id, rect) = ui.allocate_space(desired_size);
+            let to_screen = emath::RectTransform::from_to(
+                Rect::from_x_y_ranges(0.0..=audio_len, 1.0..=-1.0),
+                rect,
             );
 
-            self.audio_player = AudioPlayer::new(&audio).unwrap().into();
-        }
+            let points: Vec<_> = self
+                .audio
+                .iter()
+                .enumerate()
+                .map(|(i, sample)| pos2(i as f32, *sample))
+                .collect();
+
+            let thickness = 1.0;
+            let mut shapes = vec![];
+            shapes.push(epaint::Shape::line(
+                points.into_iter().map(|it| to_screen * it).collect(),
+                PathStroke::new(thickness, Color32::WHITE),
+            ));
+            if let Some(handle) = &self.handle {
+                let current_timestamp = chrono::offset::Utc::now();
+                let time_delta_ms: i64 =
+                    (current_timestamp - handle.start_timestamp).num_milliseconds();
+                let audio_duration_ms: f32 = audio_len / (SAMPLE_RATE as f32) * 1000.0;
+                let playthrough_ratio: f32 = (time_delta_ms as f32) / audio_duration_ms;
+                let playthrough_samples: f32 = playthrough_ratio * audio_len;
+
+                if (0.0..=1.0).contains(&playthrough_ratio) {
+                    let red_line = epaint::Shape::line(
+                        vec![
+                            to_screen * pos2(playthrough_samples, -1.0),
+                            to_screen * pos2(playthrough_samples, 1.0),
+                        ],
+                        PathStroke::new(thickness, Color32::RED),
+                    );
+                    shapes.push(red_line);
+                }
+            }
+            ui.painter().extend(shapes);
+        });
     }
 }
 
