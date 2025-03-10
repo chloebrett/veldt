@@ -39,7 +39,7 @@ pub struct App {
     delay_wet: f32,
     delay_amplitude: f32,
     handle: Option<Handle>,
-    load_promise: Promise<Vec<String>>,
+    notes_list_promise: Promise<Vec<String>>,
     notes_promise: Option<Promise<Vec<Note>>>,
 }
 
@@ -75,7 +75,7 @@ impl Default for App {
             delay_wet: 0.5,
             delay_amplitude: 0.5,
             handle: None,
-            load_promise: Promise::spawn_local(async move { load_note_list().await }),
+            notes_list_promise: Promise::spawn_local(async move { load_note_list().await }),
             notes_promise: None,
         }
     }
@@ -241,10 +241,10 @@ impl App {
             let notes_to_save = self.notes.clone();
             let _save_thread =
                 Promise::spawn_local(async move { save_notes(save_name, notes_to_save).await });
-            self.load_promise = Promise::spawn_local(async move { load_note_list().await });
+            self.notes_list_promise = Promise::spawn_local(async move { load_note_list().await });
         }
 
-        if let Some(list) = self.load_promise.ready() {
+        if let Some(list) = self.notes_list_promise.ready() {
             self.track_list = list.to_vec()
         }
         egui::ComboBox::from_label("Saved Tracks")
