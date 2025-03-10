@@ -41,6 +41,7 @@ pub struct App {
     handle: Option<Handle>,
     notes_list_promise: Promise<Vec<String>>,
     notes_promise: Option<Promise<Vec<Note>>>,
+    server_render_promise: Option<Promise<Vec<f32>>>
 }
 
 impl Default for App {
@@ -77,6 +78,7 @@ impl Default for App {
             handle: None,
             notes_list_promise: Promise::spawn_local(async move { load_note_list().await }),
             notes_promise: None,
+            server_render_promise: None
         }
     }
 }
