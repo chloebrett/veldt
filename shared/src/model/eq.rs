@@ -1,3 +1,4 @@
+use crate::types::{Freq, KnobPosition};
 use strum::{Display, EnumIter, EnumString};
 
 #[derive(Clone, EnumIter, EnumString, Display, PartialEq)]
@@ -14,4 +15,12 @@ pub enum EqType {
     ButterworthHighPass,
     ButterworthResonator,
     ButterworthBandStop,
+}
+
+pub struct EqConfig {
+    pub kind: EqType,
+
+    pub fc: Freq,
+
+    pub q: KnobPosition,
 }
