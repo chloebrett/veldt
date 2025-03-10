@@ -14,7 +14,6 @@ use shared::model::{
     SimpleWaveConfig, WaveType,
 };
 use strum::IntoEnumIterator;
-use web_sys::console;
 
 pub struct App {
     track_name: String,
@@ -40,7 +39,7 @@ pub struct App {
     delay_wet: f32,
     delay_amplitude: f32,
     handle: Option<Handle>,
-    load_promise: Promise<Vec<String>>
+    load_promise: Promise<Vec<String>>,
 }
 
 impl Default for App {
@@ -249,10 +248,10 @@ impl App {
         egui::ComboBox::from_label("Saved Tracks")
             .selected_text(self.track_name.clone())
             .show_ui(ui, |ui| {
-            for name in self.track_list.iter() {
-                ui.selectable_value(&mut self.track_name, name.clone(), name);
-            }
-        });
+                for name in self.track_list.iter() {
+                    ui.selectable_value(&mut self.track_name, name.clone(), name);
+                }
+            });
     }
 
     fn play_control(&mut self, ui: &mut Ui) {
