@@ -1,5 +1,5 @@
 use crate::audio_player::{Handle, play};
-use crate::note_save::save_notes;
+use crate::note_save::{load_note_list, save_notes};
 use egui::{
     Color32, Rect, ScrollArea, Ui, containers::Frame, emath, epaint, epaint::PathStroke, pos2,
     scroll_area::ScrollBarVisibility, vec2,
@@ -17,6 +17,7 @@ use strum::IntoEnumIterator;
 
 pub struct App {
     track_name: String,
+    track_list: Vec<String>,
     volume: f32,
     bpm: f32,
     attack: f32,
@@ -38,12 +39,14 @@ pub struct App {
     delay_wet: f32,
     delay_amplitude: f32,
     handle: Option<Handle>,
+    load_promise: Promise<Vec<String>>,
 }
 
 impl Default for App {
     fn default() -> Self {
         Self {
             track_name: "My Track".to_owned(),
+            track_list: vec![],
             volume: 1.0,
             bpm: 120.0,
             attack: 0.1,
@@ -71,6 +74,7 @@ impl Default for App {
             delay_wet: 0.5,
             delay_amplitude: 0.5,
             handle: None,
+            load_promise: Promise::spawn_local(async move { load_note_list().await }),
         }
     }
 }
@@ -235,7 +239,19 @@ impl App {
             let notes_to_save = self.notes.clone();
             let _save_thread =
                 Promise::spawn_local(async move { save_notes(save_name, notes_to_save).await });
+            self.load_promise = Promise::spawn_local(async move { load_note_list().await });
         }
+
+        if let Some(list) = self.load_promise.ready() {
+            self.track_list = list.to_vec()
+        }
+        egui::ComboBox::from_label("Saved Tracks")
+            .selected_text(self.track_name.clone())
+            .show_ui(ui, |ui| {
+                for name in self.track_list.iter() {
+                    ui.selectable_value(&mut self.track_name, name.clone(), name);
+                }
+            });
     }
 
     fn play_control(&mut self, ui: &mut Ui) {
