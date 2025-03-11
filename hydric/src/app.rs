@@ -36,9 +36,10 @@ pub struct App {
     delay_wet: f32,
     delay_amplitude: f32,
     handle: Option<Handle>,
-    notes_list_promise: Promise<Vec<String>>,
-    notes_promise: Option<Promise<Vec<Note>>>,
-    server_render_promise: Option<Promise<Vec<f32>>>,
+    notes_list_promise: Promise<Option<Vec<String>>>,
+    notes_promise: Option<Promise<Option<Vec<Note>>>>,
+    server_render_promise: Option<Promise<Option<Vec<f32>>>>,
+    save_notes_promise: Option<Promise<Option<()>>>,
 }
 
 impl Default for App {
@@ -78,6 +79,7 @@ impl Default for App {
             notes_list_promise: Promise::spawn_local(async move { load_note_list().await }),
             notes_promise: None,
             server_render_promise: None,
+            save_notes_promise: None,
         }
     }
 }
@@ -192,13 +194,17 @@ impl App {
         if ui.button("Save").clicked() {
             let save_name = self.track_name.clone();
             let notes_to_save = self.notes.clone();
-            let _save_thread =
-                Promise::spawn_local(async move { save_notes(save_name, notes_to_save).await });
+            let _save_thread = self.save_notes_promise = Some(Promise::spawn_local(async move {
+                save_notes(save_name, notes_to_save).await
+            }));
             self.notes_list_promise = Promise::spawn_local(async move { load_note_list().await });
         }
 
         if let Some(list) = self.notes_list_promise.ready() {
-            self.track_list = list.to_vec()
+            match list {
+                Some(values) => self.track_list = values.to_vec(),
+                None => self.track_list = vec![],
+            }
         }
         egui::ComboBox::from_label("Saved Tracks")
             .selected_text(self.track_name.clone())
@@ -215,7 +221,10 @@ impl App {
         }
         if let Some(notes_promise) = &self.notes_promise {
             if let Some(notes) = notes_promise.ready() {
-                self.notes = notes.to_vec()
+                match notes {
+                    Some(values) => self.notes = values.to_vec(),
+                    None => {}
+                }
             }
         }
     }
@@ -274,7 +283,7 @@ impl App {
             self.handle = Some(play(&self.audio));
         }
         if let Some(render_promise) = &self.server_render_promise {
-            if let Some(server_audio) = render_promise.ready() {
+            if let Some(Some(server_audio)) = render_promise.ready() {
                 if ui.button("Play (server)").clicked() {
                     self.audio = server_audio
                         .to_vec()
