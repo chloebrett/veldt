@@ -4,9 +4,7 @@ use egui::{
     Color32, Rect, ScrollArea, Ui, containers::Frame, emath, epaint, epaint::PathStroke, pos2,
     scroll_area::ScrollBarVisibility, vec2,
 };
-use mesic::{
-    SAMPLE_RATE, SupersawConfig, create_scale_values, create_track, render as local_render,
-};
+use mesic::{SAMPLE_RATE, create_scale_values, create_track, render as local_render};
 use poll_promise::Promise;
 use shared::model::{
     AdsrEnvelope, DelayConfig, Effect, EffectInstance, EffectMeta, EqConfig, EqType,
@@ -311,24 +309,19 @@ impl App {
                         wave: self.wave_type,
 
                         envelope,
+
+                        osc_count: self.osc_count,
+
+                        detune_cents: self.detune,
                     },
                 },
 
                 meta: GeneratorMeta { volume: 1.0 },
             };
-            self.audio = local_render(
-                &track,
-                SupersawConfig {
-                    osc_count: self.osc_count,
-                    detune_cents: self.detune,
-                },
-                effects,
-                generator,
-                self.bpm,
-            )
-            .into_iter()
-            .map(|sample| sample.clamp(-1.0, 1.0))
-            .collect();
+            self.audio = local_render(&track, effects, generator, self.bpm)
+                .into_iter()
+                .map(|sample| sample.clamp(-1.0, 1.0))
+                .collect();
             self.handle = Some(play(&self.audio));
         }
         self.audio_vis(ui);
