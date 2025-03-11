@@ -12,16 +12,14 @@ use shared::model::{
     SimpleWaveConfig, WaveType,
 };
 use strum::IntoEnumIterator;
+use crate::envelope_control;
 
 pub struct App {
     track_name: String,
     track_list: Vec<String>,
     volume: f32,
     bpm: f32,
-    attack: f32,
-    decay: f32,
-    sustain: f32,
-    release: f32,
+    envelope: AdsrEnvelope,
     osc_count: u32,
     detune: f32,
     resonant_freq: f32,
@@ -48,10 +46,12 @@ impl Default for App {
             track_list: vec![],
             volume: 1.0,
             bpm: 120.0,
-            attack: 0.1,
-            decay: 0.1,
-            sustain: 0.8,
-            release: 0.1,
+            envelope: AdsrEnvelope {
+                attack: 0.1,
+                decay: 0.1,
+                sustain: 0.8,
+                release: 0.1,
+            },
             osc_count: 4,
             detune: 5.0,
             resonant_freq: 1000.0,
@@ -86,54 +86,6 @@ impl App {
         // `cc.egui_ctx.set_visuals` and `cc.egui_ctx.set_fonts`.
 
         Default::default()
-    }
-
-    fn envelope_control(&mut self, ui: &mut Ui) {
-        let headroom = 1.0 - self.attack - self.decay - self.release;
-        let max_attack = headroom + self.attack;
-        let max_decay = headroom + self.decay;
-        let max_release = headroom + self.release;
-
-        if self.attack > max_attack {
-            self.attack = max_attack;
-        }
-        if self.decay > max_decay {
-            self.decay = max_decay;
-        }
-        if self.release > max_release {
-            self.release = max_release;
-        }
-
-        ui.add(egui::Slider::new(&mut self.attack, 0.0..=1.0).text("Attack"));
-        ui.add(egui::Slider::new(&mut self.decay, 0.0..=1.0).text("Decay"));
-        ui.add(egui::Slider::new(&mut self.sustain, 0.0..=1.0).text("Sustain"));
-        ui.add(egui::Slider::new(&mut self.release, 0.0..=1.0).text("Release"));
-
-        Frame::canvas(ui.style()).show(ui, |ui| {
-            ui.ctx().request_repaint();
-            let desired_size = vec2(100.0, 50.0);
-            let (_id, rect) = ui.allocate_space(desired_size);
-            let to_screen =
-                emath::RectTransform::from_to(Rect::from_x_y_ranges(0.0..=1.0, 1.0..=0.0), rect);
-
-            let mut points = vec![];
-            if self.attack > 0.0 {
-                points.push(pos2(0.0, 0.0));
-            }
-            points.push(pos2(self.attack, 1.0));
-            points.push(pos2(self.attack + self.decay, self.sustain));
-            points.push(pos2(1.0 - self.release, self.sustain));
-            if self.release > 0.0 {
-                points.push(pos2(1.0, 0.0));
-            }
-
-            let thickness = 2.0;
-            let shapes = vec![epaint::Shape::line(
-                points.into_iter().map(|it| to_screen * it).collect(),
-                PathStroke::new(thickness, Color32::WHITE),
-            )];
-            ui.painter().extend(shapes);
-        });
     }
 
     fn generator_control(&mut self, ui: &mut Ui) {
@@ -267,12 +219,6 @@ impl App {
 
     fn play_control(&mut self, ui: &mut Ui) {
         if ui.button("Play (local)").clicked() {
-            let envelope = AdsrEnvelope {
-                attack: self.attack,
-                decay: self.decay,
-                sustain: self.sustain,
-                release: self.release,
-            };
             let track = create_track(self.notes.clone());
             let delay = EffectInstance {
                 effect: Effect::SimpleDelay {
@@ -308,7 +254,7 @@ impl App {
                     config: SimpleWaveConfig {
                         wave: self.wave_type,
 
-                        envelope,
+                        envelope: self.envelope.clone(),
 
                         osc_count: self.osc_count,
 
@@ -398,7 +344,7 @@ impl eframe::App for App {
                     );
 
                     ui.separator();
-                    self.envelope_control(ui);
+                    envelope_control(&mut self.envelope, ui);
                     ui.separator();
                     self.generator_control(ui);
                     ui.separator();
