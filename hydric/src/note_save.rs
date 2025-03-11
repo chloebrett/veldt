@@ -1,5 +1,6 @@
 use shared::consts::XERIC_URL;
 use shared::model::Note;
+use shared::serialize::map_vec;
 use shared::save_notes::{
     LoadNotesListRequest, LoadNotesRequest, SaveNotesRequest, load_notes_client::LoadNotesClient,
     load_notes_list_client::LoadNotesListClient, save_notes_client::SaveNotesClient,
@@ -36,5 +37,5 @@ pub async fn load_notes(name: String) -> Vec<Note> {
         .unwrap()
         .into_inner()
         .notes;
-    result.iter().map(|&note| note.into()).collect()
+    map_vec(result)
 }
