@@ -3,6 +3,7 @@ use crate::types::Volume;
 
 type GeneratorInstanceId = usize;
 
+#[derive(Clone, Debug, PartialEq)]
 pub struct GeneratorInstance {
     pub id: GeneratorInstanceId,
 
@@ -11,10 +12,12 @@ pub struct GeneratorInstance {
     pub meta: GeneratorMeta,
 }
 
+#[derive(Clone, Debug, PartialEq)]
 pub enum GeneratorType {
     SimpleWave { config: SimpleWaveConfig },
 }
 
+#[derive(Clone, Debug, PartialEq)]
 pub struct SimpleWaveConfig {
     pub wave: WaveType,
 
@@ -25,6 +28,7 @@ pub struct SimpleWaveConfig {
     pub detune_cents: f32,
 }
 
+#[derive(Clone, Debug, PartialEq)]
 pub struct GeneratorMeta {
     pub volume: Volume,
     // TODO: pan
