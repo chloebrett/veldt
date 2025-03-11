@@ -1,7 +1,8 @@
 use crate::save::MySaveNotes;
 use http::{HeaderValue, Method};
-use mesic::{SupersawConfig, render};
+use mesic::render;
 use shared::bytes::as_bytes;
+use shared::consts::{HYDRIC_URL, XERIC_SOCKET_ADDR};
 use shared::model::{
     AdsrEnvelope, GeneratorInstance, GeneratorMeta, GeneratorType, SimpleWaveConfig, WaveType,
 };
@@ -11,7 +12,6 @@ use shared::save_notes::load_notes_list_server::LoadNotesListServer;
 use shared::save_notes::load_notes_server::LoadNotesServer;
 use shared::save_notes::save_notes_server::SaveNotesServer;
 use std::collections::HashMap;
-use std::net::SocketAddr;
 use std::sync::{Arc, Mutex};
 use tonic::async_trait;
 use tonic_web::GrpcWebLayer;
@@ -27,11 +27,6 @@ impl Render for MyRender {
         &self,
         request: tonic::Request<RenderRequest>,
     ) -> Result<tonic::Response<RenderReply>, tonic::Status> {
-        let supersaw_config = SupersawConfig {
-            osc_count: 1,
-
-            detune_cents: 0.0,
-        };
         let generator = GeneratorInstance {
             id: 0,
 
@@ -45,6 +40,10 @@ impl Render for MyRender {
                         sustain: 0.8,
                         release: 0.1,
                     },
+
+                    osc_count: 1,
+
+                    detune_cents: 0.0,
                 },
             },
 
@@ -56,21 +55,13 @@ impl Render for MyRender {
             .into_inner()
             .track
             .ok_or(tonic::Status::invalid_argument("Track must be supplied"))?;
-        let bytes = as_bytes(&render(
-            &track.into(),
-            supersaw_config,
-            vec![],
-            generator,
-            bpm,
-        ));
+        let bytes = as_bytes(&render(&track.into(), vec![], generator, bpm));
 
         Ok(tonic::Response::new(RenderReply { audio: bytes }))
     }
 }
 
 pub async fn start_server() -> anyhow::Result<()> {
-    let addr = SocketAddr::from(([0, 0, 0, 0], 3000));
-
     let render = RenderServer::new(MyRender);
     let saved_notes = Arc::new(Mutex::new(HashMap::new()));
     let save_notes = SaveNotesServer::new(MySaveNotes {
@@ -88,7 +79,7 @@ pub async fn start_server() -> anyhow::Result<()> {
         .layer(
             tower_http::cors::CorsLayer::new()
                 .allow_methods([Method::GET, Method::POST, Method::OPTIONS])
-                .allow_origin("http://127.0.0.1:8080".parse::<HeaderValue>().unwrap())
+                .allow_origin(HYDRIC_URL.parse::<HeaderValue>().unwrap())
                 .allow_headers(AllowHeaders::mirror_request())
                 .allow_credentials(true),
         )
@@ -97,7 +88,7 @@ pub async fn start_server() -> anyhow::Result<()> {
         .add_service(save_notes)
         .add_service(load_notes_list)
         .add_service(load_notes)
-        .serve(addr)
+        .serve(*XERIC_SOCKET_ADDR)
         .await?;
 
     Ok(())

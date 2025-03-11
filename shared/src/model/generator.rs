@@ -19,6 +19,10 @@ pub struct SimpleWaveConfig {
     pub wave: WaveType,
 
     pub envelope: AdsrEnvelope,
+
+    pub osc_count: u32,
+
+    pub detune_cents: f32,
 }
 
 pub struct GeneratorMeta {

@@ -1,3 +1,4 @@
+use shared::consts::XERIC_URL;
 use shared::model::Note;
 use shared::pmodel::NoteProto;
 use shared::save_notes::{
@@ -9,9 +10,8 @@ use tonic_web_wasm_client::Client;
 use web_sys::console;
 
 pub async fn save_notes(name: String, notes: Vec<Note>) -> Option<()> {
-    let base_url = "http://127.0.0.1:3000".to_string();
-    let wasm_client = Client::new(base_url);
-    let mut grpc = SaveNotesClient::new(wasm_client);
+    let client = Client::new(XERIC_URL.to_string());
+    let mut grpc = SaveNotesClient::new(client);
 
     let result = grpc
         .save_notes(SaveNotesRequest {
@@ -29,9 +29,8 @@ pub async fn save_notes(name: String, notes: Vec<Note>) -> Option<()> {
 }
 
 pub async fn load_note_list() -> Option<Vec<String>> {
-    let base_url = "http://127.0.0.1:3000".to_string();
-    let wasm_client = Client::new(base_url);
-    let mut grpc = LoadNotesListClient::new(wasm_client);
+    let client = Client::new(XERIC_URL.to_string());
+    let mut grpc = LoadNotesListClient::new(client);
 
     let result = grpc.load_notes_list(LoadNotesListRequest {}).await;
     match result {
@@ -44,9 +43,8 @@ pub async fn load_note_list() -> Option<Vec<String>> {
 }
 
 pub async fn load_notes(name: String) -> Option<Vec<Note>> {
-    let base_url = "http://127.0.0.1:3000".to_string();
-    let wasm_client = Client::new(base_url);
-    let mut grpc = LoadNotesClient::new(wasm_client);
+    let client = Client::new(XERIC_URL.to_string());
+    let mut grpc = LoadNotesClient::new(client);
 
     let result = grpc.load_notes(LoadNotesRequest { name }).await;
 
