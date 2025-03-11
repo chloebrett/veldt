@@ -244,15 +244,16 @@ impl App {
         if ui.button("Save").clicked() {
             let save_name = self.track_name.clone();
             let notes_to_save = self.notes.clone();
-            let _save_thread =
-                self.save_notes_promise = Some(Promise::spawn_local(async move { save_notes(save_name, notes_to_save).await }));
+            let _save_thread = self.save_notes_promise = Some(Promise::spawn_local(async move {
+                save_notes(save_name, notes_to_save).await
+            }));
             self.notes_list_promise = Promise::spawn_local(async move { load_note_list().await });
         }
 
         if let Some(list) = self.notes_list_promise.ready() {
             match list {
                 Some(values) => self.track_list = values.to_vec(),
-                None => self.track_list = vec![]
+                None => self.track_list = vec![],
             }
         }
         egui::ComboBox::from_label("Saved Tracks")
