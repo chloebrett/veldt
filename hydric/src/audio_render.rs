@@ -1,12 +1,12 @@
 use shared::bytes::as_floats;
+use shared::consts::XERIC_URL;
 use shared::model::Track;
 use shared::render::{RenderRequest, render_client::RenderClient};
 use tonic_web_wasm_client::Client;
 
 pub async fn render(track: Track) -> Vec<f32> {
-    let base_url = "http://127.0.0.1:3000".to_string();
-    let wasm_client = Client::new(base_url);
-    let mut grpc = RenderClient::new(wasm_client);
+    let client = Client::new(XERIC_URL.to_string());
+    let mut grpc = RenderClient::new(client);
 
     let result = grpc
         .render(RenderRequest {
