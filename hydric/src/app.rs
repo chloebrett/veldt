@@ -1,5 +1,6 @@
 use crate::audio_player::{Handle, play};
 use crate::envelope_control;
+use crate::audio_render::render;
 use crate::note_save::{load_note_list, load_notes, save_notes};
 use egui::{
     Color32, Rect, ScrollArea, Ui, containers::Frame, emath, epaint, epaint::PathStroke, pos2,
@@ -37,6 +38,7 @@ pub struct App {
     handle: Option<Handle>,
     notes_list_promise: Promise<Vec<String>>,
     notes_promise: Option<Promise<Vec<Note>>>,
+    server_render_promise: Option<Promise<Vec<f32>>>,
 }
 
 impl Default for App {
@@ -75,6 +77,7 @@ impl Default for App {
             handle: None,
             notes_list_promise: Promise::spawn_local(async move { load_note_list().await }),
             notes_promise: None,
+            server_render_promise: None,
         }
     }
 }
@@ -269,6 +272,23 @@ impl App {
                 .map(|sample| sample.clamp(-1.0, 1.0))
                 .collect();
             self.handle = Some(play(&self.audio));
+        }
+        if let Some(render_promise) = &self.server_render_promise {
+            if let Some(server_audio) = render_promise.ready() {
+                if ui.button("Play (server)").clicked() {
+                    self.audio = server_audio
+                        .to_vec()
+                        .into_iter()
+                        .map(|sample| sample.clamp(-1.0, 1.0))
+                        .collect::<Vec<f32>>();
+                    self.handle = Some(play(&self.audio))
+                }
+            }
+        }
+        if ui.button("Load audio (server)").clicked() {
+            let track = create_track(self.notes.clone());
+            self.server_render_promise =
+                Some(Promise::spawn_local(async move { render(track).await }))
         }
         self.audio_vis(ui);
     }
