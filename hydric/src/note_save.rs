@@ -6,6 +6,7 @@ use shared::save_notes::{
     load_notes_list_client::LoadNotesListClient, save_notes_client::SaveNotesClient,
 };
 use tonic_web_wasm_client::Client;
+use web_sys::console;
 
 pub async fn save_notes(name: String, notes: Vec<Note>) -> Option<()> {
     let base_url = "http://127.0.0.1:3000".to_string();
@@ -20,7 +21,10 @@ pub async fn save_notes(name: String, notes: Vec<Note>) -> Option<()> {
         .await;
     match result {
         Ok(_) => Some(()),
-        Err(_) => None
+        Err(_) => {
+            console::error_1(&"Error saving notes to server.".into());
+            None
+        }
     }
 }
 
@@ -32,7 +36,10 @@ pub async fn load_note_list() -> Option<Vec<String>> {
     let result = grpc.load_notes_list(LoadNotesListRequest {}).await;
     match result {
         Ok(response) => Some(response.into_inner().names),
-        Err(_) => None
+        Err(_) => {
+            console::error_1(&"Error load note list from server.".into());
+            None
+        }
     }
 }
 
@@ -47,6 +54,9 @@ pub async fn load_notes(name: String) -> Option<Vec<Note>> {
 
     match result {
         Ok(response) => Some(map_vec::<NoteProto, Note>(response.into_inner().notes)),
-        Err(_) => None 
+        Err(_) => {
+            console::error_1(&"Error loading notes from server.".into());
+            None
+        } 
     }
 }
