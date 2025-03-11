@@ -20,14 +20,11 @@ pub struct App {
     track_list: Vec<String>,
     volume: f32,
     bpm: f32,
-    envelope: AdsrEnvelope,
-    osc_count: u32,
-    detune: f32,
+    generator: GeneratorInstance,
     resonant_freq: f32,
     q: f32,
     eq_wet: f32,
     eq_type: EqType,
-    wave_type: WaveType,
     audio: Vec<f32>,
     notes: Vec<Note>,
     key: ScaleValue,
@@ -48,19 +45,27 @@ impl Default for App {
             track_list: vec![],
             volume: 1.0,
             bpm: 120.0,
-            envelope: AdsrEnvelope {
-                attack: 0.1,
-                decay: 0.1,
-                sustain: 0.8,
-                release: 0.1,
+            generator: GeneratorInstance {
+                id: 0,
+                kind: GeneratorType::SimpleWave {
+                    config: SimpleWaveConfig {
+                        wave: WaveType::Sine,
+                        envelope: AdsrEnvelope {
+                            attack: 0.1,
+                            decay: 0.1,
+                            sustain: 0.8,
+                            release: 0.1,
+                        },
+                        osc_count: 4,
+                        detune_cents: 5.0,
+                    },
+                },
+                meta: GeneratorMeta { volume: 1.0 },
             },
-            osc_count: 4,
-            detune: 5.0,
             resonant_freq: 1000.0,
             q: 1.0,
             eq_wet: 1.0,
             eq_type: EqType::SimpleResonator,
-            wave_type: WaveType::Sine,
             audio: vec![],
             notes: vec![Note {
                 pitch_name: PitchName {
@@ -82,6 +87,27 @@ impl Default for App {
     }
 }
 
+fn generator_control(config: &mut SimpleWaveConfig, ui: &mut Ui) {
+    egui::ComboBox::from_label("Wave type")
+        .selected_text(config.wave.to_string())
+        .show_ui(ui, |ui| {
+            ui.selectable_value(&mut config.wave, WaveType::Sine, "Sine");
+            ui.selectable_value(&mut config.wave, WaveType::Square, "Square");
+            ui.selectable_value(&mut config.wave, WaveType::Saw, "Saw");
+            ui.selectable_value(&mut config.wave, WaveType::Triangle, "Triangle");
+        });
+    ui.add(
+        egui::Slider::new(&mut config.osc_count, 1..=24)
+            .text("Osc count")
+            .logarithmic(true),
+    );
+    ui.add(
+        egui::Slider::new(&mut config.detune_cents, 0.0..=100.0)
+            .text("Osc detune")
+            .logarithmic(true),
+    );
+}
+
 impl App {
     /// Called once before the first frame.
     pub fn new(_cc: &eframe::CreationContext<'_>) -> Self {
@@ -89,27 +115,6 @@ impl App {
         // `cc.egui_ctx.set_visuals` and `cc.egui_ctx.set_fonts`.
 
         Default::default()
-    }
-
-    fn generator_control(&mut self, ui: &mut Ui) {
-        egui::ComboBox::from_label("Wave type")
-            .selected_text(self.wave_type.to_string())
-            .show_ui(ui, |ui| {
-                ui.selectable_value(&mut self.wave_type, WaveType::Sine, "Sine");
-                ui.selectable_value(&mut self.wave_type, WaveType::Square, "Square");
-                ui.selectable_value(&mut self.wave_type, WaveType::Saw, "Saw");
-                ui.selectable_value(&mut self.wave_type, WaveType::Triangle, "Triangle");
-            });
-        ui.add(
-            egui::Slider::new(&mut self.osc_count, 1..=24)
-                .text("Osc count")
-                .logarithmic(true),
-        );
-        ui.add(
-            egui::Slider::new(&mut self.detune, 0.0..=100.0)
-                .text("Osc detune")
-                .logarithmic(true),
-        );
     }
 
     fn eq_control(&mut self, ui: &mut Ui) {
@@ -250,24 +255,7 @@ impl App {
                 },
             };
             let effects = vec![delay, eq];
-            let generator = GeneratorInstance {
-                id: 0,
-
-                kind: GeneratorType::SimpleWave {
-                    config: SimpleWaveConfig {
-                        wave: self.wave_type,
-
-                        envelope: self.envelope.clone(),
-
-                        osc_count: self.osc_count,
-
-                        detune_cents: self.detune,
-                    },
-                },
-
-                meta: GeneratorMeta { volume: 1.0 },
-            };
-            self.audio = local_render(&track, effects, generator, self.bpm)
+            self.audio = local_render(&track, effects, self.generator.clone(), self.bpm)
                 .into_iter()
                 .map(|sample| sample.clamp(-1.0, 1.0))
                 .collect();
@@ -363,10 +351,15 @@ impl eframe::App for App {
                             .logarithmic(true),
                     );
 
+                    let generator_type: &mut GeneratorType = &mut self.generator.kind;
+                    let generator_config: &mut SimpleWaveConfig = match generator_type {
+                        GeneratorType::SimpleWave { config } => config,
+                    };
+
                     ui.separator();
-                    envelope_control(&mut self.envelope, ui);
+                    envelope_control(&mut generator_config.envelope, ui);
                     ui.separator();
-                    self.generator_control(ui);
+                    generator_control(generator_config, ui);
                     ui.separator();
                     self.eq_control(ui);
                     ui.separator();

@@ -10,6 +10,7 @@ struct _AppConfig {
     sample_rate: u32,
 }
 
+#[derive(Clone, Debug, PartialEq)]
 struct _Project {
     pub name: String,
 
@@ -32,6 +33,7 @@ struct _Project {
     pub mixer: Vec<MixerChannel>,
 }
 
+#[derive(Clone, Debug, PartialEq)]
 struct _TrackPlacement {
     track_id: _TrackId,
 
@@ -46,6 +48,7 @@ struct _TrackPlacement {
     visual_placement: u32,
 }
 
+#[derive(Clone, Debug, PartialEq)]
 struct _Sample {
     pub data: Vec<f32>,
 
@@ -55,6 +58,7 @@ struct _Sample {
     // TODO: consider multi-channel samples.
 }
 
+#[derive(Clone, Debug, PartialEq)]
 pub struct MixerChannel {
     pub effects: Vec<EffectInstance>,
 }
