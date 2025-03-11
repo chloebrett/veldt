@@ -1,10 +1,10 @@
 use shared::consts::XERIC_URL;
 use shared::model::Note;
-use shared::serialize::map_vec;
 use shared::save_notes::{
     LoadNotesListRequest, LoadNotesRequest, SaveNotesRequest, load_notes_client::LoadNotesClient,
     load_notes_list_client::LoadNotesListClient, save_notes_client::SaveNotesClient,
 };
+use shared::serialize::map_vec;
 use tonic_web_wasm_client::Client;
 
 pub async fn save_notes(name: String, notes: Vec<Note>) {
