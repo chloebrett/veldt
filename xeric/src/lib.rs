@@ -1,6 +1,6 @@
 use crate::save::MySaveNotes;
 use http::{HeaderValue, Method};
-use mesic::{SupersawConfig, render};
+use mesic::render;
 use shared::bytes::as_bytes;
 use shared::consts::{HYDRIC_URL, XERIC_SOCKET_ADDR};
 use shared::model::{
@@ -27,11 +27,6 @@ impl Render for MyRender {
         &self,
         request: tonic::Request<RenderRequest>,
     ) -> Result<tonic::Response<RenderReply>, tonic::Status> {
-        let supersaw_config = SupersawConfig {
-            osc_count: 1,
-
-            detune_cents: 0.0,
-        };
         let generator = GeneratorInstance {
             id: 0,
 
@@ -45,6 +40,10 @@ impl Render for MyRender {
                         sustain: 0.8,
                         release: 0.1,
                     },
+
+                    osc_count: 1,
+
+                    detune_cents: 0.0,
                 },
             },
 
@@ -56,13 +55,7 @@ impl Render for MyRender {
             .into_inner()
             .track
             .ok_or(tonic::Status::invalid_argument("Track must be supplied"))?;
-        let bytes = as_bytes(&render(
-            &track.into(),
-            supersaw_config,
-            vec![],
-            generator,
-            bpm,
-        ));
+        let bytes = as_bytes(&render(&track.into(), vec![], generator, bpm));
 
         Ok(tonic::Response::new(RenderReply { audio: bytes }))
     }

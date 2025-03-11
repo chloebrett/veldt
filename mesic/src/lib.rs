@@ -11,4 +11,3 @@ pub use consts::SAMPLE_RATE;
 pub use render::render;
 pub use scale::create_scale_values;
 pub use track::create_track;
-pub use wave::SupersawConfig;

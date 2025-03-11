@@ -1,11 +1,10 @@
 use crate::effect::apply_effects;
-use crate::wave::{SupersawConfig, polyphonic_wave};
+use crate::wave::polyphonic_wave;
 use shared::model::{EffectInstance, GeneratorInstance, GeneratorType, MixerChannel, Track};
 use shared::types::Beats;
 
 pub fn render(
     track: &Track,
-    supersaw_config: SupersawConfig,
     effects: Vec<EffectInstance>,
     generator: GeneratorInstance,
     bpm: Beats,
@@ -24,9 +23,7 @@ pub fn render(
             note.note.beats,
             bpm,
             generator.meta.volume,
-            &generator_config.envelope,
-            generator_config.wave,
-            supersaw_config.clone(),
+            &generator_config,
         );
 
         // TODO: account for offsets properly, instead of just appending here.

@@ -1,20 +1,13 @@
 use crate::consts::SAMPLE_RATE;
 use crate::envelope::apply_envelope;
 use crate::sig::{freq, sum};
-use shared::model::{AdsrEnvelope, PitchName, WaveType};
+use shared::model::{AdsrEnvelope, PitchName, SimpleWaveConfig, WaveType};
 use shared::types::Beats;
 use shared::types::Freq;
 use std::f32::consts::{PI, TAU};
 
 const HALF_PI: f32 = 0.5 * PI;
 const INV_HALF_PI: f32 = HALF_PI.recip();
-
-#[derive(Clone, PartialEq)]
-pub struct SupersawConfig {
-    pub osc_count: u32,
-
-    pub detune_cents: f32,
-}
 
 fn wave(
     pitch_name: &PitchName,
@@ -43,12 +36,10 @@ pub fn polyphonic_wave(
     beats: Beats,
     bpm: Beats,
     volume: f32,
-    envelope: &AdsrEnvelope,
-    wave_type: WaveType,
-    supersaw_config: SupersawConfig,
+    config: &SimpleWaveConfig,
 ) -> Vec<f32> {
-    let detune = supersaw_config.detune_cents;
-    let osc_count = supersaw_config.osc_count;
+    let detune = config.detune_cents;
+    let osc_count = config.osc_count;
     let partial_volume = volume / (osc_count as f32);
 
     let detune_amounts = linspace(-detune, detune, osc_count);
@@ -61,8 +52,8 @@ pub fn polyphonic_wave(
                 beats,
                 bpm,
                 partial_volume,
-                envelope,
-                wave_type,
+                &config.envelope,
+                config.wave,
                 *det,
             )
         })
