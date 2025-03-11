@@ -2,9 +2,13 @@ use crate::save::MySaveNotes;
 use http::{HeaderValue, Method};
 use mesic::{SupersawConfig, render};
 use shared::bytes::as_bytes;
+use shared::model::{
+    AdsrEnvelope, GeneratorInstance, GeneratorMeta, GeneratorType, SimpleWaveConfig, WaveType,
+};
 use shared::render::render_server::{Render, RenderServer};
 use shared::render::{RenderReply, RenderRequest};
 use shared::save_notes::load_notes_list_server::LoadNotesListServer;
+use shared::save_notes::load_notes_server::LoadNotesServer;
 use shared::save_notes::save_notes_server::SaveNotesServer;
 use std::collections::HashMap;
 use std::net::SocketAddr;
@@ -28,12 +32,37 @@ impl Render for MyRender {
 
             detune_cents: 0.0,
         };
+        let generator = GeneratorInstance {
+            id: 0,
+
+            kind: GeneratorType::SimpleWave {
+                config: SimpleWaveConfig {
+                    wave: WaveType::Saw,
+
+                    envelope: AdsrEnvelope {
+                        attack: 0.1,
+                        decay: 0.1,
+                        sustain: 0.8,
+                        release: 0.1,
+                    },
+                },
+            },
+
+            meta: GeneratorMeta { volume: 1.0 },
+        };
+        let bpm = 120.0;
 
         let track = request
             .into_inner()
             .track
             .ok_or(tonic::Status::invalid_argument("Track must be supplied"))?;
-        let bytes = as_bytes(&render(&track.into(), supersaw_config, vec![]));
+        let bytes = as_bytes(&render(
+            &track.into(),
+            supersaw_config,
+            vec![],
+            generator,
+            bpm,
+        ));
 
         Ok(tonic::Response::new(RenderReply { audio: bytes }))
     }
@@ -50,6 +79,9 @@ pub async fn start_server() -> anyhow::Result<()> {
     let load_notes_list = LoadNotesListServer::new(MySaveNotes {
         values: Arc::clone(&saved_notes),
     });
+    let load_notes = LoadNotesServer::new(MySaveNotes {
+        values: Arc::clone(&saved_notes),
+    });
 
     tonic::transport::Server::builder()
         .accept_http1(true)
@@ -64,6 +96,7 @@ pub async fn start_server() -> anyhow::Result<()> {
         .add_service(render)
         .add_service(save_notes)
         .add_service(load_notes_list)
+        .add_service(load_notes)
         .serve(addr)
         .await?;
 
