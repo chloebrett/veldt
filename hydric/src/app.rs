@@ -42,7 +42,7 @@ pub struct App {
     handle: Option<Handle>,
     notes_list_promise: Promise<Option<Vec<String>>>,
     notes_promise: Option<Promise<Option<Vec<Note>>>>,
-    server_render_promise: Option<Promise<Vec<f32>>>,
+    server_render_promise: Option<Promise<Option<Vec<f32>>>>,
     save_notes_promise: Option<Promise<Option<()>>>,
 }
 
@@ -343,7 +343,7 @@ impl App {
             self.handle = Some(play(&self.audio));
         }
         if let Some(render_promise) = &self.server_render_promise {
-            if let Some(server_audio) = render_promise.ready() {
+            if let Some(Some(server_audio)) = render_promise.ready() {
                 if ui.button("Play (server)").clicked() {
                     self.audio = server_audio
                         .to_vec()
