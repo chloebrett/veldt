@@ -5,7 +5,7 @@ use shared::save_notes::{
 };
 use tonic_web_wasm_client::Client;
 
-pub async fn save_notes(name: String, notes: Vec<Note>) -> String {
+pub async fn save_notes(name: String, notes: Vec<Note>) -> Result<(),String> {
     let base_url = "http://127.0.0.1:3000".to_string();
     let wasm_client = Client::new(base_url);
     let mut grpc = SaveNotesClient::new(wasm_client);
@@ -17,8 +17,8 @@ pub async fn save_notes(name: String, notes: Vec<Note>) -> String {
         })
         .await;
     match result {
-        Ok(_) => String::from("Saved"),
-        Err(_) => String::from("Error")
+        Ok(_) => Ok(()),
+        Err(_) => Err(String::from("Error saving to server."))
     }
 }
 
