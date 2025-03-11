@@ -1,7 +1,4 @@
-use egui::{
-    Color32, Rect, Ui, containers::Frame, emath, epaint, epaint::PathStroke, pos2,
-    vec2,
-};
+use egui::{Color32, Rect, Ui, containers::Frame, emath, epaint, epaint::PathStroke, pos2, vec2};
 use shared::model::AdsrEnvelope;
 
 pub fn envelope_control(envelope: &mut AdsrEnvelope, ui: &mut Ui) {

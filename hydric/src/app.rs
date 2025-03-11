@@ -1,4 +1,5 @@
 use crate::audio_player::{Handle, play};
+use crate::envelope_control;
 use crate::note_save::{load_note_list, load_notes, save_notes};
 use egui::{
     Color32, Rect, ScrollArea, Ui, containers::Frame, emath, epaint, epaint::PathStroke, pos2,
@@ -12,7 +13,6 @@ use shared::model::{
     SimpleWaveConfig, WaveType,
 };
 use strum::IntoEnumIterator;
-use crate::envelope_control;
 
 pub struct App {
     track_name: String,
