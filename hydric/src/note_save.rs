@@ -16,7 +16,7 @@ pub async fn save_notes(name: String, notes: Vec<Note>) -> Option<()> {
     let result = grpc
         .save_notes(SaveNotesRequest {
             name,
-            notes: notes.iter().map(|&note| note.into()).collect(),
+            notes: notes.iter().map(|note| note.clone().into()).collect(),
         })
         .await;
     match result {
