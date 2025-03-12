@@ -1,7 +1,7 @@
 use crate::types::{Freq, KnobPosition};
 use strum::{Display, EnumIter, EnumString};
 
-#[derive(Clone, EnumIter, EnumString, Display, PartialEq)]
+#[derive(Clone, Debug, EnumIter, EnumString, Display, PartialEq)]
 pub enum EqType {
     SimpleResonator,
     SmithAngellResonator,
@@ -17,6 +17,7 @@ pub enum EqType {
     ButterworthBandStop,
 }
 
+#[derive(Clone, Debug, PartialEq)]
 pub struct EqConfig {
     pub kind: EqType,
 
