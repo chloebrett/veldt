@@ -34,6 +34,86 @@ message PitchNameProto {
   int32 octave = 2;
 }
 
+message EffectsInstanceProto {
+  EffectProto effect = 1;
+
+  EffectMetaProto effect_meta = 1
+}
+
+message GeneratorInstanceProto {
+  int32 id = 1;
+
+  GeneratorConfigProto config = 2; // TODO pass the enum correctly.
+  
+  GeneratorMetaProto meta = 3;
+}
+
+message GeneratorConfigProto {
+  float volume = 1;
+}
+
+message GeneratorConfigProto {
+  WaveTypeProto wave = 1;
+
+  AdsrEnvelopeProto envelope = 2;
+
+  int32 osc_count = 3;
+
+  float detune_cents = 4;
+}
+
+message EffectProto {
+  SimpleDelayProto simple_delay = 1;
+
+  SimpleEqProto simple_eq = 2;
+
+  SimpleCompressorProto = simple_compressor = 3;
+}
+
+message EffectsMetaProto {
+  int32 id = 1;
+
+  float wet = 2;
+}
+
+message SimpleDelayProto {
+  DelayConfigProto config = 1;
+}
+
+message DelayConfigProto {
+  float amplitude = 1;
+
+  float delay = 2;
+}
+
+message SimpleEqProto {
+  EqConfigProto config = 1;
+}
+
+message EqConfigProto {
+  EqTypeProto kind = 1;
+
+  float fc = 2;
+
+  float q = 3;
+}
+
+message SimpleCompressorProto {
+  CompressorConfigProto config = 1;
+}
+
+message CompressorConfigProto {
+  float threshold = 1;
+
+  float attack = 2;
+
+  float release = 3;
+
+  float ratio = 4;
+
+  float gain = 5;
+}
+
 enum WaveTypeProto {
   Unknown = 0;
   Sine = 1;
@@ -59,11 +139,26 @@ enum ScaleValueProto {
 }
 
 enum ScaleProto {
-    UnknownScale = 0;
-    ChromaticScale = 1;
-    MajorScale = 2;
-    HarmonicMinorScale = 3;
-    NaturalMinorScale = 4;
-    PentatonicScale = 5;
+  UnknownScale = 0;
+  ChromaticScale = 1;
+  MajorScale = 2;
+  HarmonicMinorScale = 3;
+  NaturalMinorScale = 4;
+  PentatonicScale = 5;
 }
 
+enum EqTypeProto {
+  UnknownEq = 0
+  SimpleResonatorEq = 1;
+  SmithAngellResonatorEq = 2;
+  SimpleFirstOrderLowPassEq = 3;
+  SimpleFirstOrderHighPassEq = 4;
+  SimpleSecondOrderLowPassEq = 5;
+  SimpleSecondOrderHighPassEq = 6;
+  SimpleSecondOrderResonatorEq = 7;
+  SimpleSecondOrderBandStopEq = 8;
+  ButterworthLowPassEq = 9;
+  ButterworthHighPassEq = 10;
+  ButterworthResonatorEq = 11;
+  ButterworthBandStopEq = 12;
+}
