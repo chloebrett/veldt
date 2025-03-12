@@ -8,7 +8,7 @@ pub fn create_track(notes: Vec<Note>) -> Track {
 
     for note in notes {
         placed_notes.insert(PlacedNote {
-            note,
+            note: note.clone(),
             offset: OrderedFloat(current_beat),
         });
         current_beat += note.beats;
