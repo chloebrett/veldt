@@ -1,4 +1,7 @@
-use crate::{pmodel::{EqConfigProto, EqTypeProto}, types::{Freq, KnobPosition}};
+use crate::{
+    pmodel::{EqConfigProto, EqTypeProto},
+    types::{Freq, KnobPosition},
+};
 use strum::{Display, EnumIter, EnumString};
 
 #[derive(Clone, Debug, EnumIter, EnumString, Display, PartialEq)]
@@ -70,7 +73,7 @@ impl From<EqConfigProto> for EqConfig {
         EqConfig {
             kind: item.kind().into(),
             fc: item.fc,
-            q: item.q
+            q: item.q,
         }
     }
 }
@@ -78,9 +81,9 @@ impl From<EqConfigProto> for EqConfig {
 impl From<EqConfig> for EqConfigProto {
     fn from(item: EqConfig) -> Self {
         EqConfigProto {
-            kind: TryInto::<EqTypeProto>::try_into(item.kind).unwrap().into(),
+            kind: Into::<EqTypeProto>::into(item.kind).into(),
             fc: item.fc,
-            q: item.q
+            q: item.q,
         }
     }
 }
