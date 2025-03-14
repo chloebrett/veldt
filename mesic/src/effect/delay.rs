@@ -11,6 +11,6 @@ impl ApplyEffect for DelayConfig {
 
         output.extend(input);
 
-        mult(output, self.amplitude)
+        mult(&output, self.amplitude)
     }
 }
