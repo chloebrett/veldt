@@ -1,8 +1,6 @@
 use super::app::App;
 use egui::Ui;
-use shared::model::{
-    Scale, ScaleValue,
-};
+use shared::model::{Scale, ScaleValue};
 use strum::IntoEnumIterator;
 
 pub fn key_control(app: &mut App, ui: &mut Ui) {

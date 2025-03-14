@@ -1,7 +1,5 @@
 use egui::Ui;
-use shared::model::{
-    SimpleWaveConfig, WaveType,
-};
+use shared::model::{SimpleWaveConfig, WaveType};
 
 pub fn generator_control(config: &mut SimpleWaveConfig, ui: &mut Ui) {
     egui::ComboBox::from_label("Wave type")

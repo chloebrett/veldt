@@ -5,9 +5,7 @@ use crate::rpc::render;
 use egui::Ui;
 use mesic::{create_track, render as local_render};
 use poll_promise::Promise;
-use shared::model::{
-    DelayConfig, Effect, EffectInstance, EffectMeta, EqConfig,
-};
+use shared::model::{DelayConfig, Effect, EffectInstance, EffectMeta, EqConfig};
 
 pub fn play_control(app: &mut App, ui: &mut Ui) {
     if ui.button("Play (local)").clicked() {
