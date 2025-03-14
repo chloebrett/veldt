@@ -49,7 +49,7 @@ message EffectInstanceProto {
 }
 
 message GeneratorInstanceProto {
-  int32 id = 1;
+  uint32 id = 1;
 
   GeneratorMetaProto meta = 2;
 
@@ -72,7 +72,7 @@ message SimpleWaveConfigProto {
 
   AdsrEnvelopeProto envelope = 2;
 
-  int32 osc_count = 3;
+  uint32 osc_count = 3;
 
   float detune_cents = 4;
 }
