@@ -3,6 +3,7 @@ use http::{HeaderValue, Method};
 use mesic::render;
 use shared::bytes::as_bytes;
 use shared::consts::{HYDRIC_URL, XERIC_SOCKET_ADDR};
+use shared::model::MixerChannel;
 use shared::render::render_server::{Render, RenderServer};
 use shared::render::{RenderReply, RenderRequest};
 use shared::save_notes::load_notes_list_server::LoadNotesListServer;
@@ -34,10 +35,13 @@ impl Render for MyRender {
             .generator
             .ok_or(tonic::Status::invalid_argument("Must supply generator"))?;
         let bpm = render_data.bpm;
+        let mixer_channel = MixerChannel {
+            effects: map_vec(effects),
+        };
         let bytes = as_bytes(&render(
             &track.into(),
-            map_vec(effects),
-            generator.into(),
+            &mixer_channel,
+            &generator.into(),
             bpm,
         ));
 
