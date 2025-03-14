@@ -90,7 +90,7 @@ fn multi_sum(buffers: Vec<Vec<f32>>) -> Vec<f32> {
     let mut output: Vec<f32> = vec![0.0; max_len];
 
     for buf in buffers {
-        output = sum(output, buf);
+        output = sum(&output, &buf);
     }
 
     output
