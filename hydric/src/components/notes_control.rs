@@ -1,9 +1,7 @@
 use super::app::App;
 use egui::Ui;
 use mesic::create_scale_values;
-use shared::model::{
-    Note, PitchName, ScaleValue,
-};
+use shared::model::{Note, PitchName, ScaleValue};
 
 pub fn notes_control(app: &mut App, ui: &mut Ui) {
     let scale_options = create_scale_values(app.scale, app.key);

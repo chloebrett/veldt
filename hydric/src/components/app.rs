@@ -8,15 +8,11 @@ use super::play_control::play_control;
 use super::save_control::save_control;
 use crate::audio_player::Handle;
 use crate::rpc::load_note_list;
-use egui::{
-    ScrollArea,
-    scroll_area::ScrollBarVisibility,
-};
+use egui::{ScrollArea, scroll_area::ScrollBarVisibility};
 use poll_promise::Promise;
 use shared::model::{
-    AdsrEnvelope, EqType,
-    GeneratorInstance, GeneratorMeta, GeneratorType, Note, PitchName, Scale, ScaleValue,
-    SimpleWaveConfig, WaveType,
+    AdsrEnvelope, EqType, GeneratorInstance, GeneratorMeta, GeneratorType, Note, PitchName, Scale,
+    ScaleValue, SimpleWaveConfig, WaveType,
 };
 
 pub struct App {

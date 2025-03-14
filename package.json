@@ -12,6 +12,7 @@
   "scripts": {
     "b": "yarn hb; yarn mb; yarn sb; yarn xb",
     "f": "yarn hf; yarn mf; yarn sf; yarn xf",
+    "fix": "cd hydric; cargo fix --target=wasm32-unknown-unknown; cd ../mesic; cargo fix; cd ../shared; cargo fix; cd ../xeric; cargo fix",
     "l": "yarn hl; yarn ml; yarn sl; yarn xl",
     "p": "./.husky/pre-commit",
     "r": "yarn concurrently 'yarn xr' 'yarn hr'",
