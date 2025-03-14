@@ -2,6 +2,7 @@ use crate::audio_player::{Handle, play};
 use crate::audio_render::render;
 use crate::envelope_control;
 use crate::note_save::{load_note_list, load_notes, save_notes};
+use egui::Pos2;
 use egui::{
     Color32, Rect, ScrollArea, Ui, containers::Frame, emath, epaint, epaint::PathStroke, pos2,
     scroll_area::ScrollBarVisibility, vec2,
@@ -194,8 +195,7 @@ impl App {
             });
         }
     }
-
-    fn save_control(&mut self, ui: &mut Ui) {
+    fn save_button(&mut self, ui: &mut Ui) {
         if ui.button("Save").clicked() {
             let save_name = self.track_name.clone();
             let notes_to_save = self.notes.clone();
@@ -204,25 +204,14 @@ impl App {
             }));
             self.notes_list_promise = Promise::spawn_local(async move { load_note_list().await });
         }
+    }
 
+    fn load_control(&mut self, ui: &mut Ui) {
         if let Some(list) = self.notes_list_promise.ready() {
             match list {
                 Some(values) => self.track_list = values.to_vec(),
                 None => self.track_list = vec![],
             }
-        }
-        egui::ComboBox::from_label("Saved Tracks")
-            .selected_text(self.track_name.clone())
-            .show_ui(ui, |ui| {
-                for name in self.track_list.iter() {
-                    ui.selectable_value(&mut self.track_name, name.clone(), name);
-                }
-            });
-        if ui.button("Load").clicked() {
-            let load_name = self.track_name.clone();
-            self.notes_promise = Some(Promise::spawn_local(
-                async move { load_notes(load_name).await },
-            ))
         }
         if let Some(notes_promise) = &self.notes_promise {
             if let Some(notes) = notes_promise.ready() {
@@ -232,6 +221,21 @@ impl App {
                 }
             }
         }
+        ui.horizontal( |ui| {
+            egui::ComboBox::from_id_salt(1) // TODO Correct Id Salt
+                .selected_text(self.track_name.clone())
+                .show_ui(ui, |ui| {
+                    for name in self.track_list.iter() {
+                        ui.selectable_value(&mut self.track_name, name.clone(), name);
+                    }
+                });
+            if ui.button("Load").clicked() {
+                let load_name = self.track_name.clone();
+                self.notes_promise = Some(Promise::spawn_local(
+                    async move { load_notes(load_name).await },
+                ))
+            };
+        });
     }
 
     fn play_control(&mut self, ui: &mut Ui) {
@@ -382,8 +386,11 @@ impl eframe::App for App {
                     ui.horizontal(|ui| {
                         ui.label("Track name: ");
                         ui.text_edit_singleline(&mut self.track_name);
+                        self.save_button(ui); 
+                        self.load_control(ui);
                     });
-
+                    ui.separator();
+                    ui.label("Track Master Settings");
                     ui.add(egui::Slider::new(&mut self.volume, 0.0..=1.0).text("Volume"));
                     ui.add(
                         egui::Slider::new(&mut self.bpm, 20.0..=200.0)
@@ -396,27 +403,25 @@ impl eframe::App for App {
                         GeneratorType::SimpleWave { config } => config,
                     };
 
-                    egui::Window::new("Envelope").show(ctx, |ui| {
+                    egui::Window::new("Envelope").default_pos(Pos2{x:600.0, y:20.0}).show(ctx, |ui| {
                         envelope_control(&mut generator_config.envelope, ui);
                     });
-                    egui::Window::new("Generator").show(ctx, |ui| {
+                    egui::Window::new("Generator").default_pos(Pos2{x:1100.0, y:20.0}).show(ctx, |ui| {
                         generator_control(generator_config, ui);
                     });
-                    egui::Window::new("Effects").show(ctx, |ui| {
+                    egui::Window::new("Effects").default_pos(Pos2{x:1100.0, y:100.0}).show(ctx, |ui| {
                         ui.label("Equalizer");
                         self.eq_control(ui);
                         ui.separator();
                         ui.label("Delay");
                         self.delay_control(ui);
                     });
-                    egui::Window::new("Scale").show(ctx, |ui| {
+                    egui::Window::new("Scale").default_pos(Pos2 {x:600.0, y:1100.0 }).show(ctx, |ui| {
                         self.key_control(ui);
                     });
                     ui.separator();
                     ui.label("Notes");
                     self.notes_control(ui);
-                    ui.separator();
-                    self.save_control(ui);
                     ui.separator();
                     self.play_control(ui);
 
