@@ -2,7 +2,7 @@ mod audio_player;
 mod components;
 mod rpc;
 
-use crate::init::init;
+use crate::components::App;
 
 fn main() {
     use eframe::wasm_bindgen::JsCast as _;
@@ -28,7 +28,7 @@ fn main() {
             .start(
                 canvas,
                 web_options,
-                Box::new(|cc| Ok(Box::new(crate::app::App::new(cc)))),
+                Box::new(|cc| Ok(Box::new(App::new(cc)))),
             )
             .await;
     });

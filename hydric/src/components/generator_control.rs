@@ -1,7 +1,4 @@
 use crate::audio_player::{Handle, play};
-use crate::audio_render::render;
-use crate::envelope_control;
-use crate::note_save::{load_note_list, load_notes, save_notes};
 use egui::{
     Color32, Rect, ScrollArea, Ui, containers::Frame, emath, epaint, epaint::PathStroke, pos2,
     scroll_area::ScrollBarVisibility, vec2,
@@ -14,8 +11,9 @@ use shared::model::{
     SimpleWaveConfig, WaveType,
 };
 use strum::IntoEnumIterator;
+use super::app::App;
 
-fn generator_control(config: &mut SimpleWaveConfig, ui: &mut Ui) {
+pub fn generator_control(config: &mut SimpleWaveConfig, ui: &mut Ui) {
     egui::ComboBox::from_label("Wave type")
         .selected_text(config.wave.to_string())
         .show_ui(ui, |ui| {

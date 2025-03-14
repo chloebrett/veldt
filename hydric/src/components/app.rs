@@ -1,11 +1,9 @@
 use crate::audio_player::{Handle, play};
-use crate::audio_render::render;
-use crate::envelope_control;
-use crate::note_save::{load_note_list, load_notes, save_notes};
 use egui::{
     Color32, Rect, ScrollArea, Ui, containers::Frame, emath, epaint, epaint::PathStroke, pos2,
     scroll_area::ScrollBarVisibility, vec2,
 };
+use crate::rpc::load_note_list;
 use mesic::{SAMPLE_RATE, create_scale_values, create_track, render as local_render};
 use poll_promise::Promise;
 use shared::model::{
@@ -14,6 +12,14 @@ use shared::model::{
     SimpleWaveConfig, WaveType,
 };
 use strum::IntoEnumIterator;
+use super::save_control::save_control;
+use super::delay_control::delay_control;
+use super::envelope_control::envelope_control;
+use super::eq_control::eq_control;
+use super::generator_control::generator_control;
+use super::key_control::key_control;
+use super::notes_control::notes_control;
+use super::play_control::play_control;
 
 pub struct App {
     pub track_name: String,
@@ -130,17 +136,17 @@ impl eframe::App for App {
                     ui.separator();
                     generator_control(generator_config, ui);
                     ui.separator();
-                    eq_control(&mut self, ui);
+                    eq_control(self, ui);
                     ui.separator();
-                    delay_control(&mut self, ui);
+                    delay_control(self, ui);
                     ui.separator();
-                    key_control(&mut self, ui);
+                    key_control(self, ui);
                     ui.separator();
-                    notes_control(&mut self, ui);
+                    notes_control(self, ui);
                     ui.separator();
-                    save_control(&mut self, ui);
+                    save_control(self, ui);
                     ui.separator();
-                    play_control(&mut self, ui);
+                    play_control(self, ui);
 
                     ui.separator();
 
