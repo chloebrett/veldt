@@ -1,19 +1,21 @@
-use super::delay_control::delay_control;
-use super::envelope_control::envelope_control;
-use super::eq_control::eq_control;
-use super::generator_control::generator_control;
-use super::key_control::key_control;
-use super::notes_control::notes_control;
-use super::play_control::play_control;
-use super::save_control::{load_control, save_button};
+use super::effect_control;
+use super::envelope_control;
+use super::generator_control;
+use super::key_control;
+use super::load_control;
+use super::notes_control;
+use super::play_control;
+use super::save_button;
+use super::save_control;
 use crate::audio_player::Handle;
 use crate::rpc::load_note_list;
 use egui::Pos2;
 use egui::{ScrollArea, scroll_area::ScrollBarVisibility};
 use poll_promise::Promise;
 use shared::model::{
-    AdsrEnvelope, EqType, GeneratorInstance, GeneratorMeta, GeneratorType, Note, PitchName, Scale,
-    ScaleValue, SimpleWaveConfig, WaveType,
+    AdsrEnvelope, DelayConfig, Effect, EffectInstance, EffectMeta, EqConfig, EqType,
+    GeneratorInstance, GeneratorMeta, GeneratorType, Note, PitchName, Scale, ScaleValue,
+    SimpleWaveConfig, WaveType,
 };
 
 pub struct App {
@@ -22,17 +24,12 @@ pub struct App {
     pub volume: f32,
     pub bpm: f32,
     pub generator: GeneratorInstance,
-    pub resonant_freq: f32,
-    pub q: f32,
-    pub eq_wet: f32,
-    pub eq_type: EqType,
+    pub eq: EffectInstance,
+    pub delay: EffectInstance,
     pub audio: Vec<f32>,
     pub notes: Vec<Note>,
     pub key: ScaleValue,
     pub scale: Scale,
-    pub delay_ms: f32,
-    pub delay_wet: f32,
-    pub delay_amplitude: f32,
     pub handle: Option<Handle>,
     pub notes_list_promise: Promise<Option<Vec<String>>>,
     pub notes_promise: Option<Promise<Option<Vec<Note>>>>,
@@ -64,10 +61,25 @@ impl Default for App {
                 },
                 meta: GeneratorMeta { volume: 1.0 },
             },
-            resonant_freq: 1000.0,
-            q: 1.0,
-            eq_wet: 1.0,
-            eq_type: EqType::SimpleResonator,
+            eq: EffectInstance {
+                effect: Effect::SimpleEq {
+                    config: EqConfig {
+                        kind: EqType::SimpleResonator,
+                        fc: 1000.0,
+                        q: 1.0,
+                    },
+                },
+                meta: EffectMeta { id: 0, wet: 1.0 },
+            },
+            delay: EffectInstance {
+                effect: Effect::SimpleDelay {
+                    config: DelayConfig {
+                        amplitude: 0.5,
+                        delay_ms: 250.0,
+                    },
+                },
+                meta: EffectMeta { id: 1, wet: 0.5 },
+            },
             audio: vec![],
             notes: vec![Note {
                 pitch_name: PitchName {
@@ -78,9 +90,6 @@ impl Default for App {
             }],
             key: ScaleValue::A,
             scale: Scale::Chromatic,
-            delay_ms: 250.0,
-            delay_wet: 0.5,
-            delay_amplitude: 0.5,
             handle: None,
             notes_list_promise: Promise::spawn_local(async move { load_note_list().await }),
             notes_promise: None,
@@ -147,10 +156,10 @@ impl eframe::App for App {
                         .resizable(false)
                         .show(ctx, |ui| {
                             ui.label("Equalizer");
-                            eq_control(self, ui);
+                            effect_control(&mut self.eq, ui);
                             ui.separator();
                             ui.label("Delay");
-                            delay_control(self, ui);
+                            effect_control(&mut self.delay, ui);
                         });
                     egui::Window::new("Scale")
                         .default_pos(Pos2 { x: 600.0, y: 20.0 })
