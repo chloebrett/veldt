@@ -9,6 +9,7 @@ mod key_control;
 mod notes_control;
 mod play_control;
 mod save_control;
+mod window_toggle;
 
 pub use app::*;
 use delay_control::*;
@@ -20,3 +21,4 @@ use key_control::*;
 use notes_control::*;
 use play_control::*;
 use save_control::*;
+use window_toggle::*;
