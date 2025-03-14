@@ -1,6 +1,9 @@
 use crate::model::{AdsrEnvelope, WaveType};
 use crate::pmodel::SimpleWaveProto;
-use crate::pmodel::{generator_instance_proto::Kind, GeneratorInstanceProto, GeneratorMetaProto, SimpleWaveConfigProto, WaveTypeProto};
+use crate::pmodel::{
+    GeneratorInstanceProto, GeneratorMetaProto, SimpleWaveConfigProto, WaveTypeProto,
+    generator_instance_proto::Kind,
+};
 use crate::types::Volume;
 
 type GeneratorInstanceId = usize;
@@ -20,8 +23,10 @@ impl From<GeneratorInstanceProto> for GeneratorInstance {
             id: item.id as usize,
             meta: item.meta.unwrap().into(),
             kind: match item.kind.unwrap() {
-                Kind::SimpleWave(config) => GeneratorType::SimpleWave { config: config.config.unwrap().into()}
-            }
+                Kind::SimpleWave(config) => GeneratorType::SimpleWave {
+                    config: config.config.unwrap().into(),
+                },
+            },
         }
     }
 }
@@ -32,18 +37,18 @@ impl From<GeneratorInstance> for GeneratorInstanceProto {
             id: item.id as u32,
             meta: Some(item.meta.into()),
             kind: match item.kind {
-                GeneratorType::SimpleWave { config } => Some(Kind::SimpleWave( SimpleWaveProto {config: Some(config.into())}))
-            }
+                GeneratorType::SimpleWave { config } => Some(Kind::SimpleWave(SimpleWaveProto {
+                    config: Some(config.into()),
+                })),
+            },
         }
     }
 }
 
- 
 #[derive(Clone, Debug, PartialEq)]
 pub enum GeneratorType {
     SimpleWave { config: SimpleWaveConfig },
 }
-
 
 #[derive(Clone, Debug, PartialEq)]
 pub struct SimpleWaveConfig {
@@ -62,7 +67,7 @@ impl From<SimpleWaveConfigProto> for SimpleWaveConfig {
             wave: item.wave().into(),
             envelope: item.envelope.unwrap().into(),
             osc_count: item.osc_count,
-            detune_cents: item.detune_cents
+            detune_cents: item.detune_cents,
         }
     }
 }
@@ -76,7 +81,7 @@ impl From<SimpleWaveConfig> for SimpleWaveConfigProto {
             detune_cents: item.detune_cents,
         }
     }
-} 
+}
 
 #[derive(Clone, Debug, PartialEq)]
 pub struct GeneratorMeta {
