@@ -10,6 +10,9 @@ service Render {
 
 message RenderRequest {
   pmodel.TrackProto track = 1;
+  repeated pmodel.EffectInstanceProto effects = 2;
+  pmodel.GeneratorInstanceProto generator = 3;
+  float bpm = 4;
 }
 
 message RenderReply {

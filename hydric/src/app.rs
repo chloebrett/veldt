@@ -284,8 +284,37 @@ impl App {
         }
         if ui.button("Load audio (server)").clicked() {
             let track = create_track(self.notes.clone());
+            let delay = EffectInstance {
+                effect: Effect::SimpleDelay {
+                    config: DelayConfig {
+                        amplitude: self.delay_amplitude,
+
+                        delay_ms: self.delay_ms,
+                    },
+                },
+                meta: EffectMeta {
+                    id: 0,
+                    wet: self.delay_wet,
+                },
+            };
+            let eq = EffectInstance {
+                effect: Effect::SimpleEq {
+                    config: EqConfig {
+                        kind: self.eq_type.clone(),
+                        fc: self.resonant_freq,
+                        q: self.q,
+                    },
+                },
+                meta: EffectMeta {
+                    id: 1,
+                    wet: self.eq_wet,
+                },
+            };
+            let effects = vec![delay, eq];
+            let generator = self.generator.clone();
+            let bpm = self.bpm.clone();
             self.server_render_promise =
-                Some(Promise::spawn_local(async move { render(track).await }))
+                Some(Promise::spawn_local(async move { render(track, effects, generator, bpm).await }))
         }
         self.audio_vis(ui);
     }
