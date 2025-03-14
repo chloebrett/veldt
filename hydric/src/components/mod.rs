@@ -1,6 +1,7 @@
 mod app;
 mod audio_vis;
 mod delay_control;
+mod effect_control;
 mod envelope_control;
 mod eq_control;
 mod generator_control;
@@ -10,3 +11,12 @@ mod play_control;
 mod save_control;
 
 pub use app::*;
+use delay_control::*;
+use effect_control::*;
+use envelope_control::*;
+use eq_control::*;
+use generator_control::*;
+use key_control::*;
+use notes_control::*;
+use play_control::*;
+use save_control::*;
