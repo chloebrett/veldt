@@ -1,0 +1,48 @@
+use super::app::App;
+use crate::rpc::{load_note_list, load_notes, save_notes};
+use egui::Ui;
+use poll_promise::Promise;
+
+pub fn save_button(app: &mut App, ui: &mut Ui) {
+    if ui.button("Save").clicked() {
+        let save_name = app.track_name.clone();
+        let notes_to_save = app.notes.clone();
+        app.save_notes_promise = Some(Promise::spawn_local(async move {
+            save_notes(save_name, notes_to_save).await
+        }));
+        app.notes_list_promise = Promise::spawn_local(async move { load_note_list().await });
+    }
+}
+
+pub fn load_control(app: &mut App, ui: &mut Ui) {
+    if let Some(list) = app.notes_list_promise.ready() {
+        match list {
+            Some(values) => app.track_list = values.to_vec(),
+            None => app.track_list = vec![],
+        }
+    }
+    if let Some(notes_promise) = &app.notes_promise {
+        if let Some(notes) = notes_promise.ready() {
+            match notes {
+                Some(values) => app.notes = values.to_vec(),
+                None => {}
+            }
+        }
+    }
+    ui.horizontal(|ui| {
+        egui::ComboBox::from_id_salt(1) // TODO Correct Id Salt
+            .selected_text(app.track_name.clone())
+            .show_ui(ui, |ui| {
+                for name in app.track_list.iter() {
+                    ui.selectable_value(&mut app.track_name, name.clone(), name);
+                }
+            });
+        if ui.button("Load").clicked() {
+            let load_name = app.track_name.clone();
+            app.notes_promise =
+                Some(Promise::spawn_local(
+                    async move { load_notes(load_name).await },
+                ))
+        };
+    });
+}
