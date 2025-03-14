@@ -129,11 +129,13 @@ impl eframe::App for App {
                     };
                     egui::Window::new("Envelope")
                         .default_pos(Pos2 { x: 600.0, y: 125.0 })
+                        .resizable(false)
                         .show(ctx, |ui| {
                             envelope_control(&mut generator_config.envelope, ui);
                         });
                     egui::Window::new("Generator")
                         .default_pos(Pos2 { x: 1100.0, y: 20.0 })
+                        .resizable(false)
                         .show(ctx, |ui| {
                             generator_control(generator_config, ui);
                         });
@@ -142,6 +144,7 @@ impl eframe::App for App {
                             x: 1100.0,
                             y: 150.0,
                         })
+                        .resizable(false)
                         .show(ctx, |ui| {
                             ui.label("Equalizer");
                             eq_control(self, ui);
@@ -151,6 +154,7 @@ impl eframe::App for App {
                         });
                     egui::Window::new("Scale")
                         .default_pos(Pos2 { x: 600.0, y: 20.0 })
+                        .resizable(false)
                         .show(ctx, |ui| {
                             key_control(self, ui);
                         });
