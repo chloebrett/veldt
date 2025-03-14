@@ -1,4 +1,5 @@
 use crate::save::MySaveNotes;
+use crate::load_sample::MyLoadSample;
 use http::{HeaderValue, Method};
 use mesic::render;
 use shared::bytes::as_bytes;
@@ -15,8 +16,10 @@ use std::sync::{Arc, Mutex};
 use tonic::async_trait;
 use tonic_web::GrpcWebLayer;
 use tower_http::cors::AllowHeaders;
+use shared::load_sample::load_sample_server::LoadSampleServer;
 
 pub mod save;
+pub mod load_sample;
 
 struct MyRender;
 
@@ -61,6 +64,8 @@ pub async fn start_server() -> anyhow::Result<()> {
     let load_notes = LoadNotesServer::new(MySaveNotes {
         values: Arc::clone(&saved_notes),
     });
+    // TODO: stop using the My... pattern? Avoid / call it something else.
+    let load_sample = LoadSampleServer::new(MyLoadSample);
 
     tonic::transport::Server::builder()
         .accept_http1(true)
@@ -76,6 +81,7 @@ pub async fn start_server() -> anyhow::Result<()> {
         .add_service(save_notes)
         .add_service(load_notes_list)
         .add_service(load_notes)
+        .add_service(load_sample)
         .serve(*XERIC_SOCKET_ADDR)
         .await?;
 
