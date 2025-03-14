@@ -1,6 +1,7 @@
+use super::app::App;
+use super::envelope_control;
 use crate::audio_player::{Handle, play};
 use crate::rpc::render;
-use super::envelope_control;
 use crate::rpc::{load_note_list, load_notes, save_notes};
 use egui::{
     Color32, Rect, ScrollArea, Ui, containers::Frame, emath, epaint, epaint::PathStroke, pos2,
@@ -9,7 +10,6 @@ use egui::{
 use mesic::{SAMPLE_RATE, create_scale_values, create_track, render as local_render};
 use poll_promise::Promise;
 use strum::IntoEnumIterator;
-use super::app::App;
 
 pub fn save_control(app: &mut App, ui: &mut Ui) {
     if ui.button("Save").clicked() {

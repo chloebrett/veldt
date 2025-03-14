@@ -1,9 +1,17 @@
+use super::delay_control::delay_control;
+use super::envelope_control::envelope_control;
+use super::eq_control::eq_control;
+use super::generator_control::generator_control;
+use super::key_control::key_control;
+use super::notes_control::notes_control;
+use super::play_control::play_control;
+use super::save_control::save_control;
 use crate::audio_player::{Handle, play};
+use crate::rpc::load_note_list;
 use egui::{
     Color32, Rect, ScrollArea, Ui, containers::Frame, emath, epaint, epaint::PathStroke, pos2,
     scroll_area::ScrollBarVisibility, vec2,
 };
-use crate::rpc::load_note_list;
 use mesic::{SAMPLE_RATE, create_scale_values, create_track, render as local_render};
 use poll_promise::Promise;
 use shared::model::{
@@ -12,14 +20,6 @@ use shared::model::{
     SimpleWaveConfig, WaveType,
 };
 use strum::IntoEnumIterator;
-use super::save_control::save_control;
-use super::delay_control::delay_control;
-use super::envelope_control::envelope_control;
-use super::eq_control::eq_control;
-use super::generator_control::generator_control;
-use super::key_control::key_control;
-use super::notes_control::notes_control;
-use super::play_control::play_control;
 
 pub struct App {
     pub track_name: String,

@@ -1,4 +1,6 @@
+use super::app::App;
 use crate::audio_player::{Handle, play};
+use chrono::TimeDelta;
 use egui::{
     Color32, Rect, ScrollArea, Ui, containers::Frame, emath, epaint, epaint::PathStroke, pos2,
     scroll_area::ScrollBarVisibility, vec2,
@@ -10,10 +12,8 @@ use shared::model::{
     GeneratorInstance, GeneratorMeta, GeneratorType, Note, PitchName, Scale, ScaleValue,
     SimpleWaveConfig, WaveType,
 };
-use strum::IntoEnumIterator;
-use super::app::App;
-use chrono::TimeDelta;
 use std::ops::Sub;
+use strum::IntoEnumIterator;
 
 pub fn audio_vis(app: &App, ui: &mut Ui) {
     let audio_len = app.audio.len() as f32;
@@ -63,8 +63,7 @@ pub fn audio_vis(app: &App, ui: &mut Ui) {
         if let Some(handle) = &app.handle {
             let current_timestamp = chrono::offset::Utc::now();
             let time_delta: TimeDelta = current_timestamp.sub(handle.start_timestamp);
-            let time_delta_ms: i64 =
-                time_delta.num_milliseconds();
+            let time_delta_ms: i64 = time_delta.num_milliseconds();
             let audio_duration_ms: f32 = audio_len / (SAMPLE_RATE as f32) * 1000.0;
             let playthrough_ratio: f32 = (time_delta_ms as f32) / audio_duration_ms;
 
