@@ -422,20 +422,20 @@ impl eframe::App for App {
                         GeneratorType::SimpleWave { config } => config,
                     };
 
-                    egui::Window::new("Envelope").default_pos(Pos2{x:600.0, y:20.0}).show(ctx, |ui| {
+                    egui::Window::new("Envelope").default_pos(Pos2{x:600.0, y:125.0}).show(ctx, |ui| {
                         envelope_control(&mut generator_config.envelope, ui);
                     });
                     egui::Window::new("Generator").default_pos(Pos2{x:1100.0, y:20.0}).show(ctx, |ui| {
                         generator_control(generator_config, ui);
                     });
-                    egui::Window::new("Effects").default_pos(Pos2{x:1100.0, y:100.0}).show(ctx, |ui| {
+                    egui::Window::new("Effects").default_pos(Pos2{x:1100.0, y:150.0}).show(ctx, |ui| {
                         ui.label("Equalizer");
                         self.eq_control(ui);
                         ui.separator();
                         ui.label("Delay");
                         self.delay_control(ui);
                     });
-                    egui::Window::new("Scale").default_pos(Pos2 {x:600.0, y:1100.0 }).show(ctx, |ui| {
+                    egui::Window::new("Scale").default_pos(Pos2 {x:600.0, y:20.0 }).show(ctx, |ui| {
                         self.key_control(ui);
                     });
                     ui.separator();
