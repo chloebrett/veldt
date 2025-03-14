@@ -313,8 +313,9 @@ impl App {
             let effects = vec![delay, eq];
             let generator = self.generator.clone();
             let bpm = self.bpm.clone();
-            self.server_render_promise =
-                Some(Promise::spawn_local(async move { render(track, effects, generator, bpm).await }))
+            self.server_render_promise = Some(Promise::spawn_local(async move {
+                render(track, effects, generator, bpm).await
+            }))
         }
         self.audio_vis(ui);
     }

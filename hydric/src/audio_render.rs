@@ -1,13 +1,13 @@
 use shared::bytes::as_floats;
 use shared::consts::XERIC_URL;
-use shared::model::{Track, EffectInstance, GeneratorInstance};
+use shared::model::{EffectInstance, GeneratorInstance, Track};
 use shared::render::{RenderRequest, render_client::RenderClient};
 use shared::serialize::map_vec;
 use shared::types::Beats;
 use tonic_web_wasm_client::Client;
 use web_sys::console;
 
-pub async fn render( 
+pub async fn render(
     track: Track,
     effects: Vec<EffectInstance>,
     generator: GeneratorInstance,
@@ -21,7 +21,7 @@ pub async fn render(
             track: Some(track.into()),
             effects: map_vec(effects.into()),
             generator: Some(generator.into()),
-            bpm
+            bpm,
         })
         .await;
 
