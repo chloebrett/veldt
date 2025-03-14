@@ -396,17 +396,24 @@ impl eframe::App for App {
                         GeneratorType::SimpleWave { config } => config,
                     };
 
+                    egui::Window::new("Envelope").show(ctx, |ui| {
+                        envelope_control(&mut generator_config.envelope, ui);
+                    });
+                    egui::Window::new("Generator").show(ctx, |ui| {
+                        generator_control(generator_config, ui);
+                    });
+                    egui::Window::new("Effects").show(ctx, |ui| {
+                        ui.label("Equalizer");
+                        self.eq_control(ui);
+                        ui.separator();
+                        ui.label("Delay");
+                        self.delay_control(ui);
+                    });
+                    egui::Window::new("Scale").show(ctx, |ui| {
+                        self.key_control(ui);
+                    });
                     ui.separator();
-                    envelope_control(&mut generator_config.envelope, ui);
-                    ui.separator();
-                    generator_control(generator_config, ui);
-                    ui.separator();
-                    self.eq_control(ui);
-                    ui.separator();
-                    self.delay_control(ui);
-                    ui.separator();
-                    self.key_control(ui);
-                    ui.separator();
+                    ui.label("Notes");
                     self.notes_control(ui);
                     ui.separator();
                     self.save_control(ui);
