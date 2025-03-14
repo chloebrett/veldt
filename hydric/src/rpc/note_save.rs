@@ -1,6 +1,5 @@
 use shared::consts::XERIC_URL;
 use shared::model::Note;
-use shared::pmodel::NoteProto;
 use shared::save_notes::{
     LoadNotesListRequest, LoadNotesRequest, SaveNotesRequest, load_notes_client::LoadNotesClient,
     load_notes_list_client::LoadNotesListClient, save_notes_client::SaveNotesClient,
@@ -49,7 +48,7 @@ pub async fn load_notes(name: String) -> Option<Vec<Note>> {
     let result = grpc.load_notes(LoadNotesRequest { name }).await;
 
     match result {
-        Ok(response) => Some(map_vec::<NoteProto, Note>(response.into_inner().notes)),
+        Ok(response) => Some(map_vec(response.into_inner().notes)),
         Err(_) => {
             console::error_1(&"Error loading notes from server.".into());
             None
