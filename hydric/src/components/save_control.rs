@@ -16,16 +16,12 @@ pub fn save_button(app: &mut App, ui: &mut Ui) {
 
 pub fn load_control(app: &mut App, ui: &mut Ui) {
     if let Some(list) = app.notes_list_promise.ready() {
-        match list {
-            Some(values) => app.track_list = values.to_vec(),
-            None => app.track_list = vec![],
-        }
+        app.track_list = list.clone().unwrap_or(vec![]);
     }
     if let Some(notes_promise) = &app.notes_promise {
         if let Some(notes) = notes_promise.ready() {
-            match notes {
-                Some(values) => app.notes = values.to_vec(),
-                None => {}
+            if let Some(values) = notes {
+                app.notes = values.to_vec();
             }
         }
     }
