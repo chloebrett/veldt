@@ -7,6 +7,6 @@ pub fn effect_control(effect: &mut EffectInstance, ui: &mut Ui) {
     match inner {
         Effect::SimpleEq { config } => eq_control(config, &mut effect.meta, ui),
         Effect::SimpleDelay { config } => delay_control(config, &mut effect.meta, ui),
-        Effect::SimpleCompressor { config } => panic!("Not implemented yet!"),
+        Effect::SimpleCompressor { .. } => panic!("Not implemented yet!"),
     }
 }
