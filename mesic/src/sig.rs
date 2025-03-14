@@ -3,7 +3,7 @@ use shared::model::PitchName;
 use shared::types::{Freq, PitchValue};
 use std::cmp::max;
 
-pub fn sum(a: Vec<f32>, b: Vec<f32>) -> Vec<f32> {
+pub fn sum(a: &Vec<f32>, b: &Vec<f32>) -> Vec<f32> {
     let max_len = max(a.len(), b.len());
     let mut output: Vec<f32> = vec![0.0; max_len];
 
@@ -16,7 +16,7 @@ pub fn sum(a: Vec<f32>, b: Vec<f32>) -> Vec<f32> {
     output
 }
 
-pub fn mult(vec: Vec<f32>, scalar: f32) -> Vec<f32> {
+pub fn mult(vec: &[f32], scalar: f32) -> Vec<f32> {
     vec.into_iter().map(|it| it * scalar).collect()
 }
 

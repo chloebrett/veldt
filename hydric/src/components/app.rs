@@ -6,7 +6,6 @@ use super::load_control;
 use super::notes_control;
 use super::play_control;
 use super::save_button;
-use super::save_control;
 use crate::audio_player::Handle;
 use crate::rpc::load_note_list;
 use egui::Pos2;
@@ -14,8 +13,8 @@ use egui::{ScrollArea, scroll_area::ScrollBarVisibility};
 use poll_promise::Promise;
 use shared::model::{
     AdsrEnvelope, DelayConfig, Effect, EffectInstance, EffectMeta, EqConfig, EqType,
-    GeneratorInstance, GeneratorMeta, GeneratorType, Note, PitchName, Scale, ScaleValue,
-    SimpleWaveConfig, WaveType,
+    GeneratorInstance, GeneratorMeta, GeneratorType, MixerChannel, Note, PitchName, Scale,
+    ScaleValue, SimpleWaveConfig, WaveType,
 };
 
 pub struct App {
@@ -24,7 +23,7 @@ pub struct App {
     pub volume: f32,
     pub bpm: f32,
     pub generator: GeneratorInstance,
-    pub effects: Vec<EffectInstance>,
+    pub mixer_channels: Vec<MixerChannel>,
     pub audio: Vec<f32>,
     pub notes: Vec<Note>,
     pub key: ScaleValue,
@@ -60,27 +59,29 @@ impl Default for App {
                 },
                 meta: GeneratorMeta { volume: 1.0 },
             },
-            effects: vec![
-                EffectInstance {
-                    effect: Effect::SimpleEq {
-                        config: EqConfig {
-                            kind: EqType::SimpleResonator,
-                            fc: 1000.0,
-                            q: 1.0,
+            mixer_channels: vec![MixerChannel {
+                effects: vec![
+                    EffectInstance {
+                        effect: Effect::SimpleEq {
+                            config: EqConfig {
+                                kind: EqType::SimpleResonator,
+                                fc: 1000.0,
+                                q: 1.0,
+                            },
                         },
+                        meta: EffectMeta { id: 0, wet: 1.0 },
                     },
-                    meta: EffectMeta { id: 0, wet: 1.0 },
-                },
-                EffectInstance {
-                    effect: Effect::SimpleDelay {
-                        config: DelayConfig {
-                            amplitude: 0.5,
-                            delay_ms: 250.0,
+                    EffectInstance {
+                        effect: Effect::SimpleDelay {
+                            config: DelayConfig {
+                                amplitude: 0.5,
+                                delay_ms: 250.0,
+                            },
                         },
+                        meta: EffectMeta { id: 1, wet: 0.5 },
                     },
-                    meta: EffectMeta { id: 1, wet: 0.5 },
-                },
-            ],
+                ],
+            }],
             audio: vec![],
             notes: vec![Note {
                 pitch_name: PitchName {
@@ -156,9 +157,9 @@ impl eframe::App for App {
                         })
                         .resizable(false)
                         .show(ctx, |ui| {
-                            for i in 0..self.effects.len() {
+                            for i in 0..self.mixer_channels[0].effects.len() {
                                 ui.separator();
-                                effect_control(&mut self.effects[i], ui);
+                                effect_control(&mut self.mixer_channels[0].effects[i], ui);
                             }
                             ui.separator();
                         });
