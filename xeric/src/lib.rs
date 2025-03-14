@@ -3,14 +3,12 @@ use http::{HeaderValue, Method};
 use mesic::render;
 use shared::bytes::as_bytes;
 use shared::consts::{HYDRIC_URL, XERIC_SOCKET_ADDR};
-use shared::model::{
-    AdsrEnvelope, GeneratorInstance, GeneratorMeta, GeneratorType, SimpleWaveConfig, WaveType,
-};
 use shared::render::render_server::{Render, RenderServer};
 use shared::render::{RenderReply, RenderRequest};
 use shared::save_notes::load_notes_list_server::LoadNotesListServer;
 use shared::save_notes::load_notes_server::LoadNotesServer;
 use shared::save_notes::save_notes_server::SaveNotesServer;
+use shared::serialize::map_vec;
 use std::collections::HashMap;
 use std::sync::{Arc, Mutex};
 use tonic::async_trait;
@@ -27,35 +25,21 @@ impl Render for MyRender {
         &self,
         request: tonic::Request<RenderRequest>,
     ) -> Result<tonic::Response<RenderReply>, tonic::Status> {
-        let generator = GeneratorInstance {
-            id: 0,
-
-            kind: GeneratorType::SimpleWave {
-                config: SimpleWaveConfig {
-                    wave: WaveType::Saw,
-
-                    envelope: AdsrEnvelope {
-                        attack: 0.1,
-                        decay: 0.1,
-                        sustain: 0.8,
-                        release: 0.1,
-                    },
-
-                    osc_count: 1,
-
-                    detune_cents: 0.0,
-                },
-            },
-
-            meta: GeneratorMeta { volume: 1.0 },
-        };
-        let bpm = 120.0;
-
-        let track = request
-            .into_inner()
+        let render_data = request.into_inner();
+        let track = render_data
             .track
             .ok_or(tonic::Status::invalid_argument("Track must be supplied"))?;
-        let bytes = as_bytes(&render(&track.into(), vec![], generator, bpm));
+        let effects = render_data.effects;
+        let generator = render_data
+            .generator
+            .ok_or(tonic::Status::invalid_argument("Must supply generator"))?;
+        let bpm = render_data.bpm;
+        let bytes = as_bytes(&render(
+            &track.into(),
+            map_vec(effects),
+            generator.into(),
+            bpm,
+        ));
 
         Ok(tonic::Response::new(RenderReply { audio: bytes }))
     }
