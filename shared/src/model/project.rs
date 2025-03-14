@@ -52,10 +52,9 @@ struct _TrackPlacement {
 struct _Sample {
     pub data: Vec<f32>,
 
-    // TODO: instead store sample rate, and then derive this from the size of the data vec?
-    pub duration_seconds: f32,
-    // TODO: consider sample-specific sample rate.
-    // TODO: consider multi-channel samples.
+    pub sample_rate: f32,
+
+    pub bit_depth: f32,
 }
 
 #[derive(Clone, Debug, PartialEq)]
