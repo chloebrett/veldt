@@ -1,15 +1,7 @@
 use super::app::App;
-use crate::audio_player::{Handle, play};
-use egui::{
-    Color32, Rect, ScrollArea, Ui, containers::Frame, emath, epaint, epaint::PathStroke, pos2,
-    scroll_area::ScrollBarVisibility, vec2,
-};
-use mesic::{SAMPLE_RATE, create_scale_values, create_track, render as local_render};
-use poll_promise::Promise;
+use egui::Ui;
 use shared::model::{
-    AdsrEnvelope, DelayConfig, Effect, EffectInstance, EffectMeta, EqConfig, EqType,
-    GeneratorInstance, GeneratorMeta, GeneratorType, Note, PitchName, Scale, ScaleValue,
-    SimpleWaveConfig, WaveType,
+    Scale, ScaleValue,
 };
 use strum::IntoEnumIterator;
 

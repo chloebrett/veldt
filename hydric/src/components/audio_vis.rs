@@ -1,19 +1,10 @@
 use super::app::App;
-use crate::audio_player::{Handle, play};
 use chrono::TimeDelta;
 use egui::{
-    Color32, Rect, ScrollArea, Ui, containers::Frame, emath, epaint, epaint::PathStroke, pos2,
-    scroll_area::ScrollBarVisibility, vec2,
+    Color32, Rect, Ui, containers::Frame, emath, epaint, epaint::PathStroke, pos2, vec2,
 };
-use mesic::{SAMPLE_RATE, create_scale_values, create_track, render as local_render};
-use poll_promise::Promise;
-use shared::model::{
-    AdsrEnvelope, DelayConfig, Effect, EffectInstance, EffectMeta, EqConfig, EqType,
-    GeneratorInstance, GeneratorMeta, GeneratorType, Note, PitchName, Scale, ScaleValue,
-    SimpleWaveConfig, WaveType,
-};
+use mesic::SAMPLE_RATE;
 use std::ops::Sub;
-use strum::IntoEnumIterator;
 
 pub fn audio_vis(app: &App, ui: &mut Ui) {
     let audio_len = app.audio.len() as f32;

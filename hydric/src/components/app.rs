@@ -6,20 +6,18 @@ use super::key_control::key_control;
 use super::notes_control::notes_control;
 use super::play_control::play_control;
 use super::save_control::save_control;
-use crate::audio_player::{Handle, play};
+use crate::audio_player::Handle;
 use crate::rpc::load_note_list;
 use egui::{
-    Color32, Rect, ScrollArea, Ui, containers::Frame, emath, epaint, epaint::PathStroke, pos2,
-    scroll_area::ScrollBarVisibility, vec2,
+    ScrollArea,
+    scroll_area::ScrollBarVisibility,
 };
-use mesic::{SAMPLE_RATE, create_scale_values, create_track, render as local_render};
 use poll_promise::Promise;
 use shared::model::{
-    AdsrEnvelope, DelayConfig, Effect, EffectInstance, EffectMeta, EqConfig, EqType,
+    AdsrEnvelope, EqType,
     GeneratorInstance, GeneratorMeta, GeneratorType, Note, PitchName, Scale, ScaleValue,
     SimpleWaveConfig, WaveType,
 };
-use strum::IntoEnumIterator;
 
 pub struct App {
     pub track_name: String,
