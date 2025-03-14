@@ -54,7 +54,7 @@ message GeneratorInstanceProto {
   GeneratorMetaProto meta = 2;
 
   oneof kind {
-    SimpleWaveProto = simple_wave = 1;
+    SimpleWaveProto simple_wave = 3;
   };
 
 }
