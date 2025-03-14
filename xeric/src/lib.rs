@@ -1,9 +1,10 @@
-use crate::save::MySaveNotes;
 use crate::load_sample::MyLoadSample;
+use crate::save::MySaveNotes;
 use http::{HeaderValue, Method};
 use mesic::render;
 use shared::bytes::as_bytes;
 use shared::consts::{HYDRIC_URL, XERIC_SOCKET_ADDR};
+use shared::load_sample::load_sample_server::LoadSampleServer;
 use shared::model::MixerChannel;
 use shared::render::render_server::{Render, RenderServer};
 use shared::render::{RenderReply, RenderRequest};
@@ -16,10 +17,9 @@ use std::sync::{Arc, Mutex};
 use tonic::async_trait;
 use tonic_web::GrpcWebLayer;
 use tower_http::cors::AllowHeaders;
-use shared::load_sample::load_sample_server::LoadSampleServer;
 
-pub mod save;
 pub mod load_sample;
+pub mod save;
 
 struct MyRender;
 

@@ -1,6 +1,6 @@
-use shared::load_sample::load_sample_server::LoadSample;
-use shared::load_sample::{LoadSampleRequest, LoadSampleReply};
 use shared::bytes::as_bytes;
+use shared::load_sample::load_sample_server::LoadSample;
+use shared::load_sample::{LoadSampleReply, LoadSampleRequest};
 use tonic::async_trait;
 
 pub struct MyLoadSample;
