@@ -1,3 +1,4 @@
+use super::app::App;
 use crate::audio_player::{Handle, play};
 use egui::{
     Color32, Rect, ScrollArea, Ui, containers::Frame, emath, epaint, epaint::PathStroke, pos2,
@@ -11,7 +12,6 @@ use shared::model::{
     SimpleWaveConfig, WaveType,
 };
 use strum::IntoEnumIterator;
-use super::app::App;
 
 pub fn delay_control(app: &mut App, ui: &mut Ui) {
     ui.add(egui::Slider::new(&mut app.delay_amplitude, 0.0..=1.0).text("Delay amplitude"));

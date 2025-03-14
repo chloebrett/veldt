@@ -1,5 +1,7 @@
-use crate::audio_player::{Handle, play};
+use super::app::App;
+use super::audio_vis::audio_vis;
 use super::envelope_control;
+use crate::audio_player::{Handle, play};
 use crate::rpc::render;
 use egui::{
     Color32, Rect, ScrollArea, Ui, containers::Frame, emath, epaint, epaint::PathStroke, pos2,
@@ -13,8 +15,6 @@ use shared::model::{
     SimpleWaveConfig, WaveType,
 };
 use strum::IntoEnumIterator;
-use super::audio_vis::audio_vis;
-use super::app::App;
 
 pub fn play_control(app: &mut App, ui: &mut Ui) {
     if ui.button("Play (local)").clicked() {

@@ -1,4 +1,4 @@
-
+use super::app::App;
 use crate::audio_player::{Handle, play};
 use crate::rpc::render;
 use crate::rpc::{load_note_list, load_notes, save_notes};
@@ -14,7 +14,6 @@ use shared::model::{
     SimpleWaveConfig, WaveType,
 };
 use strum::IntoEnumIterator;
-use super::app::App;
 
 pub fn notes_control(app: &mut App, ui: &mut Ui) {
     let scale_options = create_scale_values(app.scale, app.key);
