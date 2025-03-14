@@ -221,7 +221,7 @@ impl App {
                 }
             }
         }
-        ui.horizontal( |ui| {
+        ui.horizontal(|ui| {
             egui::ComboBox::from_id_salt(1) // TODO Correct Id Salt
                 .selected_text(self.track_name.clone())
                 .show_ui(ui, |ui| {
@@ -231,9 +231,10 @@ impl App {
                 });
             if ui.button("Load").clicked() {
                 let load_name = self.track_name.clone();
-                self.notes_promise = Some(Promise::spawn_local(
-                    async move { load_notes(load_name).await },
-                ))
+                self.notes_promise =
+                    Some(Promise::spawn_local(
+                        async move { load_notes(load_name).await },
+                    ))
             };
         });
     }
@@ -405,7 +406,7 @@ impl eframe::App for App {
                     ui.horizontal(|ui| {
                         ui.label("Track name: ");
                         ui.text_edit_singleline(&mut self.track_name);
-                        self.save_button(ui); 
+                        self.save_button(ui);
                         self.load_control(ui);
                     });
                     ui.separator();
@@ -422,22 +423,33 @@ impl eframe::App for App {
                         GeneratorType::SimpleWave { config } => config,
                     };
 
-                    egui::Window::new("Envelope").default_pos(Pos2{x:600.0, y:125.0}).show(ctx, |ui| {
-                        envelope_control(&mut generator_config.envelope, ui);
-                    });
-                    egui::Window::new("Generator").default_pos(Pos2{x:1100.0, y:20.0}).show(ctx, |ui| {
-                        generator_control(generator_config, ui);
-                    });
-                    egui::Window::new("Effects").default_pos(Pos2{x:1100.0, y:150.0}).show(ctx, |ui| {
-                        ui.label("Equalizer");
-                        self.eq_control(ui);
-                        ui.separator();
-                        ui.label("Delay");
-                        self.delay_control(ui);
-                    });
-                    egui::Window::new("Scale").default_pos(Pos2 {x:600.0, y:20.0 }).show(ctx, |ui| {
-                        self.key_control(ui);
-                    });
+                    egui::Window::new("Envelope")
+                        .default_pos(Pos2 { x: 600.0, y: 125.0 })
+                        .show(ctx, |ui| {
+                            envelope_control(&mut generator_config.envelope, ui);
+                        });
+                    egui::Window::new("Generator")
+                        .default_pos(Pos2 { x: 1100.0, y: 20.0 })
+                        .show(ctx, |ui| {
+                            generator_control(generator_config, ui);
+                        });
+                    egui::Window::new("Effects")
+                        .default_pos(Pos2 {
+                            x: 1100.0,
+                            y: 150.0,
+                        })
+                        .show(ctx, |ui| {
+                            ui.label("Equalizer");
+                            self.eq_control(ui);
+                            ui.separator();
+                            ui.label("Delay");
+                            self.delay_control(ui);
+                        });
+                    egui::Window::new("Scale")
+                        .default_pos(Pos2 { x: 600.0, y: 20.0 })
+                        .show(ctx, |ui| {
+                            self.key_control(ui);
+                        });
                     ui.separator();
                     ui.label("Notes");
                     self.notes_control(ui);
