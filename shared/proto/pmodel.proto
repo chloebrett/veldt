@@ -49,23 +49,30 @@ message EffectInstanceProto {
 }
 
 message GeneratorInstanceProto {
-  int32 id = 1;
+  uint32 id = 1;
 
-  GeneratorConfigProto config = 2; // TODO pass the enum correctly.
-  
-  GeneratorMetaProto meta = 3;
+  GeneratorMetaProto meta = 2;
+
+  oneof kind {
+    SimpleWaveProto simple_wave = 3;
+  };
+
 }
 
 message GeneratorMetaProto {
   float volume = 1;
 }
 
-message GeneratorConfigProto {
+message SimpleWaveProto {
+  SimpleWaveConfigProto config = 1;
+}
+
+message SimpleWaveConfigProto {
   WaveTypeProto wave = 1;
 
   AdsrEnvelopeProto envelope = 2;
 
-  int32 osc_count = 3;
+  uint32 osc_count = 3;
 
   float detune_cents = 4;
 }
