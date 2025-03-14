@@ -39,10 +39,9 @@ pub fn load_control(app: &mut App, ui: &mut Ui) {
             });
         if ui.button("Load").clicked() {
             let load_name = app.track_name.clone();
-            app.notes_promise =
-                Some(Promise::spawn_local(
-                    async move { load_notes(load_name).await },
-                ))
+            app.notes_promise = Some(Promise::spawn_local(
+                async move { load_notes(load_name).await },
+            ))
         };
     });
 }
