@@ -19,7 +19,7 @@ pub async fn render(
     let result = grpc
         .render(RenderRequest {
             track: Some(track.into()),
-            effects: map_vec(effects.into()),
+            effects: map_vec(effects),
             generator: Some(generator.into()),
             bpm,
         })

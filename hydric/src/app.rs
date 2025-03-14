@@ -199,7 +199,7 @@ impl App {
         if ui.button("Save").clicked() {
             let save_name = self.track_name.clone();
             let notes_to_save = self.notes.clone();
-            let _save_thread = self.save_notes_promise = Some(Promise::spawn_local(async move {
+            self.save_notes_promise = Some(Promise::spawn_local(async move {
                 save_notes(save_name, notes_to_save).await
             }));
             self.notes_list_promise = Promise::spawn_local(async move { load_note_list().await });
@@ -275,7 +275,8 @@ impl App {
                 if ui.button("Play (server)").clicked() {
                     self.audio = server_audio
                         .to_vec()
-                        .into_iter()
+                        .iter()
+                        .copied()
                         .map(|sample| sample.clamp(-1.0, 1.0))
                         .collect::<Vec<f32>>();
                     self.handle = Some(play(&self.audio))
@@ -312,7 +313,7 @@ impl App {
             };
             let effects = vec![delay, eq];
             let generator = self.generator.clone();
-            let bpm = self.bpm.clone();
+            let bpm = self.bpm;
             self.server_render_promise = Some(Promise::spawn_local(async move {
                 render(track, effects, generator, bpm).await
             }))
