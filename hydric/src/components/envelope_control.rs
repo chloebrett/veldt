@@ -1,9 +1,5 @@
-use crate::audio_player::{Handle, play};
 use egui::{Color32, Rect, Ui, containers::Frame, emath, epaint, epaint::PathStroke, pos2, vec2};
-use mesic::{SAMPLE_RATE, create_scale_values, create_track, render as local_render};
-use poll_promise::Promise;
 use shared::model::AdsrEnvelope;
-use strum::IntoEnumIterator;
 
 pub fn envelope_control(envelope: &mut AdsrEnvelope, ui: &mut Ui) {
     let headroom = 1.0 - envelope.attack - envelope.decay - envelope.release;

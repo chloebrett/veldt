@@ -1,20 +1,13 @@
 use super::app::App;
 use super::audio_vis::audio_vis;
-use super::envelope_control;
-use crate::audio_player::{Handle, play};
+use crate::audio_player::play;
 use crate::rpc::render;
-use egui::{
-    Color32, Rect, ScrollArea, Ui, containers::Frame, emath, epaint, epaint::PathStroke, pos2,
-    scroll_area::ScrollBarVisibility, vec2,
-};
-use mesic::{SAMPLE_RATE, create_scale_values, create_track, render as local_render};
+use egui::Ui;
+use mesic::{create_track, render as local_render};
 use poll_promise::Promise;
 use shared::model::{
-    AdsrEnvelope, DelayConfig, Effect, EffectInstance, EffectMeta, EqConfig, EqType,
-    GeneratorInstance, GeneratorMeta, GeneratorType, Note, PitchName, Scale, ScaleValue,
-    SimpleWaveConfig, WaveType,
+    DelayConfig, Effect, EffectInstance, EffectMeta, EqConfig,
 };
-use strum::IntoEnumIterator;
 
 pub fn play_control(app: &mut App, ui: &mut Ui) {
     if ui.button("Play (local)").clicked() {
