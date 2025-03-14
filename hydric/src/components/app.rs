@@ -38,6 +38,7 @@ pub struct App {
     pub show_envelope: bool,
     pub show_generator: bool,
     pub show_scale: bool,
+    pub load_track_name: Option<String>,
 }
 
 impl Default for App {
@@ -106,6 +107,7 @@ impl Default for App {
             show_envelope: false,
             show_generator: false,
             show_scale: false,
+            load_track_name: None,
         }
     }
 }

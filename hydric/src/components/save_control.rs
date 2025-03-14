@@ -34,14 +34,14 @@ pub fn load_control(app: &mut App, ui: &mut Ui) {
     }
     ui.horizontal(|ui| {
         egui::ComboBox::from_id_salt(1) // TODO Correct Id Salt
-            .selected_text(app.track_name.clone())
+            .selected_text(app.load_track_name.clone().unwrap_or("".to_string()).to_string())
             .show_ui(ui, |ui| {
                 for name in app.track_list.iter() {
-                    ui.selectable_value(&mut app.track_name, name.clone(), name);
+                    ui.selectable_value(&mut app.load_track_name, Some(name.clone()), name);
                 }
             });
         if ui.button("Load").clicked() {
-            let load_name = app.track_name.clone();
+            let load_name = app.load_track_name.clone().unwrap();
             app.notes_promise = Some(Promise::spawn_local(
                 async move { load_notes(load_name).await },
             ))
