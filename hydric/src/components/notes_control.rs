@@ -1,7 +1,7 @@
+
 use crate::audio_player::{Handle, play};
-use crate::audio_render::render;
-use crate::envelope_control;
-use crate::note_save::{load_note_list, load_notes, save_notes};
+use crate::rpc::render;
+use crate::rpc::{load_note_list, load_notes, save_notes};
 use egui::{
     Color32, Rect, ScrollArea, Ui, containers::Frame, emath, epaint, epaint::PathStroke, pos2,
     scroll_area::ScrollBarVisibility, vec2,
@@ -14,11 +14,12 @@ use shared::model::{
     SimpleWaveConfig, WaveType,
 };
 use strum::IntoEnumIterator;
+use super::app::App;
 
-fn notes_control(&mut self, ui: &mut Ui) {
-    let scale_options = create_scale_values(self.scale, self.key);
-    for i in 0..self.notes.len() {
-        let note = &mut self.notes[i];
+pub fn notes_control(app: &mut App, ui: &mut Ui) {
+    let scale_options = create_scale_values(app.scale, app.key);
+    for i in 0..app.notes.len() {
+        let note = &mut app.notes[i];
         let scale_value = &mut note.pitch_name.scale_value;
         egui::ComboBox::from_id_salt(i)
             .selected_text(scale_value.to_string())
@@ -29,11 +30,11 @@ fn notes_control(&mut self, ui: &mut Ui) {
             });
         ui.add(egui::Slider::new(&mut note.pitch_name.octave, 0..=8).text("Octave"));
         if ui.button("Delete").clicked() {
-            self.notes.remove(i);
+            app.notes.remove(i);
         }
     }
     if ui.button("New note").clicked() {
-        self.notes.push(Note {
+        app.notes.push(Note {
             pitch_name: PitchName {
                 scale_value: ScaleValue::A,
                 octave: 4,
