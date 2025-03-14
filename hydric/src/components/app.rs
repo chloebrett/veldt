@@ -2,11 +2,14 @@ use super::effect_control;
 use super::envelope_control;
 use super::generator_control;
 use super::key_control;
+use super::load_control;
 use super::notes_control;
 use super::play_control;
+use super::save_button;
 use super::save_control;
 use crate::audio_player::Handle;
 use crate::rpc::load_note_list;
+use egui::Pos2;
 use egui::{ScrollArea, scroll_area::ScrollBarVisibility};
 use poll_promise::Promise;
 use shared::model::{
@@ -119,6 +122,8 @@ impl eframe::App for App {
                     ui.horizontal(|ui| {
                         ui.label("Track name: ");
                         ui.text_edit_singleline(&mut self.track_name);
+                        save_button(self, ui);
+                        load_control(self, ui);
                     });
 
                     ui.add(egui::Slider::new(&mut self.volume, 0.0..=1.0).text("Volume"));
@@ -132,21 +137,40 @@ impl eframe::App for App {
                     let generator_config: &mut SimpleWaveConfig = match generator_type {
                         GeneratorType::SimpleWave { config } => config,
                     };
+                    egui::Window::new("Envelope")
+                        .default_pos(Pos2 { x: 600.0, y: 125.0 })
+                        .resizable(false)
+                        .show(ctx, |ui| {
+                            envelope_control(&mut generator_config.envelope, ui);
+                        });
+                    egui::Window::new("Generator")
+                        .default_pos(Pos2 { x: 1100.0, y: 20.0 })
+                        .resizable(false)
+                        .show(ctx, |ui| {
+                            generator_control(generator_config, ui);
+                        });
+                    egui::Window::new("Effects")
+                        .default_pos(Pos2 {
+                            x: 1100.0,
+                            y: 150.0,
+                        })
+                        .resizable(false)
+                        .show(ctx, |ui| {
+                            for i in 0..self.effects.len() {
+                                ui.separator();
+                                effect_control(&mut self.effects[i], ui);
+                            }
+                            ui.separator();
+                        });
+                    egui::Window::new("Scale")
+                        .default_pos(Pos2 { x: 600.0, y: 20.0 })
+                        .resizable(false)
+                        .show(ctx, |ui| {
+                            key_control(self, ui);
+                        });
 
                     ui.separator();
-                    envelope_control(&mut generator_config.envelope, ui);
-                    ui.separator();
-                    generator_control(generator_config, ui);
-                    for i in 0..self.effects.len() {
-                        ui.separator();
-                        effect_control(&mut self.effects[i], ui);
-                    }
-                    ui.separator();
-                    key_control(self, ui);
-                    ui.separator();
                     notes_control(self, ui);
-                    ui.separator();
-                    save_control(self, ui);
                     ui.separator();
                     play_control(self, ui);
 
