@@ -6,6 +6,7 @@ use super::load_control;
 use super::notes_control;
 use super::play_control;
 use super::save_button;
+use super::toggle_window_panel;
 use crate::audio_player::Handle;
 use crate::rpc::load_note_list;
 use egui::Pos2;
@@ -33,6 +34,10 @@ pub struct App {
     pub notes_promise: Option<Promise<Option<Vec<Note>>>>,
     pub server_render_promise: Option<Promise<Option<Vec<f32>>>>,
     pub save_notes_promise: Option<Promise<Option<()>>>,
+    pub show_effects: bool,
+    pub show_envelope: bool,
+    pub show_generator: bool,
+    pub show_scale: bool,
 }
 
 impl Default for App {
@@ -97,6 +102,10 @@ impl Default for App {
             notes_promise: None,
             server_render_promise: None,
             save_notes_promise: None,
+            show_effects: false,
+            show_envelope: false,
+            show_generator: false,
+            show_scale: false,
         }
     }
 }
@@ -119,57 +128,67 @@ impl eframe::App for App {
                 .scroll_bar_visibility(ScrollBarVisibility::VisibleWhenNeeded)
                 .show(ui, |ui| {
                     ui.heading("Veldt");
-
                     ui.horizontal(|ui| {
                         ui.label("Track name: ");
                         ui.text_edit_singleline(&mut self.track_name);
                         save_button(self, ui);
                         load_control(self, ui);
                     });
-
-                    ui.add(egui::Slider::new(&mut self.volume, 0.0..=1.0).text("Volume"));
-                    ui.add(
-                        egui::Slider::new(&mut self.bpm, 20.0..=200.0)
-                            .text("BPM")
-                            .logarithmic(true),
-                    );
+                    ui.horizontal(|ui| {
+                        ui.vertical(|ui| {
+                            ui.add(egui::Slider::new(&mut self.volume, 0.0..=1.0).text("Volume"));
+                            ui.add(
+                                egui::Slider::new(&mut self.bpm, 20.0..=200.0)
+                                    .text("BPM")
+                                    .logarithmic(true),
+                            );
+                        });
+                        toggle_window_panel(self, ui);
+                    });
 
                     let generator_type: &mut GeneratorType = &mut self.generator.kind;
                     let generator_config: &mut SimpleWaveConfig = match generator_type {
                         GeneratorType::SimpleWave { config } => config,
                     };
-                    egui::Window::new("Envelope")
-                        .default_pos(Pos2 { x: 600.0, y: 125.0 })
-                        .resizable(false)
-                        .show(ctx, |ui| {
-                            envelope_control(&mut generator_config.envelope, ui);
-                        });
-                    egui::Window::new("Generator")
-                        .default_pos(Pos2 { x: 1100.0, y: 20.0 })
-                        .resizable(false)
-                        .show(ctx, |ui| {
-                            generator_control(generator_config, ui);
-                        });
-                    egui::Window::new("Effects")
-                        .default_pos(Pos2 {
-                            x: 1100.0,
-                            y: 150.0,
-                        })
-                        .resizable(false)
-                        .show(ctx, |ui| {
-                            for i in 0..self.mixer_channels[0].effects.len() {
+                    if self.show_envelope {
+                        egui::Window::new("Envelope")
+                            .default_pos(Pos2 { x: 600.0, y: 125.0 })
+                            .resizable(false)
+                            .show(ctx, |ui| {
+                                envelope_control(&mut generator_config.envelope, ui);
+                            });
+                    }
+                    if self.show_generator {
+                        egui::Window::new("Generator")
+                            .default_pos(Pos2 { x: 1100.0, y: 20.0 })
+                            .resizable(false)
+                            .show(ctx, |ui| {
+                                generator_control(generator_config, ui);
+                            });
+                    }
+                    if self.show_effects {
+                        egui::Window::new("Effects")
+                            .default_pos(Pos2 {
+                                x: 1100.0,
+                                y: 150.0,
+                            })
+                            .resizable(false)
+                            .show(ctx, |ui| {
+                                for i in 0..self.mixer_channels[0].effects.len() {
+                                    ui.separator();
+                                    effect_control(&mut self.mixer_channels[0].effects[i], ui);
+                                }
                                 ui.separator();
-                                effect_control(&mut self.mixer_channels[0].effects[i], ui);
-                            }
-                            ui.separator();
-                        });
-                    egui::Window::new("Scale")
-                        .default_pos(Pos2 { x: 600.0, y: 20.0 })
-                        .resizable(false)
-                        .show(ctx, |ui| {
-                            key_control(self, ui);
-                        });
-
+                            });
+                    }
+                    if self.show_scale {
+                        egui::Window::new("Scale")
+                            .default_pos(Pos2 { x: 600.0, y: 20.0 })
+                            .resizable(false)
+                            .show(ctx, |ui| {
+                                key_control(self, ui);
+                            });
+                    }
                     ui.separator();
                     notes_control(self, ui);
                     ui.separator();
