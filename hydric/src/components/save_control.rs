@@ -24,7 +24,10 @@ pub fn load_control(app: &mut App, ui: &mut Ui) {
     if let Some(notes_promise) = &app.notes_promise {
         if let Some(notes) = notes_promise.ready() {
             match notes {
-                Some(values) => app.notes = values.to_vec(),
+                Some(values) => {
+                    app.notes = values.to_vec();
+                    app.notes_promise = None
+                },
                 None => {}
             }
         }
