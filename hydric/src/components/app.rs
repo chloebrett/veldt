@@ -24,8 +24,7 @@ pub struct App {
     pub volume: f32,
     pub bpm: f32,
     pub generator: GeneratorInstance,
-    pub eq: EffectInstance,
-    pub delay: EffectInstance,
+    pub effects: Vec<EffectInstance>,
     pub audio: Vec<f32>,
     pub notes: Vec<Note>,
     pub key: ScaleValue,
@@ -65,25 +64,27 @@ impl Default for App {
                 },
                 meta: GeneratorMeta { volume: 1.0 },
             },
-            eq: EffectInstance {
-                effect: Effect::SimpleEq {
-                    config: EqConfig {
-                        kind: EqType::SimpleResonator,
-                        fc: 1000.0,
-                        q: 1.0,
+            effects: vec![
+                EffectInstance {
+                    effect: Effect::SimpleEq {
+                        config: EqConfig {
+                            kind: EqType::SimpleResonator,
+                            fc: 1000.0,
+                            q: 1.0,
+                        },
                     },
+                    meta: EffectMeta { id: 0, wet: 1.0 },
                 },
-                meta: EffectMeta { id: 0, wet: 1.0 },
-            },
-            delay: EffectInstance {
-                effect: Effect::SimpleDelay {
-                    config: DelayConfig {
-                        amplitude: 0.5,
-                        delay_ms: 250.0,
+                EffectInstance {
+                    effect: Effect::SimpleDelay {
+                        config: DelayConfig {
+                            amplitude: 0.5,
+                            delay_ms: 250.0,
+                        },
                     },
+                    meta: EffectMeta { id: 1, wet: 0.5 },
                 },
-                meta: EffectMeta { id: 1, wet: 0.5 },
-            },
+            ],
             audio: vec![],
             notes: vec![Note {
                 pitch_name: PitchName {
@@ -171,11 +172,11 @@ impl eframe::App for App {
                             })
                             .resizable(false)
                             .show(ctx, |ui| {
-                                ui.label("Equalizer");
-                                effect_control(&mut self.eq, ui);
+                                for i in 0..self.effects.len() {
+                                    ui.separator();
+                                    effect_control(&mut self.effects[i], ui);
+                                }
                                 ui.separator();
-                                ui.label("Delay");
-                                effect_control(&mut self.delay, ui);
                             });
                     }
                     if self.show_scale {
@@ -186,7 +187,6 @@ impl eframe::App for App {
                                 key_control(self, ui);
                             });
                     }
-
                     ui.separator();
                     notes_control(self, ui);
                     ui.separator();

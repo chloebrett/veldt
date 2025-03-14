@@ -4,6 +4,7 @@ use shared::model::{EffectMeta, EqConfig};
 use strum::IntoEnumIterator;
 
 pub fn eq_control(config: &mut EqConfig, meta: &mut EffectMeta, ui: &mut Ui) {
+    ui.label("Equalizer");
     ui.add(
         egui::Slider::new(&mut config.fc, 20.0..=20000.0)
             .text("Resonant frequency")
