@@ -1,12 +1,34 @@
 use shared::consts::XERIC_URL;
-use shared::model::Note;
+use shared::model::{Note, Track};
 use shared::save_notes::{
     LoadNotesListRequest, LoadNotesRequest, SaveNotesRequest, load_notes_client::LoadNotesClient,
     load_notes_list_client::LoadNotesListClient, save_notes_client::SaveNotesClient,
 };
+use shared::save_track::save_track_client::SaveTrackClient;
+use shared::save_track::SaveTrackRequest;
 use shared::serialize::map_vec;
 use tonic_web_wasm_client::Client;
 use web_sys::console;
+
+pub async fn save_track(name: String, track: Track) -> Option<()> {
+    let client = Client::new(XERIC_URL.to_string());
+    let mut grpc = SaveTrackClient::new(client);
+
+    let result = grpc
+        .save_track(SaveTrackRequest {
+            name,
+            track: Some(track.into())
+        })
+        .await;
+    match result {
+        Ok(_) => Some(()),
+        Err(_) => {
+            console::error_1(&"Error saving notes to server.".into());
+            None
+        }
+    }
+
+}
 
 pub async fn save_notes(name: String, notes: Vec<Note>) -> Option<()> {
     let client = Client::new(XERIC_URL.to_string());
