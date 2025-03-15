@@ -1,4 +1,4 @@
-use shared::pmodel::NoteProto;
+use shared::pmodel::{NoteProto, TrackProto};
 use shared::save_notes::load_notes_list_server::LoadNotesList;
 use shared::save_notes::load_notes_server::LoadNotes;
 use shared::save_notes::save_notes_server::SaveNotes;
@@ -6,6 +6,8 @@ use shared::save_notes::{
     LoadNotesListReply, LoadNotesListRequest, LoadNotesReply, LoadNotesRequest, SaveNotesReply,
     SaveNotesRequest,
 };
+use shared::save_track::save_track_server::SaveTrack;
+use shared::save_track::{SaveTrackReply, SaveTrackRequest};
 use std::collections::HashMap;
 use std::sync::{Arc, Mutex};
 use tonic::async_trait;
@@ -14,6 +16,27 @@ pub struct MySaveNotes {
     pub values: SavedNotes,
 }
 type SavedNotes = Arc<Mutex<HashMap<String, Vec<NoteProto>>>>;
+
+pub struct ServerSaveTracks {
+    pub values: SavedTracks,
+}
+type SavedTracks = Arc<Mutex<HashMap<String, TrackProto>>>;
+
+#[async_trait]
+impl SaveTrack for ServerSaveTracks {
+    async fn save_track(
+        self: &Self,
+        request: tonic::Request<SaveTrackRequest>,
+    ) -> Result<tonic::Response<SaveTrackReply>, tonic::Status> {
+        let SaveTrackRequest { name, track } = request.into_inner();
+        self.values
+            .lock()
+            .unwrap()
+            .insert(name.clone(), track.unwrap().clone());
+        println!("Saved {}", name.clone());
+        Ok(tonic::Response::new(SaveTrackReply {}))
+    }
+}
 
 #[async_trait]
 impl SaveNotes for MySaveNotes {
