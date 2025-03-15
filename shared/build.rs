@@ -8,6 +8,7 @@ fn main() {
                 "proto/render.proto",
                 "proto/save_notes.proto",
                 "proto/load_sample.proto",
+                "proto/save_track.proto",
             ],
             &["proto"],
         )
