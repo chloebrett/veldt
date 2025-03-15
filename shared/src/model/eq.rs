@@ -18,6 +18,8 @@ pub enum EqType {
     ButterworthHighPass,
     ButterworthResonator,
     ButterworthBandStop,
+    FirstOrderAllPass,
+    SecondOrderAllPass,
 }
 
 impl From<EqTypeProto> for EqType {
@@ -36,6 +38,8 @@ impl From<EqTypeProto> for EqType {
             EqTypeProto::ButterworthHighPassEq => EqType::ButterworthHighPass,
             EqTypeProto::ButterworthResonatorEq => EqType::ButterworthResonator,
             EqTypeProto::ButterworthBandStopEq => EqType::ButterworthBandStop,
+            EqTypeProto::FirstOrderAllPassEq => EqType::FirstOrderAllPass,
+            EqTypeProto::SecondOrderAllPassEq => EqType::SecondOrderAllPass,
         }
     }
 }
@@ -55,6 +59,8 @@ impl From<EqType> for EqTypeProto {
             EqType::ButterworthHighPass => EqTypeProto::ButterworthHighPassEq,
             EqType::ButterworthResonator => EqTypeProto::ButterworthResonatorEq,
             EqType::ButterworthBandStop => EqTypeProto::ButterworthBandStopEq,
+            EqType::FirstOrderAllPass => EqTypeProto::FirstOrderAllPassEq,
+            EqType::SecondOrderAllPass => EqTypeProto::SecondOrderAllPassEq,
         }
     }
 }
