@@ -8,7 +8,7 @@ use super::play_control;
 use super::save_button;
 use super::toggle_window_panel;
 use crate::audio_player::Handle;
-use crate::rpc::load_note_list;
+use crate::rpc::load_track_list;
 use egui::Pos2;
 use egui::{ScrollArea, scroll_area::ScrollBarVisibility};
 use poll_promise::Promise;
@@ -30,7 +30,7 @@ pub struct App {
     pub key: ScaleValue,
     pub scale: Scale,
     pub handle: Option<Handle>,
-    pub notes_list_promise: Promise<Option<Vec<String>>>,
+    pub track_list_promise: Promise<Option<Vec<String>>>,
     pub notes_promise: Option<Promise<Option<Vec<Note>>>>,
     pub server_render_promise: Option<Promise<Option<Vec<f32>>>>,
     pub save_track_promise: Option<Promise<Option<()>>>,
@@ -99,7 +99,7 @@ impl Default for App {
             key: ScaleValue::A,
             scale: Scale::Chromatic,
             handle: None,
-            notes_list_promise: Promise::spawn_local(async move { load_note_list().await }),
+            track_list_promise: Promise::spawn_local(async move { load_track_list().await }),
             notes_promise: None,
             server_render_promise: None,
             save_track_promise: None,
