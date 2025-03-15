@@ -2,6 +2,7 @@ use crate::load_sample::MyLoadSample;
 use crate::save::MySaveNotes;
 use http::{HeaderValue, Method};
 use mesic::render;
+use save::ServerSaveTracks;
 use shared::bytes::as_bytes;
 use shared::consts::{HYDRIC_URL, XERIC_SOCKET_ADDR};
 use shared::load_sample::load_sample_server::LoadSampleServer;
@@ -11,6 +12,7 @@ use shared::render::{RenderReply, RenderRequest};
 use shared::save_notes::load_notes_list_server::LoadNotesListServer;
 use shared::save_notes::load_notes_server::LoadNotesServer;
 use shared::save_notes::save_notes_server::SaveNotesServer;
+use shared::save_track::save_track_server::SaveTrackServer;
 use shared::serialize::map_vec;
 use std::collections::HashMap;
 use std::sync::{Arc, Mutex};
@@ -55,6 +57,7 @@ impl Render for MyRender {
 pub async fn start_server() -> anyhow::Result<()> {
     let render = RenderServer::new(MyRender);
     let saved_notes = Arc::new(Mutex::new(HashMap::new()));
+    let saved_tracks = Arc::new(Mutex::new(HashMap::new()));
     let save_notes = SaveNotesServer::new(MySaveNotes {
         values: Arc::clone(&saved_notes),
     });
@@ -66,6 +69,9 @@ pub async fn start_server() -> anyhow::Result<()> {
     });
     // TODO: stop using the My... pattern? Avoid / call it something else.
     let load_sample = LoadSampleServer::new(MyLoadSample);
+    let save_track = SaveTrackServer::new(ServerSaveTracks {
+        values: Arc::clone(&saved_tracks),
+    });
 
     tonic::transport::Server::builder()
         .accept_http1(true)
@@ -82,6 +88,7 @@ pub async fn start_server() -> anyhow::Result<()> {
         .add_service(load_notes_list)
         .add_service(load_notes)
         .add_service(load_sample)
+        .add_service(save_track)
         .serve(*XERIC_SOCKET_ADDR)
         .await?;
 
