@@ -1,8 +1,7 @@
 use shared::consts::XERIC_URL;
 use shared::model::{Note, Track};
 use shared::save_notes::{
-    LoadNotesListRequest, LoadNotesRequest, load_notes_client::LoadNotesClient,
-    load_notes_list_client::LoadNotesListClient,
+    LoadNotesRequest, load_notes_client::LoadNotesClient,
 };
 use shared::save_track::load_track_list_client::LoadTrackListClient;
 use shared::save_track::save_track_client::SaveTrackClient;
@@ -39,20 +38,6 @@ pub async fn load_track_list() -> Option<Vec<String>> {
         Ok(response) => Some(response.into_inner().names),
         Err(_) => {
             console::error_1(&"Error loading track list from server.".into());
-            None
-        }
-    }
-}
-
-pub async fn load_note_list() -> Option<Vec<String>> {
-    let client = Client::new(XERIC_URL.to_string());
-    let mut grpc = LoadNotesListClient::new(client);
-
-    let result = grpc.load_notes_list(LoadNotesListRequest {}).await;
-    match result {
-        Ok(response) => Some(response.into_inner().names),
-        Err(_) => {
-            console::error_1(&"Error load note list from server.".into());
             None
         }
     }
