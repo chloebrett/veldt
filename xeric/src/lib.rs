@@ -1,8 +1,10 @@
+use crate::load_sample::MyLoadSample;
 use crate::save::MySaveNotes;
 use http::{HeaderValue, Method};
 use mesic::render;
 use shared::bytes::as_bytes;
 use shared::consts::{HYDRIC_URL, XERIC_SOCKET_ADDR};
+use shared::load_sample::load_sample_server::LoadSampleServer;
 use shared::model::MixerChannel;
 use shared::render::render_server::{Render, RenderServer};
 use shared::render::{RenderReply, RenderRequest};
@@ -16,6 +18,7 @@ use tonic::async_trait;
 use tonic_web::GrpcWebLayer;
 use tower_http::cors::AllowHeaders;
 
+pub mod load_sample;
 pub mod save;
 
 struct MyRender;
@@ -61,6 +64,8 @@ pub async fn start_server() -> anyhow::Result<()> {
     let load_notes = LoadNotesServer::new(MySaveNotes {
         values: Arc::clone(&saved_notes),
     });
+    // TODO: stop using the My... pattern? Avoid / call it something else.
+    let load_sample = LoadSampleServer::new(MyLoadSample);
 
     tonic::transport::Server::builder()
         .accept_http1(true)
@@ -76,6 +81,7 @@ pub async fn start_server() -> anyhow::Result<()> {
         .add_service(save_notes)
         .add_service(load_notes_list)
         .add_service(load_notes)
+        .add_service(load_sample)
         .serve(*XERIC_SOCKET_ADDR)
         .await?;
 
