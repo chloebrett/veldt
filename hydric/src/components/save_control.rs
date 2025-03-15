@@ -1,5 +1,5 @@
 use super::app::App;
-use crate::rpc::{load_note_list, load_notes, save_notes, save_track};
+use crate::rpc::{load_note_list, load_notes, save_track};
 use egui::Ui;
 use mesic::create_track;
 use poll_promise::Promise;
@@ -7,13 +7,8 @@ use poll_promise::Promise;
 
 pub fn save_button(app: &mut App, ui: &mut Ui) {
     if ui.button("Save").clicked() {
-        let save_name = app.track_name.clone();
         let track_name = app.track_name.clone();
-        let notes_to_save = app.notes.clone();
         let track_to_save = create_track(app.notes.clone());
-        app.save_notes_promise = Some(Promise::spawn_local(async move {
-            save_notes(save_name, notes_to_save).await
-        }));
         app.save_track_promise = Some(Promise::spawn_local(async move {
             save_track(track_name, track_to_save).await
         }));

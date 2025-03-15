@@ -11,7 +11,6 @@ use shared::render::render_server::{Render, RenderServer};
 use shared::render::{RenderReply, RenderRequest};
 use shared::save_notes::load_notes_list_server::LoadNotesListServer;
 use shared::save_notes::load_notes_server::LoadNotesServer;
-use shared::save_notes::save_notes_server::SaveNotesServer;
 use shared::save_track::save_track_server::SaveTrackServer;
 use shared::serialize::map_vec;
 use std::collections::HashMap;
@@ -58,9 +57,6 @@ pub async fn start_server() -> anyhow::Result<()> {
     let render = RenderServer::new(MyRender);
     let saved_notes = Arc::new(Mutex::new(HashMap::new()));
     let saved_tracks = Arc::new(Mutex::new(HashMap::new()));
-    let save_notes = SaveNotesServer::new(MySaveNotes {
-        values: Arc::clone(&saved_notes),
-    });
     let load_notes_list = LoadNotesListServer::new(MySaveNotes {
         values: Arc::clone(&saved_notes),
     });
@@ -84,7 +80,6 @@ pub async fn start_server() -> anyhow::Result<()> {
         )
         .layer(GrpcWebLayer::new())
         .add_service(render)
-        .add_service(save_notes)
         .add_service(load_notes_list)
         .add_service(load_notes)
         .add_service(load_sample)
