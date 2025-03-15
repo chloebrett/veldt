@@ -16,6 +16,7 @@ pub fn notes_control(app: &mut App, ui: &mut Ui, ctx: &Context) {
                 }
             });
         ui.add(egui::Slider::new(&mut note.pitch_name.octave, 0..=8).text("Octave"));
+        ui.add(egui::Slider::new(&mut note.beats, 0.0..=10.0).text("Beats"));
         if ui.button("Delete").clicked() {
             app.notes.remove(i);
             ctx.request_discard("");
