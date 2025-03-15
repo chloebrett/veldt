@@ -5,7 +5,8 @@ use shared::save_notes::{
 };
 use shared::save_track::save_track_server::SaveTrack;
 use shared::save_track::load_track_list_server::LoadTrackList;
-use shared::save_track::{LoadTrackListRequest, LoadTrackListReply, SaveTrackReply, SaveTrackRequest};
+use shared::save_track::load_track_server::LoadTrack;
+use shared::save_track::{LoadTrackListReply, LoadTrackListRequest, LoadTrackReply, LoadTrackRequest, SaveTrackReply, SaveTrackRequest};
 use std::collections::HashMap;
 use std::sync::{Arc, Mutex};
 use tonic::async_trait;
@@ -44,6 +45,23 @@ impl LoadTrackList for ServerSaveTracks {
     ) -> Result<tonic::Response<LoadTrackListReply>, tonic::Status> {
         let list = self.values.lock().unwrap().keys().cloned().collect();
         Ok(tonic::Response::new(LoadTrackListReply { names: list }))
+    }
+}
+
+#[async_trait]
+impl LoadTrack for ServerSaveTracks {
+    async fn load_track(
+        self: &Self,
+        request: tonic::Request<LoadTrackRequest>,
+    ) -> Result<tonic::Response<LoadTrackReply>, tonic::Status> {
+        let name = request.into_inner().name;
+        if let Some(track) = self.values.lock().unwrap().get(&name) {
+            Ok(tonic::Response::new(LoadTrackReply {
+                track: Some(track.clone()),
+            }))
+        } else {
+            Err(tonic::Status::invalid_argument("Track name was not found on server."))
+        }
     }
 }
 

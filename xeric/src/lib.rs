@@ -11,6 +11,7 @@ use shared::render::render_server::{Render, RenderServer};
 use shared::render::{RenderReply, RenderRequest};
 use shared::save_notes::load_notes_server::LoadNotesServer;
 use shared::save_track::load_track_list_server::LoadTrackListServer;
+use shared::save_track::load_track_server::LoadTrackServer;
 use shared::save_track::save_track_server::SaveTrackServer;
 use shared::serialize::map_vec;
 use std::collections::HashMap;
@@ -68,6 +69,9 @@ pub async fn start_server() -> anyhow::Result<()> {
     let load_track_list = LoadTrackListServer::new(ServerSaveTracks {
         values: Arc::clone(&saved_tracks),  
     });
+    let load_track = LoadTrackServer::new(ServerSaveTracks {
+        values: Arc::clone(&saved_tracks),
+    });
 
 
     tonic::transport::Server::builder()
@@ -85,6 +89,7 @@ pub async fn start_server() -> anyhow::Result<()> {
         .add_service(load_sample)
         .add_service(save_track)
         .add_service(load_track_list)
+        .add_service(load_track)
         .serve(*XERIC_SOCKET_ADDR)
         .await?;
 
