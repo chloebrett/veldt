@@ -1,3 +1,5 @@
+use std::collections::BTreeSet;
+
 use super::effect_control;
 use super::envelope_control;
 use super::generator_control;
@@ -12,6 +14,8 @@ use crate::rpc::load_track_list;
 use egui::Pos2;
 use egui::{ScrollArea, scroll_area::ScrollBarVisibility};
 use poll_promise::Promise;
+use shared::model::PlacedNote;
+use shared::model::Track;
 use shared::model::{
     AdsrEnvelope, DelayConfig, Effect, EffectInstance, EffectMeta, EqConfig, EqType,
     GeneratorInstance, GeneratorMeta, GeneratorType, MixerChannel, Note, PitchName, Scale,
@@ -21,6 +25,7 @@ use shared::model::{
 pub struct App {
     pub track_name: String,
     pub track_list: Vec<String>,
+    pub track: Track,
     pub volume: f32,
     pub bpm: f32,
     pub generator: GeneratorInstance,
@@ -31,7 +36,7 @@ pub struct App {
     pub scale: Scale,
     pub handle: Option<Handle>,
     pub track_list_promise: Promise<Option<Vec<String>>>,
-    pub notes_promise: Option<Promise<Option<Vec<Note>>>>,
+    pub track_promise: Option<Promise<Option<Track>>>,
     pub server_render_promise: Option<Promise<Option<Vec<f32>>>>,
     pub save_track_promise: Option<Promise<Option<()>>>,
     pub show_effects: bool,
@@ -46,6 +51,9 @@ impl Default for App {
         Self {
             track_name: "My Track".to_owned(),
             track_list: vec![],
+            track: Track {
+                notes: BTreeSet::<PlacedNote>::new()
+            },
             volume: 1.0,
             bpm: 120.0,
             generator: GeneratorInstance {
@@ -100,7 +108,7 @@ impl Default for App {
             scale: Scale::Chromatic,
             handle: None,
             track_list_promise: Promise::spawn_local(async move { load_track_list().await }),
-            notes_promise: None,
+            track_promise: None,
             server_render_promise: None,
             save_track_promise: None,
             show_effects: false,
