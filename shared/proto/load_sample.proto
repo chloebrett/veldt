@@ -1,0 +1,16 @@
+syntax = "proto3";
+
+package load_sample;
+
+service LoadSample {
+  rpc LoadSample (LoadSampleRequest) returns (LoadSampleReply) {}
+}
+
+message LoadSampleRequest {
+  string filename = 1;
+}
+
+message LoadSampleReply {
+  // TODO:return a sample proto instead, with sample rate etc.
+  bytes sample = 1;
+}
