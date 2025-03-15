@@ -1,3 +1,5 @@
+mod apf_first_order;
+mod apf_second_order;
 mod bps_basic;
 mod filter;
 mod lhp_first_order;
@@ -7,6 +9,8 @@ mod resonator_sa;
 mod resonator_simple;
 
 use super::ApplyEffect;
+use apf_first_order::*;
+use apf_second_order::*;
 use bps_basic::*;
 use lhp_first_order::*;
 use lhp_second_order::*;
@@ -25,6 +29,8 @@ impl ApplyEffect for EqConfig {
             EqType::SimpleSecondOrderLowPass => Box::new(lhp_second_order(self, LowHigh::Low)),
             EqType::SimpleSecondOrderHighPass => Box::new(lhp_second_order(self, LowHigh::High)),
             EqType::SimpleSecondOrderResonator => Box::new(band_pass_basic(self)),
+            EqType::FirstOrderAllPass => Box::new(apf_first_order(self)),
+            EqType::SecondOrderAllPass => Box::new(apf_second_order(self)),
             EqType::SimpleSecondOrderBandStop => Box::new(band_stop_basic(self)),
             _ => panic!("EQ type not implemented!"),
         };

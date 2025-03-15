@@ -168,4 +168,6 @@ enum EqTypeProto {
   ButterworthHighPassEq = 10;
   ButterworthResonatorEq = 11;
   ButterworthBandStopEq = 12;
+  FirstOrderAllPassEq = 13;
+  SecondOrderAllPassEq = 14;
 }
