@@ -4,24 +4,12 @@ package save_notes;
 
 import "pmodel.proto";
 
-service SaveNotes {
-  rpc SaveNotes (SaveNotesRequest) returns (SaveNotesReply) {}
-}
-
 service LoadNotesList {
   rpc LoadNotesList (LoadNotesListRequest) returns (LoadNotesListReply) {}
 }
 
 service LoadNotes {
   rpc LoadNotes (LoadNotesRequest) returns (LoadNotesReply) {}
-}
-
-message SaveNotesRequest {
-  string name = 1;
-  repeated pmodel.NoteProto notes = 2;
-}
-
-message SaveNotesReply {
 }
 
 message LoadNotesListRequest {
