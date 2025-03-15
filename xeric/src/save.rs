@@ -1,8 +1,7 @@
 use shared::pmodel::{NoteProto, TrackProto};
-use shared::save_notes::load_notes_list_server::LoadNotesList;
 use shared::save_notes::load_notes_server::LoadNotes;
 use shared::save_notes::{
-    LoadNotesListReply, LoadNotesListRequest, LoadNotesReply, LoadNotesRequest
+    LoadNotesReply, LoadNotesRequest
 };
 use shared::save_track::save_track_server::SaveTrack;
 use shared::save_track::load_track_list_server::LoadTrackList;
@@ -45,17 +44,6 @@ impl LoadTrackList for ServerSaveTracks {
     ) -> Result<tonic::Response<LoadTrackListReply>, tonic::Status> {
         let list = self.values.lock().unwrap().keys().cloned().collect();
         Ok(tonic::Response::new(LoadTrackListReply { names: list }))
-    }
-}
-
-#[async_trait]
-impl LoadNotesList for MySaveNotes {
-    async fn load_notes_list(
-        self: &Self,
-        _request: tonic::Request<LoadNotesListRequest>,
-    ) -> Result<tonic::Response<LoadNotesListReply>, tonic::Status> {
-        let list = self.values.lock().unwrap().keys().cloned().collect();
-        Ok(tonic::Response::new(LoadNotesListReply { names: list }))
     }
 }
 
