@@ -5,7 +5,8 @@ use shared::save_notes::{
     LoadNotesListReply, LoadNotesListRequest, LoadNotesReply, LoadNotesRequest
 };
 use shared::save_track::save_track_server::SaveTrack;
-use shared::save_track::{SaveTrackReply, SaveTrackRequest};
+use shared::save_track::load_track_list_server::LoadTrackList;
+use shared::save_track::{LoadTrackListRequest, LoadTrackListReply, SaveTrackReply, SaveTrackRequest};
 use std::collections::HashMap;
 use std::sync::{Arc, Mutex};
 use tonic::async_trait;
@@ -33,6 +34,17 @@ impl SaveTrack for ServerSaveTracks {
             .insert(name.clone(), track.unwrap().clone());
         println!("Saved {}", name.clone());
         Ok(tonic::Response::new(SaveTrackReply {}))
+    }
+}
+
+#[async_trait]
+impl LoadTrackList for ServerSaveTracks {
+    async fn load_track_list (
+        self: &Self,
+        _request: tonic::Request<LoadTrackListRequest>,
+    ) -> Result<tonic::Response<LoadTrackListReply>, tonic::Status> {
+        let list = self.values.lock().unwrap().keys().cloned().collect();
+        Ok(tonic::Response::new(LoadTrackListReply { names: list }))
     }
 }
 
