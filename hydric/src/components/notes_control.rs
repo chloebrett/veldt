@@ -1,9 +1,9 @@
 use super::app::App;
-use egui::Ui;
+use egui::{Context, Ui};
 use mesic::create_scale_values;
 use shared::model::{Note, PitchName, ScaleValue};
 
-pub fn notes_control(app: &mut App, ui: &mut Ui) {
+pub fn notes_control(app: &mut App, ui: &mut Ui, ctx: &Context) {
     let scale_options = create_scale_values(app.scale, app.key);
     for i in 0..app.notes.len() {
         let note = &mut app.notes[i];
@@ -18,6 +18,8 @@ pub fn notes_control(app: &mut App, ui: &mut Ui) {
         ui.add(egui::Slider::new(&mut note.pitch_name.octave, 0..=8).text("Octave"));
         if ui.button("Delete").clicked() {
             app.notes.remove(i);
+            ctx.request_discard("");
+            break;
         }
     }
     if ui.button("New note").clicked() {

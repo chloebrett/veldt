@@ -192,7 +192,7 @@ impl eframe::App for App {
                             });
                     }
                     ui.separator();
-                    notes_control(self, ui);
+                    notes_control(self, ui, ctx);
                     ui.separator();
                     play_control(self, ui);
 
