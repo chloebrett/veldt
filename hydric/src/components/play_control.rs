@@ -1,15 +1,14 @@
 use super::app::App;
 use super::audio_vis::audio_vis;
 use crate::audio_player::play;
-use crate::rpc::render;
+use crate::rpc::render as server_render;
 use egui::Ui;
-use mesic::{create_track, render as local_render};
+use mesic::render as local_render;
 use poll_promise::Promise;
 
 pub fn play_control(app: &mut App, ui: &mut Ui) {
     if ui.button("Play (local)").clicked() {
-        let track = create_track(app.notes.clone());
-        app.audio = local_render(&track, &app.mixer_channels[0], &app.generator, app.bpm)
+        app.audio = local_render(&app.track, &app.mixer_channels[0], &app.generator, app.bpm)
             .into_iter()
             .map(|sample| sample.clamp(-1.0, 1.0))
             .collect();
@@ -29,12 +28,12 @@ pub fn play_control(app: &mut App, ui: &mut Ui) {
         }
     }
     if ui.button("Load audio (server)").clicked() {
-        let track = create_track(app.notes.clone());
+        let track = app.track.clone();
         let generator = app.generator.clone();
         let mixer_channel = app.mixer_channels[0].effects.clone();
         let bpm = app.bpm;
         app.server_render_promise = Some(Promise::spawn_local(async move {
-            render(track, mixer_channel, generator, bpm).await
+            server_render(track, mixer_channel, generator, bpm).await
         }))
     }
     audio_vis(app, ui);

@@ -1,29 +1,27 @@
 use super::app::App;
-use crate::rpc::{load_note_list, load_notes, save_notes};
+use crate::rpc::{load_track, load_track_list, save_track};
 use egui::Ui;
 use poll_promise::Promise;
 
 pub fn save_button(app: &mut App, ui: &mut Ui) {
     if ui.button("Save").clicked() {
-        let save_name = app.track_name.clone();
-        let notes_to_save = app.notes.clone();
-        app.save_notes_promise = Some(Promise::spawn_local(async move {
-            save_notes(save_name, notes_to_save).await
+        let track_name = app.track_name.clone();
+        let track_to_save = app.track.clone();
+        app.save_track_promise = Some(Promise::spawn_local(async move {
+            save_track(track_name, track_to_save).await
         }));
-        app.notes_list_promise = Promise::spawn_local(async move { load_note_list().await });
+        app.track_list_promise = Promise::spawn_local(async move { load_track_list().await });
     }
 }
 
 pub fn load_control(app: &mut App, ui: &mut Ui) {
-    if let Some(list) = app.notes_list_promise.ready() {
+    if let Some(list) = app.track_list_promise.ready() {
         app.track_list = list.clone().unwrap_or(vec![]);
     }
-    if let Some(notes_promise) = &app.notes_promise {
-        if let Some(notes) = notes_promise.ready() {
-            if let Some(values) = notes {
-                app.notes = values.to_vec();
-                app.notes_promise = None
-            }
+    if let Some(track_promise) = &app.track_promise {
+        if let Some(track) = track_promise.ready() {
+            app.track = track.clone().unwrap();
+            app.track_promise = None;
         }
     }
     ui.horizontal(|ui| {
@@ -39,10 +37,11 @@ pub fn load_control(app: &mut App, ui: &mut Ui) {
                     ui.selectable_value(&mut app.load_track_name, Some(name.clone()), name);
                 }
             });
+        // TODO disable button when no load_name
         if ui.button("Load").clicked() {
             let load_name = app.load_track_name.clone().unwrap();
-            app.notes_promise = Some(Promise::spawn_local(
-                async move { load_notes(load_name).await },
+            app.track_promise = Some(Promise::spawn_local(
+                async move { load_track(load_name).await },
             ))
         };
     });

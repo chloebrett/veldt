@@ -12,10 +12,10 @@ pub mod pmodel {
     tonic::include_proto!("pmodel");
 }
 
-pub mod save_notes {
-    tonic::include_proto!("save_notes");
-}
-
 pub mod load_sample {
     tonic::include_proto!("load_sample");
+}
+
+pub mod save_track {
+    tonic::include_proto!("save_track");
 }
