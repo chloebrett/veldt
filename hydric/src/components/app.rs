@@ -52,7 +52,7 @@ impl Default for App {
             track_name: "My Track".to_owned(),
             track_list: vec![],
             track: Track {
-                notes: BTreeSet::<PlacedNote>::from_iter(vec![PlacedNote {
+                notes: BTreeSet::from_iter(vec![PlacedNote {
                     note: Note {
                         pitch_name: PitchName {
                             scale_value: ScaleValue::A,
