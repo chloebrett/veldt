@@ -1,5 +1,4 @@
 use crate::load_sample::MyLoadSample;
-use crate::save::MySaveNotes;
 use http::{HeaderValue, Method};
 use mesic::render;
 use save::ServerSaveTracks;
@@ -9,7 +8,6 @@ use shared::load_sample::load_sample_server::LoadSampleServer;
 use shared::model::MixerChannel;
 use shared::render::render_server::{Render, RenderServer};
 use shared::render::{RenderReply, RenderRequest};
-use shared::save_notes::load_notes_server::LoadNotesServer;
 use shared::save_track::load_track_list_server::LoadTrackListServer;
 use shared::save_track::load_track_server::LoadTrackServer;
 use shared::save_track::save_track_server::SaveTrackServer;
@@ -56,11 +54,7 @@ impl Render for MyRender {
 
 pub async fn start_server() -> anyhow::Result<()> {
     let render = RenderServer::new(MyRender);
-    let saved_notes = Arc::new(Mutex::new(HashMap::new()));
     let saved_tracks = Arc::new(Mutex::new(HashMap::new()));
-    let load_notes = LoadNotesServer::new(MySaveNotes {
-        values: Arc::clone(&saved_notes),
-    });
     // TODO: stop using the My... pattern? Avoid / call it something else.
     let load_sample = LoadSampleServer::new(MyLoadSample);
     let save_track = SaveTrackServer::new(ServerSaveTracks {
@@ -84,7 +78,6 @@ pub async fn start_server() -> anyhow::Result<()> {
         )
         .layer(GrpcWebLayer::new())
         .add_service(render)
-        .add_service(load_notes)
         .add_service(load_sample)
         .add_service(save_track)
         .add_service(load_track_list)
