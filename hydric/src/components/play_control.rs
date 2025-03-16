@@ -9,10 +9,10 @@ use poll_promise::Promise;
 pub fn play_control(app: &mut App, ui: &mut Ui) {
     if ui.button("Play (local)").clicked() {
         app.audio = local_render(
-            &app.project.tracks[0],
-            &app.project.mixer[0],
-            &app.project.generators[0],
-            app.project.bpm,
+            &app.store.project.tracks[0],
+            &app.store.project.mixer[0],
+            &app.store.project.generators[0],
+            app.store.project.bpm,
         )
         .into_iter()
         .map(|sample| sample.clamp(-1.0, 1.0))
@@ -33,10 +33,10 @@ pub fn play_control(app: &mut App, ui: &mut Ui) {
         }
     }
     if ui.button("Load audio (server)").clicked() {
-        let track = app.project.tracks[0].clone();
-        let generator = app.project.generators[0].clone();
-        let mixer_channel = app.project.mixer[0].effects.clone();
-        let bpm = app.project.bpm;
+        let track = app.store.project.tracks[0].clone();
+        let generator = app.store.project.generators[0].clone();
+        let mixer_channel = app.store.project.mixer[0].effects.clone();
+        let bpm = app.store.project.bpm;
         app.server_render_promise = Some(Promise::spawn_local(async move {
             server_render(track, mixer_channel, generator, bpm).await
         }))
