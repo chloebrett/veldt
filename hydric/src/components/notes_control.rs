@@ -13,7 +13,7 @@ pub fn notes_control(app: &mut App, ui: &mut Ui, ctx: &Context) {
         .iter()
         .map(|placed_note| placed_note.clone())
         .collect();
-    let mut offset = OrderedFloat(0.0);
+    let mut track_length = 0.0;
     for i in 0..placed_notes.len() {
         let placed_note = &mut placed_notes[i];
         let note = &mut placed_note.note;
@@ -30,7 +30,10 @@ pub fn notes_control(app: &mut App, ui: &mut Ui, ctx: &Context) {
         let mut offset_value = placed_note.offset.into();
         ui.add(egui::Slider::new(&mut offset_value, 0.0..=16.0).text("Offset"));
         placed_note.offset = OrderedFloat(offset_value);
-        offset += OrderedFloat(placed_note.note.beats);
+        track_length = f32::max(
+            track_length,
+            Into::<f32>::into(placed_note.offset) + placed_note.note.beats,
+        );
         if ui.button("Delete").clicked() {
             placed_notes.remove(i);
             ctx.request_discard("");
@@ -46,7 +49,7 @@ pub fn notes_control(app: &mut App, ui: &mut Ui, ctx: &Context) {
                 },
                 beats: 1.0,
             },
-            offset,
+            offset: OrderedFloat(track_length.ceil()),
         })
     }
     app.track = Track {
