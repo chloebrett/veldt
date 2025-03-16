@@ -24,7 +24,7 @@ pub fn render(
     };
 
     for note in &track.notes {
-        let mut wave = polyphonic_wave(
+        let wave = polyphonic_wave(
             &note.note.pitch_name,
             note.note.beats,
             bpm,
@@ -34,10 +34,8 @@ pub fn render(
 
         let offset_samples =
             (Into::<f32>::into(note.offset) / bpm * 60.0 * SAMPLE_RATE as f32) as usize;
-        let mut placed_wave: Vec<f32> = vec![0.0; offset_samples];
-        placed_wave.append(&mut wave);
-        placed_wave.iter().enumerate().for_each(|(i, value)| {
-            total_wave[i] += value;
+        wave.iter().enumerate().for_each(|(i, value)| {
+            total_wave[i + offset_samples] += value;
         })
         // TODO: account for offsets properly, instead of just appending here.
     }
