@@ -67,12 +67,11 @@ pub async fn start_server() -> anyhow::Result<()> {
         values: Arc::clone(&saved_tracks),
     });
     let load_track_list = LoadTrackListServer::new(ServerSaveTracks {
-        values: Arc::clone(&saved_tracks),  
+        values: Arc::clone(&saved_tracks),
     });
     let load_track = LoadTrackServer::new(ServerSaveTracks {
         values: Arc::clone(&saved_tracks),
     });
-
 
     tonic::transport::Server::builder()
         .accept_http1(true)
