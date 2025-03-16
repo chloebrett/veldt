@@ -2,8 +2,47 @@ syntax = "proto3";
 
 package pmodel;
 
+message ProjectProto {
+  string name = 1;
+
+  repeated TrackProto tracks = 2;
+
+  /// Ordered based on start_position.
+  repeated TrackPlacementProto track_placements = 3;
+
+  repeated SampleProto samples = 4;
+
+  repeated GeneratorInstanceProto generators = 5;
+
+  repeated MixerChannelProto mixer = 6;
+
+  float bpm = 7;
+}
+
 message TrackProto {
   repeated PlacedNoteProto notes = 1;
+}
+
+message TrackPlacementProto {
+  uint32 track_id = 1;
+
+  float start_position = 2;
+
+  optional float clipped_duration = 3;
+
+  uint32 visual_placement = 4;
+}
+
+message SampleProto {
+  bytes data = 1;
+
+  float sample_rate = 2;
+
+  uint32 bit_depth = 3;
+}
+
+message MixerChannelProto {
+  repeated EffectInstanceProto effects = 1;
 }
 
 message PlacedNoteProto {
@@ -35,7 +74,6 @@ message PitchNameProto {
 }
 
 message EffectInstanceProto {
-
   EffectMetaProto meta = 1;
 
   oneof effect {
