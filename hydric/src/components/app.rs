@@ -1,3 +1,5 @@
+use std::collections::BTreeSet;
+
 use super::effect_control;
 use super::envelope_control;
 use super::generator_control;
@@ -8,10 +10,13 @@ use super::play_control;
 use super::save_button;
 use super::toggle_window_panel;
 use crate::audio_player::Handle;
-use crate::rpc::load_note_list;
+use crate::rpc::load_track_list;
 use egui::Pos2;
 use egui::{ScrollArea, scroll_area::ScrollBarVisibility};
+use ordered_float::OrderedFloat;
 use poll_promise::Promise;
+use shared::model::PlacedNote;
+use shared::model::Track;
 use shared::model::{
     AdsrEnvelope, DelayConfig, Effect, EffectInstance, EffectMeta, EqConfig, EqType,
     GeneratorInstance, GeneratorMeta, GeneratorType, MixerChannel, Note, PitchName, Scale,
@@ -21,19 +26,19 @@ use shared::model::{
 pub struct App {
     pub track_name: String,
     pub track_list: Vec<String>,
+    pub track: Track,
     pub volume: f32,
     pub bpm: f32,
     pub generator: GeneratorInstance,
     pub mixer_channels: Vec<MixerChannel>,
     pub audio: Vec<f32>,
-    pub notes: Vec<Note>,
     pub key: ScaleValue,
     pub scale: Scale,
     pub handle: Option<Handle>,
-    pub notes_list_promise: Promise<Option<Vec<String>>>,
-    pub notes_promise: Option<Promise<Option<Vec<Note>>>>,
+    pub track_list_promise: Promise<Option<Vec<String>>>,
+    pub track_promise: Option<Promise<Option<Track>>>,
     pub server_render_promise: Option<Promise<Option<Vec<f32>>>>,
-    pub save_notes_promise: Option<Promise<Option<()>>>,
+    pub save_track_promise: Option<Promise<Option<()>>>,
     pub show_effects: bool,
     pub show_envelope: bool,
     pub show_generator: bool,
@@ -46,6 +51,18 @@ impl Default for App {
         Self {
             track_name: "My Track".to_owned(),
             track_list: vec![],
+            track: Track {
+                notes: BTreeSet::from_iter(vec![PlacedNote {
+                    note: Note {
+                        pitch_name: PitchName {
+                            scale_value: ScaleValue::A,
+                            octave: 4,
+                        },
+                        beats: 1.0,
+                    },
+                    offset: OrderedFloat(0.0),
+                }]),
+            },
             volume: 1.0,
             bpm: 120.0,
             generator: GeneratorInstance {
@@ -89,20 +106,13 @@ impl Default for App {
                 ],
             }],
             audio: vec![],
-            notes: vec![Note {
-                pitch_name: PitchName {
-                    scale_value: ScaleValue::A,
-                    octave: 4,
-                },
-                beats: 1.0,
-            }],
             key: ScaleValue::A,
             scale: Scale::Chromatic,
             handle: None,
-            notes_list_promise: Promise::spawn_local(async move { load_note_list().await }),
-            notes_promise: None,
+            track_list_promise: Promise::spawn_local(async move { load_track_list().await }),
+            track_promise: None,
             server_render_promise: None,
-            save_notes_promise: None,
+            save_track_promise: None,
             show_effects: false,
             show_envelope: false,
             show_generator: false,
