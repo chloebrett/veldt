@@ -6,7 +6,7 @@ use shared::model::{Note, PitchName, PlacedNote, Track};
 use std::collections::BTreeSet;
 
 pub fn notes_control(app: &mut App, ui: &mut Ui, ctx: &Context) {
-    let scale_options = create_scale_values(app.scale, app.key);
+    let scale_options = create_scale_values(app.store.scale, app.store.key);
     let mut placed_notes: Vec<PlacedNote> = app.project.tracks[0]
         .notes
         .iter()
@@ -45,7 +45,7 @@ pub fn notes_control(app: &mut App, ui: &mut Ui, ctx: &Context) {
         placed_notes.push(PlacedNote {
             note: Note {
                 pitch_name: PitchName {
-                    scale_value: app.key,
+                    scale_value: app.store.key,
                     octave: 4,
                 },
                 beats: 1.0,

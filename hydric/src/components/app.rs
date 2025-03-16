@@ -11,6 +11,7 @@ use super::save_button;
 use super::toggle_window_panel;
 use crate::audio_player::Handle;
 use crate::rpc::load_track_list;
+use crate::state::Store;
 use egui::Pos2;
 use egui::{ScrollArea, scroll_area::ScrollBarVisibility};
 use ordered_float::OrderedFloat;
@@ -19,17 +20,16 @@ use shared::model::PlacedNote;
 use shared::model::Track;
 use shared::model::{
     AdsrEnvelope, DelayConfig, Effect, EffectInstance, EffectMeta, EqConfig, EqType,
-    GeneratorInstance, GeneratorMeta, GeneratorType, MixerChannel, Note, PitchName, Project, Scale,
+    GeneratorInstance, GeneratorMeta, GeneratorType, MixerChannel, Note, PitchName, Project,
     ScaleValue, SimpleWaveConfig, WaveType,
 };
 
 pub struct App {
+    pub store: Store,
     pub project: Project,
     pub track_list: Vec<String>,
     pub volume: f32,
     pub audio: Vec<f32>,
-    pub key: ScaleValue,
-    pub scale: Scale,
     pub handle: Option<Handle>,
     pub track_list_promise: Promise<Option<Vec<String>>>,
     pub track_promise: Option<Promise<Option<Track>>>,
@@ -45,6 +45,7 @@ pub struct App {
 impl Default for App {
     fn default() -> Self {
         Self {
+            store: Store::default(),
             project: Project {
                 name: "My Project".to_string(),
                 tracks: vec![Track {
@@ -108,8 +109,6 @@ impl Default for App {
             track_list: vec![],
             volume: 1.0,
             audio: vec![],
-            key: ScaleValue::A,
-            scale: Scale::Chromatic,
             handle: None,
             track_list_promise: Promise::spawn_local(async move { load_track_list().await }),
             track_promise: None,
