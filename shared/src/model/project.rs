@@ -1,6 +1,5 @@
 use crate::model::{EffectInstance, GeneratorInstance, Track};
 use crate::types::Beats;
-use chrono::{DateTime, Utc};
 use std::collections::BTreeSet;
 
 type _TrackId = usize;
@@ -11,30 +10,26 @@ struct _AppConfig {
 }
 
 #[derive(Clone, Debug, PartialEq)]
-struct _Project {
+pub struct Project {
     pub name: String,
-
-    pub filename: String,
-
-    pub created: DateTime<Utc>,
-
-    pub last_modified: DateTime<Utc>,
 
     pub tracks: Vec<Track>,
 
     // TODO: info about user who owns and share permissions
     /// Ordered based on start_position.
-    pub track_placements: BTreeSet<_TrackPlacement>,
+    pub track_placements: BTreeSet<TrackPlacement>,
 
-    pub samples: Vec<_Sample>,
+    pub samples: Vec<Sample>,
 
     pub generators: Vec<GeneratorInstance>,
 
     pub mixer: Vec<MixerChannel>,
+
+    pub bpm: Beats,
 }
 
 #[derive(Clone, Debug, PartialEq)]
-struct _TrackPlacement {
+pub struct TrackPlacement {
     track_id: _TrackId,
 
     /// The time that the track starts within the arrangement.
@@ -49,7 +44,7 @@ struct _TrackPlacement {
 }
 
 #[derive(Clone, Debug, PartialEq)]
-struct _Sample {
+pub struct Sample {
     pub data: Vec<f32>,
 
     pub sample_rate: f32,
