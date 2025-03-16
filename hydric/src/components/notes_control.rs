@@ -28,8 +28,10 @@ pub fn notes_control(app: &mut App, ui: &mut Ui, ctx: &Context) {
         ui.add(egui::Slider::new(&mut note.pitch_name.octave, 0..=8).text("Octave"));
         ui.add(egui::Slider::new(&mut note.beats, 0.0..=10.0).text("Beats"));
         let mut offset_value = placed_note.offset.into();
-        ui.add(egui::Slider::new(&mut offset_value, 0.0..=16.0).text("Offset"));
-        placed_note.offset = OrderedFloat(offset_value);
+        let response = ui.add(egui::Slider::new(&mut offset_value, 0.0..=16.0).text("Offset"));
+        if !response.dragged() {
+            placed_note.offset = OrderedFloat(offset_value);
+        }
         track_length = f32::max(
             track_length,
             Into::<f32>::into(placed_note.offset) + placed_note.note.beats,
