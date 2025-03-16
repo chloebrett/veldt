@@ -7,8 +7,7 @@ use std::collections::BTreeSet;
 
 pub fn notes_control(app: &mut App, ui: &mut Ui, ctx: &Context) {
     let scale_options = create_scale_values(app.scale, app.key);
-    let mut placed_notes: Vec<PlacedNote> = app
-        .track
+    let mut placed_notes: Vec<PlacedNote> = app.project.tracks[0]
         .notes
         .iter()
         .map(|placed_note| placed_note.clone())
@@ -54,7 +53,7 @@ pub fn notes_control(app: &mut App, ui: &mut Ui, ctx: &Context) {
             offset: OrderedFloat(track_length.ceil()),
         })
     }
-    app.track = Track {
+    app.project.tracks[0] = Track {
         notes: BTreeSet::from_iter(placed_notes),
     };
 }
