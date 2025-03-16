@@ -5,8 +5,8 @@ use poll_promise::Promise;
 
 pub fn save_button(app: &mut App, ui: &mut Ui) {
     if ui.button("Save").clicked() {
-        let track_name = app.track_name.clone();
-        let track_to_save = app.track.clone();
+        let track_name = app.project.name.clone();
+        let track_to_save = app.project.tracks[0].clone();
         app.save_track_promise = Some(Promise::spawn_local(async move {
             save_track(track_name, track_to_save).await
         }));
@@ -20,7 +20,7 @@ pub fn load_control(app: &mut App, ui: &mut Ui) {
     }
     if let Some(track_promise) = &app.track_promise {
         if let Some(track) = track_promise.ready() {
-            app.track = track.clone().unwrap();
+            app.project.tracks[0] = track.clone().unwrap();
             app.track_promise = None;
         }
     }
