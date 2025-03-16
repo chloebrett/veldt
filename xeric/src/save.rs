@@ -1,6 +1,4 @@
 use shared::pmodel::{NoteProto, TrackProto};
-use shared::save_notes::load_notes_server::LoadNotes;
-use shared::save_notes::{LoadNotesReply, LoadNotesRequest};
 use shared::save_track::load_track_list_server::LoadTrackList;
 use shared::save_track::load_track_server::LoadTrack;
 use shared::save_track::save_track_server::SaveTrack;
@@ -64,24 +62,6 @@ impl LoadTrack for ServerSaveTracks {
             Err(tonic::Status::invalid_argument(
                 "Track name was not found on server.",
             ))
-        }
-    }
-}
-
-#[async_trait]
-impl LoadNotes for MySaveNotes {
-    async fn load_notes(
-        self: &Self,
-        request: tonic::Request<LoadNotesRequest>,
-    ) -> Result<tonic::Response<LoadNotesReply>, tonic::Status> {
-        let name = request.into_inner().name;
-        if let Some(notes) = self.values.lock().unwrap().get(&name) {
-            Ok(tonic::Response::new(LoadNotesReply {
-                notes: notes.to_vec(),
-            }))
-        } else {
-            // TODO Handle error better.
-            Ok(tonic::Response::new(LoadNotesReply { notes: vec![] }))
         }
     }
 }
