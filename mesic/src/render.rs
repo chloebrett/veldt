@@ -1,8 +1,7 @@
 use crate::SAMPLE_RATE;
 use crate::effect::apply_effects;
 use crate::wave::polyphonic_wave;
-use shared::model::{GeneratorInstance, GeneratorType, MixerChannel, Project, Track};
-use shared::types::Beats;
+use shared::model::{GeneratorType, Project};
 
 pub fn render(project: &Project) -> Vec<f32> {
     let track = &project.tracks[0];
