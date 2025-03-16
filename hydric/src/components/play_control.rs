@@ -8,15 +8,10 @@ use poll_promise::Promise;
 
 pub fn play_control(app: &mut App, ui: &mut Ui) {
     if ui.button("Play (local)").clicked() {
-        app.audio = local_render(
-            &app.store.project.tracks[0],
-            &app.store.project.mixer[0],
-            &app.store.project.generators[0],
-            app.store.project.bpm,
-        )
-        .into_iter()
-        .map(|sample| sample.clamp(-1.0, 1.0))
-        .collect();
+        app.audio = local_render(&app.store.project)
+            .into_iter()
+            .map(|sample| sample.clamp(-1.0, 1.0))
+            .collect();
         app.handle = Some(play(&app.audio));
     }
     if let Some(render_promise) = &app.server_render_promise {

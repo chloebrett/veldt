@@ -6,12 +6,14 @@ use shared::bytes::as_bytes;
 use shared::consts::{HYDRIC_URL, XERIC_SOCKET_ADDR};
 use shared::load_sample::load_sample_server::LoadSampleServer;
 use shared::model::MixerChannel;
+use shared::model::Project;
 use shared::render::render_server::{Render, RenderServer};
 use shared::render::{RenderReply, RenderRequest};
 use shared::save_track::load_track_list_server::LoadTrackListServer;
 use shared::save_track::load_track_server::LoadTrackServer;
 use shared::save_track::save_track_server::SaveTrackServer;
 use shared::serialize::map_vec;
+use std::collections::BTreeSet;
 use std::collections::HashMap;
 use std::sync::{Arc, Mutex};
 use tonic::async_trait;
@@ -41,12 +43,17 @@ impl Render for MyRender {
         let mixer_channel = MixerChannel {
             effects: map_vec(effects),
         };
-        let bytes = as_bytes(&render(
-            &track.into(),
-            &mixer_channel,
-            &generator.into(),
+        // TODO: send entire project over the wire.
+        let project = Project {
+            name: "".to_string(),
+            tracks: vec![track.into()],
+            track_placements: BTreeSet::new(),
+            mixer: vec![mixer_channel],
+            generators: vec![generator.into()],
             bpm,
-        ));
+            samples: vec![],
+        };
+        let bytes = as_bytes(&render(&project));
 
         Ok(tonic::Response::new(RenderReply { audio: bytes }))
     }
