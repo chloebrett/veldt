@@ -1,6 +1,8 @@
 mod audio_player;
 mod components;
 mod rpc;
+mod state;
+mod widget;
 
 use crate::components::App;
 
