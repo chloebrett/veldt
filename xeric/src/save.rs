@@ -1,12 +1,13 @@
 use shared::pmodel::{NoteProto, TrackProto};
 use shared::save_notes::load_notes_server::LoadNotes;
-use shared::save_notes::{
-    LoadNotesReply, LoadNotesRequest
-};
-use shared::save_track::save_track_server::SaveTrack;
+use shared::save_notes::{LoadNotesReply, LoadNotesRequest};
 use shared::save_track::load_track_list_server::LoadTrackList;
 use shared::save_track::load_track_server::LoadTrack;
-use shared::save_track::{LoadTrackListReply, LoadTrackListRequest, LoadTrackReply, LoadTrackRequest, SaveTrackReply, SaveTrackRequest};
+use shared::save_track::save_track_server::SaveTrack;
+use shared::save_track::{
+    LoadTrackListReply, LoadTrackListRequest, LoadTrackReply, LoadTrackRequest, SaveTrackReply,
+    SaveTrackRequest,
+};
 use std::collections::HashMap;
 use std::sync::{Arc, Mutex};
 use tonic::async_trait;
@@ -39,7 +40,7 @@ impl SaveTrack for ServerSaveTracks {
 
 #[async_trait]
 impl LoadTrackList for ServerSaveTracks {
-    async fn load_track_list (
+    async fn load_track_list(
         self: &Self,
         _request: tonic::Request<LoadTrackListRequest>,
     ) -> Result<tonic::Response<LoadTrackListReply>, tonic::Status> {
@@ -60,7 +61,9 @@ impl LoadTrack for ServerSaveTracks {
                 track: Some(track.clone()),
             }))
         } else {
-            Err(tonic::Status::invalid_argument("Track name was not found on server."))
+            Err(tonic::Status::invalid_argument(
+                "Track name was not found on server.",
+            ))
         }
     }
 }

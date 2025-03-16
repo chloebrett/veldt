@@ -13,6 +13,7 @@ use crate::audio_player::Handle;
 use crate::rpc::load_track_list;
 use egui::Pos2;
 use egui::{ScrollArea, scroll_area::ScrollBarVisibility};
+use ordered_float::OrderedFloat;
 use poll_promise::Promise;
 use shared::model::PlacedNote;
 use shared::model::Track;
@@ -31,7 +32,6 @@ pub struct App {
     pub generator: GeneratorInstance,
     pub mixer_channels: Vec<MixerChannel>,
     pub audio: Vec<f32>,
-    pub notes: Vec<Note>,
     pub key: ScaleValue,
     pub scale: Scale,
     pub handle: Option<Handle>,
@@ -52,7 +52,16 @@ impl Default for App {
             track_name: "My Track".to_owned(),
             track_list: vec![],
             track: Track {
-                notes: BTreeSet::<PlacedNote>::new()
+                notes: BTreeSet::<PlacedNote>::from_iter(vec![PlacedNote {
+                    note: Note {
+                        pitch_name: PitchName {
+                            scale_value: ScaleValue::A,
+                            octave: 4,
+                        },
+                        beats: 1.0,
+                    },
+                    offset: OrderedFloat(0.0),
+                }]),
             },
             volume: 1.0,
             bpm: 120.0,
@@ -97,13 +106,6 @@ impl Default for App {
                 ],
             }],
             audio: vec![],
-            notes: vec![Note {
-                pitch_name: PitchName {
-                    scale_value: ScaleValue::A,
-                    octave: 4,
-                },
-                beats: 1.0,
-            }],
             key: ScaleValue::A,
             scale: Scale::Chromatic,
             handle: None,

@@ -1031,6 +1031,7 @@ dependencies = [
  "egui",
  "log",
  "mesic",
+ "ordered-float",
  "poll-promise",
  "shared",
  "strum",

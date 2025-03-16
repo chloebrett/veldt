@@ -1,13 +1,9 @@
 use shared::consts::XERIC_URL;
-use shared::model::{Note, Track};
-use shared::save_notes::{
-    LoadNotesRequest, load_notes_client::LoadNotesClient,
-};
+use shared::model::Track;
 use shared::save_track::load_track_client::LoadTrackClient;
 use shared::save_track::load_track_list_client::LoadTrackListClient;
 use shared::save_track::save_track_client::SaveTrackClient;
 use shared::save_track::{LoadTrackListRequest, LoadTrackRequest, SaveTrackRequest};
-use shared::serialize::map_vec;
 use tonic_web_wasm_client::Client;
 use web_sys::console;
 
@@ -18,7 +14,7 @@ pub async fn save_track(name: String, track: Track) -> Option<()> {
     let result = grpc
         .save_track(SaveTrackRequest {
             name,
-            track: Some(track.into())
+            track: Some(track.into()),
         })
         .await;
     match result {
@@ -52,24 +48,9 @@ pub async fn load_track(name: String) -> Option<Track> {
 
     if let Ok(load_track_reply) = result {
         if let Some(track) = load_track_reply.into_inner().track {
-            return Some(track.into())
+            return Some(track.into());
         }
     }
     console::error_1(&"Error loading track from server.".into());
     None
-}
-
-pub async fn load_notes(name: String) -> Option<Vec<Note>> {
-    let client = Client::new(XERIC_URL.to_string());
-    let mut grpc = LoadNotesClient::new(client);
-
-    let result = grpc.load_notes(LoadNotesRequest { name }).await;
-
-    match result {
-        Ok(response) => Some(map_vec(response.into_inner().notes)),
-        Err(_) => {
-            console::error_1(&"Error loading notes from server.".into());
-            None
-        }
-    }
 }
