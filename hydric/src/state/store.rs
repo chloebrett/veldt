@@ -7,8 +7,9 @@ use shared::model::{
     GeneratorInstance, GeneratorMeta, GeneratorType, MixerChannel, Note, PitchName, Project, Scale,
     ScaleValue, SimpleWaveConfig, WaveType,
 };
-use std::collections::BTreeSet;
-use std::cell::{Ref, RefMut, RefCell};
+use shared::types::Volume;
+use std::cell::{Ref, RefCell, RefMut};
+use web_sys::console;
 
 pub struct Store {
     data: RefCell<StoreData>,
@@ -18,6 +19,7 @@ pub struct StoreData {
     pub project: Project,
     pub key: ScaleValue,
     pub scale: Scale,
+    pub volume: Volume,
 }
 
 impl Store {
@@ -34,7 +36,10 @@ impl Store {
     // Dispatching is allowed with only an immutable reference.
     // We mutate via the RefCell. This allows Store to be passed around mutably,
     // while allowing the caller to dispatch actions to it.
+    // TODO: consider queueing actions for dispatch, which would make discarding frames from egui
+    // unnecessary.
     pub fn dispatch(&self, action: Action) {
+        console::log_1(&format!("Ran action: {:?}", action).into());
         reducer(self.data.borrow_mut(), action)
     }
 }
@@ -53,7 +58,7 @@ impl Default for StoreData {
             project: Project {
                 name: "My Project".to_string(),
                 tracks: vec![Track {
-                    notes: BTreeSet::from_iter(vec![PlacedNote {
+                    notes: vec![PlacedNote {
                         note: Note {
                             pitch_name: PitchName {
                                 scale_value: ScaleValue::A,
@@ -62,10 +67,10 @@ impl Default for StoreData {
                             beats: 1.0,
                         },
                         offset: OrderedFloat(0.0),
-                    }]),
+                    }],
                 }],
                 // TODO: use track placements
-                track_placements: BTreeSet::new(),
+                track_placements: vec![],
                 samples: vec![],
                 generators: vec![GeneratorInstance {
                     id: 0,
@@ -109,6 +114,7 @@ impl Default for StoreData {
                 }],
                 bpm: 120.0,
             },
+            volume: 1.0,
             key: ScaleValue::A,
             scale: Scale::Chromatic,
         }

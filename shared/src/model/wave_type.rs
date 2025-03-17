@@ -1,8 +1,10 @@
-use strum::{Display, EnumString};
+use strum::{Display, EnumIter, EnumString};
 
 use crate::pmodel::*;
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, PartialOrd, Ord, EnumString, Display)]
+#[derive(
+    Debug, Clone, Copy, PartialEq, Eq, Hash, PartialOrd, Ord, EnumString, Display, EnumIter,
+)]
 pub enum WaveType {
     Sine,
     Square,

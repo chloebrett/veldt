@@ -1,26 +1,63 @@
+use crate::state::{Action, Store};
 use egui::{Color32, Rect, Ui, containers::Frame, emath, epaint, epaint::PathStroke, pos2, vec2};
-use shared::model::AdsrEnvelope;
+use shared::model::{AdsrEnvelope, GeneratorType};
 
-pub fn envelope_control(envelope: &mut AdsrEnvelope, ui: &mut Ui) {
-    let headroom = 1.0 - envelope.attack - envelope.decay - envelope.release;
-    let max_attack = headroom + envelope.attack;
-    let max_decay = headroom + envelope.decay;
-    let max_release = headroom + envelope.release;
+fn update_envelope(
+    store: &mut Store,
+    prev: AdsrEnvelope,
+    attack: Option<f64>,
+    decay: Option<f64>,
+    sustain: Option<f64>,
+    release: Option<f64>,
+) {
+    let next = AdsrEnvelope {
+        attack: attack.map(|it| it as f32).unwrap_or(prev.attack),
+        decay: decay.map(|it| it as f32).unwrap_or(prev.decay),
+        sustain: sustain.map(|it| it as f32).unwrap_or(prev.sustain),
+        release: release.map(|it| it as f32).unwrap_or(prev.release),
+    };
+    if next != prev {
+        store.dispatch(Action::SetEnvelope {
+            generator_index: 0,
+            envelope: next,
+        })
+    }
+}
 
-    if envelope.attack > max_attack {
-        envelope.attack = max_attack;
-    }
-    if envelope.decay > max_decay {
-        envelope.decay = max_decay;
-    }
-    if envelope.release > max_release {
-        envelope.release = max_release;
-    }
-
-    ui.add(egui::Slider::new(&mut envelope.attack, 0.0..=1.0).text("Attack"));
-    ui.add(egui::Slider::new(&mut envelope.decay, 0.0..=1.0).text("Decay"));
-    ui.add(egui::Slider::new(&mut envelope.sustain, 0.0..=1.0).text("Sustain"));
-    ui.add(egui::Slider::new(&mut envelope.release, 0.0..=1.0).text("Release"));
+pub fn envelope_control(store: &mut Store, ui: &mut Ui) {
+    let generator_type = store.project.generators[0].kind.clone();
+    let config = match generator_type {
+        GeneratorType::SimpleWave { config } => config,
+    };
+    let envelope = config.envelope.clone();
+    ui.add(
+        egui::Slider::from_get_set(0.0..=1.0, |it| {
+            update_envelope(store, envelope.clone(), it, None, None, None);
+            envelope.attack.into()
+        })
+        .text("Attack"),
+    );
+    ui.add(
+        egui::Slider::from_get_set(0.0..=1.0, |it| {
+            update_envelope(store, envelope.clone(), None, it, None, None);
+            envelope.decay.into()
+        })
+        .text("Decay"),
+    );
+    ui.add(
+        egui::Slider::from_get_set(0.0..=1.0, |it| {
+            update_envelope(store, envelope.clone(), None, None, it, None);
+            envelope.sustain.into()
+        })
+        .text("Sustain"),
+    );
+    ui.add(
+        egui::Slider::from_get_set(0.0..=1.0, |it| {
+            update_envelope(store, envelope.clone(), None, None, None, it);
+            envelope.release.into()
+        })
+        .text("Release"),
+    );
 
     Frame::canvas(ui.style()).show(ui, |ui| {
         ui.ctx().request_repaint();
