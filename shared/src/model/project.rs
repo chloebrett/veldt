@@ -5,7 +5,6 @@ use crate::serialize::map_vec;
 use crate::types::Beats;
 use ordered_float::OrderedFloat;
 use std::cmp::Ordering;
-use std::collections::BTreeSet;
 
 type _TrackId = usize;
 type _SampleId = usize;
@@ -17,7 +16,7 @@ pub struct Project {
     pub tracks: Vec<Track>,
 
     /// Ordered based on start_position.
-    pub track_placements: BTreeSet<TrackPlacement>,
+    pub track_placements: Vec<TrackPlacement>,
 
     pub samples: Vec<Sample>,
 
@@ -33,7 +32,7 @@ impl From<ProjectProto> for Project {
         Project {
             name: item.name,
             tracks: map_vec(item.tracks),
-            track_placements: map_vec(item.track_placements).into_iter().collect(),
+            track_placements: map_vec(item.track_placements),
             samples: map_vec(item.samples),
             generators: map_vec(item.generators),
             mixer: map_vec(item.mixer),
@@ -47,7 +46,7 @@ impl From<Project> for ProjectProto {
         ProjectProto {
             name: item.name,
             tracks: map_vec(item.tracks),
-            track_placements: map_vec(item.track_placements.into_iter().collect()),
+            track_placements: map_vec(item.track_placements),
             samples: map_vec(item.samples),
             generators: map_vec(item.generators),
             mixer: map_vec(item.mixer),
