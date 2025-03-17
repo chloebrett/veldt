@@ -5,13 +5,11 @@ use save::ServerSaveTracks;
 use shared::bytes::as_bytes;
 use shared::consts::{HYDRIC_URL, XERIC_SOCKET_ADDR};
 use shared::load_sample::load_sample_server::LoadSampleServer;
-use shared::model::MixerChannel;
 use shared::render::render_server::{Render, RenderServer};
 use shared::render::{RenderReply, RenderRequest};
 use shared::save_track::load_track_list_server::LoadTrackListServer;
 use shared::save_track::load_track_server::LoadTrackServer;
 use shared::save_track::save_track_server::SaveTrackServer;
-use shared::serialize::map_vec;
 use std::collections::HashMap;
 use std::sync::{Arc, Mutex};
 use tonic::async_trait;
@@ -29,24 +27,12 @@ impl Render for MyRender {
         &self,
         request: tonic::Request<RenderRequest>,
     ) -> Result<tonic::Response<RenderReply>, tonic::Status> {
-        let render_data = request.into_inner();
-        let track = render_data
-            .track
-            .ok_or(tonic::Status::invalid_argument("Track must be supplied"))?;
-        let effects = render_data.effects;
-        let generator = render_data
-            .generator
-            .ok_or(tonic::Status::invalid_argument("Must supply generator"))?;
-        let bpm = render_data.bpm;
-        let mixer_channel = MixerChannel {
-            effects: map_vec(effects),
-        };
-        let bytes = as_bytes(&render(
-            &track.into(),
-            &mixer_channel,
-            &generator.into(),
-            bpm,
-        ));
+        let project = request
+            .into_inner()
+            .project
+            .ok_or(tonic::Status::invalid_argument("Project must be supplied"))?
+            .into();
+        let bytes = as_bytes(&render(&project));
 
         Ok(tonic::Response::new(RenderReply { audio: bytes }))
     }
