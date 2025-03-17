@@ -15,6 +15,6 @@ pub fn create_track(notes: Vec<Note>) -> Track {
     }
 
     Track {
-        notes: placed_notes,
+        notes: placed_notes.into_iter().collect(),
     }
 }

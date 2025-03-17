@@ -1,20 +1,20 @@
 use crate::model::Note;
 use crate::pmodel::{PlacedNoteProto, TrackProto};
+use crate::serialize::map_vec;
 use crate::types::*;
 use ordered_float::OrderedFloat;
 use std::cmp::Ordering;
-use std::collections::BTreeSet;
 
 #[derive(Clone, Debug, PartialEq)]
 pub struct Track {
     /// Ordered by offset.
-    pub notes: BTreeSet<PlacedNote>,
+    pub notes: Vec<PlacedNote>,
 }
 
 impl From<TrackProto> for Track {
     fn from(item: TrackProto) -> Track {
         Track {
-            notes: item.notes.into_iter().map(|it| it.into()).collect(),
+            notes: map_vec(item.notes),
         }
     }
 }
@@ -22,7 +22,7 @@ impl From<TrackProto> for Track {
 impl From<Track> for TrackProto {
     fn from(item: Track) -> TrackProto {
         TrackProto {
-            notes: item.notes.into_iter().map(|it| it.into()).collect(),
+            notes: map_vec(item.notes),
         }
     }
 }
