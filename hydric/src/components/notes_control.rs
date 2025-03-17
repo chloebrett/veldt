@@ -4,78 +4,119 @@ use crate::widget::selectable_value;
 use egui::{Context, Ui};
 use mesic::create_scale_values;
 use ordered_float::OrderedFloat;
-use shared::model::{Note, PitchName, PlacedNote, Track};
+use shared::model::{Note, PitchName, PlacedNote};
+use shared::types::{Beats, Octave};
 
 pub fn notes_control(app: &mut App, ui: &mut Ui, ctx: &Context) {
     let scale_options = create_scale_values(app.store.scale, app.store.key);
 
-    let mut placed_notes: Vec<PlacedNote> = app.store.project.tracks[0]
-        .notes
-        .iter()
-        .map(|placed_note| placed_note.clone())
-        .collect();
-
-    let mut track_length = 0.0;
-
-    for i in 0..placed_notes.len() {
-        let placed_note = &mut placed_notes[i];
-        let note = &mut placed_note.note;
-        let scale_value = &note.pitch_name.scale_value;
-
+    for i in 0..app.store.project.tracks[0].notes.len() {
         egui::ComboBox::from_id_salt(i)
-            .selected_text(scale_value.to_string())
+            .selected_text(
+                app.store.project.tracks[0].notes[i]
+                    .note
+                    .pitch_name
+                    .scale_value
+                    .to_string(),
+            )
             .show_ui(ui, |ui| {
                 for scale_note in scale_options.iter() {
+                    let scale_value = app.store.project.tracks[0].notes[i]
+                        .note
+                        .pitch_name
+                        .scale_value;
                     selectable_value(
                         ui,
                         |it| {
                             it.map(|it| {
-                                app.store.dispatch(Action::SetNote {
+                                app.store.dispatch(Action::SetNoteScaleValue {
                                     track_index: 0,
                                     note_index: i,
-                                    note: it,
+                                    note: *it,
                                 })
                             });
-                            *scale_value
+                            &scale_value
                         },
-                        *scale_note,
+                        scale_note,
                         scale_note.to_string(),
                     );
                 }
             });
 
-        ui.add(egui::Slider::new(&mut note.pitch_name.octave, 0..=8).text("Octave"));
-        ui.add(egui::Slider::new(&mut note.beats, 0.0..=10.0).text("Beats"));
-
-        let mut offset_value = placed_note.offset.into();
-        let response = ui.add(egui::Slider::new(&mut offset_value, 0.0..=16.0).text("Offset"));
-
-        if !response.dragged() {
-            placed_note.offset = OrderedFloat(offset_value);
-        }
-        track_length = f32::max(
-            track_length,
-            Into::<f32>::into(placed_note.offset) + placed_note.note.beats,
+        ui.add(
+            egui::Slider::from_get_set(0.0..=8.0, |it| {
+                it.map(|it| {
+                    app.store.dispatch(Action::SetNoteOctave {
+                        track_index: 0,
+                        note_index: i,
+                        octave: it as Octave,
+                    })
+                });
+                app.store.project.tracks[0].notes[i].note.pitch_name.octave as f64
+            })
+            .text("Octave")
+            .fixed_decimals(0),
         );
+        ui.add(
+            egui::Slider::from_get_set(0.0..=10.0, |it| {
+                it.map(|it| {
+                    app.store.dispatch(Action::SetNoteDuration {
+                        track_index: 0,
+                        note_index: i,
+                        duration: it as Beats,
+                    })
+                });
+                app.store.project.tracks[0].notes[i].note.beats as f64
+            })
+            .text("Beats")
+            .fixed_decimals(0),
+        );
+
+        ui.add(
+            egui::Slider::from_get_set(0.0..=16.0, |it| {
+                it.map(|it| {
+                    app.store.dispatch(Action::SetNoteOffset {
+                        track_index: 0,
+                        note_index: i,
+                        offset: it as f32,
+                    })
+                });
+                *app.store.project.tracks[0].notes[i].offset as f64
+            })
+            .text("Offset"),
+        );
+
         if ui.button("Delete").clicked() {
-            placed_notes.remove(i);
+            app.store.dispatch(Action::DeleteNote {
+                track_index: 0,
+                note_index: i,
+            });
             ctx.request_discard("");
             break;
         }
     }
+
+    let track_length = app.store.project.tracks[0]
+        .notes
+        .clone()
+        .into_iter()
+        .map(|it| it.offset + it.note.beats)
+        .max()
+        .unwrap_or(OrderedFloat(0.0));
+
     if ui.button("New note").clicked() {
-        placed_notes.push(PlacedNote {
-            note: Note {
-                pitch_name: PitchName {
-                    scale_value: app.store.key,
-                    octave: 4,
+        app.store.dispatch(Action::AddNote {
+            track_index: 0,
+            note: PlacedNote {
+                note: Note {
+                    pitch_name: PitchName {
+                        scale_value: app.store.key,
+                        octave: 4,
+                    },
+                    beats: 1.0,
                 },
-                beats: 1.0,
+                offset: track_length,
             },
-            offset: OrderedFloat(track_length.ceil()),
-        })
+        });
     }
-    app.store.project.tracks[0] = Track {
-        notes: placed_notes,
-    };
 }
