@@ -2,7 +2,10 @@ use super::{
     Action, StoreData, effect_index, effect_reducer, generator_index, generator_reducer,
     track_index, track_reducer,
 };
+use crate::rpc::{load_track, load_track_list, save_track};
+use poll_promise::Promise;
 use std::cell::RefMut;
+use std::rc::Rc;
 use web_sys::console;
 
 pub fn root_reducer(mut data: RefMut<'_, StoreData>, action: &Action) {
@@ -30,6 +33,34 @@ pub fn root_reducer(mut data: RefMut<'_, StoreData>, action: &Action) {
             console::log_1(&format!("old/new: {:?} {:?}", data.volume, volume).into());
             data.volume = *volume;
         }
+        Action::SaveTrack { track_index } => {
+            let track_name = data.project.name.clone();
+            let track = data.project.tracks[*track_index].clone();
+            data.save_track_promise = Rc::new(Some(Promise::spawn_local(async move {
+                save_track(track_name, track).await
+            })));
+        }
+        Action::LoadTrackList => {
+            data.track_list_promise = Rc::new(Some(Promise::spawn_local(async move {
+                load_track_list().await
+            })));
+        }
+        Action::SetTrackList { tracks } => data.track_list = tracks.clone(),
+        Action::SetTrack { track_index, track } => {
+            data.project.tracks[*track_index] = track.clone()
+        }
+        Action::LoadTrack => {
+            if let Some(name) = data.load_track_name.clone() {
+                data.load_track_promise =
+                    Rc::new(Some(Promise::spawn_local(
+                        async move { load_track(name).await },
+                    )))
+            }
+        }
+        Action::SetLoadTrackName { track_name } => data.load_track_name = Some(track_name.clone()),
+        Action::ClearLoadTrackPromise => data.load_track_promise = Rc::new(None),
+        Action::ClearSaveTrackPromise => data.save_track_promise = Rc::new(None),
+        Action::ClearTrackListPromise => data.track_list_promise = Rc::new(None),
         _ => {}
     }
 }

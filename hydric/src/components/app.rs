@@ -8,47 +8,35 @@ use super::play_control;
 use super::save_button;
 use super::toggle_window_panel;
 use crate::audio_player::Handle;
-use crate::rpc::load_track_list;
 use crate::state::{Action, Store, get_set};
 use crate::widget::string_observer;
 use egui::Pos2;
 use egui::{ScrollArea, scroll_area::ScrollBarVisibility};
 use poll_promise::Promise;
-use shared::model::Track;
 use shared::types::{Beats, Volume};
 
 pub struct App {
     pub store: Store,
-    pub track_list: Vec<String>,
     pub audio: Vec<f32>,
     pub handle: Option<Handle>,
-    pub track_list_promise: Promise<Option<Vec<String>>>,
-    pub track_promise: Option<Promise<Option<Track>>>,
     pub server_render_promise: Option<Promise<Option<Vec<f32>>>>,
-    pub save_track_promise: Option<Promise<Option<()>>>,
     pub show_effects: bool,
     pub show_envelope: bool,
     pub show_generator: bool,
     pub show_scale: bool,
-    pub load_track_name: Option<String>,
 }
 
 impl Default for App {
     fn default() -> Self {
         Self {
             store: Store::default(),
-            track_list: vec![],
             audio: vec![],
             handle: None,
-            track_list_promise: Promise::spawn_local(async move { load_track_list().await }),
-            track_promise: None,
             server_render_promise: None,
-            save_track_promise: None,
             show_effects: false,
             show_envelope: false,
             show_generator: false,
             show_scale: false,
-            load_track_name: None,
         }
     }
 }
@@ -81,12 +69,15 @@ impl eframe::App for App {
                     ui.horizontal(|ui| {
                         ui.label("Track name: ");
                         let project_name = self.store.get().project.name.clone();
-                        let mut name_observer = string_observer(get_set(project_name, |it| {
-                            self.store.dispatch(Action::SetProjectName(it))
-                        }));
+                        let mut name_observer = string_observer(
+                            get_set(project_name.clone(), |it| {
+                                self.store.dispatch(Action::SetProjectName(it))
+                            }),
+                            project_name.clone(),
+                        );
                         ui.text_edit_singleline(&mut name_observer);
-                        save_button(self, ui);
-                        load_control(self, ui);
+                        save_button(&self.store, ui);
+                        load_control(&self.store, ui);
                     });
                     ui.horizontal(|ui| {
                         ui.vertical(|ui| {

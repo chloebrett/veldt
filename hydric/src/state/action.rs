@@ -1,4 +1,4 @@
-use shared::model::{AdsrEnvelope, EqType, PlacedNote, Scale, ScaleValue, WaveType};
+use shared::model::{AdsrEnvelope, EqType, PlacedNote, Scale, ScaleValue, Track, WaveType};
 use shared::types::{Beats, Octave};
 use shared::types::{Freq, KnobPosition, Milliseconds, Volume};
 
@@ -84,4 +84,22 @@ pub enum Action {
         effect_index: usize,
         q: KnobPosition,
     },
+    SaveTrack {
+        track_index: usize,
+    },
+    LoadTrackList,
+    SetTrackList {
+        tracks: Vec<String>,
+    },
+    SetTrack {
+        track_index: usize,
+        track: Track,
+    },
+    LoadTrack,
+    SetLoadTrackName {
+        track_name: String,
+    },
+    ClearLoadTrackPromise,
+    ClearSaveTrackPromise,
+    ClearTrackListPromise,
 }
