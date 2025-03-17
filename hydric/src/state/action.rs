@@ -2,29 +2,6 @@ use shared::model::{AdsrEnvelope, EqType, PlacedNote, Scale, ScaleValue, WaveTyp
 use shared::types::{Beats, Octave};
 use shared::types::{Freq, KnobPosition, Milliseconds, Volume};
 
-pub fn track_index(action: &Action) -> Option<usize> {
-    match action {
-        Action::SetNoteScaleValue { track_index, .. } => Some(*track_index),
-        Action::SetNoteOctave { track_index, .. } => Some(*track_index),
-        Action::SetNoteOffset { track_index, .. } => Some(*track_index),
-        Action::SetNoteDuration { track_index, .. } => Some(*track_index),
-        Action::DeleteNote { track_index, .. } => Some(*track_index),
-        Action::AddNote { track_index, .. } => Some(*track_index),
-        _ => None,
-    }
-}
-
-pub fn note_index(action: &Action) -> Option<usize> {
-    match action {
-        Action::SetNoteScaleValue { note_index, .. } => Some(*note_index),
-        Action::SetNoteOctave { note_index, .. } => Some(*note_index),
-        Action::SetNoteOffset { note_index, .. } => Some(*note_index),
-        Action::SetNoteDuration { note_index, .. } => Some(*note_index),
-        Action::DeleteNote { note_index, .. } => Some(*note_index),
-        _ => None,
-    }
-}
-
 #[derive(Debug, Clone)]
 pub enum Action {
     SetKey(ScaleValue),
