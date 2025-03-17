@@ -9,7 +9,9 @@ use super::save_button;
 use super::toggle_window_panel;
 use crate::audio_player::Handle;
 use crate::rpc::load_track_list;
+use crate::state::Action;
 use crate::state::Store;
+use crate::widget::string_observer;
 use egui::Pos2;
 use egui::{ScrollArea, scroll_area::ScrollBarVisibility};
 use poll_promise::Promise;
@@ -74,6 +76,10 @@ impl eframe::App for App {
                     ui.heading("Veldt");
                     ui.horizontal(|ui| {
                         ui.label("Track name: ");
+                        let name_observer = string_observer(|it| {
+                            it.map(|it| self.store.dispatch(Action::SetProjectName(it)));
+                            self.store.project.name.clone()
+                        });
                         ui.text_edit_singleline(&mut self.store.project.name);
                         save_button(self, ui);
                         load_control(self, ui);
