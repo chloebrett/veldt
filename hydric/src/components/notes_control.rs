@@ -1,4 +1,6 @@
 use super::app::App;
+use crate::state::Action;
+use crate::widget::selectable_value;
 use egui::{Context, Ui};
 use mesic::create_scale_values;
 use ordered_float::OrderedFloat;
@@ -6,27 +8,48 @@ use shared::model::{Note, PitchName, PlacedNote, Track};
 
 pub fn notes_control(app: &mut App, ui: &mut Ui, ctx: &Context) {
     let scale_options = create_scale_values(app.store.scale, app.store.key);
+
     let mut placed_notes: Vec<PlacedNote> = app.store.project.tracks[0]
         .notes
         .iter()
         .map(|placed_note| placed_note.clone())
         .collect();
+
     let mut track_length = 0.0;
+
     for i in 0..placed_notes.len() {
         let placed_note = &mut placed_notes[i];
         let note = &mut placed_note.note;
-        let scale_value = &mut note.pitch_name.scale_value;
+        let scale_value = &note.pitch_name.scale_value;
+
         egui::ComboBox::from_id_salt(i)
             .selected_text(scale_value.to_string())
             .show_ui(ui, |ui| {
                 for scale_note in scale_options.iter() {
-                    ui.selectable_value(scale_value, *scale_note, scale_note.to_string());
+                    selectable_value(
+                        ui,
+                        |it| {
+                            it.map(|it| {
+                                app.store.dispatch(Action::SetNote {
+                                    track_index: 0,
+                                    note_index: i,
+                                    note: it,
+                                })
+                            });
+                            *scale_value
+                        },
+                        *scale_note,
+                        scale_note.to_string(),
+                    );
                 }
             });
+
         ui.add(egui::Slider::new(&mut note.pitch_name.octave, 0..=8).text("Octave"));
         ui.add(egui::Slider::new(&mut note.beats, 0.0..=10.0).text("Beats"));
+
         let mut offset_value = placed_note.offset.into();
         let response = ui.add(egui::Slider::new(&mut offset_value, 0.0..=16.0).text("Offset"));
+
         if !response.dragged() {
             placed_note.offset = OrderedFloat(offset_value);
         }
