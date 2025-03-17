@@ -14,12 +14,11 @@ use egui::Pos2;
 use egui::{ScrollArea, scroll_area::ScrollBarVisibility};
 use poll_promise::Promise;
 use shared::model::Track;
-use shared::types::Beats;
+use shared::types::{Beats, Volume};
 
 pub struct App {
     pub store: Store,
     pub track_list: Vec<String>,
-    pub volume: f32,
     pub audio: Vec<f32>,
     pub handle: Option<Handle>,
     pub track_list_promise: Promise<Option<Vec<String>>>,
@@ -38,7 +37,6 @@ impl Default for App {
         Self {
             store: Store::default(),
             track_list: vec![],
-            volume: 1.0,
             audio: vec![],
             handle: None,
             track_list_promise: Promise::spawn_local(async move { load_track_list().await }),
@@ -80,7 +78,15 @@ impl eframe::App for App {
                     });
                     ui.horizontal(|ui| {
                         ui.vertical(|ui| {
-                            ui.add(egui::Slider::new(&mut self.volume, 0.0..=1.0).text("Volume"));
+                            ui.add(
+                                egui::Slider::from_get_set(0.0..=1.0, |it| {
+                                    it.map(|it| {
+                                        self.store.dispatch(Action::SetVolume(it as Volume))
+                                    });
+                                    self.store.volume.into()
+                                })
+                                .text("Volume"),
+                            );
                             ui.add(
                                 egui::Slider::from_get_set(20.0..=200.0, |it| {
                                     it.map(|it| self.store.dispatch(Action::SetBpm(it as Beats)));

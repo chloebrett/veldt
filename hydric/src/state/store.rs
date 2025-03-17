@@ -7,12 +7,14 @@ use shared::model::{
     GeneratorInstance, GeneratorMeta, GeneratorType, MixerChannel, Note, PitchName, Project, Scale,
     ScaleValue, SimpleWaveConfig, WaveType,
 };
+use shared::types::Volume;
 use web_sys::console;
 
 pub struct Store {
     pub project: Project,
     pub key: ScaleValue,
     pub scale: Scale,
+    pub volume: Volume,
 }
 
 impl Default for Store {
@@ -77,6 +79,7 @@ impl Default for Store {
                 }],
                 bpm: 120.0,
             },
+            volume: 1.0,
             key: ScaleValue::A,
             scale: Scale::Chromatic,
         }
