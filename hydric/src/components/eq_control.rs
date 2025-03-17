@@ -1,4 +1,4 @@
-use crate::state::{Action, Store};
+use crate::state::{Action, Store, get_set};
 use crate::widget::selectable_value;
 use egui::Ui;
 use shared::model::Effect;
@@ -16,31 +16,31 @@ pub fn eq_control(store: &Store, effect_index: usize, ui: &mut Ui) {
     ui.label("Equalizer");
 
     ui.add(
-        egui::Slider::from_get_set(20.0..=20000.0, |it| {
-            it.map(|it| {
+        egui::Slider::from_get_set(
+            20.0..=20000.0,
+            get_set(config.fc.into(), |it| {
                 store.dispatch(Action::SetEqFc {
                     channel_index: 0,
                     effect_index,
                     fc: it as Freq,
                 })
-            });
-            config.fc.into()
-        })
+            }),
+        )
         .text("Resonant frequency")
         .logarithmic(true),
     );
 
     ui.add(
-        egui::Slider::from_get_set(0.1..=100.0, |it| {
-            it.map(|it| {
+        egui::Slider::from_get_set(
+            0.1..=100.0,
+            get_set(config.q.into(), |it| {
                 store.dispatch(Action::SetEqQ {
                     channel_index: 0,
                     effect_index,
                     q: it as Freq,
                 })
-            });
-            config.q.into()
-        })
+            }),
+        )
         .text("Q value")
         .logarithmic(true),
     );
@@ -52,16 +52,13 @@ pub fn eq_control(store: &Store, effect_index: usize, ui: &mut Ui) {
             for eq_type in EqType::iter() {
                 selectable_value(
                     ui,
-                    |it| {
-                        it.map(|it| {
-                            store.dispatch(Action::SetEqKind {
-                                channel_index: 0,
-                                effect_index,
-                                kind: it,
-                            });
+                    get_set(config.kind.clone(), |it| {
+                        store.dispatch(Action::SetEqKind {
+                            channel_index: 0,
+                            effect_index,
+                            kind: it,
                         });
-                        config.kind.clone()
-                    },
+                    }),
                     eq_type.clone(),
                     eq_type.to_string(),
                 );
@@ -69,16 +66,16 @@ pub fn eq_control(store: &Store, effect_index: usize, ui: &mut Ui) {
         });
 
     ui.add(
-        egui::Slider::from_get_set(0.0..=1.0, |it| {
-            it.map(|it| {
+        egui::Slider::from_get_set(
+            0.0..=1.0,
+            get_set(effect_instance.meta.wet.into(), |it| {
                 store.dispatch(Action::SetEffectWet {
                     channel_index: 0,
                     effect_index,
                     wet: it as KnobPosition,
                 })
-            });
-            effect_instance.meta.wet.into()
-        })
+            }),
+        )
         .text("EQ wet"),
     );
 }
