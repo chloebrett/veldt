@@ -1,6 +1,8 @@
 use super::{Action, Store};
 use ordered_float::OrderedFloat;
-use shared::model::{DelayConfig, Effect, EffectInstance, GeneratorType, SimpleWaveConfig};
+use shared::model::{
+    DelayConfig, Effect, EffectInstance, EqConfig, GeneratorType, SimpleWaveConfig,
+};
 
 pub fn reducer(store: &mut Store, action: Action) {
     match action {
@@ -142,6 +144,45 @@ pub fn reducer(store: &mut Store, action: Action) {
             let effect_instance: &mut EffectInstance =
                 &mut store.project.mixer[channel_index].effects[effect_index];
             effect_instance.meta.wet = wet;
+        }
+        Action::SetEqKind {
+            channel_index,
+            effect_index,
+            kind,
+        } => {
+            let effect_instance: &mut EffectInstance =
+                &mut store.project.mixer[channel_index].effects[effect_index];
+            let config: &mut EqConfig = match &mut effect_instance.effect {
+                Effect::SimpleEq { config } => config,
+                _ => panic!(),
+            };
+            config.kind = kind;
+        }
+        Action::SetEqFc {
+            channel_index,
+            effect_index,
+            fc,
+        } => {
+            let effect_instance: &mut EffectInstance =
+                &mut store.project.mixer[channel_index].effects[effect_index];
+            let config: &mut EqConfig = match &mut effect_instance.effect {
+                Effect::SimpleEq { config } => config,
+                _ => panic!(),
+            };
+            config.fc = fc;
+        }
+        Action::SetEqQ {
+            channel_index,
+            effect_index,
+            q,
+        } => {
+            let effect_instance: &mut EffectInstance =
+                &mut store.project.mixer[channel_index].effects[effect_index];
+            let config: &mut EqConfig = match &mut effect_instance.effect {
+                Effect::SimpleEq { config } => config,
+                _ => panic!(),
+            };
+            config.q = q;
         }
     }
 }
