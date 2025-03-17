@@ -83,6 +83,8 @@ impl Default for Store {
 }
 
 impl Store {
+    // TODO: consider queueing actions for dispatch, which would make discarding frames from egui
+    // unnecessary.
     pub fn dispatch(&mut self, action: Action) {
         reducer(self, action)
     }
