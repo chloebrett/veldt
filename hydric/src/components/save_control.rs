@@ -1,4 +1,3 @@
-use super::app::App;
 use crate::state::{Action, Store, get_set};
 use crate::widget::selectable_value;
 use egui::Ui;
