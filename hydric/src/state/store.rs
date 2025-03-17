@@ -45,7 +45,7 @@ impl Store {
     // unnecessary.
     pub fn dispatch(&self, action: Action) {
         console::log_1(&format!("Start action: {:?}", action.clone()).into());
-        root_reducer(self.data.borrow_mut(), action.clone());
+        root_reducer(self.data.borrow_mut(), &action);
         console::log_1(&format!("End action: {:?}", action.clone()).into());
     }
 }
