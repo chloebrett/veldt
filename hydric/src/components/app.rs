@@ -112,7 +112,7 @@ impl eframe::App for App {
                             .default_pos(Pos2 { x: 1100.0, y: 20.0 })
                             .resizable(false)
                             .show(ctx, |ui| {
-                                generator_control(generator_config, ui);
+                                generator_control(&mut self.store, ui);
                             });
                     }
                     if self.show_effects {
