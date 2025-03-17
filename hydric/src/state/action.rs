@@ -1,6 +1,6 @@
-use shared::model::{AdsrEnvelope, PlacedNote, Scale, ScaleValue, WaveType};
+use shared::model::{AdsrEnvelope, EqType, PlacedNote, Scale, ScaleValue, WaveType};
 use shared::types::{Beats, Octave};
-use shared::types::{KnobPosition, Milliseconds, Volume};
+use shared::types::{Freq, KnobPosition, Milliseconds, Volume};
 
 #[derive(Debug)]
 pub enum Action {
@@ -66,5 +66,20 @@ pub enum Action {
         channel_index: usize,
         effect_index: usize,
         wet: KnobPosition,
+    },
+    SetEqKind {
+        channel_index: usize,
+        effect_index: usize,
+        kind: EqType,
+    },
+    SetEqFc {
+        channel_index: usize,
+        effect_index: usize,
+        fc: Freq,
+    },
+    SetEqQ {
+        channel_index: usize,
+        effect_index: usize,
+        q: KnobPosition,
     },
 }
