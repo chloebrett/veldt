@@ -9,12 +9,13 @@ use super::save_button;
 use super::toggle_window_panel;
 use crate::audio_player::Handle;
 use crate::rpc::load_track_list;
-use crate::state::Store;
+use crate::state::{Action, Store};
 use egui::Pos2;
 use egui::{ScrollArea, scroll_area::ScrollBarVisibility};
 use poll_promise::Promise;
 use shared::model::Track;
 use shared::model::{GeneratorType, SimpleWaveConfig};
+use shared::types::Beats;
 
 pub struct App {
     pub store: Store,
@@ -82,9 +83,12 @@ impl eframe::App for App {
                         ui.vertical(|ui| {
                             ui.add(egui::Slider::new(&mut self.volume, 0.0..=1.0).text("Volume"));
                             ui.add(
-                                egui::Slider::new(&mut self.store.project.bpm, 20.0..=200.0)
-                                    .text("BPM")
-                                    .logarithmic(true),
+                                egui::Slider::from_get_set(20.0..=200.0, |it| {
+                                    it.map(|it| self.store.dispatch(Action::SetBpm(it as Beats)));
+                                    self.store.project.bpm.into()
+                                })
+                                .text("BPM")
+                                .logarithmic(true),
                             );
                         });
                         toggle_window_panel(self, ui);
