@@ -9,21 +9,19 @@ use super::save_button;
 use super::toggle_window_panel;
 use crate::audio_player::Handle;
 use crate::rpc::load_track_list;
-use crate::state::Action;
-use crate::state::Store;
+use crate::state::StoreData;
+use crate::state::{Action, Store};
 use crate::widget::string_observer;
 use egui::Pos2;
 use egui::{ScrollArea, scroll_area::ScrollBarVisibility};
 use poll_promise::Promise;
 use shared::model::Track;
-use shared::model::{MixerChannel, GeneratorType, SimpleWaveConfig};
-use crate::state::StoreData;
-use std::cell:RefMut;
+use shared::model::{GeneratorType, MixerChannel, SimpleWaveConfig};
+use shared::types::{Beats, Volume};
 
 pub struct App {
     pub store: Store,
     pub track_list: Vec<String>,
-    pub volume: f32,
     pub audio: Vec<f32>,
     pub handle: Option<Handle>,
     pub track_list_promise: Promise<Option<Vec<String>>>,
@@ -42,7 +40,6 @@ impl Default for App {
         Self {
             store: Store::default(),
             track_list: vec![],
-            volume: 1.0,
             audio: vec![],
             handle: None,
             track_list_promise: Promise::spawn_local(async move { load_track_list().await }),
@@ -88,28 +85,33 @@ impl eframe::App for App {
                     });
                     ui.horizontal(|ui| {
                         ui.vertical(|ui| {
-                            ui.add(egui::Slider::new(&mut self.volume, 0.0..=1.0).text("Volume"));
                             ui.add(
-                                egui::Slider::new(&mut self.store.get_mut().project.bpm, 20.0..=200.0)
-                                    .text("BPM")
-                                    .logarithmic(true),
+                                egui::Slider::from_get_set(0.0..=1.0, |it| {
+                                    it.map(|it| {
+                                        self.store.dispatch(Action::SetVolume(it as Volume))
+                                    });
+                                    self.store.volume.into()
+                                })
+                                .text("Volume"),
+                            );
+                            ui.add(
+                                egui::Slider::from_get_set(20.0..=200.0, |it| {
+                                    it.map(|it| self.store.dispatch(Action::SetBpm(it as Beats)));
+                                    self.store.project.bpm.into()
+                                })
+                                .text("BPM")
+                                .logarithmic(true),
                             );
                         });
                         toggle_window_panel(self, ui);
                     });
 
-                    {
-                    let generator_type: &mut GeneratorType =
-                        &mut self.store.get_mut().project.generators[0].kind;
-                    let generator_config: &mut SimpleWaveConfig = match generator_type {
-                        GeneratorType::SimpleWave { config } => config,
-                    };
                     if self.show_envelope {
                         egui::Window::new("Envelope")
                             .default_pos(Pos2 { x: 600.0, y: 125.0 })
                             .resizable(false)
                             .show(ctx, |ui| {
-                                envelope_control(&mut generator_config.envelope, ui);
+                                envelope_control(&mut self.store, ui);
                             });
                     }
                     if self.show_generator {
@@ -117,9 +119,8 @@ impl eframe::App for App {
                             .default_pos(Pos2 { x: 1100.0, y: 20.0 })
                             .resizable(false)
                             .show(ctx, |ui| {
-                                generator_control(generator_config, ui);
+                                generator_control(&mut self.store, ui);
                             });
-                    }
                     }
                     if self.show_effects {
                         egui::Window::new("Effects")
@@ -132,7 +133,7 @@ impl eframe::App for App {
                                 let mut_store: RefMut<'_, StoreData> = self.store.get_mut();
                                 for i in 0..mut_store.project.mixer[0].effects.len() {
                                     ui.separator();
-                                    effect_control(&mut mut_store.project.mixer[0].effects[i], ui);
+                                    effect_control(&mut self.store, i, ui);
                                 }
                                 ui.separator();
                             });

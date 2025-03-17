@@ -12,7 +12,7 @@ pub fn play_control(app: &mut App, ui: &mut Ui) {
             .into_iter()
             .map(|sample| sample.clamp(-1.0, 1.0))
             .collect();
-        app.handle = Some(play(&app.audio));
+        app.handle = Some(play(&app.audio, app.store.volume));
     }
     if let Some(render_promise) = &app.server_render_promise {
         if let Some(Some(server_audio)) = render_promise.ready() {
@@ -23,7 +23,7 @@ pub fn play_control(app: &mut App, ui: &mut Ui) {
                     .copied()
                     .map(|sample| sample.clamp(-1.0, 1.0))
                     .collect::<Vec<f32>>();
-                app.handle = Some(play(&app.audio))
+                app.handle = Some(play(&app.audio, app.store.volume))
             }
         }
     }

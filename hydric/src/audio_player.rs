@@ -1,6 +1,7 @@
 use chrono::{DateTime, Utc};
 use cpal::Stream;
 use cpal::traits::{DeviceTrait, HostTrait, StreamTrait};
+use shared::types::Volume;
 use web_sys::console;
 
 pub struct Handle {
@@ -8,7 +9,7 @@ pub struct Handle {
     pub start_timestamp: DateTime<Utc>,
 }
 
-pub fn play(audio: &[f32]) -> Handle {
+pub fn play(audio: &[f32], volume: Volume) -> Handle {
     let host = cpal::default_host();
     let device = host
         .default_output_device()
@@ -20,7 +21,8 @@ pub fn play(audio: &[f32]) -> Handle {
     let audio = audio.to_owned();
     let mut next_sample = move || {
         sample_clock += 1;
-        *audio.get(sample_clock).unwrap_or(&0.0)
+        let sample = audio.get(sample_clock).unwrap_or(&0.0);
+        *sample * volume
     };
     // TODO: replace with egui logger
     let err_fn = |err| console::error_1(&format!("an error occurred on stream: {}", err).into());
