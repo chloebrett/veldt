@@ -2,6 +2,7 @@ use super::app::App;
 use super::audio_vis::audio_vis;
 use crate::audio_player::play;
 use crate::rpc::render as server_render;
+use dasp_signal::{self as signal};
 use egui::Ui;
 use mesic::render as local_render;
 use poll_promise::Promise;
@@ -12,7 +13,8 @@ pub fn play_control(app: &mut App, ui: &mut Ui) {
             .into_iter()
             .map(|sample| sample.clamp(-1.0, 1.0))
             .collect();
-        app.handle = Some(play(&app.audio, app.store.get().volume));
+        let mut signal = signal::from_iter(&app.audio.iter().cloned());
+        app.handle = Some(play(signal, app.store.get().volume));
     }
     if let Some(render_promise) = &app.server_render_promise {
         if let Some(Some(server_audio)) = render_promise.ready() {
@@ -23,7 +25,8 @@ pub fn play_control(app: &mut App, ui: &mut Ui) {
                     .copied()
                     .map(|sample| sample.clamp(-1.0, 1.0))
                     .collect::<Vec<f32>>();
-                app.handle = Some(play(&app.audio, app.store.get().volume))
+                let mut signal = signal::from_iter(&app.audio.iter().cloned());
+                app.handle = Some(play(signal, app.store.get().volume));
             }
         }
     }
