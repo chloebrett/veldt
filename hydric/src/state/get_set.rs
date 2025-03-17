@@ -8,7 +8,7 @@ pub fn get_set<'a, T: PartialEq + Clone + 'a, S: Fn(T) + 'a>(
     move |it| {
         it.map(|it| {
             if it != val {
-                setter(val.clone())
+                setter(it)
             }
         });
         val.clone()
