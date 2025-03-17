@@ -8,18 +8,60 @@ use shared::model::{
     ScaleValue, SimpleWaveConfig, WaveType,
 };
 use shared::types::Volume;
+use std::cell::RefCell;
 use web_sys::console;
 
 pub struct Store {
+    // The canonical view of the store state, which can be mutated through actions.
+    data: RefCell<StoreData>,
+
+    // The most recent read-only snapshot of the store state.
+    // Generally this would be updated at the start of each frame.
+    snapshot: StoreData,
+}
+
+#[derive(Clone)]
+pub struct StoreData {
     pub project: Project,
     pub key: ScaleValue,
     pub scale: Scale,
     pub volume: Volume,
 }
 
+impl Store {
+    /// Snapshots the state, which performs an immutable borrow that is immediately released.
+    pub fn snapshot(&mut self) {
+        self.snapshot = (*self.data.borrow()).clone()
+    }
+
+    pub fn get(&self) -> &StoreData {
+        &self.snapshot
+    }
+
+    // Dispatching is allowed with only an immutable reference.
+    // We mutate via the RefCell. This allows Store to be passed around mutably,
+    // while allowing the caller to dispatch actions to it.
+    // TODO: consider queueing actions for dispatch, which would make discarding frames from egui
+    // unnecessary.
+    pub fn dispatch(&self, action: Action) {
+        console::log_1(&format!("Start action: {:?}", action.clone()).into());
+        reducer(self.data.borrow_mut(), action.clone());
+        console::log_1(&format!("End action: {:?}", action.clone()).into());
+    }
+}
+
 impl Default for Store {
     fn default() -> Self {
         Store {
+            data: RefCell::new(StoreData::default()),
+            snapshot: StoreData::default(),
+        }
+    }
+}
+
+impl Default for StoreData {
+    fn default() -> Self {
+        StoreData {
             project: Project {
                 name: "My Project".to_string(),
                 tracks: vec![Track {
@@ -83,14 +125,5 @@ impl Default for Store {
             key: ScaleValue::A,
             scale: Scale::Chromatic,
         }
-    }
-}
-
-impl Store {
-    // TODO: consider queueing actions for dispatch, which would make discarding frames from egui
-    // unnecessary.
-    pub fn dispatch(&mut self, action: Action) {
-        console::log_1(&format!("Ran action: {:?}", action).into());
-        reducer(self, action)
     }
 }

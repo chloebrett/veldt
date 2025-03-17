@@ -2,10 +2,11 @@ use shared::model::{AdsrEnvelope, EqType, PlacedNote, Scale, ScaleValue, WaveTyp
 use shared::types::{Beats, Octave};
 use shared::types::{Freq, KnobPosition, Milliseconds, Volume};
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub enum Action {
     SetKey(ScaleValue),
     SetScale(Scale),
+    SetProjectName(String),
     SetBpm(Beats),
     SetVolume(Volume),
     // TODO: split note-related actions into a note-specific nested reducer.

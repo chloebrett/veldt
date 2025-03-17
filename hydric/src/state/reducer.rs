@@ -1,21 +1,23 @@
-use super::{Action, Store};
+use super::{Action, StoreData};
 use ordered_float::OrderedFloat;
 use shared::model::{
     DelayConfig, Effect, EffectInstance, EqConfig, GeneratorType, SimpleWaveConfig,
 };
+use std::cell::RefMut;
 
-pub fn reducer(store: &mut Store, action: Action) {
+pub fn reducer(mut data: RefMut<'_, StoreData>, action: Action) {
     match action {
-        Action::SetKey(key) => store.key = key,
-        Action::SetScale(scale) => store.scale = scale,
-        Action::SetBpm(bpm) => store.project.bpm = bpm,
-        Action::SetVolume(volume) => store.volume = volume,
+        Action::SetProjectName(name) => data.project.name = name,
+        Action::SetKey(key) => data.key = key,
+        Action::SetScale(scale) => data.scale = scale,
+        Action::SetBpm(bpm) => data.project.bpm = bpm,
+        Action::SetVolume(volume) => data.volume = volume,
         Action::SetNoteScaleValue {
             track_index,
             note_index,
             note,
         } => {
-            let notes = &mut store.project.tracks[track_index].notes;
+            let notes = &mut data.project.tracks[track_index].notes;
             notes[note_index].note.pitch_name.scale_value = note
         }
         Action::SetNoteOctave {
@@ -23,7 +25,7 @@ pub fn reducer(store: &mut Store, action: Action) {
             note_index,
             octave,
         } => {
-            let notes = &mut store.project.tracks[track_index].notes;
+            let notes = &mut data.project.tracks[track_index].notes;
             notes[note_index].note.pitch_name.octave = octave
         }
         Action::SetNoteDuration {
@@ -31,7 +33,7 @@ pub fn reducer(store: &mut Store, action: Action) {
             note_index,
             duration,
         } => {
-            let notes = &mut store.project.tracks[track_index].notes;
+            let notes = &mut data.project.tracks[track_index].notes;
             notes[note_index].note.beats = duration
         }
         Action::SetNoteOffset {
@@ -39,24 +41,24 @@ pub fn reducer(store: &mut Store, action: Action) {
             note_index,
             offset,
         } => {
-            let notes = &mut store.project.tracks[track_index].notes;
+            let notes = &mut data.project.tracks[track_index].notes;
             notes[note_index].offset = OrderedFloat(offset)
         }
         Action::DeleteNote {
             track_index,
             note_index,
         } => {
-            store.project.tracks[track_index].notes.remove(note_index);
+            data.project.tracks[track_index].notes.remove(note_index);
         }
         Action::AddNote { track_index, note } => {
-            store.project.tracks[track_index].notes.push(note);
+            data.project.tracks[track_index].notes.push(note);
         }
         Action::SetWave {
             generator_index,
             wave,
         } => {
             let generator_type: &mut GeneratorType =
-                &mut store.project.generators[generator_index].kind;
+                &mut data.project.generators[generator_index].kind;
             let generator_config: &mut SimpleWaveConfig = match generator_type {
                 GeneratorType::SimpleWave { config } => config,
             };
@@ -67,7 +69,7 @@ pub fn reducer(store: &mut Store, action: Action) {
             osc_count,
         } => {
             let generator_type: &mut GeneratorType =
-                &mut store.project.generators[generator_index].kind;
+                &mut data.project.generators[generator_index].kind;
             let generator_config: &mut SimpleWaveConfig = match generator_type {
                 GeneratorType::SimpleWave { config } => config,
             };
@@ -78,7 +80,7 @@ pub fn reducer(store: &mut Store, action: Action) {
             detune_cents,
         } => {
             let generator_type: &mut GeneratorType =
-                &mut store.project.generators[generator_index].kind;
+                &mut data.project.generators[generator_index].kind;
             let generator_config: &mut SimpleWaveConfig = match generator_type {
                 GeneratorType::SimpleWave { config } => config,
             };
@@ -105,7 +107,7 @@ pub fn reducer(store: &mut Store, action: Action) {
             }
 
             let generator_type: &mut GeneratorType =
-                &mut store.project.generators[generator_index].kind;
+                &mut data.project.generators[generator_index].kind;
             let generator_config: &mut SimpleWaveConfig = match generator_type {
                 GeneratorType::SimpleWave { config } => config,
             };
@@ -117,7 +119,7 @@ pub fn reducer(store: &mut Store, action: Action) {
             amplitude,
         } => {
             let effect_instance: &mut EffectInstance =
-                &mut store.project.mixer[channel_index].effects[effect_index];
+                &mut data.project.mixer[channel_index].effects[effect_index];
             let config: &mut DelayConfig = match &mut effect_instance.effect {
                 Effect::SimpleDelay { config } => config,
                 _ => panic!(),
@@ -130,7 +132,7 @@ pub fn reducer(store: &mut Store, action: Action) {
             delay_ms,
         } => {
             let effect_instance: &mut EffectInstance =
-                &mut store.project.mixer[channel_index].effects[effect_index];
+                &mut data.project.mixer[channel_index].effects[effect_index];
             let config: &mut DelayConfig = match &mut effect_instance.effect {
                 Effect::SimpleDelay { config } => config,
                 _ => panic!(),
@@ -143,7 +145,7 @@ pub fn reducer(store: &mut Store, action: Action) {
             wet,
         } => {
             let effect_instance: &mut EffectInstance =
-                &mut store.project.mixer[channel_index].effects[effect_index];
+                &mut data.project.mixer[channel_index].effects[effect_index];
             effect_instance.meta.wet = wet;
         }
         Action::SetEqKind {
@@ -152,7 +154,7 @@ pub fn reducer(store: &mut Store, action: Action) {
             kind,
         } => {
             let effect_instance: &mut EffectInstance =
-                &mut store.project.mixer[channel_index].effects[effect_index];
+                &mut data.project.mixer[channel_index].effects[effect_index];
             let config: &mut EqConfig = match &mut effect_instance.effect {
                 Effect::SimpleEq { config } => config,
                 _ => panic!(),
@@ -165,7 +167,7 @@ pub fn reducer(store: &mut Store, action: Action) {
             fc,
         } => {
             let effect_instance: &mut EffectInstance =
-                &mut store.project.mixer[channel_index].effects[effect_index];
+                &mut data.project.mixer[channel_index].effects[effect_index];
             let config: &mut EqConfig = match &mut effect_instance.effect {
                 Effect::SimpleEq { config } => config,
                 _ => panic!(),
@@ -178,7 +180,7 @@ pub fn reducer(store: &mut Store, action: Action) {
             q,
         } => {
             let effect_instance: &mut EffectInstance =
-                &mut store.project.mixer[channel_index].effects[effect_index];
+                &mut data.project.mixer[channel_index].effects[effect_index];
             let config: &mut EqConfig = match &mut effect_instance.effect {
                 Effect::SimpleEq { config } => config,
                 _ => panic!(),
