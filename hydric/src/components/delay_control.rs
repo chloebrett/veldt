@@ -1,13 +1,53 @@
+use crate::state::{Action, Store};
 use egui::Ui;
-use shared::model::{DelayConfig, EffectMeta};
+use shared::model::Effect;
+use shared::types::{KnobPosition, Milliseconds, Volume};
 
-pub fn delay_control(config: &mut DelayConfig, meta: &mut EffectMeta, ui: &mut Ui) {
+pub fn delay_control(store: &mut Store, effect_index: usize, ui: &mut Ui) {
+    let effect_instance = store.project.mixer[0].effects[effect_index].clone();
+    let config = match effect_instance.effect {
+        Effect::SimpleDelay { config } => config,
+        _ => panic!(),
+    };
+
     ui.label("Delay");
-    ui.add(egui::Slider::new(&mut config.amplitude, 0.0..=1.0).text("Delay amplitude"));
     ui.add(
-        egui::Slider::new(&mut config.delay_ms, 1.0..=1000.0)
-            .text("Delay ms")
-            .logarithmic(true),
+        egui::Slider::from_get_set(0.0..=1.0, |it| {
+            it.map(|it| {
+                store.dispatch(Action::SetDelayAmplitude {
+                    channel_index: 0,
+                    effect_index,
+                    amplitude: it as Volume,
+                })
+            });
+            config.amplitude.into()
+        })
+        .text("Delay amplitude"),
     );
-    ui.add(egui::Slider::new(&mut meta.wet, 0.0..=1.0).text("Delay wet"));
+    ui.add(
+        egui::Slider::from_get_set(1.0..=1000.0, |it| {
+            it.map(|it| {
+                store.dispatch(Action::SetDelayMs {
+                    channel_index: 0,
+                    effect_index,
+                    delay_ms: it as Milliseconds,
+                })
+            });
+            config.delay_ms.into()
+        })
+        .text("Delay ms"),
+    );
+    ui.add(
+        egui::Slider::from_get_set(0.0..=1.0, |it| {
+            it.map(|it| {
+                store.dispatch(Action::SetEffectWet {
+                    channel_index: 0,
+                    effect_index,
+                    wet: it as KnobPosition,
+                })
+            });
+            effect_instance.meta.wet.into()
+        })
+        .text("Delay wet"),
+    );
 }
