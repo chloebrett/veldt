@@ -1,5 +1,5 @@
 use super::app::App;
-use crate::state::Action;
+use crate::state::{Action, get_set};
 use crate::widget::selectable_value;
 use egui::{Context, Ui};
 use mesic::create_scale_values;
@@ -27,16 +27,13 @@ pub fn notes_control(app: &App, ui: &mut Ui, ctx: &Context) {
                         .scale_value;
                     selectable_value(
                         ui,
-                        |it| {
-                            it.map(|it| {
-                                app.store.dispatch(Action::SetNoteScaleValue {
-                                    track_index: 0,
-                                    note_index: i,
-                                    note: *it,
-                                })
-                            });
-                            &scale_value
-                        },
+                        get_set(&scale_value, |it| {
+                            app.store.dispatch(Action::SetNoteScaleValue {
+                                track_index: 0,
+                                note_index: i,
+                                note: *it,
+                            })
+                        }),
                         scale_note,
                         scale_note.to_string(),
                     );
@@ -48,54 +45,48 @@ pub fn notes_control(app: &App, ui: &mut Ui, ctx: &Context) {
             .pitch_name
             .octave as f64;
         ui.add(
-            egui::Slider::from_get_set(0.0..=8.0, |it| {
-                it.map(|it| {
-                    if it != octave {
-                        app.store.dispatch(Action::SetNoteOctave {
-                            track_index: 0,
-                            note_index: i,
-                            octave: it as Octave,
-                        })
-                    }
-                });
-                octave
-            })
+            egui::Slider::from_get_set(
+                0.0..=8.0,
+                get_set(octave, |it| {
+                    app.store.dispatch(Action::SetNoteOctave {
+                        track_index: 0,
+                        note_index: i,
+                        octave: it as Octave,
+                    })
+                }),
+            )
             .text("Octave")
             .fixed_decimals(0),
         );
 
         let duration = app.store.get().project.tracks[0].notes[i].note.beats as f64;
         ui.add(
-            egui::Slider::from_get_set(0.0..=10.0, |it| {
-                it.map(|it| {
-                    if it != duration {
-                        app.store.dispatch(Action::SetNoteDuration {
-                            track_index: 0,
-                            note_index: i,
-                            duration: it as Beats,
-                        });
-                    }
-                });
-                app.store.get().project.tracks[0].notes[i].note.beats as f64
-            })
+            egui::Slider::from_get_set(
+                0.0..=10.0,
+                get_set(duration, |it| {
+                    app.store.dispatch(Action::SetNoteDuration {
+                        track_index: 0,
+                        note_index: i,
+                        duration: it as Beats,
+                    })
+                }),
+            )
             .text("Beats")
             .fixed_decimals(0),
         );
 
         let offset = *app.store.get().project.tracks[0].notes[i].offset as f64;
         ui.add(
-            egui::Slider::from_get_set(0.0..=16.0, |it| {
-                it.map(|it| {
-                    if it != offset {
-                        app.store.dispatch(Action::SetNoteOffset {
-                            track_index: 0,
-                            note_index: i,
-                            offset: it as f32,
-                        });
-                    }
-                });
-                offset
-            })
+            egui::Slider::from_get_set(
+                0.0..=16.0,
+                get_set(offset, |it| {
+                    app.store.dispatch(Action::SetNoteOffset {
+                        track_index: 0,
+                        note_index: i,
+                        offset: it as f32,
+                    });
+                }),
+            )
             .text("Offset"),
         );
 

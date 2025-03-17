@@ -9,7 +9,7 @@ use super::save_button;
 use super::toggle_window_panel;
 use crate::audio_player::Handle;
 use crate::rpc::load_track_list;
-use crate::state::{Action, Store};
+use crate::state::{Action, Store, get_set};
 use crate::widget::string_observer;
 use egui::Pos2;
 use egui::{ScrollArea, scroll_area::ScrollBarVisibility};
@@ -80,10 +80,10 @@ impl eframe::App for App {
                     ui.heading("Veldt");
                     ui.horizontal(|ui| {
                         ui.label("Track name: ");
-                        let mut name_observer = string_observer(|it| {
-                            it.map(|it| self.store.dispatch(Action::SetProjectName(it)));
-                            self.store.get().project.name.clone()
-                        });
+                        let project_name = self.store.get().project.name.clone();
+                        let mut name_observer = string_observer(get_set(project_name, |it| {
+                            self.store.dispatch(Action::SetProjectName(it))
+                        }));
                         ui.text_edit_singleline(&mut name_observer);
                         save_button(self, ui);
                         load_control(self, ui);
@@ -92,27 +92,23 @@ impl eframe::App for App {
                         ui.vertical(|ui| {
                             let volume = self.store.get().volume as f64;
                             ui.add(
-                                egui::Slider::from_get_set(0.0..=1.0, |it| {
-                                    it.map(|it| {
-                                        if it != volume {
-                                            self.store.dispatch(Action::SetVolume(it as Volume))
-                                        }
-                                    });
-                                    volume
-                                })
+                                egui::Slider::from_get_set(
+                                    0.0..=1.0,
+                                    get_set(volume, |it| {
+                                        self.store.dispatch(Action::SetVolume(it as Volume))
+                                    }),
+                                )
                                 .text("Volume"),
                             );
 
                             let bpm = self.store.get().project.bpm as f64;
                             ui.add(
-                                egui::Slider::from_get_set(20.0..=200.0, |it| {
-                                    it.map(|it| {
-                                        if it != bpm {
-                                            self.store.dispatch(Action::SetBpm(it as Beats))
-                                        }
-                                    });
-                                    bpm
-                                })
+                                egui::Slider::from_get_set(
+                                    20.0..=200.0,
+                                    get_set(bpm, |it| {
+                                        self.store.dispatch(Action::SetBpm(it as Beats))
+                                    }),
+                                )
                                 .text("BPM")
                                 .logarithmic(true),
                             );
@@ -156,7 +152,7 @@ impl eframe::App for App {
                             .default_pos(Pos2 { x: 600.0, y: 20.0 })
                             .resizable(false)
                             .show(ctx, |ui| {
-                                key_control(self, ui);
+                                key_control(&self.store, ui);
                             });
                     }
                     ui.separator();
