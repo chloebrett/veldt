@@ -9,6 +9,7 @@ pub fn reducer(store: &mut Store, action: Action) {
         Action::SetKey(key) => store.key = key,
         Action::SetScale(scale) => store.scale = scale,
         Action::SetBpm(bpm) => store.project.bpm = bpm,
+        Action::SetVolume(volume) => store.volume = volume,
         Action::SetNoteScaleValue {
             track_index,
             note_index,

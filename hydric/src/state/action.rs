@@ -7,6 +7,7 @@ pub enum Action {
     SetKey(ScaleValue),
     SetScale(Scale),
     SetBpm(Beats),
+    SetVolume(Volume),
     // TODO: split note-related actions into a note-specific nested reducer.
     SetNoteScaleValue {
         track_index: usize,
