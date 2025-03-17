@@ -8,7 +8,7 @@ use poll_promise::Promise;
 
 pub fn play_control(app: &mut App, ui: &mut Ui) {
     if ui.button("Play (local)").clicked() {
-        app.audio = local_render(&app.store.project)
+        app.audio = local_render(&app.store.get().project)
             .into_iter()
             .map(|sample| sample.clamp(-1.0, 1.0))
             .collect();
@@ -28,7 +28,7 @@ pub fn play_control(app: &mut App, ui: &mut Ui) {
         }
     }
     if ui.button("Load audio (server)").clicked() {
-        let project = app.store.project.clone();
+        let project = app.store.get().project.clone();
         app.server_render_promise =
             Some(Promise::spawn_local(
                 async move { server_render(project).await },

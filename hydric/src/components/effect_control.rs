@@ -2,11 +2,11 @@ use super::{delay_control, eq_control};
 use egui::Ui;
 use shared::model::{Effect, EffectInstance};
 
-pub fn effect_control(effect: &mut EffectInstance, ui: &mut Ui) {
-    let inner = &mut effect.effect;
+pub fn effect_control(effect: RefMut<'_, EffectInstance>, ui: &mut Ui) {
+    let inner = effect.map(|it| it.effect);
     match inner {
-        Effect::SimpleEq { config } => eq_control(config, &mut effect.meta, ui),
-        Effect::SimpleDelay { config } => delay_control(config, &mut effect.meta, ui),
+        Effect::SimpleEq { config } => eq_control(config, effect.map(|it| it.meta), ui),
+        Effect::SimpleDelay { config } => delay_control(config, effect.map(|it| it.meta), ui),
         Effect::SimpleCompressor { .. } => panic!("Not implemented yet!"),
     }
 }

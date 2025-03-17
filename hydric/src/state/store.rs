@@ -8,16 +8,48 @@ use shared::model::{
     ScaleValue, SimpleWaveConfig, WaveType,
 };
 use std::collections::BTreeSet;
+use std::cell::{Ref, RefMut, RefCell};
 
 pub struct Store {
+    data: RefCell<StoreData>,
+}
+
+pub struct StoreData {
     pub project: Project,
     pub key: ScaleValue,
     pub scale: Scale,
 }
 
+impl Store {
+    pub fn get(&self) -> Ref<'_, StoreData> {
+        self.data.borrow()
+    }
+
+    /// Should be avoided where possible - use actions and pass around an immutable Store instead.
+    // Note: self could just be an immutable reference, but that would be less safe.
+    pub fn get_mut(&mut self) -> RefMut<'_, StoreData> {
+        self.data.borrow_mut()
+    }
+
+    // Dispatching is allowed with only an immutable reference.
+    // We mutate via the RefCell. This allows Store to be passed around mutably,
+    // while allowing the caller to dispatch actions to it.
+    pub fn dispatch(&self, action: Action) {
+        reducer(self.data.borrow_mut(), action)
+    }
+}
+
 impl Default for Store {
     fn default() -> Self {
         Store {
+            data: RefCell::new(StoreData::default()),
+        }
+    }
+}
+
+impl Default for StoreData {
+    fn default() -> Self {
+        StoreData {
             project: Project {
                 name: "My Project".to_string(),
                 tracks: vec![Track {
@@ -80,11 +112,5 @@ impl Default for Store {
             key: ScaleValue::A,
             scale: Scale::Chromatic,
         }
-    }
-}
-
-impl Store {
-    pub fn dispatch(&mut self, action: Action) {
-        reducer(self, action)
     }
 }
