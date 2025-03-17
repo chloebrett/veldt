@@ -5,54 +5,17 @@ use shared::model::{
 };
 use std::cell::RefMut;
 
-pub fn reducer(mut data: RefMut<'_, StoreData>, action: Action) {
+pub fn root_reducer(mut data: RefMut<'_, StoreData>, action: Action) {
+    if let Some(track_index) = track_index(action) {
+        return track_reducer(&mut data.project.tracks[track_index]);
+    }
+
     match action {
         Action::SetProjectName(name) => data.project.name = name,
         Action::SetKey(key) => data.key = key,
         Action::SetScale(scale) => data.scale = scale,
         Action::SetBpm(bpm) => data.project.bpm = bpm,
         Action::SetVolume(volume) => data.volume = volume,
-        Action::SetNoteScaleValue {
-            track_index,
-            note_index,
-            note,
-        } => {
-            let notes = &mut data.project.tracks[track_index].notes;
-            notes[note_index].note.pitch_name.scale_value = note
-        }
-        Action::SetNoteOctave {
-            track_index,
-            note_index,
-            octave,
-        } => {
-            let notes = &mut data.project.tracks[track_index].notes;
-            notes[note_index].note.pitch_name.octave = octave
-        }
-        Action::SetNoteDuration {
-            track_index,
-            note_index,
-            duration,
-        } => {
-            let notes = &mut data.project.tracks[track_index].notes;
-            notes[note_index].note.beats = duration
-        }
-        Action::SetNoteOffset {
-            track_index,
-            note_index,
-            offset,
-        } => {
-            let notes = &mut data.project.tracks[track_index].notes;
-            notes[note_index].offset = OrderedFloat(offset)
-        }
-        Action::DeleteNote {
-            track_index,
-            note_index,
-        } => {
-            data.project.tracks[track_index].notes.remove(note_index);
-        }
-        Action::AddNote { track_index, note } => {
-            data.project.tracks[track_index].notes.push(note);
-        }
         Action::SetWave {
             generator_index,
             wave,

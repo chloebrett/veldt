@@ -1,4 +1,4 @@
-use super::{Action, reducer};
+use super::{Action, root_reducer};
 use ordered_float::OrderedFloat;
 use shared::model::PlacedNote;
 use shared::model::Track;
@@ -45,7 +45,7 @@ impl Store {
     // unnecessary.
     pub fn dispatch(&self, action: Action) {
         console::log_1(&format!("Start action: {:?}", action.clone()).into());
-        reducer(self.data.borrow_mut(), action.clone());
+        root_reducer(self.data.borrow_mut(), action.clone());
         console::log_1(&format!("End action: {:?}", action.clone()).into());
     }
 }
