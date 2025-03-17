@@ -1,4 +1,6 @@
 use super::app::App;
+use crate::state::Action;
+use crate::widget::selectable_value;
 use egui::{Context, Ui};
 use mesic::create_scale_values;
 use ordered_float::OrderedFloat;
@@ -16,8 +18,8 @@ pub fn notes_control(app: &mut App, ui: &mut Ui, ctx: &Context) {
     let mut track_length = 0.0;
 
     for i in 0..placed_notes.len() {
-        let placed_note = &placed_notes[i];
-        let note = &placed_note.note;
+        let placed_note = &mut placed_notes[i];
+        let note = &mut placed_note.note;
         let scale_value = &note.pitch_name.scale_value;
 
         egui::ComboBox::from_id_salt(i)
@@ -27,8 +29,14 @@ pub fn notes_control(app: &mut App, ui: &mut Ui, ctx: &Context) {
                     selectable_value(
                         ui,
                         |it| {
-                            it.map(|it| app.store.dispatch(Action::SetNote(0, i, it)));
-                            scale_value
+                            it.map(|it| {
+                                app.store.dispatch(Action::SetNote {
+                                    track_index: 0,
+                                    note_index: i,
+                                    note: it,
+                                })
+                            });
+                            *scale_value
                         },
                         *scale_note,
                         scale_note.to_string(),
