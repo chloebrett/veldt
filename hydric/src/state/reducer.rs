@@ -1,5 +1,6 @@
 use super::{Action, Store};
 use ordered_float::OrderedFloat;
+use shared::model::{GeneratorType, SimpleWaveConfig};
 
 pub fn reducer(store: &mut Store, action: Action) {
     match action {
@@ -46,6 +47,39 @@ pub fn reducer(store: &mut Store, action: Action) {
         }
         Action::AddNote { track_index, note } => {
             store.project.tracks[track_index].notes.push(note);
+        }
+        Action::SetWave {
+            generator_index,
+            wave,
+        } => {
+            let generator_type: &mut GeneratorType =
+                &mut store.project.generators[generator_index].kind;
+            let generator_config: &mut SimpleWaveConfig = match generator_type {
+                GeneratorType::SimpleWave { config } => config,
+            };
+            generator_config.wave = wave;
+        }
+        Action::SetOscCount {
+            generator_index,
+            osc_count,
+        } => {
+            let generator_type: &mut GeneratorType =
+                &mut store.project.generators[generator_index].kind;
+            let generator_config: &mut SimpleWaveConfig = match generator_type {
+                GeneratorType::SimpleWave { config } => config,
+            };
+            generator_config.osc_count = osc_count;
+        }
+        Action::SetDetuneCents {
+            generator_index,
+            detune_cents,
+        } => {
+            let generator_type: &mut GeneratorType =
+                &mut store.project.generators[generator_index].kind;
+            let generator_config: &mut SimpleWaveConfig = match generator_type {
+                GeneratorType::SimpleWave { config } => config,
+            };
+            generator_config.detune_cents = detune_cents;
         }
     }
 }
