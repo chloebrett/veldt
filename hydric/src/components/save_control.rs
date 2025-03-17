@@ -1,4 +1,3 @@
-use super::app::App;
 use crate::state::{Action, Store, get_set};
 use crate::widget::selectable_value;
 use egui::Ui;
@@ -8,7 +7,7 @@ use std::rc::Rc;
 
 pub fn save_button(store: &Store, ui: &mut Ui) {
     if ui.button("Save").clicked() {
-        store.dispatch(Action::SaveTrack { track_index: 0 });
+        store.dispatchr(Action::SaveTrack { track_index: 0 });
     }
 }
 
@@ -19,10 +18,10 @@ pub fn load_control(store: &Store, ui: &mut Ui) {
         let promise_ref: &Option<Promise<Option<()>>> = save_track_promise.as_ref();
         if let Some(promise) = promise_ref {
             if let Some(Some(())) = promise.ready() {
-                store.dispatch(Action::ClearSaveTrackPromise);
+                store.dispatchr(Action::ClearSaveTrackPromise);
 
                 // Once a track has been saved, re-load the list.
-                store.dispatch(Action::LoadTrackList);
+                store.dispatchr(Action::LoadTrackList);
             }
         }
     }
@@ -33,8 +32,8 @@ pub fn load_control(store: &Store, ui: &mut Ui) {
         let promise_ref = track_list_promise.as_ref();
         if let Some(promise) = promise_ref {
             if let Some(Some(list)) = promise.ready() {
-                store.dispatch(Action::ClearTrackListPromise);
-                store.dispatch(Action::SetTrackList {
+                store.dispatchr(Action::ClearTrackListPromise);
+                store.dispatchr(Action::SetTrackList {
                     tracks: list.clone(),
                 });
             }
@@ -47,8 +46,8 @@ pub fn load_control(store: &Store, ui: &mut Ui) {
         let promise_ref = load_track_promise.as_ref();
         if let Some(promise) = promise_ref {
             if let Some(Some(track)) = promise.ready() {
-                store.dispatch(Action::ClearLoadTrackPromise);
-                store.dispatch(Action::SetTrack {
+                store.dispatchr(Action::ClearLoadTrackPromise);
+                store.dispatchr(Action::SetTrack {
                     track_index: 0,
                     track: track.clone(),
                 });
@@ -72,7 +71,7 @@ pub fn load_control(store: &Store, ui: &mut Ui) {
                         ui,
                         get_set(store.get().load_track_name.clone(), |it| {
                             it.map(|it| {
-                                store.dispatch(Action::SetLoadTrackName { track_name: it })
+                                store.dispatchr(Action::SetLoadTrackName { track_name: it })
                             });
                         }),
                         Some(name.clone()),
@@ -82,7 +81,7 @@ pub fn load_control(store: &Store, ui: &mut Ui) {
             });
         // TODO disable button when no load_name
         if ui.button("Load").clicked() {
-            store.dispatch(Action::LoadTrack);
+            store.dispatchr(Action::LoadTrack);
         };
     });
 }

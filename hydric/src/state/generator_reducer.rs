@@ -2,24 +2,6 @@ use crate::state::Action;
 use shared::model::{GeneratorInstance, GeneratorType};
 use web_sys::console;
 
-pub fn generator_index(action: &Action) -> Option<usize> {
-    match action {
-        Action::SetOscCount {
-            generator_index, ..
-        } => Some(*generator_index),
-        Action::SetDetuneCents {
-            generator_index, ..
-        } => Some(*generator_index),
-        Action::SetEnvelope {
-            generator_index, ..
-        } => Some(*generator_index),
-        Action::SetWave {
-            generator_index, ..
-        } => Some(*generator_index),
-        _ => None,
-    }
-}
-
 pub fn generator_reducer(generator: &mut GeneratorInstance, action: &Action) {
     console::log_1(&format!("generator_reducer processing: {:?}", action.clone()).into());
 
@@ -28,16 +10,16 @@ pub fn generator_reducer(generator: &mut GeneratorInstance, action: &Action) {
     };
 
     match action {
-        Action::SetWave { wave, .. } => {
+        Action::SetWave(wave) => {
             config.wave = *wave;
         }
-        Action::SetOscCount { osc_count, .. } => {
+        Action::SetOscCount(osc_count) => {
             config.osc_count = *osc_count;
         }
-        Action::SetDetuneCents { detune_cents, .. } => {
+        Action::SetDetuneCents(detune_cents) => {
             config.detune_cents = *detune_cents;
         }
-        Action::SetEnvelope { envelope, .. } => {
+        Action::SetEnvelope(envelope) => {
             let mut envelope = envelope.clone();
             let headroom = 1.0 - envelope.attack - envelope.decay - envelope.release;
             let max_attack = headroom + envelope.attack;

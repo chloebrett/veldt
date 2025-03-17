@@ -1,4 +1,4 @@
-use crate::state::{Action, Store, get_set};
+use crate::state::{Action, Selector, Store, get_set};
 use crate::widget::selectable_value;
 use egui::Ui;
 use shared::model::{GeneratorType, WaveType};
@@ -6,7 +6,9 @@ use shared::types::KnobPosition;
 use strum::IntoEnumIterator;
 
 pub fn generator_control(store: &Store, ui: &mut Ui) {
-    let generator_type = store.get().project.generators[0].kind.clone();
+    let generator_index = 0;
+    let sel = Selector::Generator(generator_index);
+    let generator_type = store.get().project.generators[generator_index].kind.clone();
     let config = match generator_type {
         GeneratorType::SimpleWave { config } => config,
     };
@@ -17,15 +19,7 @@ pub fn generator_control(store: &Store, ui: &mut Ui) {
             for wave in WaveType::iter() {
                 selectable_value(
                     ui,
-                    |it| {
-                        it.map(|it| {
-                            store.dispatch(Action::SetWave {
-                                generator_index: 0,
-                                wave: it,
-                            })
-                        });
-                        config.wave
-                    },
+                    get_set(config.wave, |it| store.dispatch(&sel, Action::SetWave(it))),
                     wave,
                     wave.to_string(),
                 );
@@ -35,10 +29,7 @@ pub fn generator_control(store: &Store, ui: &mut Ui) {
         egui::Slider::from_get_set(
             0.0..=24.0,
             get_set(config.osc_count as f64, |it| {
-                store.dispatch(Action::SetOscCount {
-                    generator_index: 0,
-                    osc_count: it as u32,
-                })
+                store.dispatch(&sel, Action::SetOscCount(it as u32))
             }),
         )
         .text("Osc count")
@@ -48,10 +39,7 @@ pub fn generator_control(store: &Store, ui: &mut Ui) {
         egui::Slider::from_get_set(
             0.0..=100.0,
             get_set(config.detune_cents as f64, |it| {
-                store.dispatch(Action::SetDetuneCents {
-                    generator_index: 0,
-                    detune_cents: it as KnobPosition,
-                })
+                store.dispatch(&sel, Action::SetDetuneCents(it as KnobPosition))
             }),
         )
         .text("Osc detune")

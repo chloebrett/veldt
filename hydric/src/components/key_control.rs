@@ -13,7 +13,7 @@ pub fn key_control(store: &Store, ui: &mut Ui) {
             for scale_note in ScaleValue::iter() {
                 selectable_value(
                     ui,
-                    get_set(key, |it| store.dispatch(Action::SetKey(it))),
+                    get_set(key, |it| store.dispatchr(Action::SetKey(it))),
                     scale_note,
                     scale_note.to_string(),
                 );
@@ -27,7 +27,7 @@ pub fn key_control(store: &Store, ui: &mut Ui) {
             for scale in Scale::iter() {
                 selectable_value(
                     ui,
-                    get_set(scale, |it| store.dispatch(Action::SetScale(it))),
+                    get_set(scale, |it| store.dispatchr(Action::SetScale(it))),
                     scale,
                     scale.to_string(),
                 );
