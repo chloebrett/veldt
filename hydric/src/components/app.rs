@@ -1,5 +1,3 @@
-use std::collections::BTreeSet;
-
 use super::effect_control;
 use super::envelope_control;
 use super::generator_control;
@@ -14,19 +12,12 @@ use crate::rpc::load_track_list;
 use crate::state::Store;
 use egui::Pos2;
 use egui::{ScrollArea, scroll_area::ScrollBarVisibility};
-use ordered_float::OrderedFloat;
 use poll_promise::Promise;
-use shared::model::PlacedNote;
 use shared::model::Track;
-use shared::model::{
-    AdsrEnvelope, DelayConfig, Effect, EffectInstance, EffectMeta, EqConfig, EqType,
-    GeneratorInstance, GeneratorMeta, GeneratorType, MixerChannel, Note, PitchName, Project,
-    ScaleValue, SimpleWaveConfig, WaveType,
-};
+use shared::model::{GeneratorType, SimpleWaveConfig};
 
 pub struct App {
     pub store: Store,
-    pub project: Project,
     pub track_list: Vec<String>,
     pub volume: f32,
     pub audio: Vec<f32>,
@@ -46,66 +37,6 @@ impl Default for App {
     fn default() -> Self {
         Self {
             store: Store::default(),
-            project: Project {
-                name: "My Project".to_string(),
-                tracks: vec![Track {
-                    notes: BTreeSet::from_iter(vec![PlacedNote {
-                        note: Note {
-                            pitch_name: PitchName {
-                                scale_value: ScaleValue::A,
-                                octave: 4,
-                            },
-                            beats: 1.0,
-                        },
-                        offset: OrderedFloat(0.0),
-                    }]),
-                }],
-                // TODO: use track placements
-                track_placements: BTreeSet::new(),
-                samples: vec![],
-                generators: vec![GeneratorInstance {
-                    id: 0,
-                    kind: GeneratorType::SimpleWave {
-                        config: SimpleWaveConfig {
-                            wave: WaveType::Sine,
-                            envelope: AdsrEnvelope {
-                                attack: 0.1,
-                                decay: 0.1,
-                                sustain: 0.8,
-                                release: 0.1,
-                            },
-                            osc_count: 4,
-                            detune_cents: 5.0,
-                        },
-                    },
-                    meta: GeneratorMeta { volume: 1.0 },
-                }],
-                mixer: vec![MixerChannel {
-                    effects: vec![
-                        EffectInstance {
-                            effect: Effect::SimpleEq {
-                                config: EqConfig {
-                                    kind: EqType::SimpleResonator,
-                                    fc: 1000.0,
-                                    q: 1.0,
-                                },
-                            },
-                            meta: EffectMeta { id: 0, wet: 1.0 },
-                        },
-                        EffectInstance {
-                            effect: Effect::SimpleDelay {
-                                config: DelayConfig {
-                                    amplitude: 0.5,
-                                    delay_ms: 250.0,
-                                },
-                            },
-                            meta: EffectMeta { id: 1, wet: 0.5 },
-                        },
-                    ],
-                }],
-
-                bpm: 120.0,
-            },
             track_list: vec![],
             volume: 1.0,
             audio: vec![],
@@ -143,7 +74,7 @@ impl eframe::App for App {
                     ui.heading("Veldt");
                     ui.horizontal(|ui| {
                         ui.label("Track name: ");
-                        ui.text_edit_singleline(&mut self.project.name);
+                        ui.text_edit_singleline(&mut self.store.project.name);
                         save_button(self, ui);
                         load_control(self, ui);
                     });
@@ -151,7 +82,7 @@ impl eframe::App for App {
                         ui.vertical(|ui| {
                             ui.add(egui::Slider::new(&mut self.volume, 0.0..=1.0).text("Volume"));
                             ui.add(
-                                egui::Slider::new(&mut self.project.bpm, 20.0..=200.0)
+                                egui::Slider::new(&mut self.store.project.bpm, 20.0..=200.0)
                                     .text("BPM")
                                     .logarithmic(true),
                             );
@@ -159,7 +90,8 @@ impl eframe::App for App {
                         toggle_window_panel(self, ui);
                     });
 
-                    let generator_type: &mut GeneratorType = &mut self.project.generators[0].kind;
+                    let generator_type: &mut GeneratorType =
+                        &mut self.store.project.generators[0].kind;
                     let generator_config: &mut SimpleWaveConfig = match generator_type {
                         GeneratorType::SimpleWave { config } => config,
                     };
@@ -187,9 +119,9 @@ impl eframe::App for App {
                             })
                             .resizable(false)
                             .show(ctx, |ui| {
-                                for i in 0..self.project.mixer[0].effects.len() {
+                                for i in 0..self.store.project.mixer[0].effects.len() {
                                     ui.separator();
-                                    effect_control(&mut self.project.mixer[0].effects[i], ui);
+                                    effect_control(&mut self.store.project.mixer[0].effects[i], ui);
                                 }
                                 ui.separator();
                             });
