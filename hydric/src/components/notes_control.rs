@@ -3,11 +3,10 @@ use egui::{Context, Ui};
 use mesic::create_scale_values;
 use ordered_float::OrderedFloat;
 use shared::model::{Note, PitchName, PlacedNote, Track};
-use std::collections::BTreeSet;
 
 pub fn notes_control(app: &mut App, ui: &mut Ui, ctx: &Context) {
     let scale_options = create_scale_values(app.store.scale, app.store.key);
-    let mut placed_notes: Vec<PlacedNote> = app.project.tracks[0]
+    let mut placed_notes: Vec<PlacedNote> = app.store.project.tracks[0]
         .notes
         .iter()
         .map(|placed_note| placed_note.clone())
@@ -53,7 +52,7 @@ pub fn notes_control(app: &mut App, ui: &mut Ui, ctx: &Context) {
             offset: OrderedFloat(track_length.ceil()),
         })
     }
-    app.project.tracks[0] = Track {
-        notes: BTreeSet::from_iter(placed_notes),
+    app.store.project.tracks[0] = Track {
+        notes: placed_notes,
     };
 }
