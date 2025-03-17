@@ -1,10 +1,13 @@
 use egui::TextBuffer;
 use std::ops::Range;
 
-pub fn string_observer<F: Fn(Option<String>) -> String>(get_set: F) -> StringObserver<F> {
+pub fn string_observer<F: Fn(Option<String>) -> String>(
+    get_set: F,
+    initial: String,
+) -> StringObserver<F> {
     StringObserver {
         get_set,
-        owned: String::new(),
+        owned: initial,
     }
 }
 
