@@ -7,13 +7,13 @@ use ordered_float::OrderedFloat;
 use shared::model::{Note, PitchName, PlacedNote};
 use shared::types::{Beats, Octave};
 
-pub fn notes_control(app: &mut App, ui: &mut Ui, ctx: &Context) {
-    let scale_options = create_scale_values(app.store.scale, app.store.key);
+pub fn notes_control(app: &App, ui: &mut Ui, ctx: &Context) {
+    let scale_options = create_scale_values(app.store.get().scale, app.store.get().key);
 
-    for i in 0..app.store.project.tracks[0].notes.len() {
+    for i in 0..app.store.get().project.tracks[0].notes.len() {
         egui::ComboBox::from_id_salt(i)
             .selected_text(
-                app.store.project.tracks[0].notes[i]
+                app.store.get().project.tracks[0].notes[i]
                     .note
                     .pitch_name
                     .scale_value
@@ -21,7 +21,7 @@ pub fn notes_control(app: &mut App, ui: &mut Ui, ctx: &Context) {
             )
             .show_ui(ui, |ui| {
                 for scale_note in scale_options.iter() {
-                    let scale_value = app.store.project.tracks[0].notes[i]
+                    let scale_value = app.store.get().project.tracks[0].notes[i]
                         .note
                         .pitch_name
                         .scale_value;
@@ -43,45 +43,58 @@ pub fn notes_control(app: &mut App, ui: &mut Ui, ctx: &Context) {
                 }
             });
 
+        let octave = app.store.get().project.tracks[0].notes[i]
+            .note
+            .pitch_name
+            .octave as f64;
         ui.add(
             egui::Slider::from_get_set(0.0..=8.0, |it| {
                 it.map(|it| {
-                    app.store.dispatch(Action::SetNoteOctave {
-                        track_index: 0,
-                        note_index: i,
-                        octave: it as Octave,
-                    })
+                    if it != octave {
+                        app.store.dispatch(Action::SetNoteOctave {
+                            track_index: 0,
+                            note_index: i,
+                            octave: it as Octave,
+                        })
+                    }
                 });
-                app.store.project.tracks[0].notes[i].note.pitch_name.octave as f64
+                octave
             })
             .text("Octave")
             .fixed_decimals(0),
         );
+
+        let duration = app.store.get().project.tracks[0].notes[i].note.beats as f64;
         ui.add(
             egui::Slider::from_get_set(0.0..=10.0, |it| {
                 it.map(|it| {
-                    app.store.dispatch(Action::SetNoteDuration {
-                        track_index: 0,
-                        note_index: i,
-                        duration: it as Beats,
-                    })
+                    if it != duration {
+                        app.store.dispatch(Action::SetNoteDuration {
+                            track_index: 0,
+                            note_index: i,
+                            duration: it as Beats,
+                        });
+                    }
                 });
-                app.store.project.tracks[0].notes[i].note.beats as f64
+                app.store.get().project.tracks[0].notes[i].note.beats as f64
             })
             .text("Beats")
             .fixed_decimals(0),
         );
 
+        let offset = *app.store.get().project.tracks[0].notes[i].offset as f64;
         ui.add(
             egui::Slider::from_get_set(0.0..=16.0, |it| {
                 it.map(|it| {
-                    app.store.dispatch(Action::SetNoteOffset {
-                        track_index: 0,
-                        note_index: i,
-                        offset: it as f32,
-                    })
+                    if it != offset {
+                        app.store.dispatch(Action::SetNoteOffset {
+                            track_index: 0,
+                            note_index: i,
+                            offset: it as f32,
+                        });
+                    }
                 });
-                *app.store.project.tracks[0].notes[i].offset as f64
+                offset
             })
             .text("Offset"),
         );
@@ -96,7 +109,7 @@ pub fn notes_control(app: &mut App, ui: &mut Ui, ctx: &Context) {
         }
     }
 
-    let track_length = app.store.project.tracks[0]
+    let track_length = app.store.get().project.tracks[0]
         .notes
         .clone()
         .into_iter()
@@ -110,7 +123,7 @@ pub fn notes_control(app: &mut App, ui: &mut Ui, ctx: &Context) {
             note: PlacedNote {
                 note: Note {
                     pitch_name: PitchName {
-                        scale_value: app.store.key,
+                        scale_value: app.store.get().key,
                         octave: 4,
                     },
                     beats: 1.0,

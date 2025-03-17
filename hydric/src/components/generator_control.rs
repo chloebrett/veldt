@@ -4,8 +4,8 @@ use egui::Ui;
 use shared::model::{GeneratorType, WaveType};
 use strum::IntoEnumIterator;
 
-pub fn generator_control(store: &mut Store, ui: &mut Ui) {
-    let generator_type = store.project.generators[0].kind.clone();
+pub fn generator_control(store: &Store, ui: &mut Ui) {
+    let generator_type = store.get().project.generators[0].kind.clone();
     let config = match generator_type {
         GeneratorType::SimpleWave { config } => config,
     };

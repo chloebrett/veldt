@@ -20,7 +20,8 @@ pub fn load_control(app: &mut App, ui: &mut Ui) {
     }
     if let Some(track_promise) = &app.track_promise {
         if let Some(track) = track_promise.ready() {
-            app.store.get_mut().project.tracks[0] = track.clone().unwrap();
+            // TODO: run this as an action.
+            //app.store.get().project.tracks[0] = track.clone().unwrap();
             app.track_promise = None;
         }
     }
