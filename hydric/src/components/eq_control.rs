@@ -6,8 +6,8 @@ use shared::model::EqType;
 use shared::types::{Freq, KnobPosition};
 use strum::IntoEnumIterator;
 
-pub fn eq_control(store: &mut Store, effect_index: usize, ui: &mut Ui) {
-    let effect_instance = store.project.mixer[0].effects[effect_index].clone();
+pub fn eq_control(store: &Store, effect_index: usize, ui: &mut Ui) {
+    let effect_instance = store.get().project.mixer[0].effects[effect_index].clone();
     let config = match effect_instance.effect {
         Effect::SimpleEq { config } => config,
         _ => panic!(),
