@@ -7,6 +7,7 @@ use shared::model::{
     GeneratorInstance, GeneratorMeta, GeneratorType, MixerChannel, Note, PitchName, Project, Scale,
     ScaleValue, SimpleWaveConfig, WaveType,
 };
+use web_sys::console;
 
 pub struct Store {
     pub project: Project,
@@ -86,6 +87,7 @@ impl Store {
     // TODO: consider queueing actions for dispatch, which would make discarding frames from egui
     // unnecessary.
     pub fn dispatch(&mut self, action: Action) {
+        console::log_1(&format!("Ran action: {:?}", action).into());
         reducer(self, action)
     }
 }

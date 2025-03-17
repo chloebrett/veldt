@@ -1,6 +1,7 @@
-use shared::model::{PlacedNote, Scale, ScaleValue, WaveType};
+use shared::model::{AdsrEnvelope, PlacedNote, Scale, ScaleValue, WaveType};
 use shared::types::{Beats, Octave};
 
+#[derive(Debug)]
 pub enum Action {
     SetKey(ScaleValue),
     SetScale(Scale),
@@ -45,5 +46,9 @@ pub enum Action {
     SetDetuneCents {
         generator_index: usize,
         detune_cents: f32,
+    },
+    SetEnvelope {
+        generator_index: usize,
+        envelope: AdsrEnvelope,
     },
 }
