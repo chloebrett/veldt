@@ -7,7 +7,6 @@ use shared::model::{
     GeneratorInstance, GeneratorMeta, GeneratorType, MixerChannel, Note, PitchName, Project, Scale,
     ScaleValue, SimpleWaveConfig, WaveType,
 };
-use std::collections::BTreeSet;
 
 pub struct Store {
     pub project: Project,
@@ -21,7 +20,7 @@ impl Default for Store {
             project: Project {
                 name: "My Project".to_string(),
                 tracks: vec![Track {
-                    notes: BTreeSet::from_iter(vec![PlacedNote {
+                    notes: vec![PlacedNote {
                         note: Note {
                             pitch_name: PitchName {
                                 scale_value: ScaleValue::A,
@@ -30,10 +29,10 @@ impl Default for Store {
                             beats: 1.0,
                         },
                         offset: OrderedFloat(0.0),
-                    }]),
+                    }],
                 }],
                 // TODO: use track placements
-                track_placements: BTreeSet::new(),
+                track_placements: vec![],
                 samples: vec![],
                 generators: vec![GeneratorInstance {
                     id: 0,
