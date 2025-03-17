@@ -14,7 +14,6 @@ use egui::Pos2;
 use egui::{ScrollArea, scroll_area::ScrollBarVisibility};
 use poll_promise::Promise;
 use shared::model::Track;
-use shared::model::{GeneratorType, SimpleWaveConfig};
 use shared::types::Beats;
 
 pub struct App {
@@ -120,7 +119,7 @@ impl eframe::App for App {
                             .show(ctx, |ui| {
                                 for i in 0..self.store.project.mixer[0].effects.len() {
                                     ui.separator();
-                                    effect_control(&mut self.store.project.mixer[0].effects[i], ui);
+                                    effect_control(&mut self.store, i, ui);
                                 }
                                 ui.separator();
                             });
