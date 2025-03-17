@@ -94,17 +94,12 @@ impl eframe::App for App {
                         toggle_window_panel(self, ui);
                     });
 
-                    let generator_type: &mut GeneratorType =
-                        &mut self.store.project.generators[0].kind;
-                    let generator_config: &mut SimpleWaveConfig = match generator_type {
-                        GeneratorType::SimpleWave { config } => config,
-                    };
                     if self.show_envelope {
                         egui::Window::new("Envelope")
                             .default_pos(Pos2 { x: 600.0, y: 125.0 })
                             .resizable(false)
                             .show(ctx, |ui| {
-                                envelope_control(&mut generator_config.envelope, ui);
+                                envelope_control(&mut self.store, ui);
                             });
                     }
                     if self.show_generator {
