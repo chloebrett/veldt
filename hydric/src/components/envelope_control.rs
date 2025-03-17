@@ -3,7 +3,7 @@ use egui::{Color32, Rect, Ui, containers::Frame, emath, epaint, epaint::PathStro
 use shared::model::{AdsrEnvelope, GeneratorType};
 
 fn update_envelope(
-    store: &mut Store,
+    store: &Store,
     prev: AdsrEnvelope,
     attack: Option<f64>,
     decay: Option<f64>,
@@ -25,7 +25,7 @@ fn update_envelope(
 }
 
 pub fn envelope_control(store: &mut Store, ui: &mut Ui) {
-    let generator_type = store.project.generators[0].kind.clone();
+    let generator_type = store.get().project.generators[0].kind.clone();
     let config = match generator_type {
         GeneratorType::SimpleWave { config } => config,
     };

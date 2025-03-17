@@ -9,14 +9,12 @@ use super::save_button;
 use super::toggle_window_panel;
 use crate::audio_player::Handle;
 use crate::rpc::load_track_list;
-use crate::state::StoreData;
 use crate::state::{Action, Store};
 use crate::widget::string_observer;
 use egui::Pos2;
 use egui::{ScrollArea, scroll_area::ScrollBarVisibility};
 use poll_promise::Promise;
 use shared::model::Track;
-use shared::model::{GeneratorType, MixerChannel, SimpleWaveConfig};
 use shared::types::{Beats, Volume};
 
 pub struct App {
@@ -67,6 +65,13 @@ impl App {
 
 impl eframe::App for App {
     fn update(&mut self, ctx: &egui::Context, _frame: &mut eframe::Frame) {
+        // Snapshot the state at the start of each frame.
+        // TODO: profile this with the FPS counter, since it's a clone.
+        // Another option: apply all the actions once per frame, instead of cloning the whole
+        // state. Then, the store doesn't need to be mutated the rest of the time, and we don't
+        // need to ever clone it.
+        self.store.snapshot();
+
         egui::CentralPanel::default().show(ctx, |ui| {
             ScrollArea::vertical()
                 .auto_shrink(false)
@@ -75,29 +80,38 @@ impl eframe::App for App {
                     ui.heading("Veldt");
                     ui.horizontal(|ui| {
                         ui.label("Track name: ");
-                        let name_observer = string_observer(|it| {
+                        let mut name_observer = string_observer(|it| {
                             it.map(|it| self.store.dispatch(Action::SetProjectName(it)));
                             self.store.get().project.name.clone()
                         });
-                        ui.text_edit_singleline(&mut self.store.get_mut().project.name);
+                        ui.text_edit_singleline(&mut name_observer);
                         save_button(self, ui);
                         load_control(self, ui);
                     });
                     ui.horizontal(|ui| {
                         ui.vertical(|ui| {
+                            let volume = self.store.get().volume as f64;
                             ui.add(
                                 egui::Slider::from_get_set(0.0..=1.0, |it| {
                                     it.map(|it| {
-                                        self.store.dispatch(Action::SetVolume(it as Volume))
+                                        if it != volume {
+                                            self.store.dispatch(Action::SetVolume(it as Volume))
+                                        }
                                     });
-                                    self.store.volume.into()
+                                    volume
                                 })
                                 .text("Volume"),
                             );
+
+                            let bpm = self.store.get().project.bpm as f64;
                             ui.add(
                                 egui::Slider::from_get_set(20.0..=200.0, |it| {
-                                    it.map(|it| self.store.dispatch(Action::SetBpm(it as Beats)));
-                                    self.store.project.bpm.into()
+                                    it.map(|it| {
+                                        if it != bpm {
+                                            self.store.dispatch(Action::SetBpm(it as Beats))
+                                        }
+                                    });
+                                    bpm
                                 })
                                 .text("BPM")
                                 .logarithmic(true),
@@ -130,10 +144,9 @@ impl eframe::App for App {
                             })
                             .resizable(false)
                             .show(ctx, |ui| {
-                                let mut_store: RefMut<'_, StoreData> = self.store.get_mut();
-                                for i in 0..mut_store.project.mixer[0].effects.len() {
+                                for i in 0..self.store.get().project.mixer[0].effects.len() {
                                     ui.separator();
-                                    effect_control(&mut self.store, i, ui);
+                                    effect_control(&self.store, i, ui);
                                 }
                                 ui.separator();
                             });

@@ -8,13 +8,19 @@ use shared::model::{
     ScaleValue, SimpleWaveConfig, WaveType,
 };
 use shared::types::Volume;
-use std::cell::{Ref, RefCell, RefMut};
+use std::cell::RefCell;
 use web_sys::console;
 
 pub struct Store {
+    // The canonical view of the store state, which can be mutated through actions.
     data: RefCell<StoreData>,
+
+    // The most recent read-only snapshot of the store state.
+    // Generally this would be updated at the start of each frame.
+    snapshot: StoreData,
 }
 
+#[derive(Clone)]
 pub struct StoreData {
     pub project: Project,
     pub key: ScaleValue,
@@ -23,14 +29,13 @@ pub struct StoreData {
 }
 
 impl Store {
-    pub fn get(&self) -> Ref<'_, StoreData> {
-        self.data.borrow()
+    /// Snapshots the state, which performs an immutable borrow that is immediately released.
+    pub fn snapshot(&mut self) {
+        self.snapshot = (*self.data.borrow()).clone()
     }
 
-    /// Should be avoided where possible - use actions and pass around an immutable Store instead.
-    // Note: self could just be an immutable reference, but that would be less safe.
-    pub fn get_mut(&mut self) -> RefMut<'_, StoreData> {
-        self.data.borrow_mut()
+    pub fn get(&self) -> &StoreData {
+        &self.snapshot
     }
 
     // Dispatching is allowed with only an immutable reference.
@@ -39,8 +44,9 @@ impl Store {
     // TODO: consider queueing actions for dispatch, which would make discarding frames from egui
     // unnecessary.
     pub fn dispatch(&self, action: Action) {
-        console::log_1(&format!("Ran action: {:?}", action).into());
-        reducer(self.data.borrow_mut(), action)
+        console::log_1(&format!("Start action: {:?}", action.clone()).into());
+        reducer(self.data.borrow_mut(), action.clone());
+        console::log_1(&format!("End action: {:?}", action.clone()).into());
     }
 }
 
@@ -48,6 +54,7 @@ impl Default for Store {
     fn default() -> Self {
         Store {
             data: RefCell::new(StoreData::default()),
+            snapshot: StoreData::default(),
         }
     }
 }
