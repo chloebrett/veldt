@@ -1,36 +1,33 @@
-use super::app::App;
-use crate::state::Action;
+use crate::state::get_set;
+use crate::state::{Action, Store};
 use crate::widget::selectable_value;
 use egui::Ui;
 use shared::model::{Scale, ScaleValue};
 use strum::IntoEnumIterator;
 
-pub fn key_control(app: &mut App, ui: &mut Ui) {
+pub fn key_control(store: &Store, ui: &mut Ui) {
+    let key = store.get().key;
     egui::ComboBox::from_label("Key")
-        .selected_text(app.store.get().key.to_string())
+        .selected_text(key.to_string())
         .show_ui(ui, |ui| {
             for scale_note in ScaleValue::iter() {
                 selectable_value(
                     ui,
-                    |it| {
-                        it.map(|it| app.store.dispatch(Action::SetKey(it)));
-                        app.store.get().key
-                    },
+                    get_set(key, |it| store.dispatch(Action::SetKey(it))),
                     scale_note,
                     scale_note.to_string(),
                 );
             }
         });
+
+    let scale = store.get().scale;
     egui::ComboBox::from_label("Scale")
-        .selected_text(app.store.get().scale.to_string())
+        .selected_text(scale.to_string())
         .show_ui(ui, |ui| {
             for scale in Scale::iter() {
                 selectable_value(
                     ui,
-                    |it| {
-                        it.map(|it| app.store.dispatch(Action::SetScale(it)));
-                        app.store.get().scale
-                    },
+                    get_set(scale, |it| store.dispatch(Action::SetScale(it))),
                     scale,
                     scale.to_string(),
                 );

@@ -1,7 +1,8 @@
-use crate::state::{Action, Store};
+use crate::state::{Action, Store, get_set};
 use crate::widget::selectable_value;
 use egui::Ui;
 use shared::model::{GeneratorType, WaveType};
+use shared::types::KnobPosition;
 use strum::IntoEnumIterator;
 
 pub fn generator_control(store: &Store, ui: &mut Ui) {
@@ -31,28 +32,28 @@ pub fn generator_control(store: &Store, ui: &mut Ui) {
             }
         });
     ui.add(
-        egui::Slider::from_get_set(0.0..=24.0, |it| {
-            it.map(|it| {
+        egui::Slider::from_get_set(
+            0.0..=24.0,
+            get_set(config.osc_count as f64, |it| {
                 store.dispatch(Action::SetOscCount {
                     generator_index: 0,
                     osc_count: it as u32,
                 })
-            });
-            config.osc_count as f64
-        })
+            }),
+        )
         .text("Osc count")
         .fixed_decimals(0),
     );
     ui.add(
-        egui::Slider::from_get_set(0.0..=100.0, |it| {
-            it.map(|it| {
+        egui::Slider::from_get_set(
+            0.0..=100.0,
+            get_set(config.detune_cents as f64, |it| {
                 store.dispatch(Action::SetDetuneCents {
                     generator_index: 0,
-                    detune_cents: it as f32,
+                    detune_cents: it as KnobPosition,
                 })
-            });
-            config.detune_cents as f64
-        })
+            }),
+        )
         .text("Osc detune")
         .logarithmic(true),
     );
