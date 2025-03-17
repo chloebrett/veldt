@@ -1,7 +1,16 @@
 use crate::SAMPLE_RATE;
 use crate::effect::apply_effects;
 use crate::wave::polyphonic_wave;
+use dasp_signal::FromIterator;
 use shared::model::{GeneratorType, Project};
+
+pub type Sig = FromIterator<<Vec<f32> as IntoIterator>::IntoIter>;
+
+pub fn render_signal(project: &Project) -> Sig {
+    let output = render(project);
+
+    dasp_signal::from_iter(output.into_iter())
+}
 
 pub fn render(project: &Project) -> Vec<f32> {
     let track = &project.tracks[0];

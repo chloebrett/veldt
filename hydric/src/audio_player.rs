@@ -1,7 +1,7 @@
 use chrono::{DateTime, Utc};
 use cpal::Stream;
 use cpal::traits::{DeviceTrait, HostTrait, StreamTrait};
-use dasp_signal::Signal;
+use dasp_signal::{FromIterator, Signal};
 use web_sys::console;
 
 pub struct Handle {
@@ -9,7 +9,7 @@ pub struct Handle {
     pub start_timestamp: DateTime<Utc>,
 }
 
-pub fn play(mut signal: impl Signal<Frame = f32> + Send + 'static) -> Handle {
+pub fn play(mut signal: FromIterator<<Vec<f32> as IntoIterator>::IntoIter>) -> Handle {
     let host = cpal::default_host();
     let device = host
         .default_output_device()

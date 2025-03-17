@@ -10,6 +10,7 @@ use super::toggle_window_panel;
 use crate::audio_player::Handle;
 use crate::state::{Action, Store, get_set};
 use crate::widget::string_observer;
+use dasp_signal::FromIterator;
 use egui::Pos2;
 use egui::{ScrollArea, scroll_area::ScrollBarVisibility};
 use poll_promise::Promise;
@@ -18,6 +19,7 @@ use shared::types::{Beats, Volume};
 pub struct App {
     pub store: Store,
     pub audio: Vec<f32>,
+    pub signal: Option<FromIterator<<Vec<f32> as IntoIterator>::IntoIter>>,
     pub handle: Option<Handle>,
     pub server_render_promise: Option<Promise<Option<Vec<f32>>>>,
     pub show_effects: bool,
@@ -31,6 +33,7 @@ impl Default for App {
         Self {
             store: Store::default(),
             audio: vec![],
+            signal: None,
             handle: None,
             server_render_promise: None,
             show_effects: false,

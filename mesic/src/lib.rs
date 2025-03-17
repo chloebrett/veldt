@@ -8,6 +8,6 @@ mod track;
 mod wave;
 
 pub use consts::SAMPLE_RATE;
-pub use render::render;
+pub use render::*;
 pub use scale::create_scale_values;
 pub use track::create_track;
