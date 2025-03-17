@@ -1,9 +1,10 @@
-use super::{Action, Store};
+use super::{Action, StoreData};
+use std::cell::RefMut;
 
-pub fn reducer(store: &mut Store, action: Action) {
+pub fn reducer(mut data: RefMut<'_, StoreData>, action: Action) {
     match action {
-        Action::SetKey(key) => store.key = key,
-        Action::SetScale(scale) => store.scale = scale,
-        Action::SetProjectName(name) => store.project.name = name,
+        Action::SetKey(key) => data.key = key,
+        Action::SetScale(scale) => data.scale = scale,
+        Action::SetProjectName(name) => data.project.name = name,
     }
 }

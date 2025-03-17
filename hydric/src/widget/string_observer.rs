@@ -4,7 +4,7 @@ use std::ops::Range;
 pub fn string_observer<F: Fn(Option<String>) -> String>(get_set: F) -> StringObserver<F> {
     StringObserver {
         get_set,
-        owned: "".to_string(),
+        owned: String::new(),
     }
 }
 
@@ -19,30 +19,33 @@ impl<F: Fn(Option<String>) -> String> TextBuffer for StringObserver<F> {
     }
 
     fn as_str(&self) -> &str {
-        self.owned = (self.get_set)(None);
-        self.owned.as_ref()
+        self.owned.as_str()
     }
 
     fn insert_text(&mut self, text: &str, char_index: usize) -> usize {
         let mut buffer = (self.get_set)(None).to_owned();
         let result = buffer.insert_text(text, char_index);
-        (self.get_set)(Some(buffer));
+        (self.get_set)(Some(buffer.clone()));
+        self.owned = buffer.clone();
         result
     }
 
     fn delete_char_range(&mut self, char_range: Range<usize>) {
         let mut buffer = (self.get_set)(None).to_owned();
         let result = buffer.delete_char_range(char_range);
-        (self.get_set)(Some(buffer));
+        (self.get_set)(Some(buffer.clone()));
+        self.owned = buffer.clone();
         result
     }
 
     fn clear(&mut self) {
         (self.get_set)(Some(String::new()));
+        self.owned = String::new();
     }
 
     fn replace_with(&mut self, text: &str) {
         (self.get_set)(Some(text.to_string()));
+        self.owned = text.to_string();
     }
 
     fn take(&mut self) -> String {

@@ -16,7 +16,9 @@ use egui::Pos2;
 use egui::{ScrollArea, scroll_area::ScrollBarVisibility};
 use poll_promise::Promise;
 use shared::model::Track;
-use shared::model::{GeneratorType, SimpleWaveConfig};
+use shared::model::{MixerChannel, GeneratorType, SimpleWaveConfig};
+use crate::state::StoreData;
+use std::cell:RefMut;
 
 pub struct App {
     pub store: Store,
@@ -78,9 +80,9 @@ impl eframe::App for App {
                         ui.label("Track name: ");
                         let name_observer = string_observer(|it| {
                             it.map(|it| self.store.dispatch(Action::SetProjectName(it)));
-                            self.store.project.name.clone()
+                            self.store.get().project.name.clone()
                         });
-                        ui.text_edit_singleline(&mut self.store.project.name);
+                        ui.text_edit_singleline(&mut self.store.get_mut().project.name);
                         save_button(self, ui);
                         load_control(self, ui);
                     });
@@ -88,7 +90,7 @@ impl eframe::App for App {
                         ui.vertical(|ui| {
                             ui.add(egui::Slider::new(&mut self.volume, 0.0..=1.0).text("Volume"));
                             ui.add(
-                                egui::Slider::new(&mut self.store.project.bpm, 20.0..=200.0)
+                                egui::Slider::new(&mut self.store.get_mut().project.bpm, 20.0..=200.0)
                                     .text("BPM")
                                     .logarithmic(true),
                             );
@@ -96,8 +98,9 @@ impl eframe::App for App {
                         toggle_window_panel(self, ui);
                     });
 
+                    {
                     let generator_type: &mut GeneratorType =
-                        &mut self.store.project.generators[0].kind;
+                        &mut self.store.get_mut().project.generators[0].kind;
                     let generator_config: &mut SimpleWaveConfig = match generator_type {
                         GeneratorType::SimpleWave { config } => config,
                     };
@@ -117,6 +120,7 @@ impl eframe::App for App {
                                 generator_control(generator_config, ui);
                             });
                     }
+                    }
                     if self.show_effects {
                         egui::Window::new("Effects")
                             .default_pos(Pos2 {
@@ -125,9 +129,10 @@ impl eframe::App for App {
                             })
                             .resizable(false)
                             .show(ctx, |ui| {
-                                for i in 0..self.store.project.mixer[0].effects.len() {
+                                let mut_store: RefMut<'_, StoreData> = self.store.get_mut();
+                                for i in 0..mut_store.project.mixer[0].effects.len() {
                                     ui.separator();
-                                    effect_control(&mut self.store.project.mixer[0].effects[i], ui);
+                                    effect_control(&mut mut_store.project.mixer[0].effects[i], ui);
                                 }
                                 ui.separator();
                             });

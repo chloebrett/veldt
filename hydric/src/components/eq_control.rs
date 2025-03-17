@@ -2,8 +2,9 @@ use egui::Ui;
 use shared::model::EqType;
 use shared::model::{EffectMeta, EqConfig};
 use strum::IntoEnumIterator;
+use std::cell::RefMut;
 
-pub fn eq_control(config: &mut EqConfig, meta: &mut EffectMeta, ui: &mut Ui) {
+pub fn eq_control(config: RefMut<'_, EqConfig>, meta: RefMut<'_, EffectMeta>, ui: &mut Ui) {
     ui.label("Equalizer");
     ui.add(
         egui::Slider::new(&mut config.fc, 20.0..=20000.0)
