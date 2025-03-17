@@ -12,22 +12,17 @@ pub fn play_control(app: &mut App, ui: &mut Ui) {
         let volume = app.store.get().volume;
         let render_output = local_render(&app.store.get().project);
         app.audio = render_output.clone().until_exhausted().collect();
-        // TODO: clip to (-1, 1) and apply volume.
-        app.signal = Some(render_output);
-        app.handle = Some(play(app.signal.clone().unwrap()));
+        app.handle = Some(play(Box::new(
+            render_output.clone().scale_amp(volume).clip_amp(1.0),
+        )));
     }
     if let Some(render_promise) = &app.server_render_promise {
         if let Some(Some(server_audio)) = render_promise.ready() {
             if ui.button("Play (server)").clicked() {
                 let volume = app.store.get().volume;
-                app.audio = server_audio
-                    .to_vec()
-                    .iter()
-                    .copied()
-                    .map(|sample| sample.clamp(-1.0, 1.0) * volume)
-                    .collect::<Vec<f32>>();
-                let signal = dasp_signal::from_iter(app.audio.clone().into_iter());
-                app.handle = Some(play(signal));
+                app.audio = server_audio.to_vec();
+                let signal = dasp_signal::from_iter(app.audio.clone().into_iter()).scale_amp(volume).clip_amp(1.0);
+                app.handle = Some(play(Box::new(signal)));
             }
         }
     }
