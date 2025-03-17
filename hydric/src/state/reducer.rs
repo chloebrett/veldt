@@ -1,6 +1,6 @@
 use super::{Action, Store};
 use ordered_float::OrderedFloat;
-use shared::model::{GeneratorType, SimpleWaveConfig};
+use shared::model::{DelayConfig, Effect, EffectInstance, GeneratorType, SimpleWaveConfig};
 
 pub fn reducer(store: &mut Store, action: Action) {
     match action {
@@ -107,6 +107,41 @@ pub fn reducer(store: &mut Store, action: Action) {
                 GeneratorType::SimpleWave { config } => config,
             };
             generator_config.envelope = envelope;
+        }
+        Action::SetDelayAmplitude {
+            channel_index,
+            effect_index,
+            amplitude,
+        } => {
+            let effect_instance: &mut EffectInstance =
+                &mut store.project.mixer[channel_index].effects[effect_index];
+            let config: &mut DelayConfig = match &mut effect_instance.effect {
+                Effect::SimpleDelay { config } => config,
+                _ => panic!(),
+            };
+            config.amplitude = amplitude;
+        }
+        Action::SetDelayMs {
+            channel_index,
+            effect_index,
+            delay_ms,
+        } => {
+            let effect_instance: &mut EffectInstance =
+                &mut store.project.mixer[channel_index].effects[effect_index];
+            let config: &mut DelayConfig = match &mut effect_instance.effect {
+                Effect::SimpleDelay { config } => config,
+                _ => panic!(),
+            };
+            config.delay_ms = delay_ms;
+        }
+        Action::SetEffectWet {
+            channel_index,
+            effect_index,
+            wet,
+        } => {
+            let effect_instance: &mut EffectInstance =
+                &mut store.project.mixer[channel_index].effects[effect_index];
+            effect_instance.meta.wet = wet;
         }
     }
 }

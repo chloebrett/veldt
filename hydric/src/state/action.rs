@@ -1,5 +1,6 @@
 use shared::model::{AdsrEnvelope, PlacedNote, Scale, ScaleValue, WaveType};
 use shared::types::{Beats, Octave};
+use shared::types::{KnobPosition, Milliseconds, Volume};
 
 #[derive(Debug)]
 pub enum Action {
@@ -50,5 +51,20 @@ pub enum Action {
     SetEnvelope {
         generator_index: usize,
         envelope: AdsrEnvelope,
+    },
+    SetDelayAmplitude {
+        channel_index: usize,
+        effect_index: usize,
+        amplitude: Volume,
+    },
+    SetDelayMs {
+        channel_index: usize,
+        effect_index: usize,
+        delay_ms: Milliseconds,
+    },
+    SetEffectWet {
+        channel_index: usize,
+        effect_index: usize,
+        wet: KnobPosition,
     },
 }
