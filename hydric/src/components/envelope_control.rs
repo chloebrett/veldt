@@ -1,28 +1,6 @@
-use crate::state::{Action, Store};
+use crate::state::{Action, Store, get_set};
 use egui::{Color32, Rect, Ui, containers::Frame, emath, epaint, epaint::PathStroke, pos2, vec2};
 use shared::model::{AdsrEnvelope, GeneratorType};
-
-fn update_envelope(
-    store: &Store,
-    prev: AdsrEnvelope,
-    attack: Option<f64>,
-    decay: Option<f64>,
-    sustain: Option<f64>,
-    release: Option<f64>,
-) {
-    let next = AdsrEnvelope {
-        attack: attack.map(|it| it as f32).unwrap_or(prev.attack),
-        decay: decay.map(|it| it as f32).unwrap_or(prev.decay),
-        sustain: sustain.map(|it| it as f32).unwrap_or(prev.sustain),
-        release: release.map(|it| it as f32).unwrap_or(prev.release),
-    };
-    if next != prev {
-        store.dispatch(Action::SetEnvelope {
-            generator_index: 0,
-            envelope: next,
-        })
-    }
-}
 
 pub fn envelope_control(store: &mut Store, ui: &mut Ui) {
     let generator_type = store.get().project.generators[0].kind.clone();
@@ -31,31 +9,63 @@ pub fn envelope_control(store: &mut Store, ui: &mut Ui) {
     };
     let envelope = config.envelope.clone();
     ui.add(
-        egui::Slider::from_get_set(0.0..=1.0, |it| {
-            update_envelope(store, envelope.clone(), it, None, None, None);
-            envelope.attack.into()
-        })
+        egui::Slider::from_get_set(
+            0.0..=1.0,
+            get_set(envelope.attack.into(), |it| {
+                store.dispatch(Action::SetEnvelope {
+                    generator_index: 0,
+                    envelope: AdsrEnvelope {
+                        attack: it as f32,
+                        ..envelope
+                    },
+                })
+            }),
+        )
         .text("Attack"),
     );
     ui.add(
-        egui::Slider::from_get_set(0.0..=1.0, |it| {
-            update_envelope(store, envelope.clone(), None, it, None, None);
-            envelope.decay.into()
-        })
+        egui::Slider::from_get_set(
+            0.0..=1.0,
+            get_set(envelope.decay.into(), |it| {
+                store.dispatch(Action::SetEnvelope {
+                    generator_index: 0,
+                    envelope: AdsrEnvelope {
+                        decay: it as f32,
+                        ..envelope
+                    },
+                })
+            }),
+        )
         .text("Decay"),
     );
     ui.add(
-        egui::Slider::from_get_set(0.0..=1.0, |it| {
-            update_envelope(store, envelope.clone(), None, None, it, None);
-            envelope.sustain.into()
-        })
+        egui::Slider::from_get_set(
+            0.0..=1.0,
+            get_set(envelope.sustain.into(), |it| {
+                store.dispatch(Action::SetEnvelope {
+                    generator_index: 0,
+                    envelope: AdsrEnvelope {
+                        sustain: it as f32,
+                        ..envelope
+                    },
+                })
+            }),
+        )
         .text("Sustain"),
     );
     ui.add(
-        egui::Slider::from_get_set(0.0..=1.0, |it| {
-            update_envelope(store, envelope.clone(), None, None, None, it);
-            envelope.release.into()
-        })
+        egui::Slider::from_get_set(
+            0.0..=1.0,
+            get_set(envelope.release.into(), |it| {
+                store.dispatch(Action::SetEnvelope {
+                    generator_index: 0,
+                    envelope: AdsrEnvelope {
+                        release: it as f32,
+                        ..envelope
+                    },
+                })
+            }),
+        )
         .text("Release"),
     );
 
