@@ -1,7 +1,7 @@
 use chrono::{DateTime, Utc};
 use cpal::Stream;
 use cpal::traits::{DeviceTrait, HostTrait, StreamTrait};
-use shared::types::Volume;
+use dasp_signal::Signal;
 use web_sys::console;
 
 pub struct Handle {
@@ -9,7 +9,7 @@ pub struct Handle {
     pub start_timestamp: DateTime<Utc>,
 }
 
-pub fn play(audio: &[f32], volume: Volume) -> Handle {
+pub fn play(mut signal: impl Signal<Frame = f32> + Send + 'static) -> Handle {
     let host = cpal::default_host();
     let device = host
         .default_output_device()
@@ -17,13 +17,7 @@ pub fn play(audio: &[f32], volume: Volume) -> Handle {
     let config = device.default_output_config().unwrap();
     let config: &cpal::StreamConfig = &config.into();
 
-    let mut sample_clock: usize = 0;
-    let audio = audio.to_owned();
-    let mut next_sample = move || {
-        sample_clock += 1;
-        let sample = audio.get(sample_clock).unwrap_or(&0.0);
-        *sample * volume
-    };
+    let mut next_sample = move || signal.next();
     // TODO: replace with egui logger
     let err_fn = |err| console::error_1(&format!("an error occurred on stream: {}", err).into());
     let channels = config.channels as usize;
