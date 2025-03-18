@@ -8,22 +8,27 @@ use poll_promise::Promise;
 
 pub fn play_control(app: &mut App, ui: &mut Ui) {
     if ui.button("Play (local)").clicked() {
+        let volume = app.store.get().volume;
         app.audio = local_render(&app.store.get().project)
             .into_iter()
-            .map(|sample| sample.clamp(-1.0, 1.0))
+            .map(|sample| sample.clamp(-1.0, 1.0) * volume)
             .collect();
-        app.handle = Some(play(&app.audio, app.store.get().volume));
+
+        let signal = dasp_signal::from_iter(app.audio.clone().into_iter());
+        app.handle = Some(play(signal));
     }
     if let Some(render_promise) = &app.server_render_promise {
         if let Some(Some(server_audio)) = render_promise.ready() {
             if ui.button("Play (server)").clicked() {
+                let volume = app.store.get().volume;
                 app.audio = server_audio
                     .to_vec()
                     .iter()
                     .copied()
-                    .map(|sample| sample.clamp(-1.0, 1.0))
+                    .map(|sample| sample.clamp(-1.0, 1.0) * volume)
                     .collect::<Vec<f32>>();
-                app.handle = Some(play(&app.audio, app.store.get().volume))
+                let signal = dasp_signal::from_iter(app.audio.clone().into_iter());
+                app.handle = Some(play(signal));
             }
         }
     }
