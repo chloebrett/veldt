@@ -71,7 +71,7 @@ impl eframe::App for App {
                         let project_name = self.store.get().project.name.clone();
                         let mut name_observer = string_observer(
                             get_set(project_name.clone(), |it| {
-                                self.store.dispatch(Action::SetProjectName(it))
+                                self.store.dispatchr(Action::SetProjectName(it))
                             }),
                             project_name.clone(),
                         );
@@ -86,7 +86,7 @@ impl eframe::App for App {
                                 egui::Slider::from_get_set(
                                     0.0..=1.0,
                                     get_set(volume, |it| {
-                                        self.store.dispatch(Action::SetVolume(it as Volume))
+                                        self.store.dispatchr(Action::SetVolume(it as Volume))
                                     }),
                                 )
                                 .text("Volume"),
@@ -97,7 +97,7 @@ impl eframe::App for App {
                                 egui::Slider::from_get_set(
                                     20.0..=200.0,
                                     get_set(bpm, |it| {
-                                        self.store.dispatch(Action::SetBpm(it as Beats))
+                                        self.store.dispatchr(Action::SetBpm(it as Beats))
                                     }),
                                 )
                                 .text("BPM")
@@ -147,7 +147,7 @@ impl eframe::App for App {
                             });
                     }
                     ui.separator();
-                    notes_control(self, ui, ctx);
+                    notes_control(&self.store, ui, ctx);
                     ui.separator();
                     play_control(self, ui);
 

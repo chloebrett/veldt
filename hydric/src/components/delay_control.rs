@@ -1,10 +1,13 @@
-use crate::state::{Action, Store, get_set};
+use crate::state::{Action, Selector, Store, get_set};
 use egui::Ui;
 use shared::model::Effect;
 use shared::types::{KnobPosition, Milliseconds, Volume};
 
 pub fn delay_control(store: &Store, effect_index: usize, ui: &mut Ui) {
-    let effect_instance = store.get().project.mixer[0].effects[effect_index].clone();
+    let mixer_index = 0;
+    let sel = Selector::Effect(mixer_index, effect_index);
+
+    let effect_instance = store.get().project.mixer[mixer_index].effects[effect_index].clone();
     let config = match effect_instance.effect {
         Effect::SimpleDelay { config } => config,
         _ => panic!(),
@@ -17,11 +20,7 @@ pub fn delay_control(store: &Store, effect_index: usize, ui: &mut Ui) {
         egui::Slider::from_get_set(
             0.0..=1.0,
             get_set(amplitude, |it| {
-                store.dispatch(Action::SetDelayAmplitude {
-                    channel_index: 0,
-                    effect_index,
-                    amplitude: it as Volume,
-                })
+                store.dispatch(&sel, Action::SetDelayAmplitude(it as Volume))
             }),
         )
         .text("Delay amplitude"),
@@ -30,11 +29,7 @@ pub fn delay_control(store: &Store, effect_index: usize, ui: &mut Ui) {
         egui::Slider::from_get_set(
             1.0..=1000.0,
             get_set(config.delay_ms.into(), |it| {
-                store.dispatch(Action::SetDelayMs {
-                    channel_index: 0,
-                    effect_index,
-                    delay_ms: it as Milliseconds,
-                })
+                store.dispatch(&sel, Action::SetDelayMs(it as Milliseconds))
             }),
         )
         .text("Delay ms"),
@@ -43,11 +38,7 @@ pub fn delay_control(store: &Store, effect_index: usize, ui: &mut Ui) {
         egui::Slider::from_get_set(
             0.0..=1.0,
             get_set(effect_instance.meta.wet.into(), |it| {
-                store.dispatch(Action::SetEffectWet {
-                    channel_index: 0,
-                    effect_index,
-                    wet: it as KnobPosition,
-                })
+                store.dispatch(&sel, Action::SetEffectWet(it as KnobPosition))
             }),
         )
         .text("Delay wet"),

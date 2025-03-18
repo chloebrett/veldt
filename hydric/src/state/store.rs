@@ -1,4 +1,4 @@
-use super::{Action, root_reducer};
+use super::{Action, Selector, root_reducer};
 use ordered_float::OrderedFloat;
 use poll_promise::Promise;
 use shared::model::PlacedNote;
@@ -51,10 +51,15 @@ impl Store {
     // while allowing the caller to dispatch actions to it.
     // TODO: consider queueing actions for dispatch, which would make discarding frames from egui
     // unnecessary.
-    pub fn dispatch(&self, action: Action) {
+    pub fn dispatch(&self, selector: &Selector, action: Action) {
         console::log_1(&format!("Start action: {:?}", action.clone()).into());
-        root_reducer(self.data.borrow_mut(), &action);
+        root_reducer(self.data.borrow_mut(), selector, &action);
         console::log_1(&format!("End action: {:?}", action.clone()).into());
+    }
+
+    /// Shorthand for dispatch(Selector::Root, ..)
+    pub fn dispatchr(&self, action: Action) {
+        self.dispatch(&Selector::Root, action)
     }
 }
 
