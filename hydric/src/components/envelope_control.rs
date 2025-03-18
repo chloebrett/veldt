@@ -1,9 +1,12 @@
-use crate::state::{Action, Store, get_set};
+use crate::state::{Action, Selector, Store, get_set};
 use egui::{Color32, Rect, Ui, containers::Frame, emath, epaint, epaint::PathStroke, pos2, vec2};
 use shared::model::{AdsrEnvelope, GeneratorType};
 
-pub fn envelope_control(store: &mut Store, ui: &mut Ui) {
-    let generator_type = store.get().project.generators[0].kind.clone();
+pub fn envelope_control(store: &Store, ui: &mut Ui) {
+    let generator_index = 0;
+    let sel = Selector::Generator(generator_index);
+
+    let generator_type = store.get().project.generators[generator_index].kind.clone();
     let config = match generator_type {
         GeneratorType::SimpleWave { config } => config,
     };
@@ -12,13 +15,13 @@ pub fn envelope_control(store: &mut Store, ui: &mut Ui) {
         egui::Slider::from_get_set(
             0.0..=1.0,
             get_set(envelope.attack.into(), |it| {
-                store.dispatch(Action::SetEnvelope {
-                    generator_index: 0,
-                    envelope: AdsrEnvelope {
+                store.dispatch(
+                    &sel,
+                    Action::SetEnvelope(AdsrEnvelope {
                         attack: it as f32,
                         ..envelope
-                    },
-                })
+                    }),
+                )
             }),
         )
         .text("Attack"),
@@ -27,13 +30,13 @@ pub fn envelope_control(store: &mut Store, ui: &mut Ui) {
         egui::Slider::from_get_set(
             0.0..=1.0,
             get_set(envelope.decay.into(), |it| {
-                store.dispatch(Action::SetEnvelope {
-                    generator_index: 0,
-                    envelope: AdsrEnvelope {
+                store.dispatch(
+                    &sel,
+                    Action::SetEnvelope(AdsrEnvelope {
                         decay: it as f32,
                         ..envelope
-                    },
-                })
+                    }),
+                )
             }),
         )
         .text("Decay"),
@@ -42,13 +45,13 @@ pub fn envelope_control(store: &mut Store, ui: &mut Ui) {
         egui::Slider::from_get_set(
             0.0..=1.0,
             get_set(envelope.sustain.into(), |it| {
-                store.dispatch(Action::SetEnvelope {
-                    generator_index: 0,
-                    envelope: AdsrEnvelope {
+                store.dispatch(
+                    &sel,
+                    Action::SetEnvelope(AdsrEnvelope {
                         sustain: it as f32,
                         ..envelope
-                    },
-                })
+                    }),
+                )
             }),
         )
         .text("Sustain"),
@@ -57,13 +60,13 @@ pub fn envelope_control(store: &mut Store, ui: &mut Ui) {
         egui::Slider::from_get_set(
             0.0..=1.0,
             get_set(envelope.release.into(), |it| {
-                store.dispatch(Action::SetEnvelope {
-                    generator_index: 0,
-                    envelope: AdsrEnvelope {
+                store.dispatch(
+                    &sel,
+                    Action::SetEnvelope(AdsrEnvelope {
                         release: it as f32,
                         ..envelope
-                    },
-                })
+                    }),
+                )
             }),
         )
         .text("Release"),

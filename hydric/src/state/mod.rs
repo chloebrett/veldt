@@ -4,6 +4,7 @@ mod generator_reducer;
 mod get_set;
 mod note_reducer;
 mod root_reducer;
+mod selector;
 mod store;
 mod track_reducer;
 
@@ -13,5 +14,6 @@ use generator_reducer::*;
 pub use get_set::*;
 use note_reducer::*;
 use root_reducer::*;
+pub use selector::*;
 pub use store::*;
 use track_reducer::*;
