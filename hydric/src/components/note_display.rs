@@ -66,13 +66,16 @@ pub fn note_display(store: &Store, ui: &mut Ui) {
                     },
                     offset: OrderedFloat(next_offset),
                 };
-                let sel = Selector::Note(0, i);
-                store.dispatch(&sel, Action::SetNoteOctave(note.note.pitch_name.octave));
-                store.dispatch(
-                    &sel,
-                    Action::SetNoteScaleValue(note.note.pitch_name.scale_value),
-                );
-                store.dispatch(&sel, Action::SetNoteOffset(*note.offset));
+
+                if (next_offset != prev_offset) || (next_pitch_value != prev_pitch_value) {
+                    let sel = Selector::Note(0, i);
+                    store.dispatch(&sel, Action::SetNoteOctave(note.note.pitch_name.octave));
+                    store.dispatch(
+                        &sel,
+                        Action::SetNoteScaleValue(note.note.pitch_name.scale_value),
+                    );
+                    store.dispatch(&sel, Action::SetNoteOffset(*note.offset));
+                }
                 Shape::rect_filled(note_rect, CornerRadius::same(1), Color32::WHITE)
             })
             .collect();
