@@ -27,6 +27,25 @@ pub fn note_display(store: &Store, ui: &mut Ui) {
         let inv_max_pitch_value: f32 = 1.0 / max_pitch_value as f32;
         let project_length: f32 = 16.0;
         let inv_project_length: f32 = 1.0 / project_length;
+        let note_height = y_size / max_pitch_value as f32;
+        let half_note_height = note_height;
+        let mut pitch_value_shapes = vec![];
+        for pitch_value in 0..max_pitch_value {
+            if pitch_value % 2 == 0 {
+                let x1 = 0.0;
+                let pitch_ratio = 1.0 - pitch_value as f32 * inv_max_pitch_value;
+                let y1 = y_size * pitch_ratio - half_note_height;
+                let upper_corner = Pos2::new(x1, y1);
+                let x2 = x_size; 
+                let y2 = upper_corner.y + half_note_height;
+                let lower_right_corner = Pos2::new(x2, y2);
+                let min_corner = to_screen.transform_pos(upper_corner);
+                let max_corner = to_screen.transform_pos(lower_right_corner);
+                let background_rect = Rect::from_min_max(min_corner, max_corner);
+                let shape = Shape::rect_filled(background_rect, CornerRadius::same(0), Color32::from_white_alpha(2));
+                pitch_value_shapes.push(shape)
+            }
+        }
         let note_shapes: Vec<Shape> = store.get().project.tracks[0]
             .notes
             .clone()
@@ -37,11 +56,11 @@ pub fn note_display(store: &Store, ui: &mut Ui) {
                 let x1: f32 = offset * inv_project_length * x_size;
                 let pitch_value: PitchValue = note.note.pitch_name.into();
                 let pitch_ratio = 1.0 - pitch_value as f32 * inv_max_pitch_value;
-                let y1 = y_size * pitch_ratio - 5.0;
+                let y1 = y_size * pitch_ratio - note_height;
                 let note_pos = Pos2 { x: x1, y: y1 };
                 // Closure to allow for moving notes in future.
                 let x2 = note_pos.x + note.note.beats * inv_project_length * x_size;
-                let y2 = note_pos.y + 5.0;
+                let y2 = note_pos.y + note_height;
                 let note_bottom_right_corner = Pos2 { x: x2, y: y2 };
                 let min_corner = to_screen.transform_pos(note_pos);
                 let max_corner = to_screen.transform_pos(note_bottom_right_corner);
@@ -80,6 +99,7 @@ pub fn note_display(store: &Store, ui: &mut Ui) {
                 Shape::rect_filled(note_rect, CornerRadius::same(1), Color32::WHITE)
             })
             .collect();
+        painter.extend(pitch_value_shapes);
         painter.extend(note_shapes);
         response
     });
