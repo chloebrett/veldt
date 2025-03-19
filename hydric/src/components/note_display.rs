@@ -1,6 +1,7 @@
 use crate::state::{Action, Selector, Store};
 
 use egui::{Color32, CornerRadius, Frame, Pos2, Rect, Sense, Shape, Ui, Vec2, emath};
+use ordered_float::OrderedFloat;
 use shared::{
     model::{Note, PitchName, PlacedNote, ScaleValue},
     types::PitchValue,
@@ -52,14 +53,18 @@ pub fn note_display(store: &Store, ui: &mut Ui) {
                     x: note_delta.x * inv_x_size * project_length,
                     y: -note_delta.y * inv_y_size * max_pitch_value as f32,
                 };
-                let offset_delta = ordered_float::OrderedFloat(scaled_note_delta.x);
+                let offset_delta = scaled_note_delta.x;
                 let pitch_delta: PitchValue = scaled_note_delta.y.round() as i32;
+                let prev_offset: f32 = note.offset.into();
+                let next_offset = (prev_offset + offset_delta).clamp(0.0, project_length);
+                let prev_pitch_value: PitchValue = note.note.pitch_name.into();
+                let next_pitch_value = (prev_pitch_value + pitch_delta).clamp(0, max_pitch_value);
                 *note = PlacedNote {
                     note: Note {
-                        pitch_name: note.note.pitch_name + pitch_delta,
+                        pitch_name: next_pitch_value.into(),
                         beats: note.note.beats,
                     },
-                    offset: note.offset + offset_delta,
+                    offset: OrderedFloat(next_offset),
                 };
                 let sel = Selector::Note(0, i);
                 store.dispatch(&sel, Action::SetNoteOctave(note.note.pitch_name.octave));
