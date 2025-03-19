@@ -1,17 +1,25 @@
 use crate::state::Store;
 
 use egui::{emath, Color32, CornerRadius, Frame, Pos2, Rect, Sense, Shape, Ui, Vec2};
-use shared::types::PitchValue;
+use shared::{model::PitchName, types::PitchValue};
 use web_sys::console;
 
 pub fn note_display(store: &Store, ui: &mut Ui) {
     Frame::canvas(ui.style()).show(ui, |ui| {
-        let (response, painter) = ui.allocate_painter(Vec2::new(ui.available_width(), 200.0), Sense::hover());
+        let (response, painter) = ui.allocate_painter(Vec2::new(ui.available_width(), 315.0), Sense::hover());
         let to_screen = emath::RectTransform::from_to(
             Rect::from_min_size(Pos2::ZERO, response.rect.size()),
             response.rect
         );
         let y_size = to_screen.to().max.y - to_screen.to().min.y;
+        let x_size = to_screen.to().max.x - to_screen.to().min.x;
+        let max_pitch_value: PitchValue = PitchName {
+            scale_value: shared::model::ScaleValue::GSharp,
+            octave: 8
+        }.into();
+        let inv_max_pitch_value: f32 = 1.0 / max_pitch_value as f32;
+        let project_length: f32 = 16.0; // TODO integrate into project
+        let inv_project_length: f32 = 1.0 / project_length;
         console::log_1(&format!("{:?}", y_size).into());
         let note_shapes: Vec<Shape> = store
             .get()
@@ -22,12 +30,13 @@ pub fn note_display(store: &Store, ui: &mut Ui) {
             .iter_mut()
             .enumerate()
             .map(|(_i, note)| {
-                let x1: f32 = note.offset.into();
-                let y1 = y_size - Into::<PitchValue>::into(note.note.pitch_name) as f32 - 5.0;
+                let x1: f32 = Into::<f32>::into(note.offset) * inv_project_length* x_size;
+                let pitch_proportion = 1.0 - Into::<PitchValue>::into(note.note.pitch_name) as f32 * inv_max_pitch_value; 
+                let y1 = y_size  * pitch_proportion - 5.0;
                 let note_pos = Pos2 {x:x1, y:y1};
                 // Closure to allow for moving notes in future.
                 let note_corner = || {
-                    let x2 = note_pos.x + note.note.beats;
+                    let x2 = note_pos.x + note.note.beats * inv_project_length * x_size;
                     let y2 = note_pos.y + 5.0;
                     Pos2 {x:x2, y:y2}
                 };
