@@ -2,7 +2,7 @@ use crate::state::{Action, Selector, Store};
 
 use egui::{Color32, CornerRadius, Frame, Pos2, Rect, Sense, Shape, Ui, Vec2, emath};
 use shared::{
-    model::{Note, PitchName, PlacedNote},
+    model::{Note, PitchName, PlacedNote, ScaleValue},
     types::PitchValue,
 };
 
@@ -19,7 +19,7 @@ pub fn note_display(store: &Store, ui: &mut Ui) {
         let inv_x_size = 1.0 / x_size;
         let inv_y_size = 1.0 / y_size;
         let max_pitch_value: PitchValue = PitchName {
-            scale_value: shared::model::ScaleValue::GSharp,
+            scale_value: ScaleValue::GSharp,
             octave: 8,
         }
         .into();
@@ -32,17 +32,18 @@ pub fn note_display(store: &Store, ui: &mut Ui) {
             .iter_mut()
             .enumerate()
             .map(|(i, note)| {
-                let x1: f32 = Into::<f32>::into(note.offset) * inv_project_length * x_size;
-                let pitch_proportion = 1.0
-                    - Into::<PitchValue>::into(note.note.pitch_name) as f32 * inv_max_pitch_value;
+                let offset: f32 = note.offset.into();
+                let x1: f32 = offset * inv_project_length * x_size;
+                let pitch_value: PitchValue = note.note.pitch_name.into();
+                let pitch_proportion = 1.0 - pitch_value as f32 * inv_max_pitch_value;
                 let y1 = y_size * pitch_proportion - 5.0;
                 let note_pos = Pos2 { x: x1, y: y1 };
                 // Closure to allow for moving notes in future.
                 let x2 = note_pos.x + note.note.beats * inv_project_length * x_size;
                 let y2 = note_pos.y + 5.0;
-                let note_corner = Pos2 { x: x2, y: y2 };
+                let note_bottom_right_corner = Pos2 { x: x2, y: y2 };
                 let min_corner = to_screen.transform_pos(note_pos);
-                let max_corner = to_screen.transform_pos(note_corner);
+                let max_corner = to_screen.transform_pos(note_bottom_right_corner);
                 let note_rect = Rect::from_min_max(min_corner, max_corner);
                 let note_id = response.id.with(i);
                 let note_response = ui.interact(note_rect, note_id, Sense::drag());
