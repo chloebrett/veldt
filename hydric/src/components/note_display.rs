@@ -1,6 +1,6 @@
 use crate::state::{Action, Selector, Store};
 
-use egui::{Color32, CornerRadius, Frame, Pos2, Rect, Sense, Shape, Ui, Vec2, emath};
+use egui::{emath, Color32, CornerRadius, Frame, Pos2, Rect, ScrollArea, Sense, Shape, Ui, Vec2};
 use ordered_float::OrderedFloat;
 use shared::{
     model::{Note, PitchName, PlacedNote, ScaleValue},
@@ -8,9 +8,19 @@ use shared::{
 };
 
 pub fn note_display(store: &Store, ui: &mut Ui) {
+    ScrollArea::vertical() 
+        .min_scrolled_height(200.0)
+        .show(ui, |ui| {
+            note_display_canvas(
+                store, ui);
+        });
+}
+
+
+pub fn note_display_canvas(store: &Store, ui: &mut Ui) {
     Frame::canvas(ui.style()).show(ui, |ui| {
         let (response, painter) =
-            ui.allocate_painter(Vec2::new(ui.available_width(), 315.0), Sense::hover());
+            ui.allocate_painter(Vec2::new(ui.available_width(), 600.0), Sense::hover());
         let to_screen = emath::RectTransform::from_to(
             Rect::from_min_size(Pos2::ZERO, response.rect.size()),
             response.rect,
