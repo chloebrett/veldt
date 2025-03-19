@@ -53,7 +53,7 @@ pub fn note_display(store: &Store, ui: &mut Ui) {
                     y: -note_delta.y * inv_y_size * max_pitch_value as f32,
                 };
                 let offset_delta = ordered_float::OrderedFloat(scaled_note_delta.x);
-                let pitch_delta = Into::<PitchValue>::into(scaled_note_delta.y.round() as i32);
+                let pitch_delta: PitchValue = scaled_note_delta.y.round() as i32;
                 *note = PlacedNote {
                     note: Note {
                         pitch_name: note.note.pitch_name + pitch_delta,
