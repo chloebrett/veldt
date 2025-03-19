@@ -3,8 +3,8 @@ use super::envelope_control;
 use super::generator_control;
 use super::key_control;
 use super::load_control;
-use super::notes_control;
 use super::note_display;
+use super::notes_control;
 use super::play_control;
 use super::save_button;
 use super::toggle_window_panel;
@@ -160,4 +160,3 @@ impl eframe::App for App {
         });
     }
 }
-
