@@ -1,48 +1,87 @@
-use super::app::App;
-use crate::rpc::{load_track, load_track_list, save_track};
+use crate::state::{Action, Store, get_set};
+use crate::widget::selectable_value;
 use egui::Ui;
 use poll_promise::Promise;
+use shared::model::Track;
+use std::rc::Rc;
 
-pub fn save_button(app: &mut App, ui: &mut Ui) {
+pub fn save_button(store: &Store, ui: &mut Ui) {
     if ui.button("Save").clicked() {
-        let track_name = app.store.project.name.clone();
-        let track_to_save = app.store.project.tracks[0].clone();
-        app.save_track_promise = Some(Promise::spawn_local(async move {
-            save_track(track_name, track_to_save).await
-        }));
-        app.track_list_promise = Promise::spawn_local(async move { load_track_list().await });
+        store.dispatchr(Action::SaveTrack { track_index: 0 });
     }
 }
 
-pub fn load_control(app: &mut App, ui: &mut Ui) {
-    if let Some(list) = app.track_list_promise.ready() {
-        app.track_list = list.clone().unwrap_or(vec![]);
-    }
-    if let Some(track_promise) = &app.track_promise {
-        if let Some(track) = track_promise.ready() {
-            app.store.project.tracks[0] = track.clone().unwrap();
-            app.track_promise = None;
+pub fn load_control(store: &Store, ui: &mut Ui) {
+    {
+        let save_track_promise: Rc<Option<Promise<Option<()>>>> =
+            store.get().save_track_promise.clone();
+        let promise_ref: &Option<Promise<Option<()>>> = save_track_promise.as_ref();
+        if let Some(promise) = promise_ref {
+            if let Some(Some(())) = promise.ready() {
+                store.dispatchr(Action::ClearSaveTrackPromise);
+
+                // Once a track has been saved, re-load the list.
+                store.dispatchr(Action::LoadTrackList);
+            }
         }
     }
+
+    {
+        let track_list_promise: Rc<Option<Promise<Option<Vec<String>>>>> =
+            store.get().track_list_promise.clone();
+        let promise_ref = track_list_promise.as_ref();
+        if let Some(promise) = promise_ref {
+            if let Some(Some(list)) = promise.ready() {
+                store.dispatchr(Action::ClearTrackListPromise);
+                store.dispatchr(Action::SetTrackList {
+                    tracks: list.clone(),
+                });
+            }
+        }
+    }
+
+    {
+        let load_track_promise: Rc<Option<Promise<Option<Track>>>> =
+            store.get().load_track_promise.clone();
+        let promise_ref = load_track_promise.as_ref();
+        if let Some(promise) = promise_ref {
+            if let Some(Some(track)) = promise.ready() {
+                store.dispatchr(Action::ClearLoadTrackPromise);
+                store.dispatchr(Action::SetTrack {
+                    track_index: 0,
+                    track: track.clone(),
+                });
+            }
+        }
+    }
+
     ui.horizontal(|ui| {
         egui::ComboBox::from_id_salt(1) // TODO Correct Id Salt
             .selected_text(
-                app.load_track_name
+                store
+                    .get()
+                    .load_track_name
                     .clone()
                     .unwrap_or("".to_string())
                     .to_string(),
             )
             .show_ui(ui, |ui| {
-                for name in app.track_list.iter() {
-                    ui.selectable_value(&mut app.load_track_name, Some(name.clone()), name);
+                for name in store.get().track_list.iter() {
+                    selectable_value(
+                        ui,
+                        get_set(store.get().load_track_name.clone(), |it| {
+                            it.map(|it| {
+                                store.dispatchr(Action::SetLoadTrackName { track_name: it })
+                            });
+                        }),
+                        Some(name.clone()),
+                        name,
+                    );
                 }
             });
         // TODO disable button when no load_name
         if ui.button("Load").clicked() {
-            let load_name = app.load_track_name.clone().unwrap();
-            app.track_promise = Some(Promise::spawn_local(
-                async move { load_track(load_name).await },
-            ))
+            store.dispatchr(Action::LoadTrack);
         };
     });
 }
