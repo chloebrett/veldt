@@ -153,6 +153,7 @@ impl eframe::App for App {
                     play_control(self, ui);
                     ui.separator();
                     note_display(&self.store, ui);
+
                     ui.with_layout(egui::Layout::bottom_up(egui::Align::LEFT), |ui| {
                         egui::warn_if_debug_build(ui);
                     });
