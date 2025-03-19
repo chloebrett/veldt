@@ -25,7 +25,7 @@ pub fn note_display(store: &Store, ui: &mut Ui) {
         }
         .into();
         let inv_max_pitch_value: f32 = 1.0 / max_pitch_value as f32;
-        let project_length: f32 = 16.0; // TODO integrate into project
+        let project_length: f32 = 16.0;
         let inv_project_length: f32 = 1.0 / project_length;
         let note_shapes: Vec<Shape> = store.get().project.tracks[0]
             .notes
@@ -36,8 +36,8 @@ pub fn note_display(store: &Store, ui: &mut Ui) {
                 let offset: f32 = note.offset.into();
                 let x1: f32 = offset * inv_project_length * x_size;
                 let pitch_value: PitchValue = note.note.pitch_name.into();
-                let pitch_proportion = 1.0 - pitch_value as f32 * inv_max_pitch_value;
-                let y1 = y_size * pitch_proportion - 5.0;
+                let pitch_ratio = 1.0 - pitch_value as f32 * inv_max_pitch_value;
+                let y1 = y_size * pitch_ratio - 5.0;
                 let note_pos = Pos2 { x: x1, y: y1 };
                 // Closure to allow for moving notes in future.
                 let x2 = note_pos.x + note.note.beats * inv_project_length * x_size;
@@ -68,7 +68,8 @@ pub fn note_display(store: &Store, ui: &mut Ui) {
                 };
 
                 if (next_offset != prev_offset) || (next_pitch_value != prev_pitch_value) {
-                    let sel = Selector::Note(0, i);
+                    let track_index = 0;
+                    let sel = Selector::Note(track_index, i);
                     store.dispatch(&sel, Action::SetNoteOctave(note.note.pitch_name.octave));
                     store.dispatch(
                         &sel,
