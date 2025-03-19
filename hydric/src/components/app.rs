@@ -3,6 +3,7 @@ use super::envelope_control;
 use super::generator_control;
 use super::key_control;
 use super::load_control;
+use super::note_display;
 use super::notes_control;
 use super::play_control;
 use super::save_button;
@@ -150,9 +151,8 @@ impl eframe::App for App {
                     notes_control(&self.store, ui, ctx);
                     ui.separator();
                     play_control(self, ui);
-
                     ui.separator();
-
+                    note_display(&self.store, ui);
                     ui.with_layout(egui::Layout::bottom_up(egui::Align::LEFT), |ui| {
                         egui::warn_if_debug_build(ui);
                     });
