@@ -1,5 +1,6 @@
-use super::{Action, reducer};
+use super::{Action, Selector, root_reducer};
 use ordered_float::OrderedFloat;
+use poll_promise::Promise;
 use shared::model::PlacedNote;
 use shared::model::Track;
 use shared::model::{
@@ -7,16 +8,73 @@ use shared::model::{
     GeneratorInstance, GeneratorMeta, GeneratorType, MixerChannel, Note, PitchName, Project, Scale,
     ScaleValue, SimpleWaveConfig, WaveType,
 };
+use shared::types::Volume;
+use std::cell::RefCell;
+use std::rc::Rc;
+use web_sys::console;
 
 pub struct Store {
+    // The canonical view of the store state, which can be mutated through actions.
+    data: RefCell<StoreData>,
+
+    // The most recent read-only snapshot of the store state.
+    // Generally this would be updated at the start of each frame.
+    snapshot: StoreData,
+}
+
+#[derive(Clone)]
+pub struct StoreData {
     pub project: Project,
     pub key: ScaleValue,
     pub scale: Scale,
+    pub volume: Volume,
+    // TODO: call this "project_list"?
+    pub track_list: Vec<String>,
+    pub load_track_name: Option<String>,
+    pub save_track_promise: Rc<Option<Promise<Option<()>>>>,
+    pub track_list_promise: Rc<Option<Promise<Option<Vec<String>>>>>,
+    pub load_track_promise: Rc<Option<Promise<Option<Track>>>>,
+}
+
+impl Store {
+    /// Snapshots the state, which performs an immutable borrow that is immediately released.
+    pub fn snapshot(&mut self) {
+        self.snapshot = (*self.data.borrow()).clone()
+    }
+
+    pub fn get(&self) -> &StoreData {
+        &self.snapshot
+    }
+
+    // Dispatching is allowed with only an immutable reference.
+    // We mutate via the RefCell. This allows Store to be passed around mutably,
+    // while allowing the caller to dispatch actions to it.
+    // TODO: consider queueing actions for dispatch, which would make discarding frames from egui
+    // unnecessary.
+    pub fn dispatch(&self, selector: &Selector, action: Action) {
+        console::log_1(&format!("Start action: {:?}", action.clone()).into());
+        root_reducer(self.data.borrow_mut(), selector, &action);
+        console::log_1(&format!("End action: {:?}", action.clone()).into());
+    }
+
+    /// Shorthand for dispatch(Selector::Root, ..)
+    pub fn dispatchr(&self, action: Action) {
+        self.dispatch(&Selector::Root, action)
+    }
 }
 
 impl Default for Store {
     fn default() -> Self {
         Store {
+            data: RefCell::new(StoreData::default()),
+            snapshot: StoreData::default(),
+        }
+    }
+}
+
+impl Default for StoreData {
+    fn default() -> Self {
+        StoreData {
             project: Project {
                 name: "My Project".to_string(),
                 tracks: vec![Track {
@@ -76,14 +134,14 @@ impl Default for Store {
                 }],
                 bpm: 120.0,
             },
+            volume: 1.0,
             key: ScaleValue::A,
             scale: Scale::Chromatic,
+            track_list: vec![],
+            save_track_promise: Rc::new(None),
+            track_list_promise: Rc::new(None),
+            load_track_promise: Rc::new(None),
+            load_track_name: None,
         }
-    }
-}
-
-impl Store {
-    pub fn dispatch(&mut self, action: Action) {
-        reducer(self, action)
     }
 }
