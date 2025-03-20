@@ -68,7 +68,6 @@ pub fn note_display_canvas(store: &Store, ui: &mut Ui) {
                 let pitch_ratio = 1.0 - pitch_value as f32 * inv_max_pitch_value;
                 let y1 = y_size * pitch_ratio - note_height;
                 let note_pos = Pos2 { x: x1, y: y1 };
-                // Closure to allow for moving notes in future.
                 let x2 = note_pos.x + note.note.beats * inv_project_length * x_size;
                 let y2 = note_pos.y + note_height;
                 let note_bottom_right_corner = Pos2 { x: x2, y: y2 };
