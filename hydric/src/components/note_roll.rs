@@ -10,15 +10,54 @@ use shared::{
     types::PitchValue,
 };
 
-pub fn note_display(store: &Store, ui: &mut Ui) {
+struct RollConfig {
+    to_screen: RectTransform,
+    x_size: f32,
+    y_size: f32,
+    inv_x_size: f32,
+    inv_y_size: f32,
+    project_length: f32,
+    inv_project_length: f32,
+    max_pitch_value: PitchValue,
+    inv_max_pitch_value: f32,
+    project_offset: f32,
+    note_height: f32,
+}
+
+impl RollConfig {
+    pub fn new(
+        to_screen: RectTransform,
+        project_length: f32,
+        project_offset: f32,
+        max_pitch_value: PitchValue,
+    ) -> Self {
+        let y_size = to_screen.to().max.y - to_screen.to().min.y;
+        let x_size = to_screen.to().max.x - to_screen.to().min.x;
+        RollConfig {
+            to_screen,
+            x_size,
+            y_size,
+            inv_x_size: 1.0 / x_size,
+            inv_y_size: 1.0 / y_size,
+            project_length,
+            inv_project_length: 1.0 / project_length,
+            max_pitch_value,
+            inv_max_pitch_value: 1.0 / max_pitch_value as f32,
+            project_offset,
+            note_height: y_size / max_pitch_value as f32,
+        }
+    }
+}
+
+pub fn note_roll(store: &Store, ui: &mut Ui) {
     ScrollArea::vertical()
         .min_scrolled_height(200.0)
         .show(ui, |ui| {
-            note_display_canvas(store, ui);
+            note_roll_canvas(store, ui);
         });
 }
 
-pub fn note_display_canvas(store: &Store, ui: &mut Ui) {
+pub fn note_roll_canvas(store: &Store, ui: &mut Ui) {
     Frame::canvas(ui.style()).show(ui, |ui| {
         let (response, painter) =
             ui.allocate_painter(Vec2::new(ui.available_width(), 600.0), Sense::hover());
@@ -26,30 +65,24 @@ pub fn note_display_canvas(store: &Store, ui: &mut Ui) {
             Rect::from_min_size(Pos2::ZERO, response.rect.size()),
             response.rect,
         );
-        let y_size = to_screen.to().max.y - to_screen.to().min.y;
-        let x_size = to_screen.to().max.x - to_screen.to().min.x;
-        let inv_x_size = 1.0 / x_size;
-        let inv_y_size = 1.0 / y_size;
-        let project_length: f32 = 16.0;
-        let project_offset: f32 = 0.0;
+        let project_length = 16.0;
+        let project_offset = 0.0;
         let max_pitch_value: PitchValue = PitchName {
             scale_value: ScaleValue::GSharp,
             octave: 8,
         }
         .into();
-        let inv_max_pitch_value: f32 = 1.0 / max_pitch_value as f32;
-        let inv_project_length: f32 = 1.0 / project_length;
-        let note_height = y_size / max_pitch_value as f32;
-        let half_note_height = note_height;
+        let roll_config =
+            RollConfig::new(to_screen, project_length, project_offset, max_pitch_value);
         let mut pitch_value_shapes = vec![];
-        for pitch_value in 0..max_pitch_value {
+        for pitch_value in 0..roll_config.max_pitch_value {
             if pitch_value % 2 == 0 {
                 let x1 = 0.0;
-                let pitch_ratio = 1.0 - pitch_value as f32 * inv_max_pitch_value;
-                let y1 = y_size * pitch_ratio - half_note_height;
+                let pitch_ratio = 1.0 - pitch_value as f32 * roll_config.inv_max_pitch_value;
+                let y1 = roll_config.y_size * pitch_ratio - roll_config.note_height;
                 let upper_corner = Pos2::new(x1, y1);
-                let x2 = x_size;
-                let y2 = upper_corner.y + half_note_height;
+                let x2 = roll_config.x_size;
+                let y2 = upper_corner.y + roll_config.note_height;
                 let lower_right_corner = Pos2::new(x2, y2);
                 let min_corner = to_screen.transform_pos(upper_corner);
                 let max_corner = to_screen.transform_pos(lower_right_corner);
@@ -69,28 +102,32 @@ pub fn note_display_canvas(store: &Store, ui: &mut Ui) {
             .enumerate()
             .map(|(i, note)| {
                 let offset: f32 = note.offset.into();
-                let x1: f32 = offset * inv_project_length * x_size;
+                let x1: f32 = offset * roll_config.inv_project_length * roll_config.x_size;
                 let pitch_value: PitchValue = note.note.pitch_name.into();
-                let pitch_ratio = 1.0 - pitch_value as f32 * inv_max_pitch_value;
-                let y1 = y_size * pitch_ratio - note_height;
+                let pitch_ratio = 1.0 - pitch_value as f32 * roll_config.inv_max_pitch_value;
+                let y1 = roll_config.y_size * pitch_ratio - roll_config.note_height;
                 let note_pos = Pos2::new(x1, y1);
-                let x2 = note_pos.x + note.note.beats * inv_project_length * x_size;
-                let y2 = note_pos.y + note_height;
+                let x2 = note_pos.x
+                    + note.note.beats * roll_config.inv_project_length * roll_config.x_size;
+                let y2 = note_pos.y + roll_config.note_height;
                 let note_bottom_right_corner = Pos2::new(x2, y2);
-                let min_corner = to_screen.transform_pos(note_pos);
-                let max_corner = to_screen.transform_pos(note_bottom_right_corner);
+                let min_corner = roll_config.to_screen.transform_pos(note_pos);
+                let max_corner = roll_config
+                    .to_screen
+                    .transform_pos(note_bottom_right_corner);
                 let note_rect = Rect::from_min_max(min_corner, max_corner);
                 let note_id = response.id.with(i);
                 let note_response = ui.interact(note_rect, note_id, Sense::drag());
                 let note_delta = note_response.drag_delta();
                 let scaled_note_delta = Vec2 {
-                    x: note_delta.x * inv_x_size * project_length,
-                    y: -note_delta.y * inv_y_size * max_pitch_value as f32,
+                    x: note_delta.x * roll_config.inv_x_size * roll_config.project_length,
+                    y: -note_delta.y * roll_config.inv_y_size * roll_config.max_pitch_value as f32,
                 };
                 let offset_delta = scaled_note_delta.x;
                 let pitch_delta: PitchValue = scaled_note_delta.y.round() as i32;
                 let prev_offset: f32 = note.offset.into();
-                let next_offset_raw = (prev_offset + offset_delta).clamp(0.0, project_length);
+                let next_offset_raw = (prev_offset + offset_delta)
+                    .clamp(roll_config.project_offset, roll_config.project_length);
                 let quantise_ratio = 16.0;
                 let next_offset = (next_offset_raw * quantise_ratio).round() / quantise_ratio;
                 let prev_pitch_value: PitchValue = note.note.pitch_name.into();
@@ -120,26 +157,8 @@ pub fn note_display_canvas(store: &Store, ui: &mut Ui) {
         let minor_beat = 1.0;
         let major_stroke = Stroke::new(1.0, Color32::from_white_alpha(6));
         let minor_stroke = Stroke::new(1.0, Color32::from_white_alpha(3));
-        create_beat_lines(
-            &painter,
-            major_beat,
-            major_stroke,
-            project_offset,
-            project_length,
-            x_size,
-            y_size,
-            &to_screen,
-        );
-        create_beat_lines(
-            &painter,
-            minor_beat,
-            minor_stroke,
-            project_offset,
-            project_length,
-            x_size,
-            y_size,
-            &to_screen,
-        );
+        create_beat_lines(&painter, major_beat, major_stroke, &roll_config);
+        create_beat_lines(&painter, minor_beat, minor_stroke, &roll_config);
         painter.extend(pitch_value_shapes);
         painter.extend(note_shapes);
         response
@@ -150,18 +169,16 @@ fn create_beat_lines(
     painter: &Painter,
     beat_increment: f32,
     stroke: Stroke,
-    project_offset: f32,
-    project_length: f32,
-    x_size: f32,
-    y_size: f32,
-    to_screen: &RectTransform,
+    roll_config: &RollConfig,
 ) {
-    for beat in (project_offset as i32)..=(project_length / beat_increment) as i32 {
-        let x = x_size * (beat as f32) * beat_increment / project_length;
+    for beat in
+        (roll_config.project_offset as i32)..=(roll_config.project_length / beat_increment) as i32
+    {
+        let x = roll_config.x_size * (beat as f32) * beat_increment / roll_config.project_length;
         let y1: f32 = 0.0;
-        let y2: f32 = y_size;
-        let top_pos = to_screen.transform_pos(Pos2::new(x, y1));
-        let bottom_pos = to_screen.transform_pos(Pos2::new(x, y2));
+        let y2: f32 = roll_config.y_size;
+        let top_pos = roll_config.to_screen.transform_pos(Pos2::new(x, y1));
+        let bottom_pos = roll_config.to_screen.transform_pos(Pos2::new(x, y2));
         painter.line(vec![top_pos, bottom_pos], stroke);
     }
 }
