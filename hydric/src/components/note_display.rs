@@ -62,7 +62,6 @@ pub fn note_display(store: &Store, ui: &mut Ui) {
                 let next_offset = (next_offset_raw * quantise_ratio).round() / quantise_ratio;
                 let prev_pitch_value: PitchValue = note.note.pitch_name.into();
                 let next_pitch_value = (prev_pitch_value + pitch_delta).clamp(0, max_pitch_value);
-                console::log_1(&format!("{:?}", next_offset).into());
                 *note = PlacedNote {
                     note: Note {
                         pitch_name: next_pitch_value.into(),
