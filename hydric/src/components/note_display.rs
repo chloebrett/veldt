@@ -6,7 +6,6 @@ use shared::{
     model::{Note, PitchName, PlacedNote, ScaleValue},
     types::PitchValue,
 };
-use web_sys::console;
 
 pub fn note_display(store: &Store, ui: &mut Ui) {
     Frame::canvas(ui.style()).show(ui, |ui| {
