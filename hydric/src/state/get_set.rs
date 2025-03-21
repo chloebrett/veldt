@@ -9,7 +9,7 @@ pub fn get_set<'a, T: PartialEq + Clone + 'a, S: Fn(T) + 'a>(
     move |it| {
         if let Some(it) = it {
             if it != val {
-                setter(it)
+                setter(it);
             }
         }
         val.clone()
