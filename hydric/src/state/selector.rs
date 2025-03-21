@@ -1,3 +1,4 @@
+#[derive(Clone)]
 pub enum Selector {
     Root,
     Track(/* track_index */ usize),

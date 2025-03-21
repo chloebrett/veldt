@@ -3,14 +3,13 @@ use super::{
 };
 use crate::rpc::{load_track, load_track_list, save_track};
 use poll_promise::Promise;
-use std::cell::RefMut;
 use std::rc::Rc;
 use web_sys::console;
 
-pub fn root_reducer(mut data: RefMut<'_, StoreData>, selector: &Selector, action: &Action) {
+pub fn root_reducer(data: &mut StoreData, selector: &Selector, action: &Action) {
     console::log_1(&format!("root_reducer processing: {:?}", action.clone()).into());
 
-    return match selector {
+    match selector {
         Selector::Track(track_index) => {
             track_reducer(&mut data.project.tracks[*track_index], action)
         }
@@ -63,5 +62,5 @@ pub fn root_reducer(mut data: RefMut<'_, StoreData>, selector: &Selector, action
             Action::ClearTrackListPromise => data.track_list_promise = Rc::new(None),
             _ => {}
         },
-    };
+    }
 }
