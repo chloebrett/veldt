@@ -43,7 +43,7 @@ impl Store {
     pub fn snapshot(&mut self) {
         for (selector, action) in self.pending_actions.borrow().iter() {
             console::log_1(&format!("Applying action: {:?}", action.clone()).into());
-            root_reducer(&mut self.data, &selector, &action);
+            root_reducer(&mut self.data, selector, action);
         }
         self.pending_actions.borrow_mut().clear();
     }
