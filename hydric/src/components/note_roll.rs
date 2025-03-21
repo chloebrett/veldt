@@ -166,11 +166,11 @@ fn create_pitch_value_shapes(roll_config: &RollConfig) -> Vec<Shape> {
             let x1 = 0.0;
             let pitch_ratio = 1.0 - pitch_value as f32 * roll_config.inv_max_pitch_value;
             let y1 = roll_config.y_size * pitch_ratio - roll_config.note_height;
-            let upper_corner = Pos2::new(x1, y1);
+            let upper_left_corner = Pos2::new(x1, y1);
             let x2 = roll_config.x_size;
-            let y2 = upper_corner.y + roll_config.note_height;
+            let y2 = upper_left_corner.y + roll_config.note_height;
             let lower_right_corner = Pos2::new(x2, y2);
-            let min_corner = roll_config.to_screen.transform_pos(upper_corner);
+            let min_corner = roll_config.to_screen.transform_pos(upper_left_corner);
             let max_corner = roll_config.to_screen.transform_pos(lower_right_corner);
             let background_rect = Rect::from_min_max(min_corner, max_corner);
             let shape = Shape::rect_filled(
