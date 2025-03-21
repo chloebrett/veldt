@@ -56,7 +56,9 @@ pub fn note_display(store: &Store, ui: &mut Ui) {
                 let offset_delta = scaled_note_delta.x;
                 let pitch_delta: PitchValue = scaled_note_delta.y.round() as i32;
                 let prev_offset: f32 = note.offset.into();
-                let next_offset = (prev_offset + offset_delta).clamp(0.0, project_length);
+                let next_offset_raw = (prev_offset + offset_delta).clamp(0.0, project_length);
+                let quantise_ratio = 16.0;
+                let next_offset = (next_offset_raw * quantise_ratio).round() / quantise_ratio;
                 let prev_pitch_value: PitchValue = note.note.pitch_name.into();
                 let next_pitch_value = (prev_pitch_value + pitch_delta).clamp(0, max_pitch_value);
                 *note = PlacedNote {
