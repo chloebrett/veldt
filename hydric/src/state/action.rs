@@ -13,7 +13,9 @@ pub enum Action {
     SetNoteOctave(Octave),
     SetNoteOffset(Beats),
     SetNoteDuration(Beats),
-    DeleteNote { note_index: usize },
+    DeleteNote {
+        note_index: usize,
+    },
     AddNote(PlacedNote),
     SetWave(WaveType),
     SetOscCount(u32),
@@ -25,13 +27,27 @@ pub enum Action {
     SetEqKind(EqType),
     SetEqFc(Freq),
     SetEqQ(KnobPosition),
-    SaveTrack { track_index: usize },
+    SaveTrack {
+        track_index: usize,
+    },
     LoadTrackList,
-    SetTrackList { tracks: Vec<String> },
-    SetTrack { track_index: usize, track: Track },
+    SetTrackList {
+        tracks: Vec<String>,
+    },
+    SetTrack {
+        track_index: usize,
+        track: Track,
+    },
     LoadTrack,
-    SetLoadTrackName { track_name: String },
+    SetLoadTrackName {
+        track_name: String,
+    },
     ClearLoadTrackPromise,
     ClearSaveTrackPromise,
     ClearTrackListPromise,
+
+    /// Denotes the reverse-action for an action that isn't reversible.
+    /// Applying this is a no-op.
+    /// There might be a better way of describing this concept, keep a look out.
+    NonReversible,
 }
