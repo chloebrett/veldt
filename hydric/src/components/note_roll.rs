@@ -58,6 +58,13 @@ pub fn note_roll(store: &Store, ui: &mut Ui) {
 }
 
 pub fn note_roll_canvas(store: &Store, ui: &mut Ui) {
+    let project_length = 16.0;
+    let project_offset = 0.0;
+    let max_pitch_value: PitchValue = PitchName {
+        scale_value: ScaleValue::GSharp,
+        octave: 8,
+    }
+    .into();
     Frame::canvas(ui.style()).show(ui, |ui| {
         let (response, painter) =
             ui.allocate_painter(Vec2::new(ui.available_width(), 600.0), Sense::hover());
@@ -65,23 +72,19 @@ pub fn note_roll_canvas(store: &Store, ui: &mut Ui) {
             Rect::from_min_size(Pos2::ZERO, response.rect.size()),
             response.rect,
         );
-        let project_length = 16.0;
-        let project_offset = 0.0;
-        let max_pitch_value: PitchValue = PitchName {
-            scale_value: ScaleValue::GSharp,
-            octave: 8,
-        }
-        .into();
         let roll_config =
             RollConfig::new(to_screen, project_length, project_offset, max_pitch_value);
-        let note_shapes = create_note_shapes(&store, &ui, &response, &roll_config);
+        let note_shapes = create_note_shapes(store, ui, &response, &roll_config);
         let pitch_value_shapes = create_pitch_value_shapes(&roll_config);
         let major_beat = 4.0;
         let minor_beat = 1.0;
+        let quarter_beat: f32 = 1.0 / 4.0;
         let major_stroke = Stroke::new(1.0, Color32::from_white_alpha(6));
         let minor_stroke = Stroke::new(1.0, Color32::from_white_alpha(3));
+        let quarter_stroke = Stroke::new(1.0, Color32::from_white_alpha(1));
         create_beat_lines(&painter, major_beat, major_stroke, &roll_config);
         create_beat_lines(&painter, minor_beat, minor_stroke, &roll_config);
+        create_beat_lines(&painter, quarter_beat, quarter_stroke, &roll_config);
         painter.extend(pitch_value_shapes);
         painter.extend(note_shapes);
         response
