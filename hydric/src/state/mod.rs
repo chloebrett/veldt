@@ -7,8 +7,9 @@ mod root_reducer;
 mod selector;
 mod store;
 mod track_reducer;
+mod undo;
 
-pub use action::*;
+pub use action::Action;
 use effect_reducer::*;
 use generator_reducer::*;
 pub use get_set::*;
@@ -17,3 +18,4 @@ use root_reducer::*;
 pub use selector::*;
 pub use store::*;
 use track_reducer::*;
+use undo::*;

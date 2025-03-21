@@ -1,13 +1,7 @@
-use super::effect_control;
-use super::envelope_control;
-use super::generator_control;
-use super::key_control;
-use super::load_control;
-use super::note_display;
-use super::notes_control;
-use super::play_control;
-use super::save_button;
-use super::toggle_window_panel;
+use super::{
+    effect_control, envelope_control, generator_control, key_control, load_control, note_display,
+    notes_control, play_control, save_button, toggle_window_panel, undo_redo_control,
+};
 use crate::audio_player::Handle;
 use crate::state::{Action, Store, get_set};
 use crate::widget::string_observer;
@@ -135,6 +129,8 @@ impl eframe::App for App {
                     }
                     ui.separator();
                     notes_control(&self.store, ui, ctx);
+                    ui.separator();
+                    undo_redo_control(&mut self.store, ui);
                     ui.separator();
                     play_control(self, ui);
                     ui.separator();
