@@ -22,7 +22,7 @@ pub fn apply_effects(signal: &[f32], effects: &[EffectInstance]) -> Vec<f32> {
 }
 
 /// Mixes two signals in the given dry/wet ratio.
-fn mix(dry: &Vec<f32>, wet: &Vec<f32>, ratio: KnobPosition) -> Vec<f32> {
+fn mix(dry: &[f32], wet: &[f32], ratio: KnobPosition) -> Vec<f32> {
     sum(&mult(wet, ratio), &mult(dry, 1.0 - ratio))
 }
 

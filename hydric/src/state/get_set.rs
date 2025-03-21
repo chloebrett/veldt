@@ -6,11 +6,9 @@ pub fn get_set<'a, T: PartialEq + Clone + 'a, S: Fn(T) + 'a>(
     setter: S,
 ) -> impl Fn(Option<T>) -> T + use<T, S> {
     move |it| {
-        it.map(|it| {
-            if it != val {
-                setter(it)
-            }
-        });
+        if let Some(it) = it {
+            setter(it)
+        }
         val.clone()
     }
 }

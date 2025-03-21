@@ -16,6 +16,7 @@ use egui::{ScrollArea, scroll_area::ScrollBarVisibility};
 use poll_promise::Promise;
 use shared::types::{Beats, Volume};
 
+#[derive(Default)]
 pub struct App {
     pub store: Store,
     pub audio: Vec<f32>,
@@ -25,21 +26,6 @@ pub struct App {
     pub show_envelope: bool,
     pub show_generator: bool,
     pub show_scale: bool,
-}
-
-impl Default for App {
-    fn default() -> Self {
-        Self {
-            store: Store::default(),
-            audio: vec![],
-            handle: None,
-            server_render_promise: None,
-            show_effects: false,
-            show_envelope: false,
-            show_generator: false,
-            show_scale: false,
-        }
-    }
 }
 
 impl App {
@@ -113,7 +99,7 @@ impl eframe::App for App {
                             .default_pos(Pos2 { x: 600.0, y: 125.0 })
                             .resizable(false)
                             .show(ctx, |ui| {
-                                envelope_control(&mut self.store, ui);
+                                envelope_control(&self.store, ui);
                             });
                     }
                     if self.show_generator {
@@ -121,7 +107,7 @@ impl eframe::App for App {
                             .default_pos(Pos2 { x: 1100.0, y: 20.0 })
                             .resizable(false)
                             .show(ctx, |ui| {
-                                generator_control(&mut self.store, ui);
+                                generator_control(&self.store, ui);
                             });
                     }
                     if self.show_effects {
