@@ -1,7 +1,7 @@
 use crate::state::{Action, Selector, Store};
 
 use egui::{
-    Color32, CornerRadius, Frame, Painter, Pos2, Rect, Response, ScrollArea, Sense, Shape, Stroke,
+    Color32, CornerRadius, Frame, Pos2, Rect, Response, ScrollArea, Sense, Shape, Stroke,
     Ui, Vec2, emath::RectTransform,
 };
 use ordered_float::OrderedFloat;
@@ -82,9 +82,12 @@ pub fn note_roll_canvas(store: &Store, ui: &mut Ui) {
         let major_stroke = Stroke::new(1.0, Color32::from_white_alpha(6));
         let minor_stroke = Stroke::new(1.0, Color32::from_white_alpha(3));
         let quarter_stroke = Stroke::new(1.0, Color32::from_white_alpha(1));
-        create_beat_lines(&painter, major_beat, major_stroke, &roll_config);
-        create_beat_lines(&painter, minor_beat, minor_stroke, &roll_config);
-        create_beat_lines(&painter, quarter_beat, quarter_stroke, &roll_config);
+        let major_line_shapes = create_beat_lines(major_beat, major_stroke, &roll_config);
+        let minor_line_shapes = create_beat_lines(minor_beat, minor_stroke, &roll_config);
+        let quarter_line_shapes = create_beat_lines(quarter_beat, quarter_stroke, &roll_config); 
+        painter.extend(major_line_shapes);
+        painter.extend(minor_line_shapes);
+        painter.extend(quarter_line_shapes);
         painter.extend(pitch_value_shapes);
         painter.extend(note_shapes);
         response
@@ -185,11 +188,11 @@ fn create_pitch_value_shapes(roll_config: &RollConfig) -> Vec<Shape> {
 }
 
 fn create_beat_lines(
-    painter: &Painter,
     beat_increment: f32,
     stroke: Stroke,
     roll_config: &RollConfig,
-) {
+) -> Vec<Shape> {
+    let mut line_shapes = vec![];
     for beat in
         (roll_config.project_offset as i32)..=(roll_config.project_length / beat_increment) as i32
     {
@@ -198,6 +201,8 @@ fn create_beat_lines(
         let y2: f32 = roll_config.y_size;
         let top_pos = roll_config.to_screen.transform_pos(Pos2::new(x, y1));
         let bottom_pos = roll_config.to_screen.transform_pos(Pos2::new(x, y2));
-        painter.line(vec![top_pos, bottom_pos], stroke);
+        let line = Shape::line_segment([top_pos, bottom_pos], stroke);
+        line_shapes.push(line);
     }
+    line_shapes
 }
