@@ -1,8 +1,8 @@
 use crate::state::{Action, Selector, Store};
 
 use egui::{
-    Color32, CornerRadius, Frame, Pos2, Rect, Response, ScrollArea, Sense, Shape, Stroke,
-    Ui, Vec2, emath::RectTransform,
+    Color32, CornerRadius, Frame, Pos2, Rect, Response, ScrollArea, Sense, Shape, Stroke, Ui, Vec2,
+    emath::RectTransform,
 };
 use ordered_float::OrderedFloat;
 use shared::{
@@ -57,7 +57,7 @@ pub fn note_roll(store: &Store, ui: &mut Ui) {
         });
 }
 
-pub fn note_roll_canvas(store: &Store, ui: &mut Ui) {
+fn note_roll_canvas(store: &Store, ui: &mut Ui) {
     let project_length = 16.0;
     let project_offset = 0.0;
     let max_pitch_value: PitchValue = PitchName {
@@ -78,13 +78,13 @@ pub fn note_roll_canvas(store: &Store, ui: &mut Ui) {
         let pitch_value_shapes = create_pitch_value_shapes(&roll_config);
         let major_beat = 4.0;
         let minor_beat = 1.0;
-        let quarter_beat: f32 = 1.0 / 4.0;
+        let quarter_beat = 0.25;
         let major_stroke = Stroke::new(1.0, Color32::from_white_alpha(6));
         let minor_stroke = Stroke::new(1.0, Color32::from_white_alpha(3));
         let quarter_stroke = Stroke::new(1.0, Color32::from_white_alpha(1));
         let major_line_shapes = create_beat_lines(major_beat, major_stroke, &roll_config);
         let minor_line_shapes = create_beat_lines(minor_beat, minor_stroke, &roll_config);
-        let quarter_line_shapes = create_beat_lines(quarter_beat, quarter_stroke, &roll_config); 
+        let quarter_line_shapes = create_beat_lines(quarter_beat, quarter_stroke, &roll_config);
         painter.extend(major_line_shapes);
         painter.extend(minor_line_shapes);
         painter.extend(quarter_line_shapes);
@@ -105,7 +105,7 @@ fn create_note_shapes(
         .clone()
         .iter_mut()
         .enumerate()
-        .map(|(i, note)| {
+        .map(|(note_idx, note)| {
             let offset: f32 = note.offset.into();
             let x1: f32 = offset * roll_config.inv_project_length * roll_config.x_size;
             let pitch_value: PitchValue = note.note.pitch_name.into();
@@ -116,12 +116,10 @@ fn create_note_shapes(
                 note_pos.x + note.note.beats * roll_config.inv_project_length * roll_config.x_size;
             let y2 = note_pos.y + roll_config.note_height;
             let note_bottom_right_corner = Pos2::new(x2, y2);
-            let min_corner = roll_config.to_screen.transform_pos(note_pos);
-            let max_corner = roll_config
-                .to_screen
-                .transform_pos(note_bottom_right_corner);
+            let min_corner = roll_config.to_screen * note_pos;
+            let max_corner = roll_config.to_screen * note_bottom_right_corner;
             let note_rect = Rect::from_min_max(min_corner, max_corner);
-            let note_id = response.id.with(i);
+            let note_id = response.id.with(note_idx);
             let note_response = ui.interact(note_rect, note_id, Sense::drag());
             let note_delta = note_response.drag_delta();
             let scaled_note_delta = Vec2 {
@@ -145,16 +143,17 @@ fn create_note_shapes(
                 },
                 offset: OrderedFloat(next_offset),
             };
-
-            if (next_offset != prev_offset) || (next_pitch_value != prev_pitch_value) {
-                let track_index = 0;
-                let sel = Selector::Note(track_index, i);
+            let track_index = 0;
+            let sel = Selector::Note(track_index, note_idx);
+            if next_offset != prev_offset {
+                store.dispatch(&sel, Action::SetNoteOffset(*note.offset));
+            };
+            if next_pitch_value != prev_pitch_value {
                 store.dispatch(&sel, Action::SetNoteOctave(note.note.pitch_name.octave));
                 store.dispatch(
                     &sel,
                     Action::SetNoteScaleValue(note.note.pitch_name.scale_value),
                 );
-                store.dispatch(&sel, Action::SetNoteOffset(*note.offset));
             }
             Shape::rect_filled(note_rect, CornerRadius::same(1), Color32::WHITE)
         })
@@ -163,46 +162,33 @@ fn create_note_shapes(
 }
 
 fn create_pitch_value_shapes(roll_config: &RollConfig) -> Vec<Shape> {
-    let mut pitch_value_shapes = vec![];
-    for pitch_value in 0..roll_config.max_pitch_value {
-        if pitch_value % 2 == 0 {
-            let x1 = 0.0;
+    (0..roll_config.max_pitch_value)
+        .filter(|pitch_value| pitch_value % 2 == 0)
+        .map(|pitch_value| {
             let pitch_ratio = 1.0 - pitch_value as f32 * roll_config.inv_max_pitch_value;
             let y1 = roll_config.y_size * pitch_ratio - roll_config.note_height;
-            let upper_left_corner = Pos2::new(x1, y1);
-            let x2 = roll_config.x_size;
+            let upper_left_corner = Pos2::new(0.0, y1);
             let y2 = upper_left_corner.y + roll_config.note_height;
-            let lower_right_corner = Pos2::new(x2, y2);
-            let min_corner = roll_config.to_screen.transform_pos(upper_left_corner);
-            let max_corner = roll_config.to_screen.transform_pos(lower_right_corner);
-            let background_rect = Rect::from_min_max(min_corner, max_corner);
-            let shape = Shape::rect_filled(
-                background_rect,
+            let lower_right_corner = Pos2::new(roll_config.x_size, y2);
+            let background_rect = Rect::from_min_max(upper_left_corner, lower_right_corner);
+
+            Shape::rect_filled(
+                roll_config.to_screen.transform_rect(background_rect),
                 CornerRadius::same(0),
                 Color32::from_white_alpha(2),
-            );
-            pitch_value_shapes.push(shape)
-        }
-    }
-    pitch_value_shapes
+            )
+        })
+        .collect()
 }
 
-fn create_beat_lines(
-    beat_increment: f32,
-    stroke: Stroke,
-    roll_config: &RollConfig,
-) -> Vec<Shape> {
-    let mut line_shapes = vec![];
-    for beat in
-        (roll_config.project_offset as i32)..=(roll_config.project_length / beat_increment) as i32
-    {
-        let x = roll_config.x_size * (beat as f32) * beat_increment / roll_config.project_length;
-        let y1: f32 = 0.0;
-        let y2: f32 = roll_config.y_size;
-        let top_pos = roll_config.to_screen.transform_pos(Pos2::new(x, y1));
-        let bottom_pos = roll_config.to_screen.transform_pos(Pos2::new(x, y2));
-        let line = Shape::line_segment([top_pos, bottom_pos], stroke);
-        line_shapes.push(line);
-    }
-    line_shapes
+fn create_beat_lines(beat_increment: f32, stroke: Stroke, roll_config: &RollConfig) -> Vec<Shape> {
+    ((roll_config.project_offset as i32)..=(roll_config.project_length / beat_increment) as i32)
+        .map(|beat| {
+            let x =
+                roll_config.x_size * (beat as f32) * beat_increment / roll_config.project_length;
+            let top_pos = roll_config.to_screen * Pos2::new(x, 0.0);
+            let bottom_pos = roll_config.to_screen * Pos2::new(x, roll_config.y_size);
+            Shape::line_segment([top_pos, bottom_pos], stroke)
+        })
+        .collect()
 }
