@@ -1,7 +1,7 @@
 use crate::model::{AdsrEnvelope, WaveType};
 use crate::pmodel::SimpleWaveProto;
 use crate::pmodel::{
-    GeneratorInstanceProto, GeneratorMetaProto, SimpleWaveConfigProto, WaveTypeProto,
+    GeneratorInstanceProto, GeneratorMetaProto, SimpleWaveConfigProto,
     generator_instance_proto::Kind,
 };
 use crate::types::Volume;
@@ -75,7 +75,7 @@ impl From<SimpleWaveConfigProto> for SimpleWaveConfig {
 impl From<SimpleWaveConfig> for SimpleWaveConfigProto {
     fn from(item: SimpleWaveConfig) -> Self {
         SimpleWaveConfigProto {
-            wave: Into::<WaveTypeProto>::into(item.wave).into(),
+            wave: item.wave as i32,
             envelope: Some(item.envelope.into()),
             osc_count: item.osc_count,
             detune_cents: item.detune_cents,

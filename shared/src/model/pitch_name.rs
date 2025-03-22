@@ -21,7 +21,7 @@ impl From<PitchName> for PitchValue {
 impl From<PitchValue> for PitchName {
     fn from(pitch_value: PitchValue) -> Self {
         Self {
-            scale_value: ScaleValue::from(pitch_value),
+            scale_value: pitch_value.into(),
             octave: pitch_value / 12,
         }
     }
@@ -35,8 +35,9 @@ impl fmt::Display for PitchName {
 
 impl Add<PitchValue> for PitchName {
     type Output = Self;
-    fn add(self, other: PitchValue) -> PitchName {
-        let new_pitch_value: PitchValue = <PitchName as Into<PitchValue>>::into(self) + other;
+    fn add(self: PitchName, other: PitchValue) -> PitchName {
+        let pitch_value: PitchValue = self.into();
+        let new_pitch_value: PitchValue = pitch_value + other;
         PitchName::from(new_pitch_value)
     }
 }
