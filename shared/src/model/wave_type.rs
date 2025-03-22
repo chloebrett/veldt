@@ -1,6 +1,5 @@
-use strum::{Display, EnumIter, EnumString};
-
 use crate::pmodel::*;
+use strum::{Display, EnumIter, EnumString};
 
 #[derive(
     Debug, Clone, Copy, PartialEq, Eq, Hash, PartialOrd, Ord, EnumString, Display, EnumIter,
@@ -10,6 +9,18 @@ pub enum WaveType {
     Square,
     Saw,
     Triangle, // TODO: also add a generator for white noise - but it's not constrained by freq.
+}
+
+impl From<WaveType> for i32 {
+    fn from(item: WaveType) -> i32 {
+        item as i32
+    }
+}
+
+impl From<i32> for WaveType {
+    fn from(item: i32) -> WaveType {
+        item.into()
+    }
 }
 
 impl From<WaveTypeProto> for WaveType {
