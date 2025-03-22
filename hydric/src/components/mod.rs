@@ -10,6 +10,7 @@ mod note_roll;
 mod notes_control;
 mod play_control;
 mod save_control;
+mod undo_redo;
 mod window_toggle;
 
 pub use app::*;
@@ -23,4 +24,5 @@ use note_roll::*;
 use notes_control::*;
 use play_control::*;
 use save_control::*;
+use undo_redo::*;
 use window_toggle::*;

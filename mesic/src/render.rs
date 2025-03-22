@@ -28,7 +28,7 @@ pub fn render(project: &Project) -> Vec<f32> {
             note.note.beats,
             bpm,
             generator.meta.volume,
-            &generator_config,
+            generator_config,
         );
 
         let offset_samples =
