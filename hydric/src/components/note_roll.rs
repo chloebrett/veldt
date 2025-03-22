@@ -9,6 +9,37 @@ use shared::{
     types::PitchValue,
 };
 
+struct NoteRoll {
+    to_screen: RectTransform,
+    x_size: f32,
+    y_size: f32,
+    project_length: f32,
+    max_pitch_value: PitchValue,
+    project_offset: f32,
+    shapes: Vec<Shape>,
+}
+
+impl NoteRoll {
+    pub fn new(
+        to_screen: RectTransform,
+        project_length: f32,
+        project_offset: f32,
+        max_pitch_value: PitchValue,
+    ) -> Self {
+        let y_size = to_screen.to().max.y - to_screen.to().min.y;
+        let x_size = to_screen.to().max.x - to_screen.to().min.x;
+        NoteRoll {
+            to_screen,
+            x_size,
+            y_size,
+            project_length,
+            max_pitch_value,
+            project_offset,
+            shapes: vec![],
+        }
+    }
+}
+
 struct RollConfig {
     to_screen: RectTransform,
     x_size: f32,
@@ -207,6 +238,7 @@ fn note_roll_canvas(store: &Store, ui: &mut Ui) {
             Rect::from_min_size(Pos2::ZERO, response.rect.size()),
             response.rect,
         );
+        let note_roll = NoteRoll::new(to_screen, project_length, project_offset, max_pitch_value);
         let roll_config =
             RollConfig::new(to_screen, project_length, project_offset, max_pitch_value);
         let note_shapes = create_note_shapes(store, ui, &response, &roll_config);
