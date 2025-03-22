@@ -160,11 +160,11 @@ message CompressorConfigProto {
 }
 
 enum WaveTypeProto {
-  Unknown = 0;
-  Sine = 1;
-  Square = 2;
-  Saw = 3;
-  Triangle = 4;
+  UnknownWaveType = 0;
+  SineWaveType = 1;
+  SquareWaveType = 2;
+  SawWaveType = 3;
+  TriangleWaveType = 4;
 }
 
 enum ScaleValueProto {

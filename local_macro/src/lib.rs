@@ -2,9 +2,15 @@ use proc_macro::TokenStream;
 use quote::{format_ident, quote};
 use syn::{DeriveInput, Fields, Type, parse_macro_input};
 
-#[proc_macro_derive(FromProto, attributes(proto_type_u32, proto_optional, proto_enum, proto_repeated))]
+#[proc_macro_derive(
+    FromProto,
+    attributes(proto_type_u32, proto_optional, proto_enum, proto_repeated)
+)]
 pub fn derive_from_proto(input: TokenStream) -> TokenStream {
     let input = parse_macro_input!(input as DeriveInput);
+
+    let name = input.ident.clone();
+    let proto_name = format_ident!("{}Proto", name.clone());
 
     if let syn::Data::Struct(ref data) = input.data {
         if let Fields::Named(ref fields) = data.fields {
@@ -54,9 +60,6 @@ pub fn derive_from_proto(input: TokenStream) -> TokenStream {
                 }
             });
 
-            let name = input.ident;
-            let proto_name = format_ident!("{}Proto", name);
-
             return quote!(
                 impl From<#proto_name> for #name {
                     fn from(item: #proto_name) -> #name {
@@ -70,6 +73,33 @@ pub fn derive_from_proto(input: TokenStream) -> TokenStream {
         }
     }
 
+    if let syn::Data::Enum(ref data) = input.data {
+        let variants = &data.variants;
+        let mut variant_vals: Vec<_> = variants
+            .iter()
+            .map(|variant| {
+                let variant_name = &variant.ident;
+                // e.g. SimpleResonator -> SimpleResonatorEqType
+                let proto_variant_name = format_ident!("{}{}", variant_name.clone(), name.clone());
+
+                quote!(#proto_name::#proto_variant_name => #name::#variant_name)
+            })
+            .collect();
+
+        variant_vals.push(quote!(_ => panic!("")));
+
+        return quote!(
+            impl From<#proto_name> for #name {
+                fn from(item: #proto_name) -> #name {
+                    match item {
+                        #(#variant_vals),*
+                    }
+                }
+            }
+        )
+        .into();
+    }
+
     // Catchall if we don't match on the structure we want
     TokenStream::from(
         syn::Error::new(
@@ -80,9 +110,15 @@ pub fn derive_from_proto(input: TokenStream) -> TokenStream {
     )
 }
 
-#[proc_macro_derive(IntoProto, attributes(proto_type_u32, proto_optional, proto_enum, proto_repeated))]
+#[proc_macro_derive(
+    IntoProto,
+    attributes(proto_type_u32, proto_optional, proto_enum, proto_repeated)
+)]
 pub fn derive_into_proto(input: TokenStream) -> TokenStream {
     let input = parse_macro_input!(input as DeriveInput);
+
+    let name = input.ident.clone();
+    let proto_name = format_ident!("{}Proto", name).clone();
 
     if let syn::Data::Struct(ref data) = input.data {
         if let Fields::Named(ref fields) = data.fields {
@@ -131,9 +167,6 @@ pub fn derive_into_proto(input: TokenStream) -> TokenStream {
                 }
             });
 
-            let name = input.ident;
-            let proto_name = format_ident!("{}Proto", name);
-
             return quote!(
                 impl From<#name> for #proto_name {
                     fn from(item: #name) -> #proto_name {
@@ -145,6 +178,30 @@ pub fn derive_into_proto(input: TokenStream) -> TokenStream {
             )
             .into();
         }
+    }
+
+    if let syn::Data::Enum(ref data) = input.data {
+        let variants = &data.variants;
+        let variant_vals = variants
+            .iter()
+            .map(|variant| {
+                let variant_name = &variant.ident;
+                // e.g. SimpleResonator -> SimpleResonatorEqType
+                let proto_variant_name = format_ident!("{}{}", variant_name.clone(), name.clone());
+
+                quote!(#name::#variant_name => #proto_name::#proto_variant_name)
+            });
+
+        return quote!(
+            impl From<#name> for #proto_name {
+                fn from(item: #name) -> #proto_name {
+                    match item {
+                        #(#variant_vals),*
+                    }
+                }
+            }
+        )
+        .into();
     }
 
     // Catchall if we don't match on the structure we want
