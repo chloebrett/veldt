@@ -21,7 +21,7 @@ impl From<PitchName> for PitchValue {
 impl From<PitchValue> for PitchName {
     fn from(pitch_value: PitchValue) -> Self {
         Self {
-            scale_value: ScaleValue::from(pitch_value),
+            scale_value: pitch_value.into(),
             octave: pitch_value / 12,
         }
     }
@@ -35,18 +35,17 @@ impl fmt::Display for PitchName {
 
 impl Add<PitchValue> for PitchName {
     type Output = Self;
-    fn add(self, other: PitchValue) -> PitchName {
-        let new_pitch_value: PitchValue = <PitchName as Into<PitchValue>>::into(self) + other;
-        PitchName::from(new_pitch_value)
+    fn add(self: PitchName, other: PitchValue) -> PitchName {
+        let pitch_value: PitchValue = self.into();
+        (pitch_value + other).into()
     }
 }
 
 impl From<PitchNameProto> for PitchName {
     fn from(item: PitchNameProto) -> Self {
+        let scale_value: ScaleValue = item.scale_value().try_into().unwrap();
         PitchName {
-            scale_value: TryInto::<ScaleValueProto>::try_into(item.scale_value)
-                .unwrap()
-                .into(),
+            scale_value: scale_value.into(),
             octave: item.octave,
         }
     }
@@ -54,8 +53,9 @@ impl From<PitchNameProto> for PitchName {
 
 impl From<PitchName> for PitchNameProto {
     fn from(item: PitchName) -> Self {
+        let scale_value: ScaleValueProto = item.scale_value.into();
         PitchNameProto {
-            scale_value: Into::<ScaleValueProto>::into(item.scale_value) as i32,
+            scale_value: scale_value as i32,
             octave: item.octave,
         }
     }
