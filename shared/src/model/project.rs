@@ -1,58 +1,35 @@
 use crate::bytes::{as_bytes, as_floats};
 use crate::model::{EffectInstance, GeneratorInstance, Track};
 use crate::pmodel::*;
-use crate::serialize::map_vec;
 use crate::types::Beats;
+use local_macro::{FromProto, IntoProto};
 use ordered_float::OrderedFloat;
 use std::cmp::Ordering;
 
 type _TrackId = usize;
 type _SampleId = usize;
 
-#[derive(Clone, Debug, PartialEq)]
+#[derive(Clone, Debug, PartialEq, FromProto, IntoProto)]
 pub struct Project {
     pub name: String,
 
+    #[proto_repeated]
     pub tracks: Vec<Track>,
 
     /// Ordered based on start_position.
+    #[proto_repeated]
     pub track_placements: Vec<TrackPlacement>,
 
+    #[proto_repeated]
     pub samples: Vec<Sample>,
 
+    #[proto_repeated]
     pub generators: Vec<GeneratorInstance>,
 
+    #[proto_repeated]
     pub mixer: Vec<MixerChannel>,
 
     pub bpm: Beats,
-}
-
-impl From<ProjectProto> for Project {
-    fn from(item: ProjectProto) -> Self {
-        Project {
-            name: item.name,
-            tracks: map_vec(item.tracks),
-            track_placements: map_vec(item.track_placements),
-            samples: map_vec(item.samples),
-            generators: map_vec(item.generators),
-            mixer: map_vec(item.mixer),
-            bpm: item.bpm,
-        }
-    }
-}
-
-impl From<Project> for ProjectProto {
-    fn from(item: Project) -> Self {
-        ProjectProto {
-            name: item.name,
-            tracks: map_vec(item.tracks),
-            track_placements: map_vec(item.track_placements),
-            samples: map_vec(item.samples),
-            generators: map_vec(item.generators),
-            mixer: map_vec(item.mixer),
-            bpm: item.bpm,
-        }
-    }
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -133,23 +110,8 @@ impl From<Sample> for SampleProto {
     }
 }
 
-#[derive(Clone, Debug, PartialEq)]
+#[derive(Clone, Debug, PartialEq, FromProto, IntoProto)]
 pub struct MixerChannel {
+    #[proto_repeated]
     pub effects: Vec<EffectInstance>,
-}
-
-impl From<MixerChannelProto> for MixerChannel {
-    fn from(item: MixerChannelProto) -> Self {
-        MixerChannel {
-            effects: map_vec(item.effects),
-        }
-    }
-}
-
-impl From<MixerChannel> for MixerChannelProto {
-    fn from(item: MixerChannel) -> Self {
-        MixerChannelProto {
-            effects: map_vec(item.effects),
-        }
-    }
 }

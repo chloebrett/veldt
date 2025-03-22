@@ -2,7 +2,7 @@ use crate::{
     pmodel::{EqConfigProto, EqTypeProto},
     types::{Freq, KnobPosition},
 };
-use local_macro::FromProto;
+use local_macro::{FromProto, IntoProto};
 use strum::{Display, EnumIter, EnumString};
 
 #[derive(Clone, Debug, EnumIter, EnumString, Display, PartialEq)]
@@ -66,7 +66,7 @@ impl From<EqType> for EqTypeProto {
     }
 }
 
-#[derive(Clone, Debug, PartialEq, FromProto)]
+#[derive(Clone, Debug, PartialEq, FromProto, IntoProto)]
 pub struct EqConfig {
     #[proto_enum]
     pub kind: EqType,
@@ -74,14 +74,4 @@ pub struct EqConfig {
     pub fc: Freq,
 
     pub q: KnobPosition,
-}
-
-impl From<EqConfig> for EqConfigProto {
-    fn from(item: EqConfig) -> Self {
-        EqConfigProto {
-            kind: Into::<EqTypeProto>::into(item.kind) as i32,
-            fc: item.fc,
-            q: item.q,
-        }
-    }
 }

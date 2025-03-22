@@ -1,12 +1,13 @@
 use crate::model::scale_value::ScaleValue;
 use crate::pmodel::*;
 use crate::types::*;
-use local_macro::FromProto;
+use local_macro::{FromProto, IntoProto};
 use std::fmt;
 use std::ops::Add;
 
-#[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord, FromProto)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord, FromProto, IntoProto)]
 pub struct PitchName {
+    #[proto_enum]
     pub scale_value: ScaleValue,
     pub octave: Octave,
 }
@@ -39,15 +40,5 @@ impl Add<PitchValue> for PitchName {
     fn add(self: PitchName, other: PitchValue) -> PitchName {
         let pitch_value: PitchValue = self.into();
         (pitch_value + other).into()
-    }
-}
-
-impl From<PitchName> for PitchNameProto {
-    fn from(item: PitchName) -> Self {
-        let scale_value: ScaleValueProto = item.scale_value.into();
-        PitchNameProto {
-            scale_value: scale_value as i32,
-            octave: item.octave,
-        }
     }
 }
