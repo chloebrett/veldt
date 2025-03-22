@@ -4,7 +4,6 @@ use egui::{
     Color32, CornerRadius, Frame, Pos2, Rect, Response, ScrollArea, Sense, Shape, Stroke, Ui, Vec2,
     emath::RectTransform, epaint::RectShape,
 };
-use ordered_float::OrderedFloat;
 use shared::{
     model::{Note, PitchName, PlacedNote, ScaleValue},
     types::PitchValue,
@@ -38,6 +37,40 @@ impl RollConfig {
             project_offset,
             note_height: y_size / max_pitch_value as f32,
         }
+    }
+}
+
+trait Renderable<T> {
+    fn get_shape(
+        &self,
+        project_length: f32,
+        max_pitch_value: i32,
+        canvas_x_size: f32,
+        canvas_y_size: f32,
+    ) -> Shape;
+}
+
+impl Renderable<PlacedNote> for PlacedNote {
+    fn get_shape(
+        &self,
+        project_length: f32,
+        max_pitch_value: i32,
+        canvas_x_size: f32,
+        canvas_y_size: f32,
+    ) -> Shape {
+        let max_pitch_value = max_pitch_value as f32;
+        let x_scale = canvas_x_size / project_length;
+        let y_scale = canvas_y_size / max_pitch_value;
+        let scale = Vec2::new(x_scale, y_scale);
+        let x1: f32 = self.offset.into();
+        let pitch_value: PitchValue = self.note.pitch_name.into();
+        let y1 = max_pitch_value - pitch_value as f32 - 1.0;
+        let x2 = x1 + self.note.beats;
+        let y2 = y1 + 1.0;
+        let top_left = Vec2::new(x1, y1) * scale;
+        let bottom_right = Vec2::new(x2, y2) * scale;
+        let note_rect = Rect::from_min_max(top_left.to_pos2(), bottom_right.to_pos2());
+        Shape::rect_filled(note_rect, CornerRadius::same(1), Color32::WHITE)
     }
 }
 
@@ -136,73 +169,117 @@ fn note_roll_canvas(store: &Store, ui: &mut Ui) {
     });
 }
 
+struct Inverses {
+    inv_x_size: f32,
+    inv_y_size: f32,
+    inv_project_length: f32,
+    inv_max_pitch_value: f32,
+}
+
 fn create_note_shapes(
     store: &Store,
     ui: &Ui,
     response: &Response,
     roll_config: &RollConfig,
 ) -> Vec<Shape> {
-    let inv_x_size = 1.0 / roll_config.x_size;
-    let inv_y_size = 1.0 / roll_config.y_size;
-    let inv_project_length = 1.0 / roll_config.project_length;
-    let inv_max_pitch_value = 1.0 / roll_config.max_pitch_value as f32;
+    let inverses = Inverses {
+        inv_x_size: 1.0 / roll_config.x_size,
+        inv_y_size: 1.0 / roll_config.y_size,
+        inv_project_length: 1.0 / roll_config.project_length,
+        inv_max_pitch_value: 1.0 / roll_config.max_pitch_value as f32,
+    };
     let note_shapes: Vec<Shape> = store.get().project.tracks[0]
         .notes
         .clone()
         .iter_mut()
         .enumerate()
         .map(|(note_idx, note)| {
-            let offset: f32 = note.offset.into();
-            let x1: f32 = offset * inv_project_length * roll_config.x_size;
-            let pitch_value: PitchValue = note.note.pitch_name.into();
-            let pitch_ratio = 1.0 - pitch_value as f32 * inv_max_pitch_value;
-            let y1 = roll_config.y_size * pitch_ratio - roll_config.note_height;
-            let note_pos = Pos2::new(x1, y1);
-            let x2 = note_pos.x + note.note.beats * inv_project_length * roll_config.x_size;
-            let y2 = note_pos.y + roll_config.note_height;
-            let note_bottom_right_corner = Pos2::new(x2, y2);
-            let note_rect = Rect::from_min_max(note_pos, note_bottom_right_corner)
-                .transform(roll_config.to_screen);
-            let note_id = response.id.with(note_idx);
-            let note_response = ui.interact(note_rect, note_id, Sense::drag());
-            let note_delta = note_response.drag_delta();
-            let scaled_note_delta = Vec2 {
-                x: note_delta.x * inv_x_size * roll_config.project_length,
-                y: -note_delta.y * inv_y_size * roll_config.max_pitch_value as f32,
-            };
-            let offset_delta = scaled_note_delta.x;
-            let pitch_delta: PitchValue = scaled_note_delta.y.round() as i32;
-            let prev_offset: f32 = note.offset.into();
-            let next_offset_raw = (prev_offset + offset_delta)
-                .clamp(roll_config.project_offset, roll_config.project_length);
-            let quantise_ratio = 16.0;
-            let next_offset = (next_offset_raw * quantise_ratio).round() / quantise_ratio;
-            let prev_pitch_value: PitchValue = note.note.pitch_name.into();
-            let next_pitch_value =
-                (prev_pitch_value + pitch_delta).clamp(0, roll_config.max_pitch_value);
-            *note = PlacedNote {
-                note: Note {
-                    pitch_name: next_pitch_value.into(),
-                    beats: note.note.beats,
-                },
-                offset: OrderedFloat(next_offset),
-            };
-            let track_index = 0;
-            let sel = Selector::Note(track_index, note_idx);
-            if next_offset != prev_offset {
-                store.dispatch(&sel, Action::SetNoteOffset(*note.offset));
-            };
-            if next_pitch_value != prev_pitch_value {
-                store.dispatch(&sel, Action::SetNoteOctave(note.note.pitch_name.octave));
-                store.dispatch(
-                    &sel,
-                    Action::SetNoteScaleValue(note.note.pitch_name.scale_value),
-                );
-            }
-            Shape::rect_filled(note_rect, CornerRadius::same(1), Color32::WHITE)
+            let note_shape = create_note_rect(note, &roll_config);
+            let (offset_delta, pitch_delta) = get_note_delta(
+                ui,
+                &note_shape,
+                &response,
+                note_idx,
+                &roll_config,
+                &inverses,
+            );
+            let next_note = transform_note(note, offset_delta, pitch_delta, &roll_config);
+            dispatch_note(store, note, next_note, note_idx);
+            note_shape
         })
         .collect();
     note_shapes
+}
+
+fn create_note_rect(note: &mut PlacedNote, roll_config: &RollConfig) -> Shape {
+    let note_shape = note.get_shape(
+        roll_config.project_length,
+        roll_config.max_pitch_value,
+        roll_config.x_size,
+        roll_config.y_size,
+    );
+    note_shape.transform(roll_config.to_screen)
+}
+
+fn get_note_delta(
+    ui: &Ui,
+    note_shape: &Shape,
+    response: &Response,
+    note_idx: usize,
+    roll_config: &RollConfig,
+    inverses: &Inverses,
+) -> (f32, i32) {
+    let note_id = response.id.with(note_idx);
+    let note_rect = note_shape.visual_bounding_rect();
+    let note_response = ui.interact(note_rect, note_id, Sense::drag());
+    let note_delta = note_response.drag_delta();
+    let scaled_note_delta = Vec2 {
+        x: note_delta.x * inverses.inv_x_size * roll_config.project_length,
+        y: -note_delta.y * inverses.inv_y_size * roll_config.max_pitch_value as f32,
+    };
+    let offset_delta = scaled_note_delta.x;
+    let pitch_delta: PitchValue = scaled_note_delta.y.round() as i32;
+    (offset_delta, pitch_delta)
+}
+
+fn transform_note(
+    note: &mut PlacedNote,
+    offset_delta: f32,
+    pitch_delta: i32,
+    roll_config: &RollConfig,
+) -> PlacedNote {
+    let prev_offset: f32 = note.offset.into();
+    let next_offset_raw =
+        (prev_offset + offset_delta).clamp(roll_config.project_offset, roll_config.project_length);
+    let quantise_ratio = 16.0;
+    let next_offset = (next_offset_raw * quantise_ratio).round() / quantise_ratio;
+    let prev_pitch_value: PitchValue = note.note.pitch_name.into();
+    let next_pitch_value = (prev_pitch_value + pitch_delta).clamp(0, roll_config.max_pitch_value);
+    PlacedNote {
+        note: Note {
+            pitch_name: next_pitch_value.into(),
+            beats: note.note.beats,
+        },
+        offset: next_offset.into(),
+    }
+}
+
+fn dispatch_note(store: &Store, note: &mut PlacedNote, next_note: PlacedNote, note_idx: usize) {
+    let track_index = 0;
+    let sel = Selector::Note(track_index, note_idx);
+    if next_note.offset != note.offset {
+        store.dispatch(&sel, Action::SetNoteOffset(next_note.offset.into()));
+    };
+    if next_note.note.pitch_name != note.note.pitch_name {
+        store.dispatch(
+            &sel,
+            Action::SetNoteOctave(next_note.note.pitch_name.octave),
+        );
+        store.dispatch(
+            &sel,
+            Action::SetNoteScaleValue(next_note.note.pitch_name.scale_value),
+        );
+    }
 }
 
 fn create_pitch_value_shapes(roll_config: &RollConfig) -> Vec<Shape> {
