@@ -8,7 +8,6 @@ use shared::{
     model::{Note, PitchName, PlacedNote, ScaleValue},
     types::PitchValue,
 };
-use web_sys::console;
 
 struct RollConfig {
     to_screen: RectTransform,
@@ -42,51 +41,17 @@ impl RollConfig {
 }
 
 trait Renderable<T> {
-    fn to_pos2(
-        &self,
-        project_length: f32,
-        max_pitch_value: i32,
-        canvas_x_size: f32,
-        canvas_y_size: f32,
-    ) -> Pos2;
-
-    fn to_shape(
+    fn get_shape(
         &self,
         project_length: f32,
         max_pitch_value: i32,
         canvas_x_size: f32,
         canvas_y_size: f32,
     ) -> Shape;
-
-    fn from_pos2(
-        &self,
-        pos2: Pos2,
-        project_length: f32,
-        max_pitch_value: i32,
-        canvas_x_size: f32,
-        canvas_y_size: f32,
-    ) -> T;
 }
 
 impl Renderable<PlacedNote> for PlacedNote {
-    fn to_pos2(
-        &self,
-        project_length: f32,
-        max_pitch_value: i32,
-        canvas_x_size: f32,
-        canvas_y_size: f32,
-    ) -> Pos2 {
-        let max_pitch_value = max_pitch_value as f32;
-        let x_scale = canvas_x_size / project_length;
-        let y_scale = canvas_y_size / max_pitch_value;
-        let scale = Vec2::new(x_scale, y_scale);
-        let x: f32 = self.offset.into();
-        let pitch_value: PitchValue = self.note.pitch_name.into();
-        let y = max_pitch_value - pitch_value as f32;
-        (Vec2::new(x, y) * scale).to_pos2()
-    }
-
-    fn to_shape(
+    fn get_shape(
         &self,
         project_length: f32,
         max_pitch_value: i32,
@@ -106,31 +71,6 @@ impl Renderable<PlacedNote> for PlacedNote {
         let bottom_right = Vec2::new(x2, y2) * scale;
         let note_rect = Rect::from_min_max(top_left.to_pos2(), bottom_right.to_pos2());
         Shape::rect_filled(note_rect, CornerRadius::same(1), Color32::WHITE)
-    }
-
-    fn from_pos2(
-        &self,
-        pos2: Pos2,
-        project_length: f32,
-        max_pitch_value: i32,
-        canvas_x_size: f32,
-        canvas_y_size: f32,
-    ) -> PlacedNote {
-        let inverse_scale = Vec2 {
-            x: project_length / canvas_x_size,
-            y: max_pitch_value as f32 / canvas_y_size,
-        };
-        let note_values = pos2.to_vec2() * inverse_scale;
-        //console::log_1(&format!("{:?}", note_values).into());
-        let offset = note_values.x.clamp(0.0, project_length);
-        let pitch_value: PitchValue = (note_values.y.round() as i32).clamp(0, max_pitch_value);
-        PlacedNote {
-            note: Note {
-                pitch_name: pitch_value.into(),
-                beats: self.note.beats,
-            },
-            offset: offset.into(),
-        }
     }
 }
 
@@ -224,7 +164,7 @@ fn note_roll_canvas(store: &Store, ui: &mut Ui) {
         painter.extend(minor_line_shapes.transform(to_screen));
         painter.extend(quarter_line_shapes.transform(to_screen));
         painter.extend(pitch_value_shapes.transform(to_screen));
-        painter.extend(note_shapes.transform(to_screen));
+        painter.extend(note_shapes);
         response
     });
 }
@@ -255,16 +195,16 @@ fn create_note_shapes(
         .enumerate()
         .map(|(note_idx, note)| {
             let note_shape = create_note_rect(note, &roll_config);
-            let next_note = get_next_note(
+            let (offset_delta, pitch_delta) = get_note_delta(
                 ui,
-                note,
-                note_shape.visual_bounding_rect(),
-                response,
+                &note_shape,
+                &response,
                 note_idx,
                 &roll_config,
                 &inverses,
             );
-            //dispatch_note(store, note, next_note, note_idx);
+            let next_note = transform_note(note, offset_delta, pitch_delta, &roll_config);
+            dispatch_note(store, note, next_note, note_idx);
             note_shape
         })
         .collect();
@@ -272,41 +212,34 @@ fn create_note_shapes(
 }
 
 fn create_note_rect(note: &mut PlacedNote, roll_config: &RollConfig) -> Shape {
-    note.to_shape(
-        roll_config.project_length,
-        roll_config.max_pitch_value,
-        roll_config.x_size,
-        roll_config.y_size,
-    )
-}
-
-fn get_next_note(
-    ui: &Ui,
-    note: &mut PlacedNote,
-    note_rect: Rect,
-    response: Response,
-    note_idx: usize,
-    roll_config: &RollConfig,
-    inverses: &Inverses,
-) -> PlacedNote {
-    let note_pos2 = note.to_pos2(
+    let note_shape = note.get_shape(
         roll_config.project_length,
         roll_config.max_pitch_value,
         roll_config.x_size,
         roll_config.y_size,
     );
+    note_shape.transform(roll_config.to_screen)
+}
+
+fn get_note_delta(
+    ui: &Ui,
+    note_shape: &Shape,
+    response: &Response,
+    note_idx: usize,
+    roll_config: &RollConfig,
+    inverses: &Inverses,
+) -> (f32, i32) {
     let note_id = response.id.with(note_idx);
+    let note_rect = note_shape.visual_bounding_rect();
     let note_response = ui.interact(note_rect, note_id, Sense::drag());
     let note_delta = note_response.drag_delta();
-    let new_note_pos2 = note_pos2 + note_delta;
-    console::log_1(&format!("{:?}", note_delta).into());
-    note.from_pos2(
-        new_note_pos2,
-        roll_config.project_length,
-        roll_config.max_pitch_value,
-        roll_config.x_size,
-        roll_config.y_size,
-    )
+    let scaled_note_delta = Vec2 {
+        x: note_delta.x * inverses.inv_x_size * roll_config.project_length,
+        y: -note_delta.y * inverses.inv_y_size * roll_config.max_pitch_value as f32,
+    };
+    let offset_delta = scaled_note_delta.x;
+    let pitch_delta: PitchValue = scaled_note_delta.y.round() as i32;
+    (offset_delta, pitch_delta)
 }
 
 fn transform_note(
