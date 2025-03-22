@@ -1,9 +1,10 @@
 use crate::SAMPLE_RATE;
 use crate::effect::apply_effects;
+use crate::sig::OutputNode;
 use crate::wave::polyphonic_wave;
 use shared::model::{GeneratorType, Project};
 
-pub fn render(project: &Project) -> Vec<f32> {
+pub fn render(project: &Project) -> OutputNode {
     let track = &project.tracks[0];
     let generator = &project.generators[0];
     let mixer_channel = &project.mixer[0];
@@ -39,5 +40,14 @@ pub fn render(project: &Project) -> Vec<f32> {
         // TODO: account for offsets properly, instead of just appending here.
     }
 
-    apply_effects(&total_wave, &mixer_channel.effects)
+    // TODO: amp based on volume
+    let buffer = apply_effects(&total_wave, &mixer_channel.effects)
+        .into_iter()
+        .map(|sample| sample.clamp(-1.0, 1.0))
+        .collect();
+    OutputNode {
+        buffer,
+        index: 0,
+        output: None,
+    }
 }
