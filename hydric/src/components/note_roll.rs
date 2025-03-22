@@ -80,7 +80,7 @@ struct NoteRoll {
     max_pitch_value: f32,
     project_offset: f32,
     quantise_ratio: f32,
-    pub shapes: Vec<Shape>,
+    shapes: Vec<Shape>,
 }
 
 impl NoteRoll {
