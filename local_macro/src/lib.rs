@@ -1,6 +1,49 @@
 use proc_macro::TokenStream;
 use quote::{format_ident, quote};
-use syn::{DeriveInput, Fields, Type, parse_macro_input};
+use syn::{DeriveInput, Fields, Ident, Type, Field, parse_macro_input};
+
+enum Tag {
+    AsType {
+        proto_type: Ident,
+        model_type: Ident,
+    },
+    Optional,
+    Enum,
+    Repeated,
+    NoTag,
+}
+
+/// Extracts up to one tag from a struct field. Used to determine what to codegen for that field.
+fn extract_tag(field: &Field) -> Tag {
+    let mut tag = Tag::NoTag;
+    for attr in &field.attrs {
+        // if tagged with proto_type_u32, then set "as <type>" for the model type.
+        if attr.path().is_ident("proto_type_u32") {
+            if let Type::Path(ty) = &field.ty {
+                tag = Tag::AsType {
+                    proto_type: format_ident!("{}", "u32"),
+                    model_type: ty.path.get_ident().unwrap().clone(),
+                };
+            }
+        }
+
+        // if tagged with proto_optional, then call ".unwrap()" when creating the model type.
+        if attr.path().is_ident("proto_optional") {
+            tag = Tag::Optional;
+        }
+
+        // if tagged with proto_enum, then call "<field>()" on the field, to return the
+        // enum type instead of an i32.
+        if attr.path().is_ident("proto_enum") {
+            tag = Tag::Enum;
+        }
+
+        if attr.path().is_ident("proto_repeated") {
+            tag = Tag::Repeated;
+        }
+    }
+    tag
+}
 
 #[proc_macro_derive(
     FromProto,
@@ -14,49 +57,20 @@ pub fn derive_from_proto(input: TokenStream) -> TokenStream {
 
     if let syn::Data::Struct(ref data) = input.data {
         if let Fields::Named(ref fields) = data.fields {
-            // Deal with a named-field struct
-            let field_vals = fields.named.iter().enumerate().map(|(_i, field)| {
+            let field_vals = fields.named.iter().map(|field| {
                 let name = &field.ident;
+                let tag = extract_tag(&field);
 
-                let mut as_type = None;
-                let mut is_optional = false;
-                let mut is_enum = false;
-                let mut is_repeated = false;
-                for attr in &field.attrs {
-                    // if tagged with proto_type_u32, then set "as <type>" for the model type.
-                    if attr.path().is_ident("proto_type_u32") {
-                        let ty = &field.ty;
-                        if let Type::Path(ty) = ty {
-                            as_type = Some(ty.path.get_ident());
-                        }
+                match tag {
+                    Tag::AsType { model_type, .. } => {
+                        quote!(#name: (item.#name as #model_type).into())
                     }
-
-                    // if tagged with proto_optional, then call ".unwrap()" when creating the model type.
-                    if attr.path().is_ident("proto_optional") {
-                        is_optional = true;
+                    Tag::Optional => quote!(#name: item.#name.unwrap().into()),
+                    Tag::Repeated => {
+                        quote!(#name: item.#name.into_iter().map(|it| it.into()).collect())
                     }
-
-                    // if tagged with proto_enum, then call "<field>()" on the field, to return the
-                    // enum type instead of an i32.
-                    if attr.path().is_ident("proto_enum") {
-                        is_enum = true;
-                    }
-
-                    if attr.path().is_ident("proto_repeated") {
-                        is_repeated = true;
-                    }
-                }
-
-                if let Some(as_type) = as_type {
-                    quote!(#name: (item.#name as #as_type).into())
-                } else if is_optional {
-                    quote!(#name: item.#name.unwrap().into())
-                } else if is_repeated {
-                    quote!(#name: item.#name.into_iter().map(|it| it.into()).collect())
-                } else if is_enum {
-                    quote!(#name: item.#name().into())
-                } else {
-                    quote!(#name: item.#name.into())
+                    Tag::Enum => quote!(#name: item.#name().into()),
+                    Tag::NoTag => quote!(#name: item.#name.into()),
                 }
             });
 
@@ -100,14 +114,8 @@ pub fn derive_from_proto(input: TokenStream) -> TokenStream {
         .into();
     }
 
-    // Catchall if we don't match on the structure we want
-    TokenStream::from(
-        syn::Error::new(
-            input.ident.span(),
-            "Only structs with named fields can derive `FromProto`",
-        )
-        .to_compile_error(),
-    )
+    // Catchall if we don't match on the structure we want.
+    catchall_error(&input)
 }
 
 #[proc_macro_derive(
@@ -122,48 +130,21 @@ pub fn derive_into_proto(input: TokenStream) -> TokenStream {
 
     if let syn::Data::Struct(ref data) = input.data {
         if let Fields::Named(ref fields) = data.fields {
-            // Deal with a named-field struct
-            let field_vals = fields.named.iter().enumerate().map(|(_i, field)| {
-                // grab the name of the field
+            let field_vals = fields.named.iter().map(|field| {
                 let name = &field.ident;
+                let tag = extract_tag(&field);
 
-                let mut as_type = None;
-                let mut is_optional = false;
-                let mut is_enum = false;
-                let mut is_repeated = false;
-                for attr in &field.attrs {
-                    if attr.path().is_ident("proto_type_u32") {
-                        as_type = Some(format_ident!("{}", "u32"));
+                match tag {
+                    Tag::AsType { proto_type, .. } => {
+                        quote!(#name: (item.#name as #proto_type).into())
                     }
-
-                    if attr.path().is_ident("proto_optional") {
-                        is_optional = true;
+                    Tag::Optional => quote!(#name: Some(item.#name.into())),
+                    Tag::Repeated => {
+                        quote!(#name: item.#name.into_iter().map(|it| it.into()).collect())
                     }
-
-                    // if tagged with proto_enum, then call "<field>()" on the field, to return the
-                    // enum type instead of an i32.
-                    if attr.path().is_ident("proto_enum") {
-                        is_enum = true;
-                    }
-
-                    if attr.path().is_ident("proto_repeated") {
-                        is_repeated = true;
-                    }
-                }
-
-                if let Some(as_type) = as_type {
-                    // Note: optional wrapping doesn't apply if as_type is present, since it's only
-                    // used for primitives.
-                    quote!(#name: (item.#name as #as_type).into())
-                } else if is_optional {
-                    quote!(#name: Some(item.#name.into()))
-                } else if is_repeated {
-                    quote!(#name: item.#name.into_iter().map(|it| it.into()).collect())
-                } else if is_enum {
                     // enums are saved as i32 in protos.
-                    quote!(#name: item.#name as i32)
-                } else {
-                    quote!(#name: item.#name.into())
+                    Tag::Enum => quote!(#name: item.#name as i32),
+                    Tag::NoTag => quote!(#name: item.#name.into()),
                 }
             });
 
@@ -182,15 +163,13 @@ pub fn derive_into_proto(input: TokenStream) -> TokenStream {
 
     if let syn::Data::Enum(ref data) = input.data {
         let variants = &data.variants;
-        let variant_vals = variants
-            .iter()
-            .map(|variant| {
-                let variant_name = &variant.ident;
-                // e.g. SimpleResonator -> SimpleResonatorEqType
-                let proto_variant_name = format_ident!("{}{}", variant_name.clone(), name.clone());
+        let variant_vals = variants.iter().map(|variant| {
+            let variant_name = &variant.ident;
+            // e.g. SimpleResonator -> SimpleResonatorEqType
+            let proto_variant_name = format_ident!("{}{}", variant_name.clone(), name.clone());
 
-                quote!(#name::#variant_name => #proto_name::#proto_variant_name)
-            });
+            quote!(#name::#variant_name => #proto_name::#proto_variant_name)
+        });
 
         return quote!(
             impl From<#name> for #proto_name {
@@ -204,7 +183,11 @@ pub fn derive_into_proto(input: TokenStream) -> TokenStream {
         .into();
     }
 
-    // Catchall if we don't match on the structure we want
+    // Catchall if we don't match on the structure we want.
+    catchall_error(&input)
+}
+
+fn catchall_error(input: &DeriveInput) -> TokenStream {
     TokenStream::from(
         syn::Error::new(
             input.ident.span(),
