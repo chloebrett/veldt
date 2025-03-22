@@ -12,12 +12,8 @@ use shared::{
 struct RollConfig {
     x_size: f32,
     y_size: f32,
-    inv_x_size: f32,
-    inv_y_size: f32,
     project_length: f32,
-    inv_project_length: f32,
     max_pitch_value: PitchValue,
-    inv_max_pitch_value: f32,
     project_offset: f32,
     note_height: f32,
 }
@@ -34,12 +30,8 @@ impl RollConfig {
         RollConfig {
             x_size,
             y_size,
-            inv_x_size: 1.0 / x_size,
-            inv_y_size: 1.0 / y_size,
             project_length,
-            inv_project_length: 1.0 / project_length,
             max_pitch_value,
-            inv_max_pitch_value: 1.0 / max_pitch_value as f32,
             project_offset,
             note_height: y_size / max_pitch_value as f32,
         }
@@ -133,6 +125,10 @@ fn create_note_shapes(
     response: &Response,
     roll_config: &RollConfig,
 ) -> Vec<Shape> {
+    let inv_x_size = 1.0 / roll_config.x_size;
+    let inv_y_size = 1.0 / roll_config.y_size;
+    let inv_project_length = 1.0 / roll_config.project_length;
+    let inv_max_pitch_value = 1.0 / roll_config.max_pitch_value as f32;
     let note_shapes: Vec<Shape> = store.get().project.tracks[0]
         .notes
         .clone()
@@ -140,13 +136,13 @@ fn create_note_shapes(
         .enumerate()
         .map(|(note_idx, note)| {
             let offset: f32 = note.offset.into();
-            let x1: f32 = offset * roll_config.inv_project_length * roll_config.x_size;
+            let x1: f32 = offset * inv_project_length * roll_config.x_size;
             let pitch_value: PitchValue = note.note.pitch_name.into();
-            let pitch_ratio = 1.0 - pitch_value as f32 * roll_config.inv_max_pitch_value;
+            let pitch_ratio = 1.0 - pitch_value as f32 * inv_max_pitch_value;
             let y1 = roll_config.y_size * pitch_ratio - roll_config.note_height;
             let note_pos = Pos2::new(x1, y1);
             let x2 =
-                note_pos.x + note.note.beats * roll_config.inv_project_length * roll_config.x_size;
+                note_pos.x + note.note.beats * inv_project_length * roll_config.x_size;
             let y2 = note_pos.y + roll_config.note_height;
             let note_bottom_right_corner = Pos2::new(x2, y2);
             let note_rect = Rect::from_min_max(note_pos, note_bottom_right_corner);
@@ -154,8 +150,8 @@ fn create_note_shapes(
             let note_response = ui.interact(note_rect, note_id, Sense::drag());
             let note_delta = note_response.drag_delta();
             let scaled_note_delta = Vec2 {
-                x: note_delta.x * roll_config.inv_x_size * roll_config.project_length,
-                y: -note_delta.y * roll_config.inv_y_size * roll_config.max_pitch_value as f32,
+                x: note_delta.x * inv_x_size * roll_config.project_length,
+                y: -note_delta.y * inv_y_size * roll_config.max_pitch_value as f32,
             };
             let offset_delta = scaled_note_delta.x;
             let pitch_delta: PitchValue = scaled_note_delta.y.round() as i32;
@@ -193,10 +189,11 @@ fn create_note_shapes(
 }
 
 fn create_pitch_value_shapes(roll_config: &RollConfig) -> Vec<Shape> {
+    let inv_max_pitch_value = 1.0 / roll_config.max_pitch_value as f32;
     (0..roll_config.max_pitch_value)
         .filter(|pitch_value| pitch_value % 2 == 0)
         .map(|pitch_value| {
-            let pitch_ratio = 1.0 - pitch_value as f32 * roll_config.inv_max_pitch_value;
+            let pitch_ratio = 1.0 - pitch_value as f32 * inv_max_pitch_value;
             let y1 = roll_config.y_size * pitch_ratio - roll_config.note_height;
             let upper_left_corner = Pos2::new(0.0, y1);
             let y2 = upper_left_corner.y + roll_config.note_height;
