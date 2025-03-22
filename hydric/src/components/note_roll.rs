@@ -75,6 +75,22 @@ impl Transformable<Vec<Shape>> for Vec<Shape> {
 }
 
 pub fn note_roll(store: &Store, ui: &mut Ui) {
+    let track_index = 0;
+    if ui.button("New note").clicked() {
+        store.dispatch(
+            &Selector::Track(track_index),
+            Action::AddNote(PlacedNote {
+                note: Note {
+                    pitch_name: PitchName {
+                        scale_value: store.get().key,
+                        octave: 4,
+                    },
+                    beats: 1.0,
+                },
+                offset: 0.0.into(),
+            }),
+        );
+    }
     ScrollArea::vertical()
         .min_scrolled_height(200.0)
         .show(ui, |ui| {
