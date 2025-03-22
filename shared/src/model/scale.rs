@@ -1,10 +1,22 @@
 use crate::pmodel::*;
 
-use strum::{Display, EnumIter, EnumString};
 use local_macro::{FromProto, IntoProto};
+use strum::{Display, EnumIter, EnumString};
 
 #[derive(
-    Debug, Clone, Copy, PartialEq, Eq, Hash, PartialOrd, Ord, EnumString, Display, EnumIter, FromProto, IntoProto
+    Debug,
+    Clone,
+    Copy,
+    PartialEq,
+    Eq,
+    Hash,
+    PartialOrd,
+    Ord,
+    EnumString,
+    Display,
+    EnumIter,
+    FromProto,
+    IntoProto,
 )]
 pub enum Scale {
     Chromatic,
