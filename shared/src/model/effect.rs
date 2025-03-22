@@ -4,60 +4,52 @@ use crate::pmodel::{
     SimpleCompressorProto, SimpleDelayProto, SimpleEqProto, effect_instance_proto,
 };
 use crate::types::{Decibels, KnobPosition, Milliseconds, Volume};
+use effect_instance_proto::Effect as EffectProto;
+use local_macro::{FromProto, IntoProto};
 
 type EffectId = usize;
 type _EffectInstanceId = usize;
 
-#[derive(Clone, Debug, PartialEq)]
+#[derive(Clone, Debug, PartialEq, FromProto, IntoProto)]
 pub struct EffectInstance {
+    #[proto_optional]
     pub effect: Effect,
 
+    #[proto_optional]
     pub meta: EffectMeta,
     // TODO: automation links
 }
 
-impl From<EffectInstanceProto> for EffectInstance {
-    fn from(item: EffectInstanceProto) -> Self {
-        EffectInstance {
-            meta: item.meta.unwrap().into(),
-            effect: match item.effect.unwrap() {
-                effect_instance_proto::Effect::SimpleDelay(simple_delay) => Effect::SimpleDelay {
-                    config: simple_delay.config.unwrap().into(),
-                },
-                effect_instance_proto::Effect::SimpleEq(simple_eq) => Effect::SimpleEq {
-                    config: simple_eq.config.unwrap().into(),
-                },
-                effect_instance_proto::Effect::SimpleCompressor(simple_compressor) => {
-                    Effect::SimpleCompressor {
-                        config: simple_compressor.config.unwrap().into(),
-                    }
-                }
+impl From<EffectProto> for Effect {
+    fn from(item: EffectProto) -> Self {
+        match item {
+            EffectProto::SimpleDelay(simple_delay) => Effect::SimpleDelay {
+                config: simple_delay.config.unwrap().into(),
+            },
+            EffectProto::SimpleEq(simple_eq) => Effect::SimpleEq {
+                config: simple_eq.config.unwrap().into(),
+            },
+            EffectProto::SimpleCompressor(simple_compressor) => Effect::SimpleCompressor {
+                config: simple_compressor.config.unwrap().into(),
             },
         }
     }
 }
 
-impl From<EffectInstance> for EffectInstanceProto {
-    fn from(item: EffectInstance) -> Self {
-        EffectInstanceProto {
-            meta: Some(item.meta.into()),
-            effect: match item.effect {
-                Effect::SimpleDelay { config } => Some(effect_instance_proto::Effect::SimpleDelay(
-                    SimpleDelayProto {
-                        config: Some(config.into()),
-                    },
-                )),
-                Effect::SimpleEq { config } => {
-                    Some(effect_instance_proto::Effect::SimpleEq(SimpleEqProto {
-                        config: Some(config.into()),
-                    }))
-                }
-                Effect::SimpleCompressor { config } => Some(
-                    effect_instance_proto::Effect::SimpleCompressor(SimpleCompressorProto {
-                        config: Some(config.into()),
-                    }),
-                ),
-            },
+impl From<Effect> for EffectProto {
+    fn from(item: Effect) -> Self {
+        match item {
+            Effect::SimpleDelay { config } => EffectProto::SimpleDelay(SimpleDelayProto {
+                config: Some(config.into()),
+            }),
+            Effect::SimpleEq { config } => EffectProto::SimpleEq(SimpleEqProto {
+                config: Some(config.into()),
+            }),
+            Effect::SimpleCompressor { config } => {
+                EffectProto::SimpleCompressor(SimpleCompressorProto {
+                    config: Some(config.into()),
+                })
+            }
         }
     }
 }
@@ -70,90 +62,25 @@ pub enum Effect {
     SimpleCompressor { config: CompressorConfig },
 }
 
-#[derive(Clone, Debug, PartialEq)]
+#[derive(Clone, Debug, PartialEq, FromProto, IntoProto)]
 pub struct EffectMeta {
+    #[proto_type_u32]
     pub id: EffectId,
-
     pub wet: KnobPosition,
     // TODO: pan
 }
 
-impl From<EffectMetaProto> for EffectMeta {
-    fn from(item: EffectMetaProto) -> Self {
-        EffectMeta {
-            id: item.id as usize,
-            wet: item.wet,
-        }
-    }
-}
-
-impl From<EffectMeta> for EffectMetaProto {
-    fn from(item: EffectMeta) -> Self {
-        EffectMetaProto {
-            id: item.id as u32,
-            wet: item.wet,
-        }
-    }
-}
-
-#[derive(Clone, Debug, PartialEq)]
+#[derive(Clone, Debug, PartialEq, FromProto, IntoProto)]
 pub struct DelayConfig {
     pub amplitude: Volume,
-
     pub delay_ms: Milliseconds,
 }
 
-impl From<DelayConfigProto> for DelayConfig {
-    fn from(item: DelayConfigProto) -> Self {
-        DelayConfig {
-            amplitude: item.amplitude,
-            delay_ms: item.delay_ms,
-        }
-    }
-}
-
-impl From<DelayConfig> for DelayConfigProto {
-    fn from(item: DelayConfig) -> Self {
-        DelayConfigProto {
-            amplitude: item.amplitude,
-            delay_ms: item.delay_ms,
-        }
-    }
-}
-
-#[derive(Clone, Debug, PartialEq)]
+#[derive(Clone, Debug, PartialEq, FromProto, IntoProto)]
 pub struct CompressorConfig {
     threshold: Decibels,
-
     attack: Milliseconds,
-
     release: Milliseconds,
-
     ratio: KnobPosition,
-
     gain: Decibels,
-}
-
-impl From<CompressorConfigProto> for CompressorConfig {
-    fn from(item: CompressorConfigProto) -> Self {
-        CompressorConfig {
-            threshold: item.threshold,
-            attack: item.attack,
-            release: item.release,
-            ratio: item.ratio,
-            gain: item.gain,
-        }
-    }
-}
-
-impl From<CompressorConfig> for CompressorConfigProto {
-    fn from(item: CompressorConfig) -> Self {
-        CompressorConfigProto {
-            threshold: item.threshold,
-            attack: item.attack,
-            release: item.release,
-            ratio: item.ratio,
-            gain: item.gain,
-        }
-    }
 }

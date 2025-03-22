@@ -1,55 +1,22 @@
 use crate::model::Note;
 use crate::pmodel::{PlacedNoteProto, TrackProto};
-use crate::serialize::map_vec;
 use crate::types::*;
+use local_macro::{FromProto, IntoProto};
 use ordered_float::OrderedFloat;
 use std::cmp::Ordering;
 
-#[derive(Clone, Debug, PartialEq)]
+#[derive(Clone, Debug, PartialEq, FromProto, IntoProto)]
 pub struct Track {
     /// Ordered by offset.
+    #[proto_repeated]
     pub notes: Vec<PlacedNote>,
 }
 
-impl From<TrackProto> for Track {
-    fn from(item: TrackProto) -> Track {
-        Track {
-            notes: map_vec(item.notes),
-        }
-    }
-}
-
-impl From<Track> for TrackProto {
-    fn from(item: Track) -> TrackProto {
-        TrackProto {
-            notes: map_vec(item.notes),
-        }
-    }
-}
-
-impl From<PlacedNoteProto> for PlacedNote {
-    fn from(item: PlacedNoteProto) -> PlacedNote {
-        PlacedNote {
-            note: item.note.unwrap().into(),
-            offset: OrderedFloat(item.offset),
-        }
-    }
-}
-
-impl From<PlacedNote> for PlacedNoteProto {
-    fn from(item: PlacedNote) -> PlacedNoteProto {
-        PlacedNoteProto {
-            note: Some(item.note.into()),
-            offset: *item.offset,
-        }
-    }
-}
-
 /// Ordered by offset.
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, FromProto, IntoProto)]
 pub struct PlacedNote {
+    #[proto_optional]
     pub note: Note,
-
     pub offset: OrderedFloat<Beats>,
 }
 
