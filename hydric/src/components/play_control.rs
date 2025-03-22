@@ -14,7 +14,7 @@ pub fn play_control(app: &mut App, ui: &mut Ui) {
             .map(|sample| sample.clamp(-1.0, 1.0) * volume)
             .collect();
 
-        let signal = dasp_signal::from_iter(app.audio.clone().into_iter());
+        let signal = dasp_signal::from_iter(app.audio.clone());
         app.handle = Some(play(signal));
     }
     if let Some(render_promise) = &app.server_render_promise {
@@ -27,7 +27,7 @@ pub fn play_control(app: &mut App, ui: &mut Ui) {
                     .copied()
                     .map(|sample| sample.clamp(-1.0, 1.0) * volume)
                     .collect::<Vec<f32>>();
-                let signal = dasp_signal::from_iter(app.audio.clone().into_iter());
+                let signal = dasp_signal::from_iter(app.audio.clone());
                 app.handle = Some(play(signal));
             }
         }

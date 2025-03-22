@@ -70,9 +70,9 @@ pub fn load_control(store: &Store, ui: &mut Ui) {
                     selectable_value(
                         ui,
                         get_set(store.get().load_track_name.clone(), |it| {
-                            it.map(|it| {
-                                store.dispatchr(Action::SetLoadTrackName { track_name: it })
-                            });
+                            if let Some(it) = it {
+                                store.dispatchr(Action::SetLoadTrackName { track_name: it });
+                            }
                         }),
                         Some(name.clone()),
                         name,
