@@ -53,6 +53,7 @@ pub enum GeneratorType {
 
 #[derive(Clone, Debug, PartialEq, FromProto, IntoProto)]
 pub struct SimpleWaveConfig {
+    #[proto_enum]
     pub wave: WaveType,
 
     #[proto_optional]
