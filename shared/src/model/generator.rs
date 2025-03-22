@@ -5,6 +5,7 @@ use crate::pmodel::{
     generator_instance_proto::Kind,
 };
 use crate::types::Volume;
+use local_macro::{FromProto, IntoProto};
 
 type GeneratorInstanceId = usize;
 
@@ -83,24 +84,8 @@ impl From<SimpleWaveConfig> for SimpleWaveConfigProto {
     }
 }
 
-#[derive(Clone, Debug, PartialEq)]
+#[derive(Clone, Debug, PartialEq, FromProto, IntoProto)]
 pub struct GeneratorMeta {
     pub volume: Volume,
     // TODO: pan
-}
-
-impl From<GeneratorMetaProto> for GeneratorMeta {
-    fn from(item: GeneratorMetaProto) -> Self {
-        GeneratorMeta {
-            volume: item.volume,
-        }
-    }
-}
-
-impl From<GeneratorMeta> for GeneratorMetaProto {
-    fn from(item: GeneratorMeta) -> Self {
-        GeneratorMetaProto {
-            volume: item.volume,
-        }
-    }
 }

@@ -5,6 +5,7 @@ use crate::pmodel::{
 };
 use crate::types::{Decibels, KnobPosition, Milliseconds, Volume};
 use effect_instance_proto::Effect as EffectProto;
+use local_macro::{FromProto, IntoProto};
 
 type EffectId = usize;
 type _EffectInstanceId = usize;
@@ -102,59 +103,17 @@ impl From<EffectMeta> for EffectMetaProto {
     }
 }
 
-#[derive(Clone, Debug, PartialEq)]
+#[derive(Clone, Debug, PartialEq, FromProto, IntoProto)]
 pub struct DelayConfig {
     pub amplitude: Volume,
     pub delay_ms: Milliseconds,
 }
 
-impl From<DelayConfigProto> for DelayConfig {
-    fn from(item: DelayConfigProto) -> Self {
-        DelayConfig {
-            amplitude: item.amplitude,
-            delay_ms: item.delay_ms,
-        }
-    }
-}
-
-impl From<DelayConfig> for DelayConfigProto {
-    fn from(item: DelayConfig) -> Self {
-        DelayConfigProto {
-            amplitude: item.amplitude,
-            delay_ms: item.delay_ms,
-        }
-    }
-}
-
-#[derive(Clone, Debug, PartialEq)]
+#[derive(Clone, Debug, PartialEq, FromProto, IntoProto)]
 pub struct CompressorConfig {
     threshold: Decibels,
     attack: Milliseconds,
     release: Milliseconds,
     ratio: KnobPosition,
     gain: Decibels,
-}
-
-impl From<CompressorConfigProto> for CompressorConfig {
-    fn from(item: CompressorConfigProto) -> Self {
-        CompressorConfig {
-            threshold: item.threshold,
-            attack: item.attack,
-            release: item.release,
-            ratio: item.ratio,
-            gain: item.gain,
-        }
-    }
-}
-
-impl From<CompressorConfig> for CompressorConfigProto {
-    fn from(item: CompressorConfig) -> Self {
-        CompressorConfigProto {
-            threshold: item.threshold,
-            attack: item.attack,
-            release: item.release,
-            ratio: item.ratio,
-            gain: item.gain,
-        }
-    }
 }
