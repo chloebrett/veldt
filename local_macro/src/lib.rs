@@ -1,6 +1,6 @@
 use proc_macro::TokenStream;
 use quote::{format_ident, quote};
-use syn::{DeriveInput, Fields, parse_macro_input, Type};
+use syn::{DeriveInput, Fields, Type, parse_macro_input};
 
 #[proc_macro_derive(FromProto, attributes(proto_type_u32, proto_optional, proto_enum))]
 pub fn derive_from_proto(input: TokenStream) -> TokenStream {
@@ -37,18 +37,13 @@ pub fn derive_from_proto(input: TokenStream) -> TokenStream {
                 }
 
                 if let Some(as_type) = as_type {
-                    // Note: unwrap doesn't apply if as_type is present.
                     quote!(#name: (item.#name as #as_type).into())
+                } else if is_optional {
+                    quote!(#name: item.#name.unwrap().into())
+                } else if is_enum {
+                    quote!(#name: item.#name().into())
                 } else {
-                    if is_optional {
-                        quote!(#name: item.#name.unwrap().into())
-                    } else {
-                        if is_enum {
-                            quote!(#name: item.#name().into())
-                        } else {
-                            quote!(#name: item.#name.into())
-                        }
-                    }
+                    quote!(#name: item.#name.into())
                 }
             });
 
@@ -112,17 +107,13 @@ pub fn derive_into_proto(input: TokenStream) -> TokenStream {
                     // Note: optional wrapping doesn't apply if as_type is present, since it's only
                     // used for primitives.
                     quote!(#name: (item.#name as #as_type).into())
+                } else if is_optional {
+                    quote!(#name: Some(item.#name.into()))
+                } else if is_enum {
+                    // enums are saved as i32 in protos.
+                    quote!(#name: item.#name as i32)
                 } else {
-                    if is_optional {
-                        quote!(#name: Some(item.#name.into()))
-                    } else {
-                        if is_enum {
-                            // enums are saved as i32 in protos.
-                            quote!(#name: item.#name as i32)
-                        } else {
-                            quote!(#name: item.#name.into())
-                        }
-                    }
+                    quote!(#name: item.#name.into())
                 }
             });
 
