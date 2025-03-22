@@ -2,14 +2,23 @@ use crate::state::{Action, Selector, Store};
 
 use egui::{
     Color32, CornerRadius, Frame, Pos2, Rect, Response, ScrollArea, Sense, Shape, Stroke, Ui, Vec2,
-    emath::RectTransform, epaint::RectShape,
+    emath::RectTransform, epaint::RectShape, pos2, vec2,
 };
 use shared::{
     model::{Note, PitchName, PlacedNote, ScaleValue},
     types::PitchValue,
 };
 
-pub fn note_roll_widget(store: &Store, ui: &mut Ui) {
+pub fn note_roll_display(store: &Store, ui: &mut Ui) {
+    new_note_button(store, ui);
+    ScrollArea::vertical()
+        .min_scrolled_height(200.0)
+        .show(ui, |ui| {
+            note_roll_canvas(store, ui);
+        });
+}
+
+fn new_note_button(store: &Store, ui: &mut Ui) {
     let track_index = 0;
     if ui.button("New note").clicked() {
         store.dispatch(
@@ -26,17 +35,13 @@ pub fn note_roll_widget(store: &Store, ui: &mut Ui) {
             }),
         );
     }
-    ScrollArea::vertical()
-        .min_scrolled_height(200.0)
-        .show(ui, |ui| {
-            note_roll_canvas(store, ui);
-        });
 }
 
 fn note_roll_canvas(store: &Store, ui: &mut Ui) {
     let project_length = 16.0;
     let project_offset = 0.0;
     let quantise_ratio = 16.0;
+    let track_index = 0;
     let max_pitch_value: PitchValue = PitchName {
         scale_value: ScaleValue::GSharp,
         octave: 8,
@@ -44,7 +49,7 @@ fn note_roll_canvas(store: &Store, ui: &mut Ui) {
     .into();
     Frame::canvas(ui.style()).show(ui, |ui| {
         let (response, painter) =
-            ui.allocate_painter(Vec2::new(ui.available_width(), 600.0), Sense::hover());
+            ui.allocate_painter(vec2(ui.available_width(), 600.0), Sense::hover());
         let to_screen = RectTransform::from_to(
             Rect::from_min_size(Pos2::ZERO, response.rect.size()),
             response.rect,
@@ -55,6 +60,7 @@ fn note_roll_canvas(store: &Store, ui: &mut Ui) {
             project_offset,
             max_pitch_value as f32,
             quantise_ratio,
+            track_index,
         );
         let major_beat = 4.0;
         let minor_beat = 1.0;
@@ -75,12 +81,12 @@ fn note_roll_canvas(store: &Store, ui: &mut Ui) {
 
 struct NoteRoll {
     to_screen: RectTransform,
-    x_size: f32,
-    y_size: f32,
+    size: Vec2,
     project_length: f32,
     max_pitch_value: f32,
     project_offset: f32,
     quantise_ratio: f32,
+    track_index: usize,
 }
 
 impl NoteRoll {
@@ -90,17 +96,19 @@ impl NoteRoll {
         project_offset: f32,
         max_pitch_value: f32,
         quantise_ratio: f32,
+        track_index: usize,
     ) -> Self {
         let y_size = to_screen.to().max.y - to_screen.to().min.y;
         let x_size = to_screen.to().max.x - to_screen.to().min.x;
+        let size = vec2(x_size, y_size);
         NoteRoll {
             to_screen,
-            x_size,
-            y_size,
+            size,
             project_length,
             max_pitch_value,
             project_offset,
             quantise_ratio,
+            track_index,
         }
     }
 
@@ -110,22 +118,22 @@ impl NoteRoll {
         ui: &Ui,
         response: &Response,
     ) -> Vec<Shape> {
-        store.get().project.tracks[0]
+        store.get().project.tracks[self.track_index]
             .notes
             .clone()
             .iter_mut()
             .enumerate()
-            .map(|(note_idx, note)| {
+            .map(|(note_index, note)| {
                 let note_shape = note_to_shape(note, self);
                 let next_note = self.get_next_note(
                     ui,
                     note,
                     note_shape.visual_bounding_rect(),
                     response,
-                    note_idx,
+                    note_index,
                 );
                 let quantised_note = self.quantise_note(next_note);
-                self.dispatch_note(store, note, quantised_note, note_idx);
+                self.dispatch_note(store, note, quantised_note, note_index);
                 note_shape
             })
             .collect()
@@ -137,10 +145,10 @@ impl NoteRoll {
         note: &mut PlacedNote,
         note_rect: Rect,
         response: &Response,
-        note_idx: usize,
+        note_index: usize,
     ) -> PlacedNote {
         let note_pos = note_to_pos2(note, self);
-        let note_id = response.id.with(note_idx);
+        let note_id = response.id.with(note_index);
         let note_response =
             ui.interact(note_rect.transform(self.to_screen), note_id, Sense::drag());
         let note_delta = note_response.drag_delta();
@@ -162,10 +170,10 @@ impl NoteRoll {
         store: &Store,
         note: &mut PlacedNote,
         next_note: PlacedNote,
-        note_idx: usize,
+        note_index: usize,
     ) {
         let track_index = 0;
-        let sel = Selector::Note(track_index, note_idx);
+        let sel = Selector::Note(track_index, note_index);
         if next_note.offset != note.offset {
             store.dispatch(&sel, Action::SetNoteOffset(next_note.offset.into()));
         };
@@ -208,9 +216,9 @@ impl NoteRoll {
     fn create_beat_lines(&mut self, beat_increment: f32, stroke: Stroke) -> Vec<Shape> {
         ((self.project_offset as i32)..=(self.project_length / beat_increment) as i32)
             .map(|beat| {
-                let x = self.x_size * (beat as f32) * beat_increment / self.project_length;
-                let top = Pos2::new(x, 0.0);
-                let bottom = Pos2::new(x, self.y_size);
+                let x = (beat as f32) * beat_increment / self.project_length;
+                let top = (pos2(x, 0.0).to_vec2() * self.size).to_pos2();
+                let bottom = (pos2(x, 1.0).to_vec2() * self.size).to_pos2();
                 Shape::line_segment([top, bottom], stroke)
             })
             .collect()
@@ -218,31 +226,24 @@ impl NoteRoll {
 }
 
 fn note_to_pos2(note: &PlacedNote, note_roll: &NoteRoll) -> Pos2 {
-    let scale = Vec2::new(
-        note_roll.x_size / note_roll.project_length,
-        note_roll.y_size / note_roll.max_pitch_value,
-    );
+    let scale = note_roll.size / vec2(note_roll.project_length, note_roll.max_pitch_value);
     let x: f32 = note.offset.into();
     let pitch_value: PitchValue = note.note.pitch_name.into();
     let y = note_roll.max_pitch_value - pitch_value as f32;
-    (Vec2::new(x, y) * scale).to_pos2()
+    (vec2(x, y) * scale).to_pos2()
 }
 
 fn note_to_shape(note: &PlacedNote, note_roll: &NoteRoll) -> Shape {
     let note_pos = note_to_pos2(note, note_roll);
-    let x_scale = note_roll.x_size / note_roll.project_length;
-    let y_scale = note_roll.y_size / note_roll.max_pitch_value;
+    let scale = note_roll.size / vec2(note_roll.project_length, note_roll.max_pitch_value);
     let note_height = 1.0;
-    let note_width = Vec2::new(note.note.beats * x_scale, note_height * y_scale);
+    let note_width = vec2(note.note.beats, note_height) * scale;
     let note_rect = Rect::from_min_size(note_pos, note_width);
     Shape::rect_filled(note_rect, CornerRadius::same(1), Color32::WHITE)
 }
 
 fn note_from_pos2(note: &PlacedNote, pos2: Pos2, note_roll: &NoteRoll) -> PlacedNote {
-    let inverse_scale = Vec2 {
-        x: note_roll.project_length / note_roll.x_size,
-        y: note_roll.max_pitch_value / note_roll.y_size,
-    };
+    let inverse_scale = vec2(note_roll.project_length, note_roll.max_pitch_value) / note_roll.size;
     let note_values = pos2.to_vec2() * inverse_scale;
     let offset = note_values.x.clamp(0.0, note_roll.project_length);
     let pitch_value: PitchValue = ((note_roll.max_pitch_value - note_values.y).round() as i32)
