@@ -1,6 +1,5 @@
-use strum::{Display, EnumIter, EnumString};
-
 use crate::pmodel::*;
+use strum::{Display, EnumIter, EnumString};
 
 #[derive(
     Debug, Clone, Copy, PartialEq, Eq, Hash, PartialOrd, Ord, EnumString, Display, EnumIter,

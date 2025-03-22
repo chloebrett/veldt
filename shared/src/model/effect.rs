@@ -10,21 +10,14 @@ use local_macro::{FromProto, IntoProto};
 type EffectId = usize;
 type _EffectInstanceId = usize;
 
-#[derive(Clone, Debug, PartialEq)]
+#[derive(Clone, Debug, PartialEq, FromProto, IntoProto)]
 pub struct EffectInstance {
+    #[proto_optional]
     pub effect: Effect,
 
+    #[proto_optional]
     pub meta: EffectMeta,
     // TODO: automation links
-}
-
-impl From<EffectInstanceProto> for EffectInstance {
-    fn from(item: EffectInstanceProto) -> Self {
-        EffectInstance {
-            meta: item.meta.unwrap().into(),
-            effect: item.effect.unwrap().into(),
-        }
-    }
 }
 
 impl From<EffectProto> for Effect {
@@ -39,15 +32,6 @@ impl From<EffectProto> for Effect {
             EffectProto::SimpleCompressor(simple_compressor) => Effect::SimpleCompressor {
                 config: simple_compressor.config.unwrap().into(),
             },
-        }
-    }
-}
-
-impl From<EffectInstance> for EffectInstanceProto {
-    fn from(item: EffectInstance) -> Self {
-        EffectInstanceProto {
-            meta: Some(item.meta.into()),
-            effect: Some(item.effect.into()),
         }
     }
 }
