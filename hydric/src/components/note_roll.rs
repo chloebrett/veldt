@@ -196,10 +196,10 @@ fn create_pitch_value_shapes(roll_config: &RollConfig) -> Vec<Shape> {
         .map(|pitch_value| {
             let pitch_ratio = 1.0 - pitch_value as f32 * inv_max_pitch_value;
             let y1 = roll_config.y_size * pitch_ratio - roll_config.note_height;
-            let upper_left_corner = Pos2::new(0.0, y1);
-            let y2 = upper_left_corner.y + roll_config.note_height;
-            let lower_right_corner = Pos2::new(roll_config.x_size, y2);
-            let background_rect = Rect::from_min_max(upper_left_corner, lower_right_corner);
+            let top_left = Pos2::new(0.0, y1);
+            let y2 = y1 + roll_config.note_height;
+            let bottom_left = Pos2::new(roll_config.x_size, y2);
+            let background_rect = Rect::from_min_max(top_left, bottom_left);
 
             Shape::rect_filled(
                 background_rect,
@@ -215,9 +215,9 @@ fn create_beat_lines(beat_increment: f32, stroke: Stroke, roll_config: &RollConf
         .map(|beat| {
             let x =
                 roll_config.x_size * (beat as f32) * beat_increment / roll_config.project_length;
-            let top_pos = Pos2::new(x, 0.0);
-            let bottom_pos = Pos2::new(x, roll_config.y_size);
-            Shape::line_segment([top_pos, bottom_pos], stroke)
+            let top = Pos2::new(x, 0.0);
+            let bottom = Pos2::new(x, roll_config.y_size);
+            Shape::line_segment([top, bottom], stroke)
         })
         .collect()
 }
