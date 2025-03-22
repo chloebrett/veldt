@@ -26,21 +26,21 @@ pub enum EqType {
 impl From<EqTypeProto> for EqType {
     fn from(item: EqTypeProto) -> Self {
         match item {
-            EqTypeProto::UnknownEq => panic!(""),
-            EqTypeProto::SimpleResonatorEq => EqType::SimpleResonator,
-            EqTypeProto::SmithAngellResonatorEq => EqType::SmithAngellResonator,
-            EqTypeProto::SimpleFirstOrderLowPassEq => EqType::SimpleFirstOrderLowPass,
-            EqTypeProto::SimpleFirstOrderHighPassEq => EqType::SimpleFirstOrderHighPass,
-            EqTypeProto::SimpleSecondOrderLowPassEq => EqType::SimpleSecondOrderLowPass,
-            EqTypeProto::SimpleSecondOrderHighPassEq => EqType::SimpleSecondOrderHighPass,
-            EqTypeProto::SimpleSecondOrderResonatorEq => EqType::SimpleSecondOrderResonator,
-            EqTypeProto::SimpleSecondOrderBandStopEq => EqType::SimpleSecondOrderBandStop,
-            EqTypeProto::ButterworthLowPassEq => EqType::ButterworthLowPass,
-            EqTypeProto::ButterworthHighPassEq => EqType::ButterworthHighPass,
-            EqTypeProto::ButterworthResonatorEq => EqType::ButterworthResonator,
-            EqTypeProto::ButterworthBandStopEq => EqType::ButterworthBandStop,
-            EqTypeProto::FirstOrderAllPassEq => EqType::FirstOrderAllPass,
-            EqTypeProto::SecondOrderAllPassEq => EqType::SecondOrderAllPass,
+            EqTypeProto::UnknownEqType => panic!(""),
+            EqTypeProto::SimpleResonatorEqType => EqType::SimpleResonator,
+            EqTypeProto::SmithAngellResonatorEqType => EqType::SmithAngellResonator,
+            EqTypeProto::SimpleFirstOrderLowPassEqType => EqType::SimpleFirstOrderLowPass,
+            EqTypeProto::SimpleFirstOrderHighPassEqType => EqType::SimpleFirstOrderHighPass,
+            EqTypeProto::SimpleSecondOrderLowPassEqType => EqType::SimpleSecondOrderLowPass,
+            EqTypeProto::SimpleSecondOrderHighPassEqType => EqType::SimpleSecondOrderHighPass,
+            EqTypeProto::SimpleSecondOrderResonatorEqType => EqType::SimpleSecondOrderResonator,
+            EqTypeProto::SimpleSecondOrderBandStopEqType => EqType::SimpleSecondOrderBandStop,
+            EqTypeProto::ButterworthLowPassEqType => EqType::ButterworthLowPass,
+            EqTypeProto::ButterworthHighPassEqType => EqType::ButterworthHighPass,
+            EqTypeProto::ButterworthResonatorEqType => EqType::ButterworthResonator,
+            EqTypeProto::ButterworthBandStopEqType => EqType::ButterworthBandStop,
+            EqTypeProto::FirstOrderAllPassEqType => EqType::FirstOrderAllPass,
+            EqTypeProto::SecondOrderAllPassEqType => EqType::SecondOrderAllPass,
         }
     }
 }
@@ -48,20 +48,20 @@ impl From<EqTypeProto> for EqType {
 impl From<EqType> for EqTypeProto {
     fn from(item: EqType) -> Self {
         match item {
-            EqType::SimpleResonator => EqTypeProto::SimpleResonatorEq,
-            EqType::SmithAngellResonator => EqTypeProto::SmithAngellResonatorEq,
-            EqType::SimpleFirstOrderLowPass => EqTypeProto::SimpleFirstOrderLowPassEq,
-            EqType::SimpleFirstOrderHighPass => EqTypeProto::SimpleFirstOrderHighPassEq,
-            EqType::SimpleSecondOrderLowPass => EqTypeProto::SimpleSecondOrderLowPassEq,
-            EqType::SimpleSecondOrderHighPass => EqTypeProto::SimpleSecondOrderHighPassEq,
-            EqType::SimpleSecondOrderResonator => EqTypeProto::SimpleSecondOrderResonatorEq,
-            EqType::SimpleSecondOrderBandStop => EqTypeProto::SimpleSecondOrderBandStopEq,
-            EqType::ButterworthLowPass => EqTypeProto::ButterworthLowPassEq,
-            EqType::ButterworthHighPass => EqTypeProto::ButterworthHighPassEq,
-            EqType::ButterworthResonator => EqTypeProto::ButterworthResonatorEq,
-            EqType::ButterworthBandStop => EqTypeProto::ButterworthBandStopEq,
-            EqType::FirstOrderAllPass => EqTypeProto::FirstOrderAllPassEq,
-            EqType::SecondOrderAllPass => EqTypeProto::SecondOrderAllPassEq,
+            EqType::SimpleResonator => EqTypeProto::SimpleResonatorEqType,
+            EqType::SmithAngellResonator => EqTypeProto::SmithAngellResonatorEqType,
+            EqType::SimpleFirstOrderLowPass => EqTypeProto::SimpleFirstOrderLowPassEqType,
+            EqType::SimpleFirstOrderHighPass => EqTypeProto::SimpleFirstOrderHighPassEqType,
+            EqType::SimpleSecondOrderLowPass => EqTypeProto::SimpleSecondOrderLowPassEqType,
+            EqType::SimpleSecondOrderHighPass => EqTypeProto::SimpleSecondOrderHighPassEqType,
+            EqType::SimpleSecondOrderResonator => EqTypeProto::SimpleSecondOrderResonatorEqType,
+            EqType::SimpleSecondOrderBandStop => EqTypeProto::SimpleSecondOrderBandStopEqType,
+            EqType::ButterworthLowPass => EqTypeProto::ButterworthLowPassEqType,
+            EqType::ButterworthHighPass => EqTypeProto::ButterworthHighPassEqType,
+            EqType::ButterworthResonator => EqTypeProto::ButterworthResonatorEqType,
+            EqType::ButterworthBandStop => EqTypeProto::ButterworthBandStopEqType,
+            EqType::FirstOrderAllPass => EqTypeProto::FirstOrderAllPassEqType,
+            EqType::SecondOrderAllPass => EqTypeProto::SecondOrderAllPassEqType,
         }
     }
 }
