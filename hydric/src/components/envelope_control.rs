@@ -1,5 +1,7 @@
 use crate::state::{Action, Selector, Store, get_set};
-use egui::{Color32, Rect, Ui, containers::Frame, emath, epaint, epaint::PathStroke, pos2, vec2};
+use egui::{
+    Color32, Pos2, Rect, Ui, containers::Frame, emath, epaint, epaint::PathStroke, pos2, vec2,
+};
 use shared::model::{AdsrEnvelope, GeneratorType};
 
 pub fn envelope_control(store: &Store, ui: &mut Ui) {
@@ -79,22 +81,28 @@ pub fn envelope_control(store: &Store, ui: &mut Ui) {
         let to_screen =
             emath::RectTransform::from_to(Rect::from_x_y_ranges(0.0..=1.0, 1.0..=0.0), rect);
 
-        let mut points = vec![];
-        if envelope.attack > 0.0 {
-            points.push(pos2(0.0, 0.0));
-        }
-        points.push(pos2(envelope.attack, 1.0));
-        points.push(pos2(envelope.attack + envelope.decay, envelope.sustain));
-        points.push(pos2(1.0 - envelope.release, envelope.sustain));
-        if envelope.release > 0.0 {
-            points.push(pos2(1.0, 0.0));
-        }
-
         let thickness = 2.0;
-        let shapes = vec![epaint::Shape::line(
-            points.into_iter().map(|it| to_screen * it).collect(),
+        let shape = epaint::Shape::line(
+            envelope_line(&envelope)
+                .into_iter()
+                .map(|it| to_screen * it)
+                .collect(),
             PathStroke::new(thickness, Color32::WHITE),
-        )];
-        ui.painter().extend(shapes);
+        );
+        ui.painter().extend(vec![shape]);
     });
+}
+
+fn envelope_line(envelope: &AdsrEnvelope) -> Vec<Pos2> {
+    let mut points = vec![];
+    if envelope.attack > 0.0 {
+        points.push(pos2(0.0, 0.0));
+    }
+    points.push(pos2(envelope.attack, 1.0));
+    points.push(pos2(envelope.attack + envelope.decay, envelope.sustain));
+    points.push(pos2(1.0 - envelope.release, envelope.sustain));
+    if envelope.release > 0.0 {
+        points.push(pos2(1.0, 0.0));
+    }
+    points
 }
