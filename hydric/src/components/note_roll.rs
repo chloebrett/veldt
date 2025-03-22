@@ -1,7 +1,8 @@
 use crate::state::{Action, Selector, Store};
 
 use egui::{
-    emath::RectTransform, epaint::RectShape, Color32, CornerRadius, Frame, Pos2, Rect, Response, ScrollArea, Sense, Shape, Stroke, Ui, Vec2
+    Color32, CornerRadius, Frame, Pos2, Rect, Response, ScrollArea, Sense, Shape, Stroke, Ui, Vec2,
+    emath::RectTransform, epaint::RectShape,
 };
 use ordered_float::OrderedFloat;
 use shared::{
@@ -52,32 +53,24 @@ impl Transformable<Rect> for Rect {
 
 impl Transformable<Shape> for Shape {
     fn transform(self: Self, rect: RectTransform) -> Shape {
-        match self { 
-            Shape::LineSegment { points, stroke } => {
-                Shape::LineSegment { points: [
-                        rect * points[0],
-                        rect * points[1],
-                    ], 
-                    stroke 
-                }
+        match self {
+            Shape::LineSegment { points, stroke } => Shape::LineSegment {
+                points: [rect * points[0], rect * points[1]],
+                stroke,
             },
-            Shape::Rect(rect_shape) => {
-                Shape::Rect(RectShape {
-                    rect: rect.transform_rect(rect_shape.rect),
-                    ..rect_shape
-                })
-            }
-            _ => panic!("Shape note implemented.")
+            Shape::Rect(rect_shape) => Shape::Rect(RectShape {
+                rect: rect.transform_rect(rect_shape.rect),
+                ..rect_shape
+            }),
+            _ => panic!("Shape note implemented."),
         }
-    } 
+    }
 }
 
 impl Transformable<Vec<Shape>> for Vec<Shape> {
     fn transform(self: Self, rect: RectTransform) -> Vec<Shape> {
-       self.iter()
-            .map(|shape| {
-                shape.clone().transform(rect)
-            })
+        self.iter()
+            .map(|shape| shape.clone().transform(rect))
             .collect()
     }
 }
@@ -149,11 +142,11 @@ fn create_note_shapes(
             let pitch_ratio = 1.0 - pitch_value as f32 * inv_max_pitch_value;
             let y1 = roll_config.y_size * pitch_ratio - roll_config.note_height;
             let note_pos = Pos2::new(x1, y1);
-            let x2 =
-                note_pos.x + note.note.beats * inv_project_length * roll_config.x_size;
+            let x2 = note_pos.x + note.note.beats * inv_project_length * roll_config.x_size;
             let y2 = note_pos.y + roll_config.note_height;
             let note_bottom_right_corner = Pos2::new(x2, y2);
-            let note_rect = Rect::from_min_max(note_pos, note_bottom_right_corner).transform(roll_config.to_screen);
+            let note_rect = Rect::from_min_max(note_pos, note_bottom_right_corner)
+                .transform(roll_config.to_screen);
             let note_id = response.id.with(note_idx);
             let note_response = ui.interact(note_rect, note_id, Sense::drag());
             let note_delta = note_response.drag_delta();
