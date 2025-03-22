@@ -1,7 +1,75 @@
 use crate::consts::REFERENCE_PITCH;
 use shared::model::PitchName;
-use shared::types::{Freq, PitchValue};
+use shared::types::{Freq, KnobPosition, PitchValue};
 use std::cmp::max;
+
+trait Sig {
+    /// Outputs a buffer containing the specified number of frames.
+    // TODO: consider passing in a single buffer for reuse.
+    fn buffer(&self, num_samples: u32) -> Vec<f32>;
+
+    // TODO: consider storing a last_buffer?
+}
+
+/// Node with zero inputs and one output.
+struct GeneratorNode {
+    pub output: Box<dyn Sig>,
+}
+
+impl Sig for GeneratorNode {
+    fn buffer(&self, num_samples: u32) -> Vec<f32> {
+        // TODO
+        Vec::with_capacity(num_samples as usize)
+    }
+}
+
+/// Node with one input and one output.
+struct EffectNode {
+    pub input: Box<dyn Sig>,
+    pub output: Box<dyn Sig>,
+}
+
+impl Sig for EffectNode {
+    fn buffer(&self, num_samples: u32) -> Vec<f32> {
+        // TODO
+        self.input.buffer(num_samples)
+    }
+}
+
+/// Node with two inputs and one output. Mixes its inputs in a specified ratio.
+struct MixerNode {
+    pub dry: Box<dyn Sig>,
+    pub wet: Box<dyn Sig>,
+    pub ratio: KnobPosition,
+    pub output: Box<dyn Sig>,
+}
+
+impl Sig for MixerNode {
+    fn buffer(&self, num_samples: u32) -> Vec<f32> {
+        sum(
+            &mult(&self.wet.buffer(num_samples), self.ratio),
+            &mult(&self.dry.buffer(num_samples), 1.0 - self.ratio),
+        )
+    }
+}
+
+/// Node with N inputs and one output. Adds its inputs to form the output.
+struct AdderNode {
+    pub inputs: Vec<Box<dyn Sig>>,
+    pub output: Box<dyn Sig>,
+}
+
+impl Sig for AdderNode {
+    fn buffer(&self, num_samples: u32) -> Vec<f32> {
+        let mut output = Vec::with_capacity(num_samples as usize);
+
+        for input in &self.inputs {
+            output = sum(&output, &input.buffer(num_samples));
+        }
+
+        output
+    }
+}
 
 pub fn sum(a: &[f32], b: &[f32]) -> Vec<f32> {
     let max_len = max(a.len(), b.len());
