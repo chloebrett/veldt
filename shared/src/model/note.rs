@@ -1,27 +1,11 @@
 use super::pitch_name::PitchName;
 use crate::pmodel::*;
 use crate::types::*;
+use local_macro::{FromProto, IntoProto};
 
-#[derive(Clone, Debug, PartialEq)]
+#[derive(Clone, Debug, PartialEq, FromProto, IntoProto)]
 pub struct Note {
+    #[proto_optional]
     pub pitch_name: PitchName,
     pub beats: Beats,
-}
-
-impl From<NoteProto> for Note {
-    fn from(item: NoteProto) -> Self {
-        Note {
-            pitch_name: item.pitch_name.unwrap().into(),
-            beats: item.beats,
-        }
-    }
-}
-
-impl From<Note> for NoteProto {
-    fn from(item: Note) -> Self {
-        NoteProto {
-            pitch_name: Some(item.pitch_name.into()),
-            beats: item.beats,
-        }
-    }
 }
