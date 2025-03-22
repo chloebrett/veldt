@@ -49,6 +49,36 @@ impl RollConfig {
     }
 }
 
+trait Transformable<T> {
+    fn transform(self: Self, rect: RectTransform) -> T;
+}
+
+impl Transformable<Shape> for Shape {
+    fn transform(self: Self, rect: RectTransform) -> Shape {
+        match self { 
+            Shape::LineSegment { points, stroke } => {
+                Shape::LineSegment { points: [
+                        rect * points[0],
+                        rect * points[1],
+                    ], 
+                    stroke 
+                }
+            },
+            _ => panic!("Shape note implemented.")
+        }
+    } 
+}
+
+impl Transformable<Vec<Shape>> for Vec<Shape> {
+    fn transform(self: Self, rect: RectTransform) -> Vec<Shape> {
+       self.iter()
+            .map(|shape| {
+                shape.clone().transform(rect)
+            })
+            .collect()
+    }
+}
+
 pub fn note_roll(store: &Store, ui: &mut Ui) {
     ScrollArea::vertical()
         .min_scrolled_height(200.0)
@@ -85,9 +115,9 @@ fn note_roll_canvas(store: &Store, ui: &mut Ui) {
         let major_line_shapes = create_beat_lines(major_beat, major_stroke, &roll_config);
         let minor_line_shapes = create_beat_lines(minor_beat, minor_stroke, &roll_config);
         let quarter_line_shapes = create_beat_lines(quarter_beat, quarter_stroke, &roll_config);
-        painter.extend(major_line_shapes);
-        painter.extend(minor_line_shapes);
-        painter.extend(quarter_line_shapes);
+        painter.extend(major_line_shapes.transform(to_screen));
+        painter.extend(minor_line_shapes.transform(to_screen));
+        painter.extend(quarter_line_shapes.transform(to_screen));
         painter.extend(pitch_value_shapes);
         painter.extend(note_shapes);
         response
@@ -186,8 +216,8 @@ fn create_beat_lines(beat_increment: f32, stroke: Stroke, roll_config: &RollConf
         .map(|beat| {
             let x =
                 roll_config.x_size * (beat as f32) * beat_increment / roll_config.project_length;
-            let top_pos = roll_config.to_screen * Pos2::new(x, 0.0);
-            let bottom_pos = roll_config.to_screen * Pos2::new(x, roll_config.y_size);
+            let top_pos = Pos2::new(x, 0.0);
+            let bottom_pos = Pos2::new(x, roll_config.y_size);
             Shape::line_segment([top_pos, bottom_pos], stroke)
         })
         .collect()
