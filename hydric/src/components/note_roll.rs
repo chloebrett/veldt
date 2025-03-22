@@ -75,7 +75,7 @@ trait Renderable<T> {
     fn to_pos2(
         &self,
         project_length: f32,
-        max_pitch_value: i32,
+        max_pitch_value: f32,
         canvas_x_size: f32,
         canvas_y_size: f32,
     ) -> Pos2;
@@ -83,7 +83,7 @@ trait Renderable<T> {
     fn to_shape(
         &self,
         project_length: f32,
-        max_pitch_value: i32,
+        max_pitch_value: f32,
         canvas_x_size: f32,
         canvas_y_size: f32,
     ) -> Shape;
@@ -92,7 +92,7 @@ trait Renderable<T> {
         &self, // TODO Create new instance of PlacedNote
         pos2: Pos2,
         project_length: f32,
-        max_pitch_value: i32,
+        max_pitch_value: f32,
         canvas_x_size: f32,
         canvas_y_size: f32,
     ) -> T;
@@ -102,40 +102,38 @@ impl Renderable<PlacedNote> for PlacedNote {
     fn to_pos2(
         &self,
         project_length: f32,
-        max_pitch_value: i32,
+        max_pitch_value: f32,
         canvas_x_size: f32,
         canvas_y_size: f32,
     ) -> Pos2 {
-        let x_scale = canvas_x_size / project_length;
-        let y_scale = canvas_y_size / max_pitch_value as f32;
-        let scale = Vec2::new(x_scale, y_scale);
+        let scale = Vec2::new(
+            canvas_x_size / project_length,
+            canvas_y_size / max_pitch_value,
+        );
         let x: f32 = self.offset.into();
         let pitch_value: PitchValue = self.note.pitch_name.into();
-        let y = max_pitch_value as f32 - pitch_value as f32;
+        let y = max_pitch_value - pitch_value as f32;
         (Vec2::new(x, y) * scale).to_pos2()
     }
 
     fn to_shape(
         &self,
         project_length: f32,
-        max_pitch_value: i32,
+        max_pitch_value: f32,
         canvas_x_size: f32,
         canvas_y_size: f32,
     ) -> Shape {
-        let note_pos2 = self.to_pos2(
+        let note_pos = self.to_pos2(
             project_length,
             max_pitch_value,
             canvas_x_size,
             canvas_y_size,
         );
         let x_scale = canvas_x_size / project_length;
-        let y_scale = canvas_y_size / max_pitch_value as f32;
-        let y1 = note_pos2.y;
-        let y2 = note_pos2.y + 1.0 * y_scale;
-        let x2 = note_pos2.x + self.note.beats * x_scale;
-        let top_left = Pos2::new(note_pos2.x, y1);
-        let bottom_right = Pos2::new(x2, y2);
-        let note_rect = Rect::from_min_max(top_left, bottom_right);
+        let y_scale = canvas_y_size / max_pitch_value;
+        let note_height = 1.0;
+        let note_width = Vec2::new(self.note.beats * x_scale, note_height * y_scale);
+        let note_rect = Rect::from_min_size(note_pos, note_width);
         Shape::rect_filled(note_rect, CornerRadius::same(1), Color32::WHITE)
     }
 
@@ -143,18 +141,18 @@ impl Renderable<PlacedNote> for PlacedNote {
         &self,
         pos2: Pos2,
         project_length: f32,
-        max_pitch_value: i32,
+        max_pitch_value: f32,
         canvas_x_size: f32,
         canvas_y_size: f32,
     ) -> PlacedNote {
         let inverse_scale = Vec2 {
             x: project_length / canvas_x_size,
-            y: max_pitch_value as f32 / canvas_y_size,
+            y: max_pitch_value / canvas_y_size,
         };
         let note_values = pos2.to_vec2() * inverse_scale;
         let offset = note_values.x.clamp(0.0, project_length);
         let pitch_value: PitchValue =
-            ((max_pitch_value as f32 - note_values.y).round() as i32).clamp(0, max_pitch_value);
+            ((max_pitch_value - note_values.y).round() as i32).clamp(0, max_pitch_value as i32);
         PlacedNote {
             note: Note {
                 pitch_name: pitch_value.into(),
@@ -226,6 +224,7 @@ pub fn note_roll(store: &Store, ui: &mut Ui) {
 fn note_roll_canvas(store: &Store, ui: &mut Ui) {
     let project_length = 16.0;
     let project_offset = 0.0;
+    let quantise_ratio = 16.0;
     let max_pitch_value: PitchValue = PitchName {
         scale_value: ScaleValue::GSharp,
         octave: 8,
@@ -241,7 +240,7 @@ fn note_roll_canvas(store: &Store, ui: &mut Ui) {
         let note_roll = NoteRoll::new(to_screen, project_length, project_offset, max_pitch_value);
         let roll_config =
             RollConfig::new(to_screen, project_length, project_offset, max_pitch_value);
-        let note_shapes = create_note_shapes(store, ui, &response, &roll_config);
+        let note_shapes = create_note_shapes(store, ui, &response, &roll_config, quantise_ratio);
         let pitch_value_shapes = create_pitch_value_shapes(&roll_config);
         let major_beat = 4.0;
         let minor_beat = 1.0;
@@ -266,6 +265,7 @@ fn create_note_shapes(
     ui: &Ui,
     response: &Response,
     roll_config: &RollConfig,
+    quantise_ratio: f32,
 ) -> Vec<Shape> {
     let note_shapes: Vec<Shape> = store.get().project.tracks[0]
         .notes
@@ -282,7 +282,7 @@ fn create_note_shapes(
                 note_idx,
                 roll_config,
             );
-            let quantised_note = quantise_note(next_note);
+            let quantised_note = quantise_note(next_note, quantise_ratio);
             dispatch_note(store, note, quantised_note, note_idx);
             note_shape
         })
@@ -293,7 +293,7 @@ fn create_note_shapes(
 fn create_note_shape(note: &mut PlacedNote, roll_config: &RollConfig) -> Shape {
     note.to_shape(
         roll_config.project_length,
-        roll_config.max_pitch_value,
+        roll_config.max_pitch_value as f32,
         roll_config.x_size,
         roll_config.y_size,
     )
@@ -307,9 +307,9 @@ fn get_next_note(
     note_idx: usize,
     roll_config: &RollConfig,
 ) -> PlacedNote {
-    let note_pos2 = note.to_pos2(
+    let note_pos = note.to_pos2(
         roll_config.project_length,
-        roll_config.max_pitch_value,
+        roll_config.max_pitch_value as f32,
         roll_config.x_size,
         roll_config.y_size,
     );
@@ -320,19 +320,18 @@ fn get_next_note(
         Sense::drag(),
     );
     let note_delta = note_response.drag_delta();
-    let next_note_pos2 = note_pos2 + note_delta;
+    let next_note_pos = note_pos + note_delta;
     note.from_pos2(
-        next_note_pos2,
+        next_note_pos,
         roll_config.project_length,
-        roll_config.max_pitch_value,
+        roll_config.max_pitch_value as f32,
         roll_config.x_size,
         roll_config.y_size,
     )
 }
 
-fn quantise_note(note: PlacedNote) -> PlacedNote {
+fn quantise_note(note: PlacedNote, quantise_ratio: f32) -> PlacedNote {
     let prev_offset: f32 = note.offset.into();
-    let quantise_ratio = 16.0;
     let next_offset = (prev_offset * quantise_ratio).round() / quantise_ratio;
     PlacedNote {
         note: note.note,
@@ -346,11 +345,13 @@ fn dispatch_note(store: &Store, note: &mut PlacedNote, next_note: PlacedNote, no
     if next_note.offset != note.offset {
         store.dispatch(&sel, Action::SetNoteOffset(next_note.offset.into()));
     };
-    if next_note.note.pitch_name != note.note.pitch_name {
+    if next_note.note.pitch_name.octave != note.note.pitch_name.octave {
         store.dispatch(
             &sel,
             Action::SetNoteOctave(next_note.note.pitch_name.octave),
         );
+    }
+    if next_note.note.pitch_name.scale_value != note.note.pitch_name.scale_value {
         store.dispatch(
             &sel,
             Action::SetNoteScaleValue(next_note.note.pitch_name.scale_value),
