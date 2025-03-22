@@ -1,5 +1,5 @@
 use super::{
-    effect_control, envelope_control, generator_control, key_control, load_control, note_display,
+    effect_control, envelope_control, generator_control, key_control, load_control, note_roll,
     notes_control, play_control, save_button, toggle_window_panel, undo_redo_control,
 };
 use crate::audio_player::Handle;
@@ -134,7 +134,7 @@ impl eframe::App for App {
                     ui.separator();
                     play_control(self, ui);
                     ui.separator();
-                    note_display(&self.store, ui);
+                    note_roll(&self.store, ui);
 
                     ui.with_layout(egui::Layout::bottom_up(egui::Align::LEFT), |ui| {
                         egui::warn_if_debug_build(ui);
