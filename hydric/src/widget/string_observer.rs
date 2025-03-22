@@ -35,10 +35,9 @@ impl<F: Fn(Option<String>) -> String> TextBuffer for StringObserver<F> {
 
     fn delete_char_range(&mut self, char_range: Range<usize>) {
         let mut buffer = (self.get_set)(None).to_owned();
-        let result = buffer.delete_char_range(char_range);
+        buffer.delete_char_range(char_range);
         (self.get_set)(Some(buffer.clone()));
         self.owned = buffer.clone();
-        result
     }
 
     fn clear(&mut self) {
