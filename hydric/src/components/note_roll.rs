@@ -62,12 +62,13 @@ fn note_roll_canvas(store: &Store, ui: &mut Ui) {
         let major_stroke = Stroke::new(1.0, Color32::from_white_alpha(6));
         let minor_stroke = Stroke::new(1.0, Color32::from_white_alpha(3));
         let quarter_stroke = Stroke::new(1.0, Color32::from_white_alpha(1));
-        note_roll.create_beat_lines(major_beat, major_stroke);
-        note_roll.create_beat_lines(minor_beat, minor_stroke);
-        note_roll.create_beat_lines(quarter_beat, quarter_stroke);
-        note_roll.create_pitch_value_shapes();
-        note_roll.create_note_shapes(store, ui, &response);
-        painter.extend(note_roll.shapes.transform(to_screen));
+        let mut shapes = vec![];
+        shapes.extend(note_roll.create_beat_lines(major_beat, major_stroke));
+        shapes.extend(note_roll.create_beat_lines(minor_beat, minor_stroke));
+        shapes.extend(note_roll.create_beat_lines(quarter_beat, quarter_stroke));
+        shapes.extend(note_roll.create_pitch_value_shapes());
+        shapes.extend(note_roll.create_note_shapes(store, ui, &response));
+        painter.extend(shapes.transform(to_screen));
         response
     });
 }
@@ -80,7 +81,6 @@ struct NoteRoll {
     max_pitch_value: f32,
     project_offset: f32,
     quantise_ratio: f32,
-    shapes: Vec<Shape>,
 }
 
 impl NoteRoll {
@@ -101,17 +101,21 @@ impl NoteRoll {
             max_pitch_value,
             project_offset,
             quantise_ratio,
-            shapes: vec![],
         }
     }
 
-    pub fn create_note_shapes(&mut self, store: &Store, ui: &Ui, response: &Response) {
+    pub fn create_note_shapes(
+        &mut self,
+        store: &Store,
+        ui: &Ui,
+        response: &Response,
+    ) -> Vec<Shape> {
         store.get().project.tracks[0]
             .notes
             .clone()
             .iter_mut()
             .enumerate()
-            .for_each(|(note_idx, note)| {
+            .map(|(note_idx, note)| {
                 let note_shape = note_to_shape(note, self);
                 let next_note = self.get_next_note(
                     ui,
@@ -122,8 +126,9 @@ impl NoteRoll {
                 );
                 let quantised_note = self.quantise_note(next_note);
                 self.dispatch_note(store, note, quantised_note, note_idx);
-                self.shapes.push(note_shape);
+                note_shape
             })
+            .collect()
     }
 
     fn get_next_note(
@@ -178,10 +183,10 @@ impl NoteRoll {
         }
     }
 
-    pub fn create_pitch_value_shapes(&mut self) {
+    pub fn create_pitch_value_shapes(&mut self) -> Vec<Shape> {
         (0..(self.max_pitch_value as i32))
             .filter(|pitch_value| pitch_value % 2 == 0)
-            .for_each(|pitch_value| {
+            .map(|pitch_value| {
                 let background_note = PlacedNote {
                     note: Note {
                         pitch_name: pitch_value.into(),
@@ -191,24 +196,24 @@ impl NoteRoll {
                 };
                 let note_shape = note_to_shape(&background_note, self);
                 let background_rect = note_shape.visual_bounding_rect();
-                let background_shape = Shape::rect_filled(
+                Shape::rect_filled(
                     background_rect,
                     CornerRadius::same(0),
                     Color32::from_white_alpha(2),
-                );
-                self.shapes.push(background_shape);
+                )
             })
+            .collect()
     }
 
-    fn create_beat_lines(&mut self, beat_increment: f32, stroke: Stroke) {
-        ((self.project_offset as i32)..=(self.project_length / beat_increment) as i32).for_each(
-            |beat| {
+    fn create_beat_lines(&mut self, beat_increment: f32, stroke: Stroke) -> Vec<Shape> {
+        ((self.project_offset as i32)..=(self.project_length / beat_increment) as i32)
+            .map(|beat| {
                 let x = self.x_size * (beat as f32) * beat_increment / self.project_length;
                 let top = Pos2::new(x, 0.0);
                 let bottom = Pos2::new(x, self.y_size);
-                self.shapes.push(Shape::line_segment([top, bottom], stroke))
-            },
-        )
+                Shape::line_segment([top, bottom], stroke)
+            })
+            .collect()
     }
 }
 
