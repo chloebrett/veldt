@@ -1,8 +1,8 @@
 use proc_macro::TokenStream;
 use quote::{format_ident, quote};
-use syn::{DeriveInput, Fields, parse_macro_input};
+use syn::{DeriveInput, Fields, parse_macro_input, Type};
 
-#[proc_macro_derive(FromProto)]
+#[proc_macro_derive(FromProto, attributes(proto_type_u32))]
 pub fn derive_from_proto(input: TokenStream) -> TokenStream {
     let input = parse_macro_input!(input as DeriveInput);
 
@@ -10,9 +10,24 @@ pub fn derive_from_proto(input: TokenStream) -> TokenStream {
         if let Fields::Named(ref fields) = data.fields {
             // Deal with a named-field struct
             let field_vals = fields.named.iter().enumerate().map(|(_i, field)| {
-                // grab the name of the field
                 let name = &field.ident;
-                quote!(#name: item.#name.into())
+
+                let mut as_type = None;
+                for attr in &field.attrs {
+                    // if tagged with proto_type_u32, then set "as <type>" for the model type.
+                    if attr.path().is_ident("proto_type_u32") {
+                        let ty = &field.ty;
+                        if let Type::Path(ty) = ty {
+                            as_type = Some(ty.path.get_ident());
+                        }
+                    }
+                }
+
+                if let Some(as_type) = as_type {
+                    quote!(#name: item.#name as #as_type)
+                } else {
+                    quote!(#name: item.#name.into())
+                }
             });
 
             let name = input.ident;
@@ -26,7 +41,8 @@ pub fn derive_from_proto(input: TokenStream) -> TokenStream {
                         }
                     }
                 }
-            ).into();
+            )
+            .into();
         }
     }
 
@@ -40,7 +56,7 @@ pub fn derive_from_proto(input: TokenStream) -> TokenStream {
     )
 }
 
-#[proc_macro_derive(IntoProto)]
+#[proc_macro_derive(IntoProto, attributes(proto_type_u32))]
 pub fn derive_into_proto(input: TokenStream) -> TokenStream {
     let input = parse_macro_input!(input as DeriveInput);
 
@@ -50,7 +66,19 @@ pub fn derive_into_proto(input: TokenStream) -> TokenStream {
             let field_vals = fields.named.iter().enumerate().map(|(_i, field)| {
                 // grab the name of the field
                 let name = &field.ident;
-                quote!(#name: item.#name.into())
+
+                let mut as_type = None;
+                for attr in &field.attrs {
+                    if attr.path().is_ident("proto_type_u32") {
+                        as_type = Some(format_ident!("{}", "u32"));
+                    }
+                }
+
+                if let Some(as_type) = as_type {
+                    quote!(#name: item.#name as #as_type)
+                } else {
+                    quote!(#name: item.#name.into())
+                }
             });
 
             let name = input.ident;
@@ -64,7 +92,8 @@ pub fn derive_into_proto(input: TokenStream) -> TokenStream {
                         }
                     }
                 }
-            ).into();
+            )
+            .into();
         }
     }
 
