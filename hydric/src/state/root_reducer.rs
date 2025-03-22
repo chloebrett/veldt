@@ -6,7 +6,7 @@ use poll_promise::Promise;
 use std::rc::Rc;
 use web_sys::console;
 
-pub fn root_reducer(data: &mut StoreData, selector: &Selector, action: &Action) {
+pub fn root_reducer(data: &mut StoreData, selector: &Selector, action: &Action) -> Action {
     console::log_1(&format!("root_reducer processing: {:?}", action.clone()).into());
 
     match selector {
@@ -25,42 +25,79 @@ pub fn root_reducer(data: &mut StoreData, selector: &Selector, action: &Action) 
             action,
         ),
         Selector::Root => match action {
-            Action::SetProjectName(name) => data.project.name = name.to_string(),
-            Action::SetKey(key) => data.key = *key,
-            Action::SetScale(scale) => data.scale = *scale,
-            Action::SetBpm(bpm) => data.project.bpm = *bpm,
-            Action::SetVolume(volume) => data.volume = *volume,
+            Action::SetProjectName(name) => {
+                let prev = data.project.name.clone();
+                data.project.name = name.to_string();
+                Action::SetProjectName(prev)
+            }
+            Action::SetKey(key) => {
+                let prev = data.key;
+                data.key = *key;
+                Action::SetKey(prev)
+            }
+            Action::SetScale(scale) => {
+                let prev = data.scale;
+                data.scale = *scale;
+                Action::SetScale(prev)
+            }
+            Action::SetBpm(bpm) => {
+                let prev = data.project.bpm;
+                data.project.bpm = *bpm;
+                Action::SetBpm(prev)
+            }
+            Action::SetVolume(volume) => {
+                let prev = data.volume;
+                data.volume = *volume;
+                Action::SetVolume(prev)
+            }
             Action::SaveTrack { track_index } => {
                 let track_name = data.project.name.clone();
                 let track = data.project.tracks[*track_index].clone();
                 data.save_track_promise = Rc::new(Some(Promise::spawn_local(async move {
                     save_track(track_name, track).await
                 })));
+                Action::NonReversible
             }
             Action::LoadTrackList => {
                 data.track_list_promise = Rc::new(Some(Promise::spawn_local(async move {
                     load_track_list().await
                 })));
+                Action::NonReversible
             }
-            Action::SetTrackList { tracks } => data.track_list = tracks.clone(),
+            Action::SetTrackList { tracks } => {
+                data.track_list = tracks.clone();
+                Action::NonReversible
+            }
             Action::SetTrack { track_index, track } => {
-                data.project.tracks[*track_index] = track.clone()
+                data.project.tracks[*track_index] = track.clone();
+                Action::NonReversible
             }
             Action::LoadTrack => {
                 if let Some(name) = data.load_track_name.clone() {
                     data.load_track_promise =
                         Rc::new(Some(Promise::spawn_local(
                             async move { load_track(name).await },
-                        )))
+                        )));
                 }
+                Action::NonReversible
             }
             Action::SetLoadTrackName { track_name } => {
-                data.load_track_name = Some(track_name.clone())
+                data.load_track_name = Some(track_name.clone());
+                Action::NonReversible
             }
-            Action::ClearLoadTrackPromise => data.load_track_promise = Rc::new(None),
-            Action::ClearSaveTrackPromise => data.save_track_promise = Rc::new(None),
-            Action::ClearTrackListPromise => data.track_list_promise = Rc::new(None),
-            _ => {}
+            Action::ClearLoadTrackPromise => {
+                data.load_track_promise = Rc::new(None);
+                Action::NonReversible
+            }
+            Action::ClearSaveTrackPromise => {
+                data.save_track_promise = Rc::new(None);
+                Action::NonReversible
+            }
+            Action::ClearTrackListPromise => {
+                data.track_list_promise = Rc::new(None);
+                Action::NonReversible
+            }
+            _ => Action::NonReversible,
         },
     }
 }

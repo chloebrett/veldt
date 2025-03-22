@@ -1,4 +1,5 @@
-use super::{Action, Selector, root_reducer};
+use super::UndoStack;
+use super::{Action, Selector};
 use ordered_float::OrderedFloat;
 use poll_promise::Promise;
 use shared::model::PlacedNote;
@@ -13,6 +14,12 @@ use std::cell::RefCell;
 use std::rc::Rc;
 use web_sys::console;
 
+enum UndoRedoType {
+    Undo,
+    Redo,
+}
+
+#[derive(Default)]
 pub struct Store {
     // The canonical view of the store state, which can be mutated indirectly through actions.
     data: StoreData,
@@ -22,6 +29,17 @@ pub struct Store {
     // Contained within a RefCell so that it can be mutated with only an immutable reference to the
     // store.
     pending_actions: RefCell<Vec<(Selector, Action)>>,
+
+    // State regarding actions that have been completed in the past and possibly undone.
+    // Does not need to be in a refcell because it is only modified in snapshot().
+    // TODO: consider making the reducers pure functions, as this might make commuting
+    // actions and determining conflicts easier for collaborative editing. However, this seems
+    // like it would require more cloning unless clever algorithms are used.
+    undo_stack: UndoStack,
+
+    /// The pending undo/redo, if one is pending. This will be flushed on the next frame,
+    /// to avoid mutating the StoreData mid-frame.
+    pending_undo_redo: Option<UndoRedoType>,
 }
 
 #[derive(Clone)]
@@ -41,11 +59,35 @@ pub struct StoreData {
 impl Store {
     /// Snapshots the state by applying all of the pending actions.
     pub fn snapshot(&mut self) {
+        if let Some(undo_redo) = &self.pending_undo_redo {
+            match undo_redo {
+                UndoRedoType::Undo => self.undo_stack.undo(&mut self.data),
+                UndoRedoType::Redo => self.undo_stack.redo(&mut self.data),
+            }
+            self.pending_undo_redo = None;
+        }
+
         for (selector, action) in self.pending_actions.borrow().iter() {
             console::log_1(&format!("Applying action: {:?}", action.clone()).into());
-            root_reducer(&mut self.data, selector, action);
+            self.undo_stack.apply(&mut self.data, selector, action);
         }
         self.pending_actions.borrow_mut().clear();
+    }
+
+    pub fn can_undo(&self) -> bool {
+        self.undo_stack.can_undo()
+    }
+
+    pub fn pend_undo(&mut self) {
+        self.pending_undo_redo = Some(UndoRedoType::Undo);
+    }
+
+    pub fn can_redo(&self) -> bool {
+        self.undo_stack.can_redo()
+    }
+
+    pub fn pend_redo(&mut self) {
+        self.pending_undo_redo = Some(UndoRedoType::Redo);
     }
 
     pub fn get(&self) -> &StoreData {
@@ -67,16 +109,6 @@ impl Store {
     /// Shorthand for dispatch(Selector::Root, ..)
     pub fn dispatchr(&self, action: Action) {
         self.dispatch(&Selector::Root, action)
-    }
-}
-
-impl Default for Store {
-    fn default() -> Self {
-        Store {
-            data: StoreData::default(),
-            // Default capacity is 10 because more actions than this per frame is unlikely.
-            pending_actions: Vec::with_capacity(10).into(),
-        }
     }
 }
 
