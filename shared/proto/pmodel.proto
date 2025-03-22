@@ -160,11 +160,11 @@ message CompressorConfigProto {
 }
 
 enum WaveTypeProto {
-  Unknown = 0;
-  Sine = 1;
-  Square = 2;
-  Saw = 3;
-  Triangle = 4;
+  UnknownWaveType = 0;
+  SineWaveType = 1;
+  SquareWaveType = 2;
+  SawWaveType = 3;
+  TriangleWaveType = 4;
 }
 
 enum ScaleValueProto {
@@ -193,19 +193,19 @@ enum ScaleProto {
 }
 
 enum EqTypeProto {
-  UnknownEq = 0;
-  SimpleResonatorEq = 1;
-  SmithAngellResonatorEq = 2;
-  SimpleFirstOrderLowPassEq = 3;
-  SimpleFirstOrderHighPassEq = 4;
-  SimpleSecondOrderLowPassEq = 5;
-  SimpleSecondOrderHighPassEq = 6;
-  SimpleSecondOrderResonatorEq = 7;
-  SimpleSecondOrderBandStopEq = 8;
-  ButterworthLowPassEq = 9;
-  ButterworthHighPassEq = 10;
-  ButterworthResonatorEq = 11;
-  ButterworthBandStopEq = 12;
-  FirstOrderAllPassEq = 13;
-  SecondOrderAllPassEq = 14;
+  UnknownEqType = 0;
+  SimpleResonatorEqType = 1;
+  SmithAngellResonatorEqType = 2;
+  SimpleFirstOrderLowPassEqType = 3;
+  SimpleFirstOrderHighPassEqType = 4;
+  SimpleSecondOrderLowPassEqType = 5;
+  SimpleSecondOrderHighPassEqType = 6;
+  SimpleSecondOrderResonatorEqType = 7;
+  SimpleSecondOrderBandStopEqType = 8;
+  ButterworthLowPassEqType = 9;
+  ButterworthHighPassEqType = 10;
+  ButterworthResonatorEqType = 11;
+  ButterworthBandStopEqType = 12;
+  FirstOrderAllPassEqType = 13;
+  SecondOrderAllPassEqType = 14;
 }
