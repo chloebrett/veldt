@@ -2,7 +2,7 @@ use proc_macro::TokenStream;
 use quote::{format_ident, quote};
 use syn::{DeriveInput, Fields, parse_macro_input, Type};
 
-#[proc_macro_derive(FromProto, attributes(proto_type_u32))]
+#[proc_macro_derive(FromProto, attributes(proto_type_u32, proto_optional))]
 pub fn derive_from_proto(input: TokenStream) -> TokenStream {
     let input = parse_macro_input!(input as DeriveInput);
 
@@ -13,6 +13,7 @@ pub fn derive_from_proto(input: TokenStream) -> TokenStream {
                 let name = &field.ident;
 
                 let mut as_type = None;
+                let mut is_optional = false;
                 for attr in &field.attrs {
                     // if tagged with proto_type_u32, then set "as <type>" for the model type.
                     if attr.path().is_ident("proto_type_u32") {
@@ -21,12 +22,22 @@ pub fn derive_from_proto(input: TokenStream) -> TokenStream {
                             as_type = Some(ty.path.get_ident());
                         }
                     }
+
+                    // if tagged with proto_optional, then call ".unwrap()" when creating the model type.
+                    if attr.path().is_ident("proto_optional") {
+                        is_optional = true;
+                    }
                 }
 
                 if let Some(as_type) = as_type {
-                    quote!(#name: item.#name as #as_type)
+                    // Note: unwrap doesn't apply if as_type is present.
+                    quote!(#name: (item.#name as #as_type).into())
                 } else {
-                    quote!(#name: item.#name.into())
+                    if is_optional {
+                        quote!(#name: item.#name.unwrap().into())
+                    } else {
+                        quote!(#name: item.#name.into())
+                    }
                 }
             });
 
@@ -56,7 +67,7 @@ pub fn derive_from_proto(input: TokenStream) -> TokenStream {
     )
 }
 
-#[proc_macro_derive(IntoProto, attributes(proto_type_u32))]
+#[proc_macro_derive(IntoProto, attributes(proto_type_u32, proto_optional))]
 pub fn derive_into_proto(input: TokenStream) -> TokenStream {
     let input = parse_macro_input!(input as DeriveInput);
 
@@ -68,16 +79,26 @@ pub fn derive_into_proto(input: TokenStream) -> TokenStream {
                 let name = &field.ident;
 
                 let mut as_type = None;
+                let mut is_optional = false;
                 for attr in &field.attrs {
                     if attr.path().is_ident("proto_type_u32") {
                         as_type = Some(format_ident!("{}", "u32"));
                     }
+                    if attr.path().is_ident("proto_optional") {
+                        is_optional = true;
+                    }
                 }
 
                 if let Some(as_type) = as_type {
-                    quote!(#name: item.#name as #as_type)
+                    // Note: optional wrapping doesn't apply if as_type is present, since it's only
+                    // used for primitives.
+                    quote!(#name: (item.#name as #as_type).into())
                 } else {
-                    quote!(#name: item.#name.into())
+                    if is_optional {
+                        quote!(#name: Some(item.#name.into()))
+                    } else {
+                        quote!(#name: item.#name.into())
+                    }
                 }
             });
 

@@ -51,37 +51,16 @@ pub enum GeneratorType {
     SimpleWave { config: SimpleWaveConfig },
 }
 
-#[derive(Clone, Debug, PartialEq)]
+#[derive(Clone, Debug, PartialEq, FromProto, IntoProto)]
 pub struct SimpleWaveConfig {
     pub wave: WaveType,
 
+    #[proto_optional]
     pub envelope: AdsrEnvelope,
 
     pub osc_count: u32,
 
     pub detune_cents: f32,
-}
-
-impl From<SimpleWaveConfigProto> for SimpleWaveConfig {
-    fn from(item: SimpleWaveConfigProto) -> Self {
-        SimpleWaveConfig {
-            wave: item.wave().into(),
-            envelope: item.envelope.unwrap().into(),
-            osc_count: item.osc_count,
-            detune_cents: item.detune_cents,
-        }
-    }
-}
-
-impl From<SimpleWaveConfig> for SimpleWaveConfigProto {
-    fn from(item: SimpleWaveConfig) -> Self {
-        SimpleWaveConfigProto {
-            wave: item.wave as i32,
-            envelope: Some(item.envelope.into()),
-            osc_count: item.osc_count,
-            detune_cents: item.detune_cents,
-        }
-    }
 }
 
 #[derive(Clone, Debug, PartialEq, FromProto, IntoProto)]
