@@ -1,6 +1,10 @@
 use crate::state::{Action, Selector, Store, get_set};
 use egui::{
-    Color32, Pos2, Rect, Ui, containers::Frame, emath, epaint, epaint::PathStroke, pos2, vec2,
+    Color32, Pos2, Rect, Slider, Ui,
+    containers::Frame,
+    emath::RectTransform,
+    epaint::{PathStroke, Shape},
+    pos2, vec2,
 };
 use shared::model::{AdsrEnvelope, GeneratorType};
 
@@ -14,7 +18,7 @@ pub fn envelope_control(store: &Store, ui: &mut Ui) {
     };
     let envelope = config.envelope.clone();
     ui.add(
-        egui::Slider::from_get_set(
+        Slider::from_get_set(
             0.0..=1.0,
             get_set(envelope.attack.into(), |it| {
                 store.dispatch(
@@ -29,7 +33,7 @@ pub fn envelope_control(store: &Store, ui: &mut Ui) {
         .text("Attack"),
     );
     ui.add(
-        egui::Slider::from_get_set(
+        Slider::from_get_set(
             0.0..=1.0,
             get_set(envelope.decay.into(), |it| {
                 store.dispatch(
@@ -44,7 +48,7 @@ pub fn envelope_control(store: &Store, ui: &mut Ui) {
         .text("Decay"),
     );
     ui.add(
-        egui::Slider::from_get_set(
+        Slider::from_get_set(
             0.0..=1.0,
             get_set(envelope.sustain.into(), |it| {
                 store.dispatch(
@@ -59,7 +63,7 @@ pub fn envelope_control(store: &Store, ui: &mut Ui) {
         .text("Sustain"),
     );
     ui.add(
-        egui::Slider::from_get_set(
+        Slider::from_get_set(
             0.0..=1.0,
             get_set(envelope.release.into(), |it| {
                 store.dispatch(
@@ -78,11 +82,10 @@ pub fn envelope_control(store: &Store, ui: &mut Ui) {
         ui.ctx().request_repaint();
         let desired_size = vec2(100.0, 50.0);
         let (_id, rect) = ui.allocate_space(desired_size);
-        let to_screen =
-            emath::RectTransform::from_to(Rect::from_x_y_ranges(0.0..=1.0, 1.0..=0.0), rect);
+        let to_screen = RectTransform::from_to(Rect::from_x_y_ranges(0.0..=1.0, 1.0..=0.0), rect);
 
         let thickness = 2.0;
-        let shape = epaint::Shape::line(
+        let shape = Shape::line(
             envelope_line(&envelope)
                 .into_iter()
                 .map(|it| to_screen * it)
