@@ -87,7 +87,7 @@ impl From<TrackPlacementProto> for TrackPlacement {
         TrackPlacement {
             track_id: item.track_id as usize,
             start_position: OrderedFloat(item.start_position),
-            clipped_duration: item.clipped_duration.map(|it| OrderedFloat(it)),
+            clipped_duration: item.clipped_duration.map(OrderedFloat),
             visual_placement: item.visual_placement,
         }
     }

@@ -1,13 +1,7 @@
-use super::effect_control;
-use super::envelope_control;
-use super::generator_control;
-use super::key_control;
-use super::load_control;
-use super::note_roll;
-use super::notes_control;
-use super::play_control;
-use super::save_button;
-use super::toggle_window_panel;
+use super::{
+    effect_control, envelope_control, generator_control, key_control, load_control, note_roll,
+    notes_control, play_control, save_button, toggle_window_panel, undo_redo_control,
+};
 use crate::audio_player::Handle;
 use crate::state::{Action, Store, get_set};
 use crate::widget::string_observer;
@@ -16,6 +10,7 @@ use egui::{ScrollArea, scroll_area::ScrollBarVisibility};
 use poll_promise::Promise;
 use shared::types::{Beats, Volume};
 
+#[derive(Default)]
 pub struct App {
     pub store: Store,
     pub audio: Vec<f32>,
@@ -25,21 +20,6 @@ pub struct App {
     pub show_envelope: bool,
     pub show_generator: bool,
     pub show_scale: bool,
-}
-
-impl Default for App {
-    fn default() -> Self {
-        Self {
-            store: Store::default(),
-            audio: vec![],
-            handle: None,
-            server_render_promise: None,
-            show_effects: false,
-            show_envelope: false,
-            show_generator: false,
-            show_scale: false,
-        }
-    }
 }
 
 impl App {
@@ -113,7 +93,7 @@ impl eframe::App for App {
                             .default_pos(Pos2 { x: 600.0, y: 125.0 })
                             .resizable(false)
                             .show(ctx, |ui| {
-                                envelope_control(&mut self.store, ui);
+                                envelope_control(&self.store, ui);
                             });
                     }
                     if self.show_generator {
@@ -121,7 +101,7 @@ impl eframe::App for App {
                             .default_pos(Pos2 { x: 1100.0, y: 20.0 })
                             .resizable(false)
                             .show(ctx, |ui| {
-                                generator_control(&mut self.store, ui);
+                                generator_control(&self.store, ui);
                             });
                     }
                     if self.show_effects {
@@ -149,6 +129,8 @@ impl eframe::App for App {
                     }
                     ui.separator();
                     notes_control(&self.store, ui, ctx);
+                    ui.separator();
+                    undo_redo_control(&mut self.store, ui);
                     ui.separator();
                     play_control(self, ui);
                     ui.separator();
