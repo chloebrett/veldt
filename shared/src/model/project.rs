@@ -86,7 +86,7 @@ impl From<TrackPlacementProto> for TrackPlacement {
     fn from(item: TrackPlacementProto) -> Self {
         TrackPlacement {
             track_id: item.track_id as usize,
-            start_position: OrderedFloat(item.start_position),
+            start_position: item.start_position.into(),
             clipped_duration: item.clipped_duration.map(OrderedFloat),
             visual_placement: item.visual_placement,
         }
