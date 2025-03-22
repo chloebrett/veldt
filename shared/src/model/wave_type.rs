@@ -11,18 +11,6 @@ pub enum WaveType {
     Triangle, // TODO: also add a generator for white noise - but it's not constrained by freq.
 }
 
-impl From<WaveType> for i32 {
-    fn from(item: WaveType) -> i32 {
-        item as i32
-    }
-}
-
-impl From<i32> for WaveType {
-    fn from(item: i32) -> WaveType {
-        item.into()
-    }
-}
-
 impl From<WaveTypeProto> for WaveType {
     fn from(item: WaveTypeProto) -> Self {
         match item {

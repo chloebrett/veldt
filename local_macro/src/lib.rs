@@ -2,7 +2,7 @@ use proc_macro::TokenStream;
 use quote::{format_ident, quote};
 use syn::{DeriveInput, Fields, parse_macro_input, Type};
 
-#[proc_macro_derive(FromProto, attributes(proto_type_u32, proto_optional))]
+#[proc_macro_derive(FromProto, attributes(proto_type_u32, proto_optional, proto_enum))]
 pub fn derive_from_proto(input: TokenStream) -> TokenStream {
     let input = parse_macro_input!(input as DeriveInput);
 
@@ -14,6 +14,7 @@ pub fn derive_from_proto(input: TokenStream) -> TokenStream {
 
                 let mut as_type = None;
                 let mut is_optional = false;
+                let mut is_enum = false;
                 for attr in &field.attrs {
                     // if tagged with proto_type_u32, then set "as <type>" for the model type.
                     if attr.path().is_ident("proto_type_u32") {
@@ -27,6 +28,12 @@ pub fn derive_from_proto(input: TokenStream) -> TokenStream {
                     if attr.path().is_ident("proto_optional") {
                         is_optional = true;
                     }
+
+                    // if tagged with proto_enum, then call "<field>()" on the field, to return the
+                    // enum type instead of an i32.
+                    if attr.path().is_ident("proto_enum") {
+                        is_enum = true;
+                    }
                 }
 
                 if let Some(as_type) = as_type {
@@ -36,7 +43,11 @@ pub fn derive_from_proto(input: TokenStream) -> TokenStream {
                     if is_optional {
                         quote!(#name: item.#name.unwrap().into())
                     } else {
-                        quote!(#name: item.#name.into())
+                        if is_enum {
+                            quote!(#name: item.#name().into())
+                        } else {
+                            quote!(#name: item.#name.into())
+                        }
                     }
                 }
             });
@@ -57,7 +68,7 @@ pub fn derive_from_proto(input: TokenStream) -> TokenStream {
         }
     }
 
-    // Catchall if we don't match on the structure we don't want
+    // Catchall if we don't match on the structure we want
     TokenStream::from(
         syn::Error::new(
             input.ident.span(),
@@ -67,7 +78,7 @@ pub fn derive_from_proto(input: TokenStream) -> TokenStream {
     )
 }
 
-#[proc_macro_derive(IntoProto, attributes(proto_type_u32, proto_optional))]
+#[proc_macro_derive(IntoProto, attributes(proto_type_u32, proto_optional, proto_enum))]
 pub fn derive_into_proto(input: TokenStream) -> TokenStream {
     let input = parse_macro_input!(input as DeriveInput);
 
@@ -80,12 +91,20 @@ pub fn derive_into_proto(input: TokenStream) -> TokenStream {
 
                 let mut as_type = None;
                 let mut is_optional = false;
+                let mut is_enum = false;
                 for attr in &field.attrs {
                     if attr.path().is_ident("proto_type_u32") {
                         as_type = Some(format_ident!("{}", "u32"));
                     }
+
                     if attr.path().is_ident("proto_optional") {
                         is_optional = true;
+                    }
+
+                    // if tagged with proto_enum, then call "<field>()" on the field, to return the
+                    // enum type instead of an i32.
+                    if attr.path().is_ident("proto_enum") {
+                        is_enum = true;
                     }
                 }
 
@@ -97,7 +116,12 @@ pub fn derive_into_proto(input: TokenStream) -> TokenStream {
                     if is_optional {
                         quote!(#name: Some(item.#name.into()))
                     } else {
-                        quote!(#name: item.#name.into())
+                        if is_enum {
+                            // enums are saved as i32 in protos.
+                            quote!(#name: item.#name as i32)
+                        } else {
+                            quote!(#name: item.#name.into())
+                        }
                     }
                 }
             });
@@ -118,7 +142,7 @@ pub fn derive_into_proto(input: TokenStream) -> TokenStream {
         }
     }
 
-    // Catchall if we don't match on the structure we don't want
+    // Catchall if we don't match on the structure we want
     TokenStream::from(
         syn::Error::new(
             input.ident.span(),
