@@ -43,9 +43,8 @@ impl Add<PitchValue> for PitchName {
 
 impl From<PitchNameProto> for PitchName {
     fn from(item: PitchNameProto) -> Self {
-        let scale_value: ScaleValue = item.scale_value().try_into().unwrap();
         PitchName {
-            scale_value: scale_value.into(),
+            scale_value: item.scale_value().into(),
             octave: item.octave,
         }
     }
