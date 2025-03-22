@@ -31,7 +31,7 @@ impl From<PlacedNoteProto> for PlacedNote {
     fn from(item: PlacedNoteProto) -> PlacedNote {
         PlacedNote {
             note: item.note.unwrap().into(),
-            offset: OrderedFloat(item.offset),
+            offset: item.offset.into(),
         }
     }
 }
@@ -49,7 +49,6 @@ impl From<PlacedNote> for PlacedNoteProto {
 #[derive(Clone, Debug)]
 pub struct PlacedNote {
     pub note: Note,
-
     pub offset: OrderedFloat<Beats>,
 }
 
