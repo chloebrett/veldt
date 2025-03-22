@@ -2,9 +2,15 @@ use proc_macro::TokenStream;
 use quote::{format_ident, quote};
 use syn::{DeriveInput, Fields, Type, parse_macro_input};
 
-#[proc_macro_derive(FromProto, attributes(proto_type_u32, proto_optional, proto_enum))]
+#[proc_macro_derive(
+    FromProto,
+    attributes(proto_type_u32, proto_optional, proto_enum, proto_repeated)
+)]
 pub fn derive_from_proto(input: TokenStream) -> TokenStream {
     let input = parse_macro_input!(input as DeriveInput);
+
+    let name = input.ident.clone();
+    let proto_name = format_ident!("{}Proto", name.clone());
 
     if let syn::Data::Struct(ref data) = input.data {
         if let Fields::Named(ref fields) = data.fields {
@@ -15,6 +21,7 @@ pub fn derive_from_proto(input: TokenStream) -> TokenStream {
                 let mut as_type = None;
                 let mut is_optional = false;
                 let mut is_enum = false;
+                let mut is_repeated = false;
                 for attr in &field.attrs {
                     // if tagged with proto_type_u32, then set "as <type>" for the model type.
                     if attr.path().is_ident("proto_type_u32") {
@@ -34,21 +41,24 @@ pub fn derive_from_proto(input: TokenStream) -> TokenStream {
                     if attr.path().is_ident("proto_enum") {
                         is_enum = true;
                     }
+
+                    if attr.path().is_ident("proto_repeated") {
+                        is_repeated = true;
+                    }
                 }
 
                 if let Some(as_type) = as_type {
                     quote!(#name: (item.#name as #as_type).into())
                 } else if is_optional {
                     quote!(#name: item.#name.unwrap().into())
+                } else if is_repeated {
+                    quote!(#name: item.#name.into_iter().map(|it| it.into()).collect())
                 } else if is_enum {
                     quote!(#name: item.#name().into())
                 } else {
                     quote!(#name: item.#name.into())
                 }
             });
-
-            let name = input.ident;
-            let proto_name = format_ident!("{}Proto", name);
 
             return quote!(
                 impl From<#proto_name> for #name {
@@ -63,6 +73,33 @@ pub fn derive_from_proto(input: TokenStream) -> TokenStream {
         }
     }
 
+    if let syn::Data::Enum(ref data) = input.data {
+        let variants = &data.variants;
+        let mut variant_vals: Vec<_> = variants
+            .iter()
+            .map(|variant| {
+                let variant_name = &variant.ident;
+                // e.g. SimpleResonator -> SimpleResonatorEqType
+                let proto_variant_name = format_ident!("{}{}", variant_name.clone(), name.clone());
+
+                quote!(#proto_name::#proto_variant_name => #name::#variant_name)
+            })
+            .collect();
+
+        variant_vals.push(quote!(_ => panic!("")));
+
+        return quote!(
+            impl From<#proto_name> for #name {
+                fn from(item: #proto_name) -> #name {
+                    match item {
+                        #(#variant_vals),*
+                    }
+                }
+            }
+        )
+        .into();
+    }
+
     // Catchall if we don't match on the structure we want
     TokenStream::from(
         syn::Error::new(
@@ -73,9 +110,15 @@ pub fn derive_from_proto(input: TokenStream) -> TokenStream {
     )
 }
 
-#[proc_macro_derive(IntoProto, attributes(proto_type_u32, proto_optional, proto_enum))]
+#[proc_macro_derive(
+    IntoProto,
+    attributes(proto_type_u32, proto_optional, proto_enum, proto_repeated)
+)]
 pub fn derive_into_proto(input: TokenStream) -> TokenStream {
     let input = parse_macro_input!(input as DeriveInput);
+
+    let name = input.ident.clone();
+    let proto_name = format_ident!("{}Proto", name).clone();
 
     if let syn::Data::Struct(ref data) = input.data {
         if let Fields::Named(ref fields) = data.fields {
@@ -87,6 +130,7 @@ pub fn derive_into_proto(input: TokenStream) -> TokenStream {
                 let mut as_type = None;
                 let mut is_optional = false;
                 let mut is_enum = false;
+                let mut is_repeated = false;
                 for attr in &field.attrs {
                     if attr.path().is_ident("proto_type_u32") {
                         as_type = Some(format_ident!("{}", "u32"));
@@ -101,6 +145,10 @@ pub fn derive_into_proto(input: TokenStream) -> TokenStream {
                     if attr.path().is_ident("proto_enum") {
                         is_enum = true;
                     }
+
+                    if attr.path().is_ident("proto_repeated") {
+                        is_repeated = true;
+                    }
                 }
 
                 if let Some(as_type) = as_type {
@@ -109,6 +157,8 @@ pub fn derive_into_proto(input: TokenStream) -> TokenStream {
                     quote!(#name: (item.#name as #as_type).into())
                 } else if is_optional {
                     quote!(#name: Some(item.#name.into()))
+                } else if is_repeated {
+                    quote!(#name: item.#name.into_iter().map(|it| it.into()).collect())
                 } else if is_enum {
                     // enums are saved as i32 in protos.
                     quote!(#name: item.#name as i32)
@@ -116,9 +166,6 @@ pub fn derive_into_proto(input: TokenStream) -> TokenStream {
                     quote!(#name: item.#name.into())
                 }
             });
-
-            let name = input.ident;
-            let proto_name = format_ident!("{}Proto", name);
 
             return quote!(
                 impl From<#name> for #proto_name {
@@ -131,6 +178,30 @@ pub fn derive_into_proto(input: TokenStream) -> TokenStream {
             )
             .into();
         }
+    }
+
+    if let syn::Data::Enum(ref data) = input.data {
+        let variants = &data.variants;
+        let variant_vals = variants
+            .iter()
+            .map(|variant| {
+                let variant_name = &variant.ident;
+                // e.g. SimpleResonator -> SimpleResonatorEqType
+                let proto_variant_name = format_ident!("{}{}", variant_name.clone(), name.clone());
+
+                quote!(#name::#variant_name => #proto_name::#proto_variant_name)
+            });
+
+        return quote!(
+            impl From<#name> for #proto_name {
+                fn from(item: #name) -> #proto_name {
+                    match item {
+                        #(#variant_vals),*
+                    }
+                }
+            }
+        )
+        .into();
     }
 
     // Catchall if we don't match on the structure we want
