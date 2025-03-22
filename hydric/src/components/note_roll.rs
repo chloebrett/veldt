@@ -10,6 +10,7 @@ use shared::{
 };
 
 struct RollConfig {
+    to_screen: RectTransform,
     x_size: f32,
     y_size: f32,
     project_length: f32,
@@ -28,6 +29,7 @@ impl RollConfig {
         let y_size = to_screen.to().max.y - to_screen.to().min.y;
         let x_size = to_screen.to().max.x - to_screen.to().min.x;
         RollConfig {
+            to_screen,
             x_size,
             y_size,
             project_length,
@@ -40,6 +42,12 @@ impl RollConfig {
 
 trait Transformable<T> {
     fn transform(self: Self, rect: RectTransform) -> T;
+}
+
+impl Transformable<Rect> for Rect {
+    fn transform(self: Self, rect: RectTransform) -> Rect {
+        rect.transform_rect(self)
+    }
 }
 
 impl Transformable<Shape> for Shape {
@@ -114,7 +122,7 @@ fn note_roll_canvas(store: &Store, ui: &mut Ui) {
         painter.extend(minor_line_shapes.transform(to_screen));
         painter.extend(quarter_line_shapes.transform(to_screen));
         painter.extend(pitch_value_shapes.transform(to_screen));
-        painter.extend(note_shapes.transform(to_screen));
+        painter.extend(note_shapes);
         response
     });
 }
@@ -145,7 +153,7 @@ fn create_note_shapes(
                 note_pos.x + note.note.beats * inv_project_length * roll_config.x_size;
             let y2 = note_pos.y + roll_config.note_height;
             let note_bottom_right_corner = Pos2::new(x2, y2);
-            let note_rect = Rect::from_min_max(note_pos, note_bottom_right_corner);
+            let note_rect = Rect::from_min_max(note_pos, note_bottom_right_corner).transform(roll_config.to_screen);
             let note_id = response.id.with(note_idx);
             let note_response = ui.interact(note_rect, note_id, Sense::drag());
             let note_delta = note_response.drag_delta();
