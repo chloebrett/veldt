@@ -78,29 +78,12 @@ pub enum Effect {
     SimpleCompressor { config: CompressorConfig },
 }
 
-#[derive(Clone, Debug, PartialEq)]
+#[derive(Clone, Debug, PartialEq, FromProto, IntoProto)]
 pub struct EffectMeta {
+    #[proto_type_u32]
     pub id: EffectId,
     pub wet: KnobPosition,
     // TODO: pan
-}
-
-impl From<EffectMetaProto> for EffectMeta {
-    fn from(item: EffectMetaProto) -> Self {
-        EffectMeta {
-            id: item.id as usize,
-            wet: item.wet,
-        }
-    }
-}
-
-impl From<EffectMeta> for EffectMetaProto {
-    fn from(item: EffectMeta) -> Self {
-        EffectMetaProto {
-            id: item.id as u32,
-            wet: item.wet,
-        }
-    }
 }
 
 #[derive(Clone, Debug, PartialEq, FromProto, IntoProto)]
