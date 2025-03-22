@@ -275,7 +275,7 @@ fn get_next_note(
     note_idx: usize,
     roll_config: &RollConfig,
 ) -> PlacedNote {
-    let note_pos2 = note.to_pos2(
+    let note_pos = note.to_pos2(
         roll_config.project_length,
         roll_config.max_pitch_value as f32,
         roll_config.x_size,
@@ -288,9 +288,9 @@ fn get_next_note(
         Sense::drag(),
     );
     let note_delta = note_response.drag_delta();
-    let next_note_pos2 = note_pos2 + note_delta;
+    let next_note_pos = note_pos + note_delta;
     note.from_pos2(
-        next_note_pos2,
+        next_note_pos,
         roll_config.project_length,
         roll_config.max_pitch_value as f32,
         roll_config.x_size,
