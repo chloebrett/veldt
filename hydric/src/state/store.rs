@@ -14,12 +14,14 @@ use std::rc::Rc;
 use web_sys::console;
 
 pub struct Store {
-    // The canonical view of the store state, which can be mutated through actions.
-    data: RefCell<StoreData>,
+    // The canonical view of the store state, which can be mutated indirectly through actions.
+    data: StoreData,
 
-    // The most recent read-only snapshot of the store state.
-    // Generally this would be updated at the start of each frame.
-    snapshot: StoreData,
+    // The actions that have been queued to run but not run yet.
+    // Each frame, the pending actions are applied to the state in order.
+    // Contained within a RefCell so that it can be mutated with only an immutable reference to the
+    // store.
+    pending_actions: RefCell<Vec<(Selector, Action)>>,
 }
 
 #[derive(Clone)]
@@ -37,24 +39,29 @@ pub struct StoreData {
 }
 
 impl Store {
-    /// Snapshots the state, which performs an immutable borrow that is immediately released.
+    /// Snapshots the state by applying all of the pending actions.
     pub fn snapshot(&mut self) {
-        self.snapshot = (*self.data.borrow()).clone()
+        for (selector, action) in self.pending_actions.borrow().iter() {
+            console::log_1(&format!("Applying action: {:?}", action.clone()).into());
+            root_reducer(&mut self.data, &selector, &action);
+        }
+        self.pending_actions.borrow_mut().clear();
     }
 
     pub fn get(&self) -> &StoreData {
-        &self.snapshot
+        &self.data
     }
 
     // Dispatching is allowed with only an immutable reference.
-    // We mutate via the RefCell. This allows Store to be passed around mutably,
-    // while allowing the caller to dispatch actions to it.
-    // TODO: consider queueing actions for dispatch, which would make discarding frames from egui
-    // unnecessary.
+    // We mutate via the RefCell containing the queued actions. This allows Store to be passed around immutably,
+    // while allowing the caller to dispatch actions to it. As long as dispatch() is only called in
+    // a single thread, which is the case in WASM, this is safe. If it needs to be sent across
+    // threads, it should be replaced with a Mutex.
     pub fn dispatch(&self, selector: &Selector, action: Action) {
-        console::log_1(&format!("Start action: {:?}", action.clone()).into());
-        root_reducer(self.data.borrow_mut(), selector, &action);
-        console::log_1(&format!("End action: {:?}", action.clone()).into());
+        console::log_1(&format!("Recording action: {:?}", action.clone()).into());
+        self.pending_actions
+            .borrow_mut()
+            .push((selector.clone(), action.clone()));
     }
 
     /// Shorthand for dispatch(Selector::Root, ..)
@@ -66,8 +73,9 @@ impl Store {
 impl Default for Store {
     fn default() -> Self {
         Store {
-            data: RefCell::new(StoreData::default()),
-            snapshot: StoreData::default(),
+            data: StoreData::default(),
+            // Default capacity is 10 because more actions than this per frame is unlikely.
+            pending_actions: Vec::with_capacity(10).into(),
         }
     }
 }
