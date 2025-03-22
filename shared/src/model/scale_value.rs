@@ -1,10 +1,22 @@
 use crate::{pmodel::*, types::PitchValue};
+use local_macro::{FromProto, IntoProto};
 use std::str;
 use strum::{Display, EnumIter, EnumString};
-use local_macro::{FromProto, IntoProto};
 
 #[derive(
-    Debug, Clone, Copy, PartialEq, Eq, Hash, PartialOrd, Ord, EnumString, Display, EnumIter, FromProto, IntoProto
+    Debug,
+    Clone,
+    Copy,
+    PartialEq,
+    Eq,
+    Hash,
+    PartialOrd,
+    Ord,
+    EnumString,
+    Display,
+    EnumIter,
+    FromProto,
+    IntoProto,
 )]
 pub enum ScaleValue {
     A,
