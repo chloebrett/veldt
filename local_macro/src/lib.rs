@@ -2,7 +2,7 @@ use proc_macro::TokenStream;
 use quote::{format_ident, quote};
 use syn::{DeriveInput, Fields, Type, parse_macro_input};
 
-#[proc_macro_derive(FromProto, attributes(proto_type_u32, proto_optional, proto_enum))]
+#[proc_macro_derive(FromProto, attributes(proto_type_u32, proto_optional, proto_enum, proto_repeated))]
 pub fn derive_from_proto(input: TokenStream) -> TokenStream {
     let input = parse_macro_input!(input as DeriveInput);
 
@@ -15,6 +15,7 @@ pub fn derive_from_proto(input: TokenStream) -> TokenStream {
                 let mut as_type = None;
                 let mut is_optional = false;
                 let mut is_enum = false;
+                let mut is_repeated = false;
                 for attr in &field.attrs {
                     // if tagged with proto_type_u32, then set "as <type>" for the model type.
                     if attr.path().is_ident("proto_type_u32") {
@@ -34,12 +35,18 @@ pub fn derive_from_proto(input: TokenStream) -> TokenStream {
                     if attr.path().is_ident("proto_enum") {
                         is_enum = true;
                     }
+
+                    if attr.path().is_ident("proto_repeated") {
+                        is_repeated = true;
+                    }
                 }
 
                 if let Some(as_type) = as_type {
                     quote!(#name: (item.#name as #as_type).into())
                 } else if is_optional {
                     quote!(#name: item.#name.unwrap().into())
+                } else if is_repeated {
+                    quote!(#name: item.#name.into_iter().map(|it| it.into()).collect())
                 } else if is_enum {
                     quote!(#name: item.#name().into())
                 } else {
@@ -73,7 +80,7 @@ pub fn derive_from_proto(input: TokenStream) -> TokenStream {
     )
 }
 
-#[proc_macro_derive(IntoProto, attributes(proto_type_u32, proto_optional, proto_enum))]
+#[proc_macro_derive(IntoProto, attributes(proto_type_u32, proto_optional, proto_enum, proto_repeated))]
 pub fn derive_into_proto(input: TokenStream) -> TokenStream {
     let input = parse_macro_input!(input as DeriveInput);
 
@@ -87,6 +94,7 @@ pub fn derive_into_proto(input: TokenStream) -> TokenStream {
                 let mut as_type = None;
                 let mut is_optional = false;
                 let mut is_enum = false;
+                let mut is_repeated = false;
                 for attr in &field.attrs {
                     if attr.path().is_ident("proto_type_u32") {
                         as_type = Some(format_ident!("{}", "u32"));
@@ -101,6 +109,10 @@ pub fn derive_into_proto(input: TokenStream) -> TokenStream {
                     if attr.path().is_ident("proto_enum") {
                         is_enum = true;
                     }
+
+                    if attr.path().is_ident("proto_repeated") {
+                        is_repeated = true;
+                    }
                 }
 
                 if let Some(as_type) = as_type {
@@ -109,6 +121,8 @@ pub fn derive_into_proto(input: TokenStream) -> TokenStream {
                     quote!(#name: (item.#name as #as_type).into())
                 } else if is_optional {
                     quote!(#name: Some(item.#name.into()))
+                } else if is_repeated {
+                    quote!(#name: item.#name.into_iter().map(|it| it.into()).collect())
                 } else if is_enum {
                     // enums are saved as i32 in protos.
                     quote!(#name: item.#name as i32)
