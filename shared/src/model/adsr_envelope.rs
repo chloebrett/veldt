@@ -1,7 +1,8 @@
 use crate::pmodel::*;
 use crate::types::*;
+use local_macro::{FromProto, IntoProto};
 
-#[derive(Clone, Debug, PartialEq)]
+#[derive(Clone, Debug, PartialEq, FromProto, IntoProto)]
 pub struct AdsrEnvelope {
     pub attack: Beats,
 
@@ -10,26 +11,4 @@ pub struct AdsrEnvelope {
     pub sustain: Volume,
 
     pub release: Beats,
-}
-
-impl From<AdsrEnvelopeProto> for AdsrEnvelope {
-    fn from(item: AdsrEnvelopeProto) -> Self {
-        AdsrEnvelope {
-            attack: item.attack,
-            decay: item.decay,
-            sustain: item.sustain,
-            release: item.release,
-        }
-    }
-}
-
-impl From<AdsrEnvelope> for AdsrEnvelopeProto {
-    fn from(item: AdsrEnvelope) -> Self {
-        AdsrEnvelopeProto {
-            attack: item.attack,
-            decay: item.decay,
-            sustain: item.sustain,
-            release: item.release,
-        }
-    }
 }
