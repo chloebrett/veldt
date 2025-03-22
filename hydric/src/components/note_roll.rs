@@ -1,8 +1,7 @@
 use crate::state::{Action, Selector, Store};
 
 use egui::{
-    Color32, CornerRadius, Frame, Pos2, Rect, Response, ScrollArea, Sense, Shape, Stroke, Ui, Vec2,
-    emath::RectTransform,
+    emath::RectTransform, epaint::RectShape, Color32, CornerRadius, Frame, Pos2, Rect, Response, ScrollArea, Sense, Shape, Stroke, Ui, Vec2
 };
 use ordered_float::OrderedFloat;
 use shared::{
@@ -11,7 +10,6 @@ use shared::{
 };
 
 struct RollConfig {
-    to_screen: RectTransform,
     x_size: f32,
     y_size: f32,
     inv_x_size: f32,
@@ -34,7 +32,6 @@ impl RollConfig {
         let y_size = to_screen.to().max.y - to_screen.to().min.y;
         let x_size = to_screen.to().max.x - to_screen.to().min.x;
         RollConfig {
-            to_screen,
             x_size,
             y_size,
             inv_x_size: 1.0 / x_size,
@@ -64,6 +61,12 @@ impl Transformable<Shape> for Shape {
                     stroke 
                 }
             },
+            Shape::Rect(rect_shape) => {
+                Shape::Rect(RectShape {
+                    rect: rect.transform_rect(rect_shape.rect),
+                    ..rect_shape
+                })
+            }
             _ => panic!("Shape note implemented.")
         }
     } 
@@ -118,8 +121,8 @@ fn note_roll_canvas(store: &Store, ui: &mut Ui) {
         painter.extend(major_line_shapes.transform(to_screen));
         painter.extend(minor_line_shapes.transform(to_screen));
         painter.extend(quarter_line_shapes.transform(to_screen));
-        painter.extend(pitch_value_shapes);
-        painter.extend(note_shapes);
+        painter.extend(pitch_value_shapes.transform(to_screen));
+        painter.extend(note_shapes.transform(to_screen));
         response
     });
 }
@@ -146,9 +149,7 @@ fn create_note_shapes(
                 note_pos.x + note.note.beats * roll_config.inv_project_length * roll_config.x_size;
             let y2 = note_pos.y + roll_config.note_height;
             let note_bottom_right_corner = Pos2::new(x2, y2);
-            let min_corner = roll_config.to_screen * note_pos;
-            let max_corner = roll_config.to_screen * note_bottom_right_corner;
-            let note_rect = Rect::from_min_max(min_corner, max_corner);
+            let note_rect = Rect::from_min_max(note_pos, note_bottom_right_corner);
             let note_id = response.id.with(note_idx);
             let note_response = ui.interact(note_rect, note_id, Sense::drag());
             let note_delta = note_response.drag_delta();
@@ -203,7 +204,7 @@ fn create_pitch_value_shapes(roll_config: &RollConfig) -> Vec<Shape> {
             let background_rect = Rect::from_min_max(upper_left_corner, lower_right_corner);
 
             Shape::rect_filled(
-                roll_config.to_screen.transform_rect(background_rect),
+                background_rect,
                 CornerRadius::same(0),
                 Color32::from_white_alpha(2),
             )
