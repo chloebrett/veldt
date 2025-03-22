@@ -9,6 +9,69 @@ use shared::{
     types::PitchValue,
 };
 
+pub fn note_roll_widget(store: &Store, ui: &mut Ui) {
+    let track_index = 0;
+    if ui.button("New note").clicked() {
+        store.dispatch(
+            &Selector::Track(track_index),
+            Action::AddNote(PlacedNote {
+                note: Note {
+                    pitch_name: PitchName {
+                        scale_value: store.get().key,
+                        octave: 4,
+                    },
+                    beats: 1.0,
+                },
+                offset: 0.0.into(),
+            }),
+        );
+    }
+    ScrollArea::vertical()
+        .min_scrolled_height(200.0)
+        .show(ui, |ui| {
+            note_roll_canvas(store, ui);
+        });
+}
+
+fn note_roll_canvas(store: &Store, ui: &mut Ui) {
+    let project_length = 16.0;
+    let project_offset = 0.0;
+    let quantise_ratio = 16.0;
+    let max_pitch_value: PitchValue = PitchName {
+        scale_value: ScaleValue::GSharp,
+        octave: 8,
+    }
+    .into();
+    Frame::canvas(ui.style()).show(ui, |ui| {
+        let (response, painter) =
+            ui.allocate_painter(Vec2::new(ui.available_width(), 600.0), Sense::hover());
+        let to_screen = RectTransform::from_to(
+            Rect::from_min_size(Pos2::ZERO, response.rect.size()),
+            response.rect,
+        );
+        let mut note_roll = NoteRoll::new(
+            to_screen,
+            project_length,
+            project_offset,
+            max_pitch_value as f32,
+            quantise_ratio,
+        );
+        let major_beat = 4.0;
+        let minor_beat = 1.0;
+        let quarter_beat = 0.25;
+        let major_stroke = Stroke::new(1.0, Color32::from_white_alpha(6));
+        let minor_stroke = Stroke::new(1.0, Color32::from_white_alpha(3));
+        let quarter_stroke = Stroke::new(1.0, Color32::from_white_alpha(1));
+        note_roll.create_beat_lines(major_beat, major_stroke);
+        note_roll.create_beat_lines(minor_beat, minor_stroke);
+        note_roll.create_beat_lines(quarter_beat, quarter_stroke);
+        note_roll.create_pitch_value_shapes();
+        note_roll.create_note_shapes(store, ui, &response);
+        painter.extend(note_roll.shapes.transform(to_screen));
+        response
+    });
+}
+
 struct NoteRoll {
     to_screen: RectTransform,
     x_size: f32,
@@ -149,37 +212,6 @@ impl NoteRoll {
     }
 }
 
-struct RollConfig {
-    to_screen: RectTransform,
-    x_size: f32,
-    y_size: f32,
-    project_length: f32,
-    max_pitch_value: PitchValue,
-    project_offset: f32,
-    note_height: f32,
-}
-
-impl RollConfig {
-    pub fn new(
-        to_screen: RectTransform,
-        project_length: f32,
-        project_offset: f32,
-        max_pitch_value: PitchValue,
-    ) -> Self {
-        let y_size = to_screen.to().max.y - to_screen.to().min.y;
-        let x_size = to_screen.to().max.x - to_screen.to().min.x;
-        RollConfig {
-            to_screen,
-            x_size,
-            y_size,
-            project_length,
-            max_pitch_value,
-            project_offset,
-            note_height: y_size / max_pitch_value as f32,
-        }
-    }
-}
-
 fn note_to_pos2(note: &PlacedNote, note_roll: &NoteRoll) -> Pos2 {
     let scale = Vec2::new(
         note_roll.x_size / note_roll.project_length,
@@ -251,69 +283,4 @@ impl Transformable<Vec<Shape>> for Vec<Shape> {
             .map(|shape| shape.clone().transform(rect))
             .collect()
     }
-}
-
-pub fn note_roll(store: &Store, ui: &mut Ui) {
-    let track_index = 0;
-    if ui.button("New note").clicked() {
-        store.dispatch(
-            &Selector::Track(track_index),
-            Action::AddNote(PlacedNote {
-                note: Note {
-                    pitch_name: PitchName {
-                        scale_value: store.get().key,
-                        octave: 4,
-                    },
-                    beats: 1.0,
-                },
-                offset: 0.0.into(),
-            }),
-        );
-    }
-    ScrollArea::vertical()
-        .min_scrolled_height(200.0)
-        .show(ui, |ui| {
-            note_roll_canvas(store, ui);
-        });
-}
-
-fn note_roll_canvas(store: &Store, ui: &mut Ui) {
-    let project_length = 16.0;
-    let project_offset = 0.0;
-    let quantise_ratio = 16.0;
-    let max_pitch_value: PitchValue = PitchName {
-        scale_value: ScaleValue::GSharp,
-        octave: 8,
-    }
-    .into();
-    Frame::canvas(ui.style()).show(ui, |ui| {
-        let (response, painter) =
-            ui.allocate_painter(Vec2::new(ui.available_width(), 600.0), Sense::hover());
-        let to_screen = RectTransform::from_to(
-            Rect::from_min_size(Pos2::ZERO, response.rect.size()),
-            response.rect,
-        );
-        let mut note_roll = NoteRoll::new(
-            to_screen,
-            project_length,
-            project_offset,
-            max_pitch_value as f32,
-            quantise_ratio,
-        );
-        let roll_config =
-            RollConfig::new(to_screen, project_length, project_offset, max_pitch_value);
-        note_roll.create_note_shapes(store, ui, &response);
-        note_roll.create_pitch_value_shapes();
-        let major_beat = 4.0;
-        let minor_beat = 1.0;
-        let quarter_beat = 0.25;
-        let major_stroke = Stroke::new(1.0, Color32::from_white_alpha(6));
-        let minor_stroke = Stroke::new(1.0, Color32::from_white_alpha(3));
-        let quarter_stroke = Stroke::new(1.0, Color32::from_white_alpha(1));
-        note_roll.create_beat_lines(major_beat, major_stroke);
-        note_roll.create_beat_lines(minor_beat, minor_stroke);
-        note_roll.create_beat_lines(quarter_beat, quarter_stroke);
-        painter.extend(note_roll.shapes.transform(to_screen));
-        response
-    });
 }
