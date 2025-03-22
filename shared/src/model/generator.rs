@@ -1,45 +1,43 @@
 use crate::model::{AdsrEnvelope, WaveType};
 use crate::pmodel::SimpleWaveProto;
 use crate::pmodel::{
-    GeneratorInstanceProto, GeneratorMetaProto, SimpleWaveConfigProto, WaveTypeProto,
-    generator_instance_proto::Kind,
+    GeneratorInstanceProto, GeneratorMetaProto, SimpleWaveConfigProto,
+    generator_instance_proto::Kind as GeneratorTypeProto,
 };
 use crate::types::Volume;
+use local_macro::{FromProto, IntoProto};
 
 type GeneratorInstanceId = usize;
 
-#[derive(Clone, Debug, PartialEq)]
+#[derive(Clone, Debug, PartialEq, FromProto, IntoProto)]
 pub struct GeneratorInstance {
+    #[proto_type_u32]
     pub id: GeneratorInstanceId,
 
+    #[proto_optional]
     pub kind: GeneratorType,
 
+    #[proto_optional]
     pub meta: GeneratorMeta,
 }
 
-impl From<GeneratorInstanceProto> for GeneratorInstance {
-    fn from(item: GeneratorInstanceProto) -> Self {
-        GeneratorInstance {
-            id: item.id as usize,
-            meta: item.meta.unwrap().into(),
-            kind: match item.kind.unwrap() {
-                Kind::SimpleWave(config) => GeneratorType::SimpleWave {
-                    config: config.config.unwrap().into(),
-                },
-            },
+impl From<GeneratorType> for GeneratorTypeProto {
+    fn from(item: GeneratorType) -> GeneratorTypeProto {
+        match item {
+            GeneratorType::SimpleWave { config } => {
+                GeneratorTypeProto::SimpleWave(SimpleWaveProto {
+                    config: Some(config.into()),
+                })
+            }
         }
     }
 }
 
-impl From<GeneratorInstance> for GeneratorInstanceProto {
-    fn from(item: GeneratorInstance) -> Self {
-        GeneratorInstanceProto {
-            id: item.id as u32,
-            meta: Some(item.meta.into()),
-            kind: match item.kind {
-                GeneratorType::SimpleWave { config } => Some(Kind::SimpleWave(SimpleWaveProto {
-                    config: Some(config.into()),
-                })),
+impl From<GeneratorTypeProto> for GeneratorType {
+    fn from(item: GeneratorTypeProto) -> GeneratorType {
+        match item {
+            GeneratorTypeProto::SimpleWave(config) => GeneratorType::SimpleWave {
+                config: config.config.unwrap().into(),
             },
         }
     }
@@ -50,10 +48,12 @@ pub enum GeneratorType {
     SimpleWave { config: SimpleWaveConfig },
 }
 
-#[derive(Clone, Debug, PartialEq)]
+#[derive(Clone, Debug, PartialEq, FromProto, IntoProto)]
 pub struct SimpleWaveConfig {
+    #[proto_enum]
     pub wave: WaveType,
 
+    #[proto_optional]
     pub envelope: AdsrEnvelope,
 
     pub osc_count: u32,
@@ -61,46 +61,8 @@ pub struct SimpleWaveConfig {
     pub detune_cents: f32,
 }
 
-impl From<SimpleWaveConfigProto> for SimpleWaveConfig {
-    fn from(item: SimpleWaveConfigProto) -> Self {
-        SimpleWaveConfig {
-            wave: item.wave().into(),
-            envelope: item.envelope.unwrap().into(),
-            osc_count: item.osc_count,
-            detune_cents: item.detune_cents,
-        }
-    }
-}
-
-impl From<SimpleWaveConfig> for SimpleWaveConfigProto {
-    fn from(item: SimpleWaveConfig) -> Self {
-        SimpleWaveConfigProto {
-            wave: Into::<WaveTypeProto>::into(item.wave).into(),
-            envelope: Some(item.envelope.into()),
-            osc_count: item.osc_count,
-            detune_cents: item.detune_cents,
-        }
-    }
-}
-
-#[derive(Clone, Debug, PartialEq)]
+#[derive(Clone, Debug, PartialEq, FromProto, IntoProto)]
 pub struct GeneratorMeta {
     pub volume: Volume,
     // TODO: pan
-}
-
-impl From<GeneratorMetaProto> for GeneratorMeta {
-    fn from(item: GeneratorMetaProto) -> Self {
-        GeneratorMeta {
-            volume: item.volume,
-        }
-    }
-}
-
-impl From<GeneratorMeta> for GeneratorMetaProto {
-    fn from(item: GeneratorMeta) -> Self {
-        GeneratorMetaProto {
-            volume: item.volume,
-        }
-    }
 }
