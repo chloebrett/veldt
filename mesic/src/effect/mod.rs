@@ -21,13 +21,13 @@ pub fn apply_effects(
 
     for effect in effects {
         let effect_node = Rc::new(RefCell::new(EffectNode {
-            input: last.clone(),
+            input: Rc::clone(&last),
             effect: effect.clone(),
         }));
         let mixer_node = Rc::new(RefCell::new(MixerNode {
-            dry: last.clone(),
+            dry: Rc::clone(&last),
             wet: effect_node,
-            ratio: effect.clone().meta.wet,
+            ratio: effect.meta.wet,
         }));
         last = mixer_node;
     }
