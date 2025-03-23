@@ -9,7 +9,6 @@ use shared::{
     model::{Note, PitchName, PlacedNote, ScaleValue},
     types::PitchValue,
 };
-use web_sys::console;
 
 pub fn note_roll_display(store: &Store, ui: &mut Ui) {
     new_note_button(store, ui);
@@ -49,6 +48,11 @@ fn note_roll_canvas(store: &Store, ui: &mut Ui) {
         octave: 8,
     }
     .into();
+    let min_pitch_value: PitchValue = PitchName {
+        scale_value: ScaleValue::A,
+        octave: 1,
+    }
+    .into();
     // Major / Minor / Quarter
     let interval_durations: Vec<Beats> = vec![4.0, 1.0, 0.25];
     let canvas_height = 600.0;
@@ -67,6 +71,7 @@ fn note_roll_canvas(store: &Store, ui: &mut Ui) {
             project_length,
             project_offset,
             max_pitch_value: max_pitch_value as f32,
+            min_pitch_value: min_pitch_value as f32,
             quantise_ratio,
             track_index,
         };
@@ -96,6 +101,7 @@ struct NoteRoll {
     size: Vec2,
     project_length: f32,
     max_pitch_value: f32,
+    min_pitch_value: f32,
     project_offset: f32,
     quantise_ratio: f32,
     track_index: usize,
@@ -115,10 +121,6 @@ impl NoteRoll {
             .enumerate()
             .map(|(note_index, note)| {
                 let note_shape = note_to_shape(note, self);
-                let note_value: PitchValue = note.note.pitch_name.scale_value.into();
-                console::log_1(
-                    &format!("{:?} {:?}", note.note.pitch_name.scale_value, note_value).into(),
-                );
                 let next_note = self.get_next_note(
                     ui,
                     to_screen,
@@ -187,7 +189,7 @@ impl NoteRoll {
     }
 
     pub fn create_pitch_value_shapes(&self) -> Vec<Shape> {
-        (0..(self.max_pitch_value as i32))
+        ((self.min_pitch_value as i32 - 1)..=(self.max_pitch_value as i32))
             .filter(|pitch_value| pitch_value % 2 == 0)
             .map(|pitch_value| {
                 let background_note = PlacedNote {
@@ -221,7 +223,11 @@ impl NoteRoll {
 }
 
 fn note_to_pos2(note: &PlacedNote, note_roll: &NoteRoll) -> Pos2 {
-    let scale = note_roll.size / vec2(note_roll.project_length, note_roll.max_pitch_value);
+    let scale = note_roll.size
+        / vec2(
+            note_roll.project_length,
+            note_roll.max_pitch_value - note_roll.min_pitch_value,
+        );
     let x: f32 = note.offset.into();
     let pitch_value: PitchValue = note.note.pitch_name.into();
     let y = note_roll.max_pitch_value - pitch_value as f32;
@@ -230,7 +236,11 @@ fn note_to_pos2(note: &PlacedNote, note_roll: &NoteRoll) -> Pos2 {
 
 fn note_to_shape(note: &PlacedNote, note_roll: &NoteRoll) -> Shape {
     let note_pos = note_to_pos2(note, note_roll);
-    let scale = note_roll.size / vec2(note_roll.project_length, note_roll.max_pitch_value);
+    let scale = note_roll.size
+        / vec2(
+            note_roll.project_length,
+            note_roll.max_pitch_value - note_roll.min_pitch_value,
+        );
     let note_height = 1.0;
     let note_width = vec2(note.note.beats, note_height) * scale;
     let note_rect = Rect::from_min_size(note_pos, note_width);
@@ -238,11 +248,17 @@ fn note_to_shape(note: &PlacedNote, note_roll: &NoteRoll) -> Shape {
 }
 
 fn note_from_pos2(note: &PlacedNote, pos2: Pos2, note_roll: &NoteRoll) -> PlacedNote {
-    let inverse_scale = vec2(note_roll.project_length, note_roll.max_pitch_value) / note_roll.size;
+    let inverse_scale = vec2(
+        note_roll.project_length,
+        note_roll.max_pitch_value - note_roll.min_pitch_value,
+    ) / note_roll.size;
     let note_values = pos2.to_vec2() * inverse_scale;
     let offset = note_values.x.clamp(0.0, note_roll.project_length);
     let pitch_value: PitchValue = ((note_roll.max_pitch_value - note_values.y).round() as i32)
-        .clamp(0, note_roll.max_pitch_value as i32);
+        .clamp(
+            note_roll.min_pitch_value as i32,
+            note_roll.max_pitch_value as i32,
+        );
     PlacedNote {
         note: Note {
             pitch_name: pitch_value.into(),
