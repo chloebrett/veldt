@@ -1,4 +1,5 @@
 use crate::state::{Action, Selector, Store};
+use shared::types::Beats;
 
 use egui::{
     Color32, CornerRadius, Frame, Pos2, Rect, Response, ScrollArea, Sense, Shape, Stroke, Ui, Vec2,
@@ -47,40 +48,50 @@ fn note_roll_canvas(store: &Store, ui: &mut Ui) {
         octave: 8,
     }
     .into();
+    // Major / Minor / Quarter
+    let interval_durations: Vec<Beats> = vec![4.0, 1.0, 0.25];
+    let canvas_height = 600.0;
+
     Frame::canvas(ui.style()).show(ui, |ui| {
         let (response, painter) =
-            ui.allocate_painter(vec2(ui.available_width(), 600.0), Sense::hover());
+            ui.allocate_painter(vec2(ui.available_width(), canvas_height), Sense::hover());
+
         let to_screen = RectTransform::from_to(
             Rect::from_min_size(Pos2::ZERO, response.rect.size()),
             response.rect,
         );
-        let mut note_roll = NoteRoll::new(
-            to_screen,
+
+        let note_roll = NoteRoll {
+            size: response.rect.size(),
             project_length,
             project_offset,
-            max_pitch_value as f32,
+            max_pitch_value: max_pitch_value as f32,
             quantise_ratio,
             track_index,
-        );
-        let major_beat = 4.0;
-        let minor_beat = 1.0;
-        let quarter_beat = 0.25;
-        let major_stroke = Stroke::new(1.0, Color32::from_white_alpha(6));
-        let minor_stroke = Stroke::new(1.0, Color32::from_white_alpha(3));
-        let quarter_stroke = Stroke::new(1.0, Color32::from_white_alpha(1));
-        let mut shapes = vec![];
-        shapes.extend(note_roll.create_beat_lines(major_beat, major_stroke));
-        shapes.extend(note_roll.create_beat_lines(minor_beat, minor_stroke));
-        shapes.extend(note_roll.create_beat_lines(quarter_beat, quarter_stroke));
+        };
+
+        // Major / Minor / Quarter
+        let interval_strokes: Vec<Stroke> = vec![6, 3, 1]
+            .into_iter()
+            .map(|alpha| Stroke::new(1.0, Color32::from_white_alpha(alpha)))
+            .collect();
+
+        let mut shapes: Vec<Shape> = interval_durations
+            .into_iter()
+            .zip(interval_strokes)
+            .flat_map(|(duration, stroke)| note_roll.create_beat_lines(duration, stroke))
+            .collect();
+
         shapes.extend(note_roll.create_pitch_value_shapes());
-        shapes.extend(note_roll.create_note_shapes(store, ui, &response));
+        shapes.extend(note_roll.create_note_shapes(&to_screen, store, ui, &response));
+
         painter.extend(shapes.transform(to_screen));
+
         response
     });
 }
 
 struct NoteRoll {
-    to_screen: RectTransform,
     size: Vec2,
     project_length: f32,
     max_pitch_value: f32,
@@ -90,43 +101,22 @@ struct NoteRoll {
 }
 
 impl NoteRoll {
-    pub fn new(
-        to_screen: RectTransform,
-        project_length: f32,
-        project_offset: f32,
-        max_pitch_value: f32,
-        quantise_ratio: f32,
-        track_index: usize,
-    ) -> Self {
-        let y_size = to_screen.to().max.y - to_screen.to().min.y;
-        let x_size = to_screen.to().max.x - to_screen.to().min.x;
-        let size = vec2(x_size, y_size);
-        NoteRoll {
-            to_screen,
-            size,
-            project_length,
-            max_pitch_value,
-            project_offset,
-            quantise_ratio,
-            track_index,
-        }
-    }
-
     pub fn create_note_shapes(
-        &mut self,
+        &self,
+        to_screen: &RectTransform,
         store: &Store,
         ui: &Ui,
         response: &Response,
     ) -> Vec<Shape> {
         store.get().project.tracks[self.track_index]
             .notes
-            .clone()
-            .iter_mut()
+            .iter()
             .enumerate()
             .map(|(note_index, note)| {
                 let note_shape = note_to_shape(note, self);
                 let next_note = self.get_next_note(
                     ui,
+                    to_screen,
                     note,
                     note_shape.visual_bounding_rect(),
                     response,
@@ -142,15 +132,15 @@ impl NoteRoll {
     fn get_next_note(
         &self,
         ui: &Ui,
-        note: &mut PlacedNote,
+        to_screen: &RectTransform,
+        note: &PlacedNote,
         note_rect: Rect,
         response: &Response,
         note_index: usize,
     ) -> PlacedNote {
         let note_pos = note_to_pos2(note, self);
         let note_id = response.id.with(note_index);
-        let note_response =
-            ui.interact(note_rect.transform(self.to_screen), note_id, Sense::drag());
+        let note_response = ui.interact(note_rect.transform(*to_screen), note_id, Sense::drag());
         let note_delta = note_response.drag_delta();
         let next_note_pos = note_pos + note_delta;
         note_from_pos2(note, next_note_pos, self)
@@ -168,7 +158,7 @@ impl NoteRoll {
     fn dispatch_note(
         &self,
         store: &Store,
-        note: &mut PlacedNote,
+        note: &PlacedNote,
         next_note: PlacedNote,
         note_index: usize,
     ) {
@@ -191,7 +181,7 @@ impl NoteRoll {
         }
     }
 
-    pub fn create_pitch_value_shapes(&mut self) -> Vec<Shape> {
+    pub fn create_pitch_value_shapes(&self) -> Vec<Shape> {
         (0..(self.max_pitch_value as i32))
             .filter(|pitch_value| pitch_value % 2 == 0)
             .map(|pitch_value| {
@@ -213,7 +203,7 @@ impl NoteRoll {
             .collect()
     }
 
-    fn create_beat_lines(&mut self, beat_increment: f32, stroke: Stroke) -> Vec<Shape> {
+    fn create_beat_lines(&self, beat_increment: f32, stroke: Stroke) -> Vec<Shape> {
         ((self.project_offset as i32)..=(self.project_length / beat_increment) as i32)
             .map(|beat| {
                 let x = (beat as f32) * beat_increment / self.project_length;
@@ -278,7 +268,7 @@ impl Transformable<Shape> for Shape {
                 rect: rect.transform_rect(rect_shape.rect),
                 ..rect_shape
             }),
-            _ => panic!("Shape note implemented."),
+            _ => panic!("Shape not implemented."),
         }
     }
 }
