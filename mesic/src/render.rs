@@ -1,13 +1,12 @@
 use crate::SAMPLE_RATE;
-use crate::Sig;
 use crate::effect::apply_effects;
-use crate::sig::OutputNode;
+use crate::sig::{OutputNode, SigRef};
 use crate::wave::polyphonic_wave;
 use shared::model::{GeneratorType, Project};
 use std::cell::RefCell;
 use std::rc::Rc;
 
-pub fn render(project: &Project) -> Rc<RefCell<dyn Sig>> {
+pub fn render(project: &Project) -> SigRef {
     let track = &project.tracks[0];
     let generator = &project.generators[0];
     let mixer_channel = &project.mixer[0];
