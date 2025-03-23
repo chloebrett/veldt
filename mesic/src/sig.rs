@@ -8,7 +8,7 @@ use std::cmp::{max, min};
 use std::rc::Rc;
 
 /// TODO: use a single shared graph type to control ownership of nodes.
-type SigRef = Rc<RefCell<dyn Sig>>;
+pub type SigRef = Rc<RefCell<dyn Sig>>;
 
 pub trait Sig {
     /// Outputs a buffer containing the specified number of frames.
