@@ -1,8 +1,14 @@
 use crate::consts::REFERENCE_PITCH;
-use crate::effect::apply_effect;
+use crate::effect::ApplyEffect;
+use shared::model::Effect;
 use shared::model::{EffectInstance, PitchName};
 use shared::types::{Freq, KnobPosition, PitchValue, Volume};
+use std::cell::RefCell;
 use std::cmp::{max, min};
+use std::rc::Rc;
+
+/// TODO: use a single shared graph type to control ownership of nodes.
+type SigRef = Rc<RefCell<dyn Sig>>;
 
 pub trait Sig {
     /// Outputs a buffer containing the specified number of frames.
@@ -41,21 +47,25 @@ impl Sig for OutputNode {
 
 /// Node with one input and one output.
 pub struct EffectNode {
-    pub input: Box<dyn Sig>,
+    pub input: SigRef,
     pub effect: EffectInstance,
 }
 
 impl Sig for EffectNode {
     fn buffer(&mut self, num_samples: u32) -> Vec<f32> {
-        let dry = self.input.buffer(num_samples);
-        apply_effect(dry, &self.effect)
+        let dry = self.input.as_ref().borrow_mut().buffer(num_samples);
+        match &self.effect.effect {
+            Effect::SimpleDelay { config } => config.apply(&dry),
+            Effect::SimpleEq { config } => config.apply(&dry),
+            _ => panic!("Effect not implemented yet!"),
+        }
     }
 }
 
 /// Node with one input and one output and a volume control.
 /// Can clip the post-gain signal if desired.
 pub struct AmpNode {
-    pub input: Box<dyn Sig>,
+    pub input: SigRef,
     pub volume: Volume,
     pub should_clip: bool,
 }
@@ -64,6 +74,8 @@ impl Sig for AmpNode {
     fn buffer(&mut self, num_samples: u32) -> Vec<f32> {
         // TODO
         self.input
+            .as_ref()
+            .borrow_mut()
             .buffer(num_samples)
             .into_iter()
             .map(|it| {
@@ -79,23 +91,23 @@ impl Sig for AmpNode {
 
 /// Node with two inputs and one output. Mixes its inputs in a specified ratio.
 pub struct MixerNode {
-    pub dry: Box<dyn Sig>,
-    pub wet: Box<dyn Sig>,
+    pub dry: SigRef,
+    pub wet: SigRef,
     pub ratio: KnobPosition,
 }
 
 impl Sig for MixerNode {
     fn buffer(&mut self, num_samples: u32) -> Vec<f32> {
-        sum(
-            &mult(&self.wet.buffer(num_samples), self.ratio),
-            &mult(&self.dry.buffer(num_samples), 1.0 - self.ratio),
-        )
+        let dry = self.dry.as_ref().borrow_mut().buffer(num_samples);
+        let wet = self.wet.as_ref().borrow_mut().buffer(num_samples);
+
+        sum(&mult(&dry, 1.0 - self.ratio), &mult(&wet, self.ratio))
     }
 }
 
 /// Node with N inputs and one output. Adds its inputs to form the output.
 pub struct AdderNode {
-    pub inputs: Vec<Box<dyn Sig>>,
+    pub inputs: Vec<SigRef>,
 }
 
 impl Sig for AdderNode {
@@ -103,7 +115,7 @@ impl Sig for AdderNode {
         let mut output = Vec::with_capacity(num_samples as usize);
 
         for input in &mut self.inputs {
-            output = sum(&output, &input.buffer(num_samples));
+            output = sum(&output, &input.as_ref().borrow_mut().buffer(num_samples));
         }
 
         output
