@@ -8,6 +8,7 @@ use shared::{
     model::{Note, PitchName, PlacedNote, ScaleValue},
     types::PitchValue,
 };
+use web_sys::console;
 
 pub fn note_roll_display(store: &Store, ui: &mut Ui) {
     new_note_button(store, ui);
@@ -43,7 +44,7 @@ fn note_roll_canvas(store: &Store, ui: &mut Ui) {
     let quantise_ratio = 16.0;
     let track_index = 0;
     let max_pitch_value: PitchValue = PitchName {
-        scale_value: ScaleValue::GSharp,
+        scale_value: ScaleValue::C,
         octave: 8,
     }
     .into();
@@ -125,6 +126,10 @@ impl NoteRoll {
             .enumerate()
             .map(|(note_index, note)| {
                 let note_shape = note_to_shape(note, self);
+                let note_value: PitchValue = note.note.pitch_name.scale_value.into();
+                console::log_1(
+                    &format!("{:?} {:?}", note.note.pitch_name.scale_value, note_value).into(),
+                );
                 let next_note = self.get_next_note(
                     ui,
                     note,
