@@ -57,7 +57,7 @@ fn note_roll_canvas(store: &Store, ui: &mut Ui) {
         octave: 1,
     }
     .into();
-    let piano_size = 20.0;
+    let piano_size = 50.0;
     // Major / Minor / Quarter
     let interval_durations: Vec<Beats> = vec![4.0, 1.0, 0.25];
     let canvas_height = 600.0;
@@ -97,7 +97,8 @@ fn note_roll_canvas(store: &Store, ui: &mut Ui) {
         shapes.extend(note_roll.create_pitch_value_shapes());
         shapes.extend(note_roll.create_note_shapes(&to_screen, store, ui, &response));
         shapes = note_roll.transform_for_piano(shapes);
-        let piano_shapes = note_roll.create_white_keys();
+        let mut piano_shapes = note_roll.create_white_keys();
+        piano_shapes.extend(note_roll.create_black_keys());
         painter.extend(piano_shapes.transform(to_screen));
 
         painter.extend(shapes.transform(to_screen));
@@ -292,6 +293,35 @@ impl NoteRoll {
             });
         shapes
     }
+
+    fn create_black_keys(&self) -> Vec<Shape> {
+        let piano_size_beats = self.piano_size / self.size.x * self.project_length;
+        let white_values = create_scale_values(Scale::Major, ScaleValue::C);
+        let mut white_value_map = HashMap::<ScaleValue, i32>::new();
+        white_values
+            .iter()
+            .enumerate()
+            .for_each(|(value_index, scale_value)| {
+                white_value_map.insert(*scale_value, value_index as i32);
+            });
+        ((self.min_pitch_value as i32 - 1)..=(self.max_pitch_value as i32) as i32)
+            .filter(|&pitch_value| {
+                let pitch_name = PitchName::from(pitch_value);
+                !white_value_map.contains_key(&pitch_name.scale_value)
+            })
+            .map(|pitch_value| {
+                let pitch_name = PitchName::from(pitch_value);
+                let note = PlacedNote {
+                    note: Note {
+                        pitch_name,
+                        beats: piano_size_beats/2.0,
+                    },
+                    offset: 0.0.into(),
+                };
+                black_note_to_shape(&note, self)
+            })
+            .collect()
+    }
 }
 
 fn note_to_pos2(note: &PlacedNote, note_roll: &NoteRoll) -> Pos2 {
@@ -374,6 +404,18 @@ fn white_key_to_shape(
     vec![shape_filled, shape_stroke]
 }
 
+fn black_note_to_shape(note: &PlacedNote, note_roll: &NoteRoll) -> Shape {
+    let note_pos = note_to_pos2(note, note_roll);
+    let scale = note_roll.size
+        / vec2(
+            note_roll.project_length,
+            note_roll.max_pitch_value - note_roll.min_pitch_value,
+        );
+    let note_height = 1.0;
+    let note_width = vec2(note.note.beats, note_height) * scale;
+    let note_rect = Rect::from_min_size(note_pos, note_width);
+    Shape::rect_filled(note_rect, CornerRadius::same(1), Color32::BLACK)
+}
 trait Transformable<T> {
     fn transform(self, rect: RectTransform) -> T;
 }
