@@ -1,6 +1,7 @@
 use crate::consts::REFERENCE_PITCH;
-use shared::model::PitchName;
-use shared::types::{Freq, KnobPosition, PitchValue};
+use crate::effect::apply_effect;
+use shared::model::{EffectInstance, PitchName};
+use shared::types::{Freq, KnobPosition, PitchValue, Volume};
 use std::cmp::{max, min};
 
 pub trait Sig {
@@ -12,9 +13,7 @@ pub trait Sig {
 }
 
 /// Node with zero inputs and one output.
-pub struct GeneratorNode {
-    pub output: Option<Box<dyn Sig>>,
-}
+pub struct GeneratorNode {}
 
 impl Sig for GeneratorNode {
     fn buffer(&mut self, num_samples: u32) -> Vec<f32> {
@@ -27,7 +26,6 @@ impl Sig for GeneratorNode {
 pub struct OutputNode {
     pub buffer: Vec<f32>,
     pub index: usize,
-    pub output: Option<Box<dyn Sig>>,
 }
 
 impl Sig for OutputNode {
@@ -44,13 +42,38 @@ impl Sig for OutputNode {
 /// Node with one input and one output.
 pub struct EffectNode {
     pub input: Box<dyn Sig>,
-    pub output: Option<Box<dyn Sig>>,
+    pub effect: EffectInstance,
 }
 
 impl Sig for EffectNode {
     fn buffer(&mut self, num_samples: u32) -> Vec<f32> {
+        let dry = self.input.buffer(num_samples);
+        apply_effect(dry, &self.effect)
+    }
+}
+
+/// Node with one input and one output and a volume control.
+/// Can clip the post-gain signal if desired.
+pub struct AmpNode {
+    pub input: Box<dyn Sig>,
+    pub volume: Volume,
+    pub should_clip: bool,
+}
+
+impl Sig for AmpNode {
+    fn buffer(&mut self, num_samples: u32) -> Vec<f32> {
         // TODO
-        self.input.buffer(num_samples)
+        self.input
+            .buffer(num_samples)
+            .into_iter()
+            .map(|it| {
+                let mut amped = it * self.volume;
+                if self.should_clip {
+                    amped = amped.clamp(-1.0, 1.0);
+                }
+                amped
+            })
+            .collect()
     }
 }
 
@@ -59,7 +82,6 @@ pub struct MixerNode {
     pub dry: Box<dyn Sig>,
     pub wet: Box<dyn Sig>,
     pub ratio: KnobPosition,
-    pub output: Option<Box<dyn Sig>>,
 }
 
 impl Sig for MixerNode {
@@ -74,7 +96,6 @@ impl Sig for MixerNode {
 /// Node with N inputs and one output. Adds its inputs to form the output.
 pub struct AdderNode {
     pub inputs: Vec<Box<dyn Sig>>,
-    pub output: Box<dyn Sig>,
 }
 
 impl Sig for AdderNode {
