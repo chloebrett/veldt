@@ -37,10 +37,12 @@ pub struct OutputNode {
 impl Sig for OutputNode {
     fn buffer(&mut self, num_samples: u32) -> Vec<f32> {
         let mut output = vec![0.0; num_samples as usize];
-        for i in 0..min(num_samples as usize, self.buffer.len() - self.index) {
-            output[i] = self.buffer[i + self.index];
+        let remaining = self.buffer.len() as i32 - self.index as i32;
+        for i in 0i32..min(num_samples as i32, remaining) {
+            output[i as usize] = self.buffer[i as usize + self.index];
         }
-        self.index += num_samples as usize;
+        //TODO: state
+        //self.index += num_samples as usize;
         output
     }
 }
@@ -101,7 +103,8 @@ impl Sig for MixerNode {
         let dry = self.dry.as_ref().borrow_mut().buffer(num_samples);
         let wet = self.wet.as_ref().borrow_mut().buffer(num_samples);
 
-        sum(&mult(&dry, 1.0 - self.ratio), &mult(&wet, self.ratio))
+        let out = sum(&mult(&dry, 1.0 - self.ratio), &mult(&wet, self.ratio));
+        out
     }
 }
 

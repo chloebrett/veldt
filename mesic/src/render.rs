@@ -48,6 +48,5 @@ pub fn render(project: &Project) -> Rc<RefCell<dyn Sig>> {
         index: 0,
     }));
 
-    // TODO: amp based on volume
     apply_effects(wave_node, &mixer_channel.effects)
 }
