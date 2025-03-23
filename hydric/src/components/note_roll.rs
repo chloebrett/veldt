@@ -53,6 +53,7 @@ fn note_roll_canvas(store: &Store, ui: &mut Ui) {
         octave: 1,
     }
     .into();
+    let piano_size = 20.0;
     // Major / Minor / Quarter
     let interval_durations: Vec<Beats> = vec![4.0, 1.0, 0.25];
     let canvas_height = 600.0;
@@ -74,6 +75,7 @@ fn note_roll_canvas(store: &Store, ui: &mut Ui) {
             min_pitch_value: min_pitch_value as f32,
             quantise_ratio,
             track_index,
+            piano_size,
         };
 
         // Major / Minor / Quarter
@@ -90,6 +92,7 @@ fn note_roll_canvas(store: &Store, ui: &mut Ui) {
 
         shapes.extend(note_roll.create_pitch_value_shapes());
         shapes.extend(note_roll.create_note_shapes(&to_screen, store, ui, &response));
+        shapes = note_roll.transform_for_piano(shapes);
 
         painter.extend(shapes.transform(to_screen));
 
@@ -105,6 +108,7 @@ struct NoteRoll {
     project_offset: f32,
     quantise_ratio: f32,
     track_index: usize,
+    piano_size: f32,
 }
 
 impl NoteRoll {
@@ -217,6 +221,37 @@ impl NoteRoll {
                 let top = (pos2(x, 0.0).to_vec2() * self.size).to_pos2();
                 let bottom = (pos2(x, 1.0).to_vec2() * self.size).to_pos2();
                 Shape::line_segment([top, bottom], stroke)
+            })
+            .collect()
+    }
+
+    fn transform_for_piano(&self, shapes: Vec<Shape>) -> Vec<Shape> {
+        shapes
+            .iter()
+            .map(|shape| {
+                let rescale = 1.0 / self.size.x * (self.size.x - self.piano_size);
+                match shape {
+                    Shape::Rect(rect_shape) => {
+                        let min_x = rect_shape.rect.left() * rescale + self.piano_size;
+                        let min_y = rect_shape.rect.top();
+                        let max_x = rect_shape.rect.right() * rescale + self.piano_size;
+                        let max_y = rect_shape.rect.bottom();
+                        let new_rect = Rect::from_min_max(pos2(min_x, min_y), pos2(max_x, max_y));
+
+                        Shape::Rect(RectShape {
+                            rect: new_rect,
+                            ..rect_shape.clone()
+                        })
+                    }
+                    Shape::LineSegment { points, stroke } => Shape::LineSegment {
+                        points: [
+                            pos2(points[0].x * rescale + self.piano_size, points[0].y),
+                            pos2(points[1].x * rescale + self.piano_size, points[1].y),
+                        ],
+                        stroke: stroke.clone(),
+                    },
+                    _ => panic!("{}", format!("Shape {:?} not implemented.", shape)),
+                }
             })
             .collect()
     }
