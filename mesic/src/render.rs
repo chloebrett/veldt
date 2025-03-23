@@ -1,11 +1,12 @@
 use crate::SAMPLE_RATE;
-use crate::Sig;
 use crate::effect::apply_effects;
-use crate::sig::OutputNode;
+use crate::sig::{OutputNode, SigRef};
 use crate::wave::polyphonic_wave;
 use shared::model::{GeneratorType, Project};
+use std::cell::RefCell;
+use std::rc::Rc;
 
-pub fn render(project: &Project) -> Box<dyn Sig> {
+pub fn render(project: &Project) -> SigRef {
     let track = &project.tracks[0];
     let generator = &project.generators[0];
     let mixer_channel = &project.mixer[0];
@@ -41,11 +42,10 @@ pub fn render(project: &Project) -> Box<dyn Sig> {
         // TODO: account for offsets properly, instead of just appending here.
     }
 
-    let wave_node = Box::new(OutputNode {
+    let wave_node = Rc::new(RefCell::new(OutputNode {
         buffer: total_wave,
         index: 0,
-    });
+    }));
 
-    // TODO: amp based on volume
     apply_effects(wave_node, &mixer_channel.effects)
 }
