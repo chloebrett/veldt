@@ -189,6 +189,8 @@ impl NoteRoll {
     }
 
     pub fn create_pitch_value_shapes(&self) -> Vec<Shape> {
+        // TODO Render notes with with note y value at centre of shape
+        // to allow all shapes to render without having to subtract 1 as here.
         ((self.min_pitch_value as i32 - 1)..=(self.max_pitch_value as i32))
             .filter(|pitch_value| pitch_value % 2 == 0)
             .map(|pitch_value| {
