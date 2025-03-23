@@ -14,7 +14,7 @@ pub struct PitchName {
 
 impl From<PitchName> for PitchValue {
     fn from(val: PitchName) -> Self {
-        let scale_value_pitch = val.scale_value as PitchValue;
+        let scale_value_pitch: PitchValue = val.scale_value.into();
         let octave_pitch = val.octave * 12;
         scale_value_pitch + octave_pitch
     }

@@ -169,18 +169,18 @@ enum WaveTypeProto {
 
 enum ScaleValueProto {
   UnknownScaleValue = 0;
-  AScaleValue = 1;
-  ASharpScaleValue = 2;
-  BScaleValue = 3;
-  CScaleValue = 4;
-  CSharpScaleValue = 5;
-  DScaleValue = 6;
-  DSharpScaleValue = 7;
-  EScaleValue = 8;
-  FScaleValue = 9;
-  FSharpScaleValue = 10;
-  GScaleValue = 11;
-  GSharpScaleValue = 12;
+  CScaleValue = 1;
+  CSharpScaleValue = 2;
+  DScaleValue = 3;
+  DSharpScaleValue = 4;
+  EScaleValue = 5;
+  FScaleValue = 6;
+  FSharpScaleValue = 7;
+  GScaleValue = 8;
+  GSharpScaleValue = 9;
+  AScaleValue = 10;
+  ASharpScaleValue = 11;
+  BScaleValue = 12;
 }
 
 enum ScaleProto {
