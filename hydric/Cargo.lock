@@ -1495,7 +1495,6 @@ version = "0.1.0"
 dependencies = [
  "ordered-float",
  "shared",
- "web-sys",
 ]
 
 [[package]]
