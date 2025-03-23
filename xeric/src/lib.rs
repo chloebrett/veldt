@@ -33,7 +33,7 @@ impl Render for MyRender {
             .ok_or(tonic::Status::invalid_argument("Project must be supplied"))?
             .into();
         let sample_count = SAMPLE_RATE as u32 * 10; // 10 seconds
-        let bytes = as_bytes(&render(&project).buffer(sample_count));
+        let bytes = as_bytes(&render(&project).as_ref().borrow_mut().buffer(sample_count));
 
         Ok(tonic::Response::new(RenderReply { audio: bytes }))
     }
