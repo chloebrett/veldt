@@ -233,10 +233,11 @@ impl NoteRoll {
                 match shape {
                     Shape::Rect(rect_shape) => {
                         let min_x = rect_shape.rect.left() * rescale + self.piano_size;
-                        let min_y = rect_shape.rect.top();
                         let max_x = rect_shape.rect.right() * rescale + self.piano_size;
-                        let max_y = rect_shape.rect.bottom();
-                        let new_rect = Rect::from_min_max(pos2(min_x, min_y), pos2(max_x, max_y));
+                        let new_rect = Rect::from_min_max(
+                            pos2(min_x, rect_shape.rect.top()),
+                            pos2(max_x, rect_shape.rect.bottom()),
+                        );
 
                         Shape::Rect(RectShape {
                             rect: new_rect,
