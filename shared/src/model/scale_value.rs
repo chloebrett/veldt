@@ -41,18 +41,18 @@ pub enum ScaleValue {
 impl From<ScaleValue> for PitchValue {
     fn from(val: ScaleValue) -> Self {
         match val {
-            ScaleValue::A => 0,
-            ScaleValue::ASharp => 1,
-            ScaleValue::B => 2,
-            ScaleValue::C => 3,
-            ScaleValue::CSharp => 4,
-            ScaleValue::D => 5,
-            ScaleValue::DSharp => 6,
-            ScaleValue::E => 7,
-            ScaleValue::F => 8,
-            ScaleValue::FSharp => 9,
-            ScaleValue::G => 10,
-            ScaleValue::GSharp => 11,
+            ScaleValue::C => 0,
+            ScaleValue::CSharp => 1,
+            ScaleValue::D => 2,
+            ScaleValue::DSharp => 3,
+            ScaleValue::E => 4,
+            ScaleValue::F => 5,
+            ScaleValue::FSharp => 6,
+            ScaleValue::G => 7,
+            ScaleValue::GSharp => 8,
+            ScaleValue::A => 9,
+            ScaleValue::ASharp => 10,
+            ScaleValue::B => 11,
         }
     }
 }
@@ -60,18 +60,18 @@ impl From<ScaleValue> for PitchValue {
 impl From<PitchValue> for ScaleValue {
     fn from(pitch_value: PitchValue) -> Self {
         match pitch_value % 12 {
-            0 => ScaleValue::A,
-            1 => ScaleValue::ASharp,
-            2 => ScaleValue::B,
-            3 => ScaleValue::C,
-            4 => ScaleValue::CSharp,
-            5 => ScaleValue::D,
-            6 => ScaleValue::DSharp,
-            7 => ScaleValue::E,
-            8 => ScaleValue::F,
-            9 => ScaleValue::FSharp,
-            10 => ScaleValue::G,
-            11 => ScaleValue::GSharp,
+            0 => ScaleValue::C,
+            1 => ScaleValue::CSharp,
+            2 => ScaleValue::D,
+            3 => ScaleValue::DSharp,
+            4 => ScaleValue::E,
+            5 => ScaleValue::F,
+            6 => ScaleValue::FSharp,
+            7 => ScaleValue::G,
+            8 => ScaleValue::GSharp,
+            9 => ScaleValue::A,
+            10 => ScaleValue::ASharp,
+            11 => ScaleValue::B,
             _ => panic!(""), // This should never happen.
         }
     }
