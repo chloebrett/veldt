@@ -255,7 +255,7 @@ impl NoteRoll {
                 let note = PlacedNote {
                     note: Note {
                         pitch_name,
-                        beats: piano_size_beats / 2.0,
+                        beats: piano_size_beats * 3.0 / 5.0,
                     },
                     offset: 0.0.into(),
                 };
