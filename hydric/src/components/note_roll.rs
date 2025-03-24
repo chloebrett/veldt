@@ -2,8 +2,8 @@ use crate::state::{Action, Selector, Store};
 use shared::types::Beats;
 
 use egui::{
-    Color32, CornerRadius, Frame, Pos2, Rect, Response, ScrollArea, Sense, Shape, Stroke, Ui, Vec2,
-    emath::RectTransform, epaint::RectShape, pos2, vec2,
+    Color32, CornerRadius, Frame, Pos2, Rect, Response, ScrollArea, Sense, Shape, Stroke,
+    StrokeKind, Ui, Vec2, emath::RectTransform, epaint::RectShape, pos2, vec2,
 };
 use shared::{
     model::{Note, PitchName, PlacedNote, ScaleValue},
@@ -53,6 +53,7 @@ fn note_roll_canvas(store: &Store, ui: &mut Ui) {
         octave: 1,
     }
     .into();
+    let piano_size = 50.0;
     // Major / Minor / Quarter
     let interval_durations: Vec<Beats> = vec![4.0, 1.0, 0.25];
     let canvas_height = 600.0;
@@ -71,9 +72,10 @@ fn note_roll_canvas(store: &Store, ui: &mut Ui) {
             project_length,
             project_offset,
             max_pitch_value: max_pitch_value as f32,
-            min_pitch_value: min_pitch_value as f32,
+            min_pitch_value: min_pitch_value as f32 - 1.0,
             quantise_ratio,
             track_index,
+            piano_size,
         };
 
         // Major / Minor / Quarter
@@ -90,7 +92,9 @@ fn note_roll_canvas(store: &Store, ui: &mut Ui) {
 
         shapes.extend(note_roll.create_pitch_value_shapes());
         shapes.extend(note_roll.create_note_shapes(&to_screen, store, ui, &response));
-
+        shapes = transform_for_piano(shapes, &note_roll);
+        let piano_shapes = note_roll.create_piano_keys();
+        painter.extend(piano_shapes.transform(to_screen));
         painter.extend(shapes.transform(to_screen));
 
         response
@@ -105,6 +109,7 @@ struct NoteRoll {
     project_offset: f32,
     quantise_ratio: f32,
     track_index: usize,
+    piano_size: f32,
 }
 
 impl NoteRoll {
@@ -147,7 +152,8 @@ impl NoteRoll {
     ) -> PlacedNote {
         let note_pos = note_to_pos2(note, self);
         let note_id = response.id.with(note_index);
-        let note_response = ui.interact(note_rect.transform(*to_screen), note_id, Sense::drag());
+        let new_rect = shrink_rect_left(note_rect, self.piano_size, self);
+        let note_response = ui.interact(new_rect.transform(*to_screen), note_id, Sense::drag());
         let note_delta = note_response.drag_delta();
         let next_note_pos = note_pos + note_delta;
         note_from_pos2(note, next_note_pos, self)
@@ -189,9 +195,7 @@ impl NoteRoll {
     }
 
     pub fn create_pitch_value_shapes(&self) -> Vec<Shape> {
-        // TODO Render notes with with note y value at centre of shape
-        // to allow all shapes to render without having to subtract 1 as here.
-        ((self.min_pitch_value as i32 - 1)..=(self.max_pitch_value as i32))
+        ((self.min_pitch_value as i32)..=(self.max_pitch_value as i32))
             .filter(|pitch_value| pitch_value % 2 == 0)
             .map(|pitch_value| {
                 let background_note = PlacedNote {
@@ -221,6 +225,32 @@ impl NoteRoll {
                 Shape::line_segment([top, bottom], stroke)
             })
             .collect()
+    }
+
+    fn create_piano_keys(&self) -> Vec<Shape> {
+        let piano_size_beats = self.piano_size / self.size.x * self.project_length;
+        let piano_board = Rect::from_min_max(pos2(0.0, 0.0), pos2(self.piano_size, self.size.y));
+        let mut shapes = vec![Shape::rect_filled(
+            piano_board,
+            CornerRadius::same(0),
+            Color32::WHITE,
+        )];
+        shapes.extend(
+            ((self.min_pitch_value as i32)..=(self.max_pitch_value as i32))
+                .map(|pitch_value| {
+                    let pitch_name = PitchName::from(pitch_value);
+                    let note = PlacedNote {
+                        note: Note {
+                            pitch_name,
+                            beats: piano_size_beats,
+                        },
+                        offset: 0.0.into(),
+                    };
+                    note_to_piano_key_shape(&note, self)
+                })
+                .collect::<Vec<Shape>>(),
+        );
+        shapes
     }
 }
 
@@ -268,6 +298,89 @@ fn note_from_pos2(note: &PlacedNote, pos2: Pos2, note_roll: &NoteRoll) -> Placed
         },
         offset: offset.into(),
     }
+}
+
+fn note_to_piano_key_shape(note: &PlacedNote, note_roll: &NoteRoll) -> Shape {
+    // White notes are arranged so that the edge of B and C and the edge of
+    // E and F lines align with the edge of the equivalent background.
+    // This helps visual align background notes with the piano keys.
+    // As a result white notes C, D, and E are slightly larger, spread out over 5
+    // background notes and F, G, A, and B slight smaller spread out over 7.
+    // y_offset indicates where the white note shape should start in relation to the
+    // background note and note_height corresponding height of that note.
+    let (y_offset, note_height) = match note.note.pitch_name.scale_value {
+        ScaleValue::C => (-2.0 / 3.0, 5.0 / 3.0),
+        ScaleValue::D => (-1.0 / 3.0, 5.0 / 3.0),
+        ScaleValue::E => (0.0, 5.0 / 3.0),
+        ScaleValue::F => (-3.0 / 4.0, 7.0 / 4.0),
+        ScaleValue::G => (-1.0 / 2.0, 7.0 / 4.0),
+        ScaleValue::A => (-1.0 / 4.0, 7.0 / 4.0),
+        ScaleValue::B => (0.0, 7.0 / 4.0),
+        // return black key note for all other notes
+        _ => return black_note_to_shape(note, note_roll),
+    };
+    let scale = note_roll.size
+        / vec2(
+            note_roll.project_length,
+            note_roll.max_pitch_value - note_roll.min_pitch_value,
+        );
+    let note_pos = note_to_pos2(note, note_roll);
+    let note_width = vec2(note.note.beats, note_height) * scale;
+    let white_note_pos = (note_pos.to_vec2() + vec2(0.0, y_offset) * scale).to_pos2();
+    let note_rect = Rect::from_min_size(white_note_pos, note_width);
+    Shape::rect_stroke(
+        note_rect,
+        CornerRadius::same(1),
+        Stroke::new(1.0, Color32::from_black_alpha(128)),
+        StrokeKind::Inside,
+    )
+}
+
+fn black_note_to_shape(note: &PlacedNote, note_roll: &NoteRoll) -> Shape {
+    let note_pos = note_to_pos2(note, note_roll);
+    let black_note_ratio = 0.6;
+    let scale = note_roll.size
+        / vec2(
+            note_roll.project_length,
+            note_roll.max_pitch_value - note_roll.min_pitch_value,
+        );
+    let note_height = 1.0;
+    let note_width = vec2(note.note.beats * black_note_ratio, note_height) * scale;
+    let note_rect = Rect::from_min_size(note_pos, note_width);
+    let corner_radius = 1;
+    Shape::rect_filled(note_rect, CornerRadius::same(corner_radius), Color32::BLACK)
+}
+
+fn shrink_rect_left(rect: Rect, x: f32, note_roll: &NoteRoll) -> Rect {
+    let from_rect = Rect::from_min_size(pos2(0.0, 0.0), note_roll.size);
+    let to_rect = Rect::from_min_size(pos2(x, 0.0), vec2(note_roll.size.x - x, note_roll.size.y));
+    let rect_transform = RectTransform::from_to(from_rect, to_rect);
+    rect_transform.transform_rect(rect)
+}
+
+fn shrink_line_left(points: [Pos2; 2], x: f32, note_roll: &NoteRoll) -> [Pos2; 2] {
+    let rescale = 1.0 / note_roll.size.x * (note_roll.size.x - x);
+    [
+        pos2(points[0].x * rescale + x, points[0].y),
+        pos2(points[1].x * rescale + x, points[1].y),
+    ]
+}
+
+fn transform_for_piano(shapes: Vec<Shape>, note_roll: &NoteRoll) -> Vec<Shape> {
+    shapes
+        .iter()
+        .map(|shape| match shape {
+            Shape::Rect(rect_shape) => Shape::Rect(RectShape {
+                rect: shrink_rect_left(rect_shape.rect, note_roll.piano_size, note_roll),
+                ..rect_shape.clone()
+            }),
+            Shape::LineSegment { points, stroke } => Shape::LineSegment {
+                points: shrink_line_left(*points, note_roll.piano_size, note_roll),
+                stroke: *stroke,
+            },
+            _ => panic!("{}", format!("Shape {:?} not implemented.", shape)),
+        })
+        .collect()
 }
 
 trait Transformable<T> {
