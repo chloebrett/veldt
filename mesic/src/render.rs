@@ -17,7 +17,7 @@ pub fn render(project: &Project) -> SigRef {
         .iter()
         .map(|placed_note| Into::<f32>::into(placed_note.offset) + placed_note.note.beats)
         .max_by(|a, b| a.total_cmp(b))
-        .unwrap();
+        .unwrap_or(0.0);
     let track_samples = (track_beats / bpm * 60.0 * SAMPLE_RATE as f32) as usize;
     let mut total_wave: Vec<f32> = vec![0.0; track_samples];
 
