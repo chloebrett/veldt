@@ -313,8 +313,8 @@ fn note_from_pos2(note: &PlacedNote, pos2: Pos2, note_roll: &NoteRoll) -> Placed
 }
 
 fn white_key_to_shape(note: &PlacedNote, note_roll: &NoteRoll) -> Shape {
-    // Offsets for whitenote layout.
-    let (y1, y2) = match note.note.pitch_name.scale_value {
+    // Offsets y value for irregular size of white keys.
+    let (y, note_height) = match note.note.pitch_name.scale_value {
         ScaleValue::C => (-2.0 / 3.0, 5.0 / 3.0),
         ScaleValue::D => (-1.0 / 3.0, 5.0 / 3.0),
         ScaleValue::E => (0.0, 5.0 / 3.0),
@@ -330,8 +330,8 @@ fn white_key_to_shape(note: &PlacedNote, note_roll: &NoteRoll) -> Shape {
             note_roll.max_pitch_value - note_roll.min_pitch_value,
         );
     let note_pos = note_to_pos2(note, note_roll);
-    let note_width = vec2(note.note.beats, y2) * scale;
-    let white_note_pos = (note_pos.to_vec2() + vec2(0.0, y1) * scale).to_pos2();
+    let note_width = vec2(note.note.beats, note_height) * scale;
+    let white_note_pos = (note_pos.to_vec2() + vec2(0.0, y) * scale).to_pos2();
     let note_rect = Rect::from_min_size(white_note_pos, note_width);
     Shape::rect_stroke(
         note_rect,
