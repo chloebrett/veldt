@@ -1,4 +1,4 @@
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 
 use crate::state::{Action, Selector, Store};
 use mesic::create_scale_values;
@@ -76,7 +76,7 @@ fn note_roll_canvas(store: &Store, ui: &mut Ui) {
             project_length,
             project_offset,
             max_pitch_value: max_pitch_value as f32,
-            min_pitch_value: min_pitch_value as f32,
+            min_pitch_value: min_pitch_value as f32 - 1.0,
             quantise_ratio,
             track_index,
             piano_size,
@@ -94,12 +94,12 @@ fn note_roll_canvas(store: &Store, ui: &mut Ui) {
             .flat_map(|(duration, stroke)| note_roll.create_beat_lines(duration, stroke))
             .collect();
 
-        shapes.extend(note_roll.create_pitch_value_shapes());
-        shapes.extend(note_roll.create_note_shapes(&to_screen, store, ui, &response));
-        shapes = note_roll.transform_for_piano(shapes);
         let mut piano_shapes = note_roll.create_white_keys();
         piano_shapes.extend(note_roll.create_black_keys());
         painter.extend(piano_shapes.transform(to_screen));
+        shapes.extend(note_roll.create_pitch_value_shapes());
+        shapes.extend(note_roll.create_note_shapes(&to_screen, store, ui, &response));
+        shapes = note_roll.transform_for_piano(shapes);
 
         painter.extend(shapes.transform(to_screen));
 
@@ -200,7 +200,7 @@ impl NoteRoll {
     }
 
     pub fn create_pitch_value_shapes(&self) -> Vec<Shape> {
-        ((self.min_pitch_value as i32 - 1)..=(self.max_pitch_value as i32))
+        ((self.min_pitch_value as i32)..=(self.max_pitch_value as i32))
             .filter(|pitch_value| pitch_value % 2 == 0)
             .map(|pitch_value| {
                 let background_note = PlacedNote {
@@ -266,19 +266,13 @@ impl NoteRoll {
 
     fn create_white_keys(&self) -> Vec<Shape> {
         let piano_size_beats = self.piano_size / self.size.x * self.project_length;
-        let mut shapes = vec![];
-        let white_values = create_scale_values(Scale::Major, ScaleValue::C);
-        let mut white_value_map = HashMap::<ScaleValue, i32>::new();
-        white_values
-            .iter()
-            .enumerate()
-            .for_each(|(value_index, scale_value)| {
-                white_value_map.insert(*scale_value, value_index as i32);
-            });
-        ((self.min_pitch_value as i32 - 1)..=(self.max_pitch_value as i32) as i32)
+        let piano_board = Rect::from_min_max(pos2(0.0,0.0), pos2(self.piano_size, self.size.y));
+        let mut shapes = vec![Shape::rect_filled(piano_board, CornerRadius::same(0), Color32::WHITE)];
+        let white_values = HashSet::<ScaleValue>::from_iter(create_scale_values(Scale::Major, ScaleValue::C));
+        ((self.min_pitch_value as i32)..=(self.max_pitch_value as i32) as i32)
             .filter(|&pitch_value| {
                 let pitch_name = PitchName::from(pitch_value);
-                white_value_map.contains_key(&pitch_name.scale_value)
+                white_values.contains(&pitch_name.scale_value)
             })
             .for_each(|pitch_value| {
                 let pitch_name = PitchName::from(pitch_value);
@@ -289,7 +283,7 @@ impl NoteRoll {
                     },
                     offset: 0.0.into(),
                 };
-                shapes.extend(white_key_to_shape(&note, self, &white_value_map))
+                shapes.push(white_key_to_shape(&note, self))
             });
         shapes
     }
@@ -304,7 +298,7 @@ impl NoteRoll {
             .for_each(|(value_index, scale_value)| {
                 white_value_map.insert(*scale_value, value_index as i32);
             });
-        ((self.min_pitch_value as i32 - 1)..=(self.max_pitch_value as i32) as i32)
+        ((self.min_pitch_value as i32)..=(self.max_pitch_value as i32) as i32)
             .filter(|&pitch_value| {
                 let pitch_name = PitchName::from(pitch_value);
                 !white_value_map.contains_key(&pitch_name.scale_value)
@@ -373,35 +367,29 @@ fn note_from_pos2(note: &PlacedNote, pos2: Pos2, note_roll: &NoteRoll) -> Placed
 fn white_key_to_shape(
     note: &PlacedNote,
     note_roll: &NoteRoll,
-    white_value_map: &HashMap<ScaleValue, i32>,
-) -> Vec<Shape> {
-    let max_note = PitchName::from(note_roll.max_pitch_value as i32);
-    let min_note = PitchName::from(note_roll.min_pitch_value as i32);
-    let max_white_value = (max_note.octave as i32 * white_value_map.keys().len() as i32
-        + white_value_map.get(&max_note.scale_value).unwrap()) as f32;
-    let min_white_value = (min_note.octave as i32 * white_value_map.keys().len() as i32
-        + white_value_map.get(&min_note.scale_value).unwrap()) as f32;
-    let note_white_value = (note.note.pitch_name.octave as i32
-        * white_value_map.keys().len() as i32
-        + white_value_map
-            .get(&note.note.pitch_name.scale_value)
-            .unwrap()) as f32;
-    let scale = note_roll.size / vec2(note_roll.project_length, max_white_value - min_white_value);
-    let offset: f32 = note.offset.into();
-    let y = max_white_value - note_white_value;
-    let note_pos = (vec2(offset, y) * scale).to_pos2();
-    console::log_1(&format!("{:?} {:?}", note.note, note_pos).into());
-    let note_height = 1.0;
-    let note_width = vec2(note.note.beats, note_height) * scale;
-    let note_rect = Rect::from_min_size(note_pos, note_width);
-    let shape_filled = Shape::rect_filled(note_rect, CornerRadius::same(1), Color32::WHITE);
-    let shape_stroke = Shape::rect_stroke(
+) -> Shape {
+    // Offsets for whitenote layout.
+    let (y1, y2) = match note.note.pitch_name.scale_value {
+        ScaleValue::C => (-2.0/3.0, 5.0/3.0),
+        ScaleValue::D => (-1.0/3.0, 5.0/3.0),
+        ScaleValue::E => (0.0, 5.0/3.0),
+        ScaleValue::F => (-3.0/4.0, 7.0/4.0),
+        ScaleValue::G => (-1.0/2.0, 7.0/4.0),
+        ScaleValue::A => (-1.0/4.0, 7.0/4.0),
+        ScaleValue::B => (0.0, 7.0/4.0),
+        _ => panic!("ScaleValue is not a white note.")
+    };
+    let scale = note_roll.size / vec2(note_roll.project_length, note_roll.max_pitch_value - note_roll.min_pitch_value);
+    let note_pos = note_to_pos2(note, note_roll);
+    let note_width = vec2(note.note.beats, y2) * scale;
+    let white_note_pos = (note_pos.to_vec2() + vec2(0.0, y1) * scale).to_pos2();
+    let note_rect = Rect::from_min_size(white_note_pos, note_width);
+    Shape::rect_stroke(
         note_rect,
         CornerRadius::same(1),
         Stroke::new(1.0, Color32::from_black_alpha(128)),
         StrokeKind::Inside,
-    );
-    vec![shape_filled, shape_stroke]
+    )
 }
 
 fn black_note_to_shape(note: &PlacedNote, note_roll: &NoteRoll) -> Shape {
