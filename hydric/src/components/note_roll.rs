@@ -352,10 +352,10 @@ fn black_note_to_shape(note: &PlacedNote, note_roll: &NoteRoll) -> Shape {
 }
 
 fn shrink_rect_left(rect: Rect, x: f32, note_roll: &NoteRoll) -> Rect {
-    let rescale = 1.0 / note_roll.size.x * (note_roll.size.x - x);
-    let min_x = rect.left() * rescale + x;
-    let max_x = rect.right() * rescale + x;
-    Rect::from_min_max(pos2(min_x, rect.top()), pos2(max_x, rect.bottom()))
+    let from_rect = Rect::from_min_size(pos2(0.0, 0.0), note_roll.size);
+    let to_rect = Rect::from_min_size(pos2(x, 0.0), vec2(note_roll.size.x - x, note_roll.size.y));
+    let rect_transform = RectTransform::from_to(from_rect, to_rect);
+    rect_transform.transform_rect(rect)
 }
 
 fn shrink_line_left(points: [Pos2; 2], x: f32, note_roll: &NoteRoll) -> [Pos2; 2] {
