@@ -2,19 +2,14 @@ use super::app::App;
 use super::audio_vis::audio_vis;
 use crate::audio_player::play;
 use crate::rpc::render as server_render;
-use egui::{Button, Ui};
+use egui::Ui;
 use mesic::SAMPLE_RATE;
 use mesic::render as local_render;
 use mesic::{AmpNode, Sig};
 use poll_promise::Promise;
 
 pub fn play_control(app: &mut App, ui: &mut Ui) {
-    let track_index = 0;
-    let play_condition = app.store.get().project.tracks[track_index].notes.len() > 0;
-    if ui
-        .add_enabled(play_condition, Button::new("Play (local)"))
-        .clicked()
-    {
+    if ui.button("Play (local)").clicked() {
         let volume = app.store.get().volume;
         let sample_count = SAMPLE_RATE as u32 * 10; // 10 seconds
         let audio_node = local_render(&app.store.get().project);
@@ -38,10 +33,7 @@ pub fn play_control(app: &mut App, ui: &mut Ui) {
             }
         }
     }
-    if ui
-        .add_enabled(play_condition, Button::new("Load audio (server)"))
-        .clicked()
-    {
+    if ui.button("Load audio (server)").clicked() {
         let project = app.store.get().project.clone();
         app.server_render_promise =
             Some(Promise::spawn_local(
