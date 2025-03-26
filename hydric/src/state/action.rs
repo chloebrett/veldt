@@ -1,6 +1,5 @@
-use shared::model::{AdsrEnvelope, EqType, PlacedNote, Scale, ScaleValue, Track, WaveType};
-use shared::types::{Beats, Octave};
-use shared::types::{Freq, KnobPosition, Milliseconds, Volume};
+use shared::model::{AdsrEnvelope, EqType, PlacedNote, Sample, Scale, ScaleValue, Track, WaveType};
+use shared::types::{Beats, Freq, KnobPosition, Milliseconds, Octave, Volume};
 
 #[derive(Debug, Clone)]
 pub enum Action {
@@ -45,6 +44,11 @@ pub enum Action {
     ClearLoadTrackPromise,
     ClearSaveTrackPromise,
     ClearTrackListPromise,
+    LoadSample {
+        filename: String,
+    },
+    ClearLoadSamplePromise,
+    AddSample(Sample),
 
     /// Denotes the reverse-action for an action that isn't reversible.
     /// Applying this is a no-op.

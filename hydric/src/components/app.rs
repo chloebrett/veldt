@@ -1,7 +1,7 @@
 use super::{
     effect_control, envelope_control, generator_control, key_control, load_control,
-    note_roll_display, notes_control, play_control, save_button, toggle_window_panel,
-    undo_redo_control,
+    note_roll_display, notes_control, play_control, sample_control, save_button,
+    toggle_window_panel, undo_redo_control,
 };
 use crate::audio_player::Handle;
 use crate::state::{Action, Store, get_set};
@@ -134,6 +134,8 @@ impl eframe::App for App {
                     undo_redo_control(&mut self.store, ui);
                     ui.separator();
                     play_control(self, ui);
+                    ui.separator();
+                    sample_control(self, ui);
                     ui.separator();
                     note_roll_display(&self.store, ui);
 

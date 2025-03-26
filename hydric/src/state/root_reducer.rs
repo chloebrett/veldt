@@ -1,7 +1,7 @@
 use super::{
     Action, Selector, StoreData, effect_reducer, generator_reducer, note_reducer, track_reducer,
 };
-use crate::rpc::{load_track, load_track_list, save_track};
+use crate::rpc::{load_sample, load_track, load_track_list, save_track};
 use poll_promise::Promise;
 use std::rc::Rc;
 use web_sys::console;
@@ -95,6 +95,21 @@ pub fn root_reducer(data: &mut StoreData, selector: &Selector, action: &Action) 
             }
             Action::ClearTrackListPromise => {
                 data.track_list_promise = Rc::new(None);
+                Action::NonReversible
+            }
+            Action::LoadSample { filename } => {
+                let filename = filename.clone();
+                data.load_sample_promise = Rc::new(Some(Promise::spawn_local(async move {
+                    load_sample(filename).await
+                })));
+                Action::NonReversible
+            }
+            Action::ClearLoadSamplePromise => {
+                data.load_sample_promise = Rc::new(None);
+                Action::NonReversible
+            }
+            Action::AddSample(sample) => {
+                data.project.samples.push(sample.clone());
                 Action::NonReversible
             }
             _ => Action::NonReversible,

@@ -2,12 +2,10 @@ use super::UndoStack;
 use super::{Action, Selector};
 use ordered_float::OrderedFloat;
 use poll_promise::Promise;
-use shared::model::PlacedNote;
-use shared::model::Track;
 use shared::model::{
     AdsrEnvelope, DelayConfig, Effect, EffectInstance, EffectMeta, EqConfig, EqType,
-    GeneratorInstance, GeneratorMeta, GeneratorType, MixerChannel, Note, PitchName, Project, Scale,
-    ScaleValue, SimpleWaveConfig, WaveType,
+    GeneratorInstance, GeneratorMeta, GeneratorType, MixerChannel, Note, PitchName, PlacedNote,
+    Project, Sample, Scale, ScaleValue, SimpleWaveConfig, Track, WaveType,
 };
 use shared::types::Volume;
 use std::cell::RefCell;
@@ -54,6 +52,7 @@ pub struct StoreData {
     pub save_track_promise: Rc<Option<Promise<Option<()>>>>,
     pub track_list_promise: Rc<Option<Promise<Option<Vec<String>>>>>,
     pub load_track_promise: Rc<Option<Promise<Option<Track>>>>,
+    pub load_sample_promise: Rc<Option<Promise<Option<Sample>>>>,
 }
 
 impl Store {
@@ -181,6 +180,7 @@ impl Default for StoreData {
             save_track_promise: Rc::new(None),
             track_list_promise: Rc::new(None),
             load_track_promise: Rc::new(None),
+            load_sample_promise: Rc::new(None),
             load_track_name: None,
         }
     }

@@ -37,8 +37,6 @@ message SampleProto {
   bytes data = 1;
 
   float sample_rate = 2;
-
-  uint32 bit_depth = 3;
 }
 
 message MixerChannelProto {
