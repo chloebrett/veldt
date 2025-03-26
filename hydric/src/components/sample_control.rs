@@ -3,8 +3,8 @@ use crate::audio_player::play;
 use crate::state::Action;
 use egui::{Button, Ui};
 use poll_promise::Promise;
-use std::rc::Rc;
 use shared::model::Sample;
+use std::rc::Rc;
 
 pub fn sample_control(app: &mut App, ui: &mut Ui) {
     if ui

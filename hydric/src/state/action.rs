@@ -1,5 +1,5 @@
-use shared::model::{AdsrEnvelope, EqType, Sample, PlacedNote, Scale, ScaleValue, Track, WaveType};
-use shared::types::{Freq, KnobPosition, Milliseconds, Volume, Beats, Octave};
+use shared::model::{AdsrEnvelope, EqType, PlacedNote, Sample, Scale, ScaleValue, Track, WaveType};
+use shared::types::{Beats, Freq, KnobPosition, Milliseconds, Octave, Volume};
 
 #[derive(Debug, Clone)]
 pub enum Action {
