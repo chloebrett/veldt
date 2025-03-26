@@ -12,8 +12,10 @@ mod play_control;
 mod save_control;
 mod undo_redo;
 mod window_toggle;
+mod sample_control;
 
 pub use app::*;
+use sample_control::*;
 use delay_control::*;
 use effect_control::*;
 use envelope_control::*;

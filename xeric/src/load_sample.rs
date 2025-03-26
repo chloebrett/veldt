@@ -1,7 +1,7 @@
-use shared::bytes::as_bytes;
 use shared::load_sample::load_sample_server::LoadSample;
 use shared::load_sample::{LoadSampleReply, LoadSampleRequest};
 use tonic::async_trait;
+use shared::model::Sample;
 
 pub struct MyLoadSample;
 
@@ -9,9 +9,15 @@ pub struct MyLoadSample;
 impl LoadSample for MyLoadSample {
     async fn load_sample(
         self: &Self,
-        _request: tonic::Request<LoadSampleRequest>,
+        request: tonic::Request<LoadSampleRequest>,
     ) -> Result<tonic::Response<LoadSampleReply>, tonic::Status> {
-        let bytes = as_bytes(&vec![]);
-        Ok(tonic::Response::new(LoadSampleReply { sample: bytes }))
+        let LoadSampleRequest { filename } = request.into_inner();
+        let mut reader = hound::WavReader::open(filename).unwrap();
+        let data: Vec<f32> = reader.samples::<f32>().into_iter().map(|it| it.unwrap()).collect();
+        let sample = Sample {
+            data,
+            sample_rate: reader.spec().sample_rate as f32,
+        };
+        Ok(tonic::Response::new(LoadSampleReply { sample: Some(sample.into()) }))
     }
 }

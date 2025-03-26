@@ -84,10 +84,7 @@ impl From<TrackPlacement> for TrackPlacementProto {
 #[derive(Clone, Debug, PartialEq)]
 pub struct Sample {
     pub data: Vec<f32>,
-
     pub sample_rate: f32,
-
-    pub bit_depth: u32,
 }
 
 impl From<SampleProto> for Sample {
@@ -95,7 +92,6 @@ impl From<SampleProto> for Sample {
         Sample {
             data: as_floats(&item.data),
             sample_rate: item.sample_rate,
-            bit_depth: item.bit_depth,
         }
     }
 }
@@ -105,7 +101,6 @@ impl From<Sample> for SampleProto {
         SampleProto {
             data: as_bytes(&item.data),
             sample_rate: item.sample_rate,
-            bit_depth: item.bit_depth,
         }
     }
 }

@@ -45,6 +45,7 @@ pub enum Action {
     ClearLoadTrackPromise,
     ClearSaveTrackPromise,
     ClearTrackListPromise,
+    LoadSample { filename: String },
 
     /// Denotes the reverse-action for an action that isn't reversible.
     /// Applying this is a no-op.
