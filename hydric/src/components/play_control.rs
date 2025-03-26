@@ -35,6 +35,7 @@ pub fn play_control(app: &mut App, ui: &mut Ui) {
     }
     if ui.button("Load audio (server)").clicked() {
         let project = app.store.get().project.clone();
+        // TODO: use an action.
         app.server_render_promise =
             Some(Promise::spawn_local(
                 async move { server_render(project).await },

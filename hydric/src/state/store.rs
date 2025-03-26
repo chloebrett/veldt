@@ -4,8 +4,9 @@ use ordered_float::OrderedFloat;
 use poll_promise::Promise;
 use shared::model::{
     AdsrEnvelope, DelayConfig, Effect, EffectInstance, EffectMeta, EqConfig, EqType,
-    GeneratorInstance, GeneratorMeta, GeneratorType, MixerChannel, Note, PitchName, Project, Scale,
-    ScaleValue, SimpleWaveConfig, WaveType,PlacedNote, Track, Sample};
+    GeneratorInstance, GeneratorMeta, GeneratorType, MixerChannel, Note, PitchName, PlacedNote,
+    Project, Sample, Scale, ScaleValue, SimpleWaveConfig, Track, WaveType,
+};
 use shared::types::Volume;
 use std::cell::RefCell;
 use std::rc::Rc;
