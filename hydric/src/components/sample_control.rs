@@ -9,14 +9,14 @@ use std::rc::Rc;
 pub fn sample_control(app: &mut App, ui: &mut Ui) {
     if ui
         .add_enabled(
-            app.store.get().project.samples.len() > 0,
+            !app.store.get().project.samples.is_empty(),
             Button::new("Play sample"),
         )
         .clicked()
     {
         let sample = app.store.get().project.samples[0].clone();
         app.audio = sample.data.clone();
-        let signal = dasp_signal::from_iter(sample.data.into_iter());
+        let signal = dasp_signal::from_iter(sample.data);
         app.handle = Some(play(signal));
     }
 

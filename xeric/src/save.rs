@@ -9,6 +9,7 @@ use shared::save_track::{
 use std::collections::HashMap;
 use std::sync::{Arc, Mutex};
 use tonic::async_trait;
+use shared::logger::log;
 
 pub struct MySaveNotes {
     pub values: SavedNotes,
@@ -31,7 +32,7 @@ impl SaveTrack for ServerSaveTracks {
             .lock()
             .unwrap()
             .insert(name.clone(), track.unwrap().clone());
-        println!("Saved {}", name.clone());
+        log(format!("Saved {}", name.clone()));
         Ok(tonic::Response::new(SaveTrackReply {}))
     }
 }

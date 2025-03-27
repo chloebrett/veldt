@@ -1125,7 +1125,6 @@ dependencies = [
  "tonic-web-wasm-client",
  "wasm-bindgen",
  "wasm-bindgen-futures",
- "web-sys",
 ]
 
 [[package]]
@@ -2308,6 +2307,7 @@ dependencies = [
  "strum",
  "tonic",
  "tonic-build",
+ "web-sys",
 ]
 
 [[package]]

@@ -1,9 +1,9 @@
-use crate::state::Action;
+use super::Action;
 use shared::model::{GeneratorInstance, GeneratorType};
-use web_sys::console;
+use shared::logger::log;
 
 pub fn generator_reducer(generator: &mut GeneratorInstance, action: &Action) -> Action {
-    console::log_1(&format!("generator_reducer processing: {:?}", action.clone()).into());
+    log(format!("generator_reducer processing: {:?}", action.clone()));
 
     let config = match &mut generator.kind {
         GeneratorType::SimpleWave { config } => config,

@@ -3,7 +3,7 @@ use shared::consts::XERIC_URL;
 use shared::model::Project;
 use shared::render::{RenderRequest, render_client::RenderClient};
 use tonic_web_wasm_client::Client;
-use web_sys::console;
+use shared::logger::error;
 
 pub async fn render(project: Project) -> Option<Vec<f32>> {
     let client = Client::new(XERIC_URL.to_string());
@@ -22,7 +22,7 @@ pub async fn render(project: Project) -> Option<Vec<f32>> {
     match audio_result {
         Ok(audio) => Some(as_floats(&audio)),
         Err(_) => {
-            console::error_1(&"Error rendering audio on server.".into());
+            error("Error rendering audio on server.".to_string());
             None
         }
     }

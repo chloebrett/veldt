@@ -26,7 +26,7 @@ pub fn play_control(app: &mut App, ui: &mut Ui) {
     if let Some(render_promise) = &app.server_render_promise {
         if let Some(Some(server_audio)) = render_promise.ready() {
             if ui.button("Play (server)").clicked() {
-                let volume = app.store.get().volume; // TODO: reconnect
+                let _volume = app.store.get().volume; // TODO: reconnect
                 app.audio = server_audio.to_vec();
                 let signal = dasp_signal::from_iter(app.audio.clone());
                 app.handle = Some(play(signal));

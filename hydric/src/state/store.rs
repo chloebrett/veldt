@@ -10,7 +10,7 @@ use shared::model::{
 use shared::types::Volume;
 use std::cell::RefCell;
 use std::rc::Rc;
-use web_sys::console;
+use shared::logger::log;
 
 enum UndoRedoType {
     Undo,
@@ -67,7 +67,7 @@ impl Store {
         }
 
         for (selector, action) in self.pending_actions.borrow().iter() {
-            console::log_1(&format!("Applying action: {:?}", action.clone()).into());
+            log(format!("Applying action: {:?}", action.clone()));
             self.undo_stack.apply(&mut self.data, selector, action);
         }
         self.pending_actions.borrow_mut().clear();
@@ -99,7 +99,7 @@ impl Store {
     // a single thread, which is the case in WASM, this is safe. If it needs to be sent across
     // threads, it should be replaced with a Mutex.
     pub fn dispatch(&self, selector: &Selector, action: Action) {
-        console::log_1(&format!("Recording action: {:?}", action.clone()).into());
+        log(format!("Recording action: {:?}", action.clone()));
         self.pending_actions
             .borrow_mut()
             .push((selector.clone(), action.clone()));
