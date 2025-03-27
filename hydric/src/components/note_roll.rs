@@ -119,11 +119,13 @@ impl NoteOnRoll<'_> {
     }
 
     pub fn make_new_note(&self, delta: Vec2) -> PlacedNote {
+        // TODO Fix the jitter of this method. 
+        // Explore if drag is the best sense for this.
         let transformed_delta = self
             .note_roll
             .inverse_scale(self.note_roll.inverse_transform_for_piano(delta.to_pos2()));
         let offset_delta: OrderedFloat<f32> = transformed_delta.x.into();
-        let pitch_value_delta: PitchValue = transformed_delta.y as i32;
+        let pitch_value_delta: PitchValue = - transformed_delta.y.round() as i32;
         let curr_pitch_value: PitchValue = self.note.note.pitch_name.into();
         PlacedNote {
             note: Note {
@@ -139,9 +141,11 @@ impl NoteOnRoll<'_> {
         let note_size = self
             .note_roll
             .scale(pos2(self.note.note.beats, note_height));
-        Rect::from_min_size(
-            self.note_roll.transform_for_piano(self.get_pos()),
-            self.note_roll.transform_for_piano(note_size).to_vec2(),
+        let top_left = self.get_pos();
+        let bottom_right = top_left + note_size.to_vec2(); 
+        Rect::from_min_max(
+            self.note_roll.transform_for_piano(top_left),
+            self.note_roll.transform_for_piano(bottom_right),
         )
     }
 
@@ -150,9 +154,11 @@ impl NoteOnRoll<'_> {
         let note_size = self
             .note_roll
             .scale(pos2(self.note_roll.project_length, note_height));
-        Rect::from_min_size(
-            self.note_roll.transform_for_piano(self.get_pos()),
-            self.note_roll.transform_for_piano(note_size).to_vec2(),
+        let top_left = self.get_pos();
+        let bottom_right = top_left + note_size.to_vec2(); 
+        Rect::from_min_max(
+            self.note_roll.transform_for_piano(top_left),
+            self.note_roll.transform_for_piano(bottom_right),
         )
     }
 
@@ -227,12 +233,12 @@ impl NoteRollShape {
                 PianoKey::WHITE { note_rect } => Shape::rect_stroke(
                     note_rect,
                     CornerRadius::same(0),
-                    Stroke::new(1.0, Color32::from_black_alpha(128)),
+                    Stroke::new(0.5, Color32::from_black_alpha(128)),
                     StrokeKind::Inside,
                 ),
                 PianoKey::BLACK { note_rect } => {
                     let corner_radius = 2;
-                    Shape::rect_filled(note_rect, CornerRadius::same(corner_radius), Color32::BLACK)
+                    Shape::rect_filled(note_rect, CornerRadius {nw: 0, ne:corner_radius, sw:0, se:corner_radius}, Color32::BLACK)
                 }
             },
         }
@@ -281,8 +287,9 @@ impl NoteRoll {
     }
 
     fn inverse_transform_for_piano(&self, pos: Pos2) -> Pos2 {
+        // TODO this is no longer an inverse_transform
         let from_rect = Rect::from_min_size(
-            pos2(self.piano_size, 0.0),
+            pos2(0.0, 0.0),
             self.size - vec2(self.piano_size, 0.0),
         );
         let to_rect = Rect::from_min_size(pos2(0.0, 0.0), self.size);
@@ -335,7 +342,6 @@ impl NoteRoll {
         let note_response =
             ui.interact(to_screen.transform_rect(note_rect), note_id, Sense::drag());
         let note_delta = note_response.drag_delta();
-        let next_note_pos = note_object.get_pos() + note_delta;
         note_object.make_new_note(note_delta)
     }
 
