@@ -15,6 +15,6 @@ pub async fn load_sample(filename: String) -> Option<Sample> {
             return Some(sample.into());
         }
     }
-    error("Error loading sample from server.".to_string());
+    error("Error loading sample from server.");
     None
 }

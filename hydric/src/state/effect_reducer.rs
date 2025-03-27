@@ -3,7 +3,7 @@ use shared::model::{Effect, EffectInstance};
 use shared::logger::log;
 
 pub fn effect_reducer(effect: &mut EffectInstance, action: &Action) -> Action {
-    log(format!("effect_reducer processing: {:?}", action.clone()));
+    log(&format!("effect_reducer processing: {:?}", action.clone()));
 
     if let Action::SetEffectWet(wet) = action {
         let prev = effect.meta.wet;

@@ -20,7 +20,7 @@ pub async fn save_track(name: String, track: Track) -> Option<()> {
     match result {
         Ok(_) => Some(()),
         Err(_) => {
-            error("Error saving notes to server.".to_string());
+            error("Error saving notes to server.");
             None
         }
     }
@@ -34,7 +34,7 @@ pub async fn load_track_list() -> Option<Vec<String>> {
     match result {
         Ok(response) => Some(response.into_inner().names),
         Err(_) => {
-            error("Error loading track list from server.".to_string());
+            error("Error loading track list from server.");
             None
         }
     }
@@ -51,6 +51,6 @@ pub async fn load_track(name: String) -> Option<Track> {
             return Some(track.into());
         }
     }
-    error("Error loading track list from server.".to_string());
+    error("Error loading track list from server.");
     None
 }

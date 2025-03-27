@@ -3,7 +3,7 @@ use shared::model::Track;
 use shared::logger::log;
 
 pub fn track_reducer(track: &mut Track, action: &Action) -> Action {
-    log(format!("note_reducer processing: {:?}", action.clone()));
+    log(&format!("note_reducer processing: {:?}", action.clone()));
 
     match action {
         Action::DeleteNote { note_index } => {

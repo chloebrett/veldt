@@ -51,7 +51,7 @@ impl UndoStack {
             panic!("Tried to undo when there was nothing to undo!");
         }
 
-        log(format!("Undoing action. Stack state before: {:?}", self.clone()));
+        log(&format!("Undoing action. Stack state before: {:?}", self.clone()));
         let action = self
             .actions
             .get(self.index - 1)
@@ -71,7 +71,7 @@ impl UndoStack {
             panic!("Tried to redo when there was nothing to redo!");
         }
 
-        log(format!("Redoing action. Stack state before: {:?}", self.clone()));
+        log(&format!("Redoing action. Stack state before: {:?}", self.clone()));
         let action = self
             .actions
             .get(self.index)

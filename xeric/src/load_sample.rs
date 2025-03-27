@@ -32,7 +32,7 @@ impl LoadSample for MyLoadSample {
         file_path.push("assets");
         file_path.push("samples");
         file_path.push(filename);
-        log(format!("Loading sample from path: {}", file_path.clone().display()));
+        log(&format!("Loading sample from path: {}", file_path.clone().display()));
 
         // TODO: reading this seems to load at half the speed.
         // Perhaps the sample rate needs to be adjusted?

@@ -32,7 +32,7 @@ impl SaveTrack for ServerSaveTracks {
             .lock()
             .unwrap()
             .insert(name.clone(), track.unwrap().clone());
-        log(format!("Saved {}", name.clone()));
+        log(&format!("Saved {}", name.clone()));
         Ok(tonic::Response::new(SaveTrackReply {}))
     }
 }

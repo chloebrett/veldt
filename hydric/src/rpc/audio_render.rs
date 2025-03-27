@@ -22,7 +22,7 @@ pub async fn render(project: Project) -> Option<Vec<f32>> {
     match audio_result {
         Ok(audio) => Some(as_floats(&audio)),
         Err(_) => {
-            error("Error rendering audio on server.".to_string());
+            error("Error rendering audio on server.");
             None
         }
     }

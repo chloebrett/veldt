@@ -19,7 +19,7 @@ pub fn play(mut signal: impl Signal<Frame = f32> + Send + 'static) -> Handle {
 
     let mut next_sample = move || signal.next();
     // TODO: replace with egui logger
-    let err_fn = |err| error(format!("an error occurred on stream: {}", err));
+    let err_fn = |err| error(&format!("an error occurred on stream: {}", err));
     let channels = config.channels as usize;
 
     let stream = device

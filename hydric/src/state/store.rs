@@ -67,7 +67,7 @@ impl Store {
         }
 
         for (selector, action) in self.pending_actions.borrow().iter() {
-            log(format!("Applying action: {:?}", action.clone()));
+            log(&format!("Applying action: {:?}", action.clone()));
             self.undo_stack.apply(&mut self.data, selector, action);
         }
         self.pending_actions.borrow_mut().clear();
@@ -99,7 +99,7 @@ impl Store {
     // a single thread, which is the case in WASM, this is safe. If it needs to be sent across
     // threads, it should be replaced with a Mutex.
     pub fn dispatch(&self, selector: &Selector, action: Action) {
-        log(format!("Recording action: {:?}", action.clone()));
+        log(&format!("Recording action: {:?}", action.clone()));
         self.pending_actions
             .borrow_mut()
             .push((selector.clone(), action.clone()));

@@ -7,7 +7,7 @@ use std::rc::Rc;
 use shared::logger::log;
 
 pub fn root_reducer(data: &mut StoreData, selector: &Selector, action: &Action) -> Action {
-    log(format!("root_reducer processing: {:?}", action.clone()));
+    log(&format!("root_reducer processing: {:?}", action.clone()));
 
     match selector {
         Selector::Track(track_index) => {
