@@ -1,4 +1,4 @@
-use super::{UndoStack, StoreData, Action, Selector};
+use super::{Action, Selector, StoreData, UndoStack};
 use shared::logger::log;
 use std::cell::RefCell;
 
@@ -85,4 +85,3 @@ impl Store {
         self.dispatch(&Selector::Root, action)
     }
 }
-
