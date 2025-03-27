@@ -1,6 +1,6 @@
 use crate::state::Action;
-use shared::model::{Effect, EffectInstance};
 use shared::logger::log;
+use shared::model::{Effect, EffectInstance};
 
 pub fn effect_reducer(effect: &mut EffectInstance, action: &Action) -> Action {
     log(&format!("effect_reducer processing: {:?}", action.clone()));

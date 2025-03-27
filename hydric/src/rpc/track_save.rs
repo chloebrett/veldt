@@ -1,11 +1,11 @@
 use shared::consts::XERIC_URL;
+use shared::logger::error;
 use shared::model::Track;
 use shared::save_track::load_track_client::LoadTrackClient;
 use shared::save_track::load_track_list_client::LoadTrackListClient;
 use shared::save_track::save_track_client::SaveTrackClient;
 use shared::save_track::{LoadTrackListRequest, LoadTrackRequest, SaveTrackRequest};
 use tonic_web_wasm_client::Client;
-use shared::logger::error;
 
 pub async fn save_track(name: String, track: Track) -> Option<()> {
     let client = Client::new(XERIC_URL.to_string());

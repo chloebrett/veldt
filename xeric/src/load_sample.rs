@@ -1,9 +1,9 @@
 use shared::load_sample::load_sample_server::LoadSample;
 use shared::load_sample::{LoadSampleReply, LoadSampleRequest};
+use shared::logger::log;
 use shared::model::Sample;
 use std::env::current_dir;
 use tonic::async_trait;
-use shared::logger::log;
 
 const PCM_MAX_I16: i16 = 0x7FFF; // 2^15 - 1
 const _PCM_MAX_I32: i32 = 0x7FFFFFFF; // 2^31 - 1
@@ -32,7 +32,10 @@ impl LoadSample for MyLoadSample {
         file_path.push("assets");
         file_path.push("samples");
         file_path.push(filename);
-        log(&format!("Loading sample from path: {}", file_path.clone().display()));
+        log(&format!(
+            "Loading sample from path: {}",
+            file_path.clone().display()
+        ));
 
         // TODO: reading this seems to load at half the speed.
         // Perhaps the sample rate needs to be adjusted?

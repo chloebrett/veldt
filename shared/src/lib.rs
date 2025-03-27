@@ -1,9 +1,9 @@
 pub mod bytes;
 pub mod consts;
+pub mod logger;
 pub mod model;
 pub mod serialize;
 pub mod types;
-pub mod logger;
 
 pub mod render {
     tonic::include_proto!("render");

@@ -1,9 +1,12 @@
 use super::Action;
-use shared::model::{GeneratorInstance, GeneratorType};
 use shared::logger::log;
+use shared::model::{GeneratorInstance, GeneratorType};
 
 pub fn generator_reducer(generator: &mut GeneratorInstance, action: &Action) -> Action {
-    log(&format!("generator_reducer processing: {:?}", action.clone()));
+    log(&format!(
+        "generator_reducer processing: {:?}",
+        action.clone()
+    ));
 
     let config = match &mut generator.kind {
         GeneratorType::SimpleWave { config } => config,

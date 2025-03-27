@@ -1,3 +1,4 @@
+use shared::logger::log;
 use shared::pmodel::{NoteProto, TrackProto};
 use shared::save_track::load_track_list_server::LoadTrackList;
 use shared::save_track::load_track_server::LoadTrack;
@@ -9,7 +10,6 @@ use shared::save_track::{
 use std::collections::HashMap;
 use std::sync::{Arc, Mutex};
 use tonic::async_trait;
-use shared::logger::log;
 
 pub struct MySaveNotes {
     pub values: SavedNotes,

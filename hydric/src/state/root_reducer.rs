@@ -3,8 +3,8 @@ use super::{
 };
 use crate::rpc::{load_sample, load_track, load_track_list, save_track};
 use poll_promise::Promise;
-use std::rc::Rc;
 use shared::logger::log;
+use std::rc::Rc;
 
 pub fn root_reducer(data: &mut StoreData, selector: &Selector, action: &Action) -> Action {
     log(&format!("root_reducer processing: {:?}", action.clone()));

@@ -1,9 +1,9 @@
 use shared::bytes::as_floats;
 use shared::consts::XERIC_URL;
+use shared::logger::error;
 use shared::model::Project;
 use shared::render::{RenderRequest, render_client::RenderClient};
 use tonic_web_wasm_client::Client;
-use shared::logger::error;
 
 pub async fn render(project: Project) -> Option<Vec<f32>> {
     let client = Client::new(XERIC_URL.to_string());

@@ -2,6 +2,7 @@ use super::UndoStack;
 use super::{Action, Selector};
 use ordered_float::OrderedFloat;
 use poll_promise::Promise;
+use shared::logger::log;
 use shared::model::{
     AdsrEnvelope, DelayConfig, Effect, EffectInstance, EffectMeta, EqConfig, EqType,
     GeneratorInstance, GeneratorMeta, GeneratorType, MixerChannel, Note, PitchName, PlacedNote,
@@ -10,7 +11,6 @@ use shared::model::{
 use shared::types::Volume;
 use std::cell::RefCell;
 use std::rc::Rc;
-use shared::logger::log;
 
 enum UndoRedoType {
     Undo,
