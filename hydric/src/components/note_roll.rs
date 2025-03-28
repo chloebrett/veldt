@@ -129,9 +129,11 @@ impl NoteRollCanvas {
     pub fn make_all_shapes(&self) -> Vec<Shape> {
         // TODO Consider assigning render order values to shapes.
         let mut shapes = vec![];
-        let roll_objects = self.transform_roll_objects(self.make_roll_object(), self.roll_transform);
+        let roll_objects =
+            self.transform_roll_objects(self.make_roll_object(), self.roll_transform);
         shapes.extend(self.make_roll_shapes(roll_objects));
-        let piano_objects = self.transform_piano_objects(self.make_piano_object(), self.piano_transform);
+        let piano_objects =
+            self.transform_piano_objects(self.make_piano_object(), self.piano_transform);
         shapes.extend(self.make_piano_shapes(piano_objects));
         shapes
     }
@@ -140,7 +142,11 @@ impl NoteRollCanvas {
         self.roll.make_all_objects()
     }
 
-    fn transform_roll_objects(&self, objects: Vec<RollObject>, roll_transform: RectTransform) -> Vec<RollObject> {
+    fn transform_roll_objects(
+        &self,
+        objects: Vec<RollObject>,
+        roll_transform: RectTransform,
+    ) -> Vec<RollObject> {
         objects
             .iter()
             .map(|object| object.clone().transform(roll_transform))
@@ -172,7 +178,11 @@ impl NoteRollCanvas {
         self.piano.make_all_objects()
     }
 
-    fn transform_piano_objects(&self, objects: Vec<PianoObject>, piano_transform: RectTransform) -> Vec<PianoObject> {
+    fn transform_piano_objects(
+        &self,
+        objects: Vec<PianoObject>,
+        piano_transform: RectTransform,
+    ) -> Vec<PianoObject> {
         objects
             .iter()
             .map(|object| object.clone().transform(piano_transform))
@@ -451,12 +461,9 @@ impl Transformable<Vec<Shape>> for Vec<Shape> {
     }
 }
 
-impl Transformable<[Pos2;2]> for [Pos2; 2] {
+impl Transformable<[Pos2; 2]> for [Pos2; 2] {
     fn transform(self, rect: RectTransform) -> [Pos2; 2] {
-        [
-            rect * self[0],
-            rect * self[1],
-        ]
+        [rect * self[0], rect * self[1]]
     }
 }
 
@@ -469,9 +476,15 @@ impl Transformable<Rect> for Rect {
 impl Transformable<PianoObject> for PianoObject {
     fn transform(self, rect: RectTransform) -> PianoObject {
         match self {
-            PianoObject::WhiteKey { note_rect } => PianoObject::WhiteKey { note_rect: note_rect.transform(rect) },
-            PianoObject::BlackKey { note_rect } => PianoObject::BlackKey { note_rect: note_rect.transform(rect) },
-            PianoObject::Board { rect: piano_rect } => PianoObject::Board { rect: piano_rect.transform(rect) }
+            PianoObject::WhiteKey { note_rect } => PianoObject::WhiteKey {
+                note_rect: note_rect.transform(rect),
+            },
+            PianoObject::BlackKey { note_rect } => PianoObject::BlackKey {
+                note_rect: note_rect.transform(rect),
+            },
+            PianoObject::Board { rect: piano_rect } => PianoObject::Board {
+                rect: piano_rect.transform(rect),
+            },
         }
     }
 }
@@ -479,9 +492,16 @@ impl Transformable<PianoObject> for PianoObject {
 impl Transformable<RollObject> for RollObject {
     fn transform(self, rect: RectTransform) -> RollObject {
         match self {
-            RollObject::InteractiveNote { note_rect } => RollObject::InteractiveNote { note_rect: note_rect.transform(rect)},
-            RollObject::BackgroundNote { note_rect } => RollObject::BackgroundNote { note_rect: note_rect.transform(rect) },
-            RollObject::BarLine { line, order } => RollObject::BarLine { line: line.transform(rect), order }
+            RollObject::InteractiveNote { note_rect } => RollObject::InteractiveNote {
+                note_rect: note_rect.transform(rect),
+            },
+            RollObject::BackgroundNote { note_rect } => RollObject::BackgroundNote {
+                note_rect: note_rect.transform(rect),
+            },
+            RollObject::BarLine { line, order } => RollObject::BarLine {
+                line: line.transform(rect),
+                order,
+            },
         }
     }
 }
