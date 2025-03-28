@@ -1,16 +1,13 @@
 use crate::state::{Action, Selector, Store};
-use ordered_float::OrderedFloat;
-use shared::types::Beats;
 
 use egui::{
-    Color32, CornerRadius, Frame, Pos2, Rect, Response, ScrollArea, Sense, Shape, Stroke,
-    StrokeKind, Ui, Vec2, emath::RectTransform, epaint::RectShape, pos2, vec2,
+    Color32, CornerRadius, Frame, Pos2, Rect, ScrollArea, Sense, Shape, Stroke, StrokeKind, Ui,
+    Vec2, emath::RectTransform, epaint::RectShape, pos2, vec2,
 };
 use shared::{
     model::{Note, PitchName, PlacedNote, ScaleValue},
     types::PitchValue,
 };
-use web_sys::console;
 
 pub fn note_roll_display(store: &Store, ui: &mut Ui) {
     new_note_button(store, ui);
@@ -70,7 +67,8 @@ fn draw_note_roll_canvas(store: &Store, ui: &mut Ui) {
         let note_roll_canvas = NoteRollCanvas::new(
             store,
             max_note,
-            min_note - 1, // To fit all on screen.
+            min_note - 1, // Needed to fit all notes on canvas.
+            // TODO  Fix properly.
             offset,
             metre,
             bars,
@@ -130,6 +128,7 @@ impl NoteRollCanvas {
     }
 
     pub fn make_all_shapes(&self) -> Vec<Shape> {
+        // TODO Consider assigning render order values to shapes.
         let mut shapes = vec![];
         let roll_objects = self.transform_roll_objects(self.make_roll_object());
         shapes.extend(self.make_roll_shapes(roll_objects));
@@ -240,8 +239,7 @@ struct Roll {
 impl Roll {
     pub fn make_all_objects(&self) -> Vec<RollObject> {
         let mut roll_objects = vec![];
-        let background_notes = self.get_background_notes();
-        roll_objects.extend(self.make_all_background_notes(background_notes));
+        roll_objects.extend(self.make_all_background_notes(self.get_background_notes()));
         roll_objects.extend(self.make_all_bar_lines());
         roll_objects.extend(self.make_all_interactive_notes());
         roll_objects
@@ -288,9 +286,9 @@ impl Roll {
     }
 
     fn make_all_bar_lines(&self) -> Vec<RollObject> {
-        let n_orders: u32 = 3;
+        let max_order: u32 = 3;
         let mut bar_lines = vec![];
-        for order in 0..n_orders {
+        for order in 0..max_order {
             let mut order_barlines = vec![];
             let n_bar_lines = (self.bars * self.metre.powf(order as f32)) as i32;
             for value in 0..=n_bar_lines {
@@ -303,12 +301,15 @@ impl Roll {
     }
 
     fn make_bar_line(&self, beat: f32, order: u32) -> RollObject {
-        let line = [
-            pos2(beat, 0.0 as f32),
-            pos2(beat, self.max_note as f32),
-        ];
+        let line = [pos2(beat, 0.0_f32), pos2(beat, self.max_note as f32)];
         RollObject::BarLine { line, order }
     }
+}
+
+enum PianoObject {
+    WhiteKey { note_rect: Rect },
+    BlackKey { note_rect: Rect },
+    Board { rect: Rect },
 }
 
 struct Piano {
@@ -319,8 +320,7 @@ struct Piano {
 impl Piano {
     pub fn make_all_objects(&self) -> Vec<PianoObject> {
         let mut objects = vec![self.make_piano_board()];
-        let notes = self.get_piano_notes();
-        objects.extend(self.make_all_piano_keys(notes));
+        objects.extend(self.make_all_piano_keys(self.get_piano_notes()));
         objects
     }
 
@@ -390,13 +390,6 @@ impl Piano {
     }
 }
 
-
-enum PianoObject {
-    WhiteKey { note_rect: Rect },
-    BlackKey { note_rect: Rect },
-    Board { rect: Rect },
-}
-
 enum NoteRollShape {
     InteractiveNote { note_rect: Rect },
     BackgroundNote { note_rect: Rect },
@@ -452,12 +445,6 @@ impl NoteRollShape {
 
 trait Transformable<T> {
     fn transform(self, rect: RectTransform) -> T;
-}
-
-impl Transformable<Rect> for Rect {
-    fn transform(self, rect: RectTransform) -> Rect {
-        rect.transform_rect(self)
-    }
 }
 
 impl Transformable<Shape> for Shape {
