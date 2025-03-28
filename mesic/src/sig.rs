@@ -103,8 +103,7 @@ impl Sig for MixerNode {
         let dry = self.dry.as_ref().borrow_mut().buffer(num_samples);
         let wet = self.wet.as_ref().borrow_mut().buffer(num_samples);
 
-        let out = sum(&mult(&dry, 1.0 - self.ratio), &mult(&wet, self.ratio));
-        out
+        sum(&mult(&dry, 1.0 - self.ratio), &mult(&wet, self.ratio))
     }
 }
 

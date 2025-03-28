@@ -2,7 +2,7 @@ use chrono::{DateTime, Utc};
 use cpal::Stream;
 use cpal::traits::{DeviceTrait, HostTrait, StreamTrait};
 use dasp_signal::Signal;
-use web_sys::console;
+use shared::logger::error;
 
 pub struct Handle {
     _stream: Stream,
@@ -19,7 +19,7 @@ pub fn play(mut signal: impl Signal<Frame = f32> + Send + 'static) -> Handle {
 
     let mut next_sample = move || signal.next();
     // TODO: replace with egui logger
-    let err_fn = |err| console::error_1(&format!("an error occurred on stream: {}", err).into());
+    let err_fn = |err| error(&format!("an error occurred on stream: {}", err));
     let channels = config.channels as usize;
 
     let stream = device

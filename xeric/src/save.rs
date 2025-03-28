@@ -1,3 +1,4 @@
+use shared::logger::log;
 use shared::pmodel::{NoteProto, TrackProto};
 use shared::save_track::load_track_list_server::LoadTrackList;
 use shared::save_track::load_track_server::LoadTrack;
@@ -31,7 +32,7 @@ impl SaveTrack for ServerSaveTracks {
             .lock()
             .unwrap()
             .insert(name.clone(), track.unwrap().clone());
-        println!("Saved {}", name.clone());
+        log(&format!("Saved {}", name.clone()));
         Ok(tonic::Response::new(SaveTrackReply {}))
     }
 }

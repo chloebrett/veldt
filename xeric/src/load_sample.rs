@@ -1,19 +1,20 @@
 use shared::load_sample::load_sample_server::LoadSample;
 use shared::load_sample::{LoadSampleReply, LoadSampleRequest};
+use shared::logger::log;
 use shared::model::Sample;
 use std::env::current_dir;
 use tonic::async_trait;
 
-const _PCM_MAX_I16: i16 = 0x7FFF; // 2^15 - 1
-const PCM_MAX_I32: i32 = 0x7FFFFFFF; // 2^31 - 1
-const _PCM_DIV_I16: f32 = 1.0 / _PCM_MAX_I16 as f32;
-const PCM_DIV_I32: f32 = 1.0 / PCM_MAX_I32 as f32;
+const PCM_MAX_I16: i16 = 0x7FFF; // 2^15 - 1
+const _PCM_MAX_I32: i32 = 0x7FFFFFFF; // 2^31 - 1
+const PCM_DIV_I16: f32 = 1.0 / PCM_MAX_I16 as f32;
+const _PCM_DIV_I32: f32 = 1.0 / _PCM_MAX_I32 as f32;
 
 #[inline(always)]
 pub fn to_f32(sample: i32) -> f32 {
     // I don't know where 128.0 comes from (other than that it's 2^7).
     // Perhaps the sample I was testing with (89 BPM F# Minor.wav) is actually 24 bit audio?
-    _PCM_DIV_I16 * sample as f32 / 128.0
+    PCM_DIV_I16 * sample as f32 / 128.0
 }
 
 pub struct MyLoadSample;
@@ -31,7 +32,10 @@ impl LoadSample for MyLoadSample {
         file_path.push("assets");
         file_path.push("samples");
         file_path.push(filename);
-        println!("Loading sample from path: {}", file_path.clone().display());
+        log(&format!(
+            "Loading sample from path: {}",
+            file_path.clone().display()
+        ));
 
         // TODO: reading this seems to load at half the speed.
         // Perhaps the sample rate needs to be adjusted?
@@ -40,7 +44,6 @@ impl LoadSample for MyLoadSample {
         // TODO: handle 16-bit audio appropriately.
         let data: Vec<f32> = reader
             .samples::<i32>()
-            .into_iter()
             .map(|it| to_f32(it.unwrap()))
             .collect();
         let sample = Sample {

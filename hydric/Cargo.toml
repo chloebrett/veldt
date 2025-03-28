@@ -7,7 +7,6 @@ edition = "2024"
 shared = { path = "../shared" }
 mesic = { path = "../mesic" }
 tonic-web-wasm-client = "0.6.1"
-web-sys = { version = "0.3.77" }
 wasm-bindgen = "0.2.100"
 egui = "0.31"
 eframe = { version = "0.31", default-features = false, features = [

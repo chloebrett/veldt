@@ -1,10 +1,10 @@
 use crate::state::Action;
 use ordered_float::OrderedFloat;
+use shared::logger::log;
 use shared::model::PlacedNote;
-use web_sys::console;
 
 pub fn note_reducer(note: &mut PlacedNote, action: &Action) -> Action {
-    console::log_1(&format!("note_reducer processing: {:?}", action.clone()).into());
+    log(&format!("note_reducer processing: {:?}", action.clone()));
 
     match action {
         Action::SetNoteScaleValue(new_note) => {

@@ -3,11 +3,11 @@ use super::{
 };
 use crate::rpc::{load_sample, load_track, load_track_list, save_track};
 use poll_promise::Promise;
+use shared::logger::log;
 use std::rc::Rc;
-use web_sys::console;
 
 pub fn root_reducer(data: &mut StoreData, selector: &Selector, action: &Action) -> Action {
-    console::log_1(&format!("root_reducer processing: {:?}", action.clone()).into());
+    log(&format!("root_reducer processing: {:?}", action.clone()));
 
     match selector {
         Selector::Track(track_index) => {

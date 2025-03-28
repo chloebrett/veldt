@@ -1,8 +1,8 @@
 use shared::consts::XERIC_URL;
 use shared::load_sample::{LoadSampleRequest, load_sample_client::LoadSampleClient};
+use shared::logger::error;
 use shared::model::Sample;
 use tonic_web_wasm_client::Client;
-use web_sys::console;
 
 pub async fn load_sample(filename: String) -> Option<Sample> {
     let client = Client::new(XERIC_URL.to_string());
@@ -15,6 +15,6 @@ pub async fn load_sample(filename: String) -> Option<Sample> {
             return Some(sample.into());
         }
     }
-    console::error_1(&"Error loading sample from server.".into());
+    error("Error loading sample from server.");
     None
 }
