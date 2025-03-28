@@ -255,11 +255,11 @@ impl Roll {
     fn make_all_background_notes(&self, notes: Vec<PitchName>) -> Vec<RollObject> {
         notes
             .iter()
-            .map(|&note| self.make_background_notes(note))
+            .map(|&note| self.make_background_note(note))
             .collect()
     }
 
-    fn make_background_notes(&self, note: PitchName) -> RollObject {
+    fn make_background_note(&self, note: PitchName) -> RollObject {
         let pitch_value: PitchValue = note.into();
         let note_pos = pos2(0.0, (self.max_note - pitch_value) as f32);
         let note_size = vec2(self.bars * self.metre, 1.0);
