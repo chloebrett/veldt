@@ -145,8 +145,9 @@ impl NoteRollCanvas {
         objects
             .iter()
             .map(|object| match object {
-                RollObject::InteractiveNote { note_rect } => RollObject::InteractiveNote {
+                RollObject::InteractiveNote { note_rect, note_index } => RollObject::InteractiveNote {
                     note_rect: self.roll_transform.transform_rect(*note_rect),
+                    note_index: *note_index
                 },
                 RollObject::BackgroundNote { note_rect } => RollObject::BackgroundNote {
                     note_rect: self.roll_transform.transform_rect(*note_rect),
@@ -163,7 +164,7 @@ impl NoteRollCanvas {
         objects
             .iter()
             .map(|object| match object {
-                RollObject::InteractiveNote { note_rect } => NoteRollShape::InteractiveNote {
+                RollObject::InteractiveNote { note_rect, note_index: _ } => NoteRollShape::InteractiveNote {
                     note_rect: *note_rect,
                 }
                 .make_shape(),
@@ -222,7 +223,7 @@ impl NoteRollCanvas {
 }
 
 enum RollObject {
-    InteractiveNote { note_rect: Rect },
+    InteractiveNote { note_rect: Rect, note_index: usize},
     BackgroundNote { note_rect: Rect },
     BarLine { line: [Pos2; 2], order: u32 },
 }
@@ -271,17 +272,19 @@ impl Roll {
     fn make_all_interactive_notes(&self) -> Vec<RollObject> {
         self.notes
             .iter()
-            .map(|note| self.make_interactive_note(note.clone()))
+            .enumerate()
+            .map(|(note_index, note)| self.make_interactive_note(note.clone(), note_index))
             .collect()
     }
 
-    fn make_interactive_note(&self, note: PlacedNote) -> RollObject {
+    fn make_interactive_note(&self, note: PlacedNote, note_index: usize) -> RollObject {
         let pitch_value: PitchValue = note.note.pitch_name.into();
         let offset: f32 = note.offset.into();
         let note_pos = pos2(offset - self.offset, (self.max_note - pitch_value) as f32);
         let note_size = vec2(note.note.beats, 1.0);
         RollObject::InteractiveNote {
             note_rect: Rect::from_min_size(note_pos, note_size),
+            note_index
         }
     }
 
