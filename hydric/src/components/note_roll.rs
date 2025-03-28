@@ -39,7 +39,7 @@ fn new_note_button(store: &Store, ui: &mut Ui) {
 
 fn draw_note_roll_canvas(store: &Store, ui: &mut Ui) {
     let offset = 0.0;
-    let metre = 4.0;
+    let bar_length = 4.0;
     let bars = 4.0;
     let max_note: PitchValue = PitchName {
         scale_value: ScaleValue::C,
@@ -52,7 +52,6 @@ fn draw_note_roll_canvas(store: &Store, ui: &mut Ui) {
     }
     .into();
     let piano_width = 50.0;
-    // Major / Minor / Quarter
     let canvas_height = 600.0;
 
     Frame::canvas(ui.style()).show(ui, |ui| {
@@ -70,7 +69,7 @@ fn draw_note_roll_canvas(store: &Store, ui: &mut Ui) {
             min_note - 1, // Needed to fit all notes on canvas.
             // TODO  Fix properly.
             offset,
-            metre,
+            bar_length,
             bars,
             size,
             piano_width,
@@ -95,7 +94,7 @@ impl NoteRollCanvas {
         max_note: PitchValue,
         min_note: PitchValue,
         offset: f32,
-        metre: f32,
+        bar_length: f32,
         bars: f32,
         size: Vec2,
         piano_width: f32,
@@ -108,7 +107,7 @@ impl NoteRollCanvas {
         let roll_transform = RectTransform::from_to(
             Rect::from_min_size(
                 pos2(0.0, 0.0),
-                vec2(bars * metre - offset, (max_note - min_note) as f32),
+                vec2(bars * bar_length - offset, (max_note - min_note) as f32),
             ),
             Rect::from_min_size(pos2(piano_width, 0.0), vec2(size.x - piano_width, size.y)),
         );
@@ -120,7 +119,7 @@ impl NoteRollCanvas {
                 min_note,
                 offset,
                 bars,
-                metre,
+                bar_length,
             },
             piano_transform,
             roll_transform,
@@ -130,9 +129,9 @@ impl NoteRollCanvas {
     pub fn make_all_shapes(&self) -> Vec<Shape> {
         // TODO Consider assigning render order values to shapes.
         let mut shapes = vec![];
-        let roll_objects = self.transform_roll_objects(self.make_roll_object());
+        let roll_objects = self.transform_roll_objects(self.make_roll_object(), self.roll_transform);
         shapes.extend(self.make_roll_shapes(roll_objects));
-        let piano_objects = self.transform_piano_objects(self.make_piano_object());
+        let piano_objects = self.transform_piano_objects(self.make_piano_object(), self.piano_transform);
         shapes.extend(self.make_piano_shapes(piano_objects));
         shapes
     }
@@ -141,21 +140,10 @@ impl NoteRollCanvas {
         self.roll.make_all_objects()
     }
 
-    fn transform_roll_objects(&self, objects: Vec<RollObject>) -> Vec<RollObject> {
+    fn transform_roll_objects(&self, objects: Vec<RollObject>, roll_transform: RectTransform) -> Vec<RollObject> {
         objects
             .iter()
-            .map(|object| match object {
-                RollObject::InteractiveNote { note_rect } => RollObject::InteractiveNote {
-                    note_rect: self.roll_transform.transform_rect(*note_rect),
-                },
-                RollObject::BackgroundNote { note_rect } => RollObject::BackgroundNote {
-                    note_rect: self.roll_transform.transform_rect(*note_rect),
-                },
-                RollObject::BarLine { line, order } => RollObject::BarLine {
-                    line: [self.roll_transform * line[0], self.roll_transform * line[1]],
-                    order: *order,
-                },
-            })
+            .map(|object| object.clone().transform(roll_transform))
             .collect()
     }
 
@@ -184,20 +172,10 @@ impl NoteRollCanvas {
         self.piano.make_all_objects()
     }
 
-    fn transform_piano_objects(&self, objects: Vec<PianoObject>) -> Vec<PianoObject> {
+    fn transform_piano_objects(&self, objects: Vec<PianoObject>, piano_transform: RectTransform) -> Vec<PianoObject> {
         objects
             .iter()
-            .map(|object| match object {
-                PianoObject::WhiteKey { note_rect } => PianoObject::WhiteKey {
-                    note_rect: self.piano_transform.transform_rect(*note_rect),
-                },
-                PianoObject::BlackKey { note_rect } => PianoObject::BlackKey {
-                    note_rect: self.piano_transform.transform_rect(*note_rect),
-                },
-                PianoObject::Board { rect } => PianoObject::Board {
-                    rect: self.piano_transform.transform_rect(*rect),
-                },
-            })
+            .map(|object| object.clone().transform(piano_transform))
             .collect()
     }
 
@@ -221,6 +199,7 @@ impl NoteRollCanvas {
     }
 }
 
+#[derive(Clone)]
 enum RollObject {
     InteractiveNote { note_rect: Rect },
     BackgroundNote { note_rect: Rect },
@@ -233,7 +212,7 @@ struct Roll {
     min_note: PitchValue,
     offset: f32,
     bars: f32,
-    metre: f32,
+    bar_length: f32,
 }
 
 impl Roll {
@@ -262,7 +241,7 @@ impl Roll {
     fn make_background_note(&self, note: PitchName) -> RollObject {
         let pitch_value: PitchValue = note.into();
         let note_pos = pos2(0.0, (self.max_note - pitch_value) as f32);
-        let note_size = vec2(self.bars * self.metre, 1.0);
+        let note_size = vec2(self.bars * self.bar_length, 1.0);
         RollObject::BackgroundNote {
             note_rect: Rect::from_min_size(note_pos, note_size),
         }
@@ -290,9 +269,9 @@ impl Roll {
         let mut bar_lines = vec![];
         for order in 0..max_order {
             let mut order_barlines = vec![];
-            let n_bar_lines = (self.bars * self.metre.powf(order as f32)) as i32;
+            let n_bar_lines = (self.bars * self.bar_length.powf(order as f32)) as i32;
             for value in 0..=n_bar_lines {
-                let beat = value as f32 * self.metre.powf(1.0 - order as f32);
+                let beat = value as f32 * self.bar_length.powf(1.0 - order as f32);
                 order_barlines.push(self.make_bar_line(beat, order))
             }
             bar_lines.extend(order_barlines)
@@ -306,6 +285,7 @@ impl Roll {
     }
 }
 
+#[derive(Clone)]
 enum PianoObject {
     WhiteKey { note_rect: Rect },
     BlackKey { note_rect: Rect },
@@ -468,5 +448,40 @@ impl Transformable<Vec<Shape>> for Vec<Shape> {
         self.iter()
             .map(|shape| shape.clone().transform(rect))
             .collect()
+    }
+}
+
+impl Transformable<[Pos2;2]> for [Pos2; 2] {
+    fn transform(self, rect: RectTransform) -> [Pos2; 2] {
+        [
+            rect * self[0],
+            rect * self[1],
+        ]
+    }
+}
+
+impl Transformable<Rect> for Rect {
+    fn transform(self, rect: RectTransform) -> Rect {
+        rect.transform_rect(self)
+    }
+}
+
+impl Transformable<PianoObject> for PianoObject {
+    fn transform(self, rect: RectTransform) -> PianoObject {
+        match self {
+            PianoObject::WhiteKey { note_rect } => PianoObject::WhiteKey { note_rect: note_rect.transform(rect) },
+            PianoObject::BlackKey { note_rect } => PianoObject::BlackKey { note_rect: note_rect.transform(rect) },
+            PianoObject::Board { rect: piano_rect } => PianoObject::Board { rect: piano_rect.transform(rect) }
+        }
+    }
+}
+
+impl Transformable<RollObject> for RollObject {
+    fn transform(self, rect: RectTransform) -> RollObject {
+        match self {
+            RollObject::InteractiveNote { note_rect } => RollObject::InteractiveNote { note_rect: note_rect.transform(rect)},
+            RollObject::BackgroundNote { note_rect } => RollObject::BackgroundNote { note_rect: note_rect.transform(rect) },
+            RollObject::BarLine { line, order } => RollObject::BarLine { line: line.transform(rect), order }
+        }
     }
 }
