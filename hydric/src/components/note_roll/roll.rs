@@ -4,12 +4,7 @@ use shared::{
     types::PitchValue,
 };
 
-#[derive(Clone)]
-pub enum RollObject {
-    InteractiveNote { note_rect: Rect },
-    BackgroundNote { note_rect: Rect },
-    BarLine { line: [Pos2; 2], order: u32 },
-}
+use super::shapes::NoteRollShape;
 
 pub struct Roll {
     notes: Vec<PlacedNote>,
@@ -39,7 +34,7 @@ impl Roll {
         }
     }
 
-    pub fn make_all_objects(&self) -> Vec<RollObject> {
+    pub fn make_all_objects(&self) -> Vec<NoteRollShape> {
         let mut roll_objects = vec![];
         roll_objects.extend(self.make_all_background_notes(self.get_background_notes()));
         roll_objects.extend(self.make_all_bar_lines());
@@ -62,31 +57,31 @@ impl Roll {
             .collect()
     }
 
-    fn make_all_background_notes(&self, notes: Vec<PitchName>) -> Vec<RollObject> {
+    fn make_all_background_notes(&self, notes: Vec<PitchName>) -> Vec<NoteRollShape> {
         notes
             .iter()
             .map(|&note| self.make_background_note(note))
             .collect()
     }
 
-    fn make_background_note(&self, note: PitchName) -> RollObject {
+    fn make_background_note(&self, note: PitchName) -> NoteRollShape {
         let pitch_value: PitchValue = note.into();
         let note_pos = pos2(0.0, (self.max_note - pitch_value) as f32);
         let note_size = vec2(self.bars * self.bar_length, 1.0);
-        RollObject::BackgroundNote {
+        NoteRollShape::BackgroundNote {
             note_rect: Rect::from_min_size(note_pos, note_size),
         }
     }
 
-    fn make_all_interactive_notes(&self) -> Vec<RollObject> {
+    fn make_all_interactive_notes(&self) -> Vec<NoteRollShape> {
         self.notes
             .iter()
             .map(|note| self.make_interactive_note(note.clone()))
             .collect()
     }
 
-    fn make_interactive_note(&self, note: PlacedNote) -> RollObject {
-        RollObject::InteractiveNote {
+    fn make_interactive_note(&self, note: PlacedNote) -> NoteRollShape {
+        NoteRollShape::InteractiveNote {
             note_rect: self.make_interactive_rect(note),
         }
     }
@@ -99,7 +94,7 @@ impl Roll {
         Rect::from_min_size(note_pos, note_size)
     }
 
-    fn make_all_bar_lines(&self) -> Vec<RollObject> {
+    fn make_all_bar_lines(&self) -> Vec<NoteRollShape> {
         let max_order: u32 = 3;
         let mut bar_lines = vec![];
         for order in 0..max_order {
@@ -114,8 +109,9 @@ impl Roll {
         bar_lines
     }
 
-    fn make_bar_line(&self, beat: f32, order: u32) -> RollObject {
+    fn make_bar_line(&self, beat: f32, order: u32) -> NoteRollShape {
         let line = [pos2(beat, 0.0_f32), pos2(beat, self.max_note as f32)];
-        RollObject::BarLine { line, order }
+        NoteRollShape::BarLine { line, order }
     }
 }
+

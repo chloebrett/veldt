@@ -1,4 +1,6 @@
-use egui::{Color32, CornerRadius, Pos2, Rect, Shape, Stroke, StrokeKind};
+use egui::{emath::RectTransform, Color32, CornerRadius, Pos2, Rect, Shape, Stroke, StrokeKind};
+
+use crate::transform::Transform;
 
 pub enum NoteRollShape {
     InteractiveNote { note_rect: Rect },
@@ -49,6 +51,25 @@ impl NoteRollShape {
                     color: Color32::from_white_alpha(2.0f32.powf((3 - order) as f32) as u8),
                 },
             ),
+        }
+    }
+}
+
+impl Transform<Vec<NoteRollShape>> for Vec<NoteRollShape> {
+    fn transform(self, rect: RectTransform) -> Self {
+        self.into_iter().map(|shape| shape.transform(rect)).collect()
+    }
+}
+
+impl Transform<NoteRollShape> for NoteRollShape {
+    fn transform(self, rect: RectTransform) -> Self {
+        match self {
+            Self::InteractiveNote { note_rect } => Self::InteractiveNote { note_rect: note_rect.transform(rect) },
+            Self::WhiteKey { note_rect } => Self::WhiteKey { note_rect: note_rect.transform(rect) },
+            Self::BlackKey { note_rect } => Self::BlackKey { note_rect: note_rect.transform(rect) },
+            Self::PianoBoard { rect: piano_rect } => Self::PianoBoard { rect: piano_rect.transform(rect) },
+            Self::BarLine { line, order } => Self::BarLine { line: line.transform(rect), order },
+            Self::BackgroundNote { note_rect } => Self::BackgroundNote { note_rect: note_rect.transform(rect) }
         }
     }
 }
