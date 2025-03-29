@@ -114,4 +114,3 @@ impl Roll {
         NoteRollShape::BarLine { line, order }
     }
 }
-

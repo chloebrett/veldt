@@ -1,7 +1,8 @@
 use state::{Action, Selector, Store};
 
 use egui::{
-    Frame, Pos2, Rect, Response, ScrollArea, Sense, Shape, Ui, Vec2, emath::RectTransform, pos2, vec2,
+    Frame, Pos2, Rect, Response, ScrollArea, Sense, Shape, Ui, Vec2, emath::RectTransform, pos2,
+    vec2,
 };
 use ordered_float::OrderedFloat;
 use shared::{
@@ -9,10 +10,7 @@ use shared::{
     types::PitchValue,
 };
 
-use super::{
-    piano::Piano,
-    roll::Roll,
-};
+use super::{piano::Piano, roll::Roll};
 
 use crate::transform::Transform;
 
@@ -252,7 +250,14 @@ impl NoteRollCanvas {
         // TODO Consider assigning render order values to shapes.
         let mut shapes = vec![];
         shapes.extend(self.roll.make_all_objects().transform(self.roll_transform));
-        shapes.extend(self.piano.make_all_objects().transform(self.piano_transform));
-        shapes.into_iter().map(|object| object.make_shape()).collect()
+        shapes.extend(
+            self.piano
+                .make_all_objects()
+                .transform(self.piano_transform),
+        );
+        shapes
+            .into_iter()
+            .map(|object| object.make_shape())
+            .collect()
     }
 }
