@@ -239,16 +239,12 @@ impl NoteRollCanvas {
         // TODO Consider assigning render order values to shapes.
         let mut shapes = vec![];
         let roll_objects =
-            self.transform_roll_objects(self.make_roll_object(), self.roll_transform);
+            self.transform_roll_objects(self.roll.make_all_objects(), self.roll_transform);
         shapes.extend(self.make_roll_shapes(roll_objects));
         let piano_objects =
-            self.transform_piano_objects(self.make_piano_object(), self.piano_transform);
+            self.transform_piano_objects(self.piano.make_all_objects(), self.piano_transform);
         shapes.extend(self.make_piano_shapes(piano_objects));
         shapes
-    }
-
-    fn make_roll_object(&self) -> Vec<RollObject> {
-        self.roll.make_all_objects()
     }
 
     fn transform_roll_objects(
@@ -257,8 +253,9 @@ impl NoteRollCanvas {
         roll_transform: RectTransform,
     ) -> Vec<RollObject> {
         objects
-            .iter()
-            .map(|object| object.clone().transform(roll_transform))
+            .clone()
+            .into_iter()
+            .map(|object| object.transform(roll_transform))
             .collect()
     }
 
@@ -281,10 +278,6 @@ impl NoteRollCanvas {
                 .make_shape(),
             })
             .collect()
-    }
-
-    fn make_piano_object(&self) -> Vec<PianoObject> {
-        self.piano.make_all_objects()
     }
 
     fn transform_piano_objects(
