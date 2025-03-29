@@ -4,13 +4,13 @@ use super::{
     toggle_window_panel, undo_redo_control,
 };
 use crate::audio_player::Handle;
-use crate::state::{Action, Store, get_set};
 use crate::widget::string_observer;
 use egui::Pos2;
 use egui::{ScrollArea, scroll_area::ScrollBarVisibility};
 use poll_promise::Promise;
 use shared::model::{Sample, Track};
 use shared::types::{Beats, Volume};
+use state::{Action, Store, get_set};
 
 /// Container for the various promises launchable by the app.
 #[derive(Default)]

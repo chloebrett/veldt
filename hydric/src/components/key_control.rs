@@ -1,8 +1,8 @@
-use crate::state::get_set;
-use crate::state::{Action, Store};
 use crate::widget::selectable_value;
 use egui::Ui;
 use shared::model::{Scale, ScaleValue};
+use state::get_set;
+use state::{Action, Store};
 use strum::IntoEnumIterator;
 
 pub fn key_control(store: &Store, ui: &mut Ui) {
