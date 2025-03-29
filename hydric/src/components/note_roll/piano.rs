@@ -1,8 +1,10 @@
-use egui::{Rect, pos2, vec2};
+use egui::{emath::RectTransform, pos2, vec2, Rect};
 use shared::{
     model::{PitchName, ScaleValue},
     types::PitchValue,
 };
+
+use crate::transform::Transform;
 
 #[derive(Clone)]
 pub enum PianoObject {
@@ -92,3 +94,20 @@ impl Piano {
         }
     }
 }
+
+impl Transform<PianoObject> for PianoObject {
+    fn transform(self, rect: RectTransform) -> PianoObject {
+        match self {
+            PianoObject::WhiteKey { note_rect } => PianoObject::WhiteKey {
+                note_rect: note_rect.transform(rect),
+            },
+            PianoObject::BlackKey { note_rect } => PianoObject::BlackKey {
+                note_rect: note_rect.transform(rect),
+            },
+            PianoObject::Board { rect: piano_rect } => PianoObject::Board {
+                rect: piano_rect.transform(rect),
+            },
+        }
+    }
+}
+
