@@ -26,10 +26,6 @@ pub enum Action {
     SetEqKind(EqType),
     SetEqFc(Freq),
     SetEqQ(KnobPosition),
-    SaveTrack {
-        track_index: usize,
-    },
-    LoadTrackList,
     SetTrackList {
         tracks: Vec<String>,
     },
@@ -37,17 +33,9 @@ pub enum Action {
         track_index: usize,
         track: Track,
     },
-    LoadTrack,
     SetLoadTrackName {
         track_name: String,
     },
-    ClearLoadTrackPromise,
-    ClearSaveTrackPromise,
-    ClearTrackListPromise,
-    LoadSample {
-        filename: String,
-    },
-    ClearLoadSamplePromise,
     AddSample(Sample),
 
     /// Denotes the reverse-action for an action that isn't reversible.

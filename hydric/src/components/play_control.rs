@@ -1,45 +1,51 @@
-use super::app::App;
+use super::app::{AsyncState, AudioState};
 use super::audio_vis::audio_vis;
 use crate::audio_player::play;
 use crate::rpc::render as server_render;
+use crate::state::Store;
 use egui::Ui;
 use mesic::SAMPLE_RATE;
 use mesic::render as local_render;
 use mesic::{AmpNode, Sig};
 use poll_promise::Promise;
 
-pub fn play_control(app: &mut App, ui: &mut Ui) {
+pub fn play_control(
+    store: &Store,
+    async_state: &mut AsyncState,
+    audio_state: &mut AudioState,
+    ui: &mut Ui,
+) {
     if ui.button("Play (local)").clicked() {
-        let volume = app.store.get().volume;
+        let volume = store.get().volume;
         let sample_count = SAMPLE_RATE as u32 * 10; // 10 seconds
-        let audio_node = local_render(&app.store.get().project);
+        let audio_node = local_render(&store.get().project);
         let mut clipped_audio = AmpNode {
             input: audio_node,
             volume,
             should_clip: true,
         };
-        app.audio = clipped_audio.buffer(sample_count);
+        audio_state.audio = clipped_audio.buffer(sample_count);
 
-        let signal = dasp_signal::from_iter(app.audio.clone());
-        app.handle = Some(play(signal));
+        let signal = dasp_signal::from_iter(audio_state.audio.clone());
+        audio_state.handle = Some(play(signal));
     }
-    if let Some(render_promise) = &app.server_render_promise {
+    if let Some(render_promise) = &async_state.server_render {
         if let Some(Some(server_audio)) = render_promise.ready() {
             if ui.button("Play (server)").clicked() {
-                let _volume = app.store.get().volume; // TODO: reconnect
-                app.audio = server_audio.to_vec();
-                let signal = dasp_signal::from_iter(app.audio.clone());
-                app.handle = Some(play(signal));
+                let _volume = store.get().volume; // TODO: reconnect
+                audio_state.audio = server_audio.to_vec();
+                let signal = dasp_signal::from_iter(audio_state.audio.clone());
+                audio_state.handle = Some(play(signal));
             }
         }
     }
     if ui.button("Load audio (server)").clicked() {
-        let project = app.store.get().project.clone();
+        let project = store.get().project.clone();
         // TODO: use an action.
-        app.server_render_promise =
+        async_state.server_render =
             Some(Promise::spawn_local(
                 async move { server_render(project).await },
             ))
     }
-    audio_vis(app, ui);
+    audio_vis(audio_state, ui);
 }
