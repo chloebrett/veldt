@@ -72,7 +72,7 @@ impl From<PitchValue> for ScaleValue {
             9 => ScaleValue::A,
             10 => ScaleValue::ASharp,
             11 => ScaleValue::B,
-            _ => panic!(""), // This should never happen.
+            _ => panic!("{}", pitch_value), // This should never happen.
         }
     }
 }
