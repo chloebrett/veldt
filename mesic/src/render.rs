@@ -4,8 +4,9 @@ use shared::model::{GeneratorType, Project};
 use crate::sig::{Graph, Processor, BufferNode};
 use dasp_graph::NodeData;
 use dasp_signal::Signal;
+use petgraph::stable_graph::NodeIndex;
 
-pub fn render(project: &Project) -> Graph {
+pub fn render(project: &Project) -> Vec<f32> {
     let track = &project.tracks[0];
     let generator = &project.generators[0];
     let mixer_channel = &project.mixer[0];
@@ -45,15 +46,22 @@ pub fn render(project: &Project) -> Graph {
     let max_nodes = 1024;
     let max_edges = 1024;
     let mut g = Graph::with_capacity(max_nodes, max_edges);
-    let p = Processor::with_capacity(max_nodes);
+    let mut p = Processor::with_capacity(max_nodes);
 
     // Add some nodes and edges...
-    let node = g.add_node(NodeData::new1(Box::new(BufferNode { buffer: total_wave, index: 0 })));
+    let node = g.add_node(NodeData::new1(BufferNode { buffer: total_wave.clone(), index: 0 }));
 
     // Process all nodes within the graph that output to the node at `n_id`.
-    //p.process(&mut g, node);
+    let mut output: Vec<f32> = vec![];
+    let process_count = total_wave.len() / 64 + 1;
+    for _ in 0..process_count {
+        p.process(&mut g, node);
+        // TODO: optimize.
+        let vec: Vec<_> = g.node_weight(node).unwrap().buffers[0].iter().collect();
+        output.extend(vec);
+    }
 
-    g
+    output
 
     // TODO before submit: add effects back
     //apply_effects(wave_node, &mixer_channel.effects)

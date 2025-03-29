@@ -9,7 +9,7 @@ use dasp_graph::{Node, Input, Buffer, NodeData};
 // TODO: rename sig.rs to graph.rs.
 
 // TODO: consider StableGraph.
-pub type Graph = petgraph::graph::DiGraph<NodeData<Box<dyn Node>>, (), u32>;
+pub type Graph = petgraph::graph::DiGraph<NodeData<BufferNode>, (), u32>;
 
 pub type Processor = dasp_graph::Processor<Graph>;
 
@@ -30,9 +30,15 @@ impl Node for BufferNode {
     fn process(&mut self, _inputs: &[Input], output: &mut [Buffer]) {
         for out_buf in output {
             let index = self.index;
-            let slice = &self.buffer[index .. min(index, self.buffer.len())];
-            out_buf.copy_from_slice(slice);
+            let slice = &self.buffer[index .. min(index + 64, self.buffer.len())];
+
+            // TODO: account for edge cases.
+            if out_buf.len() == slice.len() {
+                out_buf.copy_from_slice(slice);
+            }
         }
+        // TODO: use Buffer LEN const.
+        self.index += 64;
     }
 }
 
