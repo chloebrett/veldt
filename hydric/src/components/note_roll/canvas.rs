@@ -26,16 +26,16 @@ struct ProjectConfig {
 }
 
 pub fn note_roll_display(store: &Store, ui: &mut Ui) {
-    new_note_button(store, ui);
+    let track_index = 0;
+    new_note_button(store, ui, track_index);
     ScrollArea::vertical()
         .min_scrolled_height(200.0)
         .show(ui, |ui| {
-            draw_note_roll_canvas(store, ui);
+            draw_note_roll_canvas(store, ui, track_index);
         });
 }
 
-fn new_note_button(store: &Store, ui: &mut Ui) {
-    let track_index = 0;
+fn new_note_button(store: &Store, ui: &mut Ui, track_index: usize) {
     if ui.button("New note").clicked() {
         store.dispatch(
             &Selector::Track(track_index),
@@ -53,7 +53,7 @@ fn new_note_button(store: &Store, ui: &mut Ui) {
     }
 }
 
-fn draw_note_roll_canvas(store: &Store, ui: &mut Ui) {
+fn draw_note_roll_canvas(store: &Store, ui: &mut Ui, track_index: usize) {
     let offset = 0.0;
     let bar_length = 4.0;
     let bars = 4.0;
@@ -86,10 +86,10 @@ fn draw_note_roll_canvas(store: &Store, ui: &mut Ui) {
             response.rect,
         );
         let size = response.rect.size();
-        let note_roll_canvas = NoteRollCanvas::new(store, project_config, size, piano_width);
+        let note_roll_canvas = NoteRollCanvas::new(store, project_config, size, piano_width, track_index);
         let shapes = note_roll_canvas.make_all_shapes();
         painter.extend(shapes.transform(to_screen));
-        update_notes(ui, &response, to_screen, store, note_roll_canvas);
+        update_notes(ui, &response, to_screen, store, note_roll_canvas, track_index);
         response
     });
 }
@@ -119,8 +119,8 @@ fn update_notes(
     to_screen: RectTransform,
     store: &Store,
     note_roll_canvas: NoteRollCanvas,
+    track_index: usize
 ) {
-    let track_index = 0;
     store.get().project.tracks[track_index]
         .notes
         .iter()
@@ -153,7 +153,7 @@ fn update_notes(
                 let pos = note_roll_canvas.roll.clamp_pos(pos_as_note);
                 let offset: OrderedFloat<f32> = pos.x.into();
                 let pitch_name = PitchName::from(pos.y as i32);
-                dispatch_note(store, note_index, offset, pitch_name);
+                dispatch_note(store, note_index, offset, pitch_name, track_index);
             }
         });
 }
@@ -174,8 +174,8 @@ fn dispatch_note(
     note_index: usize,
     offset: OrderedFloat<f32>,
     pitch_name: PitchName,
+    track_index: usize,
 ) {
-    let track_index = 0;
     let curr_note = &store.get().project.tracks[track_index].notes[note_index];
     let sel = Selector::Note(track_index, note_index);
     if curr_note.offset != offset {
@@ -198,8 +198,7 @@ struct NoteRollCanvas {
 }
 
 impl NoteRollCanvas {
-    pub fn new(store: &Store, project_config: ProjectConfig, size: Vec2, piano_width: f32) -> Self {
-        let track_index = 0;
+    pub fn new(store: &Store, project_config: ProjectConfig, size: Vec2, piano_width: f32, track_index: usize) -> Self {
         let piano_transform = RectTransform::from_to(
             Rect::from_min_size(
                 pos2(0.0, 0.0),
