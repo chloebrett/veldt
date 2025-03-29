@@ -1,17 +1,10 @@
-use egui::{Rect, emath::RectTransform, pos2, vec2};
+use egui::{Rect, pos2, vec2};
 use shared::{
     model::{PitchName, ScaleValue},
     types::PitchValue,
 };
 
-use crate::transform::Transform;
-
-#[derive(Clone)]
-pub enum PianoObject {
-    WhiteKey { note_rect: Rect },
-    BlackKey { note_rect: Rect },
-    Board { rect: Rect },
-}
+use super::shapes::NoteRollShape;
 
 pub struct Piano {
     max_note: PitchValue,
@@ -23,14 +16,14 @@ impl Piano {
         Piano { max_note, min_note }
     }
 
-    pub fn make_all_objects(&self) -> Vec<PianoObject> {
+    pub fn make_all_objects(&self) -> Vec<NoteRollShape> {
         let mut objects = vec![self.make_piano_board()];
         objects.extend(self.make_all_piano_keys(self.get_piano_notes()));
         objects
     }
 
-    fn make_piano_board(&self) -> PianoObject {
-        PianoObject::Board {
+    fn make_piano_board(&self) -> NoteRollShape {
+        NoteRollShape::PianoBoard {
             rect: Rect::from_min_size(
                 pos2(0.0, 0.0),
                 vec2(1.0, (self.max_note - self.min_note) as f32),
@@ -44,14 +37,14 @@ impl Piano {
             .collect()
     }
 
-    fn make_all_piano_keys(&self, notes: Vec<PitchName>) -> Vec<PianoObject> {
+    fn make_all_piano_keys(&self, notes: Vec<PitchName>) -> Vec<NoteRollShape> {
         notes
             .iter()
             .map(|&note| self.make_piano_key(note))
             .collect()
     }
 
-    fn make_piano_key(&self, note: PitchName) -> PianoObject {
+    fn make_piano_key(&self, note: PitchName) -> NoteRollShape {
         // White notes are arranged so that the edge of B and C and the edge of
         // E and F lines align with the edge of the equivalent background.
         // This helps visual align background notes with the piano keys.
@@ -75,38 +68,22 @@ impl Piano {
         self.make_white_key(note, y_offset, note_height)
     }
 
-    fn make_white_key(&self, note: PitchName, y_offset: f32, note_height: f32) -> PianoObject {
+    fn make_white_key(&self, note: PitchName, y_offset: f32, note_height: f32) -> NoteRollShape {
         let pitch_value: PitchValue = note.into();
         let note_pos = pos2(0.0, (self.max_note - pitch_value) as f32 + y_offset);
         let note_size = vec2(1.0, note_height);
-        PianoObject::WhiteKey {
+        NoteRollShape::WhiteKey {
             note_rect: Rect::from_min_size(note_pos, note_size),
         }
     }
 
-    fn make_black_key(&self, note: PitchName) -> PianoObject {
+    fn make_black_key(&self, note: PitchName) -> NoteRollShape {
         let black_note_length = 0.6;
         let pitch_value: PitchValue = note.into();
         let note_pos = pos2(0.0, (self.max_note - pitch_value) as f32);
         let note_size = vec2(black_note_length, 1.0);
-        PianoObject::BlackKey {
+        NoteRollShape::BlackKey {
             note_rect: Rect::from_min_size(note_pos, note_size),
-        }
-    }
-}
-
-impl Transform<PianoObject> for PianoObject {
-    fn transform(self, rect: RectTransform) -> PianoObject {
-        match self {
-            PianoObject::WhiteKey { note_rect } => PianoObject::WhiteKey {
-                note_rect: note_rect.transform(rect),
-            },
-            PianoObject::BlackKey { note_rect } => PianoObject::BlackKey {
-                note_rect: note_rect.transform(rect),
-            },
-            PianoObject::Board { rect: piano_rect } => PianoObject::Board {
-                rect: piano_rect.transform(rect),
-            },
         }
     }
 }

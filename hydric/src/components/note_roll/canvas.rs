@@ -1,8 +1,8 @@
 use state::{Action, Selector, Store};
 
 use egui::{
-    Frame, Pos2, Rect, Response, ScrollArea, Sense, Shape, Ui, Vec2, emath::RectTransform,
-    epaint::RectShape, pos2, vec2,
+    Frame, Pos2, Rect, Response, ScrollArea, Sense, Shape, Ui, Vec2, emath::RectTransform, pos2,
+    vec2,
 };
 use ordered_float::OrderedFloat;
 use shared::{
@@ -10,11 +10,9 @@ use shared::{
     types::PitchValue,
 };
 
-use super::{
-    piano::{Piano, PianoObject},
-    roll::{Roll, RollObject},
-    shapes::NoteRollShape,
-};
+use super::{piano::Piano, roll::Roll};
+
+use crate::transform::Transform;
 
 // TODO Integrate into Store and project.
 struct ProjectConfig {
@@ -251,154 +249,15 @@ impl NoteRollCanvas {
     pub fn make_all_shapes(&self) -> Vec<Shape> {
         // TODO Consider assigning render order values to shapes.
         let mut shapes = vec![];
-        let roll_objects =
-            self.transform_roll_objects(self.roll.make_all_objects(), self.roll_transform);
-        shapes.extend(self.make_roll_shapes(roll_objects));
-        let piano_objects =
-            self.transform_piano_objects(self.piano.make_all_objects(), self.piano_transform);
-        shapes.extend(self.make_piano_shapes(piano_objects));
+        shapes.extend(self.roll.make_all_objects().transform(self.roll_transform));
+        shapes.extend(
+            self.piano
+                .make_all_objects()
+                .transform(self.piano_transform),
+        );
         shapes
-    }
-
-    fn transform_roll_objects(
-        &self,
-        objects: Vec<RollObject>,
-        roll_transform: RectTransform,
-    ) -> Vec<RollObject> {
-        objects
-            .clone()
             .into_iter()
-            .map(|object| object.transform(roll_transform))
+            .map(|object| object.make_shape())
             .collect()
-    }
-
-    fn make_roll_shapes(&self, objects: Vec<RollObject>) -> Vec<Shape> {
-        objects
-            .iter()
-            .map(|object| match object {
-                RollObject::InteractiveNote { note_rect } => NoteRollShape::InteractiveNote {
-                    note_rect: *note_rect,
-                }
-                .make_shape(),
-                RollObject::BackgroundNote { note_rect } => NoteRollShape::BackgroundNote {
-                    note_rect: *note_rect,
-                }
-                .make_shape(),
-                RollObject::BarLine { line, order } => NoteRollShape::BarLine {
-                    line: *line,
-                    order: *order,
-                }
-                .make_shape(),
-            })
-            .collect()
-    }
-
-    fn transform_piano_objects(
-        &self,
-        objects: Vec<PianoObject>,
-        piano_transform: RectTransform,
-    ) -> Vec<PianoObject> {
-        objects
-            .iter()
-            .map(|object| object.clone().transform(piano_transform))
-            .collect()
-    }
-
-    fn make_piano_shapes(&self, objects: Vec<PianoObject>) -> Vec<Shape> {
-        objects
-            .iter()
-            .map(|object| match object {
-                PianoObject::WhiteKey { note_rect } => NoteRollShape::WhiteKey {
-                    note_rect: *note_rect,
-                }
-                .make_shape(),
-                PianoObject::BlackKey { note_rect } => NoteRollShape::BlackKey {
-                    note_rect: *note_rect,
-                }
-                .make_shape(),
-                PianoObject::Board { rect } => {
-                    NoteRollShape::PianoBoard { rect: *rect }.make_shape()
-                }
-            })
-            .collect()
-    }
-}
-
-trait Transformable<T> {
-    fn transform(self, rect: RectTransform) -> T;
-}
-
-impl Transformable<Shape> for Shape {
-    fn transform(self, rect: RectTransform) -> Shape {
-        match self {
-            Shape::LineSegment { points, stroke } => Shape::LineSegment {
-                points: [rect * points[0], rect * points[1]],
-                stroke,
-            },
-            Shape::Rect(rect_shape) => Shape::Rect(RectShape {
-                rect: rect.transform_rect(rect_shape.rect),
-                ..rect_shape
-            }),
-            _ => panic!("Shape not implemented."),
-        }
-    }
-}
-
-impl Transformable<Vec<Shape>> for Vec<Shape> {
-    fn transform(self, rect: RectTransform) -> Vec<Shape> {
-        self.iter()
-            .map(|shape| shape.clone().transform(rect))
-            .collect()
-    }
-}
-
-impl Transformable<[Pos2; 2]> for [Pos2; 2] {
-    fn transform(self, rect: RectTransform) -> [Pos2; 2] {
-        [rect * self[0], rect * self[1]]
-    }
-}
-
-impl Transformable<Rect> for Rect {
-    fn transform(self, rect: RectTransform) -> Rect {
-        rect.transform_rect(self)
-    }
-}
-
-impl Transformable<Pos2> for Pos2 {
-    fn transform(self, rect: RectTransform) -> Pos2 {
-        rect * self
-    }
-}
-
-impl Transformable<PianoObject> for PianoObject {
-    fn transform(self, rect: RectTransform) -> PianoObject {
-        match self {
-            PianoObject::WhiteKey { note_rect } => PianoObject::WhiteKey {
-                note_rect: note_rect.transform(rect),
-            },
-            PianoObject::BlackKey { note_rect } => PianoObject::BlackKey {
-                note_rect: note_rect.transform(rect),
-            },
-            PianoObject::Board { rect: piano_rect } => PianoObject::Board {
-                rect: piano_rect.transform(rect),
-            },
-        }
-    }
-}
-
-impl Transformable<RollObject> for RollObject {
-    fn transform(self, rect: RectTransform) -> RollObject {
-        match self {
-            RollObject::InteractiveNote { note_rect } => RollObject::InteractiveNote {
-                note_rect: note_rect.transform(rect),
-            },
-            RollObject::BackgroundNote { note_rect } => RollObject::BackgroundNote {
-                note_rect: note_rect.transform(rect),
-            },
-            RollObject::BarLine { line, order } => RollObject::BarLine {
-                line: line.transform(rect),
-                order,
-            },
-        }
     }
 }
