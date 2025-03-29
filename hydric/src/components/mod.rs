@@ -21,7 +21,6 @@ use envelope_control::*;
 use eq_control::*;
 use generator_control::*;
 use key_control::*;
-use note_roll::*;
 use notes_control::*;
 use play_control::*;
 use sample_control::*;
