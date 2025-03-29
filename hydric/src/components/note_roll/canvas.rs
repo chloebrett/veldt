@@ -1,4 +1,4 @@
-use crate::state::{Action, Selector, Store};
+use state::{Action, Selector, Store};
 
 use egui::{
     Frame, Pos2, Rect, Response, ScrollArea, Sense, Shape, Ui, Vec2, emath::RectTransform,
@@ -146,7 +146,7 @@ fn update_notes(
                 ),
             );
             let note_response = track_note_response(
-                &ui,
+                ui,
                 response,
                 note_index,
                 note_rect
@@ -173,8 +173,7 @@ fn track_note_response(
     note_rect: Rect,
 ) -> Response {
     let shape_index = response.id.with(note_index);
-    let note_response = ui.interact(note_rect, shape_index, Sense::drag());
-    note_response
+    ui.interact(note_rect, shape_index, Sense::drag())
 }
 
 fn dispatch_note(

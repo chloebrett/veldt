@@ -1,5 +1,5 @@
-use super::{Action, Selector, StoreData, root_reducer};
-use web_sys::console;
+use crate::{Action, Selector, StoreData, root_reducer};
+use shared::logger::log;
 
 /// An action that can be applied forwards or backwards.
 #[derive(Clone, Debug)]
@@ -51,7 +51,10 @@ impl UndoStack {
             panic!("Tried to undo when there was nothing to undo!");
         }
 
-        console::log_1(&format!("Undoing action. Stack state before: {:?}", self.clone()).into());
+        log(&format!(
+            "Undoing action. Stack state before: {:?}",
+            self.clone()
+        ));
         let action = self
             .actions
             .get(self.index - 1)
@@ -71,7 +74,10 @@ impl UndoStack {
             panic!("Tried to redo when there was nothing to redo!");
         }
 
-        console::log_1(&format!("Redoing action. Stack state before: {:?}", self.clone()).into());
+        log(&format!(
+            "Redoing action. Stack state before: {:?}",
+            self.clone()
+        ));
         let action = self
             .actions
             .get(self.index)

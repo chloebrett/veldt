@@ -1,8 +1,8 @@
-use crate::state::{Action, Selector, Store, get_set};
 use crate::widget::selectable_value;
 use egui::Ui;
 use shared::model::{GeneratorType, WaveType};
 use shared::types::KnobPosition;
+use state::{Action, Selector, Store, get_set};
 use strum::IntoEnumIterator;
 
 pub fn generator_control(store: &Store, ui: &mut Ui) {

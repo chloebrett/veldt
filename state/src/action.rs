@@ -1,6 +1,5 @@
-use shared::model::{AdsrEnvelope, EqType, PlacedNote, Scale, ScaleValue, Track, WaveType};
-use shared::types::{Beats, Octave};
-use shared::types::{Freq, KnobPosition, Milliseconds, Volume};
+use shared::model::{AdsrEnvelope, EqType, PlacedNote, Sample, Scale, ScaleValue, Track, WaveType};
+use shared::types::{Beats, Freq, KnobPosition, Milliseconds, Octave, Volume};
 
 #[derive(Debug, Clone)]
 pub enum Action {
@@ -27,10 +26,6 @@ pub enum Action {
     SetEqKind(EqType),
     SetEqFc(Freq),
     SetEqQ(KnobPosition),
-    SaveTrack {
-        track_index: usize,
-    },
-    LoadTrackList,
     SetTrackList {
         tracks: Vec<String>,
     },
@@ -38,13 +33,10 @@ pub enum Action {
         track_index: usize,
         track: Track,
     },
-    LoadTrack,
     SetLoadTrackName {
         track_name: String,
     },
-    ClearLoadTrackPromise,
-    ClearSaveTrackPromise,
-    ClearTrackListPromise,
+    AddSample(Sample),
 
     /// Denotes the reverse-action for an action that isn't reversible.
     /// Applying this is a no-op.

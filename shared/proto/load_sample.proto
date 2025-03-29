@@ -2,6 +2,8 @@ syntax = "proto3";
 
 package load_sample;
 
+import "pmodel.proto";
+
 service LoadSample {
   rpc LoadSample (LoadSampleRequest) returns (LoadSampleReply) {}
 }
@@ -11,6 +13,5 @@ message LoadSampleRequest {
 }
 
 message LoadSampleReply {
-  // TODO:return a sample proto instead, with sample rate etc.
-  bytes sample = 1;
+  pmodel.SampleProto sample = 1;
 }

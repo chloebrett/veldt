@@ -1,7 +1,7 @@
-use crate::state::{Action, Selector, Store, get_set};
 use egui::Ui;
 use shared::model::Effect;
 use shared::types::{KnobPosition, Milliseconds, Volume};
+use state::{Action, Selector, Store, get_set};
 
 pub fn delay_control(store: &Store, effect_index: usize, ui: &mut Ui) {
     let mixer_index = 0;

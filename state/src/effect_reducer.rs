@@ -1,9 +1,9 @@
-use crate::state::Action;
+use crate::Action;
+use shared::logger::log;
 use shared::model::{Effect, EffectInstance};
-use web_sys::console;
 
 pub fn effect_reducer(effect: &mut EffectInstance, action: &Action) -> Action {
-    console::log_1(&format!("effect_reducer processing: {:?}", action.clone()).into());
+    log(&format!("effect_reducer processing: {:?}", action.clone()));
 
     if let Action::SetEffectWet(wet) = action {
         let prev = effect.meta.wet;

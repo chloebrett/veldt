@@ -6,6 +6,7 @@ mod note_reducer;
 mod root_reducer;
 mod selector;
 mod store;
+mod store_data;
 mod track_reducer;
 mod undo;
 
@@ -17,5 +18,6 @@ use note_reducer::*;
 use root_reducer::*;
 pub use selector::*;
 pub use store::*;
+pub use store_data::*;
 use track_reducer::*;
 use undo::*;

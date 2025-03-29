@@ -4,6 +4,8 @@ cd shared && cargo fmt && cargo check && cargo check --target=wasm32-unknown-unk
   cd .. &&
   cd mesic && cargo fmt && cargo check && cargo check --target=wasm32-unknown-unknown &&
   cd .. &&
+  cd state && cargo fmt && cargo check && cargo check &&
+  cd .. &&
   cd hydric && cargo fmt && cargo check --target=wasm32-unknown-unknown &&
   cd .. &&
   cd xeric && cargo fmt && cargo check &&

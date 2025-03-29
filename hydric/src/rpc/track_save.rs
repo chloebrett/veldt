@@ -1,11 +1,11 @@
 use shared::consts::XERIC_URL;
+use shared::logger::error;
 use shared::model::Track;
 use shared::save_track::load_track_client::LoadTrackClient;
 use shared::save_track::load_track_list_client::LoadTrackListClient;
 use shared::save_track::save_track_client::SaveTrackClient;
 use shared::save_track::{LoadTrackListRequest, LoadTrackRequest, SaveTrackRequest};
 use tonic_web_wasm_client::Client;
-use web_sys::console;
 
 pub async fn save_track(name: String, track: Track) -> Option<()> {
     let client = Client::new(XERIC_URL.to_string());
@@ -20,7 +20,7 @@ pub async fn save_track(name: String, track: Track) -> Option<()> {
     match result {
         Ok(_) => Some(()),
         Err(_) => {
-            console::error_1(&"Error saving notes to server.".into());
+            error("Error saving notes to server.");
             None
         }
     }
@@ -34,7 +34,7 @@ pub async fn load_track_list() -> Option<Vec<String>> {
     match result {
         Ok(response) => Some(response.into_inner().names),
         Err(_) => {
-            console::error_1(&"Error loading track list from server.".into());
+            error("Error loading track list from server.");
             None
         }
     }
@@ -51,6 +51,6 @@ pub async fn load_track(name: String) -> Option<Track> {
             return Some(track.into());
         }
     }
-    console::error_1(&"Error loading track from server.".into());
+    error("Error loading track list from server.");
     None
 }

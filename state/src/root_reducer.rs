@@ -1,13 +1,10 @@
-use super::{
+use crate::{
     Action, Selector, StoreData, effect_reducer, generator_reducer, note_reducer, track_reducer,
 };
-use crate::rpc::{load_track, load_track_list, save_track};
-use poll_promise::Promise;
-use std::rc::Rc;
-use web_sys::console;
+use shared::logger::log;
 
 pub fn root_reducer(data: &mut StoreData, selector: &Selector, action: &Action) -> Action {
-    console::log_1(&format!("root_reducer processing: {:?}", action.clone()).into());
+    log(&format!("root_reducer processing: {:?}", action.clone()));
 
     match selector {
         Selector::Track(track_index) => {
@@ -50,20 +47,6 @@ pub fn root_reducer(data: &mut StoreData, selector: &Selector, action: &Action) 
                 data.volume = *volume;
                 Action::SetVolume(prev)
             }
-            Action::SaveTrack { track_index } => {
-                let track_name = data.project.name.clone();
-                let track = data.project.tracks[*track_index].clone();
-                data.save_track_promise = Rc::new(Some(Promise::spawn_local(async move {
-                    save_track(track_name, track).await
-                })));
-                Action::NonReversible
-            }
-            Action::LoadTrackList => {
-                data.track_list_promise = Rc::new(Some(Promise::spawn_local(async move {
-                    load_track_list().await
-                })));
-                Action::NonReversible
-            }
             Action::SetTrackList { tracks } => {
                 data.track_list = tracks.clone();
                 Action::NonReversible
@@ -72,29 +55,12 @@ pub fn root_reducer(data: &mut StoreData, selector: &Selector, action: &Action) 
                 data.project.tracks[*track_index] = track.clone();
                 Action::NonReversible
             }
-            Action::LoadTrack => {
-                if let Some(name) = data.load_track_name.clone() {
-                    data.load_track_promise =
-                        Rc::new(Some(Promise::spawn_local(
-                            async move { load_track(name).await },
-                        )));
-                }
-                Action::NonReversible
-            }
             Action::SetLoadTrackName { track_name } => {
                 data.load_track_name = Some(track_name.clone());
                 Action::NonReversible
             }
-            Action::ClearLoadTrackPromise => {
-                data.load_track_promise = Rc::new(None);
-                Action::NonReversible
-            }
-            Action::ClearSaveTrackPromise => {
-                data.save_track_promise = Rc::new(None);
-                Action::NonReversible
-            }
-            Action::ClearTrackListPromise => {
-                data.track_list_promise = Rc::new(None);
+            Action::AddSample(sample) => {
+                data.project.samples.push(sample.clone());
                 Action::NonReversible
             }
             _ => Action::NonReversible,
