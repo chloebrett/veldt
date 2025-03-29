@@ -1,11 +1,11 @@
-use super::app::App;
+use super::AudioState;
 use chrono::TimeDelta;
 use egui::{Color32, Rect, Ui, containers::Frame, emath, epaint, epaint::PathStroke, pos2, vec2};
 use mesic::SAMPLE_RATE;
 use std::ops::Sub;
 
-pub fn audio_vis(app: &App, ui: &mut Ui) {
-    let audio_len = app.audio.len() as f32;
+pub fn audio_vis(audio_state: &AudioState, ui: &mut Ui) {
+    let audio_len = audio_state.audio.len() as f32;
     let canvas_size = vec2(500.0, 100.0);
 
     if audio_len == 0.0 {
@@ -21,7 +21,7 @@ pub fn audio_vis(app: &App, ui: &mut Ui) {
         let mut averages: Vec<f32> = vec![0.0; canvas_size.x as usize];
         let chunking = (audio_len / canvas_size.x) as i32;
         // TODO: put this into a generic util.
-        for (i, sample) in app.audio.iter().enumerate() {
+        for (i, sample) in audio_state.audio.iter().enumerate() {
             let index = i / (chunking as usize);
             let value = sample.abs() / (chunking as f32);
             if index >= averages.len() {
@@ -49,7 +49,7 @@ pub fn audio_vis(app: &App, ui: &mut Ui) {
             })
             .collect();
 
-        if let Some(handle) = &app.handle {
+        if let Some(handle) = &audio_state.handle {
             let current_timestamp = chrono::offset::Utc::now();
             let time_delta: TimeDelta = current_timestamp.sub(handle.start_timestamp);
             let time_delta_ms: i64 = time_delta.num_milliseconds();

@@ -1,4 +1,4 @@
-use super::app::App;
+use super::WindowState;
 use egui::Ui;
 
 pub fn window_toggle_button(toggle_value: bool, ui: &mut Ui, toggle_name: String) -> bool {
@@ -14,13 +14,17 @@ pub fn window_toggle_button(toggle_value: bool, ui: &mut Ui, toggle_name: String
     }
 }
 
-pub fn toggle_window_panel(app: &mut App, ui: &mut Ui) {
+pub fn toggle_window_panel(window_state: &mut WindowState, ui: &mut Ui) {
     ui.vertical(|ui| {
-        app.show_effects = window_toggle_button(app.show_effects, ui, "Effects".to_string());
-        app.show_envelope = window_toggle_button(app.show_envelope, ui, "Envelope".to_string());
+        window_state.show_effects =
+            window_toggle_button(window_state.show_effects, ui, "Effects".to_string());
+        window_state.show_envelope =
+            window_toggle_button(window_state.show_envelope, ui, "Envelope".to_string());
     });
     ui.vertical(|ui| {
-        app.show_generator = window_toggle_button(app.show_generator, ui, "Generator".to_string());
-        app.show_scale = window_toggle_button(app.show_scale, ui, "Scale".to_string());
+        window_state.show_generator =
+            window_toggle_button(window_state.show_generator, ui, "Generator".to_string());
+        window_state.show_scale =
+            window_toggle_button(window_state.show_scale, ui, "Scale".to_string());
     });
 }

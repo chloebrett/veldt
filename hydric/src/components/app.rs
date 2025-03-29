@@ -9,18 +9,39 @@ use crate::widget::string_observer;
 use egui::Pos2;
 use egui::{ScrollArea, scroll_area::ScrollBarVisibility};
 use poll_promise::Promise;
+use shared::model::{Sample, Track};
 use shared::types::{Beats, Volume};
 
+/// Container for the various promises launchable by the app.
 #[derive(Default)]
-pub struct App {
-    pub store: Store,
+pub struct AsyncState {
+    pub server_render: Option<Promise<Option<Vec<f32>>>>,
+    pub save_track: Option<Promise<Option<()>>>,
+    pub track_list: Option<Promise<Option<Vec<String>>>>,
+    pub load_track: Option<Promise<Option<Track>>>,
+    pub load_sample: Option<Promise<Option<Sample>>>,
+}
+
+#[derive(Default)]
+pub struct AudioState {
     pub audio: Vec<f32>,
     pub handle: Option<Handle>,
-    pub server_render_promise: Option<Promise<Option<Vec<f32>>>>,
+}
+
+#[derive(Default)]
+pub struct WindowState {
     pub show_effects: bool,
     pub show_envelope: bool,
     pub show_generator: bool,
     pub show_scale: bool,
+}
+
+#[derive(Default)]
+pub struct App {
+    pub store: Store,
+    pub async_state: AsyncState,
+    pub audio_state: AudioState,
+    pub window_state: WindowState,
 }
 
 impl App {
@@ -58,8 +79,8 @@ impl eframe::App for App {
                             project_name.clone(),
                         );
                         ui.text_edit_singleline(&mut name_observer);
-                        save_button(&self.store, ui);
-                        load_control(&self.store, ui);
+                        save_button(&self.store, &mut self.async_state, ui);
+                        load_control(&self.store, &mut self.async_state, ui);
                     });
                     ui.horizontal(|ui| {
                         ui.vertical(|ui| {
@@ -86,10 +107,10 @@ impl eframe::App for App {
                                 .logarithmic(true),
                             );
                         });
-                        toggle_window_panel(self, ui);
+                        toggle_window_panel(&mut self.window_state, ui);
                     });
 
-                    if self.show_envelope {
+                    if self.window_state.show_envelope {
                         egui::Window::new("Envelope")
                             .default_pos(Pos2 { x: 600.0, y: 125.0 })
                             .resizable(false)
@@ -97,7 +118,7 @@ impl eframe::App for App {
                                 envelope_control(&self.store, ui);
                             });
                     }
-                    if self.show_generator {
+                    if self.window_state.show_generator {
                         egui::Window::new("Generator")
                             .default_pos(Pos2 { x: 1100.0, y: 20.0 })
                             .resizable(false)
@@ -105,7 +126,7 @@ impl eframe::App for App {
                                 generator_control(&self.store, ui);
                             });
                     }
-                    if self.show_effects {
+                    if self.window_state.show_effects {
                         egui::Window::new("Effects")
                             .default_pos(Pos2 {
                                 x: 1100.0,
@@ -120,7 +141,7 @@ impl eframe::App for App {
                                 ui.separator();
                             });
                     }
-                    if self.show_scale {
+                    if self.window_state.show_scale {
                         egui::Window::new("Scale")
                             .default_pos(Pos2 { x: 600.0, y: 20.0 })
                             .resizable(false)
@@ -133,9 +154,19 @@ impl eframe::App for App {
                     ui.separator();
                     undo_redo_control(&mut self.store, ui);
                     ui.separator();
-                    play_control(self, ui);
+                    play_control(
+                        &self.store,
+                        &mut self.async_state,
+                        &mut self.audio_state,
+                        ui,
+                    );
                     ui.separator();
-                    sample_control(self, ui);
+                    sample_control(
+                        &self.store,
+                        &mut self.audio_state,
+                        &mut self.async_state,
+                        ui,
+                    );
                     ui.separator();
                     note_roll_display(&self.store, ui);
 
