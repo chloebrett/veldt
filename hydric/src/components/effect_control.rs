@@ -1,7 +1,7 @@
 use super::{delay_control, eq_control};
-use crate::state::Store;
 use egui::Ui;
 use shared::model::Effect;
+use state::Store;
 
 pub fn effect_control(store: &Store, effect_index: usize, ui: &mut Ui) {
     let effect = store.get().project.mixer[0].effects[effect_index].clone();

@@ -1,10 +1,10 @@
 use super::{AsyncState, AudioState};
 use crate::audio_player::play;
 use crate::rpc::load_sample;
-use crate::state::{Action, Store};
 use egui::{Button, Ui};
 use poll_promise::Promise;
 use shared::model::Sample;
+use state::{Action, Store};
 
 pub fn sample_control(
     store: &Store,

@@ -1,4 +1,4 @@
-use super::{Action, Selector, StoreData, root_reducer};
+use crate::{Action, Selector, StoreData, root_reducer};
 use shared::logger::log;
 
 /// An action that can be applied forwards or backwards.

@@ -1,4 +1,3 @@
-use crate::state::{Action, Selector, Store, get_set};
 use egui::{
     Color32, Pos2, Rect, Slider, Ui,
     containers::Frame,
@@ -7,6 +6,7 @@ use egui::{
     pos2, vec2,
 };
 use shared::model::{AdsrEnvelope, GeneratorType};
+use state::{Action, Selector, Store, get_set};
 
 pub fn envelope_control(store: &Store, ui: &mut Ui) {
     let generator_index = 0;

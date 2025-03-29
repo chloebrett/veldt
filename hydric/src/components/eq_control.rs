@@ -1,9 +1,9 @@
-use crate::state::{Action, Selector, Store, get_set};
 use crate::widget::selectable_value;
 use egui::Ui;
 use shared::model::Effect;
 use shared::model::EqType;
 use shared::types::{Freq, KnobPosition};
+use state::{Action, Selector, Store, get_set};
 use strum::IntoEnumIterator;
 
 pub fn eq_control(store: &Store, effect_index: usize, ui: &mut Ui) {

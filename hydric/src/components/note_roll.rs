@@ -1,5 +1,5 @@
-use crate::state::{Action, Selector, Store};
 use shared::types::Beats;
+use state::{Action, Selector, Store};
 
 use egui::{
     Color32, CornerRadius, Frame, Pos2, Rect, Response, ScrollArea, Sense, Shape, Stroke,
