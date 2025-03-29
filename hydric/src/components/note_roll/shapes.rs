@@ -6,7 +6,7 @@ pub enum NoteRollShape {
     WhiteKey { note_rect: Rect },
     BlackKey { note_rect: Rect },
     PianoBoard { rect: Rect },
-    BarLine { line: [Pos2; 2], order: u32 },
+    BarLine { line: [Pos2; 2], order: u32 }, //Significance of line starting at 0.
 }
 
 impl NoteRollShape {

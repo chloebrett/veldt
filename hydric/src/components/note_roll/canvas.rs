@@ -86,10 +86,18 @@ fn draw_note_roll_canvas(store: &Store, ui: &mut Ui, track_index: usize) {
             response.rect,
         );
         let size = response.rect.size();
-        let note_roll_canvas = NoteRollCanvas::new(store, project_config, size, piano_width, track_index);
+        let note_roll_canvas =
+            NoteRollCanvas::new(store, project_config, size, piano_width, track_index);
         let shapes = note_roll_canvas.make_all_shapes();
         painter.extend(shapes.transform(to_screen));
-        update_notes(ui, &response, to_screen, store, note_roll_canvas, track_index);
+        update_notes(
+            ui,
+            &response,
+            to_screen,
+            store,
+            note_roll_canvas,
+            track_index,
+        );
         response
     });
 }
@@ -119,7 +127,7 @@ fn update_notes(
     to_screen: RectTransform,
     store: &Store,
     note_roll_canvas: NoteRollCanvas,
-    track_index: usize
+    track_index: usize,
 ) {
     store.get().project.tracks[track_index]
         .notes
@@ -198,7 +206,13 @@ struct NoteRollCanvas {
 }
 
 impl NoteRollCanvas {
-    pub fn new(store: &Store, project_config: ProjectConfig, size: Vec2, piano_width: f32, track_index: usize) -> Self {
+    pub fn new(
+        store: &Store,
+        project_config: ProjectConfig,
+        size: Vec2,
+        piano_width: f32,
+        track_index: usize,
+    ) -> Self {
         let piano_transform = RectTransform::from_to(
             Rect::from_min_size(
                 pos2(0.0, 0.0),

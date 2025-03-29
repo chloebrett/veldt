@@ -1,4 +1,4 @@
-use egui::{emath::RectTransform, epaint::RectShape, Pos2, Rect, Shape};
+use egui::{Pos2, Rect, Shape, emath::RectTransform, epaint::RectShape};
 
 pub trait Transform<T> {
     fn transform(self, rect: RectTransform) -> T;
@@ -45,4 +45,3 @@ impl Transform<Pos2> for Pos2 {
         rect * self
     }
 }
-

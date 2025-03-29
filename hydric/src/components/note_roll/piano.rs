@@ -1,4 +1,4 @@
-use egui::{emath::RectTransform, pos2, vec2, Rect};
+use egui::{Rect, emath::RectTransform, pos2, vec2};
 use shared::{
     model::{PitchName, ScaleValue},
     types::PitchValue,
@@ -110,4 +110,3 @@ impl Transform<PianoObject> for PianoObject {
         }
     }
 }
-
