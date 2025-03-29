@@ -1,12 +1,11 @@
 use crate::SAMPLE_RATE;
-use crate::effect::apply_effects;
-use crate::sig::{OutputNode, SigRef};
 use crate::wave::polyphonic_wave;
 use shared::model::{GeneratorType, Project};
-use std::cell::RefCell;
-use std::rc::Rc;
+use crate::sig::{Graph, Processor, BufferNode};
+use dasp_graph::NodeData;
+use dasp_signal::Signal;
 
-pub fn render(project: &Project) -> SigRef {
+pub fn render(project: &Project) -> Graph {
     let track = &project.tracks[0];
     let generator = &project.generators[0];
     let mixer_channel = &project.mixer[0];
@@ -42,10 +41,20 @@ pub fn render(project: &Project) -> SigRef {
         // TODO: account for offsets properly, instead of just appending here.
     }
 
-    let wave_node = Rc::new(RefCell::new(OutputNode {
-        buffer: total_wave,
-        index: 0,
-    }));
+    // Create a graph and a processor with some suitable capacity to avoid dynamic allocation.
+    let max_nodes = 1024;
+    let max_edges = 1024;
+    let mut g = Graph::with_capacity(max_nodes, max_edges);
+    let p = Processor::with_capacity(max_nodes);
 
-    apply_effects(wave_node, &mixer_channel.effects)
+    // Add some nodes and edges...
+    let node = g.add_node(NodeData::new1(Box::new(BufferNode { buffer: total_wave, index: 0 })));
+
+    // Process all nodes within the graph that output to the node at `n_id`.
+    //p.process(&mut g, node);
+
+    g
+
+    // TODO before submit: add effects back
+    //apply_effects(wave_node, &mixer_channel.effects)
 }

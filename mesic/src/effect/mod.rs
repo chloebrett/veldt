@@ -1,11 +1,7 @@
 mod delay;
 mod eq;
 
-use crate::Sig;
-use crate::sig::{EffectNode, MixerNode};
 use shared::model::EffectInstance;
-use std::cell::RefCell;
-use std::rc::Rc;
 
 /// Trait corresponding to something that knows how to apply an effect.
 /// Implemented for the various effect config types by the various effect plugins.
@@ -14,23 +10,23 @@ pub trait ApplyEffect {
 }
 
 pub fn apply_effects(
-    input: Rc<RefCell<dyn Sig>>,
+    input: Vec<f32>,
     effects: &[EffectInstance],
-) -> Rc<RefCell<dyn Sig>> {
-    let mut last = input;
+) -> Vec<f32> {
+    let last = input;
 
-    for effect in effects {
-        let effect_node = Rc::new(RefCell::new(EffectNode {
-            input: Rc::clone(&last),
-            effect: effect.clone(),
-        }));
-        let mixer_node = Rc::new(RefCell::new(MixerNode {
-            dry: Rc::clone(&last),
-            wet: effect_node,
-            ratio: effect.meta.wet,
-        }));
-        last = mixer_node;
-    }
+    //for effect in effects {
+    //    let effect_node = Rc::new(RefCell::new(EffectNode {
+    //        input: Rc::clone(&last),
+    //        effect: effect.clone(),
+    //    }));
+    //    let mixer_node = Rc::new(RefCell::new(MixerNode {
+    //        dry: Rc::clone(&last),
+    //        wet: effect_node,
+    //        ratio: effect.meta.wet,
+    //    }));
+    //    last = mixer_node;
+    //}
 
     last
 }

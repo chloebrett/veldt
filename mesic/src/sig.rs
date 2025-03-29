@@ -2,125 +2,83 @@ use crate::consts::REFERENCE_PITCH;
 use crate::effect::ApplyEffect;
 use shared::model::Effect;
 use shared::model::{EffectInstance, PitchName};
-use shared::types::{Freq, KnobPosition, PitchValue, Volume};
-use std::cell::RefCell;
+use shared::types::{Freq, PitchValue, Volume};
 use std::cmp::{max, min};
-use std::rc::Rc;
+use dasp_graph::{Node, Input, Buffer, NodeData};
 
-/// TODO: use a single shared graph type to control ownership of nodes.
-pub type SigRef = Rc<RefCell<dyn Sig>>;
+// TODO: rename sig.rs to graph.rs.
 
-pub trait Sig {
-    /// Outputs a buffer containing the specified number of frames.
-    // TODO: consider passing in a single buffer for reuse.
-    fn buffer(&mut self, num_samples: u32) -> Vec<f32>;
+// TODO: consider StableGraph.
+pub type Graph = petgraph::graph::DiGraph<NodeData<Box<dyn Node>>, (), u32>;
 
-    // TODO: consider storing a last_buffer?
-}
+pub type Processor = dasp_graph::Processor<Graph>;
 
-/// Node with zero inputs and one output.
-pub struct GeneratorNode {}
-
-impl Sig for GeneratorNode {
-    fn buffer(&mut self, num_samples: u32) -> Vec<f32> {
-        // TODO
-        vec![0.0; num_samples as usize]
-    }
-}
-
-/// Node with zero inputs and one output. Outputs from its buffer of already-rendered audio.
-pub struct OutputNode {
+// Note containing a buffer which it outputs.
+// TODO: make fields private.
+pub struct BufferNode {
     pub buffer: Vec<f32>,
     pub index: usize,
 }
 
-impl Sig for OutputNode {
-    fn buffer(&mut self, num_samples: u32) -> Vec<f32> {
-        let mut output = vec![0.0; num_samples as usize];
-        let remaining = self.buffer.len() as i32 - self.index as i32;
-        for i in 0i32..min(num_samples as i32, remaining) {
-            output[i as usize] = self.buffer[i as usize + self.index];
-        }
-        //TODO: state
-        //self.index += num_samples as usize;
-        output
+impl BufferNode {
+    fn reset(&mut self) {
+        self.index = 0;
     }
 }
 
-/// Node with one input and one output.
+impl Node for BufferNode {
+    fn process(&mut self, _inputs: &[Input], output: &mut [Buffer]) {
+        for out_buf in output {
+            let index = self.index;
+            let slice = &self.buffer[index .. min(index, self.buffer.len())];
+            out_buf.copy_from_slice(slice);
+        }
+    }
+}
+
 pub struct EffectNode {
-    pub input: SigRef,
-    pub effect: EffectInstance,
+    instance: EffectInstance,
 }
 
-impl Sig for EffectNode {
-    fn buffer(&mut self, num_samples: u32) -> Vec<f32> {
-        let dry = self.input.as_ref().borrow_mut().buffer(num_samples);
-        match &self.effect.effect {
-            Effect::SimpleDelay { config } => config.apply(&dry),
-            Effect::SimpleEq { config } => config.apply(&dry),
-            _ => panic!("Effect not implemented yet!"),
+impl Node for EffectNode {
+    fn process(&mut self, inputs: &[Input], output: &mut [Buffer]) {
+        for (out_buf, in_buf) in output.iter_mut().zip(inputs.get(0).expect("Expected one input").buffers()) {
+            let buf = match &self.instance.effect {
+                // TODO: use a dasp_graph Delay node.
+                Effect::SimpleDelay { config } => &config.apply(in_buf),
+                // TODO: store state on the EQ nodes, so that they don't lose track
+                // of their state every 64 samples.
+                Effect::SimpleEq { config } => &config.apply(in_buf),
+                _ => panic!("Effect not implemented yet!"),
+            };
+            out_buf.copy_from_slice(buf);
         }
     }
 }
 
-/// Node with one input and one output and a volume control.
+/// Node with a volume control.
 /// Can clip the post-gain signal if desired.
 pub struct AmpNode {
-    pub input: SigRef,
     pub volume: Volume,
     pub should_clip: bool,
 }
 
-impl Sig for AmpNode {
-    fn buffer(&mut self, num_samples: u32) -> Vec<f32> {
-        // TODO
-        self.input
-            .as_ref()
-            .borrow_mut()
-            .buffer(num_samples)
-            .into_iter()
-            .map(|it| {
-                let mut amped = it * self.volume;
-                if self.should_clip {
-                    amped = amped.clamp(-1.0, 1.0);
-                }
-                amped
-            })
-            .collect()
-    }
-}
-
-/// Node with two inputs and one output. Mixes its inputs in a specified ratio.
-pub struct MixerNode {
-    pub dry: SigRef,
-    pub wet: SigRef,
-    pub ratio: KnobPosition,
-}
-
-impl Sig for MixerNode {
-    fn buffer(&mut self, num_samples: u32) -> Vec<f32> {
-        let dry = self.dry.as_ref().borrow_mut().buffer(num_samples);
-        let wet = self.wet.as_ref().borrow_mut().buffer(num_samples);
-
-        sum(&mult(&dry, 1.0 - self.ratio), &mult(&wet, self.ratio))
-    }
-}
-
-/// Node with N inputs and one output. Adds its inputs to form the output.
-pub struct AdderNode {
-    pub inputs: Vec<SigRef>,
-}
-
-impl Sig for AdderNode {
-    fn buffer(&mut self, num_samples: u32) -> Vec<f32> {
-        let mut output = Vec::with_capacity(num_samples as usize);
-
-        for input in &mut self.inputs {
-            output = sum(&output, &input.as_ref().borrow_mut().buffer(num_samples));
+impl Node for AmpNode {
+    fn process(&mut self, inputs: &[Input], output: &mut [Buffer]) {
+        for (out_buf, in_buf) in output.iter_mut().zip(inputs.get(0).expect("Expected one input").buffers()) {
+            let buf: Vec<f32> = 
+                in_buf
+                    .into_iter()
+                    .map(|it| {
+                        let mut amped = it * self.volume;
+                        if self.should_clip {
+                            amped = amped.clamp(-1.0, 1.0);
+                        }
+                        amped
+                    })
+                    .collect();
+            out_buf.copy_from_slice(&buf);
         }
-
-        output
     }
 }
 
