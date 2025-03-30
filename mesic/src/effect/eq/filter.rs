@@ -19,8 +19,8 @@ pub struct FirstOrderFilterConfig {
 
 impl FirstOrderFilter {
     pub fn new(config: FirstOrderFilterConfig) -> Self {
-        let x_buffer = AllocRingBuffer::from([0.0; 2]);
-        let y_buffer = AllocRingBuffer::from([0.0; 2]);
+        let x_buffer = AllocRingBuffer::from([0.0; 1]);
+        let y_buffer = AllocRingBuffer::from([0.0; 1]);
 
         FirstOrderFilter {
             a0: config.a0,
