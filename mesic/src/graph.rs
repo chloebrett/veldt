@@ -1,6 +1,6 @@
 use crate::consts::SAMPLE_RATE;
 use crate::effect::eq_filter;
-use crate::node::{BufferNode, EqNode, MixerNode};
+use crate::node::{BufferNode, CompressorNode, EqNode, MixerNode};
 use dasp_graph::{BoxedNode, Buffer, Node, NodeData, node::Delay};
 use petgraph::stable_graph::{NodeIndex, StableGraph};
 use shared::model::{Effect, EffectInstance};
@@ -64,7 +64,7 @@ impl RenderableGraph {
 
                 BoxedNode::new(new_delay_node(delay_samples))
             }
-            Effect::SimpleCompressor { .. } => panic!("Not implemented!"),
+            Effect::SimpleCompressor { config } => BoxedNode::new(CompressorNode::new(config)),
         };
         let mixer_node = MixerNode {
             wet: effect.meta.wet,

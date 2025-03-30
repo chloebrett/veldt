@@ -146,9 +146,9 @@ message SimpleCompressorProto {
 message CompressorConfigProto {
   float threshold = 1;
 
-  float attack = 2;
+  float attack_ms = 2;
 
-  float release = 3;
+  float release_ms = 3;
 
   float ratio = 4;
 
