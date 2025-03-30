@@ -165,11 +165,7 @@ impl NoteRollCanvas {
     }
 }
 
-pub fn note_to_pos(
-    note: &PlacedNote,
-    max_note: i32,
-    project_offset: f32,
-) -> Pos2 {
+pub fn note_to_pos(note: &PlacedNote, max_note: i32, project_offset: f32) -> Pos2 {
     let offset: f32 = note.offset.into();
     let x = offset - project_offset;
     let pitch_value: PitchValue = note.note.pitch_name.into();

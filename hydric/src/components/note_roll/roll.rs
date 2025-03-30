@@ -48,12 +48,12 @@ impl Roll {
     fn get_background_notes(&self) -> Vec<PlacedNote> {
         (self.min_note..=self.max_note)
             .filter(|pitch_value| pitch_value % 2 == 0)
-            .map(|pitch_value| PlacedNote{
+            .map(|pitch_value| PlacedNote {
                 note: Note {
                     pitch_name: pitch_value.into(),
-                    beats: self.bar_length * self.bars
+                    beats: self.bar_length * self.bars,
                 },
-                offset: 0.0.into()
+                offset: 0.0.into(),
             })
             .collect()
     }
@@ -66,7 +66,7 @@ impl Roll {
     }
 
     fn make_background_note(&self, note: PlacedNote) -> NoteRollShape {
-        let note_pos = note_to_pos(&note, self.max_note, self.offset); 
+        let note_pos = note_to_pos(&note, self.max_note, self.offset);
         NoteRollShape::BackgroundNote {
             note_rect: make_note_rect(&note, note_pos),
         }
@@ -80,7 +80,7 @@ impl Roll {
     }
 
     fn make_interactive_note(&self, note: PlacedNote) -> NoteRollShape {
-        let note_pos = note_to_pos(&note, self.max_note, self.offset); 
+        let note_pos = note_to_pos(&note, self.max_note, self.offset);
         NoteRollShape::InteractiveNote {
             note_rect: make_note_rect(&note, note_pos),
         }
