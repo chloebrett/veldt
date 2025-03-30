@@ -34,7 +34,7 @@ mod tests {
 
     #[test]
     fn convert_scale_to_proto_and_back() {
-        let scale= Scale::Pentatonic;
+        let scale = Scale::Pentatonic;
         let proto: ScaleProto = scale.into();
         let result: Scale = proto.into();
         assert_eq!(scale, result);

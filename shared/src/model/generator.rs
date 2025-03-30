@@ -67,10 +67,10 @@ pub struct GeneratorMeta {
     // TODO: pan
 }
 
-#[cfg(test)] 
+#[cfg(test)]
 mod tests {
     use super::*;
-    
+
     #[test]
     fn convert_generator_instance_to_proto_and_back() {
         let generator_instance = GeneratorInstance {
@@ -92,7 +92,7 @@ mod tests {
         };
         let proto: GeneratorInstanceProto = generator_instance.clone().into();
         let result: GeneratorInstance = proto.into();
-        assert_eq!(generator_instance, result)
+        assert_eq!(generator_instance, result);
     }
 
     #[test]
@@ -135,9 +135,7 @@ mod tests {
 
     #[test]
     fn convert_generator_meta_to_proto_and_back() {
-        let generator_meta = GeneratorMeta {
-            volume: 1.0,
-        };
+        let generator_meta = GeneratorMeta { volume: 1.0 };
         let proto: GeneratorMetaProto = generator_meta.clone().into();
         let result: GeneratorMeta = proto.into();
         assert_eq!(generator_meta, result);

@@ -54,5 +54,4 @@ mod test {
         let result: PitchName = proto.into();
         assert_eq!(pitch_name, result);
     }
-
 }

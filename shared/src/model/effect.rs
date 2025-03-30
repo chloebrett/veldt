@@ -106,7 +106,7 @@ mod tests {
         let proto: EffectInstanceProto = effect_instance.clone().into();
         let result: EffectInstance = proto.into();
         assert_eq!(effect_instance, result);
-    } 
+    }
 
     #[test]
     fn convert_effect_to_proto_and_back() {
@@ -134,7 +134,7 @@ mod tests {
     fn convert_delay_config_to_proto_and_back() {
         let delay_config = DelayConfig {
             amplitude: 1.2,
-            delay_ms: 0.2
+            delay_ms: 0.2,
         };
         let proto: DelayConfigProto = delay_config.clone().into();
         let result: DelayConfig = proto.into();
@@ -144,7 +144,11 @@ mod tests {
     #[test]
     fn convert_compressor_config_to_proto_and_back() {
         let compressor_config = CompressorConfig {
-            threshold: 0.3,attack: 0.2,release: 0.6, ratio: 0.2,gain: 1.0
+            threshold: 0.3,
+            attack: 0.2,
+            release: 0.6,
+            ratio: 0.2,
+            gain: 1.0,
         };
         let proto: CompressorConfigProto = compressor_config.clone().into();
         let result: CompressorConfig = proto.into();

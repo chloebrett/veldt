@@ -53,8 +53,8 @@ mod tests {
                     pitch_name: 50.into(),
                     beats: 1.0,
                 },
-                offset: 0.0.into()
-            }]
+                offset: 0.0.into(),
+            }],
         };
         let proto: TrackProto = track.clone().into();
         let result: Track = proto.into();
@@ -68,7 +68,7 @@ mod tests {
                 pitch_name: 25.into(),
                 beats: 1.0,
             },
-            offset: 0.0.into()
+            offset: 0.0.into(),
         };
         let proto: PlacedNoteProto = placed_note.clone().into();
         let result: PlacedNote = proto.into();

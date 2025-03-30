@@ -50,10 +50,10 @@ mod tests {
         let eq_config = EqConfig {
             kind: EqType::SimpleResonator,
             fc: 100.0,
-            q: 1.0 
+            q: 1.0,
         };
         let proto: EqConfigProto = eq_config.clone().into();
-        let result: EqConfig = proto.into(); 
+        let result: EqConfig = proto.into();
         assert_eq!(eq_config, result);
     }
 }

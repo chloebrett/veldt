@@ -113,7 +113,10 @@ pub struct MixerChannel {
 
 #[cfg(test)]
 mod tests {
-    use crate::model::{AdsrEnvelope, DelayConfig, Effect, EffectMeta, EqConfig, EqType, GeneratorMeta, GeneratorType, Note, PitchName, PlacedNote, ScaleValue, SimpleWaveConfig, WaveType};
+    use crate::model::{
+        AdsrEnvelope, DelayConfig, Effect, EffectMeta, EqConfig, EqType, GeneratorMeta,
+        GeneratorType, Note, PitchName, PlacedNote, ScaleValue, SimpleWaveConfig, WaveType,
+    };
 
     use super::*;
 
@@ -123,7 +126,7 @@ mod tests {
             track_id: 0,
             start_position: 0.0.into(),
             clipped_duration: Some(0.0.into()),
-            visual_placement: 2
+            visual_placement: 2,
         };
         let proto: TrackPlacementProto = track_placement.clone().into();
         let result: TrackPlacement = proto.into();
@@ -134,7 +137,7 @@ mod tests {
     fn convert_sample_to_proto_and_back() {
         let sample = Sample {
             data: vec![0.3, 5.3, 2.0],
-            sample_rate: 10.0
+            sample_rate: 10.0,
         };
         let proto: SampleProto = sample.clone().into();
         let result: Sample = proto.into();
@@ -164,7 +167,7 @@ mod tests {
                     },
                     meta: EffectMeta { id: 1, wet: 0.5 },
                 },
-            ]
+            ],
         };
         let proto: MixerChannelProto = mixer_channel.clone().into();
         let result: MixerChannel = proto.into();
@@ -189,12 +192,10 @@ mod tests {
             }],
             // TODO: use track placements
             track_placements: vec![],
-            samples: vec![
-                Sample {
-                    data: vec![0.0, 1.0, 3.0],
-                    sample_rate: 1.0
-                }
-            ],
+            samples: vec![Sample {
+                data: vec![0.0, 1.0, 3.0],
+                sample_rate: 1.0,
+            }],
             generators: vec![GeneratorInstance {
                 id: 0,
                 kind: GeneratorType::SimpleWave {
