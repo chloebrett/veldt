@@ -1,11 +1,10 @@
 use crate::SAMPLE_RATE;
-use crate::graph::{RenderableGraph, make_graph};
-use crate::node::BufferNode;
+use crate::graph::{BufferNode, RenderGraph, make_graph};
 use crate::wave::polyphonic_wave;
 use dasp_graph::{BoxedNode, NodeData};
 use shared::model::{GeneratorType, Project};
 
-pub fn render(project: &Project) -> RenderableGraph {
+pub fn render(project: &Project) -> RenderGraph {
     let track = &project.tracks[0];
     let generator = &project.generators[0];
     let mixer_channel = &project.mixer[0];
@@ -44,11 +43,11 @@ pub fn render(project: &Project) -> RenderableGraph {
     let buffer_node: BufferNode = output.into();
     let buffer_node_index = graph.add_node(NodeData::new1(BoxedNode::new(buffer_node)));
 
-    let mut renderable_graph = RenderableGraph::new(graph, track_samples, buffer_node_index);
+    let mut render_graph = RenderGraph::new(graph, track_samples, buffer_node_index);
 
     for effect in &mixer_channel.effects {
-        renderable_graph.add_effect_with_mixer(effect.clone());
+        render_graph.add_effect_with_mixer(effect.clone());
     }
 
-    renderable_graph
+    render_graph
 }

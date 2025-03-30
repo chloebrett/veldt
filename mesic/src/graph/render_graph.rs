@@ -1,17 +1,15 @@
+use super::{
+    BufferNode, CompressorNode, EqNode, Graph, MixerNode, Processor, make_graph, make_processor,
+};
 use crate::consts::SAMPLE_RATE;
 use crate::effect::eq_filter;
-use crate::node::{BufferNode, CompressorNode, EqNode, MixerNode};
 use dasp_graph::{BoxedNode, Buffer, Node, NodeData, node::Delay};
-use petgraph::stable_graph::{NodeIndex, StableGraph};
+use petgraph::stable_graph::NodeIndex;
 use shared::model::{Effect, EffectInstance};
 use std::iter::repeat_n;
 
-pub type Graph = StableGraph<NodeData<BoxedNode>, ()>;
-
-pub type Processor = dasp_graph::Processor<Graph>;
-
 /// A Graph with the required metadata to facilitate immediate processing into a Vec.
-pub struct RenderableGraph {
+pub struct RenderGraph {
     graph: Graph,
     sample_count: usize,
     output_node_index: NodeIndex,
@@ -21,21 +19,9 @@ pub struct RenderableGraph {
     processed_samples_count: usize,
 }
 
-// If these are exceeded then the graph will dynamically allocate.
-const MAX_NODES: usize = 1024;
-const MAX_EDGES: usize = 1024;
-
-pub fn make_graph() -> Graph {
-    Graph::with_capacity(MAX_NODES, MAX_EDGES)
-}
-
-pub fn make_processor() -> Processor {
-    Processor::with_capacity(MAX_NODES)
-}
-
-impl RenderableGraph {
+impl RenderGraph {
     pub fn new(graph: Graph, sample_count: usize, output_node_index: NodeIndex) -> Self {
-        RenderableGraph {
+        RenderGraph {
             graph,
             sample_count,
             output_node_index,
@@ -102,7 +88,7 @@ impl RenderableGraph {
         let sample_count = vec.len();
         let buffer_node: BufferNode = vec.into();
         let buffer_node_index = graph.add_node(NodeData::new1(BoxedNode::new(buffer_node)));
-        RenderableGraph::new(graph, sample_count, buffer_node_index)
+        RenderGraph::new(graph, sample_count, buffer_node_index)
     }
 
     pub fn reset(&mut self) {
@@ -118,7 +104,7 @@ fn new_delay_node(delay_samples: usize) -> Delay<Vec<f32>> {
     Delay(vec![dasp_ring_buffer::Fixed::from(vec)])
 }
 
-impl Iterator for RenderableGraph {
+impl Iterator for RenderGraph {
     type Item = f32;
 
     fn next(&mut self) -> Option<Self::Item> {
