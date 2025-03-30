@@ -1,8 +1,8 @@
 use crate::SAMPLE_RATE;
+use crate::effect::apply_effects;
 use crate::sig::{BufferNode, Graph, Processor};
 use crate::wave::polyphonic_wave;
 use dasp_graph::NodeData;
-use crate::effect::apply_effects;
 use shared::model::{GeneratorType, Project};
 
 pub fn render(project: &Project) -> Vec<f32> {
@@ -57,7 +57,9 @@ pub fn render(project: &Project) -> Vec<f32> {
     for _ in 0..process_count {
         p.process(&mut g, node_index);
         // TODO: optimize.
-        let vec: Vec<_> = g.node_weight(node_index).unwrap().buffers[0].iter().collect();
+        let vec: Vec<_> = g.node_weight(node_index).unwrap().buffers[0]
+            .iter()
+            .collect();
         output.extend(vec);
     }
 

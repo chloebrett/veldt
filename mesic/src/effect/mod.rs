@@ -1,8 +1,8 @@
 mod delay;
 mod eq;
 
-use shared::model::{EffectInstance, Effect};
 use crate::sig::{mult, sum};
+use shared::model::{Effect, EffectInstance};
 use shared::types::KnobPosition;
 
 /// Trait corresponding to something that knows how to apply an effect.
