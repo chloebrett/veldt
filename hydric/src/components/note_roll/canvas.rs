@@ -165,21 +165,19 @@ impl NoteRollCanvas {
     }
 }
 
-fn note_to_pos(
+pub fn note_to_pos(
     note: &PlacedNote,
     max_note: i32,
-    min_note: i32,
     project_offset: f32,
-    beats: f32,
 ) -> Pos2 {
     let offset: f32 = note.offset.into();
+    let x = offset - project_offset;
     let pitch_value: PitchValue = note.note.pitch_name.into();
-    let x = (offset - project_offset).clamp(project_offset, beats);
-    let y = (max_note - pitch_value).clamp(min_note, max_note) as f32;
-    pos2(x, y)
+    let y = max_note - pitch_value;
+    pos2(x, y as f32)
 }
 
-fn make_note_rect(note: &PlacedNote, note_pos: Pos2) -> Rect {
+pub fn make_note_rect(note: &PlacedNote, note_pos: Pos2) -> Rect {
     let note_size = vec2(note.note.beats, 1.0);
     Rect::from_min_size(note_pos, note_size)
 }
@@ -202,10 +200,7 @@ fn update_notes(
                 note_to_pos(
                     note,
                     note_roll_canvas.project_config.max_note,
-                    note_roll_canvas.project_config.min_note,
                     note_roll_canvas.project_config.offset,
-                    note_roll_canvas.project_config.bar_length
-                        * note_roll_canvas.project_config.bars,
                 ),
             );
             let note_response = track_note_response(
