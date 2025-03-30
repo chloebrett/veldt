@@ -86,63 +86,22 @@ pub struct CompressorConfig {
 }
 
 #[cfg(test)]
+// Test effect configs as they may not appear in the Project test.
 mod tests {
-    use crate::model::EqType;
-
     use super::*;
+    use crate::tests::test_util::assert_proto_round_trip;
 
     #[test]
-    fn convert_effect_instance_to_proto_and_back() {
-        let effect_instance = EffectInstance {
-            effect: Effect::SimpleEq {
-                config: EqConfig {
-                    kind: EqType::SimpleResonator,
-                    fc: 1000.0,
-                    q: 1.0,
-                },
-            },
-            meta: EffectMeta { id: 0, wet: 1.0 },
-        };
-        let proto: EffectInstanceProto = effect_instance.clone().into();
-        let result: EffectInstance = proto.into();
-        assert_eq!(effect_instance, result);
-    }
-
-    #[test]
-    fn convert_effect_to_proto_and_back() {
-        let effect = Effect::SimpleEq {
-            config: EqConfig {
-                kind: EqType::SimpleResonator,
-                fc: 1000.0,
-                q: 1.0,
-            },
-        };
-        let proto: EffectProto = effect.clone().into();
-        let result: Effect = proto.into();
-        assert_eq!(effect, result);
-    }
-
-    #[test]
-    fn convert_effect_meta_to_proto_and_back() {
-        let effect_meta = EffectMeta { id: 0, wet: 1.0 };
-        let proto: EffectMetaProto = effect_meta.clone().into();
-        let result: EffectMeta = proto.into();
-        assert_eq!(effect_meta, result);
-    }
-
-    #[test]
-    fn convert_delay_config_to_proto_and_back() {
+    fn delay_config_proto_round_trip() {
         let delay_config = DelayConfig {
             amplitude: 1.2,
             delay_ms: 0.2,
         };
-        let proto: DelayConfigProto = delay_config.clone().into();
-        let result: DelayConfig = proto.into();
-        assert_eq!(delay_config, result);
+        assert_proto_round_trip::<DelayConfig, DelayConfigProto>(delay_config);
     }
 
     #[test]
-    fn convert_compressor_config_to_proto_and_back() {
+    fn conpressor_config_proto_round_trip() {
         let compressor_config = CompressorConfig {
             threshold: 0.3,
             attack: 0.2,
@@ -150,8 +109,6 @@ mod tests {
             ratio: 0.2,
             gain: 1.0,
         };
-        let proto: CompressorConfigProto = compressor_config.clone().into();
-        let result: CompressorConfig = proto.into();
-        assert_eq!(compressor_config, result);
+        assert_proto_round_trip::<CompressorConfig, CompressorConfigProto>(compressor_config);
     }
 }

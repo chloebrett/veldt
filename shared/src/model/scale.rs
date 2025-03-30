@@ -30,13 +30,13 @@ pub enum Scale {
 
 #[cfg(test)]
 mod tests {
+    use crate::tests::test_util::assert_proto_round_trip;
+
     use super::*;
 
     #[test]
     fn convert_scale_to_proto_and_back() {
         let scale = Scale::Pentatonic;
-        let proto: ScaleProto = scale.into();
-        let result: Scale = proto.into();
-        assert_eq!(scale, result);
+        assert_proto_round_trip::<Scale, ScaleProto>(scale);
     }
 }

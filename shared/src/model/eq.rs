@@ -32,28 +32,3 @@ pub struct EqConfig {
 
     pub q: KnobPosition,
 }
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn convert_eq_type_to_proto_and_back() {
-        let eq_type = EqType::SimpleResonator;
-        let proto: EqTypeProto = eq_type.clone().into();
-        let result: EqType = proto.into();
-        assert_eq!(eq_type, result);
-    }
-
-    #[test]
-    fn convert_eq_config_to_proto_and_back() {
-        let eq_config = EqConfig {
-            kind: EqType::SimpleResonator,
-            fc: 100.0,
-            q: 1.0,
-        };
-        let proto: EqConfigProto = eq_config.clone().into();
-        let result: EqConfig = proto.into();
-        assert_eq!(eq_config, result);
-    }
-}

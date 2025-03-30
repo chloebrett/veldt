@@ -42,16 +42,3 @@ impl Add<PitchValue> for PitchName {
         (pitch_value + other).into()
     }
 }
-
-#[cfg(test)]
-mod test {
-    use super::*;
-
-    #[test]
-    fn convert_pitch_name_to_proto_and_back() {
-        let pitch_name: PitchName = 50.into();
-        let proto: PitchNameProto = pitch_name.into();
-        let result: PitchName = proto.into();
-        assert_eq!(pitch_name, result);
-    }
-}

@@ -113,69 +113,19 @@ pub struct MixerChannel {
 
 #[cfg(test)]
 mod tests {
-    use crate::model::{
-        AdsrEnvelope, DelayConfig, Effect, EffectMeta, EqConfig, EqType, GeneratorMeta,
-        GeneratorType, Note, PitchName, PlacedNote, ScaleValue, SimpleWaveConfig, WaveType,
+    use crate::{
+        model::{
+            AdsrEnvelope, DelayConfig, Effect, EffectMeta, EqConfig, EqType, GeneratorMeta,
+            GeneratorType, Note, PitchName, PlacedNote, ScaleValue, SimpleWaveConfig, WaveType,
+        },
+        tests::test_util::assert_proto_round_trip,
     };
 
     use super::*;
 
     #[test]
-    fn convert_track_placement_to_proto_and_back() {
-        let track_placement = TrackPlacement {
-            track_id: 0,
-            start_position: 0.0.into(),
-            clipped_duration: Some(0.0.into()),
-            visual_placement: 2,
-        };
-        let proto: TrackPlacementProto = track_placement.clone().into();
-        let result: TrackPlacement = proto.into();
-        assert_eq!(track_placement, result);
-    }
-
-    #[test]
-    fn convert_sample_to_proto_and_back() {
-        let sample = Sample {
-            data: vec![0.3, 5.3, 2.0],
-            sample_rate: 10.0,
-        };
-        let proto: SampleProto = sample.clone().into();
-        let result: Sample = proto.into();
-        assert_eq!(sample, result);
-    }
-
-    #[test]
-    fn convert_mixer_channel_to_proto_and_back() {
-        let mixer_channel = MixerChannel {
-            effects: vec![
-                EffectInstance {
-                    effect: Effect::SimpleEq {
-                        config: EqConfig {
-                            kind: EqType::SimpleResonator,
-                            fc: 1000.0,
-                            q: 1.0,
-                        },
-                    },
-                    meta: EffectMeta { id: 0, wet: 1.0 },
-                },
-                EffectInstance {
-                    effect: Effect::SimpleDelay {
-                        config: DelayConfig {
-                            amplitude: 0.5,
-                            delay_ms: 250.0,
-                        },
-                    },
-                    meta: EffectMeta { id: 1, wet: 0.5 },
-                },
-            ],
-        };
-        let proto: MixerChannelProto = mixer_channel.clone().into();
-        let result: MixerChannel = proto.into();
-        assert_eq!(mixer_channel, result);
-    }
-
-    #[test]
-    fn convert_project_to_proto_and_back() {
+    fn project_proto_round_trip() {
+        // Project must be fully populated for sufficient tesitng.
         let project = Project {
             name: "My Project".to_string(),
             tracks: vec![Track {
@@ -190,8 +140,12 @@ mod tests {
                     offset: OrderedFloat(0.0),
                 }],
             }],
-            // TODO: use track placements
-            track_placements: vec![],
+            track_placements: vec![TrackPlacement {
+                track_id: 3,
+                start_position: 2.5.into(),
+                clipped_duration: Some(5.2.into()),
+                visual_placement: 6,
+            }],
             samples: vec![Sample {
                 data: vec![0.0, 1.0, 3.0],
                 sample_rate: 1.0,
@@ -238,8 +192,6 @@ mod tests {
             }],
             bpm: 120.0,
         };
-        let proto: ProjectProto = project.clone().into();
-        let result: Project = proto.into();
-        assert_eq!(project, result);
+        assert_proto_round_trip::<Project, ProjectProto>(project);
     }
 }

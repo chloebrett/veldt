@@ -76,16 +76,3 @@ impl From<PitchValue> for ScaleValue {
         }
     }
 }
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn convert_scale_value_to_proto_and_back() {
-        let scale_value = ScaleValue::C;
-        let proto: ScaleValueProto = scale_value.into();
-        let result: ScaleValue = proto.into();
-        assert_eq!(scale_value, result);
-    }
-}
