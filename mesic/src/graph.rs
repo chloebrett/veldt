@@ -34,12 +34,25 @@ impl Node for BufferNode {
     fn process(&mut self, _inputs: &[Input], output: &mut [Buffer]) {
         for out_buf in output {
             let index = self.index;
-            let slice = &self.buffer[index..min(index + Buffer::LEN, self.buffer.len())];
+            let mut slice = &self.buffer[index..min(index + Buffer::LEN, self.buffer.len())];
 
-            // TODO: account for edge cases.
-            if out_buf.len() == slice.len() {
-                out_buf.copy_from_slice(slice);
+            // If the slice isn't long enough, fill the rest with zeroes.
+            let mut vec;
+            if slice.len() < Buffer::LEN {
+                vec = slice.to_vec();
+                vec.resize(Buffer::LEN, 0.0);
+                slice = &vec;
             }
+
+            if slice.len() > Buffer::LEN {
+                panic!(
+                    "Got a slice with length {}, which is more than {} and shouldn't happen!",
+                    slice.len(),
+                    Buffer::LEN
+                );
+            }
+
+            out_buf.copy_from_slice(slice);
         }
         self.index += Buffer::LEN;
     }
