@@ -1553,8 +1553,10 @@ dependencies = [
 name = "mesic"
 version = "0.1.0"
 dependencies = [
+ "dasp_envelope",
  "dasp_graph",
  "dasp_ring_buffer",
+ "dasp_rms",
  "ordered-float",
  "petgraph 0.5.1",
  "ringbuffer",

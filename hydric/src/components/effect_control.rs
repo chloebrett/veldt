@@ -8,6 +8,6 @@ pub fn effect_control(store: &Store, effect_index: usize, ui: &mut Ui) {
     match effect.effect {
         Effect::SimpleEq { .. } => eq_control(store, effect_index, ui),
         Effect::SimpleDelay { .. } => delay_control(store, effect_index, ui),
-        Effect::SimpleCompressor { .. } => panic!("Not implemented yet!"),
+        Effect::SimpleCompressor { .. } => {} // TODO: implement compressor UI
     }
 }
