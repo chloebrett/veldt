@@ -1,4 +1,4 @@
-use egui::{Pos2, Rect, pos2, vec2};
+use egui::{Rect, Shape, pos2, vec2};
 use shared::{
     model::{PitchName, PlacedNote},
     types::PitchValue,
@@ -34,12 +34,15 @@ impl Roll {
         }
     }
 
-    pub fn make_roll_shapes(&self) -> Vec<NoteRollShape> {
+    pub fn make_roll_shapes(&self) -> Vec<Shape> {
         let mut roll_objects = vec![];
         roll_objects.extend(self.make_all_background_notes(self.get_background_notes()));
         roll_objects.extend(self.make_all_bar_lines());
         roll_objects.extend(self.make_all_interactive_notes());
         roll_objects
+            .into_iter()
+            .map(|object| object.make_shape())
+            .collect()
     }
 
     fn get_background_notes(&self) -> Vec<PitchName> {

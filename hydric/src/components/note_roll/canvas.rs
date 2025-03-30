@@ -156,14 +156,17 @@ fn update_notes(
                 let scaled_pos = pos
                     .transform(to_screen.inverse())
                     .transform(note_roll_canvas.roll_transform.inverse())
-                    .clamp(pos2(0.0, 0.0), note_roll_canvas.roll_transform.from().size().to_pos2());
+                    .clamp(
+                        pos2(0.0, 0.0),
+                        note_roll_canvas.roll_transform.from().size().to_pos2(),
+                    );
                 let offset: OrderedFloat<f32> = scaled_pos.x.into();
-                let pitch_name = PitchName::from(note_roll_canvas.project_config.max_note - scaled_pos.y as i32);
+                let pitch_name =
+                    PitchName::from(note_roll_canvas.project_config.max_note - scaled_pos.y as i32);
                 dispatch_note(store, note_index, offset, pitch_name, track_index);
             }
         });
 }
-
 
 fn track_note_response(
     ui: &Ui,
@@ -257,8 +260,5 @@ impl NoteRollCanvas {
                 .transform(self.piano_transform),
         );
         shapes
-            .into_iter()
-            .map(|object| object.make_shape())
-            .collect()
     }
 }

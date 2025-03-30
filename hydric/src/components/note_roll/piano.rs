@@ -1,4 +1,4 @@
-use egui::{Rect, pos2, vec2};
+use egui::{Rect, Shape, pos2, vec2};
 use shared::{
     model::{PitchName, ScaleValue},
     types::PitchValue,
@@ -16,10 +16,13 @@ impl Piano {
         Piano { max_note, min_note }
     }
 
-    pub fn make_piano_shapes(&self) -> Vec<NoteRollShape> {
+    pub fn make_piano_shapes(&self) -> Vec<Shape> {
         let mut objects = vec![self.make_piano_board()];
         objects.extend(self.make_all_piano_keys(self.get_piano_notes()));
         objects
+            .into_iter()
+            .map(|object| object.make_shape())
+            .collect()
     }
 
     fn make_piano_board(&self) -> NoteRollShape {
