@@ -16,7 +16,7 @@ impl Piano {
         Piano { max_note, min_note }
     }
 
-    pub fn make_all_objects(&self) -> Vec<NoteRollShape> {
+    pub fn make_piano_shapes(&self) -> Vec<NoteRollShape> {
         let mut objects = vec![self.make_piano_board()];
         objects.extend(self.make_all_piano_keys(self.get_piano_notes()));
         objects

@@ -34,20 +34,12 @@ impl Roll {
         }
     }
 
-    pub fn make_all_objects(&self) -> Vec<NoteRollShape> {
+    pub fn make_roll_shapes(&self) -> Vec<NoteRollShape> {
         let mut roll_objects = vec![];
         roll_objects.extend(self.make_all_background_notes(self.get_background_notes()));
         roll_objects.extend(self.make_all_bar_lines());
         roll_objects.extend(self.make_all_interactive_notes());
         roll_objects
-    }
-
-    pub fn clamp_pos(&self, pos: Pos2) -> Pos2 {
-        let x = pos.x.clamp(self.offset, self.bars * self.bar_length);
-        let cursor_offset = 1.0; // Default Y value of cursor position felt strange.
-        let y = ((self.max_note as f32 - pos.y + cursor_offset) as i32)
-            .clamp(self.min_note, self.max_note) as f32;
-        pos2(x, y)
     }
 
     fn get_background_notes(&self) -> Vec<PitchName> {

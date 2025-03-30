@@ -86,7 +86,7 @@ fn draw_note_roll_canvas(store: &Store, ui: &mut Ui, track_index: usize) {
         let size = response.rect.size();
         let note_roll_canvas =
             NoteRollCanvas::new(store, project_config, size, piano_width, track_index);
-        let shapes = note_roll_canvas.make_all_shapes();
+        let shapes = note_roll_canvas.make_canvas_shapes();
         painter.extend(shapes.transform(to_screen));
         update_notes(
             ui,
@@ -153,16 +153,17 @@ fn update_notes(
             );
             let drag_pos = note_response.interact_pointer_pos();
             if let Some(pos) = drag_pos {
-                let pos_as_note = pos
+                let scaled_pos = pos
                     .transform(to_screen.inverse())
-                    .transform(note_roll_canvas.roll_transform.inverse());
-                let pos = note_roll_canvas.roll.clamp_pos(pos_as_note);
-                let offset: OrderedFloat<f32> = pos.x.into();
-                let pitch_name = PitchName::from(pos.y as i32);
+                    .transform(note_roll_canvas.roll_transform.inverse())
+                    .clamp(pos2(0.0, 0.0), note_roll_canvas.roll_transform.from().size().to_pos2());
+                let offset: OrderedFloat<f32> = scaled_pos.x.into();
+                let pitch_name = PitchName::from(note_roll_canvas.project_config.max_note - scaled_pos.y as i32);
                 dispatch_note(store, note_index, offset, pitch_name, track_index);
             }
         });
 }
+
 
 fn track_note_response(
     ui: &Ui,
@@ -246,13 +247,13 @@ impl NoteRollCanvas {
         }
     }
 
-    pub fn make_all_shapes(&self) -> Vec<Shape> {
+    pub fn make_canvas_shapes(&self) -> Vec<Shape> {
         // TODO Consider assigning render order values to shapes.
         let mut shapes = vec![];
-        shapes.extend(self.roll.make_all_objects().transform(self.roll_transform));
+        shapes.extend(self.roll.make_roll_shapes().transform(self.roll_transform));
         shapes.extend(
             self.piano
-                .make_all_objects()
+                .make_piano_shapes()
                 .transform(self.piano_transform),
         );
         shapes
