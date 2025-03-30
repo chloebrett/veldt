@@ -5,8 +5,7 @@ use shared::model::EffectInstance;
 use shared::types::Volume;
 use std::cmp::min;
 
-// TODO: consider StableGraph.
-pub type Graph = petgraph::graph::DiGraph<NodeData<BufferNode>, (), u32>;
+pub type Graph = petgraph::stable_graph::StableGraph<NodeData<BufferNode>, ()>;
 
 pub type Processor = dasp_graph::Processor<Graph>;
 
