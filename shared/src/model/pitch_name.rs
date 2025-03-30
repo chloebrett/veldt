@@ -42,3 +42,19 @@ impl Add<PitchValue> for PitchName {
         (pitch_value + other).into()
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn pitch_name_pitch_value_round_trip () {
+        let pitch_name = PitchName {
+            scale_value: ScaleValue::C,
+            octave: 4
+        };
+        let pitch_value: PitchValue = pitch_name.into();
+        let result: PitchName = pitch_value.into();
+        assert_eq!(pitch_name, result);
+    }
+}
