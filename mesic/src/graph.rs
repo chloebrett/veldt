@@ -18,8 +18,7 @@ pub struct RenderableGraph {
     processor: Processor,
 
     // For iteration.
-    processed_samples_count: usize, // index within buffer.
-    processed_buffers_count: usize, // number of buffers processed.
+    processed_samples_count: usize,
 }
 
 // If these are exceeded then the graph will dynamically allocate.
@@ -41,8 +40,7 @@ impl RenderableGraph {
             sample_count,
             output_node_index,
             processor: make_processor(),
-            processed_samples_count: Buffer::LEN, // to force a first render.
-            processed_buffers_count: 0,
+            processed_samples_count: 0,
         }
     }
 
@@ -69,7 +67,6 @@ impl RenderableGraph {
     pub fn reset(&mut self) {
         self.processor = make_processor();
         self.processed_samples_count = 0;
-        self.processed_buffers_count = 0;
     }
 }
 
@@ -77,16 +74,12 @@ impl Iterator for RenderableGraph {
     type Item = f32;
 
     fn next(&mut self) -> Option<Self::Item> {
-        if self.processed_samples_count >= Buffer::LEN {
+        if self.processed_samples_count % Buffer::LEN == 0 {
             self.processor
                 .process(&mut self.graph, self.output_node_index);
-            self.processed_samples_count = 0;
-            self.processed_buffers_count += 1;
         }
 
-        if self.processed_buffers_count * Buffer::LEN + self.processed_samples_count
-            >= self.sample_count
-        {
+        if self.processed_samples_count >= self.sample_count {
             return None;
         }
 
@@ -97,7 +90,7 @@ impl Iterator for RenderableGraph {
             .buffers;
 
         // For now, only return one channel.
-        let output = Some(buffers[0][self.processed_samples_count]);
+        let output = Some(buffers[0][self.processed_samples_count % Buffer::LEN]);
 
         self.processed_samples_count += 1;
         output
