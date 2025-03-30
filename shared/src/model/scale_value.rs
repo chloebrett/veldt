@@ -19,10 +19,6 @@ use strum::{Display, EnumIter, EnumString};
     IntoProto,
 )]
 pub enum ScaleValue {
-    A,
-    #[strum(serialize = "A#")]
-    ASharp,
-    B,
     C,
     #[strum(serialize = "C#")]
     CSharp,
@@ -36,6 +32,10 @@ pub enum ScaleValue {
     G,
     #[strum(serialize = "G#")]
     GSharp,
+    A,
+    #[strum(serialize = "A#")]
+    ASharp,
+    B,
 }
 
 impl From<ScaleValue> for PitchValue {
@@ -74,5 +74,26 @@ impl From<PitchValue> for ScaleValue {
             11 => ScaleValue::B,
             _ => panic!("{}", pitch_value), // This should never happen.
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn convert_from_scale_value_to_proto_and_back() {
+        let scale_value = ScaleValue::C;
+        let proto: ScaleValueProto = scale_value.into();
+        let result: ScaleValue = proto.into();
+        assert_eq!(scale_value, result);
+    }
+
+    #[test]
+    fn convert_from_proto_to_scale_value_and_back() {
+        let proto = ScaleValueProto::CScaleValue;
+        let scale_value: ScaleValue = proto.into();
+        let result: ScaleValueProto = scale_value.into();
+        assert_eq!(proto, result);
     }
 }
