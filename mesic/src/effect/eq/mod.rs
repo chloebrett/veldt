@@ -19,9 +19,13 @@ use resonator_sa::*;
 use resonator_simple::*;
 use shared::model::{EqConfig, EqType};
 
+pub trait ApplyFilter {
+    fn apply(&mut self, input: &[f32]) -> Vec<f32>;
+}
+
 impl ApplyEffect for EqConfig {
     fn apply(&self, input: &[f32]) -> Vec<f32> {
-        let filter: Box<dyn ApplyEffect> = match self.kind {
+        let mut filter: Box<dyn ApplyFilter> = match self.kind {
             EqType::SimpleResonator => Box::new(resonator_simple(self)),
             EqType::SmithAngellResonator => Box::new(resonator_smith_angell(self)),
             EqType::SimpleFirstOrderLowPass => Box::new(lhp_first_order(self, LowHigh::Low)),
