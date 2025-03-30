@@ -1,6 +1,6 @@
 use crate::SAMPLE_RATE;
 use crate::effect::apply_effects;
-use crate::sig::{BufferNode, Graph, Processor};
+use crate::graph::{BufferNode, Graph, Processor};
 use crate::wave::polyphonic_wave;
 use dasp_graph::NodeData;
 use shared::model::{GeneratorType, Project};
@@ -48,8 +48,8 @@ pub fn render(project: &Project) -> Vec<f32> {
     let mut p = Processor::with_capacity(max_nodes);
 
     // Add some nodes and edges...
-    let node: BufferNode = output_buffer.into();
-    let node_index = g.add_node(NodeData::new1(node));
+    let buffer_node: BufferNode = output_buffer.into();
+    let node_index = g.add_node(NodeData::new1(buffer_node));
 
     // Process all nodes within the graph that output to the node at `node_id`.
     let mut output: Vec<f32> = vec![];
