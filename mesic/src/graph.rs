@@ -1,14 +1,21 @@
 use crate::effect::ApplyEffect;
 use dasp_graph::{BoxedNode, Buffer, Input, Node, NodeData};
+use petgraph::stable_graph::{NodeIndex, StableGraph};
 use shared::model::Effect;
 use shared::model::EffectInstance;
 use shared::types::Volume;
 use std::cmp::min;
-use petgraph::stable_graph::{StableGraph, NodeIndex};
 
 pub type Graph = StableGraph<NodeData<BoxedNode>, ()>;
 
 pub type Processor = dasp_graph::Processor<Graph>;
+
+/// A Graph with the required metadata to facilitate immediate processing into a Vec.
+pub struct RenderableGraph {
+    pub graph: Graph,
+    pub sample_count: usize,
+    pub output_node_index: NodeIndex,
+}
 
 // If these are exceeded then the graph will dynamically allocate.
 const MAX_NODES: usize = 1024;
@@ -22,21 +29,26 @@ pub fn make_processor() -> Processor {
     Processor::with_capacity(MAX_NODES)
 }
 
-pub fn to_vec(graph: &mut Graph, sample_count: usize, node_index: NodeIndex) -> Vec<f32> {
-    let mut output: Vec<f32> = vec![];
-    let mut processor = make_processor();
-    let process_iterations = sample_count / Buffer::LEN + 1;
+impl RenderableGraph {
+    pub fn to_vec(&mut self) -> Vec<f32> {
+        let graph = &mut self.graph;
+        let sample_count = self.sample_count;
+        let output_node_index = self.output_node_index;
 
-    for _ in 0..process_iterations {
-        processor.process(graph, node_index);
-        // TODO: optimize.
-        let vec = graph.node_weight(node_index).unwrap().buffers[0].to_vec();
-        output.extend(vec);
+        let mut output: Vec<f32> = vec![];
+        let mut processor = make_processor();
+        let process_iterations = sample_count / Buffer::LEN + 1;
+
+        for _ in 0..process_iterations {
+            processor.process(graph, output_node_index);
+            // TODO: optimize.
+            let vec = graph.node_weight(output_node_index).unwrap().buffers[0].to_vec();
+            output.extend(vec);
+        }
+
+        output
     }
-
-    output
 }
-
 // Note containing a buffer which it outputs.
 pub struct BufferNode {
     buffer: Vec<f32>,

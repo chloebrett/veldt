@@ -15,7 +15,8 @@ pub fn play_control(
 ) {
     if ui.button("Play (local)").clicked() {
         let volume = store.get().volume;
-        let buffered_output = local_render(&store.get().project, volume);
+        let graph = &mut local_render(&store.get().project, volume);
+        let buffered_output = graph.to_vec();
 
         let signal = dasp_signal::from_iter(buffered_output);
         audio_state.handle = Some(play(signal));

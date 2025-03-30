@@ -1,12 +1,12 @@
 use crate::SAMPLE_RATE;
 use crate::effect::apply_effects;
-use crate::graph::{AmpNode, BufferNode, Graph, Processor, make_graph, to_vec};
+use crate::graph::{AmpNode, BufferNode, RenderableGraph, make_graph};
 use crate::wave::polyphonic_wave;
-use dasp_graph::{BoxedNode, NodeData, Buffer};
+use dasp_graph::{BoxedNode, NodeData};
 use shared::model::{GeneratorType, Project};
 use shared::types::Volume;
 
-pub fn render(project: &Project, volume: Volume) -> Vec<f32> {
+pub fn render(project: &Project, volume: Volume) -> RenderableGraph {
     let track = &project.tracks[0];
     let generator = &project.generators[0];
     let mixer_channel = &project.mixer[0];
@@ -53,5 +53,9 @@ pub fn render(project: &Project, volume: Volume) -> Vec<f32> {
     graph.add_edge(buffer_node_index, amp_node_index, ());
 
     let sample_count = total_wave.len();
-    to_vec(&mut graph, sample_count, amp_node_index)
+    RenderableGraph {
+        graph,
+        sample_count,
+        output_node_index: amp_node_index,
+    }
 }

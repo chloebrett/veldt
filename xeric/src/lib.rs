@@ -33,7 +33,8 @@ impl Render for MyRender {
             .ok_or(tonic::Status::invalid_argument("Project must be supplied"))?
             .into();
         let volume = 1.0; // TODO: handle on client instead of in render step.
-        let bytes = as_bytes(&render(&project, volume));
+        let graph = &mut render(&project, volume);
+        let bytes = as_bytes(&graph.to_vec());
 
         Ok(tonic::Response::new(RenderReply { audio: bytes }))
     }
