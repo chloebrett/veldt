@@ -14,15 +14,23 @@ pub type Graph = petgraph::graph::DiGraph<NodeData<BufferNode>, (), u32>;
 pub type Processor = dasp_graph::Processor<Graph>;
 
 // Note containing a buffer which it outputs.
-// TODO: make fields private.
 pub struct BufferNode {
-    pub buffer: Vec<f32>,
-    pub index: usize,
+    buffer: Vec<f32>,
+    index: usize,
 }
 
 impl BufferNode {
-    fn reset(&mut self) {
+    fn _reset(&mut self) {
         self.index = 0;
+    }
+}
+
+impl From<Vec<f32>> for BufferNode {
+    fn from(item: Vec<f32>) -> Self {
+        BufferNode {
+            buffer: item,
+            index: 0,
+        }
     }
 }
 

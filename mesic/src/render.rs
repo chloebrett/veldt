@@ -2,7 +2,7 @@ use crate::SAMPLE_RATE;
 use crate::sig::{BufferNode, Graph, Processor};
 use crate::wave::polyphonic_wave;
 use dasp_graph::NodeData;
-use dasp_signal::Signal;
+use crate::effect::apply_effects;
 use shared::model::{GeneratorType, Project};
 
 pub fn render(project: &Project) -> Vec<f32> {
@@ -37,8 +37,9 @@ pub fn render(project: &Project) -> Vec<f32> {
         wave.iter().enumerate().for_each(|(i, value)| {
             total_wave[i + offset_samples as usize] += value;
         })
-        // TODO: account for offsets properly, instead of just appending here.
     }
+
+    let output_buffer = apply_effects(&total_wave, &mixer_channel.effects);
 
     // Create a graph and a processor with some suitable capacity to avoid dynamic allocation.
     let max_nodes = 1024;
@@ -47,23 +48,18 @@ pub fn render(project: &Project) -> Vec<f32> {
     let mut p = Processor::with_capacity(max_nodes);
 
     // Add some nodes and edges...
-    let node = g.add_node(NodeData::new1(BufferNode {
-        buffer: total_wave.clone(),
-        index: 0,
-    }));
+    let node: BufferNode = output_buffer.into();
+    let node_index = g.add_node(NodeData::new1(node));
 
-    // Process all nodes within the graph that output to the node at `n_id`.
+    // Process all nodes within the graph that output to the node at `node_id`.
     let mut output: Vec<f32> = vec![];
     let process_count = total_wave.len() / 64 + 1;
     for _ in 0..process_count {
-        p.process(&mut g, node);
+        p.process(&mut g, node_index);
         // TODO: optimize.
-        let vec: Vec<_> = g.node_weight(node).unwrap().buffers[0].iter().collect();
+        let vec: Vec<_> = g.node_weight(node_index).unwrap().buffers[0].iter().collect();
         output.extend(vec);
     }
 
     output
-
-    // TODO before submit: add effects back
-    //apply_effects(wave_node, &mixer_channel.effects)
 }
