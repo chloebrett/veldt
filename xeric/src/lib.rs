@@ -33,7 +33,7 @@ impl Render for MyRender {
             .ok_or(tonic::Status::invalid_argument("Project must be supplied"))?
             .into();
         let graph = &mut render(&project);
-        let bytes = as_bytes(&graph.to_vec());
+        let bytes = as_bytes(&graph.collect());
 
         Ok(tonic::Response::new(RenderReply { audio: bytes }))
     }

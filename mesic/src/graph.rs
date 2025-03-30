@@ -56,37 +56,14 @@ impl RenderableGraph {
         self
     }
 
-    // Helper for playing samples.
-    // Should be removed once playing samples is properly integrated.
-    // Does not handle clipping, etc.
+    /// Creates a graph that plays the buffer contained in a Vec.
+    /// Chain with .add_amp_node to control volume and/or clip.
     pub fn from_vec(vec: Vec<f32>) -> Self {
         let mut graph = make_graph();
         let sample_count = vec.len();
         let buffer_node: BufferNode = vec.into();
         let buffer_node_index = graph.add_node(NodeData::new1(BoxedNode::new(buffer_node)));
         RenderableGraph::new(graph, sample_count, buffer_node_index)
-    }
-
-    pub fn to_vec(&mut self) -> Vec<f32> {
-        self.reset();
-
-        let mut output: Vec<f32> = Vec::with_capacity(self.sample_count);
-        let process_iterations = self.sample_count / Buffer::LEN + 1;
-
-        for _ in 0..process_iterations {
-            self.processor
-                .process(&mut self.graph, self.output_node_index);
-            // TODO: optimize.
-            let vec = self
-                .graph
-                .node_weight(self.output_node_index)
-                .unwrap()
-                .buffers[0]
-                .to_vec();
-            output.extend(vec);
-        }
-
-        output
     }
 
     pub fn reset(&mut self) {
