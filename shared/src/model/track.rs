@@ -60,4 +60,18 @@ mod tests {
         let result: Track = proto.into();
         assert_eq!(track, result);
     }
+
+    #[test]
+    fn convert_placed_note_to_proto_and_back() {
+        let placed_note = PlacedNote {
+            note: Note {
+                pitch_name: 25.into(),
+                beats: 1.0,
+            },
+            offset: 0.0.into()
+        };
+        let proto: PlacedNoteProto = placed_note.clone().into();
+        let result: PlacedNote = proto.into();
+        assert_eq!(placed_note, result);
+    }
 }
