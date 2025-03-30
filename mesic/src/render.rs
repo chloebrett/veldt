@@ -1,8 +1,8 @@
 use crate::SAMPLE_RATE;
 use crate::effect::apply_effects;
-use crate::graph::{AmpNode, BufferNode, Graph, Processor};
+use crate::graph::{AmpNode, BufferNode, Graph, Processor, make_graph, to_vec};
 use crate::wave::polyphonic_wave;
-use dasp_graph::{BoxedNode, NodeData};
+use dasp_graph::{BoxedNode, NodeData, Buffer};
 use shared::model::{GeneratorType, Project};
 use shared::types::Volume;
 
@@ -42,33 +42,16 @@ pub fn render(project: &Project, volume: Volume) -> Vec<f32> {
 
     let output_buffer = apply_effects(&total_wave, &mixer_channel.effects);
 
-    // Create a graph and a processor with some suitable capacity to avoid dynamic allocation.
-    let max_nodes = 1024;
-    let max_edges = 1024;
-    let mut g = Graph::with_capacity(max_nodes, max_edges);
-    let mut p = Processor::with_capacity(max_nodes);
-
-    // Add some nodes and edges...
+    let mut graph = make_graph();
     let buffer_node: BufferNode = output_buffer.into();
-    let buffer_node_index = g.add_node(NodeData::new1(BoxedNode::new(buffer_node)));
+    let buffer_node_index = graph.add_node(NodeData::new1(BoxedNode::new(buffer_node)));
     let amp_node = AmpNode {
         volume,
         should_clip: true,
     };
-    let amp_node_index = g.add_node(NodeData::new1(BoxedNode::new(amp_node)));
-    g.add_edge(buffer_node_index, amp_node_index, ());
+    let amp_node_index = graph.add_node(NodeData::new1(BoxedNode::new(amp_node)));
+    graph.add_edge(buffer_node_index, amp_node_index, ());
 
-    // Process all nodes within the graph that output to the node at `node_id`.
-    let mut output: Vec<f32> = vec![];
-    let process_count = total_wave.len() / 64 + 1;
-    for _ in 0..process_count {
-        p.process(&mut g, amp_node_index);
-        // TODO: optimize.
-        let vec: Vec<_> = g.node_weight(amp_node_index).unwrap().buffers[0]
-            .iter()
-            .collect();
-        output.extend(vec);
-    }
-
-    output
+    let sample_count = total_wave.len();
+    to_vec(&mut graph, sample_count, amp_node_index)
 }

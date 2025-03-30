@@ -4,10 +4,38 @@ use shared::model::Effect;
 use shared::model::EffectInstance;
 use shared::types::Volume;
 use std::cmp::min;
+use petgraph::stable_graph::{StableGraph, NodeIndex};
 
-pub type Graph = petgraph::stable_graph::StableGraph<NodeData<BoxedNode>, ()>;
+pub type Graph = StableGraph<NodeData<BoxedNode>, ()>;
 
 pub type Processor = dasp_graph::Processor<Graph>;
+
+// If these are exceeded then the graph will dynamically allocate.
+const MAX_NODES: usize = 1024;
+const MAX_EDGES: usize = 1024;
+
+pub fn make_graph() -> Graph {
+    Graph::with_capacity(MAX_NODES, MAX_EDGES)
+}
+
+pub fn make_processor() -> Processor {
+    Processor::with_capacity(MAX_NODES)
+}
+
+pub fn to_vec(graph: &mut Graph, sample_count: usize, node_index: NodeIndex) -> Vec<f32> {
+    let mut output: Vec<f32> = vec![];
+    let mut processor = make_processor();
+    let process_iterations = sample_count / Buffer::LEN + 1;
+
+    for _ in 0..process_iterations {
+        processor.process(graph, node_index);
+        // TODO: optimize.
+        let vec = graph.node_weight(node_index).unwrap().buffers[0].to_vec();
+        output.extend(vec);
+    }
+
+    output
+}
 
 // Note containing a buffer which it outputs.
 pub struct BufferNode {
