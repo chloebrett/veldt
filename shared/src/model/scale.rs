@@ -27,3 +27,16 @@ pub enum Scale {
     HarmonicMinor,
     Pentatonic,
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn convert_scale_to_proto_and_back() {
+        let scale= Scale::Pentatonic;
+        let proto: ScaleProto = scale.into();
+        let result: Scale = proto.into();
+        assert_eq!(scale, result);
+    }
+}
