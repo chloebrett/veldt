@@ -16,10 +16,6 @@ pub fn sum(a: &[f32], b: &[f32]) -> Vec<f32> {
     output
 }
 
-pub fn mult(vec: &[f32], scalar: f32) -> Vec<f32> {
-    vec.iter().map(|it| it * scalar).collect()
-}
-
 // Returns the frequency based on the distance from reference pitch.
 pub fn freq(pitch_name: PitchName) -> Freq {
     let pitch: PitchValue = pitch_name.into();

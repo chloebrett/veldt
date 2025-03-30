@@ -1,6 +1,6 @@
 use egui::Ui;
 use shared::model::Effect;
-use shared::types::{KnobPosition, Milliseconds, Volume};
+use shared::types::{KnobPosition, Milliseconds};
 use state::{Action, Selector, Store, get_set};
 
 pub fn delay_control(store: &Store, effect_index: usize, ui: &mut Ui) {
@@ -15,16 +15,6 @@ pub fn delay_control(store: &Store, effect_index: usize, ui: &mut Ui) {
 
     ui.label("Delay");
 
-    let amplitude = config.amplitude as f64;
-    ui.add(
-        egui::Slider::from_get_set(
-            0.0..=1.0,
-            get_set(amplitude, |it| {
-                store.dispatch(&sel, Action::SetDelayAmplitude(it as Volume))
-            }),
-        )
-        .text("Delay amplitude"),
-    );
     ui.add(
         egui::Slider::from_get_set(
             1.0..=1000.0,

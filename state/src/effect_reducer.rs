@@ -13,11 +13,6 @@ pub fn effect_reducer(effect: &mut EffectInstance, action: &Action) -> Action {
 
     match &mut effect.effect {
         Effect::SimpleDelay { config } => match action {
-            Action::SetDelayAmplitude(amplitude) => {
-                let prev = config.amplitude;
-                config.amplitude = *amplitude;
-                Action::SetDelayAmplitude(prev)
-            }
             Action::SetDelayMs(delay_ms) => {
                 let prev = config.delay_ms;
                 config.delay_ms = *delay_ms;

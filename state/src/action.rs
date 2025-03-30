@@ -20,7 +20,6 @@ pub enum Action {
     SetOscCount(u32),
     SetDetuneCents(KnobPosition),
     SetEnvelope(AdsrEnvelope),
-    SetDelayAmplitude(Volume),
     SetDelayMs(Milliseconds),
     SetEffectWet(KnobPosition),
     SetEqKind(EqType),

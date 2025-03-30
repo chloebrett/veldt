@@ -16,7 +16,8 @@ pub fn play_control(
 ) {
     if ui.button("Play (local)").clicked() {
         let volume = store.get().volume;
-        let graph = local_render(&store.get().project).add_amp_node(AmpNode {
+        let mut graph = local_render(&store.get().project);
+        graph.add_node(AmpNode {
             volume,
             should_clip: true,
         });
@@ -27,11 +28,11 @@ pub fn play_control(
             if ui.button("Play (server)").clicked() {
                 let volume = store.get().volume;
                 audio_state.audio = server_audio.to_vec();
-                let graph =
-                    RenderableGraph::from_vec(audio_state.audio.clone()).add_amp_node(AmpNode {
-                        volume,
-                        should_clip: true,
-                    });
+                let mut graph = RenderableGraph::from_vec(audio_state.audio.clone());
+                graph.add_node(AmpNode {
+                    volume,
+                    should_clip: true,
+                });
                 audio_state.handle = Some(play(graph));
             }
         }

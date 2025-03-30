@@ -3,7 +3,7 @@ use crate::pmodel::{
     CompressorConfigProto, DelayConfigProto, EffectInstanceProto, EffectMetaProto,
     SimpleCompressorProto, SimpleDelayProto, SimpleEqProto, effect_instance_proto,
 };
-use crate::types::{Decibels, KnobPosition, Milliseconds, Volume};
+use crate::types::{Decibels, KnobPosition, Milliseconds};
 use effect_instance_proto::Effect as EffectProto;
 use local_macro::{FromProto, IntoProto};
 
@@ -72,7 +72,6 @@ pub struct EffectMeta {
 
 #[derive(Clone, Debug, PartialEq, FromProto, IntoProto)]
 pub struct DelayConfig {
-    pub amplitude: Volume,
     pub delay_ms: Milliseconds,
 }
 

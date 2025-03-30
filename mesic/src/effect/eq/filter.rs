@@ -6,6 +6,7 @@ pub struct FirstOrderFilter {
     a1: f32,
     b1: f32,
 
+    // TODO: consolidate the ring buffer types. We use dasp_ring_buffer for the delay nodes.
     x_buffer: AllocRingBuffer<f32>,
     y_buffer: AllocRingBuffer<f32>,
 }

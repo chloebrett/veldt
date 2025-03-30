@@ -23,7 +23,8 @@ pub fn sample_control(
         let sample = store.get().project.samples[0].clone();
         audio_state.audio = sample.data.clone();
         let volume = store.get().volume;
-        let graph = RenderableGraph::from_vec(sample.data).add_amp_node(AmpNode {
+        let mut graph = RenderableGraph::from_vec(sample.data);
+        graph.add_node(AmpNode {
             volume,
             should_clip: true,
         });

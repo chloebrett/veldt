@@ -1,5 +1,4 @@
 use crate::SAMPLE_RATE;
-use crate::effect::apply_effects;
 use crate::graph::{BufferNode, RenderableGraph, make_graph};
 use crate::wave::polyphonic_wave;
 use dasp_graph::{BoxedNode, NodeData};
@@ -18,7 +17,7 @@ pub fn render(project: &Project) -> RenderableGraph {
         .max_by(|a, b| a.total_cmp(b))
         .unwrap_or(0.0);
     let track_samples = (track_beats / bpm * 60.0 * SAMPLE_RATE as f32) as usize;
-    let mut total_wave: Vec<f32> = vec![0.0; track_samples];
+    let mut output: Vec<f32> = vec![0.0; track_samples];
 
     let generator_config = match &generator.kind {
         GeneratorType::SimpleWave { config } => config,
@@ -35,16 +34,20 @@ pub fn render(project: &Project) -> RenderableGraph {
 
         let offset_samples = *note.offset / bpm * 60.0 * SAMPLE_RATE as f32;
         wave.iter().enumerate().for_each(|(i, value)| {
-            total_wave[i + offset_samples as usize] += value;
+            output[i + offset_samples as usize] += value;
         })
     }
 
-    let output_buffer = apply_effects(&total_wave, &mixer_channel.effects);
-    let sample_count = output_buffer.len();
-
     let mut graph = make_graph();
-    let buffer_node: BufferNode = output_buffer.into();
+
+    let buffer_node: BufferNode = output.into();
     let buffer_node_index = graph.add_node(NodeData::new1(BoxedNode::new(buffer_node)));
 
-    RenderableGraph::new(graph, sample_count, buffer_node_index)
+    let mut renderable_graph = RenderableGraph::new(graph, track_samples, buffer_node_index);
+
+    for effect in &mixer_channel.effects {
+        renderable_graph.add_effect_with_mixer(effect.clone());
+    }
+
+    renderable_graph
 }
