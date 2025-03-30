@@ -91,6 +91,8 @@ impl RenderableGraph {
 
     pub fn reset(&mut self) {
         self.processor = make_processor();
+        self.processed_samples_count = 0;
+        self.processed_buffers_count = 0;
     }
 }
 
@@ -182,7 +184,7 @@ impl Node for EffectNode {
     fn process(&mut self, inputs: &[Input], output: &mut [Buffer]) {
         for (out_buf, in_buf) in output
             .iter_mut()
-            .zip(inputs.get(0).expect("Expected one input").buffers())
+            .zip(inputs.first().expect("Expected one input").buffers())
         {
             let buf = match &self.instance.effect {
                 // TODO: use a dasp_graph Delay node.
@@ -208,10 +210,10 @@ impl Node for AmpNode {
     fn process(&mut self, inputs: &[Input], output: &mut [Buffer]) {
         for (out_buf, in_buf) in output
             .iter_mut()
-            .zip(inputs.get(0).expect("Expected one input").buffers())
+            .zip(inputs.first().expect("Expected one input").buffers())
         {
             let buf: Vec<f32> = in_buf
-                .into_iter()
+                .iter()
                 .map(|it| {
                     let mut amped = it * self.volume;
                     if self.should_clip {

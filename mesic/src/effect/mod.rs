@@ -28,10 +28,10 @@ fn mix(dry: &[f32], wet: &[f32], ratio: KnobPosition) -> Vec<f32> {
 
 fn apply_effect(dry_signal: &[f32], effect: &EffectInstance) -> Vec<f32> {
     let wet_signal = match &effect.effect {
-        Effect::SimpleDelay { config } => config.apply(&dry_signal),
-        Effect::SimpleEq { config } => config.apply(&dry_signal),
+        Effect::SimpleDelay { config } => config.apply(dry_signal),
+        Effect::SimpleEq { config } => config.apply(dry_signal),
         _ => panic!("Effect not implemented yet!"),
     };
 
-    mix(&dry_signal, &wet_signal, effect.meta.wet)
+    mix(dry_signal, &wet_signal, effect.meta.wet)
 }

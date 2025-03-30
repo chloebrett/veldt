@@ -1,10 +1,9 @@
 use crate::SAMPLE_RATE;
 use crate::effect::apply_effects;
-use crate::graph::{AmpNode, BufferNode, RenderableGraph, make_graph};
+use crate::graph::{BufferNode, RenderableGraph, make_graph};
 use crate::wave::polyphonic_wave;
 use dasp_graph::{BoxedNode, NodeData};
 use shared::model::{GeneratorType, Project};
-use shared::types::Volume;
 
 pub fn render(project: &Project) -> RenderableGraph {
     let track = &project.tracks[0];
