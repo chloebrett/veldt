@@ -1,11 +1,12 @@
 use crate::SAMPLE_RATE;
 use crate::effect::apply_effects;
-use crate::graph::{BufferNode, Graph, Processor};
+use crate::graph::{BufferNode, Graph, Processor, AmpNode};
 use crate::wave::polyphonic_wave;
-use dasp_graph::NodeData;
+use dasp_graph::{NodeData, BoxedNode};
 use shared::model::{GeneratorType, Project};
+use shared::types::Volume;
 
-pub fn render(project: &Project) -> Vec<f32> {
+pub fn render(project: &Project, volume: Volume) -> Vec<f32> {
     let track = &project.tracks[0];
     let generator = &project.generators[0];
     let mixer_channel = &project.mixer[0];
@@ -49,15 +50,21 @@ pub fn render(project: &Project) -> Vec<f32> {
 
     // Add some nodes and edges...
     let buffer_node: BufferNode = output_buffer.into();
-    let node_index = g.add_node(NodeData::new1(buffer_node));
+    let buffer_node_index = g.add_node(NodeData::new1(BoxedNode::new(buffer_node)));
+    let amp_node = AmpNode {
+        volume,
+        should_clip: true,
+    };
+    let amp_node_index = g.add_node(NodeData::new1(BoxedNode::new(amp_node)));
+    g.add_edge(buffer_node_index, amp_node_index, ());
 
     // Process all nodes within the graph that output to the node at `node_id`.
     let mut output: Vec<f32> = vec![];
     let process_count = total_wave.len() / 64 + 1;
     for _ in 0..process_count {
-        p.process(&mut g, node_index);
+        p.process(&mut g, amp_node_index);
         // TODO: optimize.
-        let vec: Vec<_> = g.node_weight(node_index).unwrap().buffers[0]
+        let vec: Vec<_> = g.node_weight(amp_node_index).unwrap().buffers[0]
             .iter()
             .collect();
         output.extend(vec);

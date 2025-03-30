@@ -1,11 +1,11 @@
 use crate::effect::ApplyEffect;
-use dasp_graph::{Buffer, Input, Node, NodeData};
+use dasp_graph::{Buffer, Input, Node, NodeData, BoxedNode};
 use shared::model::Effect;
 use shared::model::EffectInstance;
 use shared::types::Volume;
 use std::cmp::min;
 
-pub type Graph = petgraph::stable_graph::StableGraph<NodeData<BufferNode>, ()>;
+pub type Graph = petgraph::stable_graph::StableGraph<NodeData<BoxedNode>, ()>;
 
 pub type Processor = dasp_graph::Processor<Graph>;
 

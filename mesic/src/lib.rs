@@ -5,7 +5,6 @@ mod render;
 mod scale;
 mod sig;
 mod graph;
-mod track;
 mod wave;
 
 pub use consts::SAMPLE_RATE;

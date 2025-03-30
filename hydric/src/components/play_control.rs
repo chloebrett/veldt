@@ -15,8 +15,8 @@ pub fn play_control(
 ) {
     if ui.button("Play (local)").clicked() {
         // TODO: add back volume.
-        let _volume = store.get().volume;
-        let buffered_output = local_render(&store.get().project);
+        let volume = store.get().volume;
+        let buffered_output = local_render(&store.get().project, volume);
 
         let signal = dasp_signal::from_iter(buffered_output);
         audio_state.handle = Some(play(signal));
