@@ -2,6 +2,7 @@ use super::{AsyncState, AudioState};
 use crate::audio_player::play;
 use crate::rpc::load_sample;
 use egui::{Button, Ui};
+use mesic::graph::{AmpNode, RenderableGraph};
 use poll_promise::Promise;
 use shared::model::Sample;
 use state::{Action, Store};
@@ -21,8 +22,12 @@ pub fn sample_control(
     {
         let sample = store.get().project.samples[0].clone();
         audio_state.audio = sample.data.clone();
-        let signal = dasp_signal::from_iter(sample.data);
-        audio_state.handle = Some(play(signal));
+        let volume = store.get().volume;
+        let graph = RenderableGraph::from_vec(sample.data).add_amp_node(AmpNode {
+            volume,
+            should_clip: true,
+        });
+        audio_state.handle = Some(play(graph));
     }
 
     if ui.button("Load sample").clicked() {

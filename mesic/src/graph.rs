@@ -1,13 +1,108 @@
 use crate::effect::ApplyEffect;
 use dasp_graph::{BoxedNode, Buffer, Input, Node, NodeData};
+use petgraph::stable_graph::{NodeIndex, StableGraph};
 use shared::model::Effect;
 use shared::model::EffectInstance;
 use shared::types::Volume;
 use std::cmp::min;
 
-pub type Graph = petgraph::stable_graph::StableGraph<NodeData<BoxedNode>, ()>;
+pub type Graph = StableGraph<NodeData<BoxedNode>, ()>;
 
 pub type Processor = dasp_graph::Processor<Graph>;
+
+/// A Graph with the required metadata to facilitate immediate processing into a Vec.
+pub struct RenderableGraph {
+    graph: Graph,
+    sample_count: usize,
+    output_node_index: NodeIndex,
+    processor: Processor,
+
+    // For iteration.
+    processed_samples_count: usize, // index within buffer.
+    processed_buffers_count: usize, // number of buffers processed.
+}
+
+// If these are exceeded then the graph will dynamically allocate.
+const MAX_NODES: usize = 1024;
+const MAX_EDGES: usize = 1024;
+
+pub fn make_graph() -> Graph {
+    Graph::with_capacity(MAX_NODES, MAX_EDGES)
+}
+
+pub fn make_processor() -> Processor {
+    Processor::with_capacity(MAX_NODES)
+}
+
+impl RenderableGraph {
+    pub fn new(graph: Graph, sample_count: usize, output_node_index: NodeIndex) -> Self {
+        RenderableGraph {
+            graph,
+            sample_count,
+            output_node_index,
+            processor: make_processor(),
+            processed_samples_count: Buffer::LEN, // to force a first render.
+            processed_buffers_count: 0,
+        }
+    }
+
+    pub fn add_amp_node(mut self, amp_node: AmpNode) -> Self {
+        let amp_node_index = self
+            .graph
+            .add_node(NodeData::new1(BoxedNode::new(amp_node)));
+        self.graph
+            .add_edge(self.output_node_index, amp_node_index, ());
+        self.output_node_index = amp_node_index;
+        self
+    }
+
+    /// Creates a graph that plays the buffer contained in a Vec.
+    /// Chain with .add_amp_node to control volume and/or clip.
+    pub fn from_vec(vec: Vec<f32>) -> Self {
+        let mut graph = make_graph();
+        let sample_count = vec.len();
+        let buffer_node: BufferNode = vec.into();
+        let buffer_node_index = graph.add_node(NodeData::new1(BoxedNode::new(buffer_node)));
+        RenderableGraph::new(graph, sample_count, buffer_node_index)
+    }
+
+    pub fn reset(&mut self) {
+        self.processor = make_processor();
+        self.processed_samples_count = 0;
+        self.processed_buffers_count = 0;
+    }
+}
+
+impl Iterator for RenderableGraph {
+    type Item = f32;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        if self.processed_samples_count >= Buffer::LEN {
+            self.processor
+                .process(&mut self.graph, self.output_node_index);
+            self.processed_samples_count = 0;
+            self.processed_buffers_count += 1;
+        }
+
+        if self.processed_buffers_count * Buffer::LEN + self.processed_samples_count
+            >= self.sample_count
+        {
+            return None;
+        }
+
+        let buffers = &self
+            .graph
+            .node_weight(self.output_node_index)
+            .unwrap()
+            .buffers;
+
+        // For now, only return one channel.
+        let output = Some(buffers[0][self.processed_samples_count]);
+
+        self.processed_samples_count += 1;
+        output
+    }
+}
 
 // Note containing a buffer which it outputs.
 pub struct BufferNode {
@@ -66,7 +161,7 @@ impl Node for EffectNode {
     fn process(&mut self, inputs: &[Input], output: &mut [Buffer]) {
         for (out_buf, in_buf) in output
             .iter_mut()
-            .zip(inputs.get(0).expect("Expected one input").buffers())
+            .zip(inputs.first().expect("Expected one input").buffers())
         {
             let buf = match &self.instance.effect {
                 // TODO: use a dasp_graph Delay node.
@@ -92,10 +187,10 @@ impl Node for AmpNode {
     fn process(&mut self, inputs: &[Input], output: &mut [Buffer]) {
         for (out_buf, in_buf) in output
             .iter_mut()
-            .zip(inputs.get(0).expect("Expected one input").buffers())
+            .zip(inputs.first().expect("Expected one input").buffers())
         {
             let buf: Vec<f32> = in_buf
-                .into_iter()
+                .iter()
                 .map(|it| {
                     let mut amped = it * self.volume;
                     if self.should_clip {

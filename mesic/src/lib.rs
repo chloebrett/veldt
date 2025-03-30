@@ -1,7 +1,7 @@
 mod consts;
 mod effect;
 mod envelope;
-mod graph;
+pub mod graph;
 mod render;
 mod scale;
 mod sig;
