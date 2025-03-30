@@ -100,6 +100,71 @@ fn draw_note_roll_canvas(store: &Store, ui: &mut Ui, track_index: usize) {
     });
 }
 
+struct NoteRollCanvas {
+    piano: Piano,
+    roll: Roll,
+    project_config: ProjectConfig,
+    piano_transform: RectTransform,
+    roll_transform: RectTransform,
+}
+
+impl NoteRollCanvas {
+    pub fn new(
+        store: &Store,
+        project_config: ProjectConfig,
+        size: Vec2,
+        piano_width: f32,
+        track_index: usize,
+    ) -> Self {
+        let piano_transform = RectTransform::from_to(
+            Rect::from_min_size(
+                pos2(0.0, 0.0),
+                vec2(
+                    1.0,
+                    (project_config.max_note - project_config.min_note) as f32,
+                ),
+            ),
+            Rect::from_min_size(pos2(0.0, 0.0), vec2(piano_width, size.y)),
+        );
+        let roll_transform = RectTransform::from_to(
+            Rect::from_min_size(
+                pos2(0.0, 0.0),
+                vec2(
+                    project_config.bars * project_config.bar_length - project_config.offset,
+                    (project_config.max_note - project_config.min_note) as f32,
+                ),
+            ),
+            Rect::from_min_size(pos2(piano_width, 0.0), vec2(size.x - piano_width, size.y)),
+        );
+        NoteRollCanvas {
+            piano: Piano::new(project_config.max_note, project_config.min_note),
+            roll: Roll::new(
+                store.get().project.tracks[track_index].notes.clone(),
+                project_config.max_note,
+                project_config.min_note,
+                project_config.offset,
+                project_config.bars,
+                project_config.bar_length,
+            ),
+            project_config,
+            piano_transform,
+            roll_transform,
+        }
+    }
+
+    pub fn make_canvas_shapes(&self) -> Vec<Shape> {
+        // TODO Consider assigning render order values to shapes.
+        let mut shapes = vec![];
+        shapes.extend(self.roll.make_roll_shapes().transform(self.roll_transform));
+        shapes.extend(
+            self.piano
+                .make_piano_shapes()
+                .transform(self.piano_transform),
+        );
+        shapes
+    }
+}
+
 fn note_to_pos(
     note: &PlacedNote,
     max_note: i32,
@@ -195,70 +260,5 @@ fn dispatch_note(
     };
     if curr_note.note.pitch_name.scale_value != pitch_name.scale_value {
         store.dispatch(&sel, Action::SetNoteScaleValue(pitch_name.scale_value));
-    }
-}
-
-struct NoteRollCanvas {
-    piano: Piano,
-    roll: Roll,
-    project_config: ProjectConfig,
-    piano_transform: RectTransform,
-    roll_transform: RectTransform,
-}
-
-impl NoteRollCanvas {
-    pub fn new(
-        store: &Store,
-        project_config: ProjectConfig,
-        size: Vec2,
-        piano_width: f32,
-        track_index: usize,
-    ) -> Self {
-        let piano_transform = RectTransform::from_to(
-            Rect::from_min_size(
-                pos2(0.0, 0.0),
-                vec2(
-                    1.0,
-                    (project_config.max_note - project_config.min_note) as f32,
-                ),
-            ),
-            Rect::from_min_size(pos2(0.0, 0.0), vec2(piano_width, size.y)),
-        );
-        let roll_transform = RectTransform::from_to(
-            Rect::from_min_size(
-                pos2(0.0, 0.0),
-                vec2(
-                    project_config.bars * project_config.bar_length - project_config.offset,
-                    (project_config.max_note - project_config.min_note) as f32,
-                ),
-            ),
-            Rect::from_min_size(pos2(piano_width, 0.0), vec2(size.x - piano_width, size.y)),
-        );
-        NoteRollCanvas {
-            piano: Piano::new(project_config.max_note, project_config.min_note),
-            roll: Roll::new(
-                store.get().project.tracks[track_index].notes.clone(),
-                project_config.max_note,
-                project_config.min_note,
-                project_config.offset,
-                project_config.bars,
-                project_config.bar_length,
-            ),
-            project_config,
-            piano_transform,
-            roll_transform,
-        }
-    }
-
-    pub fn make_canvas_shapes(&self) -> Vec<Shape> {
-        // TODO Consider assigning render order values to shapes.
-        let mut shapes = vec![];
-        shapes.extend(self.roll.make_roll_shapes().transform(self.roll_transform));
-        shapes.extend(
-            self.piano
-                .make_piano_shapes()
-                .transform(self.piano_transform),
-        );
-        shapes
     }
 }
