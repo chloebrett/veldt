@@ -40,3 +40,24 @@ impl PartialEq for PlacedNote {
 }
 
 impl Eq for PlacedNote {}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn convert_from_track_to_proto_and_back() {
+        let track = Track {
+            notes: vec![PlacedNote {
+                note: Note {
+                    pitch_name: 50.into(),
+                    beats: 1.0,
+                },
+                offset: 0.0.into()
+            }]
+        };
+        let proto: TrackProto = track.clone().into();
+        let result: Track = proto.into();
+        assert_eq!(track, result);
+    }
+}

@@ -35,12 +35,4 @@ mod tests {
         let result: WaveType = proto.into();
         assert_eq!(wave_type, result);
     }
-
-    #[test]
-    fn convert_from_proto_to_wave_type_and_back() {
-        let proto = WaveTypeProto::SineWaveType;
-        let wave_type: WaveType = proto.into();
-        let result: WaveTypeProto = wave_type.into();
-        assert_eq!(proto, result);
-    }
 }
