@@ -1,11 +1,10 @@
 use crate::consts::SAMPLE_RATE;
 use crate::effect::{ApplyFilter, eq_filter};
 use dasp_graph::{BoxedNode, Buffer, Input, Node, NodeData, node::Delay};
-use dasp_ring_buffer::SliceMut;
 use petgraph::stable_graph::{NodeIndex, StableGraph};
-use shared::model::{Effect, EffectInstance, EqConfig};
+use shared::model::{Effect, EffectInstance};
 use shared::types::{KnobPosition, Volume};
-use std::cmp::{max, min};
+use std::cmp::min;
 
 pub type Graph = StableGraph<NodeData<BoxedNode>, ()>;
 
@@ -53,7 +52,9 @@ impl RenderableGraph {
 
     pub fn add_effect_with_mixer(&mut self, effect: EffectInstance) {
         let effect_node = match effect.effect {
-            Effect::SimpleEq { config } => BoxedNode::new(EqNode { filter: eq_filter(&config) }),
+            Effect::SimpleEq { config } => BoxedNode::new(EqNode {
+                filter: eq_filter(&config),
+            }),
             Effect::SimpleDelay { config } => {
                 let delay_samples = config.delay_ms / 1000.0 * SAMPLE_RATE as f32;
                 let delay_samples = delay_samples as usize;
