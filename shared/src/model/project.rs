@@ -110,3 +110,135 @@ pub struct MixerChannel {
     #[proto_repeated]
     pub effects: Vec<EffectInstance>,
 }
+
+#[cfg(test)]
+mod tests {
+    use crate::model::{AdsrEnvelope, DelayConfig, Effect, EffectMeta, EqConfig, EqType, GeneratorMeta, GeneratorType, Note, PitchName, PlacedNote, ScaleValue, SimpleWaveConfig, WaveType};
+
+    use super::*;
+
+    #[test]
+    fn convert_track_placement_to_proto_and_back() {
+        let track_placement = TrackPlacement {
+            track_id: 0,
+            start_position: 0.0.into(),
+            clipped_duration: Some(0.0.into()),
+            visual_placement: 2
+        };
+        let proto: TrackPlacementProto = track_placement.clone().into();
+        let result: TrackPlacement = proto.into();
+        assert_eq!(track_placement, result);
+    }
+
+    #[test]
+    fn convert_sample_to_proto_and_back() {
+        let sample = Sample {
+            data: vec![0.3, 5.3, 2.0],
+            sample_rate: 10.0
+        };
+        let proto: SampleProto = sample.clone().into();
+        let result: Sample = proto.into();
+        assert_eq!(sample, result);
+    }
+
+    #[test]
+    fn convert_mixer_channel_to_proto_and_back() {
+        let mixer_channel = MixerChannel {
+            effects: vec![
+                EffectInstance {
+                    effect: Effect::SimpleEq {
+                        config: EqConfig {
+                            kind: EqType::SimpleResonator,
+                            fc: 1000.0,
+                            q: 1.0,
+                        },
+                    },
+                    meta: EffectMeta { id: 0, wet: 1.0 },
+                },
+                EffectInstance {
+                    effect: Effect::SimpleDelay {
+                        config: DelayConfig {
+                            amplitude: 0.5,
+                            delay_ms: 250.0,
+                        },
+                    },
+                    meta: EffectMeta { id: 1, wet: 0.5 },
+                },
+            ]
+        };
+        let proto: MixerChannelProto = mixer_channel.clone().into();
+        let result: MixerChannel = proto.into();
+        assert_eq!(mixer_channel, result);
+    }
+
+    #[test]
+    fn convert_project_to_proto_and_back() {
+        let project = Project {
+            name: "My Project".to_string(),
+            tracks: vec![Track {
+                notes: vec![PlacedNote {
+                    note: Note {
+                        pitch_name: PitchName {
+                            scale_value: ScaleValue::A,
+                            octave: 4,
+                        },
+                        beats: 1.0,
+                    },
+                    offset: OrderedFloat(0.0),
+                }],
+            }],
+            // TODO: use track placements
+            track_placements: vec![],
+            samples: vec![
+                Sample {
+                    data: vec![0.0, 1.0, 3.0],
+                    sample_rate: 1.0
+                }
+            ],
+            generators: vec![GeneratorInstance {
+                id: 0,
+                kind: GeneratorType::SimpleWave {
+                    config: SimpleWaveConfig {
+                        wave: WaveType::Sine,
+                        envelope: AdsrEnvelope {
+                            attack: 0.1,
+                            decay: 0.1,
+                            sustain: 0.8,
+                            release: 0.1,
+                        },
+                        osc_count: 4,
+                        detune_cents: 5.0,
+                    },
+                },
+                meta: GeneratorMeta { volume: 1.0 },
+            }],
+            mixer: vec![MixerChannel {
+                effects: vec![
+                    EffectInstance {
+                        effect: Effect::SimpleEq {
+                            config: EqConfig {
+                                kind: EqType::SimpleResonator,
+                                fc: 1000.0,
+                                q: 1.0,
+                            },
+                        },
+                        meta: EffectMeta { id: 0, wet: 1.0 },
+                    },
+                    EffectInstance {
+                        effect: Effect::SimpleDelay {
+                            config: DelayConfig {
+                                amplitude: 0.5,
+                                delay_ms: 250.0,
+                            },
+                        },
+                        meta: EffectMeta { id: 1, wet: 0.5 },
+                    },
+                ],
+            }],
+            bpm: 120.0,
+        };
+        let proto: ProjectProto = project.clone().into();
+        let result: Project = proto.into();
+        assert_eq!(project, result);
+    }
+}

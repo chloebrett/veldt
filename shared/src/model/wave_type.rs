@@ -29,7 +29,7 @@ mod tests {
     use super::*;
 
     #[test]
-    fn convert_from_wave_type_to_proto_and_back() {
+    fn convert_wave_type_to_proto_and_back() {
         let wave_type = WaveType::Sine;
         let proto: WaveTypeProto = wave_type.into();
         let result: WaveType = proto.into();

@@ -46,7 +46,7 @@ mod tests {
     use super::*;
 
     #[test]
-    fn convert_from_track_to_proto_and_back() {
+    fn convert_track_to_proto_and_back() {
         let track = Track {
             notes: vec![PlacedNote {
                 note: Note {
