@@ -9,10 +9,7 @@ pub trait ApplyEffect {
     fn apply(&self, input: &[f32]) -> Vec<f32>;
 }
 
-pub fn apply_effects(
-    input: Vec<f32>,
-    effects: &[EffectInstance],
-) -> Vec<f32> {
+pub fn apply_effects(input: Vec<f32>, effects: &[EffectInstance]) -> Vec<f32> {
     let last = input;
 
     //for effect in effects {

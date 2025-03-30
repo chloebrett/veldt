@@ -1,10 +1,10 @@
 use crate::consts::REFERENCE_PITCH;
 use crate::effect::ApplyEffect;
+use dasp_graph::{Buffer, Input, Node, NodeData};
 use shared::model::Effect;
 use shared::model::{EffectInstance, PitchName};
 use shared::types::{Freq, PitchValue, Volume};
 use std::cmp::{max, min};
-use dasp_graph::{Node, Input, Buffer, NodeData};
 
 // TODO: rename sig.rs to graph.rs.
 
@@ -30,7 +30,7 @@ impl Node for BufferNode {
     fn process(&mut self, _inputs: &[Input], output: &mut [Buffer]) {
         for out_buf in output {
             let index = self.index;
-            let slice = &self.buffer[index .. min(index + 64, self.buffer.len())];
+            let slice = &self.buffer[index..min(index + 64, self.buffer.len())];
 
             // TODO: account for edge cases.
             if out_buf.len() == slice.len() {
@@ -48,7 +48,10 @@ pub struct EffectNode {
 
 impl Node for EffectNode {
     fn process(&mut self, inputs: &[Input], output: &mut [Buffer]) {
-        for (out_buf, in_buf) in output.iter_mut().zip(inputs.get(0).expect("Expected one input").buffers()) {
+        for (out_buf, in_buf) in output
+            .iter_mut()
+            .zip(inputs.get(0).expect("Expected one input").buffers())
+        {
             let buf = match &self.instance.effect {
                 // TODO: use a dasp_graph Delay node.
                 Effect::SimpleDelay { config } => &config.apply(in_buf),
@@ -71,18 +74,20 @@ pub struct AmpNode {
 
 impl Node for AmpNode {
     fn process(&mut self, inputs: &[Input], output: &mut [Buffer]) {
-        for (out_buf, in_buf) in output.iter_mut().zip(inputs.get(0).expect("Expected one input").buffers()) {
-            let buf: Vec<f32> = 
-                in_buf
-                    .into_iter()
-                    .map(|it| {
-                        let mut amped = it * self.volume;
-                        if self.should_clip {
-                            amped = amped.clamp(-1.0, 1.0);
-                        }
-                        amped
-                    })
-                    .collect();
+        for (out_buf, in_buf) in output
+            .iter_mut()
+            .zip(inputs.get(0).expect("Expected one input").buffers())
+        {
+            let buf: Vec<f32> = in_buf
+                .into_iter()
+                .map(|it| {
+                    let mut amped = it * self.volume;
+                    if self.should_clip {
+                        amped = amped.clamp(-1.0, 1.0);
+                    }
+                    amped
+                })
+                .collect();
             out_buf.copy_from_slice(&buf);
         }
     }

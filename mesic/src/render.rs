@@ -1,10 +1,9 @@
 use crate::SAMPLE_RATE;
+use crate::sig::{BufferNode, Graph, Processor};
 use crate::wave::polyphonic_wave;
-use shared::model::{GeneratorType, Project};
-use crate::sig::{Graph, Processor, BufferNode};
 use dasp_graph::NodeData;
 use dasp_signal::Signal;
-use petgraph::stable_graph::NodeIndex;
+use shared::model::{GeneratorType, Project};
 
 pub fn render(project: &Project) -> Vec<f32> {
     let track = &project.tracks[0];
@@ -34,10 +33,9 @@ pub fn render(project: &Project) -> Vec<f32> {
             generator_config,
         );
 
-        let offset_samples =
-            (Into::<f32>::into(note.offset) / bpm * 60.0 * SAMPLE_RATE as f32) as usize;
+        let offset_samples = *note.offset / bpm * 60.0 * SAMPLE_RATE as f32;
         wave.iter().enumerate().for_each(|(i, value)| {
-            total_wave[i + offset_samples] += value;
+            total_wave[i + offset_samples as usize] += value;
         })
         // TODO: account for offsets properly, instead of just appending here.
     }
@@ -49,7 +47,10 @@ pub fn render(project: &Project) -> Vec<f32> {
     let mut p = Processor::with_capacity(max_nodes);
 
     // Add some nodes and edges...
-    let node = g.add_node(NodeData::new1(BufferNode { buffer: total_wave.clone(), index: 0 }));
+    let node = g.add_node(NodeData::new1(BufferNode {
+        buffer: total_wave.clone(),
+        index: 0,
+    }));
 
     // Process all nodes within the graph that output to the node at `n_id`.
     let mut output: Vec<f32> = vec![];

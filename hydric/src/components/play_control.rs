@@ -3,9 +3,7 @@ use super::audio_vis::audio_vis;
 use crate::audio_player::play;
 use crate::rpc::render as server_render;
 use egui::Ui;
-use mesic::SAMPLE_RATE;
 use mesic::render as local_render;
-use mesic::{AmpNode};
 use poll_promise::Promise;
 use state::Store;
 
