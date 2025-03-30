@@ -6,7 +6,7 @@ use dasp_graph::{BoxedNode, NodeData};
 use shared::model::{GeneratorType, Project};
 use shared::types::Volume;
 
-pub fn render(project: &Project, volume: Volume) -> RenderableGraph {
+pub fn render(project: &Project) -> RenderableGraph {
     let track = &project.tracks[0];
     let generator = &project.generators[0];
     let mixer_channel = &project.mixer[0];
@@ -41,21 +41,11 @@ pub fn render(project: &Project, volume: Volume) -> RenderableGraph {
     }
 
     let output_buffer = apply_effects(&total_wave, &mixer_channel.effects);
+    let sample_count = output_buffer.len();
 
     let mut graph = make_graph();
     let buffer_node: BufferNode = output_buffer.into();
     let buffer_node_index = graph.add_node(NodeData::new1(BoxedNode::new(buffer_node)));
-    let amp_node = AmpNode {
-        volume,
-        should_clip: true,
-    };
-    let amp_node_index = graph.add_node(NodeData::new1(BoxedNode::new(amp_node)));
-    graph.add_edge(buffer_node_index, amp_node_index, ());
 
-    let sample_count = total_wave.len();
-    RenderableGraph {
-        graph,
-        sample_count,
-        output_node_index: amp_node_index,
-    }
+    RenderableGraph::new(graph, sample_count, buffer_node_index)
 }

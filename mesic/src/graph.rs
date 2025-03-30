@@ -12,9 +12,14 @@ pub type Processor = dasp_graph::Processor<Graph>;
 
 /// A Graph with the required metadata to facilitate immediate processing into a Vec.
 pub struct RenderableGraph {
-    pub graph: Graph,
-    pub sample_count: usize,
-    pub output_node_index: NodeIndex,
+    graph: Graph,
+    sample_count: usize,
+    output_node_index: NodeIndex,
+    processor: Processor,
+
+    // For iteration.
+    processed_samples_count: usize, // index within buffer.
+    processed_buffers_count: usize, // number of buffers processed.
 }
 
 // If these are exceeded then the graph will dynamically allocate.
@@ -30,25 +35,96 @@ pub fn make_processor() -> Processor {
 }
 
 impl RenderableGraph {
-    pub fn to_vec(&mut self) -> Vec<f32> {
-        let graph = &mut self.graph;
-        let sample_count = self.sample_count;
-        let output_node_index = self.output_node_index;
+    pub fn new(graph: Graph, sample_count: usize, output_node_index: NodeIndex) -> Self {
+        RenderableGraph {
+            graph,
+            sample_count,
+            output_node_index,
+            processor: make_processor(),
+            processed_samples_count: Buffer::LEN, // to force a first render.
+            processed_buffers_count: 0,
+        }
+    }
 
-        let mut output: Vec<f32> = vec![];
-        let mut processor = make_processor();
-        let process_iterations = sample_count / Buffer::LEN + 1;
+    pub fn add_amp_node(mut self, amp_node: AmpNode) -> Self {
+        let amp_node_index = self
+            .graph
+            .add_node(NodeData::new1(BoxedNode::new(amp_node)));
+        self.graph
+            .add_edge(self.output_node_index, amp_node_index, ());
+        self.output_node_index = amp_node_index;
+        self
+    }
+
+    // Helper for playing samples.
+    // Should be removed once playing samples is properly integrated.
+    // Does not handle clipping, etc.
+    pub fn from_vec(vec: Vec<f32>) -> Self {
+        let mut graph = make_graph();
+        let sample_count = vec.len();
+        let buffer_node: BufferNode = vec.into();
+        let buffer_node_index = graph.add_node(NodeData::new1(BoxedNode::new(buffer_node)));
+        RenderableGraph::new(graph, sample_count, buffer_node_index)
+    }
+
+    pub fn to_vec(&mut self) -> Vec<f32> {
+        self.reset();
+
+        let mut output: Vec<f32> = Vec::with_capacity(self.sample_count);
+        let process_iterations = self.sample_count / Buffer::LEN + 1;
 
         for _ in 0..process_iterations {
-            processor.process(graph, output_node_index);
+            self.processor
+                .process(&mut self.graph, self.output_node_index);
             // TODO: optimize.
-            let vec = graph.node_weight(output_node_index).unwrap().buffers[0].to_vec();
+            let vec = self
+                .graph
+                .node_weight(self.output_node_index)
+                .unwrap()
+                .buffers[0]
+                .to_vec();
             output.extend(vec);
         }
 
         output
     }
+
+    pub fn reset(&mut self) {
+        self.processor = make_processor();
+    }
 }
+
+impl Iterator for RenderableGraph {
+    type Item = f32;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        if self.processed_samples_count >= Buffer::LEN {
+            self.processor
+                .process(&mut self.graph, self.output_node_index);
+            self.processed_samples_count = 0;
+            self.processed_buffers_count += 1;
+        }
+
+        if self.processed_buffers_count * Buffer::LEN + self.processed_samples_count
+            >= self.sample_count
+        {
+            return None;
+        }
+
+        let buffers = &self
+            .graph
+            .node_weight(self.output_node_index)
+            .unwrap()
+            .buffers;
+
+        // For now, only return one channel.
+        let output = Some(buffers[0][self.processed_samples_count]);
+
+        self.processed_samples_count += 1;
+        output
+    }
+}
+
 // Note containing a buffer which it outputs.
 pub struct BufferNode {
     buffer: Vec<f32>,

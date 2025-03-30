@@ -27,7 +27,7 @@ pub fn generator_control(store: &Store, ui: &mut Ui) {
         });
     ui.add(
         egui::Slider::from_get_set(
-            0.0..=24.0,
+            1.0..=24.0,
             get_set(config.osc_count as f64, |it| {
                 store.dispatch(&sel, Action::SetOscCount(it as u32))
             }),
