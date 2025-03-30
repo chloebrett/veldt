@@ -1,5 +1,6 @@
 use crate::SAMPLE_RATE;
-use crate::graph::{BufferNode, RenderableGraph, make_graph};
+use crate::graph::{RenderableGraph, make_graph};
+use crate::node::BufferNode;
 use crate::wave::polyphonic_wave;
 use dasp_graph::{BoxedNode, NodeData};
 use shared::model::{GeneratorType, Project};
