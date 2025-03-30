@@ -10,15 +10,22 @@ pub struct FirstOrderFilter {
     y_buffer: AllocRingBuffer<f32>,
 }
 
+/// Helps to prevent typos in param names.
+pub struct FirstOrderFilterConfig {
+    pub a0: f32,
+    pub a1: f32,
+    pub b1: f32,
+}
+
 impl FirstOrderFilter {
-    pub fn new(a0: f32, a1: f32, b1: f32) -> Self {
+    pub fn new(config: FirstOrderFilterConfig) -> Self {
         let x_buffer = AllocRingBuffer::from([0.0; 2]);
         let y_buffer = AllocRingBuffer::from([0.0; 2]);
 
         FirstOrderFilter {
-            a0,
-            a1,
-            b1,
+            a0: config.a0,
+            a1: config.a1,
+            b1: config.b1,
             x_buffer,
             y_buffer,
         }

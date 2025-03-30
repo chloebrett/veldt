@@ -156,12 +156,12 @@ impl Node for EffectNode {
             .iter_mut()
             .zip(inputs.first().expect("Expected one input").buffers())
         {
-            let buf = match &mut self.instance.effect {
+            let buf = match &self.instance.effect {
                 // TODO: use a dasp_graph Delay node.
-                Effect::SimpleDelay { config } => &mut config.apply(in_buf),
+                Effect::SimpleDelay { config } => &config.apply(in_buf),
                 // TODO: store state on the EQ nodes, so that they don't lose track
                 // of their state every 64 samples.
-                Effect::SimpleEq { config } => &mut config.apply(in_buf),
+                Effect::SimpleEq { config } => &config.apply(in_buf),
                 _ => panic!("Effect not implemented yet!"),
             };
             out_buf.copy_from_slice(buf);
