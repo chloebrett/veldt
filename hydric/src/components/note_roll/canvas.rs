@@ -86,7 +86,7 @@ fn draw_note_roll_canvas(store: &Store, ui: &mut Ui, track_index: usize) {
         let size = response.rect.size();
         let note_roll_canvas =
             NoteRollCanvas::new(store, project_config, size, piano_width, track_index);
-        let shapes = note_roll_canvas.make_all_shapes();
+        let shapes = note_roll_canvas.make_canvas_shapes();
         painter.extend(shapes.transform(to_screen));
         update_notes(
             ui,
@@ -98,100 +98,6 @@ fn draw_note_roll_canvas(store: &Store, ui: &mut Ui, track_index: usize) {
         );
         response
     });
-}
-
-fn note_to_pos(
-    note: &PlacedNote,
-    max_note: i32,
-    min_note: i32,
-    project_offset: f32,
-    beats: f32,
-) -> Pos2 {
-    let offset: f32 = note.offset.into();
-    let pitch_value: PitchValue = note.note.pitch_name.into();
-    let x = (offset - project_offset).clamp(project_offset, beats);
-    let y = (max_note - pitch_value).clamp(min_note, max_note) as f32;
-    pos2(x, y)
-}
-
-fn make_note_rect(note: &PlacedNote, note_pos: Pos2) -> Rect {
-    let note_size = vec2(note.note.beats, 1.0);
-    Rect::from_min_size(note_pos, note_size)
-}
-
-fn update_notes(
-    ui: &Ui,
-    response: &Response,
-    to_screen: RectTransform,
-    store: &Store,
-    note_roll_canvas: NoteRollCanvas,
-    track_index: usize,
-) {
-    store.get().project.tracks[track_index]
-        .notes
-        .iter()
-        .enumerate()
-        .for_each(|(note_index, note)| {
-            let note_rect = make_note_rect(
-                note,
-                note_to_pos(
-                    note,
-                    note_roll_canvas.project_config.max_note,
-                    note_roll_canvas.project_config.min_note,
-                    note_roll_canvas.project_config.offset,
-                    note_roll_canvas.project_config.bar_length
-                        * note_roll_canvas.project_config.bars,
-                ),
-            );
-            let note_response = track_note_response(
-                ui,
-                response,
-                note_index,
-                note_rect
-                    .transform(note_roll_canvas.roll_transform)
-                    .transform(to_screen),
-            );
-            let drag_pos = note_response.interact_pointer_pos();
-            if let Some(pos) = drag_pos {
-                let pos_as_note = pos
-                    .transform(to_screen.inverse())
-                    .transform(note_roll_canvas.roll_transform.inverse());
-                let pos = note_roll_canvas.roll.clamp_pos(pos_as_note);
-                let offset: OrderedFloat<f32> = pos.x.into();
-                let pitch_name = PitchName::from(pos.y as i32);
-                dispatch_note(store, note_index, offset, pitch_name, track_index);
-            }
-        });
-}
-
-fn track_note_response(
-    ui: &Ui,
-    response: &Response,
-    note_index: usize,
-    note_rect: Rect,
-) -> Response {
-    let shape_index = response.id.with(note_index);
-    ui.interact(note_rect, shape_index, Sense::drag())
-}
-
-fn dispatch_note(
-    store: &Store,
-    note_index: usize,
-    offset: OrderedFloat<f32>,
-    pitch_name: PitchName,
-    track_index: usize,
-) {
-    let curr_note = &store.get().project.tracks[track_index].notes[note_index];
-    let sel = Selector::Note(track_index, note_index);
-    if curr_note.offset != offset {
-        store.dispatch(&sel, Action::SetNoteOffset(offset.into()))
-    };
-    if curr_note.note.pitch_name.octave != pitch_name.octave {
-        store.dispatch(&sel, Action::SetNoteOctave(pitch_name.octave))
-    };
-    if curr_note.note.pitch_name.scale_value != pitch_name.scale_value {
-        store.dispatch(&sel, Action::SetNoteScaleValue(pitch_name.scale_value));
-    }
 }
 
 struct NoteRollCanvas {
@@ -246,18 +152,104 @@ impl NoteRollCanvas {
         }
     }
 
-    pub fn make_all_shapes(&self) -> Vec<Shape> {
+    pub fn make_canvas_shapes(&self) -> Vec<Shape> {
         // TODO Consider assigning render order values to shapes.
         let mut shapes = vec![];
-        shapes.extend(self.roll.make_all_objects().transform(self.roll_transform));
+        shapes.extend(self.roll.make_roll_shapes().transform(self.roll_transform));
         shapes.extend(
             self.piano
-                .make_all_objects()
+                .make_piano_shapes()
                 .transform(self.piano_transform),
         );
         shapes
-            .into_iter()
-            .map(|object| object.make_shape())
-            .collect()
+    }
+}
+
+pub fn note_to_pos(note: &PlacedNote, max_note: i32, project_offset: f32) -> Pos2 {
+    let offset: f32 = note.offset.into();
+    let x = offset - project_offset;
+    let pitch_value: PitchValue = note.note.pitch_name.into();
+    let y = max_note - pitch_value;
+    pos2(x, y as f32)
+}
+
+pub fn make_note_rect(note: &PlacedNote, note_pos: Pos2) -> Rect {
+    let note_size = vec2(note.note.beats, 1.0);
+    Rect::from_min_size(note_pos, note_size)
+}
+
+fn update_notes(
+    ui: &Ui,
+    response: &Response,
+    to_screen: RectTransform,
+    store: &Store,
+    note_roll_canvas: NoteRollCanvas,
+    track_index: usize,
+) {
+    store.get().project.tracks[track_index]
+        .notes
+        .iter()
+        .enumerate()
+        .for_each(|(note_index, note)| {
+            let note_rect = make_note_rect(
+                note,
+                note_to_pos(
+                    note,
+                    note_roll_canvas.project_config.max_note,
+                    note_roll_canvas.project_config.offset,
+                ),
+            );
+            let note_response = track_note_response(
+                ui,
+                response,
+                note_index,
+                note_rect
+                    .transform(note_roll_canvas.roll_transform)
+                    .transform(to_screen),
+            );
+            let drag_pos = note_response.interact_pointer_pos();
+            if let Some(pos) = drag_pos {
+                let scaled_pos = pos
+                    .transform(to_screen.inverse())
+                    .transform(note_roll_canvas.roll_transform.inverse())
+                    .clamp(
+                        pos2(0.0, 0.0),
+                        note_roll_canvas.roll_transform.from().size().to_pos2(),
+                    );
+                let offset: OrderedFloat<f32> = scaled_pos.x.into();
+                let pitch_name =
+                    PitchName::from(note_roll_canvas.project_config.max_note - scaled_pos.y as i32);
+                dispatch_note(store, note_index, offset, pitch_name, track_index);
+            }
+        });
+}
+
+fn track_note_response(
+    ui: &Ui,
+    response: &Response,
+    note_index: usize,
+    note_rect: Rect,
+) -> Response {
+    let shape_index = response.id.with(note_index);
+    ui.interact(note_rect, shape_index, Sense::drag())
+}
+
+fn dispatch_note(
+    store: &Store,
+    note_index: usize,
+    offset: OrderedFloat<f32>,
+    pitch_name: PitchName,
+    track_index: usize,
+) {
+    let curr_note = &store.get().project.tracks[track_index].notes[note_index];
+    let sel = Selector::Note(track_index, note_index);
+    if curr_note.offset != offset {
+        store.dispatch(&sel, Action::SetNoteOffset(offset.into()))
+    };
+    if curr_note.note.pitch_name.octave != pitch_name.octave {
+        store.dispatch(&sel, Action::SetNoteOctave(pitch_name.octave))
+    };
+    if curr_note.note.pitch_name.scale_value != pitch_name.scale_value {
+        store.dispatch(&sel, Action::SetNoteScaleValue(pitch_name.scale_value));
     }
 }

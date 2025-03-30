@@ -1,10 +1,10 @@
-use egui::{Pos2, Rect, pos2, vec2};
+use egui::{Shape, pos2};
 use shared::{
-    model::{PitchName, PlacedNote},
+    model::{Note, PlacedNote},
     types::PitchValue,
 };
 
-use super::shapes::NoteRollShape;
+use super::{make_note_rect, note_to_pos, shapes::NoteRollShape};
 
 pub struct Roll {
     notes: Vec<PlacedNote>,
@@ -34,42 +34,41 @@ impl Roll {
         }
     }
 
-    pub fn make_all_objects(&self) -> Vec<NoteRollShape> {
+    pub fn make_roll_shapes(&self) -> Vec<Shape> {
         let mut roll_objects = vec![];
         roll_objects.extend(self.make_all_background_notes(self.get_background_notes()));
         roll_objects.extend(self.make_all_bar_lines());
         roll_objects.extend(self.make_all_interactive_notes());
         roll_objects
+            .into_iter()
+            .map(|object| object.make_shape())
+            .collect()
     }
 
-    pub fn clamp_pos(&self, pos: Pos2) -> Pos2 {
-        let x = pos.x.clamp(self.offset, self.bars * self.bar_length);
-        let cursor_offset = 1.0; // Default Y value of cursor position felt strange.
-        let y = ((self.max_note as f32 - pos.y + cursor_offset) as i32)
-            .clamp(self.min_note, self.max_note) as f32;
-        pos2(x, y)
-    }
-
-    fn get_background_notes(&self) -> Vec<PitchName> {
+    fn get_background_notes(&self) -> Vec<PlacedNote> {
         (self.min_note..=self.max_note)
             .filter(|pitch_value| pitch_value % 2 == 0)
-            .map(|pitch_value| pitch_value.into())
+            .map(|pitch_value| PlacedNote {
+                note: Note {
+                    pitch_name: pitch_value.into(),
+                    beats: self.bar_length * self.bars,
+                },
+                offset: 0.0.into(),
+            })
             .collect()
     }
 
-    fn make_all_background_notes(&self, notes: Vec<PitchName>) -> Vec<NoteRollShape> {
+    fn make_all_background_notes(&self, notes: Vec<PlacedNote>) -> Vec<NoteRollShape> {
         notes
-            .iter()
-            .map(|&note| self.make_background_note(note))
+            .into_iter()
+            .map(|note| self.make_background_note(note))
             .collect()
     }
 
-    fn make_background_note(&self, note: PitchName) -> NoteRollShape {
-        let pitch_value: PitchValue = note.into();
-        let note_pos = pos2(0.0, (self.max_note - pitch_value) as f32);
-        let note_size = vec2(self.bars * self.bar_length, 1.0);
+    fn make_background_note(&self, note: PlacedNote) -> NoteRollShape {
+        let note_pos = note_to_pos(&note, self.max_note, self.offset);
         NoteRollShape::BackgroundNote {
-            note_rect: Rect::from_min_size(note_pos, note_size),
+            note_rect: make_note_rect(&note, note_pos),
         }
     }
 
@@ -81,17 +80,10 @@ impl Roll {
     }
 
     fn make_interactive_note(&self, note: PlacedNote) -> NoteRollShape {
+        let note_pos = note_to_pos(&note, self.max_note, self.offset);
         NoteRollShape::InteractiveNote {
-            note_rect: self.make_interactive_rect(note),
+            note_rect: make_note_rect(&note, note_pos),
         }
-    }
-
-    pub fn make_interactive_rect(&self, note: PlacedNote) -> Rect {
-        let pitch_value: PitchValue = note.note.pitch_name.into();
-        let offset: f32 = note.offset.into();
-        let note_pos = pos2(offset - self.offset, (self.max_note - pitch_value) as f32);
-        let note_size = vec2(note.note.beats, 1.0);
-        Rect::from_min_size(note_pos, note_size)
     }
 
     fn make_all_bar_lines(&self) -> Vec<NoteRollShape> {
