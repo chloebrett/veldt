@@ -1,4 +1,4 @@
-use super::filter::SecondOrderFilter;
+use super::filter::{SecondOrderFilter, SecondOrderFilterConfig};
 use super::low_high::LowHigh;
 use crate::consts::SAMPLE_RATE;
 use shared::model::EqConfig;
@@ -22,5 +22,5 @@ pub fn lhp_second_order(config: &EqConfig, low_high: LowHigh) -> SecondOrderFilt
     let b1 = -2.0 * gamma;
     let b2 = 2.0 * beta;
 
-    SecondOrderFilter { a0, a1, a2, b1, b2 }
+    SecondOrderFilter::new(SecondOrderFilterConfig { a0, a1, a2, b1, b2 })
 }
