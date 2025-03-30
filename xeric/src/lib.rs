@@ -1,6 +1,6 @@
 use crate::load_sample::MyLoadSample;
 use http::{HeaderValue, Method};
-use mesic::{SAMPLE_RATE, render};
+use mesic::render;
 use save::ServerSaveTracks;
 use shared::bytes::as_bytes;
 use shared::consts::{HYDRIC_URL, XERIC_SOCKET_ADDR};
@@ -32,8 +32,8 @@ impl Render for MyRender {
             .project
             .ok_or(tonic::Status::invalid_argument("Project must be supplied"))?
             .into();
-        let sample_count = SAMPLE_RATE as u32 * 10; // 10 seconds
-        let bytes = as_bytes(&render(&project).as_ref().borrow_mut().buffer(sample_count));
+        let volume = 1.0; // TODO: handle on client instead of in render step.
+        let bytes = as_bytes(&render(&project, volume));
 
         Ok(tonic::Response::new(RenderReply { audio: bytes }))
     }

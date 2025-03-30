@@ -1,12 +1,12 @@
 use crate::SAMPLE_RATE;
 use crate::effect::apply_effects;
-use crate::sig::{OutputNode, SigRef};
+use crate::graph::{AmpNode, BufferNode, Graph, Processor};
 use crate::wave::polyphonic_wave;
+use dasp_graph::{BoxedNode, NodeData};
 use shared::model::{GeneratorType, Project};
-use std::cell::RefCell;
-use std::rc::Rc;
+use shared::types::Volume;
 
-pub fn render(project: &Project) -> SigRef {
+pub fn render(project: &Project, volume: Volume) -> Vec<f32> {
     let track = &project.tracks[0];
     let generator = &project.generators[0];
     let mixer_channel = &project.mixer[0];
@@ -34,18 +34,41 @@ pub fn render(project: &Project) -> SigRef {
             generator_config,
         );
 
-        let offset_samples =
-            (Into::<f32>::into(note.offset) / bpm * 60.0 * SAMPLE_RATE as f32) as usize;
+        let offset_samples = *note.offset / bpm * 60.0 * SAMPLE_RATE as f32;
         wave.iter().enumerate().for_each(|(i, value)| {
-            total_wave[i + offset_samples] += value;
+            total_wave[i + offset_samples as usize] += value;
         })
-        // TODO: account for offsets properly, instead of just appending here.
     }
 
-    let wave_node = Rc::new(RefCell::new(OutputNode {
-        buffer: total_wave,
-        index: 0,
-    }));
+    let output_buffer = apply_effects(&total_wave, &mixer_channel.effects);
 
-    apply_effects(wave_node, &mixer_channel.effects)
+    // Create a graph and a processor with some suitable capacity to avoid dynamic allocation.
+    let max_nodes = 1024;
+    let max_edges = 1024;
+    let mut g = Graph::with_capacity(max_nodes, max_edges);
+    let mut p = Processor::with_capacity(max_nodes);
+
+    // Add some nodes and edges...
+    let buffer_node: BufferNode = output_buffer.into();
+    let buffer_node_index = g.add_node(NodeData::new1(BoxedNode::new(buffer_node)));
+    let amp_node = AmpNode {
+        volume,
+        should_clip: true,
+    };
+    let amp_node_index = g.add_node(NodeData::new1(BoxedNode::new(amp_node)));
+    g.add_edge(buffer_node_index, amp_node_index, ());
+
+    // Process all nodes within the graph that output to the node at `node_id`.
+    let mut output: Vec<f32> = vec![];
+    let process_count = total_wave.len() / 64 + 1;
+    for _ in 0..process_count {
+        p.process(&mut g, amp_node_index);
+        // TODO: optimize.
+        let vec: Vec<_> = g.node_weight(amp_node_index).unwrap().buffers[0]
+            .iter()
+            .collect();
+        output.extend(vec);
+    }
+
+    output
 }

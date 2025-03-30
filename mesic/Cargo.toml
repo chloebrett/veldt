@@ -4,5 +4,7 @@ version = "0.1.0"
 edition = "2024"
 
 [dependencies]
+dasp_graph = { version = "0.11.0", features = ["node-signal", "node-boxed"] }
 ordered-float = "5.0.0"
+petgraph = "0.5" # Needs to match version used by dasp_graph.
 shared = { path = "../shared" }

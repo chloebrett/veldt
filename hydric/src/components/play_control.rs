@@ -3,9 +3,7 @@ use super::audio_vis::audio_vis;
 use crate::audio_player::play;
 use crate::rpc::render as server_render;
 use egui::Ui;
-use mesic::SAMPLE_RATE;
 use mesic::render as local_render;
-use mesic::{AmpNode, Sig};
 use poll_promise::Promise;
 use state::Store;
 
@@ -17,16 +15,9 @@ pub fn play_control(
 ) {
     if ui.button("Play (local)").clicked() {
         let volume = store.get().volume;
-        let sample_count = SAMPLE_RATE as u32 * 10; // 10 seconds
-        let audio_node = local_render(&store.get().project);
-        let mut clipped_audio = AmpNode {
-            input: audio_node,
-            volume,
-            should_clip: true,
-        };
-        audio_state.audio = clipped_audio.buffer(sample_count);
+        let buffered_output = local_render(&store.get().project, volume);
 
-        let signal = dasp_signal::from_iter(audio_state.audio.clone());
+        let signal = dasp_signal::from_iter(buffered_output);
         audio_state.handle = Some(play(signal));
     }
     if let Some(render_promise) = &async_state.server_render {
