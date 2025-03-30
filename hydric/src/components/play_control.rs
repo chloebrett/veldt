@@ -3,8 +3,7 @@ use super::audio_vis::audio_vis;
 use crate::audio_player::play;
 use crate::rpc::render as server_render;
 use egui::Ui;
-use mesic::graph::RenderableGraph;
-use mesic::node::AmpNode;
+use mesic::graph::{AmpNode, RenderGraph};
 use mesic::render as local_render;
 use poll_promise::Promise;
 use state::Store;
@@ -29,7 +28,7 @@ pub fn play_control(
             if ui.button("Play (server)").clicked() {
                 let volume = store.get().volume;
                 audio_state.audio = server_audio.to_vec();
-                let mut graph = RenderableGraph::from_vec(audio_state.audio.clone());
+                let mut graph = RenderGraph::from_vec(audio_state.audio.clone());
                 graph.add_node(AmpNode {
                     volume,
                     should_clip: true,

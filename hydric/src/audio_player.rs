@@ -1,7 +1,7 @@
 use chrono::{DateTime, Utc};
 use cpal::Stream;
 use cpal::traits::{DeviceTrait, HostTrait, StreamTrait};
-use mesic::graph::RenderableGraph;
+use mesic::graph::RenderGraph;
 use shared::logger::error;
 use std::sync::mpsc;
 
@@ -10,7 +10,7 @@ pub struct Handle {
     pub start_timestamp: DateTime<Utc>,
 }
 
-pub fn play(graph: RenderableGraph) -> Handle {
+pub fn play(graph: RenderGraph) -> Handle {
     let host = cpal::default_host();
     let device = host
         .default_output_device()
@@ -18,7 +18,7 @@ pub fn play(graph: RenderableGraph) -> Handle {
     let config = device.default_output_config().unwrap();
     let config: &cpal::StreamConfig = &config.into();
 
-    // Using MPSC because RenderableGraph is not Send.
+    // Using MPSC because RenderGraph is not Send.
     let (tx, rx) = mpsc::channel();
 
     // TODO: space out sending the graph instead of just sending it as fast as possible.
