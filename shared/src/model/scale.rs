@@ -35,7 +35,7 @@ mod tests {
     use super::*;
 
     #[test]
-    fn convert_scale_to_proto_and_back() {
+    fn scale_proto_round_trip() {
         let scale = Scale::Pentatonic;
         assert_proto_round_trip::<Scale, ScaleProto>(scale);
     }
