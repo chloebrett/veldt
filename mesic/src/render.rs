@@ -1,8 +1,8 @@
 use crate::SAMPLE_RATE;
 use crate::effect::apply_effects;
-use crate::graph::{BufferNode, Graph, Processor, AmpNode};
+use crate::graph::{AmpNode, BufferNode, Graph, Processor};
 use crate::wave::polyphonic_wave;
-use dasp_graph::{NodeData, BoxedNode};
+use dasp_graph::{BoxedNode, NodeData};
 use shared::model::{GeneratorType, Project};
 use shared::types::Volume;
 

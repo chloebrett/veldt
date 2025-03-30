@@ -1,5 +1,5 @@
 use crate::effect::ApplyEffect;
-use dasp_graph::{Buffer, Input, Node, NodeData, BoxedNode};
+use dasp_graph::{BoxedNode, Buffer, Input, Node, NodeData};
 use shared::model::Effect;
 use shared::model::EffectInstance;
 use shared::types::Volume;
@@ -34,15 +34,14 @@ impl Node for BufferNode {
     fn process(&mut self, _inputs: &[Input], output: &mut [Buffer]) {
         for out_buf in output {
             let index = self.index;
-            let slice = &self.buffer[index..min(index + 64, self.buffer.len())];
+            let slice = &self.buffer[index..min(index + Buffer::LEN, self.buffer.len())];
 
             // TODO: account for edge cases.
             if out_buf.len() == slice.len() {
                 out_buf.copy_from_slice(slice);
             }
         }
-        // TODO: use Buffer LEN const.
-        self.index += 64;
+        self.index += Buffer::LEN;
     }
 }
 

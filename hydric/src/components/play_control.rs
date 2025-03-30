@@ -14,7 +14,6 @@ pub fn play_control(
     ui: &mut Ui,
 ) {
     if ui.button("Play (local)").clicked() {
-        // TODO: add back volume.
         let volume = store.get().volume;
         let buffered_output = local_render(&store.get().project, volume);
 
