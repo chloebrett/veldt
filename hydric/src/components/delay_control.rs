@@ -1,6 +1,6 @@
 use egui::Ui;
 use shared::model::Effect;
-use shared::types::{KnobPosition, Milliseconds, Volume};
+use shared::types::{KnobPosition, Milliseconds};
 use state::{Action, Selector, Store, get_set};
 
 pub fn delay_control(store: &Store, effect_index: usize, ui: &mut Ui) {

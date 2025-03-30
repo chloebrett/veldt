@@ -2,6 +2,7 @@ mod consts;
 mod effect;
 mod envelope;
 pub mod graph;
+pub mod node;
 mod render;
 mod scale;
 mod sig;
