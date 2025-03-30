@@ -124,8 +124,6 @@ message SimpleDelayProto {
 }
 
 message DelayConfigProto {
-  float amplitude = 1;
-
   float delay_ms = 2;
 }
 

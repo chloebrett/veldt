@@ -1,10 +1,11 @@
-use crate::effect::ApplyEffect;
-use dasp_graph::{BoxedNode, Buffer, Input, Node, NodeData};
+use crate::consts::SAMPLE_RATE;
+use crate::effect::{ApplyFilter, eq_filter};
+use dasp_graph::{BoxedNode, Buffer, Input, Node, NodeData, node::Delay};
+use dasp_ring_buffer::SliceMut;
 use petgraph::stable_graph::{NodeIndex, StableGraph};
-use shared::model::Effect;
-use shared::model::EffectInstance;
-use shared::types::Volume;
-use std::cmp::min;
+use shared::model::{Effect, EffectInstance, EqConfig};
+use shared::types::{KnobPosition, Volume};
+use std::cmp::{max, min};
 
 pub type Graph = StableGraph<NodeData<BoxedNode>, ()>;
 
@@ -44,14 +45,53 @@ impl RenderableGraph {
         }
     }
 
-    pub fn add_amp_node(mut self, amp_node: AmpNode) -> Self {
-        let amp_node_index = self
+    pub fn add_node(&mut self, node: impl Node + 'static) {
+        let node_index = self.graph.add_node(NodeData::new1(BoxedNode::new(node)));
+        self.graph.add_edge(self.output_node_index, node_index, ());
+        self.output_node_index = node_index;
+    }
+
+    pub fn add_effect_with_mixer(&mut self, effect: EffectInstance) {
+        let effect_node = match effect.effect {
+            Effect::SimpleEq { config } => BoxedNode::new(EqNode { filter: eq_filter(&config) }),
+            Effect::SimpleDelay { config } => {
+                let delay_samples = config.delay_ms / 1000.0 * SAMPLE_RATE as f32;
+                let delay_samples = delay_samples as usize;
+
+                // Extend the graph duration by the delay amount.
+                self.sample_count += delay_samples;
+
+                BoxedNode::new(new_delay_node(delay_samples))
+            }
+            Effect::SimpleCompressor { .. } => panic!("Not implemented!"),
+        };
+        let mixer_node = MixerNode {
+            wet: effect.meta.wet,
+        };
+
+        let dry = self.output_node_index;
+        let effect = self.graph.add_node(NodeData::new1(effect_node));
+        let mixer = self
             .graph
-            .add_node(NodeData::new1(BoxedNode::new(amp_node)));
-        self.graph
-            .add_edge(self.output_node_index, amp_node_index, ());
-        self.output_node_index = amp_node_index;
-        self
+            .add_node(NodeData::new1(BoxedNode::new(mixer_node)));
+
+        // Route the signal like this:
+        // dry --|
+        //  |    |
+        //  v    |
+        // eff   |
+        //  |    |
+        //  v    |
+        // mix <-|
+        //  |
+        //  v
+        self.graph.add_edge(dry, effect, ());
+        // Note that dry goes second. If the two lines below are switched, the mixer `wet` is
+        // inverted!
+        self.graph.add_edge(effect, mixer, ());
+        self.graph.add_edge(dry, mixer, ());
+
+        self.output_node_index = mixer;
     }
 
     /// Creates a graph that plays the buffer contained in a Vec.
@@ -68,6 +108,16 @@ impl RenderableGraph {
         self.processor = make_processor();
         self.processed_samples_count = 0;
     }
+}
+
+fn new_delay_node(delay_samples: usize) -> Delay<Vec<f32>> {
+    // TODO: helper function
+    let mut vec = Vec::with_capacity(delay_samples);
+    for _ in 0..delay_samples {
+        vec.push(0.0);
+    }
+
+    Delay(vec![dasp_ring_buffer::Fixed::from(vec)])
 }
 
 impl Iterator for RenderableGraph {
@@ -97,6 +147,8 @@ impl Iterator for RenderableGraph {
     }
 }
 
+/// TODO: move nodes to node.rs.
+
 // Note containing a buffer which it outputs.
 pub struct BufferNode {
     buffer: Vec<f32>,
@@ -121,8 +173,14 @@ impl From<Vec<f32>> for BufferNode {
 impl Node for BufferNode {
     fn process(&mut self, _inputs: &[Input], output: &mut [Buffer]) {
         for out_buf in output {
-            let index = self.index;
-            let mut slice = &self.buffer[index..min(index + Buffer::LEN, self.buffer.len())];
+            let start_index = self.index;
+            let end_index = min(start_index + Buffer::LEN, self.buffer.len());
+
+            let mut slice = if start_index < end_index {
+                &self.buffer[start_index..end_index]
+            } else {
+                &vec![]
+            };
 
             // If the slice isn't long enough, fill the rest with zeroes.
             let mut vec;
@@ -146,25 +204,18 @@ impl Node for BufferNode {
     }
 }
 
-pub struct EffectNode {
-    instance: EffectInstance,
+pub struct EqNode {
+    pub filter: Box<dyn ApplyFilter>,
 }
 
-impl Node for EffectNode {
+impl Node for EqNode {
     fn process(&mut self, inputs: &[Input], output: &mut [Buffer]) {
         for (out_buf, in_buf) in output
             .iter_mut()
             .zip(inputs.first().expect("Expected one input").buffers())
         {
-            let buf = match &self.instance.effect {
-                // TODO: use a dasp_graph Delay node.
-                Effect::SimpleDelay { config } => &config.apply(in_buf),
-                // TODO: store state on the EQ nodes, so that they don't lose track
-                // of their state every 64 samples.
-                Effect::SimpleEq { config } => &config.apply(in_buf),
-                _ => panic!("Effect not implemented yet!"),
-            };
-            out_buf.copy_from_slice(buf);
+            let buf = self.filter.apply(in_buf);
+            out_buf.copy_from_slice(&buf);
         }
     }
 }
@@ -191,6 +242,46 @@ impl Node for AmpNode {
                     }
                     amped
                 })
+                .collect();
+            out_buf.copy_from_slice(&buf);
+        }
+    }
+}
+
+/// Mixes two inputs down to one in the given wet/dry ratio.
+/// The first input is the dry signal. The second is the wet signal.
+/// wet = 1.0 returns only the wet signal.
+/// wet = 0.0 returns only the dry signal.
+/// wet = 0.5 returns a 50/50 mix.
+/// And so on.
+pub struct MixerNode {
+    pub wet: KnobPosition,
+}
+
+impl Node for MixerNode {
+    fn process(&mut self, inputs: &[Input], output: &mut [Buffer]) {
+        debug_assert!(self.wet >= 0.0 && self.wet <= 1.0);
+        let dry = 1.0 - self.wet;
+
+        for ((out_buf, dry_buf), wet_buf) in output
+            .iter_mut()
+            .zip(
+                inputs
+                    .first()
+                    .expect("Expected a dry signal as the first input")
+                    .buffers(),
+            )
+            .zip(
+                inputs
+                    .get(1)
+                    .expect("Expected a wet signal as the second input")
+                    .buffers(),
+            )
+        {
+            let buf: Vec<f32> = dry_buf
+                .iter()
+                .zip(wet_buf.iter())
+                .map(|(d, w)| d * dry + w * self.wet)
                 .collect();
             out_buf.copy_from_slice(&buf);
         }

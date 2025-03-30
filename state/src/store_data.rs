@@ -68,7 +68,6 @@ impl Default for StoreData {
                         EffectInstance {
                             effect: Effect::SimpleDelay {
                                 config: DelayConfig {
-                                    amplitude: 0.5,
                                     delay_ms: 250.0,
                                 },
                             },

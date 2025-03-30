@@ -72,7 +72,6 @@ pub struct EffectMeta {
 
 #[derive(Clone, Debug, PartialEq, FromProto, IntoProto)]
 pub struct DelayConfig {
-    pub amplitude: Volume,
     pub delay_ms: Milliseconds,
 }
 
