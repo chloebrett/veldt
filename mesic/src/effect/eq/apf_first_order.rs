@@ -9,5 +9,5 @@ pub fn apf_first_order(config: &EqConfig) -> FirstOrderFilter {
     let a0 = -alpha;
     let a1 = 1.0;
     let b1 = -alpha;
-    FirstOrderFilter { a0, a1, b1 }
+    FirstOrderFilter::new(a0, a1, b1)
 }

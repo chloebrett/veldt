@@ -19,5 +19,5 @@ pub fn lhp_first_order(config: &EqConfig, low_high: LowHigh) -> FirstOrderFilter
     let a1: f32 = a0;
     let b1: f32 = -gamma;
 
-    FirstOrderFilter { a0, a1, b1 }
+    FirstOrderFilter::new(a0, a1, b1)
 }
