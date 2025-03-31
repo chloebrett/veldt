@@ -93,10 +93,7 @@ mod tests {
 
     #[test]
     fn delay_config_proto_round_trip() {
-        let delay_config = DelayConfig {
-            amplitude: 1.2,
-            delay_ms: 0.2,
-        };
+        let delay_config = DelayConfig { delay_ms: 0.2 };
         assert_proto_round_trip::<DelayConfig, DelayConfigProto>(delay_config);
     }
 
@@ -104,8 +101,8 @@ mod tests {
     fn compressor_config_proto_round_trip() {
         let compressor_config = CompressorConfig {
             threshold: 0.3,
-            attack: 0.2,
-            release: 0.6,
+            attack_ms: 0.2,
+            release_ms: 0.6,
             ratio: 0.2,
             gain: 1.0,
         };
