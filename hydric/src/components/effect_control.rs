@@ -1,4 +1,4 @@
-use super::{delay_control, eq_control};
+use super::{compressor_control::compressor_control, delay_control, eq_control};
 use egui::Ui;
 use shared::model::Effect;
 use state::Store;
@@ -8,6 +8,6 @@ pub fn effect_control(store: &Store, effect_index: usize, ui: &mut Ui) {
     match effect.effect {
         Effect::SimpleEq { .. } => eq_control(store, effect_index, ui),
         Effect::SimpleDelay { .. } => delay_control(store, effect_index, ui),
-        Effect::SimpleCompressor { .. } => {} // TODO: implement compressor UI
+        Effect::SimpleCompressor { .. } => compressor_control(store, effect_index, ui),
     }
 }
