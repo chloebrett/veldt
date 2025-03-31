@@ -143,7 +143,8 @@ pub fn derive_into_proto(input: TokenStream) -> TokenStream {
                         quote!(#name: item.#name.into_iter().map(|it| it.into()).collect())
                     }
                     // enums are saved as i32 in protos.
-                    Tag::Enum => quote!(#name: item.#name as i32),
+                    // increment by 1 to account for Unkown = 0.
+                    Tag::Enum => quote!(#name: item.#name as i32 + 1),
                     Tag::NoTag => quote!(#name: item.#name.into()),
                 }
             });
