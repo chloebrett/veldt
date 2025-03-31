@@ -48,10 +48,10 @@ mod tests {
     use super::*;
 
     #[test]
-    fn pitch_name_pitch_value_round_trip () {
+    fn pitch_name_pitch_value_round_trip() {
         let pitch_name = PitchName {
             scale_value: ScaleValue::C,
-            octave: 4
+            octave: 4,
         };
         let pitch_value: PitchValue = pitch_name.into();
         let result: PitchName = pitch_value.into();
@@ -59,16 +59,16 @@ mod tests {
     }
 
     #[test]
-    fn pitch_name_addition () {
+    fn pitch_name_addition() {
         let pitch_name = PitchName {
             scale_value: ScaleValue::C,
-            octave: 4
+            octave: 4,
         };
         let pitch_delta: PitchValue = 5;
         let result = pitch_name + pitch_delta;
         let target_result = PitchName {
             scale_value: ScaleValue::F,
-            octave: 4
+            octave: 4,
         };
         assert_eq!(target_result, result);
     }
