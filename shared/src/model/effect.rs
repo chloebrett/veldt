@@ -89,7 +89,7 @@ pub struct CompressorConfig {
 // Test effect configs as they may not appear in the Project test.
 mod tests {
     use super::*;
-    use crate::tests::test_util::assert_proto_round_trip;
+    use crate::testing::proto::proto_testing::assert_proto_round_trip;
 
     #[test]
     fn delay_config_proto_round_trip() {

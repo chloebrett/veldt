@@ -118,7 +118,7 @@ mod tests {
             AdsrEnvelope, DelayConfig, Effect, EffectMeta, EqConfig, EqType, GeneratorMeta,
             GeneratorType, Note, PitchName, PlacedNote, ScaleValue, SimpleWaveConfig, WaveType,
         },
-        tests::test_util::assert_proto_round_trip,
+        testing::proto::proto_testing::assert_proto_round_trip,
     };
 
     use super::*;
