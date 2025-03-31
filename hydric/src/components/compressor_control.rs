@@ -73,8 +73,8 @@ pub fn compressor_control(store: &Store, effect_index: usize, ui: &mut Ui) {
             0.0..=1.0,
             get_set(effect_instance.meta.wet.into(), |it| {
                 store.dispatch(&sel, Action::SetEffectWet(it as KnobPosition));
-            })
+            }),
         )
-        .text("Compressor wet")
+        .text("Compressor wet"),
     );
 }

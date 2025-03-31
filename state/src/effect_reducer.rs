@@ -43,28 +43,28 @@ pub fn effect_reducer(effect: &mut EffectInstance, action: &Action) -> Action {
                 let prev = config.threshold;
                 config.threshold = *volume;
                 Action::SetCompressorThreshold(prev)
-            },
+            }
             Action::SetCompressorAttackMs(attack_ms) => {
                 let prev = config.attack_ms;
                 config.attack_ms = *attack_ms;
                 Action::SetCompressorAttackMs(prev)
-            },
+            }
             Action::SetCompressorReleaseMs(release_ms) => {
                 let prev = config.release_ms;
                 config.release_ms = *release_ms;
                 Action::SetCompressorReleaseMs(prev)
-            },
+            }
             Action::SetCompressorRatio(ratio) => {
                 let prev = config.ratio;
                 config.ratio = *ratio;
                 Action::SetCompressorRatio(prev)
-            },
+            }
             Action::SetCompressorGain(gain) => {
                 let prev = config.gain;
                 config.gain = *gain;
                 Action::SetCompressorGain(prev)
             }
-            _ => Action::NonReversible
+            _ => Action::NonReversible,
         },
     }
 }

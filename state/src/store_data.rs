@@ -74,10 +74,10 @@ impl Default for StoreData {
                         EffectInstance {
                             effect: Effect::SimpleCompressor {
                                 config: CompressorConfig {
-                                    threshold: 1.0,
+                                    threshold: 0.3,
                                     attack_ms: 0.1,
-                                    release_ms: 0.1,
-                                    ratio: 5.0,
+                                    release_ms: 0.8,
+                                    ratio: 1.5,
                                     gain: 1.0,
                                 },
                             },
