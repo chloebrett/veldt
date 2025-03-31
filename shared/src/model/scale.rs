@@ -27,3 +27,15 @@ pub enum Scale {
     HarmonicMinor,
     Pentatonic,
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::testing::proto::proto_testing::assert_proto_round_trip;
+
+    #[test]
+    fn scale_proto_round_trip() {
+        let scale = Scale::Pentatonic;
+        assert_proto_round_trip::<Scale, ScaleProto>(scale);
+    }
+}
