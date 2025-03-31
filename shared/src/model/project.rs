@@ -125,7 +125,7 @@ mod tests {
 
     #[test]
     fn project_proto_round_trip() {
-        // Project must be fully populated for sufficient tesitng.
+        // Project must be fully populated for sufficient testing.
         let project = Project {
             name: "My Project".to_string(),
             tracks: vec![Track {

@@ -101,7 +101,7 @@ mod tests {
     }
 
     #[test]
-    fn conpressor_config_proto_round_trip() {
+    fn compressor_config_proto_round_trip() {
         let compressor_config = CompressorConfig {
             threshold: 0.3,
             attack: 0.2,
