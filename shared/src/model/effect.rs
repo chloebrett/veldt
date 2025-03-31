@@ -3,7 +3,7 @@ use crate::pmodel::{
     CompressorConfigProto, DelayConfigProto, EffectInstanceProto, EffectMetaProto,
     SimpleCompressorProto, SimpleDelayProto, SimpleEqProto, effect_instance_proto,
 };
-use crate::types::{Decibels, KnobPosition, Milliseconds, Volume};
+use crate::types::{KnobPosition, Milliseconds, Volume};
 use effect_instance_proto::Effect as EffectProto;
 use local_macro::{FromProto, IntoProto};
 
@@ -72,24 +72,24 @@ pub struct EffectMeta {
 
 #[derive(Clone, Debug, PartialEq, FromProto, IntoProto)]
 pub struct DelayConfig {
-    pub amplitude: Volume,
     pub delay_ms: Milliseconds,
 }
 
 #[derive(Clone, Debug, PartialEq, FromProto, IntoProto)]
 pub struct CompressorConfig {
-    threshold: Decibels,
-    attack: Milliseconds,
-    release: Milliseconds,
-    ratio: KnobPosition,
-    gain: Decibels,
+    // TODO: use Decibels instead of Volume.
+    pub threshold: Volume,
+    pub attack_ms: Milliseconds,
+    pub release_ms: Milliseconds,
+    pub ratio: KnobPosition,
+    pub gain: Volume,
 }
 
 #[cfg(test)]
 // Test effect configs as they may not appear in the Project test.
 mod tests {
     use super::*;
-    use crate::tests::test_util::assert_proto_round_trip;
+    use crate::testing::proto::proto_testing::assert_proto_round_trip;
 
     #[test]
     fn delay_config_proto_round_trip() {
@@ -101,7 +101,7 @@ mod tests {
     }
 
     #[test]
-    fn conpressor_config_proto_round_trip() {
+    fn compressor_config_proto_round_trip() {
         let compressor_config = CompressorConfig {
             threshold: 0.3,
             attack: 0.2,

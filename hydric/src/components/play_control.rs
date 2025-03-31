@@ -3,6 +3,7 @@ use super::audio_vis::audio_vis;
 use crate::audio_player::play;
 use crate::rpc::render as server_render;
 use egui::Ui;
+use mesic::graph::{AmpNode, RenderGraph};
 use mesic::render as local_render;
 use poll_promise::Promise;
 use state::Store;
@@ -15,18 +16,24 @@ pub fn play_control(
 ) {
     if ui.button("Play (local)").clicked() {
         let volume = store.get().volume;
-        let buffered_output = local_render(&store.get().project, volume);
-
-        let signal = dasp_signal::from_iter(buffered_output);
-        audio_state.handle = Some(play(signal));
+        let mut graph = local_render(&store.get().project);
+        graph.add_node(AmpNode {
+            volume,
+            should_clip: true,
+        });
+        audio_state.handle = Some(play(graph));
     }
     if let Some(render_promise) = &async_state.server_render {
         if let Some(Some(server_audio)) = render_promise.ready() {
             if ui.button("Play (server)").clicked() {
-                let _volume = store.get().volume; // TODO: reconnect
+                let volume = store.get().volume;
                 audio_state.audio = server_audio.to_vec();
-                let signal = dasp_signal::from_iter(audio_state.audio.clone());
-                audio_state.handle = Some(play(signal));
+                let mut graph = RenderGraph::from_vec(audio_state.audio.clone());
+                graph.add_node(AmpNode {
+                    volume,
+                    should_clip: true,
+                });
+                audio_state.handle = Some(play(graph));
             }
         }
     }

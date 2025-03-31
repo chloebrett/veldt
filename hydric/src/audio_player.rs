@@ -1,15 +1,16 @@
 use chrono::{DateTime, Utc};
 use cpal::Stream;
 use cpal::traits::{DeviceTrait, HostTrait, StreamTrait};
-use dasp_signal::Signal;
+use mesic::graph::RenderGraph;
 use shared::logger::error;
+use std::sync::mpsc;
 
 pub struct Handle {
     _stream: Stream,
     pub start_timestamp: DateTime<Utc>,
 }
 
-pub fn play(mut signal: impl Signal<Frame = f32> + Send + 'static) -> Handle {
+pub fn play(graph: RenderGraph) -> Handle {
     let host = cpal::default_host();
     let device = host
         .default_output_device()
@@ -17,8 +18,15 @@ pub fn play(mut signal: impl Signal<Frame = f32> + Send + 'static) -> Handle {
     let config = device.default_output_config().unwrap();
     let config: &cpal::StreamConfig = &config.into();
 
-    let mut next_sample = move || signal.next();
-    // TODO: replace with egui logger
+    // Using MPSC because RenderGraph is not Send.
+    let (tx, rx) = mpsc::channel();
+
+    // TODO: space out sending the graph instead of just sending it as fast as possible.
+    for sample in graph {
+        let _ = tx.send(sample);
+    }
+
+    let next_sample = move || rx.recv().unwrap_or(0.0);
     let err_fn = |err| error(&format!("an error occurred on stream: {}", err));
     let channels = config.channels as usize;
 

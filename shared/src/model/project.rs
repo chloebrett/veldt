@@ -118,14 +118,14 @@ mod tests {
             AdsrEnvelope, DelayConfig, Effect, EffectMeta, EqConfig, EqType, GeneratorMeta,
             GeneratorType, Note, PitchName, PlacedNote, ScaleValue, SimpleWaveConfig, WaveType,
         },
-        tests::test_util::assert_proto_round_trip,
+        testing::proto::proto_testing::assert_proto_round_trip,
     };
 
     use super::*;
 
     #[test]
     fn project_proto_round_trip() {
-        // Project must be fully populated for sufficient tesitng.
+        // Project must be fully populated for sufficient testing.
         let project = Project {
             name: "My Project".to_string(),
             tracks: vec![Track {

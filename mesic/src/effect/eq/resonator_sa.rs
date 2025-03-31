@@ -1,4 +1,4 @@
-use super::filter::SecondOrderFilter;
+use super::filter::{SecondOrderFilter, SecondOrderFilterConfig};
 use crate::consts::SAMPLE_RATE;
 use shared::model::EqConfig;
 use std::f32::consts::TAU;
@@ -15,5 +15,5 @@ pub fn resonator_smith_angell(config: &EqConfig) -> SecondOrderFilter {
     let a1 = 0.0;
     let a2 = -a0;
 
-    SecondOrderFilter { a0, a1, a2, b1, b2 }
+    SecondOrderFilter::new(SecondOrderFilterConfig { a0, a1, a2, b1, b2 })
 }

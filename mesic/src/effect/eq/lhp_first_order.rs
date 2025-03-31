@@ -1,4 +1,4 @@
-use super::filter::FirstOrderFilter;
+use super::filter::{FirstOrderFilter, FirstOrderFilterConfig};
 use super::low_high::LowHigh;
 use crate::consts::SAMPLE_RATE;
 use shared::model::EqConfig;
@@ -19,5 +19,5 @@ pub fn lhp_first_order(config: &EqConfig, low_high: LowHigh) -> FirstOrderFilter
     let a1: f32 = a0;
     let b1: f32 = -gamma;
 
-    FirstOrderFilter { a0, a1, b1 }
+    FirstOrderFilter::new(FirstOrderFilterConfig { a0, a1, b1 })
 }

@@ -3,7 +3,7 @@ pub mod consts;
 pub mod logger;
 pub mod model;
 pub mod serialize;
-mod tests;
+mod testing;
 pub mod types;
 
 pub mod render {
