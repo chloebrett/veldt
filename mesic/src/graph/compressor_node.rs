@@ -17,7 +17,6 @@ impl CompressorNode {
         let release_frames = (config.release_ms / 1000.0 * SAMPLE_RATE as f32) as usize;
 
         // TODO: consider whether this is the appropriate size for the ring buffer.
-        // Perhaps it should be max(attack, release) instead of the sum?
         // TODO: potentially we need two buffers with different lengths - one for tracking attack
         // and one for release.
         // Note: needs at least one frame or the ring buffer panics.
