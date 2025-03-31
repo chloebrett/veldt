@@ -55,7 +55,7 @@ mod tests {
         };
         let pitch_value: PitchValue = pitch_name.into();
         let result: PitchName = pitch_value.into();
-        assert_eq!(pitch_name, result);
+        assert_eq!(result, pitch_name);
     }
 
     #[test]
@@ -66,10 +66,10 @@ mod tests {
         };
         let pitch_delta: PitchValue = 5;
         let result = pitch_name + pitch_delta;
-        let target_result = PitchName {
+        let expected = PitchName {
             scale_value: ScaleValue::F,
             octave: 4,
         };
-        assert_eq!(target_result, result);
+        assert_eq!(result, expected);
     }
 }

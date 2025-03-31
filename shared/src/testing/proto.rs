@@ -10,6 +10,6 @@ pub mod proto_testing {
     {
         let proto: U = object.clone().into();
         let result: T = proto.into();
-        assert_eq!(object, result);
+        assert_eq!(result, object);
     }
 }
