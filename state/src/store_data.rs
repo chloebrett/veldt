@@ -1,8 +1,8 @@
 use ordered_float::OrderedFloat;
 use shared::model::{
-    AdsrEnvelope, DelayConfig, Effect, EffectInstance, EffectMeta, EqConfig, EqType,
-    GeneratorInstance, GeneratorMeta, GeneratorType, MixerChannel, Note, PitchName, PlacedNote,
-    Project, Scale, ScaleValue, SimpleWaveConfig, Track, WaveType,
+    AdsrEnvelope, CompressorConfig, DelayConfig, Effect, EffectInstance, EffectMeta, EqConfig,
+    EqType, GeneratorInstance, GeneratorMeta, GeneratorType, MixerChannel, Note, PitchName,
+    PlacedNote, Project, Scale, ScaleValue, SimpleWaveConfig, Track, WaveType,
 };
 use shared::types::Volume;
 
@@ -70,6 +70,18 @@ impl Default for StoreData {
                                 config: DelayConfig { delay_ms: 250.0 },
                             },
                             meta: EffectMeta { id: 1, wet: 0.5 },
+                        },
+                        EffectInstance {
+                            effect: Effect::SimpleCompressor {
+                                config: CompressorConfig {
+                                    threshold: 1.0,
+                                    attack_ms: 0.1,
+                                    release_ms: 0.1,
+                                    ratio: 5.0,
+                                    gain: 1.0,
+                                },
+                            },
+                            meta: EffectMeta { id: 2, wet: 1.0 },
                         },
                     ],
                 }],
