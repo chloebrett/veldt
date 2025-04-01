@@ -6,9 +6,7 @@ use state::{Selector, Store};
 pub fn effect_control(store: &Store, effect_index: usize, ui: &mut Ui) {
     let mixer_index = 0;
     let sel = Selector::Effect(mixer_index, effect_index);
-    let dispatch_effect = |action| {
-        store.dispatch(&sel, action);
-    };
+    let dispatch_effect = |action| store.dispatch(&sel, action);
     let effect = store.get().project.mixer[0].effects[effect_index].clone();
     let meta = effect.meta;
     match effect.effect {
