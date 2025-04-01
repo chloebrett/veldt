@@ -29,7 +29,7 @@ pub fn compressor_control(store: &Store, effect_index: usize, ui: &mut Ui) {
 
     ui.add(
         egui::Slider::from_get_set(
-            0.0..=1.0,
+            0.0..=1000.0,
             get_set(config.attack_ms.into(), |it| {
                 store.dispatch(&sel, Action::SetCompressorAttackMs(it as Milliseconds))
             }),
@@ -39,7 +39,7 @@ pub fn compressor_control(store: &Store, effect_index: usize, ui: &mut Ui) {
 
     ui.add(
         egui::Slider::from_get_set(
-            0.0..=1.0,
+            0.0..=1000.0,
             get_set(config.release_ms.into(), |it| {
                 store.dispatch(&sel, Action::SetCompressorReleaseMs(it as Milliseconds))
             }),
