@@ -25,6 +25,11 @@ pub enum Action {
     SetEqKind(EqType),
     SetEqFc(Freq),
     SetEqQ(KnobPosition),
+    SetCompressorThreshold(Volume),
+    SetCompressorAttackMs(Milliseconds),
+    SetCompressorReleaseMs(Milliseconds),
+    SetCompressorRatio(KnobPosition),
+    SetCompressorGain(Volume),
     SetTrackList {
         tracks: Vec<String>,
     },
