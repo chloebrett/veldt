@@ -34,17 +34,17 @@ pub struct Project {
 
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct TrackPlacement {
-    track_id: _TrackId,
+    pub track_id: _TrackId,
 
     /// The time that the track starts within the arrangement.
-    start_position: OrderedFloat<Beats>,
+    pub start_position: OrderedFloat<Beats>,
 
     /// If None, then duration is not clipped.
-    clipped_duration: Option<OrderedFloat<Beats>>,
+    pub clipped_duration: Option<OrderedFloat<Beats>>,
 
     /// Position that the track should be displayed visually, useful if there are overlapping tracks.
     /// Zero is the top.
-    visual_placement: u32,
+    pub visual_placement: u32,
 }
 
 impl PartialOrd for TrackPlacement {
@@ -113,99 +113,13 @@ pub struct MixerChannel {
 
 #[cfg(test)]
 mod tests {
-    use crate::{
-        model::{
-            AdsrEnvelope, CompressorConfig, DelayConfig, Effect, EffectMeta, EqConfig, EqType,
-            GeneratorMeta, GeneratorType, Note, PitchName, PlacedNote, ScaleValue,
-            SimpleWaveConfig, WaveType,
-        },
-        testing::proto::proto_testing::assert_proto_round_trip,
-    };
+    use crate::testing::{project::make_project, proto::assert_proto_round_trip};
 
     use super::*;
 
     #[test]
     fn project_proto_round_trip() {
-        assert_proto_round_trip::<Project, ProjectProto>(Project::default());
-    }
-
-    impl Default for Project {
-        fn default() -> Self {
-            Project {
-                name: "My Project".to_string(),
-                tracks: vec![Track {
-                    notes: vec![PlacedNote {
-                        note: Note {
-                            pitch_name: PitchName {
-                                scale_value: ScaleValue::A,
-                                octave: 4,
-                            },
-                            beats: 1.0,
-                        },
-                        offset: OrderedFloat(0.0),
-                    }],
-                }],
-                track_placements: vec![TrackPlacement {
-                    track_id: 3,
-                    start_position: 2.5.into(),
-                    clipped_duration: Some(5.2.into()),
-                    visual_placement: 6,
-                }],
-                samples: vec![Sample {
-                    data: vec![0.0, 1.0, 3.0],
-                    sample_rate: 1.0,
-                }],
-                generators: vec![GeneratorInstance {
-                    id: 0,
-                    kind: GeneratorType::SimpleWave {
-                        config: SimpleWaveConfig {
-                            wave: WaveType::Sine,
-                            envelope: AdsrEnvelope {
-                                attack: 0.1,
-                                decay: 0.1,
-                                sustain: 0.8,
-                                release: 0.1,
-                            },
-                            osc_count: 4,
-                            detune_cents: 5.0,
-                        },
-                    },
-                    meta: GeneratorMeta { volume: 1.0 },
-                }],
-                mixer: vec![MixerChannel {
-                    effects: vec![
-                        EffectInstance {
-                            effect: Effect::SimpleEq {
-                                config: EqConfig {
-                                    kind: EqType::SimpleResonator,
-                                    fc: 1000.0,
-                                    q: 1.0,
-                                },
-                            },
-                            meta: EffectMeta { id: 0, wet: 1.0 },
-                        },
-                        EffectInstance {
-                            effect: Effect::SimpleDelay {
-                                config: DelayConfig { delay_ms: 250.0 },
-                            },
-                            meta: EffectMeta { id: 1, wet: 0.5 },
-                        },
-                        EffectInstance {
-                            effect: Effect::SimpleCompressor {
-                                config: CompressorConfig {
-                                    threshold: 3.2,
-                                    attack_ms: 20.0,
-                                    release_ms: 500.0,
-                                    ratio: 3.0,
-                                    gain: 1.0,
-                                },
-                            },
-                            meta: EffectMeta { id: 2, wet: 1.0 },
-                        },
-                    ],
-                }],
-                bpm: 120.0,
-            }
-        }
+        let project = make_project();
+        assert_proto_round_trip::<Project, ProjectProto>(project);
     }
 }

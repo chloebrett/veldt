@@ -31,7 +31,7 @@ pub enum Scale {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::testing::proto::proto_testing::assert_proto_round_trip;
+    use crate::testing::proto::assert_proto_round_trip;
 
     #[test]
     fn scale_proto_round_trip() {
