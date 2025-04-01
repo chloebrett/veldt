@@ -1,25 +1,19 @@
 use egui::Ui;
-use shared::model::Effect;
+use shared::model::{DelayConfig, EffectMeta};
 use shared::types::{KnobPosition, Milliseconds};
-use state::{Action, Selector, Store, get_set};
+use state::{Action, get_set};
 
-pub fn delay_control(store: &Store, effect_index: usize, ui: &mut Ui) {
-    let mixer_index = 0;
-    let sel = Selector::Effect(mixer_index, effect_index);
-
-    let effect_instance = store.get().project.mixer[mixer_index].effects[effect_index].clone();
-    let config = match effect_instance.effect {
-        Effect::SimpleDelay { config } => config,
-        _ => panic!(),
-    };
-
+pub fn delay_control<F>(config: DelayConfig, meta: EffectMeta, dispatch_effect: F, ui: &mut Ui)
+where
+    F: Fn(Action),
+{
     ui.label("Delay");
 
     ui.add(
         egui::Slider::from_get_set(
             1.0..=1000.0,
             get_set(config.delay_ms.into(), |it| {
-                store.dispatch(&sel, Action::SetDelayMs(it as Milliseconds))
+                dispatch_effect(Action::SetDelayMs(it as Milliseconds))
             }),
         )
         .text("Delay ms"),
@@ -27,8 +21,8 @@ pub fn delay_control(store: &Store, effect_index: usize, ui: &mut Ui) {
     ui.add(
         egui::Slider::from_get_set(
             0.0..=1.0,
-            get_set(effect_instance.meta.wet.into(), |it| {
-                store.dispatch(&sel, Action::SetEffectWet(it as KnobPosition))
+            get_set(meta.wet.into(), |it| {
+                dispatch_effect(Action::SetEffectWet(it as KnobPosition))
             }),
         )
         .text("Delay wet"),

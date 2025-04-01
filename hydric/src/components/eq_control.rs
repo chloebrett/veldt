@@ -1,28 +1,23 @@
 use crate::widget::selectable_value;
 use egui::Ui;
-use shared::model::Effect;
+use shared::model::EffectMeta;
+use shared::model::EqConfig;
 use shared::model::EqType;
 use shared::types::{Freq, KnobPosition};
-use state::{Action, Selector, Store, get_set};
+use state::{Action, get_set};
 use strum::IntoEnumIterator;
 
-pub fn eq_control(store: &Store, effect_index: usize, ui: &mut Ui) {
-    let mixer_index = 0;
-    let sel = Selector::Effect(mixer_index, effect_index);
-
-    let effect_instance = store.get().project.mixer[mixer_index].effects[effect_index].clone();
-    let config = match effect_instance.effect {
-        Effect::SimpleEq { config } => config,
-        _ => panic!(),
-    };
-
+pub fn eq_control<F>(config: EqConfig, meta: EffectMeta, dispatch_effect: F, ui: &mut Ui)
+where
+    F: Fn(Action),
+{
     ui.label("Equalizer");
 
     ui.add(
         egui::Slider::from_get_set(
             20.0..=20000.0,
             get_set(config.fc.into(), |it| {
-                store.dispatch(&sel, Action::SetEqFc(it as Freq))
+                dispatch_effect(Action::SetEqFc(it as Freq))
             }),
         )
         .text("Resonant frequency")
@@ -33,7 +28,7 @@ pub fn eq_control(store: &Store, effect_index: usize, ui: &mut Ui) {
         egui::Slider::from_get_set(
             0.1..=100.0,
             get_set(config.q.into(), |it| {
-                store.dispatch(&sel, Action::SetEqQ(it as KnobPosition))
+                dispatch_effect(Action::SetEqQ(it as KnobPosition))
             }),
         )
         .text("Q value")
@@ -48,7 +43,7 @@ pub fn eq_control(store: &Store, effect_index: usize, ui: &mut Ui) {
                 selectable_value(
                     ui,
                     get_set(config.kind.clone(), |it| {
-                        store.dispatch(&sel, Action::SetEqKind(it))
+                        dispatch_effect(Action::SetEqKind(it))
                     }),
                     eq_type.clone(),
                     eq_type.to_string(),
@@ -59,8 +54,8 @@ pub fn eq_control(store: &Store, effect_index: usize, ui: &mut Ui) {
     ui.add(
         egui::Slider::from_get_set(
             0.0..=1.0,
-            get_set(effect_instance.meta.wet.into(), |it| {
-                store.dispatch(&sel, Action::SetEffectWet(it as KnobPosition))
+            get_set(meta.wet.into(), |it| {
+                dispatch_effect(Action::SetEffectWet(it as KnobPosition))
             }),
         )
         .text("EQ wet"),
