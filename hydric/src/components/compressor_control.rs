@@ -49,13 +49,14 @@ pub fn compressor_control(store: &Store, effect_index: usize, ui: &mut Ui) {
 
     ui.add(
         egui::Slider::from_get_set(
-            1.0..=100.0,
+            1.0..=f64::INFINITY,
             get_set(config.ratio.into(), |it| {
                 store.dispatch(&sel, Action::SetCompressorRatio(it as KnobPosition))
             }),
         )
         .text("Ratio")
-        .logarithmic(true),
+        .logarithmic(true)
+        .largest_finite(10000.0),
     );
 
     ui.add(
