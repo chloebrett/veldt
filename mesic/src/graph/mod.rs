@@ -5,6 +5,7 @@ mod amp_node;
 mod buffer_node;
 mod compressor_node;
 mod eq_node;
+mod generator_node;
 mod mixer_node;
 mod render_graph;
 
@@ -12,6 +13,7 @@ pub use amp_node::*;
 pub use buffer_node::*;
 pub use compressor_node::*;
 pub use eq_node::*;
+pub use generator_node::*;
 pub use mixer_node::*;
 pub use render_graph::*;
 
