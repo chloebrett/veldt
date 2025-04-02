@@ -1,12 +1,12 @@
 use crate::widget::selectable_value;
-use egui::{Context, Ui};
+use egui::Ui;
 use mesic::create_scale_values;
 use ordered_float::OrderedFloat;
 use shared::model::{Note, PitchName, PlacedNote};
 use shared::types::{Beats, Octave};
 use state::{Action, Selector, Store, get_set};
 
-pub fn notes_control(store: &Store, ui: &mut Ui, ctx: &Context) {
+pub fn notes_control(store: &Store, ui: &mut Ui) {
     let scale_options = create_scale_values(store.get().scale, store.get().key);
     let track_index = 0;
     let track = &store.get().project.tracks[track_index];
@@ -15,7 +15,7 @@ pub fn notes_control(store: &Store, ui: &mut Ui, ctx: &Context) {
         let note = &track.notes[note_index];
         let sel = Selector::Note(track_index, note_index);
 
-        egui::ComboBox::from_id_salt("note_{note_index}")
+        egui::ComboBox::from_id_salt(format!("note_{note_index}"))
             .selected_text(note.note.pitch_name.scale_value.to_string())
             .show_ui(ui, |ui| {
                 for scale_note in scale_options.iter() {

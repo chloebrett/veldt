@@ -1,18 +1,18 @@
 use crate::widget::selectable_value;
-use egui::{Context, Ui};
+use egui::Ui;
 use ordered_float::OrderedFloat;
 use shared::model::{TrackId, TrackPlacement};
 use shared::types::Beats;
 use state::{Action, Selector, Store, get_set};
 
-pub fn track_placement_control(store: &Store, ui: &mut Ui, ctx: &Context) {
+pub fn track_placement_control(store: &Store, ui: &mut Ui) {
     let project = &store.get().project;
 
     for track_placement_index in 0..project.track_placements.len() {
         let placement = &project.track_placements[track_placement_index];
         let sel = Selector::TrackPlacement(track_placement_index);
 
-        egui::ComboBox::from_id_salt(format!("placement_{track_placement_index}"))
+        egui::ComboBox::from_id_salt(format!("track_placement_{track_placement_index}"))
             .selected_text(format!("Track {}", placement.track_id))
             .show_ui(ui, |ui| {
                 for track_index in 0..project.tracks.len() {

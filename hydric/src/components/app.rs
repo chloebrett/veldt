@@ -8,7 +8,7 @@ use crate::widget::string_observer;
 use egui::Pos2;
 use egui::{ScrollArea, scroll_area::ScrollBarVisibility};
 use poll_promise::Promise;
-use shared::model::{Sample, Track};
+use shared::model::{Project, Sample};
 use shared::types::{Beats, Volume};
 use state::{Action, Store, get_set};
 
@@ -16,9 +16,9 @@ use state::{Action, Store, get_set};
 #[derive(Default)]
 pub struct AsyncState {
     pub server_render: Option<Promise<Option<Vec<f32>>>>,
-    pub save_track: Option<Promise<Option<()>>>,
-    pub track_list: Option<Promise<Option<Vec<String>>>>,
-    pub load_track: Option<Promise<Option<Track>>>,
+    pub save_project: Option<Promise<Option<()>>>,
+    pub project_list: Option<Promise<Option<Vec<String>>>>,
+    pub load_project: Option<Promise<Option<Project>>>,
     pub load_sample: Option<Promise<Option<Sample>>>,
 }
 
@@ -150,9 +150,9 @@ impl eframe::App for App {
                             });
                     }
                     ui.separator();
-                    track_placement_control(&self.store, ui, ctx);
+                    track_placement_control(&self.store, ui);
                     ui.separator();
-                    notes_control(&self.store, ui, ctx);
+                    notes_control(&self.store, ui);
                     ui.separator();
                     undo_redo_control(&mut self.store, ui);
                     ui.separator();
