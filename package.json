@@ -16,6 +16,7 @@
     "l": "yarn hl; yarn ml; yarn sl; yarn stl; yarn xl",
     "p": "./.husky/pre-commit",
     "r": "yarn concurrently 'yarn xr' 'yarn hr'",
+    "t": "yarn mt; yarn st; yarn stt; yarn xt",
     "hb": "cd hydric; cargo build --target=wasm32-unknown-unknown",
     "hf": "cd hydric; cargo fmt",
     "hr": "cd hydric; cargo build --target=wasm32-unknown-unknown && trunk serve",
@@ -23,15 +24,19 @@
     "mb": "cd mesic; cargo build",
     "mf": "cd mesic; cargo fmt",
     "ml": "cd mesic; cargo clippy -- -W clippy::all",
+    "mt": "cd mesic; cargo test",
     "sb": "cd shared; cargo build",
     "sf": "cd shared; cargo fmt",
     "sl": "cd shared; cargo clippy -- -W clippy::all",
+    "st": "cd shared; cargo test",
     "stb": "cd state; cargo build",
     "stf": "cd state; cargo fmt",
     "stl": "cd state; cargo clippy -- -W clippy::all",
+    "stt": "cd state; cargo test",
     "xb": "cd xeric; cargo build",
     "xf": "cd xeric; cargo fmt",
     "xr": "cd xeric; cargo run",
-    "xl": "cd xeric; cargo clippy -- -W clippy::all"
+    "xl": "cd xeric; cargo clippy -- -W clippy::all",
+    "xt": "cd xeric; cargo test"
   }
 }

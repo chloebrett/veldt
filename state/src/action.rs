@@ -34,6 +34,11 @@ pub enum Action {
     },
     SetTrackPlacementTrackId(TrackId),
     SetTrackPlacementOffset(Beats),
+    SetCompressorThreshold(Volume),
+    SetCompressorAttackMs(Milliseconds),
+    SetCompressorReleaseMs(Milliseconds),
+    SetCompressorRatio(KnobPosition),
+    SetCompressorGain(Volume),
     SetTrackList {
         tracks: Vec<String>,
     },
