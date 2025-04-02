@@ -12,7 +12,7 @@ pub fn track_placement_control(store: &Store, ui: &mut Ui) {
         let placement = &project.track_placements[track_placement_index];
         let sel = Selector::TrackPlacement(track_placement_index);
 
-        egui::ComboBox::from_id_salt(format!("placement_{track_placement_index}"))
+        egui::ComboBox::from_id_salt(format!("track_placement_{track_placement_index}"))
             .selected_text(format!("Track {}", placement.track_id))
             .show_ui(ui, |ui| {
                 for track_index in 0..project.tracks.len() {

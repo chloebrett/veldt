@@ -15,7 +15,7 @@ pub fn notes_control(store: &Store, ui: &mut Ui) {
         let note = &track.notes[note_index];
         let sel = Selector::Note(track_index, note_index);
 
-        egui::ComboBox::from_id_salt("note_{note_index}")
+        egui::ComboBox::from_id_salt(format!("note_{note_index}"))
             .selected_text(note.note.pitch_name.scale_value.to_string())
             .show_ui(ui, |ui| {
                 for scale_note in scale_options.iter() {
