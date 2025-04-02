@@ -1,4 +1,7 @@
-use shared::model::{AdsrEnvelope, EqType, PlacedNote, Sample, Scale, ScaleValue, Track, WaveType};
+use shared::model::{
+    AdsrEnvelope, EqType, PlacedNote, Sample, Scale, ScaleValue, Track, TrackId, TrackPlacement,
+    WaveType,
+};
 use shared::types::{Beats, Freq, KnobPosition, Milliseconds, Octave, Volume};
 
 #[derive(Debug, Clone)]
@@ -25,6 +28,12 @@ pub enum Action {
     SetEqKind(EqType),
     SetEqFc(Freq),
     SetEqQ(KnobPosition),
+    AddTrackPlacement(TrackPlacement),
+    DeleteTrackPlacement {
+        track_placement_index: usize,
+    },
+    SetTrackPlacementTrackId(TrackId),
+    SetTrackPlacementOffset(Beats),
     SetTrackList {
         tracks: Vec<String>,
     },

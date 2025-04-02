@@ -5,4 +5,5 @@ pub enum Selector {
     Note(/* track_index */ usize, /* note_index */ usize),
     Effect(/* mixer_index */ usize, /* effect_index */ usize),
     Generator(/* generator_index */ usize),
+    TrackPlacement(/* track_placement_index */ usize),
 }

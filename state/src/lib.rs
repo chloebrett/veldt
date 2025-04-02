@@ -7,6 +7,7 @@ mod root_reducer;
 mod selector;
 mod store;
 mod store_data;
+mod track_placement_reducer;
 mod track_reducer;
 mod undo;
 
@@ -19,5 +20,6 @@ use root_reducer::*;
 pub use selector::*;
 pub use store::*;
 pub use store_data::*;
+use track_placement_reducer::*;
 use track_reducer::*;
 use undo::*;

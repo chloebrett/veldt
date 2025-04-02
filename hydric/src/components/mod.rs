@@ -11,6 +11,7 @@ mod notes_control;
 mod play_control;
 mod sample_control;
 mod save_control;
+mod track_placement_control;
 mod undo_redo;
 mod window_toggle;
 
@@ -25,5 +26,6 @@ use notes_control::*;
 use play_control::*;
 use sample_control::*;
 use save_control::*;
+use track_placement_control::*;
 use undo_redo::*;
 use window_toggle::*;
