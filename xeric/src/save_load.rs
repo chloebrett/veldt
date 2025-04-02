@@ -1,5 +1,5 @@
 use shared::logger::log;
-use shared::pmodel::{NoteProto, ProjectProto};
+use shared::pmodel::ProjectProto;
 use shared::save_load::load_project_list_server::LoadProjectList;
 use shared::save_load::load_project_server::LoadProject;
 use shared::save_load::save_project_server::SaveProject;

@@ -8,7 +8,7 @@ use crate::widget::string_observer;
 use egui::Pos2;
 use egui::{ScrollArea, scroll_area::ScrollBarVisibility};
 use poll_promise::Promise;
-use shared::model::{Sample, Track, Project};
+use shared::model::{Sample, Project};
 use shared::types::{Beats, Volume};
 use state::{Action, Store, get_set};
 

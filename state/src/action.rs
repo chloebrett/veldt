@@ -1,5 +1,5 @@
 use shared::model::{
-    AdsrEnvelope, EqType, PlacedNote, Sample, Scale, ScaleValue, Track, TrackId, TrackPlacement,
+    AdsrEnvelope, EqType, PlacedNote, Sample, Scale, ScaleValue, TrackId, TrackPlacement,
     WaveType, Project,
 };
 use shared::types::{Beats, Freq, KnobPosition, Milliseconds, Octave, Volume};

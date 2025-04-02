@@ -1,5 +1,5 @@
 use crate::widget::selectable_value;
-use egui::{Context, Ui};
+use egui::Ui;
 use mesic::create_scale_values;
 use ordered_float::OrderedFloat;
 use shared::model::{Note, PitchName, PlacedNote};
