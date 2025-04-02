@@ -142,7 +142,7 @@ mod tests {
             }],
             track_placements: vec![TrackPlacement {
                 track_id: 3,
-                start_position: 2.5.into(),
+                offset: 2.5.into(),
                 clipped_duration: Some(5.2.into()),
                 visual_placement: 6,
             }],
