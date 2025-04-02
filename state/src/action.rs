@@ -38,6 +38,11 @@ pub enum Action {
     SetProjectList {
         projects: Vec<String>,
     },
+    SetCompressorThreshold(Volume),
+    SetCompressorAttackMs(Milliseconds),
+    SetCompressorReleaseMs(Milliseconds),
+    SetCompressorRatio(KnobPosition),
+    SetCompressorGain(Volume),
     // Overwrites the whole project.
     SetProject {
         project: Project,

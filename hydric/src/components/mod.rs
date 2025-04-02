@@ -1,5 +1,6 @@
 mod app;
 mod audio_vis;
+mod compressor_control;
 mod delay_control;
 mod effect_control;
 mod envelope_control;

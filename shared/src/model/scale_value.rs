@@ -19,10 +19,6 @@ use strum::{Display, EnumIter, EnumString};
     IntoProto,
 )]
 pub enum ScaleValue {
-    A,
-    #[strum(serialize = "A#")]
-    ASharp,
-    B,
     C,
     #[strum(serialize = "C#")]
     CSharp,
@@ -36,6 +32,10 @@ pub enum ScaleValue {
     G,
     #[strum(serialize = "G#")]
     GSharp,
+    A,
+    #[strum(serialize = "A#")]
+    ASharp,
+    B,
 }
 
 impl From<ScaleValue> for PitchValue {
