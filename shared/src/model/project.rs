@@ -6,7 +6,7 @@ use local_macro::{FromProto, IntoProto};
 use ordered_float::OrderedFloat;
 use std::cmp::Ordering;
 
-type _TrackId = usize;
+pub type TrackId = usize;
 type _SampleId = usize;
 
 #[derive(Clone, Debug, PartialEq, FromProto, IntoProto)]
@@ -34,17 +34,17 @@ pub struct Project {
 
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct TrackPlacement {
-    track_id: _TrackId,
+    pub track_id: TrackId,
 
     /// The time that the track starts within the arrangement.
-    start_position: OrderedFloat<Beats>,
+    pub offset: OrderedFloat<Beats>,
 
     /// If None, then duration is not clipped.
-    clipped_duration: Option<OrderedFloat<Beats>>,
+    pub clipped_duration: Option<OrderedFloat<Beats>>,
 
     /// Position that the track should be displayed visually, useful if there are overlapping tracks.
     /// Zero is the top.
-    visual_placement: u32,
+    pub visual_placement: u32,
 }
 
 impl PartialOrd for TrackPlacement {
@@ -55,7 +55,7 @@ impl PartialOrd for TrackPlacement {
 
 impl Ord for TrackPlacement {
     fn cmp(&self, other: &Self) -> Ordering {
-        self.start_position.cmp(&other.start_position)
+        self.offset.cmp(&other.offset)
     }
 }
 
@@ -63,7 +63,7 @@ impl From<TrackPlacementProto> for TrackPlacement {
     fn from(item: TrackPlacementProto) -> Self {
         TrackPlacement {
             track_id: item.track_id as usize,
-            start_position: item.start_position.into(),
+            offset: item.offset.into(),
             clipped_duration: item.clipped_duration.map(OrderedFloat),
             visual_placement: item.visual_placement,
         }
@@ -74,7 +74,7 @@ impl From<TrackPlacement> for TrackPlacementProto {
     fn from(item: TrackPlacement) -> Self {
         TrackPlacementProto {
             track_id: item.track_id as u32,
-            start_position: *item.start_position,
+            offset: *item.offset,
             clipped_duration: item.clipped_duration.map(|it| *it),
             visual_placement: item.visual_placement,
         }
@@ -142,7 +142,7 @@ mod tests {
             }],
             track_placements: vec![TrackPlacement {
                 track_id: 3,
-                start_position: 2.5.into(),
+                offset: 2.5.into(),
                 clipped_duration: Some(5.2.into()),
                 visual_placement: 6,
             }],

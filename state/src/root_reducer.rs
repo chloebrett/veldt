@@ -1,5 +1,6 @@
 use crate::{
-    Action, Selector, StoreData, effect_reducer, generator_reducer, note_reducer, track_reducer,
+    Action, Selector, StoreData, effect_reducer, generator_reducer, note_reducer,
+    track_placement_reducer, track_reducer,
 };
 use shared::logger::log;
 
@@ -21,7 +22,30 @@ pub fn root_reducer(data: &mut StoreData, selector: &Selector, action: &Action) 
             &mut data.project.tracks[*track_index].notes[*note_index],
             action,
         ),
+        Selector::TrackPlacement(track_placement_index) => track_placement_reducer(
+            &mut data.project.track_placements[*track_placement_index],
+            action,
+        ),
         Selector::Root => match action {
+            Action::AddTrackPlacement(track_placement) => {
+                let track_placement_index = data.project.track_placements.len();
+                data.project.track_placements.push(track_placement.clone());
+                Action::DeleteTrackPlacement {
+                    track_placement_index,
+                }
+            }
+            Action::DeleteTrackPlacement {
+                track_placement_index,
+            } => {
+                let prev = data
+                    .project
+                    .track_placements
+                    .get(*track_placement_index)
+                    .expect("Can't delete non-existent track placement!")
+                    .clone();
+                data.project.track_placements.remove(*track_placement_index);
+                Action::AddTrackPlacement(prev)
+            }
             Action::SetProjectName(name) => {
                 let prev = data.project.name.clone();
                 data.project.name = name.to_string();

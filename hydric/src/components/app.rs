@@ -1,7 +1,7 @@
 use super::{
     effect_control, envelope_control, generator_control, key_control, load_control,
     note_roll::note_roll_display, notes_control, play_control, sample_control, save_button,
-    toggle_window_panel, undo_redo_control,
+    toggle_window_panel, track_placement_control, undo_redo_control,
 };
 use crate::audio_player::Handle;
 use crate::widget::string_observer;
@@ -70,7 +70,7 @@ impl eframe::App for App {
                 .show(ui, |ui| {
                     ui.heading("Veldt");
                     ui.horizontal(|ui| {
-                        ui.label("Track name: ");
+                        ui.label("Project name: ");
                         let project_name = self.store.get().project.name.clone();
                         let mut name_observer = string_observer(
                             get_set(project_name.clone(), |it| {
@@ -149,6 +149,8 @@ impl eframe::App for App {
                                 key_control(&self.store, ui);
                             });
                     }
+                    ui.separator();
+                    track_placement_control(&self.store, ui, ctx);
                     ui.separator();
                     notes_control(&self.store, ui, ctx);
                     ui.separator();

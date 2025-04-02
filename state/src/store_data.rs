@@ -33,7 +33,6 @@ impl Default for StoreData {
                         offset: OrderedFloat(0.0),
                     }],
                 }],
-                // TODO: use track placements
                 track_placements: vec![],
                 samples: vec![],
                 generators: vec![GeneratorInstance {
