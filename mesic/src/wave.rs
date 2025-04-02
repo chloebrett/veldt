@@ -17,10 +17,11 @@ fn wave(
     envelope: &AdsrEnvelope,
     wave_type: WaveType,
     detune_cents: f32,
+    start_index: usize,
 ) -> Vec<f32> {
     let step =
         freq(*pitch_name) * detune_multiplier(detune_cents) * 2.0 * PI / (SAMPLE_RATE as f32);
-    let range = 0..(SAMPLE_RATE as f32 * beats / bpm * 60.0) as i32;
+    let range = (start_index as i32)..(SAMPLE_RATE as f32 * beats / bpm * 60.0) as i32;
 
     range
         .map(|x: i32| {
@@ -37,6 +38,7 @@ pub fn polyphonic_wave(
     bpm: Beats,
     volume: f32,
     config: &SimpleWaveConfig,
+    start_index: usize, // allows starting the wave in the middle.
 ) -> Vec<f32> {
     let detune = config.detune_cents;
     let osc_count = config.osc_count;
@@ -55,6 +57,7 @@ pub fn polyphonic_wave(
                 &config.envelope,
                 config.wave,
                 *det,
+                start_index,
             )
         })
         .collect();
