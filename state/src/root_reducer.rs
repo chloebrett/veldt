@@ -71,16 +71,16 @@ pub fn root_reducer(data: &mut StoreData, selector: &Selector, action: &Action) 
                 data.volume = *volume;
                 Action::SetVolume(prev)
             }
-            Action::SetTrackList { tracks } => {
-                data.track_list = tracks.clone();
+            Action::SetProjectList { projects } => {
+                data.project_list = projects.clone();
                 Action::NonReversible
             }
-            Action::SetTrack { track_index, track } => {
-                data.project.tracks[*track_index] = track.clone();
+            Action::SetProject { project } => {
+                data.project = project.clone();
                 Action::NonReversible
             }
-            Action::SetLoadTrackName { track_name } => {
-                data.load_track_name = Some(track_name.clone());
+            Action::SetLoadProjectName { project_name } => {
+                data.load_project_name = Some(project_name.clone());
                 Action::NonReversible
             }
             Action::AddSample(sample) => {

@@ -11,9 +11,8 @@ pub struct StoreData {
     pub key: ScaleValue,
     pub scale: Scale,
     pub volume: Volume,
-    // TODO: call this "project_list"?
-    pub track_list: Vec<String>,
-    pub load_track_name: Option<String>,
+    pub project_list: Vec<String>,
+    pub load_project_name: Option<String>,
 }
 
 impl Default for StoreData {
@@ -77,8 +76,8 @@ impl Default for StoreData {
             volume: 1.0,
             key: ScaleValue::A,
             scale: Scale::Chromatic,
-            track_list: vec![],
-            load_track_name: None,
+            project_list: vec![],
+            load_project_name: None,
         }
     }
 }

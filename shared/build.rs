@@ -7,7 +7,7 @@ fn main() {
                 "proto/pmodel.proto",
                 "proto/render.proto",
                 "proto/load_sample.proto",
-                "proto/save_track.proto",
+                "proto/save_load.proto",
             ],
             &["proto"],
         )

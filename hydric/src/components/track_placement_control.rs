@@ -5,7 +5,7 @@ use shared::model::{TrackId, TrackPlacement};
 use shared::types::Beats;
 use state::{Action, Selector, Store, get_set};
 
-pub fn track_placement_control(store: &Store, ui: &mut Ui, ctx: &Context) {
+pub fn track_placement_control(store: &Store, ui: &mut Ui) {
     let project = &store.get().project;
 
     for track_placement_index in 0..project.track_placements.len() {

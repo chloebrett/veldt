@@ -1,6 +1,6 @@
 use shared::model::{
     AdsrEnvelope, EqType, PlacedNote, Sample, Scale, ScaleValue, Track, TrackId, TrackPlacement,
-    WaveType,
+    WaveType, Project,
 };
 use shared::types::{Beats, Freq, KnobPosition, Milliseconds, Octave, Volume};
 
@@ -34,15 +34,16 @@ pub enum Action {
     },
     SetTrackPlacementTrackId(TrackId),
     SetTrackPlacementOffset(Beats),
-    SetTrackList {
-        tracks: Vec<String>,
+    // Sets the names of loadable projects.
+    SetProjectList {
+        projects: Vec<String>,
     },
-    SetTrack {
-        track_index: usize,
-        track: Track,
+    // Overwrites the whole project.
+    SetProject {
+        project: Project,
     },
-    SetLoadTrackName {
-        track_name: String,
+    SetLoadProjectName {
+        project_name: String,
     },
     AddSample(Sample),
 

@@ -1,0 +1,40 @@
+syntax = "proto3";
+
+package save_load;
+
+import "pmodel.proto";
+
+service SaveProject {
+  rpc SaveProject (SaveProjectRequest) returns (SaveProjectReply) {}
+}
+
+service LoadProjectList {
+  rpc LoadProjectList (LoadProjectListRequest) returns (LoadProjectListReply) {}
+}
+
+service LoadProject {
+  rpc LoadProject (LoadProjectRequest) returns (LoadProjectReply) {}
+}
+
+message SaveProjectRequest {
+  string name = 1;
+  pmodel.ProjectProto project = 2;
+}
+
+message SaveProjectReply {
+}
+
+message LoadProjectListRequest {
+}
+
+message LoadProjectListReply {
+  repeated string project_names = 1;
+}
+
+message LoadProjectRequest {
+  string name = 1;
+}
+
+message LoadProjectReply {
+  pmodel.ProjectProto project = 1;
+}

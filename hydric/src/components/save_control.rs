@@ -1,72 +1,70 @@
 use super::AsyncState;
-use crate::rpc::{load_track, load_track_list, save_track};
+use crate::rpc::{load_project, save_project, load_project_list};
 use crate::widget::selectable_value;
 use egui::Ui;
 use poll_promise::Promise;
-use shared::model::Track;
+use shared::model::Project;
 use state::{Action, Store, get_set};
 
 pub fn save_button(store: &Store, async_state: &mut AsyncState, ui: &mut Ui) {
     if ui.button("Save").clicked() {
-        let track_index = 0;
-        let track_name = store.get().project.name.clone();
-        let track = store.get().project.tracks[track_index].clone();
-        async_state.save_track = Some(Promise::spawn_local(async move {
-            save_track(track_name, track).await
+        let project_name = store.get().project.name.clone();
+        let project = store.get().project.clone();
+        async_state.save_project = Some(Promise::spawn_local(async move {
+            save_project(project_name, project).await
         }));
     }
 }
 
 pub fn load_control(store: &Store, async_state: &mut AsyncState, ui: &mut Ui) {
     {
-        let save_track_promise: &Option<Promise<Option<()>>> = &async_state.save_track;
-        let promise_ref: Option<&Promise<Option<()>>> = save_track_promise.as_ref();
+        let save_project_promise: &Option<Promise<Option<()>>> = &async_state.save_project;
+        let promise_ref: Option<&Promise<Option<()>>> = save_project_promise.as_ref();
         if let Some(promise) = promise_ref {
             if let Some(Some(())) = promise.ready() {
-                async_state.save_track = None;
+                async_state.save_project = None;
 
-                // Once a track has been saved, re-load the list.
-                async_state.track_list =
-                    Some(Promise::spawn_local(async move { load_track_list().await }));
+                // Once a project has been saved, re-load the list of project names;
+                async_state.project_list =
+                    Some(Promise::spawn_local(async move { load_project_list().await }));
             }
         }
     }
 
     {
-        let track_list_promise: &Option<Promise<Option<Vec<String>>>> = &async_state.track_list;
-        let promise_ref = track_list_promise.as_ref();
+        let project_list_promise: &Option<Promise<Option<Vec<String>>>> = &async_state.project_list;
+        let promise_ref = project_list_promise.as_ref();
         let mut clear = false;
         if let Some(promise) = promise_ref {
             if let Some(Some(list)) = promise.ready() {
                 clear = true;
 
-                store.dispatchr(Action::SetTrackList {
-                    tracks: list.clone(),
+                store.dispatchr(Action::SetProjectList {
+                    projects: list.clone(),
                 });
             }
         }
         if clear {
-            async_state.track_list = None;
+            async_state.project_list = None;
         }
     }
 
     // TODO: generalise this promise handling logic.
     {
-        let load_track_promise: &Option<Promise<Option<Track>>> = &async_state.load_track;
-        let promise_ref = load_track_promise.as_ref();
+        let load_project_promise: &Option<Promise<Option<Project>>> = &async_state.load_project;
+        let promise_ref = load_project_promise.as_ref();
         let mut clear = false;
         if let Some(promise) = promise_ref {
-            if let Some(Some(track)) = promise.ready() {
+            if let Some(Some(project)) = promise.ready() {
                 clear = true;
 
-                store.dispatchr(Action::SetTrack {
-                    track_index: 0,
-                    track: track.clone(),
+                store.dispatchr(Action::SetProject {
+                    project: project.clone(),
                 });
             }
         }
         if clear {
-            async_state.load_track = None;
+            async_state.load_project = None;
         }
     }
 
@@ -75,18 +73,18 @@ pub fn load_control(store: &Store, async_state: &mut AsyncState, ui: &mut Ui) {
             .selected_text(
                 store
                     .get()
-                    .load_track_name
+                    .load_project_name
                     .clone()
                     .unwrap_or("".to_string())
                     .to_string(),
             )
             .show_ui(ui, |ui| {
-                for name in store.get().track_list.iter() {
+                for name in store.get().project_list.iter() {
                     selectable_value(
                         ui,
-                        get_set(store.get().load_track_name.clone(), |it| {
+                        get_set(store.get().load_project_name.clone(), |it| {
                             if let Some(it) = it {
-                                store.dispatchr(Action::SetLoadTrackName { track_name: it });
+                                store.dispatchr(Action::SetLoadProjectName { project_name: it });
                             }
                         }),
                         Some(name.clone()),
@@ -96,9 +94,9 @@ pub fn load_control(store: &Store, async_state: &mut AsyncState, ui: &mut Ui) {
             });
         // TODO disable button when no load_name
         if ui.button("Load").clicked() {
-            if let Some(name) = store.get().load_track_name.clone() {
-                async_state.load_track =
-                    Some(Promise::spawn_local(async move { load_track(name).await }));
+            if let Some(name) = store.get().load_project_name.clone() {
+                async_state.load_project =
+                    Some(Promise::spawn_local(async move { load_project(name).await }));
             }
         };
     });
