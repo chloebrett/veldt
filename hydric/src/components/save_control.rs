@@ -1,5 +1,5 @@
 use super::AsyncState;
-use crate::rpc::{load_project, save_project, load_project_list};
+use crate::rpc::{load_project, load_project_list, save_project};
 use crate::widget::selectable_value;
 use egui::Ui;
 use poll_promise::Promise;
@@ -26,7 +26,9 @@ pub fn load_control(store: &Store, async_state: &mut AsyncState, ui: &mut Ui) {
 
                 // Once a project has been saved, re-load the list of project names;
                 async_state.project_list =
-                    Some(Promise::spawn_local(async move { load_project_list().await }));
+                    Some(Promise::spawn_local(
+                        async move { load_project_list().await },
+                    ));
             }
         }
     }
@@ -96,7 +98,9 @@ pub fn load_control(store: &Store, async_state: &mut AsyncState, ui: &mut Ui) {
         if ui.button("Load").clicked() {
             if let Some(name) = store.get().load_project_name.clone() {
                 async_state.load_project =
-                    Some(Promise::spawn_local(async move { load_project(name).await }));
+                    Some(Promise::spawn_local(
+                        async move { load_project(name).await },
+                    ));
             }
         };
     });

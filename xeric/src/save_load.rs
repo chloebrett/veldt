@@ -4,8 +4,8 @@ use shared::save_load::load_project_list_server::LoadProjectList;
 use shared::save_load::load_project_server::LoadProject;
 use shared::save_load::save_project_server::SaveProject;
 use shared::save_load::{
-    LoadProjectListReply, LoadProjectListRequest, LoadProjectReply, LoadProjectRequest, SaveProjectReply,
-    SaveProjectRequest,
+    LoadProjectListReply, LoadProjectListRequest, LoadProjectReply, LoadProjectRequest,
+    SaveProjectReply, SaveProjectRequest,
 };
 use std::collections::HashMap;
 use std::sync::{Arc, Mutex};
@@ -41,7 +41,9 @@ impl LoadProjectList for SaveLoadContext {
         _request: tonic::Request<LoadProjectListRequest>,
     ) -> Result<tonic::Response<LoadProjectListReply>, tonic::Status> {
         let list = self.projects.lock().unwrap().keys().cloned().collect();
-        Ok(tonic::Response::new(LoadProjectListReply { project_names: list }))
+        Ok(tonic::Response::new(LoadProjectListReply {
+            project_names: list,
+        }))
     }
 }
 
