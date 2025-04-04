@@ -7,6 +7,7 @@ mod lhp_second_order;
 mod low_high;
 mod resonator_sa;
 mod resonator_simple;
+mod lhp_second_order_lr;
 
 use apf_first_order::*;
 use apf_second_order::*;
@@ -16,6 +17,7 @@ use lhp_second_order::*;
 use low_high::LowHigh;
 use resonator_sa::*;
 use resonator_simple::*;
+use lhp_second_order_lr::*;
 use shared::model::{EqConfig, EqType};
 
 pub trait ApplyFilter {
@@ -34,6 +36,8 @@ pub fn eq_filter(config: &EqConfig) -> Box<dyn ApplyFilter> {
         EqType::FirstOrderAllPass => Box::new(apf_first_order(config)),
         EqType::SecondOrderAllPass => Box::new(apf_second_order(config)),
         EqType::SimpleSecondOrderBandStop => Box::new(band_stop_basic(config)),
+        EqType::LinkwitzRileySecondOrderLowPass => Box::new(lhp_second_order_lr(config, LowHigh::Low)),
+        EqType::LinkwitzRileySecondOrderHighPass => Box::new(lhp_second_order_lr(config, LowHigh::High)),
         _ => panic!("EQ type not implemented!"),
     }
 }
