@@ -1,5 +1,5 @@
 use shared::logger::log;
-use shared::pmodel::ProjectProto;
+use shared::model::Project;
 use shared::save_load::load_project_list_server::LoadProjectList;
 use shared::save_load::load_project_server::LoadProject;
 use shared::save_load::save_project_server::SaveProject;
@@ -16,7 +16,7 @@ pub struct SaveLoadContext {
     pub projects: SavedProjects,
 }
 
-type SavedProjects = Arc<Mutex<HashMap<String, ProjectProto>>>;
+type SavedProjects = Arc<Mutex<HashMap<String, Project>>>;
 
 #[async_trait]
 impl SaveProject for SaveLoadContext {
@@ -28,7 +28,7 @@ impl SaveProject for SaveLoadContext {
         self.projects
             .lock()
             .unwrap()
-            .insert(name.clone(), project.unwrap().clone());
+            .insert(name.clone(), project.unwrap().clone().into());
         log(&format!("Saved {}", name.clone()));
         Ok(tonic::Response::new(SaveProjectReply {}))
     }
@@ -56,7 +56,7 @@ impl LoadProject for SaveLoadContext {
         let name = request.into_inner().name;
         if let Some(project) = self.projects.lock().unwrap().get(&name) {
             Ok(tonic::Response::new(LoadProjectReply {
-                project: Some(project.clone()),
+                project: Some(project.clone().into()),
             }))
         } else {
             Err(tonic::Status::invalid_argument(

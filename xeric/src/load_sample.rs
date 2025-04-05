@@ -17,10 +17,10 @@ pub fn to_f32(sample: i32) -> f32 {
     PCM_DIV_I16 * sample as f32 / 128.0
 }
 
-pub struct MyLoadSample;
+pub struct LoadSampleContext;
 
 #[async_trait]
-impl LoadSample for MyLoadSample {
+impl LoadSample for LoadSampleContext {
     async fn load_sample(
         self: &Self,
         request: tonic::Request<LoadSampleRequest>,
