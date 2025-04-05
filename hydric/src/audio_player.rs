@@ -22,6 +22,8 @@ pub fn play(graph: RenderGraph) -> Handle {
     let (tx, rx) = mpsc::channel();
 
     // TODO: space out sending the graph instead of just sending it as fast as possible.
+    // Note: could also consider using a graph of BoxedNodeSend, as then we can just send the whole
+    // thing directly.
     for sample in graph {
         let _ = tx.send(sample);
     }

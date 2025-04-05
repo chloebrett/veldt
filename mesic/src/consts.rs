@@ -16,3 +16,4 @@ pub const REFERENCE_PITCH: ReferencePitch<'static> = ReferencePitch {
 };
 
 pub const SAMPLE_RATE: i32 = 44_100;
+pub const SECONDS_PER_MINUTE: f32 = 60.0;
