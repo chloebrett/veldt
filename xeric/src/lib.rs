@@ -1,47 +1,25 @@
-use crate::load_sample::MyLoadSample;
+use crate::load_sample::LoadSampleContext;
+use crate::render::RenderContext;
+use crate::save_load::SaveLoadContext;
 use http::{HeaderValue, Method};
-use mesic::render;
-use save_load::SaveLoadContext;
-use shared::bytes::as_bytes;
 use shared::consts::{HYDRIC_URL, XERIC_SOCKET_ADDR};
 use shared::load_sample::load_sample_server::LoadSampleServer;
-use shared::render::render_server::{Render, RenderServer};
-use shared::render::{RenderReply, RenderRequest};
+use shared::render::render_server::RenderServer;
 use shared::save_load::load_project_list_server::LoadProjectListServer;
 use shared::save_load::load_project_server::LoadProjectServer;
 use shared::save_load::save_project_server::SaveProjectServer;
 use std::collections::HashMap;
 use std::sync::{Arc, Mutex};
-use tonic::async_trait;
 use tonic_web::GrpcWebLayer;
 use tower_http::cors::AllowHeaders;
 
 pub mod load_sample;
+pub mod render;
 pub mod save_load;
-
-struct RenderContext;
-
-#[async_trait]
-impl Render for RenderContext {
-    async fn render(
-        &self,
-        request: tonic::Request<RenderRequest>,
-    ) -> Result<tonic::Response<RenderReply>, tonic::Status> {
-        let project = request
-            .into_inner()
-            .project
-            .ok_or(tonic::Status::invalid_argument("Project must be supplied"))?
-            .into();
-        let graph = &mut render(&project);
-        let bytes = as_bytes(&graph.collect());
-
-        Ok(tonic::Response::new(RenderReply { audio: bytes }))
-    }
-}
 
 pub async fn start_server() -> anyhow::Result<()> {
     let render = RenderServer::new(RenderContext);
-    let load_sample = LoadSampleServer::new(MyLoadSample);
+    let load_sample = LoadSampleServer::new(LoadSampleContext);
 
     // Projects list gets shared when this is cloned.
     let save_load_context = SaveLoadContext {
@@ -55,6 +33,8 @@ pub async fn start_server() -> anyhow::Result<()> {
     tonic::transport::Server::builder()
         .accept_http1(true)
         .layer(
+            // Without this configuration, requests from the client will be blocked by the browser.
+            // This is also the reason the URL in the browser must be 127.0.0.1:8080, *not* localhost:8080.
             tower_http::cors::CorsLayer::new()
                 .allow_methods([Method::GET, Method::POST, Method::OPTIONS])
                 .allow_origin(HYDRIC_URL.parse::<HeaderValue>().unwrap())

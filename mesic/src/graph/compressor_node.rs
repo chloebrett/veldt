@@ -42,6 +42,9 @@ impl CompressorNode {
 }
 
 #[inline]
+/// Compresses an audio sample (in the amplitude sense, not the WinRAR sense) based on the output
+/// of an amplitude detector, a compression threshold, and ratio (represented as a reciprocal).
+/// The reciprocal is used to save on division.
 fn compress(input: f32, detector: f32, threshold: f32, ratio_recip: f32) -> f32 {
     // TODO: use dB for threshold.
     if detector > threshold {
@@ -64,19 +67,20 @@ impl Node for CompressorNode {
             .iter_mut()
             .zip(inputs.first().expect("Expected one input").buffers())
         {
-            let buf: Vec<f32> = in_buf
-                .iter()
-                .map(|it| {
-                    let rms = self.detector.next(*it);
+            out_buf.copy_from_slice(
+                &in_buf
+                    .iter()
+                    .map(|it| {
+                        let rms = self.detector.next(*it);
 
-                    // TODO: also support using the compressor as a downward expander.
-                    let pre_gain = compress(*it, rms, threshold, ratio_recip);
+                        // TODO: also support using the compressor as a downward expander.
+                        let pre_gain = compress(*it, rms, threshold, ratio_recip);
 
-                    // TODO: use dB for makeup gain.
-                    pre_gain * self.config.gain
-                })
-                .collect();
-            out_buf.copy_from_slice(&buf);
+                        // TODO: use dB for makeup gain.
+                        pre_gain * self.config.gain
+                    })
+                    .collect::<Vec<_>>(),
+            );
         }
     }
 }
@@ -85,7 +89,7 @@ impl Node for CompressorNode {
 mod tests {
     use super::*;
     use crate::graph::RenderGraph;
-    use crate::sig::freq;
+    use crate::wave::freq;
     use assert_float_eq::assert_float_absolute_eq;
     use shared::model::{Effect, EffectInstance, EffectMeta, PitchName, ScaleValue};
 

@@ -22,6 +22,8 @@ jobs:
       run: rustup target add wasm32-unknown-unknown && sudo apt-get install protobuf-compiler && cargo install leptosfmt
     - name: Build-shared
       run: cd shared && cargo build --verbose && cargo fmt --check
+    - name: Build-state
+      run: cd state && cargo build --verbose && cargo fmt --check
     - name: Build-xeric
       run: cd xeric && cargo build --verbose && cargo fmt --check
     - name: Build-mesic
@@ -30,5 +32,12 @@ jobs:
       run: cd hydric && cargo build --verbose --target=wasm32-unknown-unknown && cargo fmt --check
     - name: Leptosfmt
       run: cd hydric && leptosfmt * --check
-    # TODO: run tests when we have them
+    - name: Test-shared
+      run: cd shared && cargo test
+    - name: Test-state
+      run: cd state && cargo test
+    - name: Test-xeric
+      run: cd xeric && cargo test
+    - name: Test-mesic
+      run: cd mesic && cargo test
     

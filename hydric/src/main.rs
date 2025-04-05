@@ -1,5 +1,6 @@
 mod audio_player;
 mod components;
+mod promise;
 mod rpc;
 mod transform;
 mod widget;

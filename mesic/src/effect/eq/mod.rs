@@ -4,6 +4,7 @@ mod bps_basic;
 mod filter;
 mod lhp_first_order;
 mod lhp_second_order;
+mod lhp_second_order_lr;
 mod low_high;
 mod resonator_sa;
 mod resonator_simple;
@@ -13,12 +14,14 @@ use apf_second_order::*;
 use bps_basic::*;
 use lhp_first_order::*;
 use lhp_second_order::*;
+use lhp_second_order_lr::*;
 use low_high::LowHigh;
 use resonator_sa::*;
 use resonator_simple::*;
 use shared::model::{EqConfig, EqType};
 
 pub trait ApplyFilter {
+    // TODO: adapt this to work with the dasp_graph Buffer type.
     fn apply(&mut self, input: &[f32]) -> Vec<f32>;
 }
 
@@ -34,6 +37,12 @@ pub fn eq_filter(config: &EqConfig) -> Box<dyn ApplyFilter> {
         EqType::FirstOrderAllPass => Box::new(apf_first_order(config)),
         EqType::SecondOrderAllPass => Box::new(apf_second_order(config)),
         EqType::SimpleSecondOrderBandStop => Box::new(band_stop_basic(config)),
+        EqType::LinkwitzRileySecondOrderLowPass => {
+            Box::new(lhp_second_order_lr(config, LowHigh::Low))
+        }
+        EqType::LinkwitzRileySecondOrderHighPass => {
+            Box::new(lhp_second_order_lr(config, LowHigh::High))
+        }
         _ => panic!("EQ type not implemented!"),
     }
 }

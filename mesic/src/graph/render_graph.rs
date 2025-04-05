@@ -6,7 +6,6 @@ use crate::effect::eq_filter;
 use dasp_graph::{BoxedNode, Buffer, Node, NodeData, node::Delay};
 use petgraph::stable_graph::NodeIndex;
 use shared::model::{Effect, EffectInstance};
-use std::iter::repeat_n;
 
 /// A Graph with the required metadata to facilitate immediate processing into a Vec.
 pub struct RenderGraph {
@@ -97,11 +96,12 @@ impl RenderGraph {
     }
 }
 
+/// The delay node is built into dasp_graph. This is just a helper to construct one.
 fn new_delay_node(delay_samples: usize) -> Delay<Vec<f32>> {
-    let mut vec = Vec::with_capacity(delay_samples);
-    vec.extend(repeat_n(0.0, delay_samples));
-
-    Delay(vec![dasp_ring_buffer::Fixed::from(vec)])
+    Delay(vec![dasp_ring_buffer::Fixed::from(vec![
+        0.0;
+        delay_samples
+    ])])
 }
 
 impl Iterator for RenderGraph {
@@ -129,4 +129,6 @@ impl Iterator for RenderGraph {
         self.processed_samples_count += 1;
         output
     }
+
+    // TODO: implement size_hint or SizedIterator to make collection more efficient.
 }
