@@ -1,11 +1,9 @@
 use super::{AsyncState, AudioState};
 use crate::audio_player::play;
-use crate::promise::poll;
+use crate::promise::{poll, spawn};
 use crate::rpc::load_sample;
 use egui::{Button, Ui};
 use mesic::graph::{AmpNode, RenderGraph};
-use poll_promise::Promise;
-use shared::model::Sample;
 use state::{Action, Store};
 
 pub fn sample_control(
@@ -33,13 +31,12 @@ pub fn sample_control(
     }
 
     if ui.button("Load sample").clicked() {
-        async_state.load_sample = Some(Promise::spawn_local(async move {
+        spawn(&mut async_state.load_sample, async move {
             load_sample("89 BPM F# Minor.wav".to_string()).await
-        }));
+        })
     }
 
-    poll(
-        &mut async_state.load_sample,
-        /* if_ready= */ |sample: &Sample| store.dispatchr(Action::AddSample(sample.clone())),
-    );
+    poll(&mut async_state.load_sample, |sample| {
+        store.dispatchr(Action::AddSample(sample.clone()))
+    });
 }

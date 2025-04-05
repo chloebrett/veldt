@@ -17,10 +17,14 @@ impl Node for AmpNode {
             let buf: Vec<f32> = in_buf
                 .iter()
                 .map(|it| {
+                    // Apply the volume multiplier.
                     let mut amped = it * self.volume;
+
+                    // If applicable, clip the output so that the magnitude doesn't go above 1.
                     if self.should_clip {
                         amped = amped.clamp(-1.0, 1.0);
                     }
+
                     amped
                 })
                 .collect();

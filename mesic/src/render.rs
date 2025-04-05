@@ -1,15 +1,18 @@
 use crate::SAMPLE_RATE;
+use crate::consts::SECONDS_PER_MINUTE;
 use crate::graph::{BufferNode, RenderGraph, make_graph};
 use crate::wave::polyphonic_wave;
 use dasp_graph::{BoxedNode, NodeData};
 use shared::model::{GeneratorType, Project};
 
 pub fn render(project: &Project) -> RenderGraph {
+    // Extract relevant info out of the project model.
     let track = &project.tracks[0];
     let generator = &project.generators[0];
     let mixer_channel = &project.mixer[0];
     let bpm = project.bpm;
 
+    // Determine how long the track is, in samples.
     let track_beats: f32 = track
         .notes
         .iter()
@@ -17,12 +20,15 @@ pub fn render(project: &Project) -> RenderGraph {
         .max_by(|a, b| a.total_cmp(b))
         .unwrap_or(0.0);
     let track_samples = (track_beats / bpm * 60.0 * SAMPLE_RATE as f32) as usize;
-    let mut output: Vec<f32> = vec![0.0; track_samples];
 
     let generator_config = match &generator.kind {
         GeneratorType::SimpleWave { config } => config,
     };
 
+    // Create an output buffer and fill it with the generator's output.
+    // Currently this buffers the entire output in advance, but we should move to making the
+    // generator part of the graph.
+    let mut output: Vec<f32> = vec![0.0; track_samples];
     for note in &track.notes {
         let wave = polyphonic_wave(
             &note.note.pitch_name,
@@ -32,7 +38,7 @@ pub fn render(project: &Project) -> RenderGraph {
             generator_config,
         );
 
-        let offset_samples = *note.offset / bpm * 60.0 * SAMPLE_RATE as f32;
+        let offset_samples = *note.offset / bpm * SECONDS_PER_MINUTE * SAMPLE_RATE as f32;
         wave.iter().enumerate().for_each(|(i, value)| {
             output[i + offset_samples as usize] += value;
         })
