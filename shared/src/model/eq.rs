@@ -21,6 +21,8 @@ pub enum EqType {
     ButterworthBandStop,
     FirstOrderAllPass,
     SecondOrderAllPass,
+    LinkwitzRileySecondOrderLowPass,
+    LinkwitzRileySecondOrderHighPass,
 }
 
 #[derive(Clone, Debug, PartialEq, FromProto, IntoProto)]

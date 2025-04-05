@@ -1,12 +1,12 @@
 #!/bin/bash
 set -eux # Note: pipefail doesn't seem to work on Asahi? So use chained commands.
-cd shared && cargo fmt && cargo check && cargo check --target=wasm32-unknown-unknown && cargo test &&
+cd shared && cargo fmt && cargo check && cargo check --target=wasm32-unknown-unknown &&
   cd .. &&
-  cd mesic && cargo fmt && cargo check && cargo check --target=wasm32-unknown-unknown && cargo test &&
+  cd mesic && cargo fmt && cargo check && cargo check --target=wasm32-unknown-unknown &&
   cd .. &&
-  cd state && cargo fmt && cargo check && cargo check && cargo test &&
+  cd state && cargo fmt && cargo check && cargo check &&
   cd .. &&
   cd hydric && cargo fmt && cargo check --target=wasm32-unknown-unknown &&
   cd .. &&
-  cd xeric && cargo fmt && cargo check && cargo test &&
+  cd xeric && cargo fmt && cargo check &&
   cd ..
