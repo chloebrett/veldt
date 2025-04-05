@@ -33,6 +33,8 @@ pub async fn start_server() -> anyhow::Result<()> {
     tonic::transport::Server::builder()
         .accept_http1(true)
         .layer(
+            // Without this configuration, requests from the client will be blocked by the browser.
+            // This is also the reason the URL in the browser must be 127.0.0.1:8080, *not* localhost:8080.
             tower_http::cors::CorsLayer::new()
                 .allow_methods([Method::GET, Method::POST, Method::OPTIONS])
                 .allow_origin(HYDRIC_URL.parse::<HeaderValue>().unwrap())

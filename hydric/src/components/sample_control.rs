@@ -1,5 +1,6 @@
 use super::{AsyncState, AudioState};
 use crate::audio_player::play;
+use crate::promise::poll;
 use crate::rpc::load_sample;
 use egui::{Button, Ui};
 use mesic::graph::{AmpNode, RenderGraph};
@@ -37,17 +38,8 @@ pub fn sample_control(
         }));
     }
 
-    {
-        let promise_ref: &Option<Promise<Option<Sample>>> = &async_state.load_sample;
-        let mut clear = false;
-        if let Some(promise) = promise_ref {
-            if let Some(Some(sample)) = promise.ready() {
-                clear = true;
-                store.dispatchr(Action::AddSample(sample.clone()));
-            }
-        }
-        if clear {
-            async_state.load_sample = None;
-        }
-    }
+    poll(
+        &mut async_state.load_sample,
+        /* if_ready= */ |sample: &Sample| store.dispatchr(Action::AddSample(sample.clone())),
+    );
 }

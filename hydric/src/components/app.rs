@@ -4,10 +4,10 @@ use super::{
     toggle_window_panel, track_placement_control, undo_redo_control,
 };
 use crate::audio_player::Handle;
+use crate::promise::AsyncResult;
 use crate::widget::string_observer;
 use egui::Pos2;
 use egui::{ScrollArea, scroll_area::ScrollBarVisibility};
-use poll_promise::Promise;
 use shared::model::{Project, Sample};
 use shared::types::{Beats, Volume};
 use state::{Action, Store, get_set};
@@ -15,11 +15,19 @@ use state::{Action, Store, get_set};
 /// Container for the various promises launchable by the app.
 #[derive(Default)]
 pub struct AsyncState {
-    pub server_render: Option<Promise<Option<Vec<f32>>>>,
-    pub save_project: Option<Promise<Option<()>>>,
-    pub project_list: Option<Promise<Option<Vec<String>>>>,
-    pub load_project: Option<Promise<Option<Project>>>,
-    pub load_sample: Option<Promise<Option<Sample>>>,
+    // Async states represent outgoing requests that may or may not have finished.
+    // The Option<Promise<Result<..., ()>>> format is for the following reasons:
+    // * The Option is None if no request has been made.
+    // * The Promise is pending if the request is in progress, and resolved if it has succeeded or
+    // failed.
+    // * The Result used to be another Option, but it was changed to Result with an empty error
+    // because that is closer to its meaning. It contains Ok(something) if the request succeeded,
+    // and Err(()) if it failed.
+    pub server_render: AsyncResult<Vec<f32>, ()>,
+    pub save_project: AsyncResult<(), ()>,
+    pub project_list: AsyncResult<Vec<String>, ()>,
+    pub load_project: AsyncResult<Project, ()>,
+    pub load_sample: AsyncResult<Sample, ()>,
 }
 
 #[derive(Default)]

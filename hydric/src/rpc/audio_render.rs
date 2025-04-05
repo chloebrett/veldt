@@ -1,11 +1,10 @@
 use shared::bytes::as_floats;
 use shared::consts::XERIC_URL;
-use shared::logger::error;
 use shared::model::Project;
 use shared::render::{RenderRequest, render_client::RenderClient};
 use tonic_web_wasm_client::Client;
 
-pub async fn render(project: Project) -> Option<Vec<f32>> {
+pub async fn render(project: Project) -> Result<Vec<f32>, ()> {
     let client = Client::new(XERIC_URL.to_string());
     let mut grpc = RenderClient::new(client);
 
@@ -19,11 +18,5 @@ pub async fn render(project: Project) -> Option<Vec<f32>> {
 
     // TODO: consider if we should just send the Vec<f32> directly over the wire
     // instead of serializing to bytes first?
-    match audio_result {
-        Ok(audio) => Some(as_floats(&audio)),
-        Err(_) => {
-            error("Error rendering audio on server.");
-            None
-        }
-    }
+    audio_result.map(|it| as_floats(&it)).map_err(|_| ())
 }
