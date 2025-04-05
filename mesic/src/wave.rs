@@ -144,10 +144,10 @@ fn triangle_wave(x: f32) -> f32 {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::graph::RenderGraph;
+    
     use crate::sig::freq;
     use assert_float_eq::assert_float_absolute_eq;
-    use shared::model::{Effect, EffectInstance, EffectMeta, PitchName, ScaleValue};
+    use shared::model::{PitchName, ScaleValue};
     use shared::types::Volume;
 
     const FLOAT_THRES: f32 = 1e-6;
@@ -167,7 +167,7 @@ mod tests {
                 scale_value: ScaleValue::CSharp,
                 octave: 4, // one octave higher.
             },
-            0.0
+            0.0,
         );
 
         assert_float_absolute_eq!(output, expected, FLOAT_THRES);

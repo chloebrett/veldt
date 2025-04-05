@@ -4,9 +4,10 @@ use dasp_graph::{BoxedNode, NodeData};
 use shared::model::Project;
 
 pub fn render(project: &Project) -> RenderGraph {
-    // Work out how many samples the graph needs to render.
-    let track = project.tracks[0].clone();
+    let track = &project.tracks[0];
     let bpm = project.bpm;
+
+    // Work out how many samples the graph needs to render.
     let track_beats: f32 = track
         .notes
         .iter()
