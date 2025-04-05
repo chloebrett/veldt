@@ -250,13 +250,9 @@ mod tests {
     }
 
     fn assert_float_vec_almost_eq(a: Vec<f32>, b: Vec<f32>) {
-        assert_float_vec_almost_eq_with_threshold(a, b, FLOAT_THRES);
-    }
-
-    fn assert_float_vec_almost_eq_with_threshold(a: Vec<f32>, b: Vec<f32>, threshold: f32) {
         assert_eq!(a.len(), b.len());
         for (i, (a, b)) in a.into_iter().zip(b.into_iter()).enumerate() {
-            assert!((a - b).abs() < threshold, "{a}, {b}, index: {i}");
+            assert!((a - b).abs() < FLOAT_THRES, "{a}, {b}, index: {i}");
         }
     }
 }
