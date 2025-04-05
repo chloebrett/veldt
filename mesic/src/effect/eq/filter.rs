@@ -73,11 +73,11 @@ impl ApplyFilter for FirstOrderFilter {
 ///
 /// In order to produce y0, the current output.
 pub struct SecondOrderFilter {
-    a0: f32,
-    a1: f32,
-    a2: f32,
-    b1: f32,
-    b2: f32,
+    a0: f32, // coefficient of x0.
+    a1: f32, // coefficient of x1.
+    a2: f32, // coefficient of x2.
+    b1: f32, // coefficient of y1.
+    b2: f32, // coefficient of y2.
 
     // TODO: consolidate the ring buffer types. We use dasp_ring_buffer for the delay nodes.
     x_buffer: AllocRingBuffer<f32>,
@@ -145,9 +145,9 @@ impl ApplyFilter for SecondOrderFilter {
 ///
 /// This is a special case of the second order filter which doesn't rely on previous input values.
 pub struct SecondOrderFeedbackFilter {
-    a0: f32,
-    b1: f32,
-    b2: f32,
+    a0: f32, // coefficient of x0.
+    b1: f32, // coefficient of y1.
+    b2: f32, // coefficient of y2.
 
     y_buffer: AllocRingBuffer<f32>,
     // Does not have x_buffer.

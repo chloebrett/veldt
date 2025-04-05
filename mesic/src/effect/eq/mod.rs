@@ -19,6 +19,7 @@ use resonator_simple::*;
 use shared::model::{EqConfig, EqType};
 
 pub trait ApplyFilter {
+    // TODO: adapt this to work with the dasp_graph Buffer type.
     fn apply(&mut self, input: &[f32]) -> Vec<f32>;
 }
 

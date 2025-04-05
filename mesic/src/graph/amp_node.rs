@@ -14,21 +14,22 @@ impl Node for AmpNode {
             .iter_mut()
             .zip(inputs.first().expect("Expected one input").buffers())
         {
-            let buf: Vec<f32> = in_buf
-                .iter()
-                .map(|it| {
-                    // Apply the volume multiplier.
-                    let mut amped = it * self.volume;
+            out_buf.copy_from_slice(
+                &in_buf
+                    .iter()
+                    .map(|it| {
+                        // Apply the volume multiplier.
+                        let mut amped = it * self.volume;
 
-                    // If applicable, clip the output so that the magnitude doesn't go above 1.
-                    if self.should_clip {
-                        amped = amped.clamp(-1.0, 1.0);
-                    }
+                        // If applicable, clip the output so that the magnitude doesn't go above 1.
+                        if self.should_clip {
+                            amped = amped.clamp(-1.0, 1.0);
+                        }
 
-                    amped
-                })
-                .collect();
-            out_buf.copy_from_slice(&buf);
+                        amped
+                    })
+                    .collect::<Vec<f32>>(),
+            );
         }
     }
 }

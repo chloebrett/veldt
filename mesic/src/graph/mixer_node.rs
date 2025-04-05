@@ -31,12 +31,13 @@ impl Node for MixerNode {
                     .buffers(),
             )
         {
-            let buf: Vec<f32> = dry_buf
-                .iter()
-                .zip(wet_buf.iter())
-                .map(|(d, w)| d * dry + w * self.wet)
-                .collect();
-            out_buf.copy_from_slice(&buf);
+            out_buf.copy_from_slice(
+                &dry_buf
+                    .iter()
+                    .zip(wet_buf.iter())
+                    .map(|(d, w)| d * dry + w * self.wet)
+                    .collect::<Vec<f32>>(),
+            );
         }
     }
 }
