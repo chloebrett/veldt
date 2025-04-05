@@ -1,5 +1,5 @@
 use shared::logger::log;
-use shared::pmodel::ProjectProto;
+use shared::model::Project;
 use shared::save_load::load_project_list_server::LoadProjectList;
 use shared::save_load::load_project_server::LoadProject;
 use shared::save_load::save_project_server::SaveProject;
@@ -11,15 +11,21 @@ use std::collections::HashMap;
 use std::sync::{Arc, Mutex};
 use tonic::async_trait;
 
+// Save/load RPCs share some stateful context. Currently, we don't save/load to a file, we just
+// store the saved projects in memory while the server is running.
 #[derive(Clone)]
 pub struct SaveLoadContext {
+    // Since SavedProjects is an Arc<Mutex<...>>, cloning the SaveLoadContext just clones the
+    // reference; the data is still shared.
     pub projects: SavedProjects,
 }
 
-type SavedProjects = Arc<Mutex<HashMap<String, ProjectProto>>>;
+// Using an Arc<Mutex<...>> because the hashmap may be accessed from multiple threads.
+type SavedProjects = Arc<Mutex<HashMap<String, Project>>>;
 
 #[async_trait]
 impl SaveProject for SaveLoadContext {
+    /// Saves a project to server memory by name.
     async fn save_project(
         self: &Self,
         request: tonic::Request<SaveProjectRequest>,
@@ -28,7 +34,7 @@ impl SaveProject for SaveLoadContext {
         self.projects
             .lock()
             .unwrap()
-            .insert(name.clone(), project.unwrap().clone());
+            .insert(name.clone(), project.unwrap().clone().into());
         log(&format!("Saved {}", name.clone()));
         Ok(tonic::Response::new(SaveProjectReply {}))
     }
@@ -36,6 +42,8 @@ impl SaveProject for SaveLoadContext {
 
 #[async_trait]
 impl LoadProjectList for SaveLoadContext {
+    /// Loads the list of project names that are saved. LoadProject can then be called to load an
+    /// actual project.
     async fn load_project_list(
         self: &Self,
         _request: tonic::Request<LoadProjectListRequest>,
@@ -49,6 +57,7 @@ impl LoadProjectList for SaveLoadContext {
 
 #[async_trait]
 impl LoadProject for SaveLoadContext {
+    /// Loads a project by name. If it doesn't exist in the server memory, returns an error.
     async fn load_project(
         self: &Self,
         request: tonic::Request<LoadProjectRequest>,
@@ -56,7 +65,7 @@ impl LoadProject for SaveLoadContext {
         let name = request.into_inner().name;
         if let Some(project) = self.projects.lock().unwrap().get(&name) {
             Ok(tonic::Response::new(LoadProjectReply {
-                project: Some(project.clone()),
+                project: Some(project.clone().into()),
             }))
         } else {
             Err(tonic::Status::invalid_argument(

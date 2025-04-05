@@ -4,10 +4,10 @@ use super::{
     toggle_window_panel, track_placement_control, undo_redo_control,
 };
 use crate::audio_player::Handle;
+use crate::promise::AsyncResult;
 use crate::widget::string_observer;
 use egui::Pos2;
 use egui::{ScrollArea, scroll_area::ScrollBarVisibility};
-use poll_promise::Promise;
 use shared::model::{Project, Sample};
 use shared::types::{Beats, Volume};
 use state::{Action, Store, get_set};
@@ -15,11 +15,11 @@ use state::{Action, Store, get_set};
 /// Container for the various promises launchable by the app.
 #[derive(Default)]
 pub struct AsyncState {
-    pub server_render: Option<Promise<Option<Vec<f32>>>>,
-    pub save_project: Option<Promise<Option<()>>>,
-    pub project_list: Option<Promise<Option<Vec<String>>>>,
-    pub load_project: Option<Promise<Option<Project>>>,
-    pub load_sample: Option<Promise<Option<Sample>>>,
+    pub server_render: AsyncResult<Vec<f32>, ()>,
+    pub save_project: AsyncResult<(), ()>,
+    pub project_list: AsyncResult<Vec<String>, ()>,
+    pub load_project: AsyncResult<Project, ()>,
+    pub load_sample: AsyncResult<Sample, ()>,
 }
 
 #[derive(Default)]

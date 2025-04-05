@@ -17,10 +17,15 @@ pub fn to_f32(sample: i32) -> f32 {
     PCM_DIV_I16 * sample as f32 / 128.0
 }
 
-pub struct MyLoadSample;
+// This is a stateless RPC, at least as far as in-memory state is concerned (it does
+// depend on filesystem state). Therefore the context can be empty.
+pub struct LoadSampleContext;
 
 #[async_trait]
-impl LoadSample for MyLoadSample {
+impl LoadSample for LoadSampleContext {
+    /// Loads a sample from the server filesystem by name.
+    /// It's assumed that the file exists in veldt/assets/samples.
+    /// Throws an error if the file does not exist. Panics if reading it fails.
     async fn load_sample(
         self: &Self,
         request: tonic::Request<LoadSampleRequest>,
