@@ -76,7 +76,7 @@ mod tests {
 
     #[tokio::test]
     async fn project_save_round_trip() {
-        // arrange
+        // ARRANGE
         let save_load_context = SaveLoadContext {
             projects: Arc::new(Mutex::new(HashMap::new())),
         };
@@ -99,25 +99,26 @@ mod tests {
             name: project_name.into(),
         });
 
-        // act
+        // ACT
         let _ = save_load_context.save_project(save_request).await;
         let response = save_load_context.load_project(load_request).await;
-        let loaded_project = response.unwrap().into_inner().project.unwrap();
+        let load_project_proto = response.unwrap().into_inner().project.unwrap();
 
-        // assert
-        assert_eq!(loaded_project, project_proto)
+        // ASSERT
+        assert_eq!(load_project_proto, project_proto)
     }
 
     #[tokio::test]
     async fn load_project_list() {
-        // arrange
+        // ARRANGE
         let save_load_context = SaveLoadContext {
             projects: Arc::new(Mutex::new(HashMap::new())),
         };
         let project_name_1 = "A";
         let project_name_2 = "B";
-        let name_list: Vec<String> = vec![project_name_1.into(), project_name_2.into()];
-        let name_set: HashSet<String> = HashSet::from_iter(name_list);
+        // Create set to compare to response agnostic of order.
+        let name_set: HashSet<String> =
+            HashSet::from_iter(vec![project_name_1.into(), project_name_2.into()]);
         let project_proto_1: ProjectProto = Project {
             name: project_name_1.into(),
             tracks: vec![],
@@ -148,21 +149,20 @@ mod tests {
         });
         let load_request = tonic::Request::new(LoadProjectListRequest {});
 
-        // act
+        // ACT
         let _ = save_load_context.save_project(save_request_1).await;
         let _ = save_load_context.save_project(save_request_2).await;
         let response = save_load_context.load_project_list(load_request).await;
         let project_list = response.unwrap().into_inner().project_names;
 
-        // assert
-        // Compare agnostic of order.
+        // ASSERT
         let loaded_set: HashSet<String> = HashSet::from_iter(project_list);
         assert_eq!(loaded_set, name_set)
     }
 
     #[tokio::test]
     async fn load_unsaved_track_name_fails() {
-        // arrange
+        // ARRANGE
         let save_load_context = SaveLoadContext {
             projects: Arc::new(Mutex::new(HashMap::new())),
         };
@@ -186,17 +186,17 @@ mod tests {
             name: unsaved_name.into(),
         });
 
-        // act
+        // ACT
         let _ = save_load_context.save_project(save_request).await;
         let response = save_load_context.load_project(load_request).await;
 
-        // assert
+        // ASSERT
         assert!(response.is_err())
     }
 
     #[tokio::test]
     async fn save_same_project_name_overwrites_project() {
-        // arrange
+        // ARRANGE
         let save_load_context = SaveLoadContext {
             projects: Arc::new(Mutex::new(HashMap::new())),
         };
@@ -233,13 +233,13 @@ mod tests {
             name: project_name.into(),
         });
 
-        // act
+        // ACT
         let _ = save_load_context.save_project(save_request_1).await;
         let _ = save_load_context.save_project(save_request_2).await;
         let response = save_load_context.load_project(load_request).await;
-        let loaded_project = response.unwrap().into_inner().project.unwrap();
+        let load_project_proto = response.unwrap().into_inner().project.unwrap();
 
-        // assert
-        assert_eq!(loaded_project, project_proto_2)
+        // ASSERT
+        assert_eq!(load_project_proto, project_proto_2)
     }
 }
