@@ -10,7 +10,7 @@ Collaborative, self-hosted, web-based digital audio workstation built in Rust
 ...yes, the three app layers are named after [habitat classifications](https://en.wikipedia.org/wiki/Mesic_habitat) :)
 
 * `shared/` contains the data model
-* `state/` contains the state of the application when running and actions to access and mutate it.
+* `state/` contains the state store, which contains all of the application state that is relevant to undo/redo and collaborative editing. This includes all of the project state, but excludes things like window states.
 
 ## Architecture
 
@@ -90,7 +90,7 @@ yarn xl # xeric
 yarn l # all
 
 # Testing
-yarn t # everything (current excluding Hydric)
+yarn t # everything (currently excluding Hydric)
 yarn mt # mesic
 yarn st # shared
 yarn stt # state
