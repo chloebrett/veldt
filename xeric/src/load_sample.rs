@@ -36,7 +36,7 @@ impl LoadSample for LoadSampleContext {
         file_path.pop(); // pop '/xeric'
         file_path.push("assets");
         file_path.push("samples");
-        file_path.push(filename);
+        file_path.push(filename.clone());
         log(&format!(
             "Loading sample from path: {}",
             file_path.clone().display()
@@ -45,8 +45,9 @@ impl LoadSample for LoadSampleContext {
         // TODO: reading this seems to load at half the speed.
         // Perhaps the sample rate needs to be adjusted?
         // Either way, a bit weird and should be fixed.
-        let mut reader = hound::WavReader::open(file_path).unwrap();
-        // TODO: handle 16-bit audio appropriately.
+        let mut reader = hound::WavReader::open(file_path).map_err(|_| {
+            tonic::Status::invalid_argument(format!("File {} could not be read.", filename))
+        })?;
         let data: Vec<f32> = reader
             .samples::<i32>()
             .map(|it| to_f32(it.unwrap()))
@@ -58,5 +59,44 @@ impl LoadSample for LoadSampleContext {
         Ok(tonic::Response::new(LoadSampleReply {
             sample: Some(sample.into()),
         }))
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[tokio::test]
+    async fn load_sample() {
+        // ARRANGE
+        let my_load_sample = LoadSampleContext;
+        let sample_name = "89 BPM F# Minor.wav";
+        let load_request = tonic::Request::new(LoadSampleRequest {
+            filename: sample_name.into(),
+        });
+
+        // ACT
+        let load_request = my_load_sample.load_sample(load_request).await;
+
+        // ASSERT
+        // TODO more meaningful check of return.
+        assert!(load_request.is_ok())
+    }
+
+    #[tokio::test]
+    async fn load_invalid_file_name_fails() {
+        // ARRANGE
+        let my_load_sample = LoadSampleContext;
+        let sample_name = "test.wav";
+        let load_request = tonic::Request::new(LoadSampleRequest {
+            filename: sample_name.into(),
+        });
+
+        // ACT
+        let load_request = my_load_sample.load_sample(load_request).await;
+
+        // ASSERT
+        // TODO more meaningful check of return.
+        assert!(load_request.is_err())
     }
 }
