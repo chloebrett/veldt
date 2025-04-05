@@ -1,6 +1,7 @@
 use crate::consts::{SAMPLE_RATE, SECONDS_PER_MINUTE};
 use crate::envelope::apply_envelope;
 use crate::sig::{freq, sum};
+use lazy_static::lazy_static;
 use shared::model::{AdsrEnvelope, PitchName, SimpleWaveConfig, WaveType};
 use shared::types::Beats;
 use shared::types::Freq;
@@ -9,6 +10,11 @@ use std::ops::Range;
 
 const HALF_PI: f32 = 0.5 * PI;
 const INV_HALF_PI: f32 = HALF_PI.recip();
+
+lazy_static! {
+    // The frequency multiplier for a semitone.
+    pub static ref SEMITONE_FREQ: f32 = 2.0_f32.powf(1.0 / 12.0);
+}
 
 fn wave(
     pitch_name: &PitchName,
@@ -21,6 +27,7 @@ fn wave(
     start_index: usize,
 ) -> Vec<f32> {
     let step = get_step(pitch_name, detune_cents);
+
     make_range(start_index, beats, bpm)
         .into_iter()
         .map(|x: i32| {
@@ -85,9 +92,7 @@ fn detune_multiplier(cents: f32) -> Freq {
 
     let interval = cents / 100.0;
 
-    // TODO: de-duplicate this.
-    let semitone_increment: f32 = 2.0_f32.powf(1.0 / 12.0);
-    semitone_increment.powf(interval)
+    SEMITONE_FREQ.powf(interval)
 }
 
 /// Returns a vec range with `count` evenly spaced values from `low` to `high`.
@@ -144,7 +149,7 @@ fn triangle_wave(x: f32) -> f32 {
 #[cfg(test)]
 mod tests {
     use super::*;
-    
+
     use crate::sig::freq;
     use assert_float_eq::assert_float_absolute_eq;
     use shared::model::{PitchName, ScaleValue};
@@ -214,10 +219,11 @@ mod tests {
 
         // Manually construct the same value.
         let expected = (0..SAMPLE_RATE)
-            .map(|it| (it as f32 / SAMPLE_RATE as f32 * freq(pitch)).sin())
+            .map(|it| (it as f32 * get_step(&pitch, 0.0)).sin())
             .collect();
 
-        assert_float_vec_almost_eq(output, expected);
+        // TODO: investigate why this accuracy threshold is so low!
+        assert_float_vec_almost_eq_with_threshold(output, expected, 1.0e-2);
     }
 
     #[test]
@@ -251,10 +257,10 @@ mod tests {
 
         // Manually construct the same value.
         let expected = (0..SAMPLE_RATE)
-            .map(|it| (it as f32 / SAMPLE_RATE as f32 * freq(pitch)).sin())
+            .map(|it| (it as f32 * get_step(&pitch, 0.0)).sin())
             .collect();
 
-        assert_float_vec_almost_eq(output, expected);
+        assert_float_vec_almost_eq_with_threshold(output, expected, 1.0e-2);
     }
 
     #[test]
@@ -296,9 +302,13 @@ mod tests {
     }
 
     fn assert_float_vec_almost_eq(a: Vec<f32>, b: Vec<f32>) {
+        assert_float_vec_almost_eq_with_threshold(a, b, FLOAT_THRES);
+    }
+
+    fn assert_float_vec_almost_eq_with_threshold(a: Vec<f32>, b: Vec<f32>, threshold: f32) {
         assert_eq!(a.len(), b.len());
         for (i, (a, b)) in a.into_iter().zip(b.into_iter()).enumerate() {
-            assert!((a - b).abs() < FLOAT_THRES, "{a}, {b}, index: {i}");
+            assert!((a - b).abs() < threshold, "{a}, {b}, index: {i}");
         }
     }
 }

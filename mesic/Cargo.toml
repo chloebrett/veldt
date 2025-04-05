@@ -11,6 +11,7 @@ dasp_envelope = { version = "0.11.0", features = ["rms"] }
 dasp_graph = { version = "0.11.0", features = ["node-boxed"] }
 dasp_ring_buffer = "0.11.0"
 dasp_rms = "0.11.0"
+lazy_static = "1.5.0"
 ordered-float = "5.0.0"
 petgraph = "0.5" # Needs to match version used by dasp_graph.
 ringbuffer = "0.15.0"
