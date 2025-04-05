@@ -1,0 +1,27 @@
+use super::filter::{SecondOrderFilter, SecondOrderFilterConfig};
+use crate::consts::SAMPLE_RATE;
+use shared::model::EqConfig;
+use std::f32::consts::PI;
+
+pub fn parametric_non_constant_q(config: &EqConfig) -> SecondOrderFilter {
+    let fs = SAMPLE_RATE as f32;
+
+    let thetac: f32 = 2 * PI * config.fc / fs;
+
+    let mu:f32 = 0;
+
+    let zeta:f32 = 4/(1+mu);
+
+    let beta:f32 = 0.5*(1-zeta*(thetac/2 * config.Q).tan()) / 
+        (1+zeta*(thetac/2 * config.Q).tan());
+    
+    let gamma:f32 = (0.5+beta)*thetac.cos();
+
+    let a0:f32 = 0.5 - beta;
+    let a1:f32 = 0.0;
+    let a2:f32 = -(0.5-beta);
+    let b1:f32 = -2*gamma;
+    let b2:f32 = 2*beta;
+
+    SecondOrderFilter::new(SecondOrderFilterConfig { a0, a1, a2, b1, b2 })
+}   
