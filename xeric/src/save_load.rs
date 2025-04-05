@@ -74,15 +74,9 @@ mod tests {
 
     use super::*;
 
-    #[tokio::test]
-    async fn project_save_round_trip() {
-        // ARRANGE
-        let save_load_context = SaveLoadContext {
-            projects: Arc::new(Mutex::new(HashMap::new())),
-        };
-        let project_name = "test";
-        let project_proto: ProjectProto = Project {
-            name: project_name.into(),
+    fn empty_project(name: String) -> Project {
+        Project {
+            name,
             tracks: vec![],
             track_placements: vec![],
             samples: vec![],
@@ -90,7 +84,16 @@ mod tests {
             mixer: vec![],
             bpm: 120.0,
         }
-        .into();
+    }
+
+    #[tokio::test]
+    async fn project_save_round_trip() {
+        // ARRANGE
+        let save_load_context = SaveLoadContext {
+            projects: Arc::new(Mutex::new(HashMap::new())),
+        };
+        let project_name = "test";
+        let project_proto: ProjectProto = empty_project(project_name.into()).into();
         let save_request = tonic::Request::new(SaveProjectRequest {
             name: project_name.into(),
             project: Some(project_proto.clone()),
@@ -119,26 +122,8 @@ mod tests {
         // Create set to compare to response agnostic of order.
         let name_set: HashSet<String> =
             HashSet::from_iter(vec![project_name_1.into(), project_name_2.into()]);
-        let project_proto_1: ProjectProto = Project {
-            name: project_name_1.into(),
-            tracks: vec![],
-            track_placements: vec![],
-            samples: vec![],
-            generators: vec![],
-            mixer: vec![],
-            bpm: 120.0,
-        }
-        .into();
-        let project_proto_2: ProjectProto = Project {
-            name: project_name_2.into(),
-            tracks: vec![],
-            track_placements: vec![],
-            samples: vec![],
-            generators: vec![],
-            mixer: vec![],
-            bpm: 120.0,
-        }
-        .into();
+        let project_proto_1: ProjectProto = empty_project(project_name_1.into()).into();
+        let project_proto_2: ProjectProto = empty_project(project_name_2.into()).into();
         let save_request_1 = tonic::Request::new(SaveProjectRequest {
             name: project_name_1.into(),
             project: Some(project_proto_1.clone()),
@@ -168,16 +153,7 @@ mod tests {
         };
         let project_name = "test";
         let unsaved_name = "unsaved";
-        let project_proto: ProjectProto = Project {
-            name: project_name.into(),
-            tracks: vec![],
-            track_placements: vec![],
-            samples: vec![],
-            generators: vec![],
-            mixer: vec![],
-            bpm: 120.0,
-        }
-        .into();
+        let project_proto: ProjectProto = empty_project(project_name.into()).into();
         let save_request = tonic::Request::new(SaveProjectRequest {
             name: project_name.into(),
             project: Some(project_proto.clone()),
