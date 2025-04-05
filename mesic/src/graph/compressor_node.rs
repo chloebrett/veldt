@@ -89,7 +89,7 @@ impl Node for CompressorNode {
 mod tests {
     use super::*;
     use crate::graph::RenderGraph;
-    use crate::sig::freq;
+    use crate::wave::freq;
     use assert_float_eq::assert_float_absolute_eq;
     use shared::model::{Effect, EffectInstance, EffectMeta, PitchName, ScaleValue};
 
