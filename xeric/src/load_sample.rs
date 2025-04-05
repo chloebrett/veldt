@@ -69,7 +69,7 @@ mod tests {
     #[tokio::test]
     async fn load_sample() {
         // ARRANGE
-        let my_load_sample = MyLoadSample;
+        let my_load_sample = LoadSampleContext;
         let sample_name = "89 BPM F# Minor.wav";
         let load_request = tonic::Request::new(LoadSampleRequest {
             filename: sample_name.into(),
@@ -86,7 +86,7 @@ mod tests {
     #[tokio::test]
     async fn load_invalid_file_name_fails() {
         // ARRANGE
-        let my_load_sample = MyLoadSample;
+        let my_load_sample = LoadSampleContext;
         let sample_name = "test.wav";
         let load_request = tonic::Request::new(LoadSampleRequest {
             filename: sample_name.into(),
