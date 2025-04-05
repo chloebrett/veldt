@@ -15,14 +15,6 @@ use state::{Action, Store, get_set};
 /// Container for the various promises launchable by the app.
 #[derive(Default)]
 pub struct AsyncState {
-    // Async states represent outgoing requests that may or may not have finished.
-    // The Option<Promise<Result<..., ()>>> format is for the following reasons:
-    // * The Option is None if no request has been made.
-    // * The Promise is pending if the request is in progress, and resolved if it has succeeded or
-    // failed.
-    // * The Result used to be another Option, but it was changed to Result with an empty error
-    // because that is closer to its meaning. It contains Ok(something) if the request succeeded,
-    // and Err(()) if it failed.
     pub server_render: AsyncResult<Vec<f32>, ()>,
     pub save_project: AsyncResult<(), ()>,
     pub project_list: AsyncResult<Vec<String>, ()>,

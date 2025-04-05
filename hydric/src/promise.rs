@@ -1,5 +1,12 @@
 use poll_promise::Promise;
 
+// Async states represent outgoing requests that may or may not have finished.
+// The Option<Promise<Result<..., ()>>> format is for the following reasons:
+// * The Option is None if no request has been made.
+// * The Promise is pending if the request is in progress, and resolved if it has succeeded or
+// failed.
+// * The Result contains the result of the promise - Ok(something) if succeeded and
+// Err(something) if it failed. Currently the errors are just unit, i.e. ().
 pub type AsyncResult<T, E> = Option<Promise<Result<T, E>>>;
 
 /// Spawns a promise that performs the given async closure.

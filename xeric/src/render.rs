@@ -4,10 +4,12 @@ use shared::render::render_server::Render;
 use shared::render::{RenderReply, RenderRequest};
 use tonic::async_trait;
 
+// This is a stateless RPC: it accepts a project and returns audio bytes of the rendered project.
 pub struct RenderContext;
 
 #[async_trait]
 impl Render for RenderContext {
+    /// Renders a project and returns audio bytes.
     async fn render(
         &self,
         request: tonic::Request<RenderRequest>,
