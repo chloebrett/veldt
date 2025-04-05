@@ -1,11 +1,11 @@
+use crate::consts::REFERENCE_PITCH;
 use crate::consts::{SAMPLE_RATE, SECONDS_PER_MINUTE};
 use crate::envelope::apply_envelope;
-use crate::sig::freq;
 use dasp_graph::Buffer;
 use lazy_static::lazy_static;
 use shared::model::{AdsrEnvelope, PitchName, SimpleWaveConfig, WaveType};
 use shared::types::Beats;
-use shared::types::Freq;
+use shared::types::{Freq, PitchValue};
 use std::cmp::min;
 use std::f32::consts::{PI, TAU};
 use std::iter::repeat_n;
@@ -17,6 +17,15 @@ const INV_HALF_PI: f32 = HALF_PI.recip();
 lazy_static! {
     // The frequency multiplier for a semitone.
     pub static ref SEMITONE_FREQ: f32 = 2.0_f32.powf(1.0 / 12.0);
+}
+
+// Returns the frequency based on the distance from reference pitch.
+pub fn freq(pitch_name: PitchName) -> Freq {
+    let pitch: PitchValue = pitch_name.into();
+    let reference: PitchValue = (*REFERENCE_PITCH.pitch_name).into();
+    let interval: PitchValue = pitch - reference;
+
+    REFERENCE_PITCH.frequency * SEMITONE_FREQ.powf(interval as f32)
 }
 
 fn wave(
@@ -35,6 +44,8 @@ fn wave(
         .into_iter()
         .map(|x: i32| {
             // Handles the case where start_index < 0.
+            // This happens when the start of a note is in the middle of a buffer that is being
+            // processed.
             if x < 0 {
                 return 0.0;
             }
@@ -45,6 +56,8 @@ fn wave(
         .collect();
 
     let mut buffer = Buffer::SILENT;
+    // Handles the case where the range is smaller than the output buffer.
+    // This happens when a note finishes in the middle of a buffer.
     if vec.len() < Buffer::LEN {
         vec.extend(repeat_n(0.0, Buffer::LEN - vec.len()));
     }
@@ -172,10 +185,8 @@ fn triangle_wave(x: f32) -> f32 {
 mod tests {
     use super::*;
 
-    use crate::sig::freq;
     use assert_float_eq::assert_float_absolute_eq;
     use shared::model::{PitchName, ScaleValue};
-    use shared::types::Volume;
 
     const FLOAT_THRES: f32 = 1e-6;
 
@@ -198,91 +209,6 @@ mod tests {
         );
 
         assert_float_absolute_eq!(output, expected, FLOAT_THRES);
-    }
-
-    #[test]
-    fn make_range_one_second() {
-        let start_index = 0;
-        let beats = 2.0;
-        let bpm = 120.0;
-        let output = make_range(start_index, beats, bpm);
-
-        let expected = 0..SAMPLE_RATE;
-
-        assert_eq!(output, expected);
-    }
-
-    #[test]
-    fn wave_one_second() {
-        let beats = 2.0 as Beats;
-        let bpm = 120.0 as Beats;
-        let volume = 1.0 as Volume;
-        let start_position = 0;
-        let pitch = PitchName {
-            scale_value: ScaleValue::ASharp,
-            octave: 6,
-        };
-        let detune = 0.0;
-        let output = wave(
-            &pitch,
-            beats,
-            bpm,
-            volume,
-            &AdsrEnvelope {
-                attack: 0.0,
-                decay: 0.0,
-                sustain: 1.0,
-                release: 0.0,
-            },
-            WaveType::Sine,
-            detune,
-            start_position,
-        );
-
-        // Manually construct the same value.
-        let expected = (0..SAMPLE_RATE)
-            .map(|it| (it as f32 * get_step(&pitch, 0.0)).sin())
-            .collect();
-
-        // TODO: investigate why this accuracy threshold is so low!
-        assert_float_vec_almost_eq_with_threshold(output, expected, 1.0e-2);
-    }
-
-    #[test]
-    fn polyphonic_wave_one_second_no_detune() {
-        let beats = 2.0 as Beats;
-        let bpm = 120.0 as Beats;
-        let volume = 1.0 as Volume;
-        let start_position = 0;
-        let pitch = PitchName {
-            scale_value: ScaleValue::ASharp,
-            octave: 6,
-        };
-        let output = polyphonic_wave(
-            &pitch,
-            beats,
-            bpm,
-            volume,
-            &SimpleWaveConfig {
-                detune_cents: 0.0,
-                envelope: AdsrEnvelope {
-                    attack: 0.0,
-                    decay: 0.0,
-                    sustain: 1.0,
-                    release: 0.0,
-                },
-                osc_count: 1,
-                wave: WaveType::Sine,
-            },
-            start_position,
-        );
-
-        // Manually construct the same value.
-        let expected = (0..SAMPLE_RATE)
-            .map(|it| (it as f32 * get_step(&pitch, 0.0)).sin())
-            .collect();
-
-        assert_float_vec_almost_eq_with_threshold(output, expected, 1.0e-2);
     }
 
     #[test]

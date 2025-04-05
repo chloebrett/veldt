@@ -4,7 +4,6 @@ mod envelope;
 pub mod graph;
 mod render;
 mod scale;
-mod sig;
 mod wave;
 
 pub use consts::SAMPLE_RATE;

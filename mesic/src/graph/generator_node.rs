@@ -1,4 +1,3 @@
-use crate::consts::SAMPLE_RATE;
 use crate::wave::{beats_to_samples, polyphonic_wave};
 use dasp_graph::{Buffer, Input, Node};
 use shared::model::{GeneratorInstance, GeneratorType, Track};
@@ -24,18 +23,6 @@ impl GeneratorNode {
 
 impl Node for GeneratorNode {
     fn process(&mut self, _inputs: &[Input], output: &mut [Buffer]) {
-        let track_beats: f32 = self
-            .track
-            .notes
-            .iter()
-            .map(|placed_note| {
-                let offset: f32 = placed_note.offset.into();
-                offset + placed_note.note.beats
-            })
-            .max_by(|a, b| a.total_cmp(b))
-            .unwrap_or(0.0);
-        let track_samples = (track_beats / self.bpm * 60.0 * SAMPLE_RATE as f32) as usize;
-
         let config = match &self.instance.kind {
             GeneratorType::SimpleWave { config } => config,
         };
