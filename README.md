@@ -10,6 +10,7 @@ Collaborative, self-hosted, web-based digital audio workstation built in Rust
 ...yes, the three app layers are named after [habitat classifications](https://en.wikipedia.org/wiki/Mesic_habitat) :)
 
 * `shared/` contains the data model
+* `state/` contains the state of the application when running and actions to access and mutate it.
 
 ## Architecture
 
@@ -70,19 +71,28 @@ yarn b # everything
 yarn hb # hydric
 yarn mb # mesic
 yarn sb # shared
+yarn stb # state
 yarn xb # xeric
 
 # Running
 yarn r # everything (hydric and xeric)
 yarn hr # hydric - note: visit localhost:8080
 yarn xr # xeric
-# Note: mesic and shared can't be run as they're libraries.
+# Note: mesic, shared, and state can't be run as they're libraries.
 # They get built by implication when hydric/xeric are run.
 
 # Lint
 yarn hl # hydric
 yarn ml # mesic
 yarn sl # shared
+yarn st # state
 yarn xl # xeric
 yarn l # all
+
+# Testing
+yarn t # everything (current excluding Hydric)
+yarn mt # mesic
+yarn st # shared
+yarn stt # state
+yarn xt # xeric
 ```
