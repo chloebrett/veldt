@@ -204,4 +204,6 @@ enum EqTypeProto {
   ButterworthBandStopEqType = 12;
   FirstOrderAllPassEqType = 13;
   SecondOrderAllPassEqType = 14;
+  LinkwitzRileySecondOrderLowPassEqType = 15;
+  LinkwitzRileySecondOrderHighPassEqType = 16;
 }
