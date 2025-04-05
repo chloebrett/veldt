@@ -40,26 +40,20 @@ impl LoadSample for MyLoadSample {
         // TODO: reading this seems to load at half the speed.
         // Perhaps the sample rate needs to be adjusted?
         // Either way, a bit weird and should be fixed.
-        let reader_response = hound::WavReader::open(file_path);
-        if let Ok(mut reader) = reader_response {
-            // TODO: handle 16-bit audio appropriately.
-            let data: Vec<f32> = reader
-                .samples::<i32>()
-                .map(|it| to_f32(it.unwrap()))
-                .collect();
-            let sample = Sample {
-                data,
-                sample_rate: reader.spec().sample_rate as f32,
-            };
-            Ok(tonic::Response::new(LoadSampleReply {
-                sample: Some(sample.into()),
-            }))
-        } else {
-            Err(tonic::Status::invalid_argument(format!(
-                "File {} could not be read.",
-                filename
-            )))
-        }
+        let mut reader = hound::WavReader::open(file_path).map_err(|_| {
+            tonic::Status::invalid_argument(format!("File {} could not be read.", filename))
+        })?;
+        let data: Vec<f32> = reader
+            .samples::<i32>()
+            .map(|it| to_f32(it.unwrap()))
+            .collect();
+        let sample = Sample {
+            data,
+            sample_rate: reader.spec().sample_rate as f32,
+        };
+        Ok(tonic::Response::new(LoadSampleReply {
+            sample: Some(sample.into()),
+        }))
     }
 }
 
