@@ -434,6 +434,7 @@ dependencies = [
  "dasp_graph",
  "dasp_ring_buffer",
  "dasp_rms",
+ "dasp_slice",
  "lazy_static",
  "ordered-float",
  "petgraph 0.5.1",

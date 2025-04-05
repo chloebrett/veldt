@@ -1,11 +1,14 @@
 use crate::consts::{SAMPLE_RATE, SECONDS_PER_MINUTE};
 use crate::envelope::apply_envelope;
-use crate::sig::{freq, sum};
+use crate::sig::freq;
+use dasp_graph::Buffer;
 use lazy_static::lazy_static;
 use shared::model::{AdsrEnvelope, PitchName, SimpleWaveConfig, WaveType};
 use shared::types::Beats;
 use shared::types::Freq;
+use std::cmp::min;
 use std::f32::consts::{PI, TAU};
+use std::iter::repeat_n;
 use std::ops::Range;
 
 const HALF_PI: f32 = 0.5 * PI;
@@ -24,18 +27,29 @@ fn wave(
     envelope: &AdsrEnvelope,
     wave_type: WaveType,
     detune_cents: f32,
-    start_index: usize,
-) -> Vec<f32> {
+    start_index: i32,
+) -> Buffer {
     let step = get_step(pitch_name, detune_cents);
 
-    make_range(start_index, beats, bpm)
+    let mut vec: Vec<_> = make_range(start_index, beats, bpm)
         .into_iter()
         .map(|x: i32| {
+            // Handles the case where start_index < 0.
+            if x < 0 {
+                return 0.0;
+            }
             make_wave(x as f32 * step, wave_type)
                 * volume
                 * apply_envelope(x as f32, envelope, beats, bpm)
         })
-        .collect()
+        .collect();
+
+    let mut buffer = Buffer::SILENT;
+    if vec.len() < Buffer::LEN {
+        vec.extend(repeat_n(0.0, Buffer::LEN - vec.len()));
+    }
+    buffer.copy_from_slice(&vec);
+    buffer
 }
 
 /// Returns a multiplier that controls how fast the wave should cycle.
@@ -46,10 +60,17 @@ fn get_step(pitch_name: &PitchName, detune_cents: f32) -> f32 {
     freq(*pitch_name) * detune_multiplier(detune_cents) * TAU / (SAMPLE_RATE as f32)
 }
 
-fn make_range(start_index: usize, beats: Beats, bpm: Beats) -> Range<i32> {
+pub fn beats_to_samples(beats: Beats, bpm: Beats) -> u32 {
     let seconds = beats / bpm * SECONDS_PER_MINUTE;
-    let samples = SAMPLE_RATE as f32 * seconds;
-    (start_index as i32)..(samples as i32)
+    (SAMPLE_RATE as f32 * seconds) as u32
+}
+
+fn make_range(start_index: i32, beats: Beats, bpm: Beats) -> Range<i32> {
+    start_index
+        ..min(
+            beats_to_samples(beats, bpm) as i32,
+            Buffer::LEN as i32 + start_index,
+        )
 }
 
 pub fn polyphonic_wave(
@@ -58,15 +79,16 @@ pub fn polyphonic_wave(
     bpm: Beats,
     volume: f32,
     config: &SimpleWaveConfig,
-    start_index: usize, // allows starting the wave in the middle.
-) -> Vec<f32> {
+    start_index: i32, // allows starting the wave in the middle. Can be negative - if it is, then
+                      // -x will return x samples of silence before starting the wave.
+) -> Buffer {
     let detune = config.detune_cents;
     let osc_count = config.osc_count;
     let partial_volume = volume / (osc_count as f32);
 
     let detune_amounts = linspace(-detune, detune, osc_count);
 
-    let outputs: Vec<Vec<f32>> = detune_amounts
+    let outputs: Vec<Buffer> = detune_amounts
         .iter()
         .map(|det| {
             wave(
@@ -82,7 +104,7 @@ pub fn polyphonic_wave(
         })
         .collect();
 
-    multi_sum(outputs)
+    multi_sum(&outputs)
 }
 
 fn detune_multiplier(cents: f32) -> Freq {
@@ -110,12 +132,12 @@ fn linspace(low: f32, high: f32, count: u32) -> Vec<f32> {
         .collect()
 }
 
-fn multi_sum(buffers: Vec<Vec<f32>>) -> Vec<f32> {
-    let max_len = buffers.iter().map(|it| it.len()).max().unwrap();
-    let mut output: Vec<f32> = vec![0.0; max_len];
+/// Sums the input buffers into a single buffer.
+fn multi_sum(inputs: &[Buffer]) -> Buffer {
+    let mut output = Buffer::SILENT;
 
-    for buf in buffers {
-        output = sum(&output, &buf);
+    for input in inputs {
+        dasp_slice::add_in_place(&mut output, input);
     }
 
     output
