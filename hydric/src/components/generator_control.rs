@@ -5,8 +5,7 @@ use shared::types::KnobPosition;
 use state::{Action, Selector, Store, get_set};
 use strum::IntoEnumIterator;
 
-pub fn generator_control(store: &Store, ui: &mut Ui) {
-    let generator_index = 0;
+pub fn generator_control(store: &Store, ui: &mut Ui, generator_index: usize) {
     let sel = Selector::Generator(generator_index);
     let generator_type = store.get().project.generators[generator_index].kind.clone();
     let config = match generator_type {

@@ -32,7 +32,6 @@ pub struct AudioState {
 #[derive(Default)]
 pub struct WindowState {
     pub show_effects: bool,
-    pub show_envelope: bool,
     pub show_generator: bool,
     pub show_scale: bool,
 }
@@ -111,21 +110,19 @@ impl eframe::App for App {
                         toggle_window_panel(&mut self.window_state, ui);
                     });
 
-                    if self.window_state.show_envelope {
-                        egui::Window::new("Envelope")
-                            .default_pos(Pos2 { x: 600.0, y: 125.0 })
-                            .resizable(false)
-                            .show(ctx, |ui| {
-                                envelope_control(&self.store, ui);
-                            });
-                    }
                     if self.window_state.show_generator {
-                        egui::Window::new("Generator")
-                            .default_pos(Pos2 { x: 1100.0, y: 20.0 })
-                            .resizable(false)
-                            .show(ctx, |ui| {
-                                generator_control(&self.store, ui);
-                            });
+                        let generators = &self.store.get().project.generators;
+                        for generator_index in 0..generators.len() {
+                            egui::Window::new("Generator")
+                                .default_pos(Pos2 { x: 1100.0, y: 20.0 })
+                                .resizable(false)
+                                .show(ctx, |ui| {
+                                    generator_control(&self.store, ui, generator_index);
+                            ui.separator();
+                            ui.label("Envelope");
+                                envelope_control(&self.store, ui, generator_index);
+                                });
+                        }
                     }
                     if self.window_state.show_effects {
                         let mixer = &self.store.get().project.mixer;

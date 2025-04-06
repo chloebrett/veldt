@@ -7,7 +7,7 @@ use state::{Action, Selector, Store, get_set};
 pub fn effect_control(ctx: &egui::Context, store: &Store, mixer_index: usize, effect_index: usize) {
     let sel = Selector::Effect(mixer_index, effect_index);
     let dispatch_effect = |action| store.dispatch(&sel, action);
-    let effect = store.get().project.mixer[0].effects[effect_index].clone();
+    let effect = store.get().project.mixer[mixer_index].effects[effect_index].clone();
 
     let title = match effect.effect {
         Effect::SimpleEq { .. } => "EQ",
@@ -18,8 +18,8 @@ pub fn effect_control(ctx: &egui::Context, store: &Store, mixer_index: usize, ef
     egui::Window::new(title)
         .id(format!("effects_{mixer_index}_{effect_index}").into())
         .default_pos(Pos2 {
-            x: 1100.0,
-            y: 150.0,
+            x: 1000.0 + 50.0 * effect_index as f32,
+            y: 150.0 + 50.0 * effect_index as f32,
         })
         .resizable(false)
         .show(ctx, |ui| {
