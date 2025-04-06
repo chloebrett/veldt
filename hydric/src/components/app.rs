@@ -129,9 +129,8 @@ impl eframe::App for App {
                     }
                     if self.window_state.show_effects {
                         let mixer = &self.store.get().project.mixer;
-                        for mixer_index in 0..mixer.len() {
-                            let effects = &mixer[mixer_index].effects;
-                            for effect_index in 0..effects.len() {
+                        for (mixer_index, mixer) in mixer.iter().enumerate() {
+                            for effect_index in 0..mixer.effects.len() {
                                 effect_control(ctx, &self.store, mixer_index, effect_index);
                             }
                         }

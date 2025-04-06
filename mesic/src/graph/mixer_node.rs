@@ -36,7 +36,7 @@ impl Node for MixerNode {
             if self.mute {
                 // TODO: make muting an effect temporarily short circuit it in the graph, so that
                 // it doesn't run at all.
-                out_buf.copy_from_slice(&dry_buf);
+                out_buf.copy_from_slice(dry_buf);
             } else {
                 out_buf.copy_from_slice(
                     &dry_buf

@@ -1,12 +1,13 @@
+use crate::widget::knob;
 use egui::{
-    Color32, Pos2, Rect, Slider, Ui,
+    Color32, Pos2, Rect, Ui,
     containers::Frame,
     emath::RectTransform,
     epaint::{PathStroke, Shape},
     pos2, vec2,
 };
 use shared::model::{AdsrEnvelope, GeneratorType};
-use state::{Action, Selector, Store, get_set};
+use state::{Action, Selector, Store};
 
 pub fn envelope_control(store: &Store, ui: &mut Ui, generator_index: usize) {
     let sel = Selector::Generator(generator_index);
@@ -16,65 +17,63 @@ pub fn envelope_control(store: &Store, ui: &mut Ui, generator_index: usize) {
         GeneratorType::SimpleWave { config } => config,
     };
     let envelope = config.envelope.clone();
-    ui.add(
-        Slider::from_get_set(
-            0.0..=1.0,
-            get_set(envelope.attack.into(), |it| {
-                store.dispatch(
-                    &sel,
-                    Action::SetEnvelope(AdsrEnvelope {
-                        attack: it as f32,
-                        ..envelope
-                    }),
-                )
-            }),
-        )
-        .text("Attack"),
+    knob(
+        ui,
+        "Attack",
+        envelope.attack,
+        |attack| {
+            store.dispatch(
+                &sel,
+                Action::SetEnvelope(AdsrEnvelope { attack, ..envelope }),
+            )
+        },
+        0.0,
+        1.0,
     );
-    ui.add(
-        Slider::from_get_set(
-            0.0..=1.0,
-            get_set(envelope.decay.into(), |it| {
-                store.dispatch(
-                    &sel,
-                    Action::SetEnvelope(AdsrEnvelope {
-                        decay: it as f32,
-                        ..envelope
-                    }),
-                )
-            }),
-        )
-        .text("Decay"),
+    knob(
+        ui,
+        "Decay",
+        envelope.decay,
+        |decay| {
+            store.dispatch(
+                &sel,
+                Action::SetEnvelope(AdsrEnvelope { decay, ..envelope }),
+            )
+        },
+        0.0,
+        1.0,
     );
-    ui.add(
-        Slider::from_get_set(
-            0.0..=1.0,
-            get_set(envelope.sustain.into(), |it| {
-                store.dispatch(
-                    &sel,
-                    Action::SetEnvelope(AdsrEnvelope {
-                        sustain: it as f32,
-                        ..envelope
-                    }),
-                )
-            }),
-        )
-        .text("Sustain"),
+    knob(
+        ui,
+        "Sustain",
+        envelope.sustain,
+        |sustain| {
+            store.dispatch(
+                &sel,
+                Action::SetEnvelope(AdsrEnvelope {
+                    sustain,
+                    ..envelope
+                }),
+            )
+        },
+        0.0,
+        1.0,
     );
-    ui.add(
-        Slider::from_get_set(
-            0.0..=1.0,
-            get_set(envelope.release.into(), |it| {
-                store.dispatch(
-                    &sel,
-                    Action::SetEnvelope(AdsrEnvelope {
-                        release: it as f32,
-                        ..envelope
-                    }),
-                )
-            }),
-        )
-        .text("Release"),
+    knob(
+        ui,
+        "Release",
+        envelope.release,
+        |release| {
+            store.dispatch(
+                &sel,
+                Action::SetEnvelope(AdsrEnvelope {
+                    release,
+                    ..envelope
+                }),
+            )
+        },
+        0.0,
+        1.0,
     );
 
     Frame::canvas(ui.style()).show(ui, |ui| {

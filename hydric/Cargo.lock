@@ -767,6 +767,14 @@ dependencies = [
 ]
 
 [[package]]
+name = "egui_knob"
+version = "0.2.0"
+source = "git+https://github.com/chloebrett/egui_knob#0a2915f31b2c0a5bcfa1c56469ff02f9c3c35a7a"
+dependencies = [
+ "egui",
+]
+
+[[package]]
 name = "either"
 version = "1.15.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1149,8 +1157,10 @@ dependencies = [
  "cpal",
  "dasp_frame",
  "dasp_signal",
+ "ecolor",
  "eframe",
  "egui",
+ "egui_knob",
  "log",
  "mesic",
  "ordered-float",
