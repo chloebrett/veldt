@@ -3,7 +3,7 @@ use egui::Ui;
 use shared::model::EffectMeta;
 use shared::model::EqConfig;
 use shared::model::EqType;
-use shared::types::{Freq, KnobPosition};
+use shared::types::{Freq, KnobPosition, GainDB};
 use state::{Action, get_set};
 use strum::IntoEnumIterator;
 
