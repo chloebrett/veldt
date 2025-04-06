@@ -2,7 +2,7 @@ use shared::model::{
     AdsrEnvelope, AntiAliasingMode, EqType, PlacedNote, Project, Sample, Scale, ScaleValue,
     TrackId, TrackPlacement, WaveType,
 };
-use shared::types::{Beats, Freq, KnobPosition, GainDB, Milliseconds, Octave, Volume};
+use shared::types::{Beats, Freq, GainDB, KnobPosition, Milliseconds, Octave, Volume};
 
 #[derive(Debug, Clone)]
 pub enum Action {
