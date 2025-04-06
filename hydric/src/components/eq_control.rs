@@ -1,13 +1,12 @@
 use crate::widget::selectable_value;
 use egui::Ui;
-use shared::model::EffectMeta;
 use shared::model::EqConfig;
 use shared::model::EqType;
 use shared::types::{Freq, GainDB, KnobPosition};
 use state::{Action, get_set};
 use strum::IntoEnumIterator;
 
-pub fn eq_control<F>(config: EqConfig, meta: EffectMeta, dispatch_effect: F, ui: &mut Ui)
+pub fn eq_control<F>(config: EqConfig, dispatch_effect: F, ui: &mut Ui)
 where
     F: Fn(Action),
 {
@@ -42,7 +41,7 @@ where
                 dispatch_effect(Action::SetEqGain(it as GainDB))
             }),
         )
-        .text("Gain"),
+        .text("Gain (dB)"),
     );
 
     let eq_type = config.kind.clone();
@@ -60,14 +59,4 @@ where
                 );
             }
         });
-
-    ui.add(
-        egui::Slider::from_get_set(
-            0.0..=1.0,
-            get_set(meta.wet.into(), |it| {
-                dispatch_effect(Action::SetEffectWet(it as KnobPosition))
-            }),
-        )
-        .text("EQ wet"),
-    );
 }

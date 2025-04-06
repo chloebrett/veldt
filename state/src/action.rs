@@ -52,6 +52,7 @@ pub enum Action {
     // --- EffectSelector ---
     SetDelayMs(Milliseconds),
     SetEffectWet(KnobPosition),
+    SetEffectMute(bool),
     SetEqKind(EqType),
     SetEqFc(Freq),
     SetEqQ(KnobPosition),

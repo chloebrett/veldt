@@ -128,19 +128,10 @@ impl eframe::App for App {
                             });
                     }
                     if self.window_state.show_effects {
-                        egui::Window::new("Effects")
-                            .default_pos(Pos2 {
-                                x: 1100.0,
-                                y: 150.0,
-                            })
-                            .resizable(false)
-                            .show(ctx, |ui| {
-                                for i in 0..self.store.get().project.mixer[0].effects.len() {
-                                    ui.separator();
-                                    effect_control(&self.store, i, ui);
-                                }
-                                ui.separator();
-                            });
+                        let effects = &self.store.get().project.mixer[0].effects;
+                        for effect_index in 0..effects.len() {
+                            effect_control(ctx, &self.store, effect_index);
+                        }
                     }
                     if self.window_state.show_scale {
                         egui::Window::new("Scale")
