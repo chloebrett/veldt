@@ -140,6 +140,8 @@ message EqConfigProto {
   float fc = 2;
 
   float q = 3;
+
+  float gain = 4;
 }
 
 message SimpleCompressorProto {
