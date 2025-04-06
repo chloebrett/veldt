@@ -8,8 +8,7 @@ use egui::{
 use shared::model::{AdsrEnvelope, GeneratorType};
 use state::{Action, Selector, Store, get_set};
 
-pub fn envelope_control(store: &Store, ui: &mut Ui) {
-    let generator_index = 0;
+pub fn envelope_control(store: &Store, ui: &mut Ui, generator_index: usize) {
     let sel = Selector::Generator(generator_index);
 
     let generator_type = store.get().project.generators[generator_index].kind.clone();

@@ -4,11 +4,10 @@ use shared::model::Effect;
 use shared::types::KnobPosition;
 use state::{Action, Selector, Store, get_set};
 
-pub fn effect_control(ctx: &egui::Context, store: &Store, effect_index: usize) {
-    let mixer_index = 0;
+pub fn effect_control(ctx: &egui::Context, store: &Store, mixer_index: usize, effect_index: usize) {
     let sel = Selector::Effect(mixer_index, effect_index);
-    let dispatch_effect = |action| store.dispatch(&sel, action);
-    let effect = store.get().project.mixer[0].effects[effect_index].clone();
+    let dispatch = |action| store.dispatch(&sel, action);
+    let effect = store.get().project.mixer[mixer_index].effects[effect_index].clone();
 
     let title = match effect.effect {
         Effect::SimpleEq { .. } => "EQ",
@@ -17,19 +16,17 @@ pub fn effect_control(ctx: &egui::Context, store: &Store, effect_index: usize) {
     };
 
     egui::Window::new(title)
-        .id(format!("effects_{effect_index}").into())
+        .id(format!("effects_{mixer_index}_{effect_index}").into())
         .default_pos(Pos2 {
-            x: 1100.0,
-            y: 150.0,
+            x: 1000.0 + 50.0 * effect_index as f32,
+            y: 150.0 + 50.0 * effect_index as f32,
         })
         .resizable(false)
         .show(ctx, |ui| {
             match effect.effect {
-                Effect::SimpleEq { config } => eq_control(config, dispatch_effect, ui),
-                Effect::SimpleDelay { config } => delay_control(config, dispatch_effect, ui),
-                Effect::SimpleCompressor { config } => {
-                    compressor_control(config, dispatch_effect, ui)
-                }
+                Effect::SimpleEq { config } => eq_control(&config, dispatch, ui),
+                Effect::SimpleDelay { config } => delay_control(&config, dispatch, ui),
+                Effect::SimpleCompressor { config } => compressor_control(&config, dispatch, ui),
             }
 
             let meta = effect.meta;
@@ -37,7 +34,7 @@ pub fn effect_control(ctx: &egui::Context, store: &Store, effect_index: usize) {
                 egui::Slider::from_get_set(
                     0.0..=1.0,
                     get_set(meta.wet.into(), |it| {
-                        dispatch_effect(Action::SetEffectWet(it as KnobPosition))
+                        dispatch(Action::SetEffectWet(it as KnobPosition))
                     }),
                 )
                 .text("Wet"),
@@ -45,9 +42,16 @@ pub fn effect_control(ctx: &egui::Context, store: &Store, effect_index: usize) {
             checkbox_get_set(
                 ui,
                 meta.mute,
-                |it| dispatch_effect(Action::SetEffectMute(it)),
+                |it| dispatch(Action::SetEffectMute(it)),
                 "Mute",
             );
+
+            ui.separator();
+            ui.label(format!(
+                "Mixer {} | Effect {}",
+                mixer_index + 1,
+                effect_index + 1
+            ));
         });
 }
 
