@@ -1,9 +1,8 @@
 use super::{compressor_control::compressor_control, delay_control, eq_control};
-use crate::widget::checkbox;
+use crate::widget::{FloatRange, checkbox, knob};
 use egui::Pos2;
 use shared::model::Effect;
-use shared::types::KnobPosition;
-use state::{Action, Selector, Store, get_set};
+use state::{Action, Selector, Store};
 
 pub fn effect_control(ctx: &egui::Context, store: &Store, mixer_index: usize, effect_index: usize) {
     let sel = Selector::Effect(mixer_index, effect_index);
@@ -31,14 +30,12 @@ pub fn effect_control(ctx: &egui::Context, store: &Store, mixer_index: usize, ef
             }
 
             let meta = effect.meta;
-            ui.add(
-                egui::Slider::from_get_set(
-                    0.0..=1.0,
-                    get_set(meta.wet.into(), |it| {
-                        dispatch(Action::SetEffectWet(it as KnobPosition))
-                    }),
-                )
-                .text("Wet"),
+            knob(
+                ui,
+                "Wet",
+                meta.wet,
+                |it| dispatch(Action::SetEffectWet(it)),
+                FloatRange(0.0, 1.0),
             );
             checkbox(
                 ui,

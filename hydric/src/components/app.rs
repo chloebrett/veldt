@@ -8,11 +8,11 @@ use super::{
 };
 use crate::audio_player::Handle;
 use crate::promise::AsyncResult;
-use crate::widget::string_observer;
+use crate::widget::{FloatRange, knob, string_observer};
 use egui::Pos2;
 use egui::{ScrollArea, scroll_area::ScrollBarVisibility};
 use shared::model::{Project, Sample};
-use shared::types::{Beats, Volume};
+use shared::types::Beats;
 use state::{Action, Store, get_set};
 
 /// Container for the various promises launchable by the app.
@@ -87,15 +87,13 @@ impl eframe::App for App {
                     });
                     ui.horizontal(|ui| {
                         ui.vertical(|ui| {
-                            let volume = self.store.get().volume as f64;
-                            ui.add(
-                                egui::Slider::from_get_set(
-                                    0.0..=1.0,
-                                    get_set(volume, |it| {
-                                        self.store.dispatchr(Action::SetVolume(it as Volume))
-                                    }),
-                                )
-                                .text("Volume"),
+                            let volume = self.store.get().volume;
+                            knob(
+                                ui,
+                                "Volume",
+                                volume,
+                                |it| self.store.dispatchr(Action::SetVolume(it)),
+                                FloatRange(0.0, 1.0),
                             );
 
                             let bpm = self.store.get().project.bpm as f64;

@@ -1,53 +1,41 @@
+use crate::widget::{FloatRange, knob};
 use egui::Ui;
 use shared::model::CompressorConfig;
-use shared::types::KnobPosition;
-use shared::types::Milliseconds;
-use shared::types::Volume;
-use state::{Action, get_set};
+use state::Action;
 
 pub fn compressor_control<F>(config: &CompressorConfig, dispatch: F, ui: &mut Ui)
 where
     F: Fn(Action),
 {
-    ui.add(
-        egui::Slider::from_get_set(
-            0.0..=1.0,
-            get_set(config.threshold.into(), |it| {
-                dispatch(Action::SetCompressorThreshold(it as Volume));
-            }),
-        )
-        .text("Threshold"),
+    knob(
+        ui,
+        "Threshold",
+        config.threshold,
+        |it| dispatch(Action::SetCompressorThreshold(it)),
+        FloatRange(0.0, 1.0),
     );
 
-    ui.add(
-        egui::Slider::from_get_set(
-            0.0..=1000.0,
-            get_set(config.attack_ms.into(), |it| {
-                dispatch(Action::SetCompressorAttackMs(it as Milliseconds));
-            }),
-        )
-        .text("Attack"),
+    knob(
+        ui,
+        "Attack (ms)",
+        config.attack_ms,
+        |it| dispatch(Action::SetCompressorAttackMs(it)),
+        FloatRange(0.0, 1000.0), // TODO: logarithmic
     );
 
-    ui.add(
-        egui::Slider::from_get_set(
-            0.0..=1000.0,
-            get_set(config.release_ms.into(), |it| {
-                dispatch(Action::SetCompressorReleaseMs(it as Milliseconds));
-            }),
-        )
-        .text("Release"),
+    knob(
+        ui,
+        "Release (ms)",
+        config.release_ms,
+        |it| dispatch(Action::SetCompressorReleaseMs(it)),
+        FloatRange(0.0, 1000.0), // TODO: logarithmic
     );
 
-    ui.add(
-        egui::Slider::from_get_set(
-            1.0..=f64::INFINITY,
-            get_set(config.ratio.into(), |it| {
-                dispatch(Action::SetCompressorRatio(it as KnobPosition));
-            }),
-        )
-        .text("Ratio")
-        .logarithmic(true)
-        .largest_finite(10000.0),
+    knob(
+        ui,
+        "Ratio",
+        config.ratio,
+        |it| dispatch(Action::SetCompressorRatio(it)),
+        FloatRange(1.0, 100.0),
     );
 }
