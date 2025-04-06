@@ -5,7 +5,7 @@ use shared::types::Milliseconds;
 use shared::types::Volume;
 use state::{Action, get_set};
 
-pub fn compressor_control<F>(config: CompressorConfig, dispatch_effect: F, ui: &mut Ui)
+pub fn compressor_control<F>(config: &CompressorConfig, dispatch: F, ui: &mut Ui)
 where
     F: Fn(Action),
 {
@@ -13,7 +13,7 @@ where
         egui::Slider::from_get_set(
             0.0..=1.0,
             get_set(config.threshold.into(), |it| {
-                dispatch_effect(Action::SetCompressorThreshold(it as Volume));
+                dispatch(Action::SetCompressorThreshold(it as Volume));
             }),
         )
         .text("Threshold"),
@@ -23,7 +23,7 @@ where
         egui::Slider::from_get_set(
             0.0..=1000.0,
             get_set(config.attack_ms.into(), |it| {
-                dispatch_effect(Action::SetCompressorAttackMs(it as Milliseconds));
+                dispatch(Action::SetCompressorAttackMs(it as Milliseconds));
             }),
         )
         .text("Attack"),
@@ -33,7 +33,7 @@ where
         egui::Slider::from_get_set(
             0.0..=1000.0,
             get_set(config.release_ms.into(), |it| {
-                dispatch_effect(Action::SetCompressorReleaseMs(it as Milliseconds));
+                dispatch(Action::SetCompressorReleaseMs(it as Milliseconds));
             }),
         )
         .text("Release"),
@@ -43,7 +43,7 @@ where
         egui::Slider::from_get_set(
             1.0..=f64::INFINITY,
             get_set(config.ratio.into(), |it| {
-                dispatch_effect(Action::SetCompressorRatio(it as KnobPosition));
+                dispatch(Action::SetCompressorRatio(it as KnobPosition));
             }),
         )
         .text("Ratio")

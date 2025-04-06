@@ -6,7 +6,7 @@ use state::{Action, Selector, Store, get_set};
 
 pub fn effect_control(ctx: &egui::Context, store: &Store, mixer_index: usize, effect_index: usize) {
     let sel = Selector::Effect(mixer_index, effect_index);
-    let dispatch_effect = |action| store.dispatch(&sel, action);
+    let dispatch = |action| store.dispatch(&sel, action);
     let effect = store.get().project.mixer[mixer_index].effects[effect_index].clone();
 
     let title = match effect.effect {
@@ -24,11 +24,9 @@ pub fn effect_control(ctx: &egui::Context, store: &Store, mixer_index: usize, ef
         .resizable(false)
         .show(ctx, |ui| {
             match effect.effect {
-                Effect::SimpleEq { config } => eq_control(config, dispatch_effect, ui),
-                Effect::SimpleDelay { config } => delay_control(config, dispatch_effect, ui),
-                Effect::SimpleCompressor { config } => {
-                    compressor_control(config, dispatch_effect, ui)
-                }
+                Effect::SimpleEq { config } => eq_control(&config, dispatch, ui),
+                Effect::SimpleDelay { config } => delay_control(&config, dispatch, ui),
+                Effect::SimpleCompressor { config } => compressor_control(&config, dispatch, ui),
             }
 
             let meta = effect.meta;
@@ -36,7 +34,7 @@ pub fn effect_control(ctx: &egui::Context, store: &Store, mixer_index: usize, ef
                 egui::Slider::from_get_set(
                     0.0..=1.0,
                     get_set(meta.wet.into(), |it| {
-                        dispatch_effect(Action::SetEffectWet(it as KnobPosition))
+                        dispatch(Action::SetEffectWet(it as KnobPosition))
                     }),
                 )
                 .text("Wet"),
@@ -44,7 +42,7 @@ pub fn effect_control(ctx: &egui::Context, store: &Store, mixer_index: usize, ef
             checkbox_get_set(
                 ui,
                 meta.mute,
-                |it| dispatch_effect(Action::SetEffectMute(it)),
+                |it| dispatch(Action::SetEffectMute(it)),
                 "Mute",
             );
 

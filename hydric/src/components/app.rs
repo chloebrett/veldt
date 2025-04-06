@@ -118,9 +118,9 @@ impl eframe::App for App {
                                 .resizable(false)
                                 .show(ctx, |ui| {
                                     generator_control(&self.store, ui, generator_index);
-                            ui.separator();
-                            ui.label("Envelope");
-                                envelope_control(&self.store, ui, generator_index);
+                                    ui.separator();
+                                    ui.label("Envelope");
+                                    envelope_control(&self.store, ui, generator_index);
                                 });
                         }
                     }
