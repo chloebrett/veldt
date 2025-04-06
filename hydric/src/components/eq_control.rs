@@ -35,6 +35,16 @@ where
         .logarithmic(true),
     );
 
+    ui.add(
+        egui::Slider::from_get_set(
+            -60.0..=60.0,
+            get_set(config.gain.into(), |it| {
+                dispatch_effect(Action::SetEqGain(it as GainDB))
+            }),
+        )
+        .text("Gain"),
+    );
+
     let eq_type = config.kind.clone();
     egui::ComboBox::from_label("EQ type")
         .selected_text(format!("{}", eq_type))
