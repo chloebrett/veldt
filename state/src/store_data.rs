@@ -1,8 +1,8 @@
 use ordered_float::OrderedFloat;
 use shared::model::{
-    AdsrEnvelope, CompressorConfig, DelayConfig, Effect, EffectInstance, EffectMeta, EqConfig,
-    EqType, GeneratorInstance, GeneratorMeta, GeneratorType, MixerChannel, Note, PitchName,
-    PlacedNote, Project, Scale, ScaleValue, SimpleWaveConfig, Track, WaveType,
+    AdsrEnvelope, AntiAliasingMode, CompressorConfig, DelayConfig, Effect, EffectInstance,
+    EffectMeta, EqConfig, EqType, GeneratorInstance, GeneratorMeta, GeneratorType, MixerChannel,
+    Note, PitchName, PlacedNote, Project, Scale, ScaleValue, SimpleWaveConfig, Track, WaveType,
 };
 use shared::types::Volume;
 
@@ -47,6 +47,8 @@ impl Default for StoreData {
                             },
                             osc_count: 4,
                             detune_cents: 5.0,
+                            anti_aliasing_mode: AntiAliasingMode::Off,
+                            oversample_factor: 2,
                         },
                     },
                     meta: GeneratorMeta { volume: 1.0 },

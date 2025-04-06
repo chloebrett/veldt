@@ -1,11 +1,11 @@
 use crate::model::{AdsrEnvelope, WaveType};
-use crate::pmodel::SimpleWaveProto;
 use crate::pmodel::{
-    GeneratorInstanceProto, GeneratorMetaProto, SimpleWaveConfigProto,
-    generator_instance_proto::Kind as GeneratorTypeProto,
+    AntiAliasingModeProto, GeneratorInstanceProto, GeneratorMetaProto, SimpleWaveConfigProto,
+    SimpleWaveProto, generator_instance_proto::Kind as GeneratorTypeProto,
 };
 use crate::types::Volume;
 use local_macro::{FromProto, IntoProto};
+use strum::{Display, EnumIter, EnumString};
 
 type GeneratorInstanceId = usize;
 
@@ -59,6 +59,26 @@ pub struct SimpleWaveConfig {
     pub osc_count: u32,
 
     pub detune_cents: f32,
+
+    #[proto_enum]
+    pub anti_aliasing_mode: AntiAliasingMode,
+
+    pub oversample_factor: u32,
+}
+
+#[derive(Debug, Clone, PartialEq, EnumString, Display, EnumIter, IntoProto, FromProto)]
+pub enum AntiAliasingMode {
+    // No anti-aliasing. Uses naive waves without oversampling. Produces artifacts for waves like
+    // square and saw, especially at high frequencies.
+    Off,
+
+    // Reduces aliasing by oversampling by the given factor, low passing, then downsampling. This uses additional computation
+    // power.
+    Oversample,
+
+    // Avoids aliasing entirely by constructing the waveform additively. This results in zero
+    // aliasing but is the most computationally expensive.
+    Additive,
 }
 
 #[derive(Clone, Debug, PartialEq, FromProto, IntoProto)]

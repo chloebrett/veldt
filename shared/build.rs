@@ -4,9 +4,9 @@ fn main() {
         .build_client(true)
         .compile_protos(
             &[
+                "proto/load_sample.proto",
                 "proto/pmodel.proto",
                 "proto/render.proto",
-                "proto/load_sample.proto",
                 "proto/save_load.proto",
             ],
             &["proto"],

@@ -115,8 +115,9 @@ pub struct MixerChannel {
 mod tests {
     use crate::{
         model::{
-            AdsrEnvelope, DelayConfig, Effect, EffectMeta, EqConfig, EqType, GeneratorMeta,
-            GeneratorType, Note, PitchName, PlacedNote, ScaleValue, SimpleWaveConfig, WaveType,
+            AdsrEnvelope, AntiAliasingMode, DelayConfig, Effect, EffectMeta, EqConfig, EqType,
+            GeneratorMeta, GeneratorType, Note, PitchName, PlacedNote, ScaleValue,
+            SimpleWaveConfig, WaveType,
         },
         testing::proto::proto_testing::assert_proto_round_trip,
     };
@@ -163,6 +164,8 @@ mod tests {
                         },
                         osc_count: 4,
                         detune_cents: 5.0,
+                        anti_aliasing_mode: AntiAliasingMode::Off,
+                        oversample_factor: 2,
                     },
                 },
                 meta: GeneratorMeta { volume: 1.0 },

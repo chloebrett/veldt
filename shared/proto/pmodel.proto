@@ -92,7 +92,6 @@ message GeneratorInstanceProto {
   oneof kind {
     SimpleWaveProto simple_wave = 3;
   };
-
 }
 
 message GeneratorMetaProto {
@@ -111,6 +110,10 @@ message SimpleWaveConfigProto {
   uint32 osc_count = 3;
 
   float detune_cents = 4;
+
+  AntiAliasingModeProto anti_aliasing_mode = 5;
+
+  uint32 oversample_factor = 6;
 }
 
 message EffectMetaProto {
@@ -161,6 +164,13 @@ enum WaveTypeProto {
   SquareWaveType = 2;
   SawWaveType = 3;
   TriangleWaveType = 4;
+}
+
+enum AntiAliasingModeProto {
+  UnknownAntiAliasingMode = 0;
+  OffAntiAliasingMode = 1;
+  OversampleAntiAliasingMode = 2;
+  AdditiveAntiAliasingMode = 3;
 }
 
 enum ScaleValueProto {
