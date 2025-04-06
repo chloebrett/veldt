@@ -116,7 +116,7 @@ mod tests {
     use crate::{
         model::{
             AdsrEnvelope, DelayConfig, Effect, EffectMeta, EqConfig, EqType, GeneratorMeta,
-            GeneratorType, Note, PitchName, PlacedNote, ScaleValue, SimpleWaveConfig, WaveType,
+            GeneratorType, Note, PitchName, PlacedNote, ScaleValue, SimpleWaveConfig, WaveType, AntiAliasingMode
         },
         testing::proto::proto_testing::assert_proto_round_trip,
     };
@@ -163,6 +163,7 @@ mod tests {
                         },
                         osc_count: 4,
                         detune_cents: 5.0,
+                        anti_aliasing_mode: AntiAliasingMode::Off,
                     },
                 },
                 meta: GeneratorMeta { volume: 1.0 },

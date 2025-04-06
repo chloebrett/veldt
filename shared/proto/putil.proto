@@ -1,0 +1,11 @@
+syntax = "proto3";
+
+// Utility protos.
+// Generally utility files are discouraged for code,
+// but for protos I think this should be okay. We can rearrange
+// if it gets out of hand.
+package putil;
+
+// Empty proto, similar to google.protobuf.Empty.
+// This seemed easier than getting the well known proto types into prost.
+message EmptyProto {}

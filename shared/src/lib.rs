@@ -10,12 +10,16 @@ pub mod render {
     tonic::include_proto!("render");
 }
 
+pub mod load_sample {
+    tonic::include_proto!("load_sample");
+}
+
 pub mod pmodel {
     tonic::include_proto!("pmodel");
 }
 
-pub mod load_sample {
-    tonic::include_proto!("load_sample");
+pub mod putil {
+    tonic::include_proto!("putil");
 }
 
 pub mod save_load {

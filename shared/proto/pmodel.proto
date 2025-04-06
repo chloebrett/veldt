@@ -2,6 +2,8 @@ syntax = "proto3";
 
 package pmodel;
 
+import "putil.proto";
+
 message ProjectProto {
   string name = 1;
 
@@ -92,7 +94,6 @@ message GeneratorInstanceProto {
   oneof kind {
     SimpleWaveProto simple_wave = 3;
   };
-
 }
 
 message GeneratorMetaProto {
@@ -111,6 +112,16 @@ message SimpleWaveConfigProto {
   uint32 osc_count = 3;
 
   float detune_cents = 4;
+
+  oneof anti_aliasing_mode {
+    putil.EmptyProto off = 5;
+    OversampleProto oversample = 6;
+    putil.EmptyProto additive = 7;
+  };
+}
+
+message OversampleProto {
+  uint32 factor = 1;
 }
 
 message EffectMetaProto {
