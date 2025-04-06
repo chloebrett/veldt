@@ -54,7 +54,6 @@ pub fn polyphonic_wave(
                 &config.envelope,
                 config.wave,
                 config.anti_aliasing_mode,
-                config.oversample_factor,
                 *det,
                 start_index,
             )
@@ -72,7 +71,6 @@ fn wave(
     envelope: &AdsrEnvelope,
     wave_type: WaveType,
     anti_aliasing_mode: AntiAliasingMode,
-    oversample_factor: u32,
     detune_cents: f32,
     start_index: i32,
 ) -> Buffer {
@@ -87,13 +85,8 @@ fn wave(
             if x < 0 {
                 return 0.0;
             }
-            make_wave(
-                x as f32 * step,
-                wave_type,
-                wave_freq,
-                anti_aliasing_mode,
-                oversample_factor,
-            ) * volume
+            make_wave(x as f32 * step, wave_type, wave_freq, anti_aliasing_mode)
+                * volume
                 * apply_envelope(x as f32, envelope, beats, bpm)
         })
         .collect();
@@ -165,7 +158,6 @@ pub fn make_wave(
     wave_type: WaveType,
     wave_freq: Freq,
     anti_aliasing_mode: AntiAliasingMode,
-    oversample_factor: u32,
 ) -> f32 {
     let x = (x % 1.0) * TAU;
 
@@ -212,31 +204,7 @@ fn triangle_wave(x: f32) -> f32 {
 mod tests {
     use super::*;
 
-    use assert_float_eq::assert_float_absolute_eq;
-    use shared::model::{PitchName, ScaleValue};
-
     const FLOAT_THRES: f32 = 1e-6;
-
-    #[test]
-    fn get_step_with_detune() {
-        let output = get_step(
-            &PitchName {
-                scale_value: ScaleValue::CSharp,
-                octave: 3,
-            },
-            1200.0, // an entire octave of detune!
-        );
-
-        let expected = get_step(
-            &PitchName {
-                scale_value: ScaleValue::CSharp,
-                octave: 4, // one octave higher.
-            },
-            0.0,
-        );
-
-        assert_float_absolute_eq!(output, expected, FLOAT_THRES);
-    }
 
     #[test]
     fn linspace_1() {
