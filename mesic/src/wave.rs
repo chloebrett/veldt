@@ -12,7 +12,8 @@ use std::iter::repeat_n;
 use std::ops::Range;
 
 const HALF_PI: f32 = 0.5 * PI;
-const INV_HALF_PI: f32 = HALF_PI.recip();
+const RECIP_HALF_PI: f32 = HALF_PI.recip(); // 2 / PI, not 1 / TAU.
+const RECIP_PI: f32 = PI.recip();
 
 lazy_static! {
     // The frequency multiplier for a semitone.
@@ -163,7 +164,7 @@ pub fn make_wave(x: f32, wave_type: WaveType) -> f32 {
 
     match wave_type {
         WaveType::Sine => x.sin(),
-        WaveType::Square => square_wave(x),
+        WaveType::Square => square_wave_additive(x),
         WaveType::Saw => saw_wave(x),
         WaveType::Triangle => triangle_wave(x),
     }
@@ -173,12 +174,23 @@ fn square_wave(x: f32) -> f32 {
     x.sin().signum()
 }
 
+fn square_wave_additive(x: f32) -> f32 {
+    let max_k = 10; // TODO: cut off once frequency is > Nyquist.
+    let mut y = 0.0;
+    for i in 0..max_k {
+        let w = (2 * i - 1) as f32;
+        let s = (w * x).sin();
+        y += s / w
+    }
+    y * 4.0 * RECIP_PI
+}
+
 fn saw_wave(x: f32) -> f32 {
-    (x * 0.5).tan().atan() * INV_HALF_PI
+    (x * 0.5).tan().atan() * RECIP_HALF_PI
 }
 
 fn triangle_wave(x: f32) -> f32 {
-    x.sin().asin() * INV_HALF_PI
+    x.sin().asin() * RECIP_HALF_PI
 }
 
 #[cfg(test)]
