@@ -52,17 +52,17 @@ pub fn generator_control(store: &Store, ui: &mut Ui) {
             for mode in AntiAliasingMode::iter() {
                 selectable_value(
                     ui,
-                    get_set(config.anti_aliasing_mode.clone(), |it| {
+                    get_set(config.anti_aliasing_mode, |it| {
                         store.dispatch(&sel, Action::SetAntiAliasingMode(it))
                     }),
-                    mode.clone(),
-                    mode.clone().to_string(),
+                    mode,
+                    mode.to_string(),
                 );
             }
         });
 
     // Only show oversample factor if the anti-aliasing mode is oversample.
-    if let AntiAliasingMode::Oversample = config.anti_aliasing_mode.clone() {
+    if let AntiAliasingMode::Oversample = config.anti_aliasing_mode {
         ui.add(
             egui::Slider::from_get_set(
                 2.0..=10.0,
