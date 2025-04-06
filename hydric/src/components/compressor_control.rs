@@ -9,8 +9,6 @@ pub fn compressor_control<F>(config: CompressorConfig, dispatch_effect: F, ui: &
 where
     F: Fn(Action),
 {
-    ui.label("Compressor");
-
     ui.add(
         egui::Slider::from_get_set(
             0.0..=1.0,

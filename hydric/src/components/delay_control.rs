@@ -7,8 +7,6 @@ pub fn delay_control<F>(config: DelayConfig, dispatch_effect: F, ui: &mut Ui)
 where
     F: Fn(Action),
 {
-    ui.label("Delay");
-
     ui.add(
         egui::Slider::from_get_set(
             1.0..=1000.0,

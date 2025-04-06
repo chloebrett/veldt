@@ -4,8 +4,7 @@ use shared::model::Effect;
 use shared::types::KnobPosition;
 use state::{Action, Selector, Store, get_set};
 
-pub fn effect_control(ctx: &egui::Context, store: &Store, effect_index: usize) {
-    let mixer_index = 0;
+pub fn effect_control(ctx: &egui::Context, store: &Store, mixer_index: usize, effect_index: usize) {
     let sel = Selector::Effect(mixer_index, effect_index);
     let dispatch_effect = |action| store.dispatch(&sel, action);
     let effect = store.get().project.mixer[0].effects[effect_index].clone();
@@ -17,7 +16,7 @@ pub fn effect_control(ctx: &egui::Context, store: &Store, effect_index: usize) {
     };
 
     egui::Window::new(title)
-        .id(format!("effects_{effect_index}").into())
+        .id(format!("effects_{mixer_index}_{effect_index}").into())
         .default_pos(Pos2 {
             x: 1100.0,
             y: 150.0,
@@ -48,6 +47,13 @@ pub fn effect_control(ctx: &egui::Context, store: &Store, effect_index: usize) {
                 |it| dispatch_effect(Action::SetEffectMute(it)),
                 "Mute",
             );
+
+            ui.separator();
+            ui.label(format!(
+                "Mixer {} | Effect {}",
+                mixer_index + 1,
+                effect_index + 1
+            ));
         });
 }
 

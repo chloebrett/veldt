@@ -10,8 +10,6 @@ pub fn eq_control<F>(config: EqConfig, dispatch_effect: F, ui: &mut Ui)
 where
     F: Fn(Action),
 {
-    ui.label("Equalizer");
-
     ui.add(
         egui::Slider::from_get_set(
             20.0..=20000.0,
