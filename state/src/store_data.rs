@@ -59,6 +59,7 @@ impl Default for StoreData {
                                     kind: EqType::SimpleResonator,
                                     fc: 1000.0,
                                     q: 1.0,
+                                    gain: 0.0
                                 },
                             },
                             meta: EffectMeta { id: 0, wet: 1.0 },

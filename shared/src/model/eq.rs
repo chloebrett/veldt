@@ -1,6 +1,6 @@
 use crate::{
     pmodel::{EqConfigProto, EqTypeProto},
-    types::{Freq, KnobPosition},
+    types::{Freq, KnobPosition, GainDB},
 };
 use local_macro::{FromProto, IntoProto};
 use strum::{Display, EnumIter, EnumString};
@@ -31,6 +31,8 @@ pub struct EqConfig {
     pub kind: EqType,
 
     pub fc: Freq,
+
+    pub gain: GainDB,
 
     pub q: KnobPosition,
 }

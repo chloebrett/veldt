@@ -4,6 +4,8 @@ pub type Milliseconds = f32;
 pub type Octave = i32;
 pub type PitchValue = i32;
 
+pub type GainDB = f32;
+
 /// Zero to one.
 pub type KnobPosition = f32;
 
