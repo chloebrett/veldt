@@ -1,5 +1,6 @@
 use super::{compressor_control::compressor_control, delay_control, eq_control};
-use egui::{Pos2, Ui};
+use crate::widget::checkbox;
+use egui::Pos2;
 use shared::model::Effect;
 use shared::types::KnobPosition;
 use state::{Action, Selector, Store, get_set};
@@ -39,7 +40,7 @@ pub fn effect_control(ctx: &egui::Context, store: &Store, mixer_index: usize, ef
                 )
                 .text("Wet"),
             );
-            checkbox_get_set(
+            checkbox(
                 ui,
                 meta.mute,
                 |it| dispatch(Action::SetEffectMute(it)),
@@ -53,12 +54,4 @@ pub fn effect_control(ctx: &egui::Context, store: &Store, mixer_index: usize, ef
                 effect_index + 1
             ));
         });
-}
-
-fn checkbox_get_set(ui: &mut Ui, value: bool, setter: impl Fn(bool), text: &str) {
-    let mut temp = value;
-    ui.checkbox(&mut temp, text);
-    if value != temp {
-        setter(temp);
-    }
 }

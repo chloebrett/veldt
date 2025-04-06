@@ -1,5 +1,5 @@
-use super::{AsyncState, AudioState};
 use crate::audio_player::play;
+use crate::components::{AsyncState, AudioState};
 use crate::promise::{poll, spawn};
 use crate::rpc::load_sample;
 use egui::{Button, Ui};

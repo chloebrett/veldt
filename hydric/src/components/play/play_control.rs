@@ -1,6 +1,6 @@
-use super::app::{AsyncState, AudioState};
 use super::audio_vis::audio_vis;
 use crate::audio_player::play;
+use crate::components::{AsyncState, AudioState};
 use crate::promise::{poll, spawn};
 use crate::rpc::render as server_render;
 use egui::Ui;

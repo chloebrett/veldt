@@ -1,7 +1,10 @@
 use super::{
-    effect_control, envelope_control, generator_control, key_control, load_control,
-    note_roll::note_roll_display, notes_control, play_control, sample_control, save_button,
-    toggle_window_panel, track_placement_control, undo_redo_control,
+    effect::effect_control,
+    generator::{envelope_control, generator_control},
+    key_control, load_control,
+    note_roll::note_roll_display,
+    play::{play_control, sample_control},
+    save_button, toggle_window_panel, track_control, track_placement_control, undo_redo_control,
 };
 use crate::audio_player::Handle;
 use crate::promise::AsyncResult;
@@ -144,7 +147,7 @@ impl eframe::App for App {
                     ui.separator();
                     track_placement_control(&self.store, ui);
                     ui.separator();
-                    notes_control(&self.store, ui);
+                    track_control(&self.store, ui);
                     ui.separator();
                     undo_redo_control(&mut self.store, ui);
                     ui.separator();

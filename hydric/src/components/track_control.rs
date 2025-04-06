@@ -6,7 +6,7 @@ use shared::model::{Note, PitchName, PlacedNote};
 use shared::types::{Beats, Octave};
 use state::{Action, Selector, Store, get_set};
 
-pub fn notes_control(store: &Store, ui: &mut Ui) {
+pub fn track_control(store: &Store, ui: &mut Ui) {
     let scale_options = create_scale_values(store.get().scale, store.get().key);
     let track_index = 0;
     let track = &store.get().project.tracks[track_index];
