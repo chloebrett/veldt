@@ -1,4 +1,4 @@
-use crate::widget::knob;
+use crate::widget::{FloatRange, knob};
 use egui::{
     Color32, Pos2, Rect, Ui,
     containers::Frame,
@@ -11,6 +11,7 @@ use state::{Action, Selector, Store};
 
 pub fn envelope_control(store: &Store, ui: &mut Ui, generator_index: usize) {
     let sel = Selector::Generator(generator_index);
+    let dispatch = |action| store.dispatch(&sel, action);
 
     let generator_type = store.get().project.generators[generator_index].kind.clone();
     let config = match generator_type {
@@ -21,59 +22,39 @@ pub fn envelope_control(store: &Store, ui: &mut Ui, generator_index: usize) {
         ui,
         "Attack",
         envelope.attack,
-        |attack| {
-            store.dispatch(
-                &sel,
-                Action::SetEnvelope(AdsrEnvelope { attack, ..envelope }),
-            )
-        },
-        0.0,
-        1.0,
+        |attack| dispatch(Action::SetEnvelope(AdsrEnvelope { attack, ..envelope })),
+        FloatRange(0.0, 1.0),
     );
     knob(
         ui,
         "Decay",
         envelope.decay,
-        |decay| {
-            store.dispatch(
-                &sel,
-                Action::SetEnvelope(AdsrEnvelope { decay, ..envelope }),
-            )
-        },
-        0.0,
-        1.0,
+        |decay| dispatch(Action::SetEnvelope(AdsrEnvelope { decay, ..envelope })),
+        FloatRange(0.0, 1.0),
     );
     knob(
         ui,
         "Sustain",
         envelope.sustain,
         |sustain| {
-            store.dispatch(
-                &sel,
-                Action::SetEnvelope(AdsrEnvelope {
-                    sustain,
-                    ..envelope
-                }),
-            )
+            dispatch(Action::SetEnvelope(AdsrEnvelope {
+                sustain,
+                ..envelope
+            }))
         },
-        0.0,
-        1.0,
+        FloatRange(0.0, 1.0),
     );
     knob(
         ui,
         "Release",
         envelope.release,
         |release| {
-            store.dispatch(
-                &sel,
-                Action::SetEnvelope(AdsrEnvelope {
-                    release,
-                    ..envelope
-                }),
-            )
+            dispatch(Action::SetEnvelope(AdsrEnvelope {
+                release,
+                ..envelope
+            }))
         },
-        0.0,
-        1.0,
+        FloatRange(0.0, 1.0),
     );
 
     Frame::canvas(ui.style()).show(ui, |ui| {

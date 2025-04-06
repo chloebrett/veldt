@@ -1,8 +1,7 @@
-use crate::widget::selectable_value;
+use crate::widget::{FloatRange, knob, selectable_value};
 use egui::Ui;
 use shared::model::EqConfig;
 use shared::model::EqType;
-use shared::types::{Freq, GainDB, KnobPosition};
 use state::{Action, get_set};
 use strum::IntoEnumIterator;
 
@@ -10,34 +9,28 @@ pub fn eq_control<F>(config: &EqConfig, dispatch: F, ui: &mut Ui)
 where
     F: Fn(Action),
 {
-    ui.add(
-        egui::Slider::from_get_set(
-            20.0..=20000.0,
-            get_set(config.fc.into(), |it| dispatch(Action::SetEqFc(it as Freq))),
-        )
-        .text("Resonant frequency")
-        .logarithmic(true),
+    knob(
+        ui,
+        "Freq",
+        config.fc,
+        |it| dispatch(Action::SetEqFc(it)),
+        FloatRange(20.0, 20000.0), // TODO: logarithmic
     );
 
-    ui.add(
-        egui::Slider::from_get_set(
-            0.1..=100.0,
-            get_set(config.q.into(), |it| {
-                dispatch(Action::SetEqQ(it as KnobPosition))
-            }),
-        )
-        .text("Q value")
-        .logarithmic(true),
+    knob(
+        ui,
+        "Q",
+        config.q,
+        |it| dispatch(Action::SetEqQ(it)),
+        FloatRange(0.1, 100.0), // TODO: logarithmic
     );
 
-    ui.add(
-        egui::Slider::from_get_set(
-            -60.0..=60.0,
-            get_set(config.gain.into(), |it| {
-                dispatch(Action::SetEqGain(it as GainDB))
-            }),
-        )
-        .text("Gain (dB)"),
+    knob(
+        ui,
+        "Gain",
+        config.gain,
+        |it| dispatch(Action::SetEqGain(it)),
+        FloatRange(-60.0, 60.0),
     );
 
     let eq_type = config.kind.clone();
