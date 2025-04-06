@@ -1,4 +1,4 @@
-use dasp_graph::{BoxedNode, NodeData};
+use dasp_graph::{BoxedNodeSend, NodeData};
 use petgraph::stable_graph::StableGraph;
 
 mod amp_node;
@@ -17,7 +17,7 @@ pub use generator_node::*;
 pub use mixer_node::*;
 pub use render_graph::*;
 
-pub type Graph = StableGraph<NodeData<BoxedNode>, ()>;
+pub type Graph = StableGraph<NodeData<BoxedNodeSend>, ()>;
 
 pub type Processor = dasp_graph::Processor<Graph>;
 

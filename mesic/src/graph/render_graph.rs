@@ -3,7 +3,7 @@ use super::{
 };
 use crate::consts::SAMPLE_RATE;
 use crate::effect::eq_filter;
-use dasp_graph::{BoxedNode, Buffer, Node, NodeData, node::Delay};
+use dasp_graph::{BoxedNodeSend, Buffer, Node, NodeData, node::Delay};
 use petgraph::stable_graph::NodeIndex;
 use shared::model::{Effect, EffectInstance};
 
@@ -29,15 +29,17 @@ impl RenderGraph {
         }
     }
 
-    pub fn add_node(&mut self, node: impl Node + 'static) {
-        let node_index = self.graph.add_node(NodeData::new1(BoxedNode::new(node)));
+    pub fn add_node(&mut self, node: impl Node + 'static + Send) {
+        let node_index = self
+            .graph
+            .add_node(NodeData::new1(BoxedNodeSend::new(node)));
         self.graph.add_edge(self.output_node_index, node_index, ());
         self.output_node_index = node_index;
     }
 
     pub fn add_effect_with_mixer(&mut self, effect: EffectInstance) {
         let effect_node = match effect.effect {
-            Effect::SimpleEq { config } => BoxedNode::new(EqNode {
+            Effect::SimpleEq { config } => BoxedNodeSend::new(EqNode {
                 filter: eq_filter(&config),
             }),
             Effect::SimpleDelay { config } => {
@@ -47,9 +49,9 @@ impl RenderGraph {
                 // Extend the graph duration by the delay amount.
                 self.sample_count += delay_samples;
 
-                BoxedNode::new(new_delay_node(delay_samples))
+                BoxedNodeSend::new(new_delay_node(delay_samples))
             }
-            Effect::SimpleCompressor { config } => BoxedNode::new(CompressorNode::new(config)),
+            Effect::SimpleCompressor { config } => BoxedNodeSend::new(CompressorNode::new(config)),
         };
         let mixer_node = MixerNode {
             wet: effect.meta.wet,
@@ -59,7 +61,7 @@ impl RenderGraph {
         let effect = self.graph.add_node(NodeData::new1(effect_node));
         let mixer = self
             .graph
-            .add_node(NodeData::new1(BoxedNode::new(mixer_node)));
+            .add_node(NodeData::new1(BoxedNodeSend::new(mixer_node)));
 
         // Route the signal like this:
         // dry --|
@@ -86,7 +88,7 @@ impl RenderGraph {
         let mut graph = make_graph();
         let sample_count = vec.len();
         let buffer_node: BufferNode = vec.into();
-        let buffer_node_index = graph.add_node(NodeData::new1(BoxedNode::new(buffer_node)));
+        let buffer_node_index = graph.add_node(NodeData::new1(BoxedNodeSend::new(buffer_node)));
         RenderGraph::new(graph, sample_count, buffer_node_index)
     }
 
