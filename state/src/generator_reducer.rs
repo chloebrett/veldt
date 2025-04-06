@@ -50,8 +50,8 @@ pub fn generator_reducer(generator: &mut GeneratorInstance, action: &Action) -> 
             Action::SetEnvelope(prev)
         }
         Action::SetAntiAliasingMode(mode) => {
-            let prev = config.anti_aliasing_mode.clone();
-            config.anti_aliasing_mode = mode.clone();
+            let prev = config.anti_aliasing_mode;
+            config.anti_aliasing_mode = *mode;
             Action::SetAntiAliasingMode(prev)
         }
         Action::SetOversampleFactor(factor) => {

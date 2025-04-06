@@ -1,9 +1,8 @@
-use crate::consts::REFERENCE_PITCH;
-use crate::consts::{SAMPLE_RATE, SECONDS_PER_MINUTE};
+use crate::consts::{NYQUIST, REFERENCE_PITCH, SAMPLE_RATE, SECONDS_PER_MINUTE};
 use crate::envelope::apply_envelope;
 use dasp_graph::Buffer;
 use lazy_static::lazy_static;
-use shared::model::{AdsrEnvelope, PitchName, SimpleWaveConfig, WaveType};
+use shared::model::{AdsrEnvelope, AntiAliasingMode, PitchName, SimpleWaveConfig, WaveType};
 use shared::types::Beats;
 use shared::types::{Freq, PitchValue};
 use std::cmp::min;
@@ -27,64 +26,6 @@ pub fn freq(pitch_name: PitchName) -> Freq {
     let interval: PitchValue = pitch - reference;
 
     REFERENCE_PITCH.frequency * SEMITONE_FREQ.powf(interval as f32)
-}
-
-fn wave(
-    pitch_name: &PitchName,
-    beats: Beats,
-    bpm: Beats,
-    volume: f32,
-    envelope: &AdsrEnvelope,
-    wave_type: WaveType,
-    detune_cents: f32,
-    start_index: i32,
-) -> Buffer {
-    let step = get_step(pitch_name, detune_cents);
-
-    let mut vec: Vec<_> = make_range(start_index, beats, bpm)
-        .into_iter()
-        .map(|x: i32| {
-            // Handles the case where start_index < 0.
-            // This happens when the start of a note is in the middle of a buffer that is being
-            // processed.
-            if x < 0 {
-                return 0.0;
-            }
-            make_wave(x as f32 * step, wave_type)
-                * volume
-                * apply_envelope(x as f32, envelope, beats, bpm)
-        })
-        .collect();
-
-    let mut buffer = Buffer::SILENT;
-    // Handles the case where the range is smaller than the output buffer.
-    // This happens when a note finishes in the middle of a buffer.
-    if vec.len() < Buffer::LEN {
-        vec.extend(repeat_n(0.0, Buffer::LEN - vec.len()));
-    }
-    buffer.copy_from_slice(&vec);
-    buffer
-}
-
-/// Returns a multiplier that controls how fast the wave should cycle.
-/// This is dependent on the frequency, the detune and the sample rate.
-/// A 1Hz frequency will return a value of TAU / SAMPLE_RATE.
-/// TODO: need a better abstraction, this isn't very meaningful.
-fn get_step(pitch_name: &PitchName, detune_cents: f32) -> f32 {
-    freq(*pitch_name) * detune_multiplier(detune_cents) * TAU / (SAMPLE_RATE as f32)
-}
-
-pub fn beats_to_samples(beats: Beats, bpm: Beats) -> u32 {
-    let seconds = beats / bpm * SECONDS_PER_MINUTE;
-    (SAMPLE_RATE as f32 * seconds) as u32
-}
-
-fn make_range(start_index: i32, beats: Beats, bpm: Beats) -> Range<i32> {
-    start_index
-        ..min(
-            beats_to_samples(beats, bpm) as i32,
-            Buffer::LEN as i32 + start_index,
-        )
 }
 
 pub fn polyphonic_wave(
@@ -112,6 +53,8 @@ pub fn polyphonic_wave(
                 partial_volume,
                 &config.envelope,
                 config.wave,
+                config.anti_aliasing_mode,
+                config.oversample_factor,
                 *det,
                 start_index,
             )
@@ -119,6 +62,63 @@ pub fn polyphonic_wave(
         .collect();
 
     multi_sum(&outputs)
+}
+
+fn wave(
+    pitch_name: &PitchName,
+    beats: Beats,
+    bpm: Beats,
+    volume: f32,
+    envelope: &AdsrEnvelope,
+    wave_type: WaveType,
+    anti_aliasing_mode: AntiAliasingMode,
+    oversample_factor: u32,
+    detune_cents: f32,
+    start_index: i32,
+) -> Buffer {
+    let wave_freq = freq(*pitch_name) * detune_multiplier(detune_cents);
+    let step = wave_freq / (SAMPLE_RATE as f32);
+
+    let mut vec: Vec<_> = make_range(start_index, beats, bpm)
+        .map(|x: i32| {
+            // Handles the case where start_index < 0.
+            // This happens when the start of a note is in the middle of a buffer that is being
+            // processed.
+            if x < 0 {
+                return 0.0;
+            }
+            make_wave(
+                x as f32 * step,
+                wave_type,
+                wave_freq,
+                anti_aliasing_mode,
+                oversample_factor,
+            ) * volume
+                * apply_envelope(x as f32, envelope, beats, bpm)
+        })
+        .collect();
+
+    let mut buffer = Buffer::SILENT;
+    // Handles the case where the range is smaller than the output buffer.
+    // This happens when a note finishes in the middle of a buffer.
+    if vec.len() < Buffer::LEN {
+        vec.extend(repeat_n(0.0, Buffer::LEN - vec.len()));
+    }
+    buffer.copy_from_slice(&vec);
+    buffer
+}
+
+pub fn beats_to_samples(beats: Beats, bpm: Beats) -> u32 {
+    let seconds = beats / bpm * SECONDS_PER_MINUTE;
+    (SAMPLE_RATE as f32 * seconds) as u32
+}
+
+fn make_range(start_index: i32, beats: Beats, bpm: Beats) -> Range<i32> {
+    start_index
+        ..min(
+            beats_to_samples(beats, bpm) as i32,
+            Buffer::LEN as i32 + start_index,
+        )
 }
 
 fn detune_multiplier(cents: f32) -> Freq {
@@ -159,12 +159,23 @@ fn multi_sum(inputs: &[Buffer]) -> Buffer {
 
 /// Constructs the given wave at the given phase. x is between 0 and TAU (or will be modulo'd to be
 /// between these numbers).
-pub fn make_wave(x: f32, wave_type: WaveType) -> f32 {
-    let x = x % TAU;
+/// wave_freq is sent to determine cutoffs for additive anti-aliasing.
+pub fn make_wave(
+    x: f32,
+    wave_type: WaveType,
+    wave_freq: Freq,
+    anti_aliasing_mode: AntiAliasingMode,
+    oversample_factor: u32,
+) -> f32 {
+    let x = (x % 1.0) * TAU;
 
     match wave_type {
         WaveType::Sine => x.sin(),
-        WaveType::Square => square_wave_additive(x),
+        WaveType::Square => match anti_aliasing_mode {
+            AntiAliasingMode::Off => square_wave(x),
+            AntiAliasingMode::Additive => square_wave_additive(x, wave_freq),
+            AntiAliasingMode::Oversample => todo!(),
+        },
         WaveType::Saw => saw_wave(x),
         WaveType::Triangle => triangle_wave(x),
     }
@@ -174,11 +185,15 @@ fn square_wave(x: f32) -> f32 {
     x.sin().signum()
 }
 
-fn square_wave_additive(x: f32) -> f32 {
-    let max_k = 10; // TODO: cut off once frequency is > Nyquist.
+fn square_wave_additive(x: f32, wave_freq: Freq) -> f32 {
+    let max_k = 1000;
     let mut y = 0.0;
-    for i in 0..max_k {
+    for i in 1..max_k {
         let w = (2 * i - 1) as f32;
+        let harmonic = w * wave_freq;
+        if harmonic > NYQUIST as Freq {
+            break;
+        }
         let s = (w * x).sin();
         y += s / w
     }

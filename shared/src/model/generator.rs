@@ -66,7 +66,7 @@ pub struct SimpleWaveConfig {
     pub oversample_factor: u32,
 }
 
-#[derive(Debug, Clone, PartialEq, EnumString, Display, EnumIter, IntoProto, FromProto)]
+#[derive(Debug, Clone, Copy, PartialEq, EnumString, Display, EnumIter, IntoProto, FromProto)]
 pub enum AntiAliasingMode {
     // No anti-aliasing. Uses naive waves without oversampling. Produces artifacts for waves like
     // square and saw, especially at high frequencies.
