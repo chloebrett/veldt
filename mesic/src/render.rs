@@ -1,6 +1,6 @@
 use crate::SAMPLE_RATE;
 use crate::graph::{GeneratorNode, RenderGraph, make_graph};
-use dasp_graph::{BoxedNode, NodeData};
+use dasp_graph::{BoxedNodeSend, NodeData};
 use shared::model::Project;
 
 pub fn render(project: &Project) -> RenderGraph {
@@ -19,7 +19,7 @@ pub fn render(project: &Project) -> RenderGraph {
     // Create a generator node, and create a render graph that uses it as the starting point.
     let mut graph = make_graph();
     let generator_node = GeneratorNode::new(project.generators[0].clone(), track.clone(), bpm);
-    let generator_node_index = graph.add_node(NodeData::new1(BoxedNode::new(generator_node)));
+    let generator_node_index = graph.add_node(NodeData::new1(BoxedNodeSend::new(generator_node)));
     let mut render_graph = RenderGraph::new(graph, track_samples, generator_node_index);
 
     // Apply effects.

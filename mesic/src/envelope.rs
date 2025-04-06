@@ -16,6 +16,7 @@ pub fn apply_envelope(
     let scale_factor = bpm / SECONDS_PER_MINUTE / duration;
     let beats = sample_index * scale_factor / (SAMPLE_RATE as f32);
 
+    // TODO: apply exponential curves to the envelope.
     if beats < envelope.attack {
         // in attack
         beats / envelope.attack

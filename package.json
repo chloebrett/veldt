@@ -11,7 +11,7 @@
   "license": "MIT",
   "scripts": {
     "b": "yarn hb; yarn mb; yarn sb; yarn stb; yarn xb",
-    "f": "yarn hf; yarn mf; yarn sf; yarn stb; yarn xf",
+    "f": "yarn hf; yarn mf; yarn sf; yarn stf; yarn xf",
     "fix": "cd hydric; cargo fix --target=wasm32-unknown-unknown; cd ../mesic; cargo fix; cd ../shared; cargo fix; cd ../state; cargo fix; cd ../xeric; cargo fix",
     "l": "yarn hl; yarn ml; yarn sl; yarn stl; yarn xl",
     "p": "./.husky/pre-commit",

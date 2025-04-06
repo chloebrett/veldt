@@ -1,5 +1,5 @@
-use super::{AsyncState, AudioState};
 use crate::audio_player::play;
+use crate::components::{AsyncState, AudioState};
 use crate::promise::{poll, spawn};
 use crate::rpc::load_sample;
 use egui::{Button, Ui};
@@ -27,7 +27,7 @@ pub fn sample_control(
             volume,
             should_clip: true,
         });
-        audio_state.handle = Some(play(graph));
+        audio_state.handle = Some(play(graph, audio_state.pre_render));
     }
 
     if ui.button("Load sample").clicked() {

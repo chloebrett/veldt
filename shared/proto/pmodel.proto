@@ -120,6 +120,8 @@ message EffectMetaProto {
   uint32 id = 1;
 
   float wet = 2;
+
+  bool mute = 3;
 }
 
 message SimpleDelayProto {

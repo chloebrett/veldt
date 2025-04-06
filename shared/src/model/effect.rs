@@ -67,6 +67,7 @@ pub struct EffectMeta {
     #[proto_type_u32]
     pub id: EffectId,
     pub wet: KnobPosition,
+    pub mute: bool,
     // TODO: pan
 }
 
