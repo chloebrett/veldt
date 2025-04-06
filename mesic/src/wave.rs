@@ -177,15 +177,27 @@ fn square_wave(x: f32) -> f32 {
     x.sin().signum()
 }
 
+/// Builds an anti-aliased square wave by summing up sine waves according to the square wave
+/// formula.
 fn square_wave_additive(x: f32, wave_freq: Freq) -> f32 {
+    // Maximum number of iterations to try. Reducing this produces a sort of low pass effect,
+    // and also makes the wave faster to compute.
     let max_k = 1000;
+
+    // The output value.
     let mut y = 0.0;
+
     for i in 1..max_k {
+        // Square wave formula: https://en.wikipedia.org/wiki/Square_wave_(waveform)
         let w = (2 * i - 1) as f32;
+
+        // Stop adding harmonics once they exceed the Nyquist limit (half the sample rate).
+        // This prevents the signal from aliasing.
         let harmonic = w * wave_freq;
         if harmonic > NYQUIST as Freq {
             break;
         }
+
         let s = (w * x).sin();
         y += s / w
     }
