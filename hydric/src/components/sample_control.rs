@@ -27,7 +27,7 @@ pub fn sample_control(
             volume,
             should_clip: true,
         });
-        audio_state.handle = Some(play(graph));
+        audio_state.handle = Some(play(graph, audio_state.pre_render));
     }
 
     if ui.button("Load sample").clicked() {

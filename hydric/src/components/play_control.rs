@@ -21,7 +21,7 @@ pub fn play_control(
             volume,
             should_clip: true,
         });
-        audio_state.handle = Some(play(graph));
+        audio_state.handle = Some(play(graph, audio_state.pre_render));
     }
     poll(&mut async_state.server_render, |audio: &Vec<f32>| {
         let volume = store.get().volume;
@@ -31,7 +31,7 @@ pub fn play_control(
             volume,
             should_clip: true,
         });
-        audio_state.handle = Some(play(graph));
+        audio_state.handle = Some(play(graph, audio_state.pre_render));
     });
     if ui.button("Load audio (server)").clicked() {
         let project = store.get().project.clone();
@@ -39,5 +39,6 @@ pub fn play_control(
             server_render(project).await
         })
     }
+    ui.checkbox(&mut audio_state.pre_render, "Pre-render audio");
     audio_vis(audio_state, ui);
 }

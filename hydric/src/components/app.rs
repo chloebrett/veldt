@@ -26,6 +26,7 @@ pub struct AsyncState {
 pub struct AudioState {
     pub audio: Vec<f32>,
     pub handle: Option<Handle>,
+    pub pre_render: bool,
 }
 
 #[derive(Default)]
