@@ -3,7 +3,7 @@ use egui::Ui;
 use shared::model::EffectMeta;
 use shared::model::EqConfig;
 use shared::model::EqType;
-use shared::types::{Freq, KnobPosition};
+use shared::types::{Freq, GainDB, KnobPosition};
 use state::{Action, get_set};
 use strum::IntoEnumIterator;
 
@@ -33,6 +33,16 @@ where
         )
         .text("Q value")
         .logarithmic(true),
+    );
+
+    ui.add(
+        egui::Slider::from_get_set(
+            -60.0..=60.0,
+            get_set(config.gain.into(), |it| {
+                dispatch_effect(Action::SetEqGain(it as GainDB))
+            }),
+        )
+        .text("Gain"),
     );
 
     let eq_type = config.kind.clone();

@@ -36,6 +36,11 @@ pub fn effect_reducer(effect: &mut EffectInstance, action: &Action) -> Action {
                 config.q = *q;
                 Action::SetEqQ(prev)
             }
+            Action::SetEqGain(gain) => {
+                let prev = config.gain;
+                config.gain = *gain;
+                Action::SetEqGain(prev)
+            }
             _ => Action::NonReversible,
         },
         Effect::SimpleCompressor { config } => match action {
