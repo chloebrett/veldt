@@ -21,13 +21,10 @@ pub fn envelope_control(store: &Store, ui: &mut Ui, generator_index: usize) {
         ui,
         "Attack",
         envelope.attack,
-        |it| {
+        |attack| {
             store.dispatch(
                 &sel,
-                Action::SetEnvelope(AdsrEnvelope {
-                    attack: it as f32,
-                    ..envelope
-                }),
+                Action::SetEnvelope(AdsrEnvelope { attack, ..envelope }),
             )
         },
         0.0,
@@ -37,13 +34,10 @@ pub fn envelope_control(store: &Store, ui: &mut Ui, generator_index: usize) {
         ui,
         "Decay",
         envelope.decay,
-        |it| {
+        |decay| {
             store.dispatch(
                 &sel,
-                Action::SetEnvelope(AdsrEnvelope {
-                    decay: it as f32,
-                    ..envelope
-                }),
+                Action::SetEnvelope(AdsrEnvelope { decay, ..envelope }),
             )
         },
         0.0,
@@ -53,11 +47,11 @@ pub fn envelope_control(store: &Store, ui: &mut Ui, generator_index: usize) {
         ui,
         "Sustain",
         envelope.sustain,
-        |it| {
+        |sustain| {
             store.dispatch(
                 &sel,
                 Action::SetEnvelope(AdsrEnvelope {
-                    sustain: it as f32,
+                    sustain,
                     ..envelope
                 }),
             )
@@ -69,11 +63,11 @@ pub fn envelope_control(store: &Store, ui: &mut Ui, generator_index: usize) {
         ui,
         "Release",
         envelope.release,
-        |it| {
+        |release| {
             store.dispatch(
                 &sel,
                 Action::SetEnvelope(AdsrEnvelope {
-                    release: it as f32,
+                    release,
                     ..envelope
                 }),
             )
