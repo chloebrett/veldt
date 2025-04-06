@@ -181,13 +181,21 @@ mod tests {
                                 gain: 0.0,
                             },
                         },
-                        meta: EffectMeta { id: 0, wet: 1.0 },
+                        meta: EffectMeta {
+                            id: 0,
+                            wet: 1.0,
+                            mute: false,
+                        },
                     },
                     EffectInstance {
                         effect: Effect::SimpleDelay {
                             config: DelayConfig { delay_ms: 250.0 },
                         },
-                        meta: EffectMeta { id: 1, wet: 0.5 },
+                        meta: EffectMeta {
+                            id: 1,
+                            wet: 0.5,
+                            mute: false,
+                        },
                     },
                 ],
             }],

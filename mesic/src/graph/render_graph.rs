@@ -55,6 +55,7 @@ impl RenderGraph {
         };
         let mixer_node = MixerNode {
             wet: effect.meta.wet,
+            mute: effect.meta.mute,
         };
 
         let dry = self.output_node_index;

@@ -5,10 +5,18 @@ use shared::model::{Effect, EffectInstance};
 pub fn effect_reducer(effect: &mut EffectInstance, action: &Action) -> Action {
     log(&format!("effect_reducer processing: {:?}", action.clone()));
 
-    if let Action::SetEffectWet(wet) = action {
-        let prev = effect.meta.wet;
-        effect.meta.wet = *wet;
-        return Action::SetEffectWet(prev);
+    match action {
+        Action::SetEffectWet(wet) => {
+            let prev = effect.meta.wet;
+            effect.meta.wet = *wet;
+            return Action::SetEffectWet(prev);
+        }
+        Action::SetEffectMute(mute) => {
+            let prev = effect.meta.mute;
+            effect.meta.mute = *mute;
+            return Action::SetEffectMute(prev);
+        }
+        _ => {}
     }
 
     match &mut effect.effect {

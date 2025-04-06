@@ -9,11 +9,13 @@ use shared::types::KnobPosition;
 /// And so on.
 pub struct MixerNode {
     pub wet: KnobPosition,
+    pub mute: bool,
 }
 
 impl Node for MixerNode {
     fn process(&mut self, inputs: &[Input], output: &mut [Buffer]) {
         debug_assert!(self.wet >= 0.0 && self.wet <= 1.0);
+
         let dry = 1.0 - self.wet;
 
         for ((out_buf, dry_buf), wet_buf) in output
@@ -31,13 +33,19 @@ impl Node for MixerNode {
                     .buffers(),
             )
         {
-            out_buf.copy_from_slice(
-                &dry_buf
-                    .iter()
-                    .zip(wet_buf.iter())
-                    .map(|(d, w)| d * dry + w * self.wet)
-                    .collect::<Vec<f32>>(),
-            );
+            if self.mute {
+                // TODO: make muting an effect temporarily short circuit it in the graph, so that
+                // it doesn't run at all.
+                out_buf.copy_from_slice(&dry_buf);
+            } else {
+                out_buf.copy_from_slice(
+                    &dry_buf
+                        .iter()
+                        .zip(wet_buf.iter())
+                        .map(|(d, w)| d * dry + w * self.wet)
+                        .collect::<Vec<f32>>(),
+                );
+            }
         }
     }
 }
