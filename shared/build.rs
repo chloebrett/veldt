@@ -6,7 +6,6 @@ fn main() {
             &[
                 "proto/load_sample.proto",
                 "proto/pmodel.proto",
-                "proto/putil.proto",
                 "proto/render.proto",
                 "proto/save_load.proto",
             ],

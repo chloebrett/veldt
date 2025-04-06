@@ -18,10 +18,6 @@ pub mod pmodel {
     tonic::include_proto!("pmodel");
 }
 
-pub mod putil {
-    tonic::include_proto!("putil");
-}
-
 pub mod save_load {
     tonic::include_proto!("save_load");
 }

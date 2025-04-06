@@ -1,12 +1,11 @@
 use crate::model::{AdsrEnvelope, WaveType};
 use crate::pmodel::{
-    GeneratorInstanceProto, GeneratorMetaProto, OversampleProto, SimpleWaveConfigProto,
+    AntiAliasingModeProto, GeneratorInstanceProto, GeneratorMetaProto, SimpleWaveConfigProto,
     SimpleWaveProto, generator_instance_proto::Kind as GeneratorTypeProto,
-    simple_wave_config_proto::AntiAliasingMode as AntiAliasingModeProto,
 };
-use crate::putil::EmptyProto;
 use crate::types::Volume;
 use local_macro::{FromProto, IntoProto};
+use strum::{Display, EnumIter, EnumString};
 
 type GeneratorInstanceId = usize;
 
@@ -61,11 +60,13 @@ pub struct SimpleWaveConfig {
 
     pub detune_cents: f32,
 
-    #[proto_optional]
+    #[proto_enum]
     pub anti_aliasing_mode: AntiAliasingMode,
+
+    pub oversample_factor: u32,
 }
 
-#[derive(Clone, Debug, PartialEq)]
+#[derive(Debug, Clone, PartialEq, EnumString, Display, EnumIter, IntoProto, FromProto)]
 pub enum AntiAliasingMode {
     // No anti-aliasing. Uses naive waves without oversampling. Produces artifacts for waves like
     // square and saw, especially at high frequencies.
@@ -73,35 +74,11 @@ pub enum AntiAliasingMode {
 
     // Reduces aliasing by oversampling by the given factor, low passing, then downsampling. This uses additional computation
     // power.
-    Oversample { factor: u32 },
+    Oversample,
 
     // Avoids aliasing entirely by constructing the waveform additively. This results in zero
     // aliasing but is the most computationally expensive.
     Additive,
-}
-
-impl From<AntiAliasingModeProto> for AntiAliasingMode {
-    fn from(item: AntiAliasingModeProto) -> AntiAliasingMode {
-        match item {
-            AntiAliasingModeProto::Off(_) => AntiAliasingMode::Off,
-            AntiAliasingModeProto::Oversample(OversampleProto { factor }) => {
-                AntiAliasingMode::Oversample { factor }
-            }
-            AntiAliasingModeProto::Additive(_) => AntiAliasingMode::Additive,
-        }
-    }
-}
-
-impl From<AntiAliasingMode> for AntiAliasingModeProto {
-    fn from(item: AntiAliasingMode) -> AntiAliasingModeProto {
-        match item {
-            AntiAliasingMode::Off => AntiAliasingModeProto::Off(EmptyProto {}),
-            AntiAliasingMode::Oversample { factor } => {
-                AntiAliasingModeProto::Oversample(OversampleProto { factor })
-            }
-            AntiAliasingMode::Additive => AntiAliasingModeProto::Additive(EmptyProto {}),
-        }
-    }
 }
 
 #[derive(Clone, Debug, PartialEq, FromProto, IntoProto)]

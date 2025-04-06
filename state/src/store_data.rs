@@ -48,6 +48,7 @@ impl Default for StoreData {
                             osc_count: 4,
                             detune_cents: 5.0,
                             anti_aliasing_mode: AntiAliasingMode::Off,
+                            oversample_factor: 2,
                         },
                     },
                     meta: GeneratorMeta { volume: 1.0 },

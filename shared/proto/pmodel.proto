@@ -2,8 +2,6 @@ syntax = "proto3";
 
 package pmodel;
 
-import "putil.proto";
-
 message ProjectProto {
   string name = 1;
 
@@ -113,15 +111,9 @@ message SimpleWaveConfigProto {
 
   float detune_cents = 4;
 
-  oneof anti_aliasing_mode {
-    putil.EmptyProto off = 5;
-    OversampleProto oversample = 6;
-    putil.EmptyProto additive = 7;
-  };
-}
+  AntiAliasingModeProto anti_aliasing_mode = 5;
 
-message OversampleProto {
-  uint32 factor = 1;
+  uint32 oversample_factor = 6;
 }
 
 message EffectMetaProto {
@@ -172,6 +164,13 @@ enum WaveTypeProto {
   SquareWaveType = 2;
   SawWaveType = 3;
   TriangleWaveType = 4;
+}
+
+enum AntiAliasingModeProto {
+  UnknownAntiAliasingMode = 0;
+  OffAntiAliasingMode = 1;
+  OversampleAntiAliasingMode = 2;
+  AdditiveAntiAliasingMode = 3;
 }
 
 enum ScaleValueProto {
