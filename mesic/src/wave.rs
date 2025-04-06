@@ -168,7 +168,11 @@ pub fn make_wave(
             AntiAliasingMode::Additive => square_wave_additive(x, wave_freq),
             AntiAliasingMode::Oversample => todo!(),
         },
-        WaveType::Saw => saw_wave(x),
+        WaveType::Saw => match anti_aliasing_mode {
+            AntiAliasingMode::Off => saw_wave(x),
+            AntiAliasingMode::Additive => saw_wave_additive(x, wave_freq),
+            AntiAliasingMode::Oversample => todo!(),
+        },
         WaveType::Triangle => triangle_wave(x),
     }
 }
@@ -202,6 +206,34 @@ fn square_wave_additive(x: f32, wave_freq: Freq) -> f32 {
         y += s / w
     }
     y * 4.0 * RECIP_PI
+}
+
+/// Builds an anti-aliased saw wave by summing up sine waves according to the saw wave
+/// formula.
+fn saw_wave_additive(x: f32, wave_freq: Freq) -> f32 {
+    // Maximum number of iterations to try. Reducing this produces a sort of low pass effect,
+    // and also makes the wave faster to compute.
+    let max_k = 1000;
+
+    // The output value.
+    let mut y = 0.0;
+
+    for i in 1..max_k {
+        let w = i as f32;
+
+        // Stop adding harmonics once they exceed the Nyquist limit (half the sample rate).
+        // This prevents the signal from aliasing.
+        let harmonic = w * wave_freq;
+        if harmonic > NYQUIST as Freq {
+            break;
+        }
+
+        // Saw wave formula: https://en.wikipedia.org/wiki/Sawtooth_wave
+        let s = (w * x).sin();
+        let sign = if i % 2 == 0 { 1.0 } else { -1.0 };
+        y += sign * s / w
+    }
+    y * -2.0 * RECIP_PI
 }
 
 fn saw_wave(x: f32) -> f32 {
