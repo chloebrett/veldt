@@ -3,6 +3,7 @@ use super::{
 };
 use crate::consts::SAMPLE_RATE;
 use crate::effect::eq_filter;
+use dasp_frame::Mono;
 use dasp_graph::{BoxedNodeSend, Buffer, Node, NodeData, node::Delay};
 use petgraph::stable_graph::NodeIndex;
 use shared::model::{Effect, EffectInstance};
@@ -108,7 +109,7 @@ fn new_delay_node(delay_samples: usize) -> Delay<Vec<f32>> {
 }
 
 impl Iterator for RenderGraph {
-    type Item = f32;
+    type Item = Mono<f32>;
 
     fn next(&mut self) -> Option<Self::Item> {
         if self.processed_samples_count % Buffer::LEN == 0 {
@@ -127,7 +128,7 @@ impl Iterator for RenderGraph {
             .buffers;
 
         // For now, only return one channel.
-        let output = Some(buffers[0][self.processed_samples_count % Buffer::LEN]);
+        let output = Some([buffers[0][self.processed_samples_count % Buffer::LEN]]);
 
         self.processed_samples_count += 1;
         output

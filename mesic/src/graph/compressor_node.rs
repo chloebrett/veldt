@@ -67,20 +67,16 @@ impl Node for CompressorNode {
             .iter_mut()
             .zip(inputs.first().expect("Expected one input").buffers())
         {
-            out_buf.copy_from_slice(
-                &in_buf
-                    .iter()
-                    .map(|it| {
-                        let rms = self.detector.next(*it);
+            out_buf.copy_from_slice(&in_buf);
+            for x in out_buf.iter_mut() {
+                let rms = self.detector.next(*x);
 
-                        // TODO: also support using the compressor as a downward expander.
-                        let pre_gain = compress(*it, rms, threshold, ratio_recip);
+                // TODO: also support using the compressor as a downward expander.
+                let pre_gain = compress(*x, rms, threshold, ratio_recip);
 
-                        // TODO: use dB for makeup gain.
-                        pre_gain * self.config.gain
-                    })
-                    .collect::<Vec<_>>(),
-            );
+                // TODO: use dB for makeup gain.
+                *x = pre_gain * self.config.gain
+            }
         }
     }
 }
@@ -91,6 +87,7 @@ mod tests {
     use crate::graph::RenderGraph;
     use crate::wave::freq;
     use assert_float_eq::assert_float_absolute_eq;
+    use dasp_frame::Mono;
     use shared::model::{Effect, EffectInstance, EffectMeta, PitchName, ScaleValue};
 
     const FLOAT_THRES: f32 = 1e-6;
@@ -125,7 +122,7 @@ mod tests {
         let output: Vec<_> = graph.collect();
 
         // ASSERT
-        assert_signals_approx_eq(output, input);
+        assert_signals_approx_eq(output, input.into_iter().map(|it| [it]).collect());
     }
 
     #[test]
@@ -156,7 +153,7 @@ mod tests {
             .map(|it| {
                 // Note using 'it' as both input and detector.
                 // (with .abs() for detector).
-                compress(*it, it.abs(), threshold, 1.0 / ratio)
+                [compress(*it, it.abs(), threshold, 1.0 / ratio)]
             })
             .collect();
 
@@ -185,6 +182,8 @@ mod tests {
 
         // ASSERT
         for (y, x) in output.into_iter().zip(input.into_iter()) {
+            let y = y[0];
+
             // Absolute output should always be less than absolute input.
             // Polarity should be the same.
             assert!(y.abs() < x.abs() + FLOAT_THRES, "{y}, {x}");
@@ -214,6 +213,8 @@ mod tests {
 
         // ASSERT
         for (y, x) in output.into_iter().zip(input.into_iter()) {
+            let y = y[0];
+
             assert!(
                 y.abs() <= (x.abs() * makeup_gain) + FLOAT_THRES,
                 "{y}, {x}, {makeup_gain}, {}",
@@ -248,6 +249,8 @@ mod tests {
 
         // ASSERT
         for ((i, y), x) in output.into_iter().enumerate().zip(input.into_iter()) {
+            let y = y[0];
+
             if i < attack_samples {
                 // While the limiter is kicking in, just assert that the output is less than or
                 // equal to the input.
@@ -279,11 +282,11 @@ mod tests {
         graph
     }
 
-    fn assert_signals_approx_eq(first: Vec<f32>, second: Vec<f32>) {
+    fn assert_signals_approx_eq(first: Vec<Mono<f32>>, second: Vec<Mono<f32>>) {
         // TODO: make the errors for this more readable,
         // and perhaps make our own macro.
         for (a, b) in first.iter().zip(second.iter()) {
-            assert_float_absolute_eq!(*a, *b, FLOAT_THRES);
+            assert_float_absolute_eq!(a[0], b[0], FLOAT_THRES);
         }
     }
 

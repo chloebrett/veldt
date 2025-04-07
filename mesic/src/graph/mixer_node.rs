@@ -38,13 +38,9 @@ impl Node for MixerNode {
                 // it doesn't run at all.
                 out_buf.copy_from_slice(dry_buf);
             } else {
-                out_buf.copy_from_slice(
-                    &dry_buf
-                        .iter()
-                        .zip(wet_buf.iter())
-                        .map(|(d, w)| d * dry + w * self.wet)
-                        .collect::<Vec<f32>>(),
-                );
+                for i in 0..Buffer::LEN {
+                    out_buf[i] = dry_buf[i] * dry + wet_buf[i] * self.wet;
+                }
             }
         }
     }

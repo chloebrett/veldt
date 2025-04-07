@@ -1,4 +1,5 @@
 use super::ApplyFilter;
+use dasp_graph::Buffer;
 use ringbuffer::{AllocRingBuffer, RingBuffer};
 
 /// A filter which looks at:
@@ -46,21 +47,19 @@ impl FirstOrderFilter {
 }
 
 impl ApplyFilter for FirstOrderFilter {
-    fn apply(&mut self, input: &[f32]) -> Vec<f32> {
-        let mut output: Vec<f32> = vec![];
-
-        for xn in input.iter() {
+    fn apply(&mut self, buffer: &mut Buffer) {
+        for xn in buffer.iter_mut() {
             let xn1 = self.x_buffer;
             let yn1 = self.y_buffer;
 
-            let yn = self.a0 * xn + self.a1 * xn1 - self.b1 * yn1;
+            let yn = self.a0 * *xn + self.a1 * xn1 - self.b1 * yn1;
 
             self.x_buffer = *xn;
             self.y_buffer = yn;
-            output.push(yn);
-        }
 
-        output
+            // Replace the input value with the corresponding output value.
+            *xn = yn;
+        }
     }
 }
 
@@ -112,10 +111,8 @@ impl SecondOrderFilter {
 }
 
 impl ApplyFilter for SecondOrderFilter {
-    fn apply(&mut self, input: &[f32]) -> Vec<f32> {
-        let mut output: Vec<f32> = vec![];
-
-        for xn in input.iter() {
+    fn apply(&mut self, buffer: &mut Buffer) {
+        for xn in buffer.iter_mut() {
             // The oldest values should be removed from the ring buffer in each iteration.
             let xn2 = self.x_buffer.dequeue().expect("Expected value in x buffer");
             let yn2 = self.y_buffer.dequeue().expect("Expected value in y buffer");
@@ -125,14 +122,14 @@ impl ApplyFilter for SecondOrderFilter {
             let xn1 = self.x_buffer.front().expect("Expected value in x buffer");
             let yn1 = self.y_buffer.front().expect("Expected value in y buffer");
 
-            let yn = self.a0 * xn + self.a1 * xn1 + self.a2 * xn2 - self.b1 * yn1 - self.b2 * yn2;
+            let yn = self.a0 * *xn + self.a1 * xn1 + self.a2 * xn2 - self.b1 * yn1 - self.b2 * yn2;
 
             self.x_buffer.push(*xn);
             self.y_buffer.push(yn);
-            output.push(yn);
-        }
 
-        output
+            // Replace the input value with the corresponding output value.
+            *xn = yn;
+        }
     }
 }
 
@@ -174,19 +171,17 @@ impl SecondOrderFeedbackFilter {
 }
 
 impl ApplyFilter for SecondOrderFeedbackFilter {
-    fn apply(&mut self, input: &[f32]) -> Vec<f32> {
-        let mut output: Vec<f32> = vec![];
-
-        for xn in input.iter() {
+    fn apply(&mut self, buffer: &mut Buffer) {
+        for xn in buffer.iter_mut() {
             let yn2 = self.y_buffer.dequeue().expect("Expected value in y buffer");
             let yn1 = self.y_buffer.front().expect("Expected value in y buffer");
 
-            let yn = self.a0 * xn - self.b1 * yn1 - self.b2 * yn2;
+            let yn = self.a0 * *xn - self.b1 * yn1 - self.b2 * yn2;
 
             self.y_buffer.push(yn);
-            output.push(yn);
-        }
 
-        output
+            // Replace the input value with the corresponding output value.
+            *xn = yn;
+        }
     }
 }

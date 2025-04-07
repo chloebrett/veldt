@@ -63,10 +63,7 @@ impl App {
 impl eframe::App for App {
     fn update(&mut self, ctx: &egui::Context, _frame: &mut eframe::Frame) {
         // Snapshot the state at the start of each frame.
-        // TODO: profile this with the FPS counter, since it's a clone.
-        // Another option: apply all the actions once per frame, instead of cloning the whole
-        // state. Then, the store doesn't need to be mutated the rest of the time, and we don't
-        // need to ever clone it.
+        // This applies all of the pending actions. It avoids cloning the state.
         self.store.snapshot();
 
         egui::CentralPanel::default().show(ctx, |ui| {
