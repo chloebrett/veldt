@@ -1,10 +1,17 @@
 use super::{compressor_control::compressor_control, delay_control, eq_control};
+use crate::components::WindowState;
 use crate::widget::{FloatRange, checkbox, knob};
 use egui::Pos2;
 use shared::model::Effect;
 use state::{Action, Selector, Store};
 
-pub fn effect_control(ctx: &egui::Context, store: &Store, mixer_index: usize, effect_index: usize) {
+pub fn effect_control(
+    ctx: &egui::Context,
+    window_state: &mut WindowState,
+    store: &Store,
+    mixer_index: usize,
+    effect_index: usize,
+) {
     let sel = Selector::Effect(mixer_index, effect_index);
     let dispatch = |action| store.dispatch(&sel, action);
     let effect = store.get().project.mixer[mixer_index].effects[effect_index].clone();
@@ -21,6 +28,7 @@ pub fn effect_control(ctx: &egui::Context, store: &Store, mixer_index: usize, ef
             x: 1000.0 + 50.0 * effect_index as f32,
             y: 150.0 + 50.0 * effect_index as f32,
         })
+        .open(&mut window_state.effects)
         .resizable(false)
         .show(ctx, |ui| {
             match effect.effect {
