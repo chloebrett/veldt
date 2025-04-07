@@ -21,6 +21,9 @@ impl Render for RenderContext {
             .ok_or(tonic::Status::invalid_argument("Project must be supplied"))?
             .into();
         let graph = &mut render(&project);
+        // TODO: render out stereo audio.
+        // Currently, this gets sent over the wire as mono, then put into a BufferNode, which will
+        // cause it to play as stereo but only the left channel.
         let bytes = as_bytes(&graph.map(|it| *it.channel(0).unwrap()).collect());
 
         Ok(tonic::Response::new(RenderReply { audio: bytes }))
