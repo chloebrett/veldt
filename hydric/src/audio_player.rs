@@ -10,7 +10,7 @@ pub struct Handle {
     pub start_timestamp: DateTime<Utc>,
 }
 
-pub fn play(graph: RenderGraph) -> Handle {
+pub fn play(mut graph: RenderGraph, pre_render: bool) -> Handle {
     let host = cpal::default_host();
     let device = host
         .default_output_device()
@@ -18,19 +18,20 @@ pub fn play(graph: RenderGraph) -> Handle {
     let config = device.default_output_config().unwrap();
     let config: &cpal::StreamConfig = &config.into();
 
-    // Using MPSC because RenderGraph is not Send.
-    let (tx, rx) = mpsc::channel();
-
-    // TODO: space out sending the graph instead of just sending it as fast as possible.
-    // Note: could also consider using a graph of BoxedNodeSend, as then we can just send the whole
-    // thing directly.
-    for sample in graph {
-        let _ = tx.send(sample);
-    }
-
-    let next_sample = move || rx.recv().unwrap_or(0.0);
     let err_fn = |err| error(&format!("an error occurred on stream: {}", err));
     let channels = config.channels as usize;
+
+    let (tx, rx) = mpsc::channel();
+
+    let mut next_sample: Box<dyn FnMut() -> f32 + Send> = if pre_render {
+        for sample in graph {
+            let _ = tx.send(sample);
+        }
+
+        Box::new(move || rx.recv().unwrap_or(0.0))
+    } else {
+        Box::new(move || graph.next().unwrap_or(0.0))
+    };
 
     let stream = device
         .build_output_stream(

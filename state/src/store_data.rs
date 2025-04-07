@@ -1,8 +1,8 @@
 use ordered_float::OrderedFloat;
 use shared::model::{
-    AdsrEnvelope, CompressorConfig, DelayConfig, Effect, EffectInstance, EffectMeta, EqConfig,
-    EqType, GeneratorInstance, GeneratorMeta, GeneratorType, MixerChannel, Note, PitchName,
-    PlacedNote, Project, Scale, ScaleValue, SimpleWaveConfig, Track, WaveType,
+    AdsrEnvelope, AntiAliasingMode, CompressorConfig, DelayConfig, Effect, EffectInstance,
+    EffectMeta, EqConfig, EqType, GeneratorInstance, GeneratorMeta, GeneratorType, MixerChannel,
+    Note, PitchName, PlacedNote, Project, Scale, ScaleValue, SimpleWaveConfig, Track, WaveType,
 };
 use shared::types::Volume;
 
@@ -47,6 +47,8 @@ impl Default for StoreData {
                             },
                             osc_count: 4,
                             detune_cents: 5.0,
+                            anti_aliasing_mode: AntiAliasingMode::Off,
+                            oversample_factor: 2,
                         },
                     },
                     meta: GeneratorMeta { volume: 1.0 },
@@ -59,15 +61,24 @@ impl Default for StoreData {
                                     kind: EqType::SimpleResonator,
                                     fc: 1000.0,
                                     q: 1.0,
+                                    gain: 0.0,
                                 },
                             },
-                            meta: EffectMeta { id: 0, wet: 1.0 },
+                            meta: EffectMeta {
+                                id: 0,
+                                wet: 1.0,
+                                mute: false,
+                            },
                         },
                         EffectInstance {
                             effect: Effect::SimpleDelay {
                                 config: DelayConfig { delay_ms: 250.0 },
                             },
-                            meta: EffectMeta { id: 1, wet: 0.5 },
+                            meta: EffectMeta {
+                                id: 1,
+                                wet: 0.5,
+                                mute: false,
+                            },
                         },
                         EffectInstance {
                             effect: Effect::SimpleCompressor {
@@ -79,7 +90,11 @@ impl Default for StoreData {
                                     gain: 1.0,
                                 },
                             },
-                            meta: EffectMeta { id: 2, wet: 1.0 },
+                            meta: EffectMeta {
+                                id: 2,
+                                wet: 1.0,
+                                mute: false,
+                            },
                         },
                     ],
                 }],

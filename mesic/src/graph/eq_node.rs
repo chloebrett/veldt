@@ -2,7 +2,7 @@ use crate::effect::ApplyFilter;
 use dasp_graph::{Buffer, Input, Node};
 
 pub struct EqNode {
-    pub filter: Box<dyn ApplyFilter>,
+    pub filter: Box<dyn ApplyFilter + Send>,
 }
 
 impl Node for EqNode {

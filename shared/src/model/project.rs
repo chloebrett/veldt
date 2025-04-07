@@ -115,8 +115,9 @@ pub struct MixerChannel {
 mod tests {
     use crate::{
         model::{
-            AdsrEnvelope, DelayConfig, Effect, EffectMeta, EqConfig, EqType, GeneratorMeta,
-            GeneratorType, Note, PitchName, PlacedNote, ScaleValue, SimpleWaveConfig, WaveType,
+            AdsrEnvelope, AntiAliasingMode, DelayConfig, Effect, EffectMeta, EqConfig, EqType,
+            GeneratorMeta, GeneratorType, Note, PitchName, PlacedNote, ScaleValue,
+            SimpleWaveConfig, WaveType,
         },
         testing::proto::proto_testing::assert_proto_round_trip,
     };
@@ -163,6 +164,8 @@ mod tests {
                         },
                         osc_count: 4,
                         detune_cents: 5.0,
+                        anti_aliasing_mode: AntiAliasingMode::Off,
+                        oversample_factor: 2,
                     },
                 },
                 meta: GeneratorMeta { volume: 1.0 },
@@ -175,15 +178,24 @@ mod tests {
                                 kind: EqType::SimpleResonator,
                                 fc: 1000.0,
                                 q: 1.0,
+                                gain: 0.0,
                             },
                         },
-                        meta: EffectMeta { id: 0, wet: 1.0 },
+                        meta: EffectMeta {
+                            id: 0,
+                            wet: 1.0,
+                            mute: false,
+                        },
                     },
                     EffectInstance {
                         effect: Effect::SimpleDelay {
                             config: DelayConfig { delay_ms: 250.0 },
                         },
-                        meta: EffectMeta { id: 1, wet: 0.5 },
+                        meta: EffectMeta {
+                            id: 1,
+                            wet: 0.5,
+                            mute: false,
+                        },
                     },
                 ],
             }],

@@ -25,7 +25,7 @@ pub trait ApplyFilter {
     fn apply(&mut self, input: &[f32]) -> Vec<f32>;
 }
 
-pub fn eq_filter(config: &EqConfig) -> Box<dyn ApplyFilter> {
+pub fn eq_filter(config: &EqConfig) -> Box<dyn ApplyFilter + Send> {
     match config.kind {
         EqType::SimpleResonator => Box::new(resonator_simple(config)),
         EqType::SmithAngellResonator => Box::new(resonator_smith_angell(config)),

@@ -49,6 +49,16 @@ pub fn generator_reducer(generator: &mut GeneratorInstance, action: &Action) -> 
             config.envelope = envelope;
             Action::SetEnvelope(prev)
         }
+        Action::SetAntiAliasingMode(mode) => {
+            let prev = config.anti_aliasing_mode;
+            config.anti_aliasing_mode = *mode;
+            Action::SetAntiAliasingMode(prev)
+        }
+        Action::SetOversampleFactor(factor) => {
+            let prev = config.oversample_factor;
+            config.oversample_factor = *factor;
+            Action::SetOversampleFactor(prev)
+        }
         _ => Action::NonReversible,
     }
 }

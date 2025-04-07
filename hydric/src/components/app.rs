@@ -1,15 +1,18 @@
 use super::{
-    effect_control, envelope_control, generator_control, key_control, load_control,
-    note_roll::note_roll_display, notes_control, play_control, sample_control, save_button,
-    toggle_window_panel, track_placement_control, undo_redo_control,
+    effect::effect_control,
+    generator::{envelope_control, generator_control},
+    key_control, load_control,
+    note_roll::note_roll_display,
+    play::{play_control, sample_control},
+    save_button, toggle_window_panel, track_control, track_placement_control, undo_redo_control,
 };
 use crate::audio_player::Handle;
 use crate::promise::AsyncResult;
-use crate::widget::string_observer;
+use crate::widget::{FloatRange, knob, string_observer};
 use egui::Pos2;
 use egui::{ScrollArea, scroll_area::ScrollBarVisibility};
 use shared::model::{Project, Sample};
-use shared::types::{Beats, Volume};
+use shared::types::Beats;
 use state::{Action, Store, get_set};
 
 /// Container for the various promises launchable by the app.
@@ -26,14 +29,17 @@ pub struct AsyncState {
 pub struct AudioState {
     pub audio: Vec<f32>,
     pub handle: Option<Handle>,
+    pub pre_render: bool,
 }
 
+/// Which windows are currently shown.
 #[derive(Default)]
 pub struct WindowState {
-    pub show_effects: bool,
-    pub show_envelope: bool,
-    pub show_generator: bool,
-    pub show_scale: bool,
+    pub effects: bool,
+    pub manual_notes: bool,
+    pub generator: bool,
+    pub scale: bool,
+    pub note_roll: bool,
 }
 
 #[derive(Default)]
@@ -70,7 +76,6 @@ impl eframe::App for App {
                 .show(ui, |ui| {
                     ui.heading("Veldt");
                     ui.horizontal(|ui| {
-                        ui.label("Project name: ");
                         let project_name = self.store.get().project.name.clone();
                         let mut name_observer = string_observer(
                             get_set(project_name.clone(), |it| {
@@ -82,17 +87,76 @@ impl eframe::App for App {
                         save_button(&self.store, &mut self.async_state, ui);
                         load_control(&self.store, &mut self.async_state, ui);
                     });
-                    ui.horizontal(|ui| {
-                        ui.vertical(|ui| {
-                            let volume = self.store.get().volume as f64;
-                            ui.add(
-                                egui::Slider::from_get_set(
-                                    0.0..=1.0,
-                                    get_set(volume, |it| {
-                                        self.store.dispatchr(Action::SetVolume(it as Volume))
-                                    }),
-                                )
-                                .text("Volume"),
+                    toggle_window_panel(&mut self.window_state, ui);
+
+                    if self.window_state.generator {
+                        let generators = &self.store.get().project.generators;
+                        for generator_index in 0..generators.len() {
+                            egui::Window::new("Generator")
+                                .open(&mut self.window_state.generator)
+                                .default_pos(Pos2 { x: 1100.0, y: 20.0 })
+                                .resizable(false)
+                                .show(ctx, |ui| {
+                                    generator_control(&self.store, ui, generator_index);
+                                    ui.separator();
+                                    ui.label("Envelope");
+                                    envelope_control(&self.store, ui, generator_index);
+                                });
+                        }
+                    }
+                    if self.window_state.effects {
+                        let mixer = &self.store.get().project.mixer;
+                        for (mixer_index, mixer) in mixer.iter().enumerate() {
+                            for effect_index in 0..mixer.effects.len() {
+                                effect_control(
+                                    ctx,
+                                    &mut self.window_state,
+                                    &self.store,
+                                    mixer_index,
+                                    effect_index,
+                                );
+                            }
+                        }
+                    }
+                    if self.window_state.scale {
+                        egui::Window::new("Scale")
+                            .open(&mut self.window_state.scale)
+                            .default_pos(Pos2 { x: 600.0, y: 20.0 })
+                            .resizable(false)
+                            .show(ctx, |ui| {
+                                key_control(&self.store, ui);
+                            });
+                    }
+                    if self.window_state.manual_notes {
+                        egui::Window::new("Notes")
+                            .open(&mut self.window_state.manual_notes)
+                            .default_pos(Pos2 { x: 600.0, y: 20.0 })
+                            .resizable(false)
+                            .show(ctx, |ui| {
+                                track_control(&self.store, ui);
+                            });
+                    }
+
+                    if self.window_state.note_roll {
+                        egui::Window::new("Note roll")
+                            .open(&mut self.window_state.note_roll)
+                            .default_pos(Pos2 { x: 600.0, y: 20.0 })
+                            .show(ctx, |ui| {
+                                note_roll_display(&self.store, ui);
+                            });
+                    }
+
+                    egui::Window::new("Toolbar")
+                        .default_pos(Pos2 { x: 600.0, y: 20.0 })
+                        .resizable(false)
+                        .show(ctx, |ui| {
+                            let volume = self.store.get().volume;
+                            knob(
+                                ui,
+                                "Volume",
+                                volume,
+                                |it| self.store.dispatchr(Action::SetVolume(it)),
+                                FloatRange(0.0, 1.0),
                             );
 
                             let bpm = self.store.get().project.bpm as f64;
@@ -106,71 +170,25 @@ impl eframe::App for App {
                                 .text("BPM")
                                 .logarithmic(true),
                             );
+                            undo_redo_control(&mut self.store, ui);
+                            ui.separator();
+                            play_control(
+                                &self.store,
+                                &mut self.async_state,
+                                &mut self.audio_state,
+                                ui,
+                            );
+                            ui.separator();
+                            sample_control(
+                                &self.store,
+                                &mut self.audio_state,
+                                &mut self.async_state,
+                                ui,
+                            );
                         });
-                        toggle_window_panel(&mut self.window_state, ui);
-                    });
 
-                    if self.window_state.show_envelope {
-                        egui::Window::new("Envelope")
-                            .default_pos(Pos2 { x: 600.0, y: 125.0 })
-                            .resizable(false)
-                            .show(ctx, |ui| {
-                                envelope_control(&self.store, ui);
-                            });
-                    }
-                    if self.window_state.show_generator {
-                        egui::Window::new("Generator")
-                            .default_pos(Pos2 { x: 1100.0, y: 20.0 })
-                            .resizable(false)
-                            .show(ctx, |ui| {
-                                generator_control(&self.store, ui);
-                            });
-                    }
-                    if self.window_state.show_effects {
-                        egui::Window::new("Effects")
-                            .default_pos(Pos2 {
-                                x: 1100.0,
-                                y: 150.0,
-                            })
-                            .resizable(false)
-                            .show(ctx, |ui| {
-                                for i in 0..self.store.get().project.mixer[0].effects.len() {
-                                    ui.separator();
-                                    effect_control(&self.store, i, ui);
-                                }
-                                ui.separator();
-                            });
-                    }
-                    if self.window_state.show_scale {
-                        egui::Window::new("Scale")
-                            .default_pos(Pos2 { x: 600.0, y: 20.0 })
-                            .resizable(false)
-                            .show(ctx, |ui| {
-                                key_control(&self.store, ui);
-                            });
-                    }
                     ui.separator();
                     track_placement_control(&self.store, ui);
-                    ui.separator();
-                    notes_control(&self.store, ui);
-                    ui.separator();
-                    undo_redo_control(&mut self.store, ui);
-                    ui.separator();
-                    play_control(
-                        &self.store,
-                        &mut self.async_state,
-                        &mut self.audio_state,
-                        ui,
-                    );
-                    ui.separator();
-                    sample_control(
-                        &self.store,
-                        &mut self.audio_state,
-                        &mut self.async_state,
-                        ui,
-                    );
-                    ui.separator();
-                    note_roll_display(&self.store, ui);
 
                     ui.with_layout(egui::Layout::bottom_up(egui::Align::LEFT), |ui| {
                         egui::warn_if_debug_build(ui);
