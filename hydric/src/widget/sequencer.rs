@@ -32,6 +32,7 @@ impl<F: Fn(&Selector, Pos2)> Sequencer<F> {
         self
     }
 
+    #[inline]
     pub fn vertical_bars(mut self, increment: f32, colour: Color32) -> Self {
         let steps = (self.range.size().x / increment) as i32;
         let shapes: Vec<Shape> = (0..=steps)
@@ -49,6 +50,7 @@ impl<F: Fn(&Selector, Pos2)> Sequencer<F> {
         self
     }
 
+    #[inline]
     pub fn horizontal_rects(mut self, increment: f32, colour: Color32) -> Self {
         let steps = (self.range.size().y / increment) as i32;
         let shapes: Vec<Shape> = (0..=steps)
@@ -75,7 +77,11 @@ impl<F: Fn(&Selector, Pos2)> Sequencer<F> {
     ) {
         let track_index = 0;
         let id = response.id.with(rect_index);
-        let rect_response = ui.interact(rect, id, self.sense.unwrap_or(Sense::drag()));
+        let rect_response = ui.interact(
+            rect.transform(*sequencer_transform),
+            id,
+            self.sense.unwrap_or(Sense::drag()),
+        );
         let drag_pos = rect_response.interact_pointer_pos();
         let drag_delta = rect_response.drag_delta();
         if let Some(pos) = drag_pos {
@@ -101,7 +107,7 @@ impl<F: Fn(&Selector, Pos2)> Widget for Sequencer<F> {
             ref background_shapes,
         } = self;
         let size = size.unwrap_or(vec2(400.0, 600.0));
-        let rects = rects.clone().unwrap_or(vec![]);
+        let rects = rects.clone().unwrap_or_default();
         let sense = sense.unwrap_or(Sense::drag());
         let background_shapes = background_shapes.clone().unwrap_or(vec![]);
         Frame::canvas(ui.style()).show(ui, |ui| {
@@ -114,13 +120,7 @@ impl<F: Fn(&Selector, Pos2)> Widget for Sequencer<F> {
                 .into_iter()
                 .enumerate()
                 .map(|(index, rect)| {
-                    self.update_rect(
-                        rect.transform(sequencer_transform),
-                        index,
-                        ui,
-                        &response,
-                        &sequencer_transform,
-                    );
+                    self.update_rect(rect, index, ui, &response, &sequencer_transform);
                     Shape::rect_filled(rect, CornerRadius::same(1), Color32::WHITE)
                 })
                 .collect();

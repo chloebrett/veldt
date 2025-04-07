@@ -1,5 +1,4 @@
 mod canvas;
-mod sequencer;
 mod piano;
 mod roll;
 mod shapes;

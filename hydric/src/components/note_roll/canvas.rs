@@ -10,9 +10,9 @@ use shared::{
     types::PitchValue,
 };
 
-use super::{sequencer::Sequencer, piano::Piano, roll::Roll};
+use super::{piano::Piano, roll::Roll};
 
-use crate::transform::Transform;
+use crate::{transform::Transform, widget::Sequencer};
 
 // TODO Integrate into Store and project.
 struct ProjectConfig {
@@ -80,7 +80,7 @@ fn draw_note_roll_canvas(store: &Store, ui: &mut Ui, track_index: usize) {
         offset,
     );
     let range = Rect::from_min_max(
-        pos2(offset, min_note as f32),
+        pos2(offset, min_note as f32 - 1.0),
         pos2(bars * bar_length, max_note as f32),
     );
     let dispatch = move |sel: &Selector, pos: Pos2| {
