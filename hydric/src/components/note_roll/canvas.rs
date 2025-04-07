@@ -92,7 +92,8 @@ fn draw_note_roll_canvas(store: &Store, ui: &mut Ui, track_index: usize) {
         store.dispatch(sel, Action::SetNoteScaleValue(pitch_name.scale_value));
     };
     ui.add(
-        Sequencer::new(range, note_rects, dispatch_x, dispatch_y)
+        Sequencer::new(range, dispatch_x, dispatch_y)
+            .rects(note_rects)
             .horizontal_rects(2.0, Color32::from_white_alpha(4))
             .vertical_bars(1.0, Color32::from_white_alpha(3))
             .vertical_bars(1.0 / bar_length, Color32::from_white_alpha(1)),
