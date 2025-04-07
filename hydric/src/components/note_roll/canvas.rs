@@ -1,8 +1,8 @@
 use state::{Action, Selector, Store};
 
 use egui::{
-    Frame, Pos2, Rect, Response, ScrollArea, Sense, Shape, Ui, Vec2, emath::RectTransform, pos2,
-    vec2,
+    Color32, Frame, Pos2, Rect, Response, ScrollArea, Sense, Shape, Ui, Vec2, emath::RectTransform,
+    pos2, vec2,
 };
 use ordered_float::OrderedFloat;
 use shared::{
@@ -12,7 +12,7 @@ use shared::{
 
 use super::{piano::Piano, roll::Roll};
 
-use crate::transform::Transform;
+use crate::{transform::Transform, widget::Sequencer};
 
 // TODO Integrate into Store and project.
 struct ProjectConfig {
@@ -74,7 +74,30 @@ fn draw_note_roll_canvas(store: &Store, ui: &mut Ui, track_index: usize) {
     };
     let piano_width = 50.0;
     let canvas_height = 600.0;
-
+    let note_rects = make_all_note_rects(
+        store.get().project.tracks[track_index].notes.clone(),
+        max_note,
+        offset,
+    );
+    let range = Rect::from_min_max(
+        pos2(offset, min_note as f32 - 1.0),
+        pos2(bars * bar_length, max_note as f32),
+    );
+    let dispatch_x = move |sel: &Selector, offset: f32| {
+        store.dispatch(sel, Action::SetNoteOffset(offset));
+    };
+    let dispatch_y = move |sel: &Selector, pitch_value: f32| {
+        let pitch_name = PitchName::from(max_note - pitch_value as i32);
+        store.dispatch(sel, Action::SetNoteOctave(pitch_name.octave));
+        store.dispatch(sel, Action::SetNoteScaleValue(pitch_name.scale_value));
+    };
+    ui.add(
+        Sequencer::new(range, dispatch_x, dispatch_y)
+            .rects(note_rects)
+            .horizontal_rects(2.0, Color32::from_white_alpha(4))
+            .vertical_bars(1.0, Color32::from_white_alpha(3))
+            .vertical_bars(1.0 / bar_length, Color32::from_white_alpha(1)),
+    );
     Frame::canvas(ui.style()).show(ui, |ui| {
         let (response, painter) =
             ui.allocate_painter(vec2(ui.available_width(), canvas_height), Sense::hover());
@@ -176,6 +199,20 @@ pub fn note_to_pos(note: &PlacedNote, max_note: i32, project_offset: f32) -> Pos
 pub fn make_note_rect(note: &PlacedNote, note_pos: Pos2) -> Rect {
     let note_size = vec2(note.note.beats, 1.0);
     Rect::from_min_size(note_pos, note_size)
+}
+
+pub fn make_all_note_rects(
+    notes: Vec<PlacedNote>,
+    max_note: i32,
+    project_offset: f32,
+) -> Vec<Rect> {
+    notes
+        .iter()
+        .map(|note| {
+            let note_pos = note_to_pos(note, max_note, project_offset);
+            make_note_rect(note, note_pos)
+        })
+        .collect()
 }
 
 fn update_notes(
