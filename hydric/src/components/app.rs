@@ -2,7 +2,7 @@ use super::{
     effect::effect_control,
     generator::{envelope_control, generator_control},
     key_control, load_control,
-    note_roll::note_roll_display,
+    note_roll::note_roll,
     play::{play_control, sample_control},
     save_button, toggle_window_panel, track_control, track_placement_control, undo_redo_control,
 };
@@ -142,7 +142,7 @@ impl eframe::App for App {
                             .open(&mut self.window_state.note_roll)
                             .default_pos(Pos2 { x: 600.0, y: 20.0 })
                             .show(ctx, |ui| {
-                                note_roll_display(&self.store, ui);
+                                note_roll(&self.store, ui);
                             });
                     }
 

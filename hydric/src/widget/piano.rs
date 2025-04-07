@@ -9,18 +9,9 @@ use shared::{
 
 use crate::transform::Transform;
 
-use super::{note_to_pos, shapes::NoteRollShape};
-
-#[derive(Clone)]
-pub enum Orientation {
-    Vertical,
-    Horizontal,
-}
-
 pub struct Piano {
     max_note: PitchValue,
     min_note: PitchValue,
-    orientation: Option<Orientation>,
     size: Option<Vec2>,
 }
 
@@ -29,7 +20,6 @@ impl Piano {
         Piano {
             max_note,
             min_note,
-            orientation: None,
             size: None,
         }
     }
@@ -123,10 +113,8 @@ impl Widget for Piano {
         let Piano {
             max_note,
             min_note,
-            ref orientation,
             size,
         } = self;
-        let orientation = orientation.clone().unwrap_or(Orientation::Vertical);
         let size = size.unwrap_or(vec2(50.0, 600.0));
         Frame::canvas(ui.style()).show(ui, |ui| {
             let (response, painter) = ui.allocate_painter(size, Sense::hover());
@@ -143,4 +131,12 @@ impl Widget for Piano {
         let (_rect, response) = ui.allocate_at_least(Vec2::ZERO, Sense::hover());
         response
     }
+}
+
+pub fn note_to_pos(note: &PlacedNote, max_note: i32, project_offset: f32) -> Pos2 {
+    let offset: f32 = note.offset.into();
+    let x = offset - project_offset;
+    let pitch_value: PitchValue = note.note.pitch_name.into();
+    let y = max_note - pitch_value;
+    pos2(x, y as f32)
 }

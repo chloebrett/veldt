@@ -1,35 +1,20 @@
 use state::{Action, Selector, Store};
 
-use egui::{
-    Color32, Frame, Pos2, Rect, Response, ScrollArea, Sense, Shape, Ui, Vec2, emath::RectTransform,
-    pos2, vec2,
-};
-use ordered_float::OrderedFloat;
+use egui::{Color32, Pos2, Rect, ScrollArea, Ui, pos2, vec2};
 use shared::{
     model::{Note, PitchName, PlacedNote, ScaleValue},
     types::PitchValue,
 };
 
-use super::{piano::Piano, roll::Roll};
+use crate::widget::{Piano, Sequencer};
 
-use crate::{transform::Transform, widget::Sequencer};
-
-// TODO Integrate into Store and project.
-struct ProjectConfig {
-    pub max_note: PitchValue,
-    pub min_note: PitchValue,
-    pub offset: f32,
-    pub bars: f32,
-    pub bar_length: f32,
-}
-
-pub fn note_roll_display(store: &Store, ui: &mut Ui) {
+pub fn note_roll(store: &Store, ui: &mut Ui) {
     let track_index = 0;
     new_note_button(store, ui, track_index);
     ScrollArea::vertical()
         .min_scrolled_height(200.0)
         .show(ui, |ui| {
-            draw_note_roll_canvas(store, ui, track_index);
+            draw_note_roll(store, ui, track_index);
         });
 }
 
@@ -51,7 +36,7 @@ fn new_note_button(store: &Store, ui: &mut Ui, track_index: usize) {
     }
 }
 
-fn draw_note_roll_canvas(store: &Store, ui: &mut Ui, track_index: usize) {
+fn draw_note_roll(store: &Store, ui: &mut Ui, track_index: usize) {
     let offset = 0.0;
     let bar_length = 4.0;
     let bars = 4.0;
@@ -65,8 +50,6 @@ fn draw_note_roll_canvas(store: &Store, ui: &mut Ui, track_index: usize) {
         octave: 1,
     }
     .into();
-    let piano_width = 50.0;
-    let canvas_height = 600.0;
     let note_rects = make_all_note_rects(
         store.get().project.tracks[track_index].notes.clone(),
         max_note,
