@@ -1,8 +1,8 @@
 use state::{Action, Selector, Store};
 
 use egui::{
-    Frame, Pos2, Rect, Response, ScrollArea, Sense, Shape, Ui, Vec2, emath::RectTransform, pos2,
-    vec2,
+    Color32, Frame, Pos2, Rect, Response, ScrollArea, Sense, Shape, Ui, Vec2, emath::RectTransform,
+    pos2, vec2,
 };
 use ordered_float::OrderedFloat;
 use shared::{
@@ -10,7 +10,7 @@ use shared::{
     types::PitchValue,
 };
 
-use super::{note_roll::Sequencer, piano::Piano, roll::Roll};
+use super::{sequencer::Sequencer, piano::Piano, roll::Roll};
 
 use crate::transform::Transform;
 
@@ -75,7 +75,7 @@ fn draw_note_roll_canvas(store: &Store, ui: &mut Ui, track_index: usize) {
     let piano_width = 50.0;
     let canvas_height = 600.0;
     let note_rects = make_all_note_rects(
-        &store.get().project.tracks[track_index].notes,
+        store.get().project.tracks[track_index].notes.clone(),
         max_note,
         offset,
     );
@@ -86,11 +86,17 @@ fn draw_note_roll_canvas(store: &Store, ui: &mut Ui, track_index: usize) {
     let dispatch = move |sel: &Selector, pos: Pos2| {
         let offset = pos.x;
         let pitch_name = PitchName::from(max_note - pos.y as i32);
-        store.dispatch(&sel, Action::SetNoteOffset(offset));
-        store.dispatch(&sel, Action::SetNoteOctave(pitch_name.octave));
-        store.dispatch(&sel, Action::SetNoteScaleValue(pitch_name.scale_value));
+        store.dispatch(sel, Action::SetNoteOffset(offset));
+        store.dispatch(sel, Action::SetNoteOctave(pitch_name.octave));
+        store.dispatch(sel, Action::SetNoteScaleValue(pitch_name.scale_value));
     };
-    ui.add(Sequencer::new(range, dispatch).rects(note_rects));
+    ui.add(
+        Sequencer::new(range, dispatch)
+            .rects(note_rects)
+            .horizontal_rects(2.0, Color32::from_white_alpha(4))
+            .vertical_bars(1.0, Color32::from_white_alpha(3))
+            .vertical_bars(1.0 / bar_length, Color32::from_white_alpha(1)),
+    );
     Frame::canvas(ui.style()).show(ui, |ui| {
         let (response, painter) =
             ui.allocate_painter(vec2(ui.available_width(), canvas_height), Sense::hover());
@@ -195,7 +201,7 @@ pub fn make_note_rect(note: &PlacedNote, note_pos: Pos2) -> Rect {
 }
 
 pub fn make_all_note_rects(
-    notes: &Vec<PlacedNote>,
+    notes: Vec<PlacedNote>,
     max_note: i32,
     project_offset: f32,
 ) -> Vec<Rect> {

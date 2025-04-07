@@ -1,5 +1,5 @@
 mod canvas;
-mod note_roll;
+mod sequencer;
 mod piano;
 mod roll;
 mod shapes;
