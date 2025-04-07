@@ -26,7 +26,7 @@ impl<F: Fn(&Selector, Pos2)> Sequencer<F> {
     }
 
     #[inline]
-    pub fn add_rects(mut self, rects: Vec<Rect>) -> Self {
+    pub fn rects(mut self, rects: Vec<Rect>) -> Self {
         self.rects = Some(rects);
         self
     }

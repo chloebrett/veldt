@@ -90,7 +90,7 @@ fn draw_note_roll_canvas(store: &Store, ui: &mut Ui, track_index: usize) {
         store.dispatch(&sel, Action::SetNoteOctave(pitch_name.octave));
         store.dispatch(&sel, Action::SetNoteScaleValue(pitch_name.scale_value));
     };
-    ui.add(Sequencer::new(range, dispatch).add_rects(note_rects));
+    ui.add(Sequencer::new(range, dispatch).rects(note_rects));
     Frame::canvas(ui.style()).show(ui, |ui| {
         let (response, painter) =
             ui.allocate_painter(vec2(ui.available_width(), canvas_height), Sense::hover());
