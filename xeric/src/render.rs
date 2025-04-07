@@ -1,3 +1,4 @@
+use dasp_frame::Frame;
 use mesic::render;
 use shared::bytes::as_bytes;
 use shared::render::render_server::Render;
@@ -20,7 +21,7 @@ impl Render for RenderContext {
             .ok_or(tonic::Status::invalid_argument("Project must be supplied"))?
             .into();
         let graph = &mut render(&project);
-        let bytes = as_bytes(&graph.collect());
+        let bytes = as_bytes(&graph.map(|it| *it.channel(0).unwrap()).collect());
 
         Ok(tonic::Response::new(RenderReply { audio: bytes }))
     }

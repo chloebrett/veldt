@@ -19,7 +19,7 @@ pub fn knob(
         .with_font_size(12.0)
         .with_stroke_width(2.0)
         .with_colors(Color32::GRAY, Color32::WHITE, Color32::WHITE)
-        .with_label(label, LabelPosition::Top);
+        .with_label(label, LabelPosition::Right);
 
     ui.add(knob);
 

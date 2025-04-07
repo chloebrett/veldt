@@ -431,6 +431,7 @@ version = "0.1.0"
 dependencies = [
  "assert_float_eq",
  "dasp_envelope",
+ "dasp_frame",
  "dasp_graph",
  "dasp_ring_buffer",
  "dasp_rms",
