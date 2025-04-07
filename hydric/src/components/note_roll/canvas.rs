@@ -83,9 +83,14 @@ fn draw_note_roll_canvas(store: &Store, ui: &mut Ui, track_index: usize) {
         pos2(offset, min_note as f32),
         pos2(bars * bar_length, max_note as f32),
     );
-    let dispatcher = move |sel: &Selector, action: Action| store.dispatch(sel, action);
-    let note_roll = Sequencer::new(range, dispatcher).add_rects(note_rects);
-    ui.add(note_roll);
+    let dispatch = move |sel: &Selector, pos: Pos2| {
+        let offset = pos.x;
+        let pitch_name = PitchName::from(max_note - pos.y as i32);
+        store.dispatch(&sel, Action::SetNoteOffset(offset));
+        store.dispatch(&sel, Action::SetNoteOctave(pitch_name.octave));
+        store.dispatch(&sel, Action::SetNoteScaleValue(pitch_name.scale_value));
+    };
+    ui.add(Sequencer::new(range, dispatch).add_rects(note_rects));
     Frame::canvas(ui.style()).show(ui, |ui| {
         let (response, painter) =
             ui.allocate_painter(vec2(ui.available_width(), canvas_height), Sense::hover());
