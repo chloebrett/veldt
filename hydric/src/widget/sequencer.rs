@@ -5,23 +5,25 @@ use egui::{
 };
 use state::Selector;
 
-pub struct Sequencer<F: Fn(&Selector, Pos2)> {
+pub struct Sequencer<F: Fn(&Selector, f32), G: Fn(&Selector, f32)> {
     range: Rect,
     size: Option<Vec2>,
     rects: Option<Vec<Rect>>,
     sense: Option<Sense>,
-    dispatch: F,
+    dispatch_x: F,
+    dispatch_y: G,
     background_shapes: Option<Vec<Shape>>,
 }
 
-impl<F: Fn(&Selector, Pos2)> Sequencer<F> {
-    pub fn new(range: Rect, dispatch: F) -> Self {
+impl<F: Fn(&Selector, f32), G: Fn(&Selector, f32)> Sequencer<F, G> {
+    pub fn new(range: Rect, dispatch_x: F, dispatch_y: G) -> Self {
         Sequencer {
             range,
             size: None,
             rects: None,
             sense: None,
-            dispatch,
+            dispatch_x,
+            dispatch_y,
             background_shapes: None,
         }
     }
@@ -90,20 +92,26 @@ impl<F: Fn(&Selector, Pos2)> Sequencer<F> {
                 .clamp(pos2(0.0, 0.0), self.range.size().to_pos2());
             if drag_delta != Vec2::ZERO {
                 let sel = Selector::Note(track_index, rect_index);
-                (self.dispatch)(&sel, scaled_pos)
+                if drag_delta.x != 0.0 {
+                    (self.dispatch_x)(&sel, scaled_pos.x)
+                };
+                if drag_delta.y != 0.0 {
+                    (self.dispatch_y)(&sel, scaled_pos.y)
+                }
             }
         }
     }
 }
 
-impl<F: Fn(&Selector, Pos2)> Widget for Sequencer<F> {
+impl<F: Fn(&Selector, f32), G: Fn(&Selector, f32)> Widget for Sequencer<F, G> {
     fn ui(self, ui: &mut Ui) -> Response {
         let Sequencer {
             range,
             size,
             ref rects,
             sense,
-            dispatch: _,
+            dispatch_x: _,
+            dispatch_y: _,
             ref background_shapes,
         } = self;
         let size = size.unwrap_or(vec2(400.0, 600.0));
