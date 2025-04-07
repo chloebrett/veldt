@@ -8,7 +8,7 @@ use state::Selector;
 pub struct Sequencer<F: Fn(&Selector, f32), G: Fn(&Selector, f32)> {
     range: Rect,
     size: Vec2,
-    rects: Vec<Rect>,
+    pub rects: Vec<Rect>,
     sense: Sense,
     dispatch_x: F,
     dispatch_y: G,
@@ -16,22 +16,16 @@ pub struct Sequencer<F: Fn(&Selector, f32), G: Fn(&Selector, f32)> {
 }
 
 impl<F: Fn(&Selector, f32), G: Fn(&Selector, f32)> Sequencer<F, G> {
-    pub fn new(range: Rect, dispatch_x: F, dispatch_y: G) -> Self {
+    pub fn new(range: Rect, rects: Vec<Rect>, dispatch_x: F, dispatch_y: G) -> Self {
         Sequencer {
             range,
             size: vec2(400.0, 600.0),
-            rects: vec![],
+            rects,
             sense: Sense::drag(),
             dispatch_x,
             dispatch_y,
             background_shapes: vec![],
         }
-    }
-
-    #[inline]
-    pub fn rects(mut self, rects: Vec<Rect>) -> Self {
-        self.rects = rects;
-        self
     }
 
     #[inline]
