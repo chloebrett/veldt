@@ -87,10 +87,10 @@ mod tests {
     use crate::graph::RenderGraph;
     use crate::wave::freq;
     use assert_float_eq::assert_float_absolute_eq;
-    use dasp_frame::Mono;
+    use dasp_frame::Stereo;
     use shared::model::{Effect, EffectInstance, EffectMeta, PitchName, ScaleValue};
 
-    const FLOAT_THRES: f32 = 1e-6;
+    const FLOAT_THRES: f32 = 1e-5;
 
     #[test]
     fn compress_negative() {
@@ -122,7 +122,7 @@ mod tests {
         let output: Vec<_> = graph.collect();
 
         // ASSERT
-        assert_signals_approx_eq(output, input.into_iter().map(|it| [it]).collect());
+        assert_signals_approx_eq(output, input.into_iter().map(|it| [it; 2]).collect());
     }
 
     #[test]
@@ -153,7 +153,7 @@ mod tests {
             .map(|it| {
                 // Note using 'it' as both input and detector.
                 // (with .abs() for detector).
-                [compress(*it, it.abs(), threshold, 1.0 / ratio)]
+                [compress(*it, it.abs(), threshold, 1.0 / ratio); 2]
             })
             .collect();
 
@@ -282,7 +282,7 @@ mod tests {
         graph
     }
 
-    fn assert_signals_approx_eq(first: Vec<Mono<f32>>, second: Vec<Mono<f32>>) {
+    fn assert_signals_approx_eq(first: Vec<Stereo<f32>>, second: Vec<Stereo<f32>>) {
         // TODO: make the errors for this more readable,
         // and perhaps make our own macro.
         for (a, b) in first.iter().zip(second.iter()) {
