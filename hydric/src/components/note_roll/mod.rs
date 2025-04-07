@@ -1,7 +1,7 @@
 mod canvas;
+mod note_roll;
 mod piano;
 mod roll;
 mod shapes;
-mod note_roll;
 
 pub use canvas::*;
