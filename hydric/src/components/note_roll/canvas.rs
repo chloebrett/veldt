@@ -10,7 +10,7 @@ use shared::{
     types::PitchValue,
 };
 
-use super::{piano::Piano, roll::Roll};
+use super::{note_roll::Sequencer, piano::Piano, roll::Roll};
 
 use crate::transform::Transform;
 
@@ -74,7 +74,14 @@ fn draw_note_roll_canvas(store: &Store, ui: &mut Ui, track_index: usize) {
     };
     let piano_width = 50.0;
     let canvas_height = 600.0;
-
+    let note_rects = make_all_note_rects(&store.get().project.tracks[track_index].notes, max_note, offset);
+    let range = Rect::from_min_size(
+        Pos2::ZERO, 
+        vec2(bars*bar_length-offset, (max_note-min_note) as f32)
+    );
+    let dispatcher = |action, selector| store.dispatch(&selector, action);
+    let note_roll = Sequencer::new(range, dispatcher);
+    ui.add(note_roll);
     Frame::canvas(ui.style()).show(ui, |ui| {
         let (response, painter) =
             ui.allocate_painter(vec2(ui.available_width(), canvas_height), Sense::hover());
@@ -176,6 +183,13 @@ pub fn note_to_pos(note: &PlacedNote, max_note: i32, project_offset: f32) -> Pos
 pub fn make_note_rect(note: &PlacedNote, note_pos: Pos2) -> Rect {
     let note_size = vec2(note.note.beats, 1.0);
     Rect::from_min_size(note_pos, note_size)
+}
+
+pub fn make_all_note_rects(notes: &Vec<PlacedNote>, max_note: i32, project_offset: f32) -> Vec<Rect> {
+    notes.iter().map(|note| {
+        let note_pos = note_to_pos(note, max_note, project_offset);
+        make_note_rect(note, note_pos)
+    }).collect()
 }
 
 fn update_notes(
