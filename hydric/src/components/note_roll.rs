@@ -9,8 +9,7 @@ use shared::{
 use super::Piano;
 use crate::widget::Sequencer;
 
-pub fn note_roll(store: &Store, ui: &mut Ui) {
-    let track_index = 0;
+pub fn note_roll(store: &Store, ui: &mut Ui, track_index: usize) {
     new_note_button(store, ui, track_index);
     ScrollArea::vertical()
         .min_scrolled_height(200.0)

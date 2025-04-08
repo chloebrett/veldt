@@ -142,7 +142,8 @@ impl eframe::App for App {
                             .open(&mut self.window_state.note_roll)
                             .default_pos(Pos2 { x: 600.0, y: 20.0 })
                             .show(ctx, |ui| {
-                                note_roll(&self.store, ui);
+                                let track_index = 0;
+                                note_roll(&self.store, ui, track_index);
                             });
                     }
 
