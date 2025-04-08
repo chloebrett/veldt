@@ -59,17 +59,18 @@ fn draw_note_roll(store: &Store, ui: &mut Ui, track_index: usize) {
         pos2(offset, min_note as f32 - 1.0),
         pos2(bars * bar_length, max_note as f32),
     );
-    let dispatch = move |sel: &Selector, pos: Pos2| {
-        let offset = pos.x;
-        let pitch_name = PitchName::from(max_note - pos.y as i32);
+    let dispatch_x = move |sel: &Selector, offset: f32| {
         store.dispatch(sel, Action::SetNoteOffset(offset));
+    };
+    let dispatch_y = move |sel: &Selector, pitch_value: f32| {
+        let pitch_name = PitchName::from(max_note - pitch_value as i32);
         store.dispatch(sel, Action::SetNoteOctave(pitch_name.octave));
         store.dispatch(sel, Action::SetNoteScaleValue(pitch_name.scale_value));
     };
     ui.horizontal(|ui| {
         ui.add(Piano::new(max_note, min_note - 1));
         ui.add(
-            Sequencer::new(range, dispatch)
+            Sequencer::new(range, dispatch_x, dispatch_y)
                 .rects(note_rects)
                 .horizontal_rects(2.0, Color32::from_white_alpha(4))
                 .vertical_bars(1.0, Color32::from_white_alpha(3))

@@ -5,30 +5,32 @@ use egui::{
 };
 use state::Selector;
 
-pub struct Sequencer<F: Fn(&Selector, Pos2)> {
+pub struct Sequencer<F: Fn(&Selector, f32), G: Fn(&Selector, f32)> {
     range: Rect,
-    size: Option<Vec2>,
-    rects: Option<Vec<Rect>>,
-    sense: Option<Sense>,
-    dispatch: F,
-    background_shapes: Option<Vec<Shape>>,
+    size: Vec2,
+    rects: Vec<Rect>,
+    sense: Sense,
+    dispatch_x: F,
+    dispatch_y: G,
+    background_shapes: Vec<Shape>,
 }
 
-impl<F: Fn(&Selector, Pos2)> Sequencer<F> {
-    pub fn new(range: Rect, dispatch: F) -> Self {
+impl<F: Fn(&Selector, f32), G: Fn(&Selector, f32)> Sequencer<F, G> {
+    pub fn new(range: Rect, dispatch_x: F, dispatch_y: G) -> Self {
         Sequencer {
             range,
-            size: None,
-            rects: None,
-            sense: None,
-            dispatch,
-            background_shapes: None,
+            size: vec2(400.0, 600.0),
+            rects: vec![],
+            sense: Sense::drag(),
+            dispatch_x,
+            dispatch_y,
+            background_shapes: vec![],
         }
     }
 
     #[inline]
     pub fn rects(mut self, rects: Vec<Rect>) -> Self {
-        self.rects = Some(rects);
+        self.rects = rects;
         self
     }
 
@@ -44,9 +46,7 @@ impl<F: Fn(&Selector, Pos2)> Sequencer<F> {
                 )
             })
             .collect();
-        let mut background_shapes = self.background_shapes.unwrap_or_default();
-        background_shapes.extend(shapes);
-        self.background_shapes = Some(background_shapes);
+        self.background_shapes.extend(shapes);
         self
     }
 
@@ -61,9 +61,7 @@ impl<F: Fn(&Selector, Pos2)> Sequencer<F> {
                 Shape::rect_filled(rect, CornerRadius::ZERO, colour)
             })
             .collect();
-        let mut background_shapes = self.background_shapes.unwrap_or_default();
-        background_shapes.extend(shapes);
-        self.background_shapes = Some(background_shapes);
+        self.background_shapes.extend(shapes);
         self
     }
 
@@ -77,11 +75,7 @@ impl<F: Fn(&Selector, Pos2)> Sequencer<F> {
     ) {
         let track_index = 0;
         let id = response.id.with(rect_index);
-        let rect_response = ui.interact(
-            rect.transform(*sequencer_transform),
-            id,
-            self.sense.unwrap_or(Sense::drag()),
-        );
+        let rect_response = ui.interact(rect.transform(*sequencer_transform), id, self.sense);
         let drag_pos = rect_response.interact_pointer_pos();
         let drag_delta = rect_response.drag_delta();
         if let Some(pos) = drag_pos {
@@ -91,26 +85,28 @@ impl<F: Fn(&Selector, Pos2)> Sequencer<F> {
             );
             if drag_delta != Vec2::ZERO {
                 let sel = Selector::Note(track_index, rect_index);
-                (self.dispatch)(&sel, scaled_pos)
+                if drag_delta.x != 0.0 {
+                    (self.dispatch_x)(&sel, scaled_pos.x)
+                };
+                if drag_delta.y != 0.0 {
+                    (self.dispatch_y)(&sel, scaled_pos.y)
+                }
             }
         }
     }
 }
 
-impl<F: Fn(&Selector, Pos2)> Widget for Sequencer<F> {
+impl<F: Fn(&Selector, f32), G: Fn(&Selector, f32)> Widget for Sequencer<F, G> {
     fn ui(self, ui: &mut Ui) -> Response {
         let Sequencer {
             range,
             size,
             ref rects,
             sense,
-            dispatch: _,
+            dispatch_x: _,
+            dispatch_y: _,
             ref background_shapes,
         } = self;
-        let size = size.unwrap_or(vec2(400.0, 600.0));
-        let rects = rects.clone().unwrap_or_default();
-        let sense = sense.unwrap_or(Sense::drag());
-        let background_shapes = background_shapes.clone().unwrap_or(vec![]);
         Frame::canvas(ui.style()).show(ui, |ui| {
             let (response, painter) = ui.allocate_painter(size, sense);
             let sequencer_transform = RectTransform::from_to(
@@ -121,11 +117,11 @@ impl<F: Fn(&Selector, Pos2)> Widget for Sequencer<F> {
                 .into_iter()
                 .enumerate()
                 .map(|(index, rect)| {
-                    self.update_rect(rect, index, ui, &response, &sequencer_transform);
-                    Shape::rect_filled(rect, CornerRadius::same(1), Color32::WHITE)
+                    self.update_rect(*rect, index, ui, &response, &sequencer_transform);
+                    Shape::rect_filled(*rect, CornerRadius::same(1), Color32::WHITE)
                 })
                 .collect();
-            painter.extend(background_shapes.transform(sequencer_transform));
+            painter.extend(background_shapes.clone().transform(sequencer_transform));
             painter.extend(shapes.transform(sequencer_transform))
         });
         let (_rect, response) = ui.allocate_at_least(Vec2::ZERO, sense);
