@@ -1,6 +1,6 @@
 use super::{
     effect::{effect_control, mixer_control},
-    generator::{envelope_control, generator_control},
+    generator::{envelope_control, generator_control, generators_control},
     key_control, load_control,
     note_roll::note_roll,
     play::{play_control, sample_control},
@@ -11,7 +11,7 @@ use crate::promise::AsyncResult;
 use crate::widget::{FloatRange, default_window, knob, string_observer};
 use egui::Pos2;
 use egui::{ScrollArea, scroll_area::ScrollBarVisibility};
-use shared::model::{Project, Sample};
+use shared::model::{GeneratorType, Project, Sample};
 use shared::types::Beats;
 use state::{Action, Store, get_set};
 
@@ -43,6 +43,7 @@ pub struct WindowState {
     pub mixer: MixerWindowState,
     pub effects: Vec<Vec<bool>>, // by ID (within each mixer)
     pub manual_notes: bool,
+    pub generator_list: bool,
     pub generators: Vec<bool>, // by ID
     pub scale: bool,
     pub note_roll: bool,
@@ -58,6 +59,7 @@ impl Default for WindowState {
             },
             effects: vec![vec![false, false, false]],
             manual_notes: false,
+            generator_list: false,
             generators: vec![false],
             scale: false,
             note_roll: false,
@@ -109,10 +111,18 @@ impl eframe::App for App {
                     });
                     toggle_window_panel(&mut self.window_state, ui);
 
-                    if self.window_state.generators[0] {
-                        let generators = &self.store.get().project.generators;
-                        for generator_index in 0..generators.len() {
-                            default_window("Generator")
+                    if self.window_state.generator_list {
+                        generators_control(ctx, &mut self.window_state, &self.store);
+                    }
+
+                    let generators = &self.store.get().project.generators;
+                    for (generator_index, generator) in generators.iter().enumerate() {
+                        if self.window_state.generators[generator_index] {
+                            // TODO: move this to generator_control.rs.
+                            let title = match &generator.kind {
+                                GeneratorType::SimpleWave { .. } => "Simple Wave Generator",
+                            };
+                            default_window(title)
                                 .open(&mut self.window_state.generators[0])
                                 .default_pos(Pos2 { x: 1100.0, y: 20.0 })
                                 .show(ctx, |ui| {
