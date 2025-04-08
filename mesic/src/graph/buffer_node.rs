@@ -27,30 +27,16 @@ impl Node for BufferNode {
         for out_buf in output {
             let start_index = self.index;
             let end_index = min(start_index + Buffer::LEN, self.buffer.len());
+            let size = end_index - start_index;
 
-            let mut slice = if start_index < end_index {
-                &self.buffer[start_index..end_index]
-            } else {
-                &vec![]
-            };
-
-            // If the slice isn't long enough, fill the rest with zeroes.
-            let mut vec;
-            if slice.len() < Buffer::LEN {
-                vec = slice.to_vec();
-                vec.resize(Buffer::LEN, 0.0);
-                slice = &vec;
+            if size == Buffer::LEN {
+                out_buf.copy_from_slice(&self.buffer[start_index..end_index]);
+                continue;
             }
 
-            if slice.len() > Buffer::LEN {
-                panic!(
-                    "Got a slice with length {}, which is more than {} and shouldn't happen!",
-                    slice.len(),
-                    Buffer::LEN
-                );
+            for i in 0..size {
+                out_buf[i] = self.buffer[start_index + i];
             }
-
-            out_buf.copy_from_slice(slice);
         }
         self.index += Buffer::LEN;
     }

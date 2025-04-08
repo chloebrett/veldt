@@ -1,6 +1,7 @@
 use chrono::{DateTime, Utc};
 use cpal::Stream;
 use cpal::traits::{DeviceTrait, HostTrait, StreamTrait};
+use dasp_frame::Stereo;
 use mesic::graph::RenderGraph;
 use shared::logger::error;
 use std::sync::mpsc;
@@ -23,14 +24,15 @@ pub fn play(mut graph: RenderGraph, pre_render: bool) -> Handle {
 
     let (tx, rx) = mpsc::channel();
 
-    let mut next_sample: Box<dyn FnMut() -> f32 + Send> = if pre_render {
-        for sample in graph {
-            let _ = tx.send(sample);
+    // TODO: maybe this could avoid an allocation.
+    let mut next_sample: Box<dyn FnMut() -> Stereo<f32> + Send> = if pre_render {
+        for frame in graph {
+            let _ = tx.send(frame);
         }
 
-        Box::new(move || rx.recv().unwrap_or(0.0))
+        Box::new(move || rx.recv().unwrap_or([0.0; 2]))
     } else {
-        Box::new(move || graph.next().unwrap_or(0.0))
+        Box::new(move || graph.next().unwrap_or([0.0; 2]))
     };
 
     let stream = device
@@ -39,9 +41,8 @@ pub fn play(mut graph: RenderGraph, pre_render: bool) -> Handle {
             move |data: &mut [f32], _| {
                 for frame in data.chunks_mut(channels) {
                     let value = next_sample();
-                    for sample in frame.iter_mut() {
-                        *sample = value;
-                    }
+                    frame[0] = value[0]; // left
+                    frame[1] = value[1]; // right
                 }
             },
             err_fn,

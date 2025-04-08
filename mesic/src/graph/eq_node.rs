@@ -11,7 +11,8 @@ impl Node for EqNode {
             .iter_mut()
             .zip(inputs.first().expect("Expected one input").buffers())
         {
-            out_buf.copy_from_slice(&self.filter.apply(in_buf));
+            out_buf.copy_from_slice(in_buf);
+            self.filter.apply(out_buf);
         }
     }
 }
