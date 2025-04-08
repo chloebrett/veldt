@@ -1,13 +1,14 @@
 use egui::{
-    Color32, CornerRadius, Frame, Pos2, Rect, Response, Sense, Shape, Stroke, StrokeKind, Ui, Vec2,
+    Color32, CornerRadius, Frame, Pos2, Rect, Sense, Shape, Stroke, StrokeKind, Ui, Vec2,
     emath::RectTransform, pos2, vec2,
 };
 use shared::{
     model::{Note, PlacedNote, ScaleValue},
     types::PitchValue,
 };
+use state::Store;
 
-use crate::transform::Transform;
+use crate::{transform::Transform, view::View};
 
 use super::note_to_pos;
 
@@ -110,13 +111,15 @@ impl Piano {
             Color32::BLACK,
         )
     }
+}
 
-    pub fn render(self, ui: &mut Ui) -> Response {
+impl View for Piano {
+    fn ui(&self, _store: &Store, ui: &mut Ui) {
         let Piano {
             max_note,
             min_note,
             size,
-        } = self;
+        } = *self;
         Frame::canvas(ui.style()).show(ui, |ui| {
             let (response, painter) = ui.allocate_painter(size, Sense::hover());
             let piano_transform = RectTransform::from_to(
@@ -129,7 +132,5 @@ impl Piano {
             painter.extend(vec![piano_board].transform(piano_transform));
             painter.extend(piano_keys.transform(piano_transform))
         });
-        let (_rect, response) = ui.allocate_at_least(Vec2::ZERO, Sense::hover());
-        response
     }
 }

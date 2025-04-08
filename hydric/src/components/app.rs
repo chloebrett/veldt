@@ -2,13 +2,13 @@ use super::{
     effect::effect_control,
     generator::{envelope_control, generator_control},
     key_control, load_control,
-    note_roll::note_roll,
+    note_roll::NoteRoll,
     play::{play_control, sample_control},
     save_button, toggle_window_panel, track_control, track_placement_control, undo_redo_control,
 };
-use crate::audio_player::Handle;
 use crate::promise::AsyncResult;
 use crate::widget::{FloatRange, knob, string_observer};
+use crate::{audio_player::Handle, view::View};
 use egui::Pos2;
 use egui::{ScrollArea, scroll_area::ScrollBarVisibility};
 use shared::model::{Project, Sample};
@@ -140,7 +140,7 @@ impl eframe::App for App {
                             .default_pos(Pos2 { x: 600.0, y: 20.0 })
                             .show(ctx, |ui| {
                                 let track_index = 0;
-                                note_roll(&self.store, ui, track_index);
+                                NoteRoll::new(track_index).ui(&self.store, ui);
                             });
                     }
 
