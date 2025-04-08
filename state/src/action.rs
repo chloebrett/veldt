@@ -49,6 +49,10 @@ pub enum Action {
     SetAntiAliasingMode(AntiAliasingMode),
     SetOversampleFactor(u32),
 
+    // --- MixerSelector ---
+    MoveEffectUp(/* effect_index= */ usize),
+    MoveEffectDown(/* effect_index= */ usize),
+
     // --- EffectSelector ---
     SetDelayMs(Milliseconds),
     SetEffectWet(KnobPosition),
