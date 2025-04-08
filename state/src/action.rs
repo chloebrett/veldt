@@ -42,6 +42,8 @@ pub enum Action {
     SetNoteDuration(Beats),
 
     // --- GeneratorSelector ---
+    SetGeneratorVolume(Volume),
+    SetGeneratorMute(bool),
     SetWave(WaveType),
     SetOscCount(u32),
     SetDetuneCents(KnobPosition),

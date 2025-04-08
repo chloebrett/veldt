@@ -51,7 +51,10 @@ impl Default for StoreData {
                             oversample_factor: 2,
                         },
                     },
-                    meta: GeneratorMeta { volume: 1.0 },
+                    meta: GeneratorMeta {
+                        volume: 1.0,
+                        mute: false,
+                    },
                 }],
                 mixer: vec![MixerChannel {
                     effects: vec![
