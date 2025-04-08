@@ -8,11 +8,11 @@ pub fn mixer_reducer(mixer: &mut MixerChannel, action: &Action) -> Action {
     match action {
         Action::MoveEffectDown(effect_index) => {
             mixer.effects.swap(*effect_index, effect_index + 1);
-            return Action::MoveEffectUp(*effect_index);
+            Action::MoveEffectUp(*effect_index)
         }
         Action::MoveEffectUp(effect_index) => {
             mixer.effects.swap(*effect_index, effect_index - 1);
-            return Action::MoveEffectDown(*effect_index);
+            Action::MoveEffectDown(*effect_index)
         }
         _ => Action::NonReversible,
     }
