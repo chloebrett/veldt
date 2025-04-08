@@ -48,7 +48,7 @@ pub fn mixer_control(ctx: &egui::Context, window_state: &mut WindowState, store:
                     |it| store.dispatch(&sel, Action::SetEffectMute(it)),
                     "Mute",
                 );
-                if effect_index > 0 && ui.button("^").clicked() {
+                if effect_index > 0 && ui.button("🔼").clicked() {
                     // TODO: rearranging effects like this while their windows are open causes the
                     // windows to reset position - because the IDs change. Should we have stable
                     // IDs instead / as well?
@@ -60,7 +60,7 @@ pub fn mixer_control(ctx: &egui::Context, window_state: &mut WindowState, store:
                     // How can we sync these up automatically?
                     window_state.effects[mixer_index].swap(effect_index, effect_index - 1);
                 }
-                if effect_index < mixer.effects.len() - 1 && ui.button("v").clicked() {
+                if effect_index < mixer.effects.len() - 1 && ui.button("🔽").clicked() {
                     store.dispatch(
                         &Selector::Mixer(mixer_index),
                         Action::MoveEffectDown(effect_index),
