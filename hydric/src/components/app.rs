@@ -1,17 +1,16 @@
 use super::{
-    effect::effect_control,
-    generator::{envelope_control, generator_control},
+    effect::{effect_control, mixer_control},
+    generator::{envelope_control, generator_control, generators_control},
     key_control, load_control,
     note_roll::NoteRoll,
     play::{play_control, sample_control},
     save_button, toggle_window_panel, track_control, track_placement_control, undo_redo_control,
 };
-use crate::promise::AsyncResult;
-use crate::widget::{FloatRange, knob, string_observer};
-use crate::{audio_player::Handle, view::View};
+use crate::widget::{FloatRange, default_window, knob, string_observer};
+use crate::{audio_player::Handle, promise::AsyncResult, view::View};
 use egui::Pos2;
 use egui::{ScrollArea, scroll_area::ScrollBarVisibility};
-use shared::model::{Project, Sample};
+use shared::model::{GeneratorType, Project, Sample};
 use shared::types::Beats;
 use state::{Action, Store, get_set};
 
@@ -32,14 +31,39 @@ pub struct AudioState {
     pub pre_render: bool,
 }
 
+pub struct MixerWindowState {
+    pub visible: bool,
+    // Currently active / shown channel.
+    pub channel: usize,
+}
+
 /// Which windows are currently shown.
-#[derive(Default)]
 pub struct WindowState {
-    pub effects: bool,
+    pub mixer: MixerWindowState,
+    pub effects: Vec<Vec<bool>>, // by ID (within each mixer)
     pub manual_notes: bool,
-    pub generator: bool,
+    pub generator_list: bool,
+    pub generators: Vec<bool>, // by ID
     pub scale: bool,
     pub note_roll: bool,
+}
+
+impl Default for WindowState {
+    fn default() -> WindowState {
+        // TODO: generate this automatically from the project state.
+        WindowState {
+            mixer: MixerWindowState {
+                visible: false,
+                channel: 0,
+            },
+            effects: vec![vec![false, false, false]],
+            manual_notes: false,
+            generator_list: false,
+            generators: vec![false],
+            scale: false,
+            note_roll: false,
+        }
+    }
 }
 
 #[derive(Default)]
@@ -86,13 +110,20 @@ impl eframe::App for App {
                     });
                     toggle_window_panel(&mut self.window_state, ui);
 
-                    if self.window_state.generator {
-                        let generators = &self.store.get().project.generators;
-                        for generator_index in 0..generators.len() {
-                            egui::Window::new("Generator")
-                                .open(&mut self.window_state.generator)
+                    if self.window_state.generator_list {
+                        generators_control(ctx, &mut self.window_state, &self.store);
+                    }
+
+                    let generators = &self.store.get().project.generators;
+                    for (generator_index, generator) in generators.iter().enumerate() {
+                        if self.window_state.generators[generator_index] {
+                            // TODO: move this to generator_control.rs.
+                            let title = match &generator.kind {
+                                GeneratorType::SimpleWave { .. } => "Simple Wave Generator",
+                            };
+                            default_window(title)
+                                .open(&mut self.window_state.generators[0])
                                 .default_pos(Pos2 { x: 1100.0, y: 20.0 })
-                                .resizable(false)
                                 .show(ctx, |ui| {
                                     generator_control(&self.store, ui, generator_index);
                                     ui.separator();
@@ -101,10 +132,13 @@ impl eframe::App for App {
                                 });
                         }
                     }
-                    if self.window_state.effects {
-                        let mixer = &self.store.get().project.mixer;
-                        for (mixer_index, mixer) in mixer.iter().enumerate() {
-                            for effect_index in 0..mixer.effects.len() {
+                    if self.window_state.mixer.visible {
+                        mixer_control(ctx, &mut self.window_state, &self.store);
+                    }
+                    let mixer = &self.store.get().project.mixer;
+                    for (mixer_index, channel) in mixer.iter().enumerate() {
+                        for effect_index in 0..channel.effects.len() {
+                            if self.window_state.effects[mixer_index][effect_index] {
                                 effect_control(
                                     ctx,
                                     &mut self.window_state,
@@ -116,37 +150,35 @@ impl eframe::App for App {
                         }
                     }
                     if self.window_state.scale {
-                        egui::Window::new("Scale")
+                        default_window("Scale")
                             .open(&mut self.window_state.scale)
                             .default_pos(Pos2 { x: 600.0, y: 20.0 })
-                            .resizable(false)
                             .show(ctx, |ui| {
                                 key_control(&self.store, ui);
                             });
                     }
                     if self.window_state.manual_notes {
-                        egui::Window::new("Notes")
+                        default_window("Notes")
                             .open(&mut self.window_state.manual_notes)
                             .default_pos(Pos2 { x: 600.0, y: 20.0 })
-                            .resizable(false)
                             .show(ctx, |ui| {
                                 track_control(&self.store, ui);
                             });
                     }
 
                     if self.window_state.note_roll {
-                        egui::Window::new("Note roll")
+                        default_window("Note roll")
                             .open(&mut self.window_state.note_roll)
                             .default_pos(Pos2 { x: 600.0, y: 20.0 })
+                            .resizable(true)
                             .show(ctx, |ui| {
                                 let track_index = 0;
                                 NoteRoll::new(track_index).ui(&self.store, ui);
                             });
                     }
 
-                    egui::Window::new("Toolbar")
+                    default_window("Toolbar")
                         .default_pos(Pos2 { x: 600.0, y: 20.0 })
-                        .resizable(false)
                         .show(ctx, |ui| {
                             let volume = self.store.get().volume;
                             knob(

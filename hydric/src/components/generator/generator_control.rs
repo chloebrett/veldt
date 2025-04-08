@@ -5,7 +5,8 @@ use state::{Selector, Store};
 
 pub fn generator_control(store: &Store, ui: &mut Ui, generator_index: usize) {
     let sel = Selector::Generator(generator_index);
-    let generator_type = store.get().project.generators[generator_index].kind.clone();
+    let generator = &store.get().project.generators[generator_index];
+    let generator_type = generator.kind.clone();
     let dispatch = |action| store.dispatch(&sel, action);
 
     match generator_type {
