@@ -42,12 +42,18 @@ pub enum Action {
     SetNoteDuration(Beats),
 
     // --- GeneratorSelector ---
+    SetGeneratorVolume(Volume),
+    SetGeneratorMute(bool),
     SetWave(WaveType),
     SetOscCount(u32),
     SetDetuneCents(KnobPosition),
     SetEnvelope(AdsrEnvelope),
     SetAntiAliasingMode(AntiAliasingMode),
     SetOversampleFactor(u32),
+
+    // --- MixerSelector ---
+    MoveEffectUp(/* effect_index= */ usize),
+    MoveEffectDown(/* effect_index= */ usize),
 
     // --- EffectSelector ---
     SetDelayMs(Milliseconds),

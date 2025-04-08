@@ -3,6 +3,7 @@ mod effect;
 mod generator;
 mod key_control;
 mod note_roll;
+mod piano;
 mod play;
 mod save_control;
 mod track_control;
@@ -12,6 +13,8 @@ mod window_toggle;
 
 pub use app::*;
 use key_control::*;
+use note_roll::*;
+use piano::*;
 use save_control::*;
 use track_control::*;
 use track_placement_control::*;

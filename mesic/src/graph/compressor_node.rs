@@ -67,7 +67,7 @@ impl Node for CompressorNode {
             .iter_mut()
             .zip(inputs.first().expect("Expected one input").buffers())
         {
-            out_buf.copy_from_slice(&in_buf);
+            out_buf.copy_from_slice(in_buf);
             for x in out_buf.iter_mut() {
                 let rms = self.detector.next(*x);
 

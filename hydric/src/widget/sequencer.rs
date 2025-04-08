@@ -79,9 +79,10 @@ impl<F: Fn(&Selector, f32), G: Fn(&Selector, f32)> Sequencer<F, G> {
         let drag_pos = rect_response.interact_pointer_pos();
         let drag_delta = rect_response.drag_delta();
         if let Some(pos) = drag_pos {
-            let scaled_pos = pos
-                .transform(sequencer_transform.inverse())
-                .clamp(pos2(0.0, 0.0), self.range.size().to_pos2());
+            let scaled_pos = pos.transform(sequencer_transform.inverse()).clamp(
+                pos2(0.0, 0.0),
+                (self.range.size() - vec2(0.0, 1.0)).to_pos2(),
+            );
             if drag_delta != Vec2::ZERO {
                 let sel = Selector::Note(track_index, rect_index);
                 if drag_delta.x != 0.0 {
