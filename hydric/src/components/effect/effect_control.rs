@@ -1,6 +1,6 @@
 use super::{compressor_control::compressor_control, delay_control, eq_control};
 use crate::components::WindowState;
-use crate::widget::{FloatRange, checkbox, knob};
+use crate::widget::{FloatRange, checkbox, default_window, knob};
 use egui::Pos2;
 use shared::model::Effect;
 use state::{Action, Selector, Store};
@@ -22,14 +22,13 @@ pub fn effect_control(
         Effect::SimpleCompressor { .. } => "Compressor",
     };
 
-    egui::Window::new(title)
+    default_window(title)
         .id(format!("effects_{mixer_index}_{effect_index}").into())
         .default_pos(Pos2 {
             x: 1000.0 + 50.0 * effect_index as f32,
             y: 150.0 + 50.0 * effect_index as f32,
         })
-        .open(&mut window_state.effects)
-        .resizable(false)
+        .open(&mut window_state.effects[mixer_index][effect_index])
         .show(ctx, |ui| {
             match effect.effect {
                 Effect::SimpleEq { config } => eq_control(&config, dispatch, ui),

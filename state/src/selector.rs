@@ -3,6 +3,7 @@ pub enum Selector {
     Root,
     Track(/* track_index */ usize),
     Note(/* track_index */ usize, /* note_index */ usize),
+    Mixer(/* mixer_index */ usize),
     Effect(/* mixer_index */ usize, /* effect_index */ usize),
     Generator(/* generator_index */ usize),
     TrackPlacement(/* track_placement_index */ usize),
