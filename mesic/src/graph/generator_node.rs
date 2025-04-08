@@ -23,6 +23,12 @@ impl GeneratorNode {
 
 impl Node for GeneratorNode {
     fn process(&mut self, _inputs: &[Input], output: &mut [Buffer]) {
+        // Skip generating if muted!
+        // TODO: disconnect muted generators from the graph.
+        if self.instance.meta.mute {
+            return;
+        }
+
         let config = match &self.instance.kind {
             GeneratorType::SimpleWave { config } => config,
         };

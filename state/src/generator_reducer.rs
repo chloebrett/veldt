@@ -8,6 +8,20 @@ pub fn generator_reducer(generator: &mut GeneratorInstance, action: &Action) -> 
         action.clone()
     ));
 
+    match action {
+        Action::SetGeneratorVolume(volume) => {
+            let prev = generator.meta.volume;
+            generator.meta.volume = *volume;
+            return Action::SetGeneratorVolume(prev);
+        }
+        Action::SetGeneratorMute(mute) => {
+            let prev = generator.meta.mute;
+            generator.meta.mute = *mute;
+            return Action::SetGeneratorMute(prev);
+        }
+        _ => {}
+    }
+
     let config = match &mut generator.kind {
         GeneratorType::SimpleWave { config } => config,
     };
