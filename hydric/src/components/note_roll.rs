@@ -6,7 +6,8 @@ use shared::{
     types::PitchValue,
 };
 
-use crate::widget::{Piano, Sequencer};
+use super::Piano;
+use crate::widget::Sequencer;
 
 pub fn note_roll(store: &Store, ui: &mut Ui) {
     let track_index = 0;
@@ -68,7 +69,7 @@ fn draw_note_roll(store: &Store, ui: &mut Ui, track_index: usize) {
         store.dispatch(sel, Action::SetNoteScaleValue(pitch_name.scale_value));
     };
     ui.horizontal(|ui| {
-        ui.add(Piano::new(max_note, min_note - 1));
+        Piano::new(max_note, min_note - 1).render(ui);
         ui.add(
             Sequencer::new(range, dispatch_x, dispatch_y)
                 .rects(note_rects)
