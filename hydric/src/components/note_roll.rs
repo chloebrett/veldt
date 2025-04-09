@@ -1,13 +1,16 @@
 use state::{Action, Selector, Store};
 
-use egui::{Color32, Rect, ScrollArea, Ui, pos2};
+use egui::{Color32, Pos2, Rect, ScrollArea, Ui, pos2, vec2};
 use shared::{
     model::{Note, PitchName, PlacedNote, ScaleValue},
     types::PitchValue,
 };
 
 use super::Piano;
-use crate::{view::View, widget::Sequencer};
+use crate::{
+    view::View,
+    widget::{Sequencer, SequencerObject},
+};
 
 pub struct NoteRoll {
     track_index: usize,
@@ -85,5 +88,29 @@ impl View for NoteRoll {
                     );
                 });
             });
+    }
+}
+
+impl SequencerObject<PlacedNote> for PlacedNote {
+    fn to_pos(&self, range: Rect) -> Pos2 {
+        let offset: f32 = self.offset.into();
+        let x = offset - range.left();
+        let pitch_value: PitchValue = self.note.pitch_name.into();
+        let y = range.bottom() as i32 - pitch_value;
+        pos2(x, y as f32)
+    }
+
+    fn to_rect(&self, range: Rect) -> Rect {
+        let pos = self.to_pos(range);
+        let note_size = vec2(self.note.beats, 1.0);
+        Rect::from_min_size(pos, note_size)
+    }
+
+    fn x_action(&self, x: f32, range: Rect) -> Action {
+        Action::SetNoteOffset(x - range.left())
+    }
+
+    fn y_action(&self, y: f32, range: Rect) -> Action {
+        Action::SetNotePitchName(PitchName::from((range.bottom() - y) as i32))
     }
 }
