@@ -223,4 +223,5 @@ enum EqTypeProto {
   LinkwitzRileySecondOrderLowPassEqType = 15;
   LinkwitzRileySecondOrderHighPassEqType = 16;
   LowShelvingFirstOrderEqType = 17;
+  HighShelvingFirstOrderEqType = 18;
 }
