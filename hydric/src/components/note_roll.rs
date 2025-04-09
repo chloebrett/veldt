@@ -42,6 +42,29 @@ impl NoteRoll {
             bar_length: 4.0,
         }
     }
+
+    fn make_white_note_pattern(&self, max_note: i32) -> impl Fn(i32) -> bool {
+        // Return a pattern for Background Rects to display white notes.
+        // Account for max note changing.
+        let c_value: PitchValue = ScaleValue::C.into();
+        let max_scale_value: PitchValue = PitchName::from(max_note).scale_value.into();
+        let c_delta = c_value - max_scale_value;
+        move |y| {
+            let notes = create_scale_values(Scale::Major, ScaleValue::C);
+            // Return true for notes in C Major (White notes)
+            // Determine if `y` is a white note by checking if the `ScaleValue` of the
+            // note is in the C Major scale where `0 => C`, `1 => CSharp` etc.
+            // Calculate `y` modulo `12` to account for higher values of y (`ScaleValues` are
+            // between 0 and 11).
+            // `y` will start at 0 no matter what the `max_note` is. Account for this by
+            // adding the difference between the C `ScaleValue` and the `max_note` scale so that
+            // `y` will start at the correct `ScaleValue`.
+            // Use the negative of `y + c_delta` as `y` starts from the top of the piano 
+            // and moves down and so moves backwards through the scale.
+            let scale_value = ScaleValue::from(((0 - (y + c_delta)) as i32).rem_euclid(12) as i32);
+            notes.contains(&scale_value)
+        }
+    }
 }
 
 impl View for NoteRoll {
@@ -65,17 +88,7 @@ impl View for NoteRoll {
             offset: offset.into(),
         };
         let notes = store.get().project.tracks[track_index].notes.clone();
-        // Pattern for Background Rects
-        // Account for max note changing.
-        let c_value: PitchValue = ScaleValue::C.into();
-        let max_scale_value: PitchValue = PitchName::from(max_note).scale_value.into();
-        let c_delta = c_value - max_scale_value;
-        let background_pattern = |y| {
-            let notes = create_scale_values(Scale::Major, ScaleValue::C);
-            // Return true for notes in C Major (White notes)
-            let scale_value = ScaleValue::from(((0 - y - c_delta) as i32).rem_euclid(12) as i32);
-            notes.contains(&scale_value)
-        };
+        let white_note_pattern = self.make_white_note_pattern(max_note);
         if ui.button("New note").clicked() {
             store.dispatch(&Selector::Track(track_index), Action::AddNote(default_note));
         }
@@ -94,7 +107,7 @@ impl View for NoteRoll {
                     ui.add(
                         Sequencer::new(range, dispatch)
                             .objects(notes)
-                            .horizontal_rects(background_pattern, Color32::from_white_alpha(4))
+                            .horizontal_rects(white_note_pattern, Color32::from_white_alpha(4))
                             .vertical_bars(bar_length, Color32::from_white_alpha(6))
                             .vertical_bars(1.0, Color32::from_white_alpha(3))
                             .vertical_bars(1.0 / bar_length, Color32::from_white_alpha(1)),
