@@ -1,7 +1,7 @@
 use super::{
     effect::{effect_control, mixer_control},
     generator::{envelope_control, generator_control, generators_control},
-    key_control, load_control,
+    key_control::KeyControl, load_control,
     note_roll::NoteRoll,
     play::{play_control, sample_control},
     save_button, toggle_window_panel, track_control, track_placement_control, undo_redo_control,
@@ -154,7 +154,7 @@ impl eframe::App for App {
                             .open(&mut self.window_state.scale)
                             .default_pos(Pos2 { x: 600.0, y: 20.0 })
                             .show(ctx, |ui| {
-                                key_control(&self.store, ui);
+                                KeyControl::new(self.store.get().key, self.store.get().scale).ui(&self.store, ui);
                             });
                     }
                     if self.window_state.manual_notes {
