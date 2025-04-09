@@ -2,9 +2,11 @@ use state::{Action, Selector, Store};
 
 use egui::{Color32, Pos2, Rect, ScrollArea, Ui, pos2, vec2};
 use shared::{
-    model::{Note, PitchName, PlacedNote, ScaleValue},
+    model::{Note, PitchName, PlacedNote, Scale, ScaleValue},
     types::PitchValue,
 };
+
+use mesic::create_scale_values;
 
 use super::Piano;
 use crate::{view::View, widget::Sequencer};
@@ -64,6 +66,17 @@ impl View for NoteRoll {
             max_note,
             offset,
         );
+        // Pattern for Background Rects
+        // Account for max note changing.
+        let c_value: PitchValue = ScaleValue::C.into();
+        let max_scale_value: PitchValue = PitchName::from(max_note).scale_value.into();
+        let c_delta = c_value - max_scale_value;
+        let background_pattern = |y| {
+            let notes = create_scale_values(Scale::Major, ScaleValue::C);
+            // Return true for notes in C Major (White notes)
+            let scale_value = ScaleValue::from(((0 - y - c_delta) as i32).rem_euclid(12) as i32);
+            notes.contains(&scale_value)
+        };
         if ui.button("New note").clicked() {
             store.dispatch(&Selector::Track(track_index), Action::AddNote(default_note));
         }
@@ -87,7 +100,7 @@ impl View for NoteRoll {
                     ui.add(
                         Sequencer::new(range, dispatch_x, dispatch_y)
                             .rects(note_rects)
-                            .horizontal_rects(2.0, Color32::from_white_alpha(4))
+                            .horizontal_rects(background_pattern, Color32::from_white_alpha(4))
                             .vertical_bars(bar_length, Color32::from_white_alpha(6))
                             .vertical_bars(1.0, Color32::from_white_alpha(3))
                             .vertical_bars(1.0 / bar_length, Color32::from_white_alpha(1)),
