@@ -53,7 +53,7 @@ impl<T: SequencerObject<T>, F: Fn(usize, Action)> Sequencer<T, F> {
     }
 
     #[inline]
-    pub fn horizontal_rects<H: Fn(i32) -> bool>(mut self, pattern: H, colour: Color32) -> Self {
+    pub fn horizontal_rects<G: Fn(i32) -> bool>(mut self, pattern: G, colour: Color32) -> Self {
         // Add horizontal rectangles across background of Sequencer.
         // Indicate where to paint rectangles with `pattern` a closure that takes `i32` the y coordinate as the
         // input and returns `true` if a rectangle should be rendered there.
