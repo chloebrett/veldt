@@ -136,10 +136,11 @@ impl ApplyFilter for SecondOrderFilter {
             self.y_buffer.push(yn);
 
             if self.c0 == 1.0 && self.d0 == 0.0 {
-                // slight optimization
+                // Slight optimization.
                 // Replace the input value with the corresponding output value.
                 *xn = yn;
             } else {
+                // Apply the filter using the wet/dry values.
                 *xn = self.c0 * yn + self.d0 * *xn;
             }
         }
