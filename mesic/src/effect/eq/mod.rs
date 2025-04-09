@@ -2,6 +2,7 @@ mod apf_first_order;
 mod apf_second_order;
 mod bps_basic;
 mod filter;
+mod first_order_all_pole;
 mod lhp_first_order;
 mod lhp_second_order;
 mod lhp_second_order_lr;
@@ -13,6 +14,7 @@ use apf_first_order::*;
 use apf_second_order::*;
 use bps_basic::*;
 use dasp_graph::Buffer;
+use first_order_all_pole::*;
 use lhp_first_order::*;
 use lhp_second_order::*;
 use lhp_second_order_lr::*;
@@ -43,6 +45,7 @@ pub fn eq_filter(config: &EqConfig) -> Box<dyn ApplyFilter + Send> {
         EqType::LinkwitzRileySecondOrderHighPass => {
             Box::new(lhp_second_order_lr(config, LowHigh::High))
         }
+        EqType::FirstOrderAllPole => Box::new(first_order_all_pole(config)),
         _ => panic!("EQ type not implemented!"),
     }
 }
