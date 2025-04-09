@@ -1,7 +1,7 @@
 use crate::Action;
 use ordered_float::OrderedFloat;
 use shared::logger::log;
-use shared::model::PlacedNote;
+use shared::model::{PitchName, PlacedNote};
 
 pub fn note_reducer(note: &mut PlacedNote, action: &Action) -> Action {
     log(&format!("note_reducer processing: {:?}", action.clone()));
@@ -16,6 +16,11 @@ pub fn note_reducer(note: &mut PlacedNote, action: &Action) -> Action {
             let prev = note.note.pitch_name.octave;
             note.note.pitch_name.octave = *octave;
             Action::SetNoteOctave(prev)
+        }
+        Action::SetNotePitchName(pitch_name) => {
+            let prev: PitchName = note.note.pitch_name;
+            note.note.pitch_name = *pitch_name;
+            Action::SetNotePitchName(prev)
         }
         Action::SetNoteDuration(duration) => {
             let prev = note.note.beats;

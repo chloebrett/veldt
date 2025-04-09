@@ -8,9 +8,7 @@ use shared::{
 };
 use state::Store;
 
-use crate::{transform::Transform, view::View};
-
-use super::note_to_pos;
+use crate::{transform::Transform, view::View, widget::SequencerObject};
 
 pub struct Piano {
     max_note: PitchValue,
@@ -27,13 +25,16 @@ impl Piano {
         }
     }
 
-    fn make_piano_board(&self, min_note: i32, max_note: i32) -> Shape {
-        let rect = Rect::from_min_size(pos2(0.0, 0.0), vec2(1.0, (max_note - min_note) as f32));
-        Shape::rect_filled(rect, CornerRadius::ZERO, Color32::WHITE)
+    fn make_piano_board(&self, range: Rect) -> Shape {
+        Shape::rect_filled(
+            Rect::from_min_size(Pos2::ZERO, range.size()),
+            CornerRadius::ZERO,
+            Color32::WHITE,
+        )
     }
 
-    fn get_piano_notes(&self, min_note: i32, max_note: i32) -> Vec<PlacedNote> {
-        (min_note..=max_note)
+    fn get_piano_notes(&self, range: Rect) -> Vec<PlacedNote> {
+        (range.top() as i32..=range.bottom() as i32)
             .map(|pitch_value| PlacedNote {
                 note: Note {
                     pitch_name: pitch_value.into(),
@@ -44,14 +45,14 @@ impl Piano {
             .collect()
     }
 
-    fn make_all_piano_keys(&self, notes: Vec<PlacedNote>, max_note: i32) -> Vec<Shape> {
+    fn make_all_piano_keys(&self, notes: Vec<PlacedNote>, range: Rect) -> Vec<Shape> {
         notes
             .into_iter()
-            .map(|note| self.make_piano_key(note, max_note))
+            .map(|note| self.make_piano_key(note, range))
             .collect()
     }
 
-    fn make_piano_key(&self, note: PlacedNote, max_note: i32) -> Shape {
+    fn make_piano_key(&self, note: PlacedNote, range: Rect) -> Shape {
         // White notes are arranged so that the edge of B and C and the edge of
         // E and F lines align with the edge of the equivalent background.
         // This helps visual align background notes with the piano keys.
@@ -70,9 +71,9 @@ impl Piano {
             ScaleValue::A => (-1.0 / 4.0, 7.0 / 4.0),
             ScaleValue::B => (0.0, 7.0 / 4.0),
             // return black key note as regular size and offset
-            _ => return self.make_black_key(note, max_note),
+            _ => return self.make_black_key(note, range),
         };
-        self.make_white_key(note, y_offset, note_height, max_note)
+        self.make_white_key(note, y_offset, note_height, range)
     }
 
     fn make_white_key(
@@ -80,9 +81,9 @@ impl Piano {
         note: PlacedNote,
         y_offset: f32,
         note_height: f32,
-        max_note: i32,
+        range: Rect,
     ) -> Shape {
-        let note_pos = note_to_pos(&note, max_note, 0.0) + vec2(0.0, y_offset);
+        let note_pos = note.to_pos(range) + vec2(0.0, y_offset);
         let note_size = vec2(1.0, note_height);
         let rect = Rect::from_min_size(note_pos, note_size);
         Shape::rect_stroke(
@@ -93,9 +94,9 @@ impl Piano {
         )
     }
 
-    fn make_black_key(&self, note: PlacedNote, max_note: i32) -> Shape {
+    fn make_black_key(&self, note: PlacedNote, range: Rect) -> Shape {
         let black_note_length = 0.6;
-        let note_pos = note_to_pos(&note, max_note, 0.0);
+        let note_pos = note.to_pos(range);
         let note_size = vec2(black_note_length, 1.0);
         let rect = Rect::from_min_size(note_pos, note_size);
         Shape::rect_filled(
@@ -120,15 +121,15 @@ impl View for Piano {
             min_note,
             size,
         } = *self;
+        let range = Rect::from_min_max(pos2(0.0, min_note as f32), pos2(1.0, max_note as f32));
         Frame::canvas(ui.style()).show(ui, |ui| {
             let (response, painter) = ui.allocate_painter(size, Sense::hover());
             let piano_transform = RectTransform::from_to(
-                Rect::from_min_size(Pos2::ZERO, vec2(1.0, (max_note - min_note) as f32)),
+                Rect::from_min_size(Pos2::ZERO, range.size()),
                 response.rect,
             );
-            let piano_board = self.make_piano_board(min_note, max_note);
-            let piano_keys =
-                self.make_all_piano_keys(self.get_piano_notes(min_note, max_note), max_note);
+            let piano_board = self.make_piano_board(range);
+            let piano_keys = self.make_all_piano_keys(self.get_piano_notes(range), range);
             painter.extend(vec![piano_board].transform(piano_transform));
             painter.extend(piano_keys.transform(piano_transform))
         });
