@@ -59,7 +59,7 @@ impl NoteRoll {
             // `y` will start at 0 no matter what the `max_note` is. Account for this by
             // adding the difference between the C `ScaleValue` and the `max_note` scale so that
             // `y` will start at the correct `ScaleValue`.
-            // Use the negative of `y + c_delta` as `y` starts from the top of the piano 
+            // Use the negative of `y + c_delta` as `y` starts from the top of the piano
             // and moves down and so moves backwards through the scale.
             let scale_value = ScaleValue::from(((0 - (y + c_delta)) as i32).rem_euclid(12) as i32);
             notes.contains(&scale_value)
