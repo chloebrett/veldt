@@ -10,6 +10,7 @@ mod track_control;
 mod track_placement_control;
 mod undo_redo;
 mod window_toggle;
+mod track_roll;
 
 pub use app::*;
 use key_control::*;
