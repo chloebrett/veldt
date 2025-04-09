@@ -7,7 +7,10 @@ use shared::{
 };
 
 use super::Piano;
-use crate::{view::View, widget::Sequencer};
+use crate::{
+    view::View,
+    widget::{Sequencer, SequencerObject},
+};
 
 pub struct NoteRoll {
     track_index: usize,
@@ -59,11 +62,7 @@ impl View for NoteRoll {
             },
             offset: offset.into(),
         };
-        let note_rects = make_all_note_rects(
-            store.get().project.tracks[track_index].notes.clone(),
-            max_note,
-            offset,
-        );
+        let notes = store.get().project.tracks[track_index].notes.clone();
         if ui.button("New note").clicked() {
             store.dispatch(&Selector::Track(track_index), Action::AddNote(default_note));
         }
@@ -74,19 +73,14 @@ impl View for NoteRoll {
                     pos2(offset, min_note as f32 - 1.0),
                     pos2(bars * bar_length, max_note as f32),
                 );
-                let dispatch_x = move |sel: &Selector, offset: f32| {
-                    store.dispatch(sel, Action::SetNoteOffset(offset));
-                };
-                let dispatch_y = move |sel: &Selector, pitch_value: f32| {
-                    let pitch_name = PitchName::from(max_note - pitch_value as i32);
-                    store.dispatch(sel, Action::SetNoteOctave(pitch_name.octave));
-                    store.dispatch(sel, Action::SetNoteScaleValue(pitch_name.scale_value));
+                let dispatch = move |note_index: usize, action: Action| {
+                    store.dispatch(&Selector::Note(track_index, note_index), action)
                 };
                 ui.horizontal(|ui| {
                     Piano::new(max_note, min_note - 1).ui(store, ui);
                     ui.add(
-                        Sequencer::new(range, dispatch_x, dispatch_y)
-                            .rects(note_rects)
+                        Sequencer::new(range, dispatch)
+                            .objects(notes)
                             .horizontal_rects(2.0, Color32::from_white_alpha(4))
                             .vertical_bars(bar_length, Color32::from_white_alpha(6))
                             .vertical_bars(1.0, Color32::from_white_alpha(3))
@@ -97,29 +91,26 @@ impl View for NoteRoll {
     }
 }
 
-pub fn note_to_pos(note: &PlacedNote, max_note: i32, project_offset: f32) -> Pos2 {
-    let offset: f32 = note.offset.into();
-    let x = offset - project_offset;
-    let pitch_value: PitchValue = note.note.pitch_name.into();
-    let y = max_note - pitch_value;
-    pos2(x, y as f32)
-}
+impl SequencerObject<PlacedNote> for PlacedNote {
+    fn to_pos(&self, range: Rect) -> Pos2 {
+        let offset: f32 = self.offset.into();
+        let x = offset - range.left();
+        let pitch_value: PitchValue = self.note.pitch_name.into();
+        let y = range.bottom() as i32 - pitch_value;
+        pos2(x, y as f32)
+    }
 
-pub fn make_note_rect(note: &PlacedNote, note_pos: Pos2) -> Rect {
-    let note_size = vec2(note.note.beats, 1.0);
-    Rect::from_min_size(note_pos, note_size)
-}
+    fn to_rect(&self, range: Rect) -> Rect {
+        let pos = self.to_pos(range);
+        let note_size = vec2(self.note.beats, 1.0);
+        Rect::from_min_size(pos, note_size)
+    }
 
-pub fn make_all_note_rects(
-    notes: Vec<PlacedNote>,
-    max_note: i32,
-    project_offset: f32,
-) -> Vec<Rect> {
-    notes
-        .iter()
-        .map(|note| {
-            let note_pos = note_to_pos(note, max_note, project_offset);
-            make_note_rect(note, note_pos)
-        })
-        .collect()
+    fn x_action(&self, x: f32, range: Rect) -> Action {
+        Action::SetNoteOffset(x - range.left())
+    }
+
+    fn y_action(&self, y: f32, range: Rect) -> Action {
+        Action::SetNotePitchName(PitchName::from((range.bottom() - y) as i32))
+    }
 }

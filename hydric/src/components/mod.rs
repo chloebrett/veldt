@@ -12,7 +12,6 @@ mod undo_redo;
 mod window_toggle;
 
 pub use app::*;
-use note_roll::*;
 use piano::*;
 use save_control::*;
 use track_control::*;
