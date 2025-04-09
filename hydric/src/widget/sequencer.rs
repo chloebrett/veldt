@@ -10,7 +10,7 @@ pub struct Sequencer<T: SequencerObject<T>, F: Fn(usize, Action)> {
     size: Vec2,
     objects: Vec<T>,
     sense: Sense,
-    dispatch: F,
+    dispatch: F, // A closure to modify object in Store. Takes object index and `Action` to dispatch chage.
     background_shapes: Vec<Shape>,
 }
 
@@ -49,13 +49,20 @@ impl<T: SequencerObject<T>, F: Fn(usize, Action)> Sequencer<T, F> {
     }
 
     #[inline]
-    pub fn horizontal_rects(mut self, increment: f32, colour: Color32) -> Self {
-        let steps = (self.range.size().y / increment) as i32;
-        let shapes: Vec<Shape> = (0..=steps)
-            .map(|step| {
-                let y = (step as f32) * increment;
-                let rect =
-                    Rect::from_min_size(pos2(self.range.left(), y), vec2(self.range.size().x, 1.0));
+    pub fn horizontal_rects<G: Fn(i32) -> bool>(mut self, pattern: G, colour: Color32) -> Self {
+        // Add horizontal rectangles across background of Sequencer.
+        // Indicate where to paint rectangles with `pattern` a closure that takes `i32` the y coordinate as the
+        // input and returns `true` if a rectangle should be rendered there.
+        // Example
+        // To alternate rectangles in background:
+        //     pattern: |y| (y % 2 == 0)
+        let shapes: Vec<Shape> = (0..self.range.size().y as i32)
+            .filter(|&y| pattern(y))
+            .map(|y| {
+                let rect = Rect::from_min_size(
+                    pos2(self.range.left(), y as f32),
+                    vec2(self.range.size().x, 1.0),
+                );
                 Shape::rect_filled(rect, CornerRadius::ZERO, colour)
             })
             .collect();
