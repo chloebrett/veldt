@@ -1,5 +1,5 @@
 use crate::{
-    Action, Selector, StoreData, effect_reducer, generator_reducer, note_reducer,
+    Action, Selector, StoreData, effect_reducer, generator_reducer, mixer_reducer, note_reducer,
     track_placement_reducer, track_reducer,
 };
 use shared::logger::log;
@@ -18,6 +18,9 @@ pub fn root_reducer(data: &mut StoreData, selector: &Selector, action: &Action) 
             &mut data.project.mixer[*mixer_index].effects[*effect_index],
             action,
         ),
+        Selector::Mixer(mixer_index) => {
+            mixer_reducer(&mut data.project.mixer[*mixer_index], action)
+        }
         Selector::Note(track_index, note_index) => note_reducer(
             &mut data.project.tracks[*track_index].notes[*note_index],
             action,

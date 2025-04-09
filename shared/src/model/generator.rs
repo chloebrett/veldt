@@ -84,5 +84,7 @@ pub enum AntiAliasingMode {
 #[derive(Clone, Debug, PartialEq, FromProto, IntoProto)]
 pub struct GeneratorMeta {
     pub volume: Volume,
+
+    pub mute: bool,
     // TODO: pan
 }

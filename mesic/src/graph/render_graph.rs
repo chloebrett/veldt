@@ -3,6 +3,7 @@ use super::{
 };
 use crate::consts::SAMPLE_RATE;
 use crate::effect::eq_filter;
+use dasp_frame::Stereo;
 use dasp_graph::{BoxedNodeSend, Buffer, Node, NodeData, node::Delay};
 use petgraph::stable_graph::NodeIndex;
 use shared::model::{Effect, EffectInstance};
@@ -32,7 +33,7 @@ impl RenderGraph {
     pub fn add_node(&mut self, node: impl Node + 'static + Send) {
         let node_index = self
             .graph
-            .add_node(NodeData::new1(BoxedNodeSend::new(node)));
+            .add_node(NodeData::new2(BoxedNodeSend::new(node)));
         self.graph.add_edge(self.output_node_index, node_index, ());
         self.output_node_index = node_index;
     }
@@ -59,10 +60,10 @@ impl RenderGraph {
         };
 
         let dry = self.output_node_index;
-        let effect = self.graph.add_node(NodeData::new1(effect_node));
+        let effect = self.graph.add_node(NodeData::new2(effect_node));
         let mixer = self
             .graph
-            .add_node(NodeData::new1(BoxedNodeSend::new(mixer_node)));
+            .add_node(NodeData::new2(BoxedNodeSend::new(mixer_node)));
 
         // Route the signal like this:
         // dry --|
@@ -89,7 +90,7 @@ impl RenderGraph {
         let mut graph = make_graph();
         let sample_count = vec.len();
         let buffer_node: BufferNode = vec.into();
-        let buffer_node_index = graph.add_node(NodeData::new1(BoxedNodeSend::new(buffer_node)));
+        let buffer_node_index = graph.add_node(NodeData::new2(BoxedNodeSend::new(buffer_node)));
         RenderGraph::new(graph, sample_count, buffer_node_index)
     }
 
@@ -108,7 +109,7 @@ fn new_delay_node(delay_samples: usize) -> Delay<Vec<f32>> {
 }
 
 impl Iterator for RenderGraph {
-    type Item = f32;
+    type Item = Stereo<f32>;
 
     fn next(&mut self) -> Option<Self::Item> {
         if self.processed_samples_count % Buffer::LEN == 0 {
@@ -126,8 +127,9 @@ impl Iterator for RenderGraph {
             .unwrap()
             .buffers;
 
-        // For now, only return one channel.
-        let output = Some(buffers[0][self.processed_samples_count % Buffer::LEN]);
+        let left = buffers[0][self.processed_samples_count % Buffer::LEN];
+        let right = buffers[1][self.processed_samples_count % Buffer::LEN];
+        let output = Some([left, right]);
 
         self.processed_samples_count += 1;
         output

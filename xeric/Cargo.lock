@@ -639,6 +639,7 @@ name = "mesic"
 version = "0.1.0"
 dependencies = [
  "dasp_envelope",
+ "dasp_frame",
  "dasp_graph",
  "dasp_ring_buffer",
  "dasp_rms",
@@ -1491,6 +1492,7 @@ name = "xeric"
 version = "0.1.0"
 dependencies = [
  "anyhow",
+ "dasp_frame",
  "hound",
  "http",
  "mesic",

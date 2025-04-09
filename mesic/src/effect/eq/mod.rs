@@ -2,6 +2,7 @@ mod apf_first_order;
 mod apf_second_order;
 mod bps_basic;
 mod filter;
+mod first_order_all_pole;
 mod lhp_first_order;
 mod lhp_second_order;
 mod lhp_second_order_lr;
@@ -13,6 +14,8 @@ mod resonator_simple;
 use apf_first_order::*;
 use apf_second_order::*;
 use bps_basic::*;
+use dasp_graph::Buffer;
+use first_order_all_pole::*;
 use lhp_first_order::*;
 use lhp_second_order::*;
 use lhp_second_order_lr::*;
@@ -23,8 +26,7 @@ use resonator_simple::*;
 use shared::model::{EqConfig, EqType};
 
 pub trait ApplyFilter {
-    // TODO: adapt this to work with the dasp_graph Buffer type.
-    fn apply(&mut self, input: &[f32]) -> Vec<f32>;
+    fn apply(&mut self, buffer: &mut Buffer);
 }
 
 pub fn eq_filter(config: &EqConfig) -> Box<dyn ApplyFilter + Send> {
@@ -46,6 +48,7 @@ pub fn eq_filter(config: &EqConfig) -> Box<dyn ApplyFilter + Send> {
             Box::new(lhp_second_order_lr(config, LowHigh::High))
         }
         EqType::ParametricSecondOrderNonConstantQ => Box::new(parametric_non_constant_q(config)),
+        EqType::FirstOrderAllPole => Box::new(first_order_all_pole(config)),
         _ => panic!("EQ type not implemented!"),
     }
 }

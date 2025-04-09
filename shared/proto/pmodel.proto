@@ -96,6 +96,8 @@ message GeneratorInstanceProto {
 
 message GeneratorMetaProto {
   float volume = 1;
+
+  bool mute = 2;
 }
 
 message SimpleWaveProto {
@@ -220,5 +222,6 @@ enum EqTypeProto {
   SecondOrderAllPassEqType = 14;
   LinkwitzRileySecondOrderLowPassEqType = 15;
   LinkwitzRileySecondOrderHighPassEqType = 16;
-  ParametricSecondOrderNonConstantQEqType = 17;
+  FirstOrderAllPoleEqType = 17;
+  ParametricSecondOrderNonConstantQEqType = 18;
 }

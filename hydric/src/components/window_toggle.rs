@@ -1,28 +1,17 @@
 use super::WindowState;
 use egui::Ui;
 
-pub fn window_toggle_button(toggle_value: bool, ui: &mut Ui, toggle_name: String) -> bool {
-    let button_text = if toggle_value {
-        format!("Hide {}", toggle_name).to_string()
-    } else {
-        format!("Show {}", toggle_name).to_string()
-    };
-    if ui.button(button_text).clicked() {
-        !toggle_value
-    } else {
-        toggle_value
-    }
+pub fn window_toggle_button(toggle_value: bool, ui: &mut Ui, toggle_name: &str) -> bool {
+    toggle_value || ui.button(toggle_name.to_string()).clicked()
 }
 
 pub fn toggle_window_panel(window_state: &mut WindowState, ui: &mut Ui) {
-    ui.vertical(|ui| {
-        window_state.show_effects =
-            window_toggle_button(window_state.show_effects, ui, "Effects".to_string());
-    });
-    ui.vertical(|ui| {
-        window_state.show_generator =
-            window_toggle_button(window_state.show_generator, ui, "Generator".to_string());
-        window_state.show_scale =
-            window_toggle_button(window_state.show_scale, ui, "Scale".to_string());
+    ui.horizontal(|ui| {
+        window_state.mixer.visible = window_toggle_button(window_state.mixer.visible, ui, "Mixer");
+        window_state.manual_notes = window_toggle_button(window_state.manual_notes, ui, "Notes");
+        window_state.generator_list =
+            window_toggle_button(window_state.generator_list, ui, "Generators");
+        window_state.scale = window_toggle_button(window_state.scale, ui, "Scale");
+        window_state.note_roll = window_toggle_button(window_state.note_roll, ui, "Note Roll");
     });
 }

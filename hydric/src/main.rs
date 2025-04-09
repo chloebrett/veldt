@@ -3,6 +3,7 @@ mod components;
 mod promise;
 mod rpc;
 mod transform;
+mod view;
 mod widget;
 
 use crate::components::App;
