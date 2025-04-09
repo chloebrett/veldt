@@ -7,6 +7,7 @@ mod lhp_first_order;
 mod lhp_second_order;
 mod lhp_second_order_lr;
 mod low_high;
+mod parametric_second_order;
 mod resonator_sa;
 mod resonator_simple;
 
@@ -19,6 +20,7 @@ use lhp_first_order::*;
 use lhp_second_order::*;
 use lhp_second_order_lr::*;
 use low_high::LowHigh;
+use parametric_second_order::*;
 use resonator_sa::*;
 use resonator_simple::*;
 use shared::model::{EqConfig, EqType};
@@ -45,6 +47,7 @@ pub fn eq_filter(config: &EqConfig) -> Box<dyn ApplyFilter + Send> {
         EqType::LinkwitzRileySecondOrderHighPass => {
             Box::new(lhp_second_order_lr(config, LowHigh::High))
         }
+        EqType::ParametricSecondOrderNonConstantQ => Box::new(parametric_non_constant_q(config)),
         EqType::FirstOrderAllPole => Box::new(first_order_all_pole(config)),
         _ => panic!("EQ type not implemented!"),
     }
