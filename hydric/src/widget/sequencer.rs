@@ -10,7 +10,7 @@ pub struct Sequencer<T: SequencerObject<T>, F: Fn(usize, Action)> {
     size: Vec2,
     objects: Vec<T>,
     sense: Sense,
-    dispatch: F,
+    dispatch: F, // A closure to modify object in Store. Takes object index and `Action` to dispatch chage.
     background_shapes: Vec<Shape>,
 }
 
