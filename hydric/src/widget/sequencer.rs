@@ -3,34 +3,36 @@ use egui::{
     Color32, CornerRadius, Frame, Pos2, Rect, Response, Sense, Shape, Stroke, Ui, Vec2, Widget,
     emath::RectTransform, pos2, vec2,
 };
-use state::Selector;
+use shared::{
+    model::{PitchName, PlacedNote},
+    types::PitchValue,
+};
+use state::Action;
 
-pub struct Sequencer<F: Fn(&Selector, f32), G: Fn(&Selector, f32)> {
+pub struct Sequencer<T: SequencerObject<T>, F: Fn(usize, Action)> {
     range: Rect,
     size: Vec2,
-    rects: Vec<Rect>,
+    objects: Vec<T>,
     sense: Sense,
-    dispatch_x: F,
-    dispatch_y: G,
+    dispatch: F,
     background_shapes: Vec<Shape>,
 }
 
-impl<F: Fn(&Selector, f32), G: Fn(&Selector, f32)> Sequencer<F, G> {
-    pub fn new(range: Rect, dispatch_x: F, dispatch_y: G) -> Self {
+impl<T: SequencerObject<T>, F: Fn(usize, Action)> Sequencer<T, F> {
+    pub fn new(range: Rect, dispatch: F) -> Self {
         Sequencer {
             range,
             size: vec2(400.0, 600.0),
-            rects: vec![],
+            objects: vec![],
             sense: Sense::drag(),
-            dispatch_x,
-            dispatch_y,
+            dispatch,
             background_shapes: vec![],
         }
     }
 
     #[inline]
-    pub fn rects(mut self, rects: Vec<Rect>) -> Self {
-        self.rects = rects;
+    pub fn objects(mut self, objects: Vec<T>) -> Self {
+        self.objects = objects;
         self
     }
 
@@ -72,16 +74,16 @@ impl<F: Fn(&Selector, f32), G: Fn(&Selector, f32)> Sequencer<F, G> {
         self
     }
 
-    fn update_rect(
+    fn update_objects(
         &self,
-        rect: Rect,
-        rect_index: usize,
+        object: &T,
+        object_index: usize,
         ui: &mut Ui,
         response: &Response,
         sequencer_transform: &RectTransform,
     ) {
-        let track_index = 0;
-        let id = response.id.with(rect_index);
+        let id = response.id.with(object_index);
+        let rect = object.to_rect(self.range);
         let rect_response = ui.interact(rect.transform(*sequencer_transform), id, self.sense);
         let drag_pos = rect_response.interact_pointer_pos();
         let drag_delta = rect_response.drag_delta();
@@ -91,27 +93,25 @@ impl<F: Fn(&Selector, f32), G: Fn(&Selector, f32)> Sequencer<F, G> {
                 (self.range.size() - vec2(0.0, 1.0)).to_pos2(),
             );
             if drag_delta != Vec2::ZERO {
-                let sel = Selector::Note(track_index, rect_index);
                 if drag_delta.x != 0.0 {
-                    (self.dispatch_x)(&sel, scaled_pos.x)
+                    (self.dispatch)(object_index, object.x_action(scaled_pos.x, self.range))
                 };
                 if drag_delta.y != 0.0 {
-                    (self.dispatch_y)(&sel, scaled_pos.y)
+                    (self.dispatch)(object_index, object.y_action(scaled_pos.y, self.range))
                 }
             }
         }
     }
 }
 
-impl<F: Fn(&Selector, f32), G: Fn(&Selector, f32)> Widget for Sequencer<F, G> {
+impl<T: SequencerObject<T>, F: Fn(usize, Action)> Widget for Sequencer<T, F> {
     fn ui(self, ui: &mut Ui) -> Response {
         let Sequencer {
             range,
             size,
-            ref rects,
+            ref objects,
             sense,
-            dispatch_x: _,
-            dispatch_y: _,
+            dispatch: _,
             ref background_shapes,
         } = self;
         Frame::canvas(ui.style()).show(ui, |ui| {
@@ -120,12 +120,12 @@ impl<F: Fn(&Selector, f32), G: Fn(&Selector, f32)> Widget for Sequencer<F, G> {
                 Rect::from_min_size(Pos2::ZERO, range.size()),
                 response.rect,
             );
-            let shapes: Vec<Shape> = rects
-                .into_iter()
+            let shapes: Vec<Shape> = objects
+                .iter()
                 .enumerate()
-                .map(|(index, rect)| {
-                    self.update_rect(*rect, index, ui, &response, &sequencer_transform);
-                    Shape::rect_filled(*rect, CornerRadius::same(1), Color32::WHITE)
+                .map(|(index, object)| {
+                    self.update_objects(object, index, ui, &response, &sequencer_transform);
+                    Shape::rect_filled(object.to_rect(range), CornerRadius::same(1), Color32::WHITE)
                 })
                 .collect();
             painter.extend(background_shapes.clone().transform(sequencer_transform));
@@ -133,5 +133,39 @@ impl<F: Fn(&Selector, f32), G: Fn(&Selector, f32)> Widget for Sequencer<F, G> {
         });
         let (_rect, response) = ui.allocate_at_least(Vec2::ZERO, sense);
         response
+    }
+}
+
+pub trait SequencerObject<T> {
+    fn to_pos(&self, range: Rect) -> Pos2;
+
+    fn to_rect(&self, range: Rect) -> Rect;
+
+    fn x_action(&self, x: f32, range: Rect) -> Action;
+
+    fn y_action(&self, y: f32, range: Rect) -> Action;
+}
+
+impl SequencerObject<PlacedNote> for PlacedNote {
+    fn to_pos(&self, range: Rect) -> Pos2 {
+        let offset: f32 = self.offset.into();
+        let x = offset - range.left();
+        let pitch_value: PitchValue = self.note.pitch_name.into();
+        let y = range.bottom() as i32 - pitch_value;
+        pos2(x, y as f32)
+    }
+
+    fn to_rect(&self, range: Rect) -> Rect {
+        let pos = self.to_pos(range);
+        let note_size = vec2(self.note.beats, 1.0);
+        Rect::from_min_size(pos, note_size)
+    }
+
+    fn x_action(&self, x: f32, range: Rect) -> Action {
+        Action::SetNoteOffset(x - range.left())
+    }
+
+    fn y_action(&self, y: f32, range: Rect) -> Action {
+        Action::SetNotePitchName(PitchName::from((range.bottom() - y) as i32))
     }
 }
