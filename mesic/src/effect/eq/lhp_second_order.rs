@@ -22,5 +22,13 @@ pub fn lhp_second_order(config: &EqConfig, low_high: LowHigh) -> SecondOrderFilt
     let b1 = -2.0 * gamma;
     let b2 = 2.0 * beta;
 
-    SecondOrderFilter::new(SecondOrderFilterConfig { a0, a1, a2, b1, b2 })
+    SecondOrderFilter::new(SecondOrderFilterConfig {
+        a0,
+        a1,
+        a2,
+        b1,
+        b2,
+        c0: 1.0,
+        d0: 0.0,
+    })
 }

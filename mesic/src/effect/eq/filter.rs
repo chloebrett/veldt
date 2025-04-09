@@ -78,6 +78,10 @@ pub struct SecondOrderFilter {
     b1: f32, // coefficient of y1.
     b2: f32, // coefficient of y2.
 
+    // Note: wet/dry below is independent from wet/dry on the mixer.
+    c0: f32, // wet
+    d0: f32, // dry
+
     // TODO: consolidate the ring buffer types. We use dasp_ring_buffer for the delay nodes.
     x_buffer: AllocRingBuffer<f32>,
     y_buffer: AllocRingBuffer<f32>,
@@ -90,6 +94,8 @@ pub struct SecondOrderFilterConfig {
     pub a2: f32,
     pub b1: f32,
     pub b2: f32,
+    pub c0: f32,
+    pub d0: f32,
 }
 
 impl SecondOrderFilter {
@@ -104,6 +110,8 @@ impl SecondOrderFilter {
             a2: config.a2,
             b1: config.b1,
             b2: config.b2,
+            c0: config.c0,
+            d0: config.d0,
             x_buffer,
             y_buffer,
         }
@@ -127,8 +135,13 @@ impl ApplyFilter for SecondOrderFilter {
             self.x_buffer.push(*xn);
             self.y_buffer.push(yn);
 
-            // Replace the input value with the corresponding output value.
-            *xn = yn;
+            if self.c0 == 1.0 && self.d0 == 0.0 {
+                // slight optimization
+                // Replace the input value with the corresponding output value.
+                *xn = yn;
+            } else {
+                *xn = self.c0 * yn + self.d0 * *xn;
+            }
         }
     }
 }

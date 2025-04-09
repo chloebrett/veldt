@@ -13,5 +13,13 @@ pub fn apf_second_order(config: &EqConfig) -> SecondOrderFilter {
     let a2 = 1.0;
     let b1 = a1;
     let b2 = a0;
-    SecondOrderFilter::new(SecondOrderFilterConfig { a0, a1, a2, b1, b2 })
+    SecondOrderFilter::new(SecondOrderFilterConfig {
+        a0,
+        a1,
+        a2,
+        b1,
+        b2,
+        c0: 1.0,
+        d0: 0.0,
+    })
 }

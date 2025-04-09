@@ -24,10 +24,16 @@ pub fn parametric_non_constant_q(config: &EqConfig) -> SecondOrderFilter {
     let b1: f32 = -2.0 * gamma;
     let b2: f32 = 2.0 * beta;
 
-    // We may need to use this at some point, currently no handing for it :)
+    let c0: f32 = mu - 1.0;
+    let d0: f32 = 1.0;
 
-    // let c0:f32 = mu - 1.0;
-    // let d0:f32 = 1;
-
-    SecondOrderFilter::new(SecondOrderFilterConfig { a0, a1, a2, b1, b2 })
+    SecondOrderFilter::new(SecondOrderFilterConfig {
+        a0,
+        a1,
+        a2,
+        b1,
+        b2,
+        c0,
+        d0,
+    })
 }
