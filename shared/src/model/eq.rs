@@ -23,6 +23,7 @@ pub enum EqType {
     SecondOrderAllPass,
     LinkwitzRileySecondOrderLowPass,
     LinkwitzRileySecondOrderHighPass,
+    FirstOrderAllPole,
     LowShelvingFirstOrder,
     HighShelvingFirstOrder,
 }

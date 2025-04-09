@@ -222,6 +222,7 @@ enum EqTypeProto {
   SecondOrderAllPassEqType = 14;
   LinkwitzRileySecondOrderLowPassEqType = 15;
   LinkwitzRileySecondOrderHighPassEqType = 16;
-  LowShelvingFirstOrderEqType = 17;
-  HighShelvingFirstOrderEqType = 18;
+  FirstOrderAllPoleEqType = 17;
+  LowShelvingFirstOrderEqType = 18;
+  HighShelvingFirstOrderEqType = 19;
 }
