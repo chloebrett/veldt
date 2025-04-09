@@ -3,10 +3,6 @@ use egui::{
     Color32, CornerRadius, Frame, Pos2, Rect, Response, Sense, Shape, Stroke, Ui, Vec2, Widget,
     emath::RectTransform, pos2, vec2,
 };
-use shared::{
-    model::{PitchName, PlacedNote},
-    types::PitchValue,
-};
 use state::Action;
 
 pub struct Sequencer<T: SequencerObject<T>, F: Fn(usize, Action)> {
@@ -144,28 +140,4 @@ pub trait SequencerObject<T> {
     fn x_action(&self, x: f32, range: Rect) -> Action;
 
     fn y_action(&self, y: f32, range: Rect) -> Action;
-}
-
-impl SequencerObject<PlacedNote> for PlacedNote {
-    fn to_pos(&self, range: Rect) -> Pos2 {
-        let offset: f32 = self.offset.into();
-        let x = offset - range.left();
-        let pitch_value: PitchValue = self.note.pitch_name.into();
-        let y = range.bottom() as i32 - pitch_value;
-        pos2(x, y as f32)
-    }
-
-    fn to_rect(&self, range: Rect) -> Rect {
-        let pos = self.to_pos(range);
-        let note_size = vec2(self.note.beats, 1.0);
-        Rect::from_min_size(pos, note_size)
-    }
-
-    fn x_action(&self, x: f32, range: Rect) -> Action {
-        Action::SetNoteOffset(x - range.left())
-    }
-
-    fn y_action(&self, y: f32, range: Rect) -> Action {
-        Action::SetNotePitchName(PitchName::from((range.bottom() - y) as i32))
-    }
 }
