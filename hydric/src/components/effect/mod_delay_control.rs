@@ -9,6 +9,7 @@ where
     F: Fn(Action),
 {
     // TODO: support integer knobs.
+    // TODO: clamp the value within each frame to prevent min_depth from exceeding max_depth.
     knob(
         ui,
         "Min depth (samples)",

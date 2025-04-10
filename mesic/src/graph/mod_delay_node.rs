@@ -4,6 +4,7 @@ use dasp_graph::{Buffer, Input, Node};
 use ringbuffer::{AllocRingBuffer, RingBuffer};
 use shared::model::{AntiAliasingMode, ModDelayConfig};
 
+/// Modulated delay - i.e. vibrato, flanger, phaser, chorus.
 pub struct ModDelayNode {
     config: ModDelayConfig,
     lfo_phase: f32, // current phase of the LFO. Ranges from 0 to 1 then loops back to 0.
@@ -15,6 +16,7 @@ pub struct ModDelayNode {
 
 impl ModDelayNode {
     pub fn new(config: ModDelayConfig) -> ModDelayNode {
+        debug_assert!(config.min_depth <= config.max_depth);
         let mod_depth = config.max_depth - config.min_depth;
         let mid_depth = (config.max_depth + config.min_depth) / 2;
         ModDelayNode {
