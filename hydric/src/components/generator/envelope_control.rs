@@ -16,6 +16,7 @@ pub fn envelope_control(store: &Store, ui: &mut Ui, generator_index: usize) {
     let generator_type = store.get().project.generators[generator_index].kind.clone();
     let config = match generator_type {
         GeneratorType::SimpleWave { config } => config,
+        GeneratorType::Noise { .. } => todo!(),
     };
     let envelope = config.envelope.clone();
     knob(

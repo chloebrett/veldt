@@ -123,6 +123,7 @@ impl eframe::App for App {
                             // TODO: move this to generator_control.rs.
                             let title = match &generator.kind {
                                 GeneratorType::SimpleWave { .. } => "Simple Wave Generator",
+                                GeneratorType::Noise { .. } => "Noise Generator",
                             };
                             default_window(title)
                                 .open(&mut self.window_state.generators[0])

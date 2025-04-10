@@ -11,5 +11,6 @@ pub fn generator_control(store: &Store, ui: &mut Ui, generator_index: usize) {
 
     match generator_type {
         GeneratorType::SimpleWave { config } => simple_wave_control(&config, dispatch, ui),
+        GeneratorType::Noise { .. } => todo!(),
     };
 }

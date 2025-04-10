@@ -21,6 +21,7 @@ pub fn generators_control(ctx: &egui::Context, window_state: &mut WindowState, s
                 let generator = &generators[generator_index];
                 let label = match &generator.kind {
                     GeneratorType::SimpleWave { .. } => "Simple Wave Generator",
+                    GeneratorType::Noise { .. } => "Noise Generator",
                 };
                 ui.label(label);
 
