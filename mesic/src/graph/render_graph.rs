@@ -1,5 +1,6 @@
 use super::{
-    BufferNode, CompressorNode, EqNode, Graph, MixerNode, Processor, make_graph, make_processor,
+    BufferNode, CompressorNode, EqNode, Graph, MixerNode, ModDelayNode, Processor, make_graph,
+    make_processor,
 };
 use crate::consts::SAMPLE_RATE;
 use crate::effect::eq_filter;
@@ -53,7 +54,7 @@ impl RenderGraph {
                 BoxedNodeSend::new(new_delay_node(delay_samples))
             }
             Effect::SimpleCompressor { config } => BoxedNodeSend::new(CompressorNode::new(config)),
-            Effect::ModDelay { .. } => todo!(),
+            Effect::ModDelay { config } => BoxedNodeSend::new(ModDelayNode::new(config)),
         };
         let mixer_node = MixerNode {
             wet: effect.meta.wet,

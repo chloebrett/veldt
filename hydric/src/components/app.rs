@@ -59,7 +59,7 @@ impl Default for WindowState {
                 visible: false,
                 channel: 0,
             },
-            effects: vec![vec![false, false, false]],
+            effects: vec![vec![false, false, false, false]],
             manual_notes: false,
             generator_list: false,
             generators: vec![false],
