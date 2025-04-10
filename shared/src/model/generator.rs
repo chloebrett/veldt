@@ -1,7 +1,8 @@
 use crate::model::{AdsrEnvelope, WaveType};
 use crate::pmodel::{
-    AntiAliasingModeProto, GeneratorInstanceProto, GeneratorMetaProto, SimpleWaveConfigProto,
-    SimpleWaveProto, generator_instance_proto::Kind as GeneratorTypeProto,
+    AntiAliasingModeProto, GeneratorInstanceProto, GeneratorMetaProto, NoiseConfigProto,
+    NoiseProto, NoiseTypeProto, SimpleWaveConfigProto, SimpleWaveProto,
+    generator_instance_proto::Kind as GeneratorTypeProto,
 };
 use crate::types::Volume;
 use local_macro::{FromProto, IntoProto};
@@ -29,6 +30,9 @@ impl From<GeneratorType> for GeneratorTypeProto {
                     config: Some(config.into()),
                 })
             }
+            GeneratorType::Noise { config } => GeneratorTypeProto::Noise(NoiseProto {
+                config: Some(config.into()),
+            }),
         }
     }
 }
@@ -39,6 +43,9 @@ impl From<GeneratorTypeProto> for GeneratorType {
             GeneratorTypeProto::SimpleWave(config) => GeneratorType::SimpleWave {
                 config: config.config.unwrap().into(),
             },
+            GeneratorTypeProto::Noise(config) => GeneratorType::Noise {
+                config: config.config.unwrap().into(),
+            },
         }
     }
 }
@@ -46,6 +53,7 @@ impl From<GeneratorTypeProto> for GeneratorType {
 #[derive(Clone, Debug, PartialEq)]
 pub enum GeneratorType {
     SimpleWave { config: SimpleWaveConfig },
+    Noise { config: NoiseConfig },
 }
 
 #[derive(Clone, Debug, PartialEq, FromProto, IntoProto)]
@@ -64,6 +72,19 @@ pub struct SimpleWaveConfig {
     pub anti_aliasing_mode: AntiAliasingMode,
 
     pub oversample_factor: u32,
+}
+
+#[derive(Clone, Debug, PartialEq, FromProto, IntoProto)]
+pub struct NoiseConfig {
+    #[proto_enum]
+    pub kind: NoiseType,
+}
+
+#[derive(Clone, Debug, PartialEq, FromProto, IntoProto)]
+pub enum NoiseType {
+    White,
+    Brown,
+    Pink,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, EnumString, Display, EnumIter, IntoProto, FromProto)]

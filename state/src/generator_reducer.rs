@@ -24,6 +24,7 @@ pub fn generator_reducer(generator: &mut GeneratorInstance, action: &Action) -> 
 
     let config = match &mut generator.kind {
         GeneratorType::SimpleWave { config } => config,
+        GeneratorType::Noise { .. } => todo!(),
     };
 
     match action {

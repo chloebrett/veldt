@@ -105,7 +105,23 @@ message GeneratorInstanceProto {
 
   oneof kind {
     SimpleWaveProto simple_wave = 3;
+    NoiseProto noise = 4;
   };
+}
+
+message NoiseProto {
+  NoiseConfigProto config = 1;
+}
+
+message NoiseConfigProto {
+  NoiseTypeProto kind = 1;
+}
+
+enum NoiseTypeProto {
+  UnknownNoiseType = 0;
+  WhiteNoiseType = 1;
+  BrownNoiseType = 2;
+  PinkNoiseType = 3;
 }
 
 message GeneratorMetaProto {
