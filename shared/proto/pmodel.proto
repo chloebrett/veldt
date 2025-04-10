@@ -80,6 +80,8 @@ message EffectInstanceProto {
     SimpleEqProto simple_eq = 3;
 
     SimpleCompressorProto simple_compressor = 4;
+
+    ModDelayProto mod_delay = 5;
   }
 
 }
@@ -162,6 +164,17 @@ message CompressorConfigProto {
   float ratio = 4;
 
   float gain = 5;
+}
+
+message ModDelayProto {
+  ModDelayConfigProto config = 1;
+}
+
+message ModDelayConfigProto {
+  uint32 min_depth = 1;
+  uint32 max_depth = 2;
+  float freq = 3;
+  WaveTypeProto lfo_type = 4;
 }
 
 enum WaveTypeProto {
