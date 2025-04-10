@@ -116,8 +116,8 @@ mod tests {
     use crate::{
         model::{
             AdsrEnvelope, AntiAliasingMode, DelayConfig, Effect, EffectMeta, EqConfig, EqType,
-            GeneratorMeta, GeneratorType, Note, PitchName, PlacedNote, ScaleValue,
-            SimpleWaveConfig, WaveType, ModDelayConfig,
+            GeneratorMeta, GeneratorType, ModDelayConfig, Note, PitchName, PlacedNote, ScaleValue,
+            SimpleWaveConfig, WaveType,
         },
         testing::proto::proto_testing::assert_proto_round_trip,
     };
