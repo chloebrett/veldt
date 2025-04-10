@@ -3,6 +3,7 @@ use egui::{
     Color32, CornerRadius, Frame, Pos2, Rect, Response, Sense, Shape, Stroke, Ui, Vec2, Widget,
     emath::RectTransform, pos2, vec2,
 };
+use shared::logger;
 use state::Action;
 
 pub struct Sequencer<T: SequencerObject<T>, F: Fn(usize, Action)> {
@@ -29,6 +30,11 @@ impl<T: SequencerObject<T>, F: Fn(usize, Action)> Sequencer<T, F> {
     #[inline]
     pub fn objects(mut self, objects: Vec<T>) -> Self {
         self.objects = objects;
+        self
+    }
+
+    pub fn size(mut self, size: Vec2) -> Self {
+        self.size = size;
         self
     }
 
@@ -124,6 +130,10 @@ impl<T: SequencerObject<T>, F: Fn(usize, Action)> Widget for Sequencer<T, F> {
                     Shape::rect_filled(object.to_rect(range), CornerRadius::same(1), Color32::WHITE)
                 })
                 .collect();
+            logger::log(&format!(
+                "{:?}",
+                shapes.clone().transform(sequencer_transform)
+            ));
             painter.extend(background_shapes.clone().transform(sequencer_transform));
             painter.extend(shapes.transform(sequencer_transform))
         });
