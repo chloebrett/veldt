@@ -31,6 +31,7 @@ impl Default for StoreData {
                         },
                         offset: OrderedFloat(0.0),
                     }],
+                    offset: OrderedFloat(0.0),
                 }],
                 track_placements: vec![],
                 samples: vec![],

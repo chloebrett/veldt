@@ -21,6 +21,8 @@ message ProjectProto {
 
 message TrackProto {
   repeated PlacedNoteProto notes = 1;
+
+  float offset = 2;
 }
 
 message TrackPlacementProto {
