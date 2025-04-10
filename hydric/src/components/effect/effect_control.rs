@@ -35,9 +35,9 @@ pub fn effect_control(
         .open(&mut window_state.effects[mixer_index][effect_index])
         .show(ctx, |ui| {
             match &effect.effect {
-                Effect::SimpleEq { config } => eq_control(&config, dispatch, ui),
-                Effect::SimpleDelay { config } => delay_control(&config, dispatch, ui),
-                Effect::SimpleCompressor { config } => compressor_control(&config, dispatch, ui),
+                Effect::SimpleEq { config } => eq_control(config, dispatch, ui),
+                Effect::SimpleDelay { config } => delay_control(config, dispatch, ui),
+                Effect::SimpleCompressor { config } => compressor_control(config, dispatch, ui),
                 Effect::ModDelay { .. } => todo!(),
             }
 
