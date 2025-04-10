@@ -33,8 +33,8 @@ impl View for TrackRoll {
 
 impl SequencerObject<Track> for Track {
     fn to_pos(&self, range: Rect) -> Pos2 {
-        // TODO handling channels. Currently all are at `y=1`.
-        let y = 1.0;
+        // TODO handling multiple channels. Currently all are at `y=0`.
+        let y = 0.0;
         let offsets: Vec<OrderedFloat<f32>> = self.notes.iter().map(|note| note.offset).collect();
         let offset: f32 = offsets
             .into_iter()
@@ -42,7 +42,7 @@ impl SequencerObject<Track> for Track {
             .unwrap_or(OrderedFloat(0.0))
             .into();
         let x = offset - range.left();
-        pos2(x, y - 1.0)
+        pos2(x, y)
     }
 
     fn to_rect(&self, range: Rect) -> Rect {
