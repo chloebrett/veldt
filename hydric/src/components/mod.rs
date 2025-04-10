@@ -13,7 +13,6 @@ mod window_toggle;
 mod track_roll;
 
 pub use app::*;
-use key_control::*;
 use piano::*;
 use save_control::*;
 use track_control::*;

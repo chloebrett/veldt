@@ -223,4 +223,5 @@ enum EqTypeProto {
   LinkwitzRileySecondOrderLowPassEqType = 15;
   LinkwitzRileySecondOrderHighPassEqType = 16;
   FirstOrderAllPoleEqType = 17;
+  ParametricSecondOrderNonConstantQEqType = 18;
 }

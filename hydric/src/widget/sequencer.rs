@@ -3,11 +3,7 @@ use egui::{
     Color32, CornerRadius, Frame, Pos2, Rect, Response, Sense, Shape, Stroke, Ui, Vec2, Widget,
     emath::RectTransform, pos2, vec2,
 };
-use ordered_float::OrderedFloat;
-use shared::{
-    model::{PitchName, PlacedNote, Track},
-    types::PitchValue,
-};
+use shared::logger;
 use state::Action;
 
 pub struct Sequencer<T: SequencerObject<T>, F: Fn(usize, Action)> {
@@ -15,7 +11,7 @@ pub struct Sequencer<T: SequencerObject<T>, F: Fn(usize, Action)> {
     size: Vec2,
     objects: Vec<T>,
     sense: Sense,
-    dispatch: F,
+    dispatch: F, // A closure to modify object in Store. Takes object index and `Action` to dispatch chage.
     background_shapes: Vec<Shape>,
 }
 
@@ -37,6 +33,11 @@ impl<T: SequencerObject<T>, F: Fn(usize, Action)> Sequencer<T, F> {
         self
     }
 
+    pub fn size(mut self, size: vec2) -> Self {
+        self.size = size;
+        self
+    }
+
     #[inline]
     pub fn vertical_bars(mut self, increment: f32, colour: Color32) -> Self {
         let steps = (self.range.size().x / increment) as i32;
@@ -54,13 +55,20 @@ impl<T: SequencerObject<T>, F: Fn(usize, Action)> Sequencer<T, F> {
     }
 
     #[inline]
-    pub fn horizontal_rects(mut self, increment: f32, colour: Color32) -> Self {
-        let steps = (self.range.size().y / increment) as i32;
-        let shapes: Vec<Shape> = (0..=steps)
-            .map(|step| {
-                let y = (step as f32) * increment;
-                let rect =
-                    Rect::from_min_size(pos2(self.range.left(), y), vec2(self.range.size().x, 1.0));
+    pub fn horizontal_rects<G: Fn(i32) -> bool>(mut self, pattern: G, colour: Color32) -> Self {
+        // Add horizontal rectangles across background of Sequencer.
+        // Indicate where to paint rectangles with `pattern` a closure that takes `i32` the y coordinate as the
+        // input and returns `true` if a rectangle should be rendered there.
+        // Example
+        // To alternate rectangles in background:
+        //     pattern: |y| (y % 2 == 0)
+        let shapes: Vec<Shape> = (0..self.range.size().y as i32)
+            .filter(|&y| pattern(y))
+            .map(|y| {
+                let rect = Rect::from_min_size(
+                    pos2(self.range.left(), y as f32),
+                    vec2(self.range.size().x, 1.0),
+                );
                 Shape::rect_filled(rect, CornerRadius::ZERO, colour)
             })
             .collect();
@@ -122,6 +130,7 @@ impl<T: SequencerObject<T>, F: Fn(usize, Action)> Widget for Sequencer<T, F> {
                     Shape::rect_filled(object.to_rect(range), CornerRadius::same(1), Color32::WHITE)
                 })
                 .collect();
+            logger::log(&format!("{:?}", shapes.clone().transform(sequencer_transform)));
             painter.extend(background_shapes.clone().transform(sequencer_transform));
             painter.extend(shapes.transform(sequencer_transform))
         });
@@ -140,63 +149,3 @@ pub trait SequencerObject<T> {
     fn y_action(&self, y: f32, range: Rect) -> Action;
 }
 
-impl SequencerObject<PlacedNote> for PlacedNote {
-    fn to_pos(&self, range: Rect) -> Pos2 {
-        let offset: f32 = self.offset.into();
-        let x = offset - range.left();
-        let pitch_value: PitchValue = self.note.pitch_name.into();
-        let y = range.bottom() as i32 - pitch_value;
-        pos2(x, y as f32)
-    }
-
-    fn to_rect(&self, range: Rect) -> Rect {
-        let pos = self.to_pos(range);
-        let note_size = vec2(self.note.beats, 1.0);
-        Rect::from_min_size(pos, note_size)
-    }
-
-    fn x_action(&self, x: f32, range: Rect) -> Action {
-        Action::SetNoteOffset(x - range.left())
-    }
-
-    fn y_action(&self, y: f32, range: Rect) -> Action {
-        Action::SetNotePitchName(PitchName::from((range.bottom() - y) as i32))
-    }
-}
-
-impl SequencerObject<Track> for Track {
-    fn to_pos(&self, range: Rect) -> Pos2 {
-        // TODO handling channels. Currently all are at `y=1`.
-        let y = 1.0;
-        let offsets: Vec<OrderedFloat<f32>> = self.notes.iter().map(|note| note.offset).collect();
-        let offset: f32 = offsets.into_iter()
-            .max_by(|x, y| x.cmp(y))
-            .unwrap_or(OrderedFloat(0.0)).into();
-        let x = offset - range.left();
-        pos2(x, y)
-    }
-
-    fn to_rect(&self, range: Rect) -> Rect {
-        let track_pos = self.to_pos(range);
-        let lengths: Vec<OrderedFloat<f32>> = self.notes.iter().map(|note| {
-            note.offset + OrderedFloat(note.note.beats)
-        }).collect();
-        let max_length: f32 = lengths.into_iter()
-            .max_by(|x, y| x.cmp(&y))
-            .unwrap_or(OrderedFloat(1.0)).into();
-        Rect::from_min_size(track_pos, vec2(max_length - track_pos.x, 1.0))
-    } 
-
-    fn x_action(&self, x: f32, range: Rect) -> Action {
-        // TODO implement for track
-        // This is a placeholder to satisfy trait
-        Action::SetNoteOffset(x - range.left())
-    }
-
-    fn y_action(&self, y: f32, range: Rect) -> Action {
-        // TODO implement for track
-        // This is a placeholder to satisfy trait
-        Action::SetNotePitchName(PitchName::from((range.bottom() - y) as i32))
-    }
-
-}
