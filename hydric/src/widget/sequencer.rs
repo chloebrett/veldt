@@ -3,8 +3,9 @@ use egui::{
     Color32, CornerRadius, Frame, Pos2, Rect, Response, Sense, Shape, Stroke, Ui, Vec2, Widget,
     emath::RectTransform, pos2, vec2,
 };
+use ordered_float::OrderedFloat;
 use shared::{
-    model::{PitchName, PlacedNote},
+    model::{PitchName, PlacedNote, Track},
     types::PitchValue,
 };
 use state::Action;
@@ -161,4 +162,41 @@ impl SequencerObject<PlacedNote> for PlacedNote {
     fn y_action(&self, y: f32, range: Rect) -> Action {
         Action::SetNotePitchName(PitchName::from((range.bottom() - y) as i32))
     }
+}
+
+impl SequencerObject<Track> for Track {
+    fn to_pos(&self, range: Rect) -> Pos2 {
+        // TODO handling channels. Currently all are at `y=1`.
+        let y = 1.0;
+        let offsets: Vec<OrderedFloat<f32>> = self.notes.iter().map(|note| note.offset).collect();
+        let offset: f32 = offsets.into_iter()
+            .max_by(|x, y| x.cmp(y))
+            .unwrap_or(OrderedFloat(0.0)).into();
+        let x = offset - range.left();
+        pos2(x, y)
+    }
+
+    fn to_rect(&self, range: Rect) -> Rect {
+        let track_pos = self.to_pos(range);
+        let lengths: Vec<OrderedFloat<f32>> = self.notes.iter().map(|note| {
+            note.offset + OrderedFloat(note.note.beats)
+        }).collect();
+        let max_length: f32 = lengths.into_iter()
+            .max_by(|x, y| x.cmp(&y))
+            .unwrap_or(OrderedFloat(1.0)).into();
+        Rect::from_min_size(track_pos, vec2(max_length - track_pos.x, 1.0))
+    } 
+
+    fn x_action(&self, x: f32, range: Rect) -> Action {
+        // TODO implement for track
+        // This is a placeholder to satisfy trait
+        Action::SetNoteOffset(x - range.left())
+    }
+
+    fn y_action(&self, y: f32, range: Rect) -> Action {
+        // TODO implement for track
+        // This is a placeholder to satisfy trait
+        Action::SetNotePitchName(PitchName::from((range.bottom() - y) as i32))
+    }
+
 }

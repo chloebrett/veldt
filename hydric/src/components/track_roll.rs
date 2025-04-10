@@ -1,4 +1,4 @@
-crate::view::View;
+use crate::view::View;
 
 pub struct TrackRoll;
 
@@ -8,6 +8,3 @@ impl TrackRoll {
     }
 }
 
-impl View for TrackRoll {
-
-}
