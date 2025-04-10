@@ -1,9 +1,10 @@
-use crate::model::EqConfig;
+use crate::model::{EqConfig, WaveType};
 use crate::pmodel::{
     CompressorConfigProto, DelayConfigProto, EffectInstanceProto, EffectMetaProto,
-    SimpleCompressorProto, SimpleDelayProto, SimpleEqProto, effect_instance_proto,
+    ModDelayConfigProto, ModDelayProto, SimpleCompressorProto, SimpleDelayProto, SimpleEqProto,
+    effect_instance_proto,
 };
-use crate::types::{KnobPosition, Milliseconds, Volume};
+use crate::types::{Freq, KnobPosition, Milliseconds, Volume};
 use effect_instance_proto::Effect as EffectProto;
 use local_macro::{FromProto, IntoProto};
 
@@ -32,6 +33,9 @@ impl From<EffectProto> for Effect {
             EffectProto::SimpleCompressor(simple_compressor) => Effect::SimpleCompressor {
                 config: simple_compressor.config.unwrap().into(),
             },
+            EffectProto::ModDelay(mod_delay) => Effect::ModDelay {
+                config: mod_delay.config.unwrap().into(),
+            },
         }
     }
 }
@@ -50,6 +54,9 @@ impl From<Effect> for EffectProto {
                     config: Some(config.into()),
                 })
             }
+            Effect::ModDelay { config } => EffectProto::ModDelay(ModDelayProto {
+                config: Some(config.into()),
+            }),
         }
     }
 }
@@ -60,6 +67,8 @@ pub enum Effect {
     // simple as opposed to parametric.
     SimpleEq { config: EqConfig },
     SimpleCompressor { config: CompressorConfig },
+    // Modulated delay, e.g. vibrato, flanger, chorus.
+    ModDelay { config: ModDelayConfig },
 }
 
 #[derive(Clone, Debug, PartialEq, FromProto, IntoProto)]
@@ -74,6 +83,17 @@ pub struct EffectMeta {
 #[derive(Clone, Debug, PartialEq, FromProto, IntoProto)]
 pub struct DelayConfig {
     pub delay_ms: Milliseconds,
+}
+
+/// Modulated delay, e.g. vibrato, flanger, chorus.
+#[derive(Clone, Debug, PartialEq, FromProto, IntoProto)]
+pub struct ModDelayConfig {
+    pub min_depth: u32, // Samples
+    pub max_depth: u32, // Samples
+    pub freq: Freq,     // LFO rate
+    #[proto_enum]
+    pub lfo_type: WaveType,
+    // No support for feedback for now.
 }
 
 #[derive(Clone, Debug, PartialEq, FromProto, IntoProto)]

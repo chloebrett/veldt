@@ -25,6 +25,8 @@ pub enum EqType {
     LinkwitzRileySecondOrderHighPass,
     ParametricSecondOrderNonConstantQ,
     FirstOrderAllPole,
+    LowShelvingFirstOrder,
+    HighShelvingFirstOrder,
 }
 
 #[derive(Clone, Debug, PartialEq, FromProto, IntoProto)]

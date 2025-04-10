@@ -1,7 +1,7 @@
+use super::effect_name;
 use crate::components::WindowState;
 use crate::widget::{FloatRange, checkbox, default_window, knob};
 use egui::Pos2;
-use shared::model::Effect;
 use state::{Action, Selector, Store};
 
 pub fn mixer_control(ctx: &egui::Context, window_state: &mut WindowState, store: &Store) {
@@ -21,12 +21,7 @@ pub fn mixer_control(ctx: &egui::Context, window_state: &mut WindowState, store:
                 let sel = Selector::Effect(mixer_index, effect_index);
 
                 let effect = &mixer.effects[effect_index];
-                let label = match &effect.effect {
-                    Effect::SimpleEq { .. } => "EQ",
-                    Effect::SimpleDelay { .. } => "Delay",
-                    Effect::SimpleCompressor { .. } => "Compressor",
-                };
-                ui.label(label);
+                ui.label(effect_name(&effect.effect));
 
                 let show = &mut window_state.effects[mixer_index][effect_index];
                 let text = if *show { "Hide" } else { "Show" };
@@ -34,7 +29,7 @@ pub fn mixer_control(ctx: &egui::Context, window_state: &mut WindowState, store:
                     *show = !*show;
                 }
 
-                let meta = effect.meta.clone();
+                let meta = &effect.meta;
                 knob(
                     ui,
                     "Wet",
