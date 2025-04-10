@@ -117,7 +117,7 @@ mod tests {
         model::{
             AdsrEnvelope, AntiAliasingMode, DelayConfig, Effect, EffectMeta, EqConfig, EqType,
             GeneratorMeta, GeneratorType, Note, PitchName, PlacedNote, ScaleValue,
-            SimpleWaveConfig, WaveType,
+            SimpleWaveConfig, WaveType, ModDelayConfig,
         },
         testing::proto::proto_testing::assert_proto_round_trip,
     };
@@ -193,6 +193,21 @@ mod tests {
                     EffectInstance {
                         effect: Effect::SimpleDelay {
                             config: DelayConfig { delay_ms: 250.0 },
+                        },
+                        meta: EffectMeta {
+                            id: 1,
+                            wet: 0.5,
+                            mute: false,
+                        },
+                    },
+                    EffectInstance {
+                        effect: Effect::ModDelay {
+                            config: ModDelayConfig {
+                                min_depth: 100,
+                                max_depth: 200,
+                                freq: 10.0,
+                                lfo_type: WaveType::Triangle,
+                            },
                         },
                         meta: EffectMeta {
                             id: 1,
