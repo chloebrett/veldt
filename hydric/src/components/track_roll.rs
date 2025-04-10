@@ -1,7 +1,7 @@
 use egui::{Color32, Pos2, Rect, Ui, pos2, vec2};
 use ordered_float::OrderedFloat;
 use shared::model::Track;
-use state::{Action, Store};
+use state::{Action, Selector, Store};
 
 use crate::{
     view::View,
@@ -20,7 +20,8 @@ impl View for TrackRoll {
     fn ui(&self, store: &Store, ui: &mut Ui) {
         let tracks = store.get().project.tracks.clone();
         let range = Rect::from_min_max(pos2(0.0, 0.0), pos2(16.0, 1.0));
-        let dispatch = |_index: usize, _action: Action| {};
+        let dispatch =
+            |index: usize, action: Action| store.dispatch(&Selector::Track(index), action);
         ui.add(
             Sequencer::new(range, dispatch)
                 .objects(tracks)
@@ -35,12 +36,7 @@ impl SequencerObject<Track> for Track {
     fn to_pos(&self, range: Rect) -> Pos2 {
         // TODO handling multiple channels. Currently all are at `y=0`.
         let y = 0.0;
-        let offsets: Vec<OrderedFloat<f32>> = self.notes.iter().map(|note| note.offset).collect();
-        let offset: f32 = offsets
-            .into_iter()
-            .min_by(|x, y| x.cmp(y))
-            .unwrap_or(OrderedFloat(0.0))
-            .into();
+        let offset: f32 = self.offset.into();
         let x = offset - range.left();
         pos2(x, y)
     }
@@ -62,14 +58,12 @@ impl SequencerObject<Track> for Track {
     }
 
     fn x_action(&self, x: f32, range: Rect) -> Action {
-        // TODO implement for track
-        // This is a placeholder to satisfy trait
-        Action::SetNoteOffset(x - range.left())
+        Action::SetTrackOffset(x - range.left())
     }
 
-    fn y_action(&self, y: f32, _range: Rect) -> Action {
+    fn y_action(&self, _y: f32, _range: Rect) -> Action {
         // TODO implement for track
         // This is a placeholder to satisfy trait
-        Action::SetNoteOffset(y)
+        Action::NonReversible
     }
 }
