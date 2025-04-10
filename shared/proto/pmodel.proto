@@ -80,6 +80,8 @@ message EffectInstanceProto {
     SimpleEqProto simple_eq = 3;
 
     SimpleCompressorProto simple_compressor = 4;
+
+    ModDelayProto mod_delay = 5;
   }
 
 }
@@ -164,6 +166,17 @@ message CompressorConfigProto {
   float gain = 5;
 }
 
+message ModDelayProto {
+  ModDelayConfigProto config = 1;
+}
+
+message ModDelayConfigProto {
+  uint32 min_depth = 1;
+  uint32 max_depth = 2;
+  float freq = 3;
+  WaveTypeProto lfo_type = 4;
+}
+
 enum WaveTypeProto {
   UnknownWaveType = 0;
   SineWaveType = 1;
@@ -223,6 +236,7 @@ enum EqTypeProto {
   LinkwitzRileySecondOrderLowPassEqType = 15;
   LinkwitzRileySecondOrderHighPassEqType = 16;
   FirstOrderAllPoleEqType = 17;
-  LowShelvingFirstOrderEqType = 18;
-  HighShelvingFirstOrderEqType = 19;
+  ParametricSecondOrderNonConstantQEqType = 18;
+  LowShelvingFirstOrderEqType = 19;
+  HighShelvingFirstOrderEqType = 20;
 }

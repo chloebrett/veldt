@@ -1,6 +1,6 @@
 use shared::model::{
-    AdsrEnvelope, AntiAliasingMode, EqType, PlacedNote, Project, Sample, Scale, ScaleValue,
-    TrackId, TrackPlacement, WaveType,
+    AdsrEnvelope, AntiAliasingMode, EqType, PitchName, PlacedNote, Project, Sample, Scale,
+    ScaleValue, TrackId, TrackPlacement, WaveType,
 };
 use shared::types::{Beats, Freq, GainDB, KnobPosition, Milliseconds, Octave, Volume};
 
@@ -38,6 +38,7 @@ pub enum Action {
     // --- NoteSelector ---
     SetNoteScaleValue(ScaleValue),
     SetNoteOctave(Octave),
+    SetNotePitchName(PitchName),
     SetNoteOffset(Beats),
     SetNoteDuration(Beats),
 

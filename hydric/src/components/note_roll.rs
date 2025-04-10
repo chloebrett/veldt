@@ -2,12 +2,17 @@ use state::{Action, Selector, Store};
 
 use egui::{Color32, Pos2, Rect, ScrollArea, Ui, pos2, vec2};
 use shared::{
-    model::{Note, PitchName, PlacedNote, ScaleValue},
+    model::{Note, PitchName, PlacedNote, Scale, ScaleValue},
     types::PitchValue,
 };
 
+use mesic::create_scale_values;
+
 use super::Piano;
-use crate::{view::View, widget::Sequencer};
+use crate::{
+    view::View,
+    widget::{Sequencer, SequencerObject},
+};
 
 pub struct NoteRoll {
     track_index: usize,
@@ -37,6 +42,29 @@ impl NoteRoll {
             bar_length: 4.0,
         }
     }
+
+    fn make_white_note_pattern(&self, max_note: i32) -> impl Fn(i32) -> bool {
+        // Return a pattern for Background Rects to display white notes.
+        // Account for max note changing.
+        let c_value: PitchValue = ScaleValue::C.into();
+        let max_scale_value: PitchValue = PitchName::from(max_note).scale_value.into();
+        let c_delta = c_value - max_scale_value;
+        move |y| {
+            let notes = create_scale_values(Scale::Major, ScaleValue::C);
+            // Return true for notes in C Major (White notes)
+            // Determine if `y` is a white note by checking if the `ScaleValue` of the
+            // note is in the C Major scale where `0 => C`, `1 => CSharp` etc.
+            // Calculate `y` modulo `12` to account for higher values of y (`ScaleValues` are
+            // between 0 and 11).
+            // `y` will start at 0 no matter what the `max_note` is. Account for this by
+            // adding the difference between the C `ScaleValue` and the `max_note` scale so that
+            // `y` will start at the correct `ScaleValue`.
+            // Use the negative of `y + c_delta` as `y` starts from the top of the piano
+            // and moves down and so moves backwards through the scale.
+            let scale_value = ScaleValue::from(((0 - (y + c_delta)) as i32).rem_euclid(12) as i32);
+            notes.contains(&scale_value)
+        }
+    }
 }
 
 impl View for NoteRoll {
@@ -59,11 +87,8 @@ impl View for NoteRoll {
             },
             offset: offset.into(),
         };
-        let note_rects = make_all_note_rects(
-            store.get().project.tracks[track_index].notes.clone(),
-            max_note,
-            offset,
-        );
+        let notes = store.get().project.tracks[track_index].notes.clone();
+        let white_note_pattern = self.make_white_note_pattern(max_note);
         if ui.button("New note").clicked() {
             store.dispatch(&Selector::Track(track_index), Action::AddNote(default_note));
         }
@@ -74,20 +99,15 @@ impl View for NoteRoll {
                     pos2(offset, min_note as f32 - 1.0),
                     pos2(bars * bar_length, max_note as f32),
                 );
-                let dispatch_x = move |sel: &Selector, offset: f32| {
-                    store.dispatch(sel, Action::SetNoteOffset(offset));
-                };
-                let dispatch_y = move |sel: &Selector, pitch_value: f32| {
-                    let pitch_name = PitchName::from(max_note - pitch_value as i32);
-                    store.dispatch(sel, Action::SetNoteOctave(pitch_name.octave));
-                    store.dispatch(sel, Action::SetNoteScaleValue(pitch_name.scale_value));
+                let dispatch = move |note_index: usize, action: Action| {
+                    store.dispatch(&Selector::Note(track_index, note_index), action)
                 };
                 ui.horizontal(|ui| {
                     Piano::new(max_note, min_note - 1).ui(store, ui);
                     ui.add(
-                        Sequencer::new(range, dispatch_x, dispatch_y)
-                            .rects(note_rects)
-                            .horizontal_rects(2.0, Color32::from_white_alpha(4))
+                        Sequencer::new(range, dispatch)
+                            .objects(notes)
+                            .horizontal_rects(white_note_pattern, Color32::from_white_alpha(4))
                             .vertical_bars(bar_length, Color32::from_white_alpha(6))
                             .vertical_bars(1.0, Color32::from_white_alpha(3))
                             .vertical_bars(1.0 / bar_length, Color32::from_white_alpha(1)),
@@ -97,29 +117,26 @@ impl View for NoteRoll {
     }
 }
 
-pub fn note_to_pos(note: &PlacedNote, max_note: i32, project_offset: f32) -> Pos2 {
-    let offset: f32 = note.offset.into();
-    let x = offset - project_offset;
-    let pitch_value: PitchValue = note.note.pitch_name.into();
-    let y = max_note - pitch_value;
-    pos2(x, y as f32)
-}
+impl SequencerObject<PlacedNote> for PlacedNote {
+    fn to_pos(&self, range: Rect) -> Pos2 {
+        let offset: f32 = self.offset.into();
+        let x = offset - range.left();
+        let pitch_value: PitchValue = self.note.pitch_name.into();
+        let y = range.bottom() as i32 - pitch_value;
+        pos2(x, y as f32)
+    }
 
-pub fn make_note_rect(note: &PlacedNote, note_pos: Pos2) -> Rect {
-    let note_size = vec2(note.note.beats, 1.0);
-    Rect::from_min_size(note_pos, note_size)
-}
+    fn to_rect(&self, range: Rect) -> Rect {
+        let pos = self.to_pos(range);
+        let note_size = vec2(self.note.beats, 1.0);
+        Rect::from_min_size(pos, note_size)
+    }
 
-pub fn make_all_note_rects(
-    notes: Vec<PlacedNote>,
-    max_note: i32,
-    project_offset: f32,
-) -> Vec<Rect> {
-    notes
-        .iter()
-        .map(|note| {
-            let note_pos = note_to_pos(note, max_note, project_offset);
-            make_note_rect(note, note_pos)
-        })
-        .collect()
+    fn x_action(&self, x: f32, range: Rect) -> Action {
+        Action::SetNoteOffset(x - range.left())
+    }
+
+    fn y_action(&self, y: f32, range: Rect) -> Action {
+        Action::SetNotePitchName(PitchName::from((range.bottom() - y) as i32))
+    }
 }

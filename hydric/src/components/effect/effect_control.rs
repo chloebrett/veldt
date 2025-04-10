@@ -5,6 +5,15 @@ use egui::Pos2;
 use shared::model::Effect;
 use state::{Action, Selector, Store};
 
+pub fn effect_name(effect: &Effect) -> &str {
+    match effect {
+        Effect::SimpleEq { .. } => "EQ",
+        Effect::SimpleDelay { .. } => "Delay",
+        Effect::SimpleCompressor { .. } => "Compressor",
+        Effect::ModDelay { .. } => "Modulated Delay",
+    }
+}
+
 pub fn effect_control(
     ctx: &egui::Context,
     window_state: &mut WindowState,
@@ -14,13 +23,8 @@ pub fn effect_control(
 ) {
     let sel = Selector::Effect(mixer_index, effect_index);
     let dispatch = |action| store.dispatch(&sel, action);
-    let effect = store.get().project.mixer[mixer_index].effects[effect_index].clone();
-
-    let title = match effect.effect {
-        Effect::SimpleEq { .. } => "EQ",
-        Effect::SimpleDelay { .. } => "Delay",
-        Effect::SimpleCompressor { .. } => "Compressor",
-    };
+    let effect = &store.get().project.mixer[mixer_index].effects[effect_index];
+    let title = effect_name(&effect.effect);
 
     default_window(title)
         .id(format!("effects_{mixer_index}_{effect_index}").into())
@@ -30,13 +34,14 @@ pub fn effect_control(
         })
         .open(&mut window_state.effects[mixer_index][effect_index])
         .show(ctx, |ui| {
-            match effect.effect {
-                Effect::SimpleEq { config } => eq_control(&config, dispatch, ui),
-                Effect::SimpleDelay { config } => delay_control(&config, dispatch, ui),
-                Effect::SimpleCompressor { config } => compressor_control(&config, dispatch, ui),
+            match &effect.effect {
+                Effect::SimpleEq { config } => eq_control(config, dispatch, ui),
+                Effect::SimpleDelay { config } => delay_control(config, dispatch, ui),
+                Effect::SimpleCompressor { config } => compressor_control(config, dispatch, ui),
+                Effect::ModDelay { .. } => todo!(),
             }
 
-            let meta = effect.meta;
+            let meta = &effect.meta;
             knob(
                 ui,
                 "Wet",
