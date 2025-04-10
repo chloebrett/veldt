@@ -36,7 +36,13 @@ impl SequencerObject<Track> for Track {
     fn to_pos(&self, range: Rect) -> Pos2 {
         // TODO handling multiple channels. Currently all are at `y=0`.
         let y = 0.0;
-        let offset: f32 = self.offset.into();
+        let note_offsets: Vec<OrderedFloat<f32>> =
+            self.notes.iter().map(|note| note.offset).collect();
+        let min_note_offset = note_offsets
+            .into_iter()
+            .min_by(|x, y| x.cmp(&y))
+            .unwrap_or(self.offset);
+        let offset: f32 = self.offset.min(min_note_offset).into();
         let x = offset - range.left();
         pos2(x, y)
     }
