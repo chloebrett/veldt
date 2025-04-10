@@ -28,13 +28,11 @@ pub fn shelf_first_order(config: &EqConfig, low_high: LowHigh) -> FirstOrderFilt
         LowHigh::Low => low_frac,
         LowHigh::High => -high_frac,
     };
-    let a2: f32 = 0.0;
     let b1: f32 = -gamma;
-    let b2: f32 = 0.0;
-    
+
     // TODO: add support for wet/dry to first-order filters
     // let c0: f32 = mu - 1.0;
     // let d0: f32 = 1.0;
 
-    FirstOrderFilter::new(FirstOrderFilterConfig { a0, a1, a2, b1, b2 })
+    FirstOrderFilter::new(FirstOrderFilterConfig { a0, a1, b1 })
 }
