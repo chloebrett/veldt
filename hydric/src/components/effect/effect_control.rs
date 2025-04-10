@@ -1,9 +1,9 @@
-use super::{compressor_control::compressor_control, delay_control, eq_control};
+use super::{compressor_control::compressor_control, delay_control, eq_control, mod_delay_control};
 use crate::components::WindowState;
-use crate::widget::{FloatRange, checkbox, default_window, knob};
+use crate::widget::default_window;
 use egui::Pos2;
 use shared::model::Effect;
-use state::{Action, Selector, Store};
+use state::{Selector, Store};
 
 pub fn effect_name(effect: &Effect) -> &str {
     match effect {
@@ -38,23 +38,8 @@ pub fn effect_control(
                 Effect::SimpleEq { config } => eq_control(config, dispatch, ui),
                 Effect::SimpleDelay { config } => delay_control(config, dispatch, ui),
                 Effect::SimpleCompressor { config } => compressor_control(config, dispatch, ui),
-                Effect::ModDelay { .. } => todo!(),
+                Effect::ModDelay { config } => mod_delay_control(config, dispatch, ui),
             }
-
-            let meta = &effect.meta;
-            knob(
-                ui,
-                "Wet",
-                meta.wet,
-                |it| dispatch(Action::SetEffectWet(it)),
-                FloatRange(0.0, 1.0),
-            );
-            checkbox(
-                ui,
-                meta.mute,
-                |it| dispatch(Action::SetEffectMute(it)),
-                "Mute",
-            );
 
             ui.separator();
             ui.label(format!(
