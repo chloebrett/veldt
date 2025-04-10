@@ -79,7 +79,7 @@ impl LoadProject for SaveLoadContext {
 mod tests {
     use std::collections::HashSet;
 
-    use shared::model::Project;
+    use shared::model::ModMatrix;
 
     use super::*;
 
@@ -92,6 +92,7 @@ mod tests {
             generators: vec![],
             mixer: vec![],
             bpm: 120.0,
+            mod_matrix: ModMatrix::default(),
         }
     }
 
@@ -194,6 +195,7 @@ mod tests {
             generators: vec![],
             mixer: vec![],
             bpm: 120.0,
+            mod_matrix: ModMatrix::default(),
         };
         let project_2 = Project {
             name: project_name.into(),
@@ -203,6 +205,7 @@ mod tests {
             generators: vec![],
             mixer: vec![],
             bpm: 60.0,
+            mod_matrix: ModMatrix::default(),
         };
         let save_request_1 = tonic::Request::new(SaveProjectRequest {
             name: project_name.into(),
