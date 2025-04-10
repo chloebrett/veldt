@@ -79,5 +79,8 @@ pub fn effect_reducer(effect: &mut EffectInstance, action: &Action) -> Action {
             }
             _ => Action::NonReversible,
         },
+        Effect::ModDelay { .. } => match action {
+            _ => Action::NonReversible,
+        },
     }
 }

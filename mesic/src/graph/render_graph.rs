@@ -53,6 +53,7 @@ impl RenderGraph {
                 BoxedNodeSend::new(new_delay_node(delay_samples))
             }
             Effect::SimpleCompressor { config } => BoxedNodeSend::new(CompressorNode::new(config)),
+            Effect::ModDelay { .. } => todo!(),
         };
         let mixer_node = MixerNode {
             wet: effect.meta.wet,
