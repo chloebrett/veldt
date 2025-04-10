@@ -23,6 +23,9 @@ pub fn track_reducer(track: &mut Track, action: &Action) -> Action {
         }
         Action::SetTrackOffset(offset) => {
             let prev = track.offset;
+            for note in track.notes.iter_mut() {
+                note.offset += *offset-*prev;
+            }
             track.offset = OrderedFloat(*offset);
             Action::SetTrackOffset(*prev)
         }
