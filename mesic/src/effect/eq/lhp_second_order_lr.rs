@@ -27,5 +27,13 @@ pub fn lhp_second_order_lr(config: &EqConfig, low_high: LowHigh) -> SecondOrderF
     let b1: f32 = (2.0 * (omega2 - kappa2)) * delta_reciprocal;
     let b2: f32 = (-2.0 * kappa * omega + kappa2 + omega2) * delta_reciprocal;
 
-    SecondOrderFilter::new(SecondOrderFilterConfig { a0, a1, a2, b1, b2 })
+    SecondOrderFilter::new(SecondOrderFilterConfig {
+        a0,
+        a1,
+        a2,
+        b1,
+        b2,
+        c0: 1.0,
+        d0: 0.0,
+    })
 }
