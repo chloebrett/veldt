@@ -17,6 +17,16 @@ message ProjectProto {
   repeated MixerChannelProto mixer = 6;
 
   float bpm = 7;
+
+  ModMatrixProto mod_matrix = 8;
+}
+
+message ModMatrixProto {
+  uint32 rows = 1;
+
+  uint32 cols = 2;
+
+  repeated float matrix = 3;
 }
 
 message TrackProto {

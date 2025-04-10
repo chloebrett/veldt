@@ -18,6 +18,16 @@ fn extract_tag(field: &Field) -> Tag {
     let mut tag = Tag::NoTag;
     for attr in &field.attrs {
         // if tagged with proto_type_u32, then set "as <type>" for the model type.
+        if attr.path().is_ident("proto_type_u8") {
+            if let Type::Path(ty) = &field.ty {
+                tag = Tag::AsType {
+                    proto_type: format_ident!("{}", "u8"),
+                    model_type: ty.path.get_ident().unwrap().clone(),
+                };
+            }
+        }
+
+        // if tagged with proto_type_u32, then set "as <type>" for the model type.
         if attr.path().is_ident("proto_type_u32") {
             if let Type::Path(ty) = &field.ty {
                 tag = Tag::AsType {
@@ -47,7 +57,7 @@ fn extract_tag(field: &Field) -> Tag {
 
 #[proc_macro_derive(
     FromProto,
-    attributes(proto_type_u32, proto_optional, proto_enum, proto_repeated)
+    attributes(proto_type_u8, proto_type_u32, proto_optional, proto_enum, proto_repeated)
 )]
 pub fn derive_from_proto(input: TokenStream) -> TokenStream {
     let input = parse_macro_input!(input as DeriveInput);
@@ -120,7 +130,7 @@ pub fn derive_from_proto(input: TokenStream) -> TokenStream {
 
 #[proc_macro_derive(
     IntoProto,
-    attributes(proto_type_u32, proto_optional, proto_enum, proto_repeated)
+    attributes(proto_type_u8, proto_type_u32, proto_optional, proto_enum, proto_repeated)
 )]
 pub fn derive_into_proto(input: TokenStream) -> TokenStream {
     let input = parse_macro_input!(input as DeriveInput);
