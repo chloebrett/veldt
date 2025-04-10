@@ -23,6 +23,7 @@ pub fn track_reducer(track: &mut Track, action: &Action) -> Action {
         }
         Action::SetTrackOffset(offset) => {
             let prev = track.offset;
+            // Update note offset based on track offset.
             for note in track.notes.iter_mut() {
                 note.offset += *offset - *prev;
             }

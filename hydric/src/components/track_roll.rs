@@ -36,6 +36,8 @@ impl SequencerObject<Track> for Track {
     fn to_pos(&self, range: Rect) -> Pos2 {
         // TODO handling multiple channels. Currently all are at `y=0`.
         let y = 0.0;
+        // Account for notes less than track offset.
+        // If this is the case track offset will update each frame in `x_dispatch`
         let note_offsets: Vec<OrderedFloat<f32>> =
             self.notes.iter().map(|note| note.offset).collect();
         let min_note_offset = note_offsets
