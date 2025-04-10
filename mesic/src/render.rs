@@ -8,9 +8,9 @@ pub fn render(project: &Project) -> RenderGraph {
 
     // Offset note offsets by track offset
     for note in track.notes.iter_mut() {
-        note.offset += track.offset 
-    };
-    
+        note.offset += track.offset
+    }
+
     let bpm = project.bpm;
 
     // Work out how many samples the graph needs to render.
