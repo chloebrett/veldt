@@ -91,7 +91,8 @@ impl<T: SequencerObject<T>, F: Fn(usize, Action)> Sequencer<T, F> {
         if let Some(pos) = drag_pos {
             let scaled_pos = pos.transform(sequencer_transform.inverse()).clamp(
                 pos2(0.0, 0.0),
-                (self.range.size() - vec2(0.0, 1.0)).to_pos2(),
+                // Ensure entire rect stays on sequencer.
+                (self.range.size() - vec2(rect.size().x, 1.0)).to_pos2(),
             );
             if drag_delta != Vec2::ZERO {
                 if drag_delta.x != 0.0 {
