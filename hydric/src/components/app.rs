@@ -1,5 +1,13 @@
 use super::{
-    effect::{effect_control, mixer_control}, generator::{envelope_control, generator_control, generators_control}, key_control::KeyControl, load_control, note_roll::NoteRoll, play::{play_control, sample_control}, save_button, toggle_window_panel, track_control, track_placement_control, track_roll::TrackRoll, undo_redo_control
+    effect::{effect_control, mixer_control},
+    generator::{envelope_control, generator_control, generators_control},
+    key_control::KeyControl,
+    load_control,
+    note_roll::NoteRoll,
+    play::{play_control, sample_control},
+    save_button, toggle_window_panel, track_control, track_placement_control,
+    track_roll::TrackRoll,
+    undo_redo_control,
 };
 use crate::widget::{FloatRange, default_window, knob, string_observer};
 use crate::{audio_player::Handle, promise::AsyncResult, view::View};

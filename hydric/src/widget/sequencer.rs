@@ -33,7 +33,7 @@ impl<T: SequencerObject<T>, F: Fn(usize, Action)> Sequencer<T, F> {
         self
     }
 
-    pub fn size(mut self, size: vec2) -> Self {
+    pub fn size(mut self, size: Vec2) -> Self {
         self.size = size;
         self
     }
@@ -130,7 +130,10 @@ impl<T: SequencerObject<T>, F: Fn(usize, Action)> Widget for Sequencer<T, F> {
                     Shape::rect_filled(object.to_rect(range), CornerRadius::same(1), Color32::WHITE)
                 })
                 .collect();
-            logger::log(&format!("{:?}", shapes.clone().transform(sequencer_transform)));
+            logger::log(&format!(
+                "{:?}",
+                shapes.clone().transform(sequencer_transform)
+            ));
             painter.extend(background_shapes.clone().transform(sequencer_transform));
             painter.extend(shapes.transform(sequencer_transform))
         });
@@ -148,4 +151,3 @@ pub trait SequencerObject<T> {
 
     fn y_action(&self, y: f32, range: Rect) -> Action;
 }
-
