@@ -86,6 +86,7 @@ impl<T: SequencerObject<T>, F: Fn(usize, Action)> Sequencer<T, F> {
     ) {
         let id = response.id.with(object_index);
         let rect = object.to_rect(self.range);
+        logger::log(&format!("{:?}", rect));
         let rect_response = ui.interact(rect.transform(*sequencer_transform), id, self.sense);
         let drag_pos = rect_response.interact_pointer_pos();
         let drag_delta = rect_response.drag_delta();
@@ -130,10 +131,6 @@ impl<T: SequencerObject<T>, F: Fn(usize, Action)> Widget for Sequencer<T, F> {
                     Shape::rect_filled(object.to_rect(range), CornerRadius::same(1), Color32::WHITE)
                 })
                 .collect();
-            logger::log(&format!(
-                "{:?}",
-                shapes.clone().transform(sequencer_transform)
-            ));
             painter.extend(background_shapes.clone().transform(sequencer_transform));
             painter.extend(shapes.transform(sequencer_transform))
         });
