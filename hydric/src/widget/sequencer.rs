@@ -32,6 +32,11 @@ impl<T: SequencerObject<T>, F: Fn(usize, Action)> Sequencer<T, F> {
         self
     }
 
+    pub fn size(mut self, size: Vec2) -> Self {
+        self.size = size;
+        self
+    }
+
     #[inline]
     pub fn vertical_bars(mut self, increment: f32, colour: Color32) -> Self {
         let steps = (self.range.size().x / increment) as i32;

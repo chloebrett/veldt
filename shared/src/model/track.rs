@@ -10,6 +10,7 @@ pub struct Track {
     /// Ordered by offset.
     #[proto_repeated]
     pub notes: Vec<PlacedNote>,
+    pub offset: OrderedFloat<Beats>,
 }
 
 /// Ordered by offset.

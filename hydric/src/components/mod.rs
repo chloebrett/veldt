@@ -8,6 +8,7 @@ mod play;
 mod save_control;
 mod track_control;
 mod track_placement_control;
+mod track_roll;
 mod undo_redo;
 mod window_toggle;
 
