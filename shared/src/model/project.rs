@@ -1,5 +1,5 @@
 use crate::bytes::{as_bytes, as_floats};
-use crate::model::{EffectInstance, GeneratorInstance, Track};
+use crate::model::{EffectInstance, GeneratorInstance, ModMatrix, Track};
 use crate::pmodel::*;
 use crate::types::Beats;
 use local_macro::{FromProto, IntoProto};
@@ -30,6 +30,9 @@ pub struct Project {
     pub mixer: Vec<MixerChannel>,
 
     pub bpm: Beats,
+
+    #[proto_optional]
+    pub mod_matrix: ModMatrix,
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -140,6 +143,7 @@ mod tests {
                     },
                     offset: OrderedFloat(0.0),
                 }],
+                offset: OrderedFloat(0.0),
             }],
             track_placements: vec![TrackPlacement {
                 track_id: 3,
@@ -218,6 +222,7 @@ mod tests {
                 ],
             }],
             bpm: 120.0,
+            mod_matrix: ModMatrix::default(),
         };
         assert_proto_round_trip::<Project, ProjectProto>(project);
     }

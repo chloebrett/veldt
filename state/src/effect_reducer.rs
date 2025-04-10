@@ -1,6 +1,7 @@
 use crate::Action;
 use shared::logger::log;
 use shared::model::{Effect, EffectInstance};
+use std::cmp::{max, min};
 
 pub fn effect_reducer(effect: &mut EffectInstance, action: &Action) -> Action {
     log(&format!("effect_reducer processing: {:?}", action.clone()));
@@ -79,8 +80,30 @@ pub fn effect_reducer(effect: &mut EffectInstance, action: &Action) -> Action {
             }
             _ => Action::NonReversible,
         },
-        Effect::ModDelay { .. } => match action {
-            _ => Action::NonReversible,
+        Effect::ModDelay { config } => match action {
+            Action::SetModDelayMinDepth(min_depth) => {
+                let prev = config.min_depth;
+                // Prevent min_depth from going above max_depth.
+                config.min_depth = min(*min_depth, config.max_depth);
+                Action::SetModDelayMinDepth(prev)
+            }
+            Action::SetModDelayMaxDepth(max_depth) => {
+                let prev = config.max_depth;
+                // Prevent max_depth from going below min_depth.
+                config.max_depth = max(*max_depth, config.min_depth);
+                Action::SetModDelayMaxDepth(prev)
+            }
+            Action::SetModDelayLfoFreq(freq) => {
+                let prev = config.freq;
+                config.freq = *freq;
+                Action::SetModDelayLfoFreq(prev)
+            }
+            Action::SetModDelayLfoType(lfo_type) => {
+                let prev = config.lfo_type;
+                config.lfo_type = *lfo_type;
+                Action::SetModDelayLfoType(prev)
+            }
+            _ => todo!(),
         },
     }
 }

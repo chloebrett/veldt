@@ -34,6 +34,7 @@ pub enum Action {
         note_index: usize,
     },
     AddNote(PlacedNote),
+    SetTrackOffset(Beats),
 
     // --- NoteSelector ---
     SetNoteScaleValue(ScaleValue),
@@ -69,6 +70,10 @@ pub enum Action {
     SetCompressorReleaseMs(Milliseconds),
     SetCompressorRatio(KnobPosition),
     SetCompressorGain(Volume),
+    SetModDelayMinDepth(u32),
+    SetModDelayMaxDepth(u32),
+    SetModDelayLfoFreq(f32),
+    SetModDelayLfoType(WaveType),
 
     // --- TrackPlacementSelector ---
     SetTrackPlacementTrackId(TrackId),
