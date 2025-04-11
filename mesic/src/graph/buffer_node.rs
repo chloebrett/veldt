@@ -1,3 +1,4 @@
+use super::extract_outputs;
 use dasp_graph::{Buffer, Input, Node};
 use std::cmp::min;
 
@@ -10,6 +11,21 @@ pub struct BufferNode {
 impl BufferNode {
     fn _reset(&mut self) {
         self.index = 0;
+    }
+
+    fn process_channel(&self, out: &mut Buffer) {
+        let start_index = self.index;
+        let end_index = min(start_index + Buffer::LEN, self.buffer.len());
+        let size = end_index - start_index;
+
+        if size == Buffer::LEN {
+            out.copy_from_slice(&self.buffer[start_index..end_index]);
+            return;
+        }
+
+        for i in 0..size {
+            out[i] = self.buffer[start_index + i];
+        }
     }
 }
 
@@ -24,20 +40,11 @@ impl From<Vec<f32>> for BufferNode {
 
 impl Node for BufferNode {
     fn process(&mut self, _inputs: &[Input], output: &mut [Buffer]) {
-        for out_buf in output {
-            let start_index = self.index;
-            let end_index = min(start_index + Buffer::LEN, self.buffer.len());
-            let size = end_index - start_index;
+        let (out_left, out_right) = extract_outputs(output);
 
-            if size == Buffer::LEN {
-                out_buf.copy_from_slice(&self.buffer[start_index..end_index]);
-                continue;
-            }
+        self.process_channel(out_left);
+        self.process_channel(out_right);
 
-            for i in 0..size {
-                out_buf[i] = self.buffer[start_index + i];
-            }
-        }
         self.index += Buffer::LEN;
     }
 }

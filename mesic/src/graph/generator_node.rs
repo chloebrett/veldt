@@ -19,6 +19,13 @@ impl GeneratorNode {
             sample_index: 0,
         }
     }
+
+    fn apply_volume_and_pan(&self, buffer: &mut Buffer, channel_index: usize) {
+        let pan_mult = pan_multipliers(self.instance.meta.pan)[channel_index];
+        for x in buffer.iter_mut() {
+            *x *= pan_mult * self.instance.meta.volume;
+        }
+    }
 }
 
 impl Node for GeneratorNode {
@@ -66,15 +73,6 @@ impl Node for GeneratorNode {
             self.apply_volume_and_pan(out_buf, channel_index);
         }
         self.sample_index += Buffer::LEN as u32;
-    }
-}
-
-impl GeneratorNode {
-    fn apply_volume_and_pan(&self, buffer: &mut Buffer, channel_index: usize) {
-        let pan_mult = pan_multipliers(self.instance.meta.pan)[channel_index];
-        for x in buffer.iter_mut() {
-            *x *= pan_mult * self.instance.meta.volume;
-        }
     }
 }
 

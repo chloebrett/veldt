@@ -1,3 +1,4 @@
+use super::{extract_inputs_2, extract_outputs};
 use dasp_graph::{Buffer, Input, Node};
 use shared::types::KnobPosition;
 
@@ -12,36 +13,30 @@ pub struct MixerNode {
     pub mute: bool,
 }
 
+impl MixerNode {
+    fn process_channel(&self, out: &mut Buffer, dry: &Buffer, wet: &Buffer) {
+        let d = 1.0 - self.wet;
+
+        if self.mute {
+            // TODO: make muting an effect temporarily short circuit it in the graph, so that
+            // it doesn't run at all.
+            out.copy_from_slice(dry);
+        } else {
+            for i in 0..Buffer::LEN {
+                out[i] = dry[i] * d + wet[i] * self.wet;
+            }
+        }
+    }
+}
+
 impl Node for MixerNode {
     fn process(&mut self, inputs: &[Input], output: &mut [Buffer]) {
         debug_assert!(self.wet >= 0.0 && self.wet <= 1.0);
 
-        let dry = 1.0 - self.wet;
+        let (out_left, out_right) = extract_outputs(output);
+        let [(dry_left, dry_right), (wet_left, wet_right)] = extract_inputs_2(inputs);
 
-        for ((out_buf, dry_buf), wet_buf) in output
-            .iter_mut()
-            .zip(
-                inputs
-                    .first()
-                    .expect("Expected a dry signal as the first input")
-                    .buffers(),
-            )
-            .zip(
-                inputs
-                    .get(1)
-                    .expect("Expected a wet signal as the second input")
-                    .buffers(),
-            )
-        {
-            if self.mute {
-                // TODO: make muting an effect temporarily short circuit it in the graph, so that
-                // it doesn't run at all.
-                out_buf.copy_from_slice(dry_buf);
-            } else {
-                for i in 0..Buffer::LEN {
-                    out_buf[i] = dry_buf[i] * dry + wet_buf[i] * self.wet;
-                }
-            }
-        }
+        self.process_channel(out_left, dry_left, wet_left);
+        self.process_channel(out_right, dry_right, wet_right);
     }
 }
