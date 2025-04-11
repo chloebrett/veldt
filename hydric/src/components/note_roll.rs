@@ -139,4 +139,9 @@ impl SequencerObject<PlacedNote> for PlacedNote {
     fn y_action(&self, y: f32, range: Rect) -> Action {
         Action::SetNotePitchName(PitchName::from((range.bottom() - y) as i32))
     }
+
+    fn resize_action(&self, x: f32, _range: Rect) -> Action {
+        let beats = x - *self.offset;
+        Action::SetNoteDuration(beats)
+    }
 }
