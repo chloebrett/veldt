@@ -37,25 +37,34 @@ pub fn make_processor() -> Processor {
     Processor::with_capacity(MAX_NODES)
 }
 
-/// Extracts the channels out of an input array and output buffer array.
-/// Returns:
-/// (left_out, left_in, right_out, right_in)
-/// Panics if there aren't enough inputs/outputs.
-fn dual_channel<'a>(
-    inputs: &'a [Input],
-    output: &'a mut [Buffer],
-) -> (&'a mut Buffer, &'a Buffer, &'a mut Buffer, &'a Buffer) {
-    let mut input = inputs
-        .first()
-        .expect("Expected one set of input channels")
-        .buffers()
-        .iter();
+/// Extracts left/right outputs from an outputs slice.
+/// Panics if there aren't enough channels.
+fn extract_outputs<'a>(output: &'a mut [Buffer]) -> (&'a mut Buffer, &'a mut Buffer) {
     let output = &mut output.iter_mut();
+    let left = output.next().expect("Expected left output");
+    let right = output.next().expect("Expected right output");
+    (left, right)
+}
 
-    let left_out = output.next().expect("Expected left output");
-    let left_in = input.next().expect("Expected left input");
-    let right_out = output.next().expect("Expected right output");
-    let right_in = input.next().expect("Expected right input");
+/// Extracts left/right inputs from an inputs slice.
+/// Panics if there aren't enough channels for any of the inputs.
+fn extract_inputs<'a>(input: &'a [Input]) -> Vec<(&'a Buffer, &'a Buffer)> {
+    input
+        .iter()
+        .map(|input| {
+            let mut input = input.buffers().iter();
 
-    (left_out, left_in, right_out, right_in)
+            let left = input.next().expect("Expected left input");
+            let right = input.next().expect("Expected right input");
+
+            (left, right)
+        })
+        .collect()
+}
+
+/// Extracts exactly two sets of input channels.
+fn extract_inputs_2<'a>(input: &'a [Input]) -> [(&'a Buffer, &'a Buffer); 2] {
+    debug_assert!(input.len() >= 2);
+    let x = extract_inputs(input);
+    [x[0], x[1]]
 }

@@ -1,4 +1,4 @@
-use super::dual_channel;
+use super::{extract_inputs, extract_outputs};
 use crate::consts::SAMPLE_RATE_RECIP;
 use crate::wave::make_wave;
 use dasp_graph::{Buffer, Input, Node};
@@ -55,7 +55,8 @@ impl ModDelayNode {
 
 impl Node for ModDelayNode {
     fn process(&mut self, inputs: &[Input], output: &mut [Buffer]) {
-        let (left_out, left_in, right_out, right_in) = dual_channel(inputs, output);
+        let (left_out, right_out) = extract_outputs(output);
+        let (left_in, right_in) = extract_inputs(inputs)[0];
 
         self.apply(left_out, left_in, /* channel_index= */ 0);
         self.apply(right_out, right_in, /* channel_index= */ 1);
