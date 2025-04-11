@@ -25,7 +25,7 @@ pub fn render(project: &Project) -> RenderGraph {
     // Create a generator node, and create a render graph that uses it as the starting point.
     let mut graph = make_graph();
     let generator_node = GeneratorNode::new(project.generators[0].clone(), track, bpm);
-    let generator_node_index = graph.add_node(NodeData::new1(BoxedNodeSend::new(generator_node)));
+    let generator_node_index = graph.add_node(NodeData::new2(BoxedNodeSend::new(generator_node)));
     let mut render_graph = RenderGraph::new(graph, track_samples, generator_node_index);
 
     // Apply effects.

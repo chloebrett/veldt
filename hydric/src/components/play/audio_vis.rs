@@ -35,7 +35,7 @@ pub fn audio_vis(audio_state: &AudioState, ui: &mut Ui) {
         let points: Vec<_> = averages
             .iter()
             .enumerate()
-            .map(|(x, sample)| pos2(x as f32 / canvas_size.x, *sample))
+            .map(|(x, sample)| pos2(x as f32 / canvas_size.x, sample.clamp(-1.0, 1.0)))
             .collect();
 
         let thickness = 1.0;

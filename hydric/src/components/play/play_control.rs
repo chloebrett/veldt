@@ -25,6 +25,7 @@ pub fn play_control(
     }
     poll(&mut async_state.server_render, |audio: &Vec<f32>| {
         let volume = store.get().volume;
+        // TODO: visualise both channels, not just the left.
         audio_state.audio = audio.to_vec();
         let mut graph = RenderGraph::from_vec(audio_state.audio.clone());
         graph.add_node(AmpNode {

@@ -28,18 +28,16 @@ pub fn freq(pitch_name: PitchName) -> Freq {
     REFERENCE_PITCH.frequency * SEMITONE_FREQ.powf(interval as f32)
 }
 
-pub fn polyphonic_wave(
+pub fn unison_wave(
     pitch_name: &PitchName,
     beats: Beats,
     bpm: Beats,
-    volume: f32,
     config: &SimpleWaveConfig,
     start_index: i32, // allows starting the wave in the middle. Can be negative - if it is, then
                       // -x will return x samples of silence before starting the wave.
 ) -> Buffer {
     let detune = config.detune_cents;
     let osc_count = config.osc_count;
-    let partial_volume = volume / (osc_count as f32);
 
     let detune_amounts = linspace(-detune, detune, osc_count);
 
@@ -50,7 +48,6 @@ pub fn polyphonic_wave(
                 pitch_name,
                 beats,
                 bpm,
-                partial_volume,
                 &config.envelope,
                 config.wave,
                 config.anti_aliasing_mode,
@@ -67,7 +64,6 @@ fn wave(
     pitch_name: &PitchName,
     beats: Beats,
     bpm: Beats,
-    volume: f32,
     envelope: &AdsrEnvelope,
     wave_type: WaveType,
     anti_aliasing_mode: AntiAliasingMode,
@@ -86,7 +82,6 @@ fn wave(
                 return 0.0;
             }
             make_wave(x as f32 * step, wave_type, wave_freq, anti_aliasing_mode)
-                * volume
                 * apply_envelope(x as f32, envelope, beats, bpm)
         })
         .collect();

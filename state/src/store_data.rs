@@ -56,6 +56,7 @@ impl Default for StoreData {
                     meta: GeneratorMeta {
                         volume: 1.0,
                         mute: false,
+                        pan: 0.0,
                     },
                 }],
                 mixer: vec![MixerChannel {

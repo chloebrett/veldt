@@ -4,7 +4,7 @@ use crate::pmodel::{
     NoiseProto, NoiseTypeProto, SimpleWaveConfigProto, SimpleWaveProto,
     generator_instance_proto::Kind as GeneratorTypeProto,
 };
-use crate::types::Volume;
+use crate::types::{KnobPosition, Volume};
 use local_macro::{FromProto, IntoProto};
 use strum::{Display, EnumIter, EnumString};
 
@@ -107,5 +107,6 @@ pub struct GeneratorMeta {
     pub volume: Volume,
 
     pub mute: bool,
-    // TODO: pan
+
+    pub pan: KnobPosition,
 }
