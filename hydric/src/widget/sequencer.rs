@@ -92,12 +92,15 @@ impl<T: SequencerObject<T>, F: Fn(usize, Action)> Sequencer<T, F> {
         if let Some(drag_pos) = drag_pos {
             // 'y' moves in increments and should update to to wherever the mouse is while dragging.
             // 'x' moves continiously and so move based on the drag detla.
-            let scaled_pos = pos2(next_rect_pos.x, drag_pos.y).transform(sequencer_transform.inverse()).clamp(
-                pos2(0.0, 0.0),
-                // Ensure entire rect stays on sequencer.
-                (self.range.size() - vec2(rect.size().x, 1.0)).to_pos2(),
-            );
-            if drag_delta != Vec2::ZERO { if drag_delta.x != 0.0 {
+            let scaled_pos = pos2(next_rect_pos.x, drag_pos.y)
+                .transform(sequencer_transform.inverse())
+                .clamp(
+                    pos2(0.0, 0.0),
+                    // Ensure entire rect stays on sequencer.
+                    (self.range.size() - vec2(rect.size().x, 1.0)).to_pos2(),
+                );
+            if drag_delta != Vec2::ZERO {
+                if drag_delta.x != 0.0 {
                     (self.dispatch)(object_index, object.x_action(scaled_pos.x, self.range))
                 };
                 if drag_delta.y != 0.0 {
