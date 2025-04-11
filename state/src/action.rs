@@ -1,6 +1,6 @@
 use shared::model::{
-    AdsrEnvelope, AntiAliasingMode, EqType, PitchName, PlacedNote, Project, Sample, Scale,
-    ScaleValue, TrackId, TrackPlacement, WaveType,
+    AdsrEnvelope, AntiAliasingMode, EffectInstance, EqType, PitchName, PlacedNote, Project, Sample,
+    Scale, ScaleValue, TrackId, TrackPlacement, WaveType,
 };
 use shared::types::{Beats, Freq, GainDB, KnobPosition, Milliseconds, Octave, Volume};
 
@@ -57,6 +57,8 @@ pub enum Action {
     // --- MixerSelector ---
     MoveEffectUp(/* effect_index= */ usize),
     MoveEffectDown(/* effect_index= */ usize),
+    DeleteEffect(/* effect_index= */ usize),
+    AddEffect(EffectInstance),
 
     // --- EffectSelector ---
     SetDelayMs(Milliseconds),

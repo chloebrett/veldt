@@ -36,3 +36,14 @@ pub struct EqConfig {
 
     pub q: KnobPosition,
 }
+
+impl Default for EqConfig {
+    fn default() -> Self {
+        EqConfig {
+            kind: EqType::ParametricSecondOrderNonConstantQ,
+            fc: 1000.0,
+            gain: 0.0,
+            q: 1.0,
+        }
+    }
+}
