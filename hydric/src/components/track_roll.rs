@@ -36,8 +36,7 @@ impl SequencerObject<Track> for Track {
     fn to_pos(&self, range: Rect) -> Pos2 {
         // TODO handling multiple channels. Currently all are at `y=0`.
         let y = 0.0;
-        let offset: f32 = self.offset.into();
-        let x = offset - range.left();
+        let x = *self.offset - range.left();
         pos2(x, y)
     }
 
@@ -53,7 +52,7 @@ impl SequencerObject<Track> for Track {
             .max_by(|x, y| x.cmp(&y))
             .unwrap_or(OrderedFloat(1.0))
             .into();
-        let track_size = vec2(max_length - track_pos.x, 1.0);
+        let track_size = vec2(max_length, 1.0);
         Rect::from_min_size(track_pos, track_size)
     }
 
