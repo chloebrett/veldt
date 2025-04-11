@@ -26,6 +26,11 @@ pub fn track_reducer(track: &mut Track, action: &Action) -> Action {
             track.offset = OrderedFloat(*offset);
             Action::SetTrackOffset(*prev)
         }
+        Action::SetTrackDuration(beats) => {
+            let prev = track.duration;
+            track.duration = *beats;
+            Action::SetTrackDuration(prev)
+        }
         _ => Action::NonReversible,
     }
 }

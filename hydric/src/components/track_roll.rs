@@ -25,8 +25,8 @@ impl View for TrackRoll {
             Sequencer::new(range, dispatch)
                 .objects(tracks)
                 .size(vec2(ui.available_width(), 100.0))
-                .vertical_bars(4.0, Color32::from_white_alpha(6))
-                .vertical_bars(1.0, Color32::from_white_alpha(3)),
+                .vertical_bars(4.0, 0.0, Color32::from_white_alpha(6))
+                .vertical_bars(1.0, 0.0, Color32::from_white_alpha(3)),
         );
     }
 }

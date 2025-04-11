@@ -33,6 +33,8 @@ message TrackProto {
   repeated PlacedNoteProto notes = 1;
 
   float offset = 2;
+
+  float duration = 3;
 }
 
 message TrackPlacementProto {

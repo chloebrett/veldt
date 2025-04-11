@@ -35,6 +35,7 @@ pub enum Action {
     },
     AddNote(PlacedNote),
     SetTrackOffset(Beats),
+    SetTrackDuration(Beats),
 
     // --- NoteSelector ---
     SetNoteScaleValue(ScaleValue),
