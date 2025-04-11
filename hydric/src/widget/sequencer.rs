@@ -38,11 +38,11 @@ impl<T: SequencerObject<T>, F: Fn(usize, Action)> Sequencer<T, F> {
     }
 
     #[inline]
-    pub fn vertical_bars(mut self, increment: f32, offset: f32, colour: Color32) -> Self {
+    pub fn vertical_bars(mut self, increment: f32, colour: Color32) -> Self {
         let steps = (self.range.size().x / increment) as i32;
-        let shapes: Vec<Shape> = (offset as i32..=(steps + offset as i32))
+        let shapes: Vec<Shape> = (0..=steps)
             .map(|step| {
-                let x = (step as f32) * increment - offset;
+                let x = (step as f32) * increment;
                 Shape::line_segment(
                     [pos2(x, 0.0), pos2(x, self.range.size().y)],
                     Stroke::new(1.0, colour),

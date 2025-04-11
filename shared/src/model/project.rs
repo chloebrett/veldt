@@ -144,6 +144,7 @@ mod tests {
                     offset: OrderedFloat(0.0),
                 }],
                 offset: OrderedFloat(0.0),
+                duration: 4.0,
             }],
             track_placements: vec![TrackPlacement {
                 track_id: 3,

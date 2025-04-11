@@ -84,8 +84,8 @@ impl View for NoteRoll {
             },
             offset: offset.into(),
         };
-        let track = store.get().project.tracks[track_index].clone();
-        let notes = track.notes;
+        let notes = store.get().project.tracks[track_index].notes.clone();
+        let track_duration = store.get().project.tracks[track_index].duration;
         let white_note_pattern = self.make_white_note_pattern(max_note);
         if ui.button("New note").clicked() {
             store.dispatch(&Selector::Track(track_index), Action::AddNote(default_note));
@@ -95,7 +95,7 @@ impl View for NoteRoll {
             .show(ui, |ui| {
                 let range = Rect::from_min_max(
                     pos2(offset, min_note as f32 - 1.0),
-                    pos2(track.duration, max_note as f32),
+                    pos2(track_duration, max_note as f32),
                 );
                 let dispatch = move |note_index: usize, action: Action| {
                     store.dispatch(&Selector::Note(track_index, note_index), action)
@@ -106,13 +106,9 @@ impl View for NoteRoll {
                         Sequencer::new(range, dispatch)
                             .objects(notes)
                             .horizontal_rects(white_note_pattern, Color32::from_white_alpha(4))
-                            .vertical_bars(bar_length, *track.offset, Color32::from_white_alpha(6))
-                            .vertical_bars(1.0, *track.offset, Color32::from_white_alpha(3))
-                            .vertical_bars(
-                                1.0 / bar_length,
-                                *track.offset,
-                                Color32::from_white_alpha(1),
-                            ),
+                            .vertical_bars(bar_length, Color32::from_white_alpha(6))
+                            .vertical_bars(1.0, Color32::from_white_alpha(3))
+                            .vertical_bars(1.0 / bar_length, Color32::from_white_alpha(1)),
                     );
                 });
             });
