@@ -1,7 +1,7 @@
-use crate::wave::{beats_to_samples, polyphonic_wave};
+use crate::wave::{beats_to_samples, unison_wave};
 use dasp_graph::{Buffer, Input, Node};
 use shared::model::{GeneratorInstance, GeneratorType, Track};
-use shared::types::Beats;
+use shared::types::{Beats, KnobPosition, Volume};
 
 pub struct GeneratorNode {
     instance: GeneratorInstance,
@@ -51,20 +51,36 @@ impl Node for GeneratorNode {
 
             dasp_slice::add_in_place(
                 &mut buffer,
-                &polyphonic_wave(
+                &unison_wave(
                     &note.note.pitch_name,
                     note.note.beats,
                     self.bpm,
-                    self.instance.meta.volume,
                     config,
                     self.sample_index as i32 - note_start_sample as i32,
                 ),
             );
         }
 
-        for out_buf in output {
+        for (channel_index, out_buf) in output.iter_mut().enumerate() {
             out_buf.copy_from_slice(&buffer);
+            self.apply_volume_and_pan(out_buf, channel_index);
         }
         self.sample_index += Buffer::LEN as u32;
     }
+}
+
+impl GeneratorNode {
+    fn apply_volume_and_pan(&self, buffer: &mut Buffer, channel_index: usize) {
+        let pan_mult = pan_multipliers(self.instance.meta.pan)[channel_index];
+        for x in buffer.iter_mut() {
+            *x *= pan_mult * self.instance.meta.volume;
+        }
+    }
+}
+
+/// TODO: use exponential pan curves, instead of linear.
+fn pan_multipliers(pan: KnobPosition) -> [Volume; 2] {
+    let left = 0.5 * (1.0 - pan);
+    let right = 0.5 * (1.0 + pan);
+    [left, right]
 }

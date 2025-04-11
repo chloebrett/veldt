@@ -128,6 +128,8 @@ message GeneratorMetaProto {
   float volume = 1;
 
   bool mute = 2;
+
+  float pan = 3;
 }
 
 message SimpleWaveProto {

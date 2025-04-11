@@ -39,6 +39,14 @@ pub fn generators_control(ctx: &egui::Context, window_state: &mut WindowState, s
                     |it| store.dispatch(&sel, Action::SetGeneratorVolume(it)),
                     FloatRange(0.0, 1.0),
                 );
+                // TODO: make the pan knob centre at the top since it's bipolar.
+                knob(
+                    ui,
+                    "Pan",
+                    meta.pan,
+                    |it| store.dispatch(&sel, Action::SetGeneratorPan(it)),
+                    FloatRange(-1.0, 1.0),
+                );
                 checkbox(
                     ui,
                     meta.mute,

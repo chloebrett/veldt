@@ -46,6 +46,7 @@ pub enum Action {
     // --- GeneratorSelector ---
     SetGeneratorVolume(Volume),
     SetGeneratorMute(bool),
+    SetGeneratorPan(KnobPosition),
     SetWave(WaveType),
     SetOscCount(u32),
     SetDetuneCents(KnobPosition),

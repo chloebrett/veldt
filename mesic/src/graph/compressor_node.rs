@@ -1,3 +1,4 @@
+use super::dual_channel;
 use crate::consts::SAMPLE_RATE;
 use dasp_graph::{Buffer, Input, Node};
 use shared::model::CompressorConfig;
@@ -8,7 +9,7 @@ pub type EnvelopeDetector = dasp_envelope::Detector<f32, dasp_rms::Rms<f32, Vec<
 
 pub struct CompressorNode {
     config: CompressorConfig,
-    detector: EnvelopeDetector,
+    detectors: [EnvelopeDetector; 2],
 }
 
 impl CompressorNode {
@@ -28,15 +29,30 @@ impl CompressorNode {
         vec.extend(repeat_n(0.0, ring_buffer_frames));
 
         let buffer = dasp_ring_buffer::Fixed::from(vec);
-
         let rms = dasp_rms::Rms::new(buffer);
+        let detector =
+            dasp_envelope::Detector::new(rms, attack_frames as f32, release_frames as f32);
+
         CompressorNode {
             config,
-            detector: dasp_envelope::Detector::new(
-                rms,
-                attack_frames as f32,
-                release_frames as f32,
-            ),
+            // TODO: should we have two detectors, or just one that averages the inputs?
+            detectors: [detector.clone(), detector.clone()],
+        }
+    }
+
+    fn apply(&mut self, out_buf: &mut Buffer, in_buf: &Buffer, channel_index: usize) {
+        let ratio_recip = 1.0 / self.config.ratio;
+        let threshold = self.config.threshold;
+
+        out_buf.copy_from_slice(in_buf);
+        for x in out_buf.iter_mut() {
+            let rms = self.detectors[channel_index].next(*x);
+
+            // TODO: also support using the compressor as a downward expander.
+            let pre_gain = compress(*x, rms, threshold, ratio_recip);
+
+            // TODO: use dB for makeup gain.
+            *x = pre_gain * self.config.gain
         }
     }
 }
@@ -60,24 +76,10 @@ fn compress(input: f32, detector: f32, threshold: f32, ratio_recip: f32) -> f32 
 
 impl Node for CompressorNode {
     fn process(&mut self, inputs: &[Input], output: &mut [Buffer]) {
-        let threshold = self.config.threshold;
-        let ratio_recip = 1.0 / self.config.ratio;
+        let (left_out, left_in, right_out, right_in) = dual_channel(inputs, output);
 
-        for (out_buf, in_buf) in output
-            .iter_mut()
-            .zip(inputs.first().expect("Expected one input").buffers())
-        {
-            out_buf.copy_from_slice(in_buf);
-            for x in out_buf.iter_mut() {
-                let rms = self.detector.next(*x);
-
-                // TODO: also support using the compressor as a downward expander.
-                let pre_gain = compress(*x, rms, threshold, ratio_recip);
-
-                // TODO: use dB for makeup gain.
-                *x = pre_gain * self.config.gain
-            }
-        }
+        self.apply(left_out, left_in, /* channel_index= */ 0);
+        self.apply(right_out, right_in, /* channel_index= */ 1);
     }
 }
 

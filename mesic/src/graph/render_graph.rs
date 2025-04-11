@@ -1,11 +1,11 @@
 use super::{
-    BufferNode, CompressorNode, EqNode, Graph, MixerNode, ModDelayNode, Processor, make_graph,
-    make_processor,
+    BufferNode, CompressorNode, DelayNode, EqNode, Graph, MixerNode, ModDelayNode, Processor,
+    make_graph, make_processor,
 };
 use crate::consts::SAMPLE_RATE;
 use crate::effect::eq_filter;
 use dasp_frame::Stereo;
-use dasp_graph::{BoxedNodeSend, Buffer, Node, NodeData, node::Delay};
+use dasp_graph::{BoxedNodeSend, Buffer, Node, NodeData};
 use petgraph::stable_graph::NodeIndex;
 use shared::model::{Effect, EffectInstance};
 
@@ -42,7 +42,8 @@ impl RenderGraph {
     pub fn add_effect_with_mixer(&mut self, effect: EffectInstance) {
         let effect_node = match effect.effect {
             Effect::SimpleEq { config } => BoxedNodeSend::new(EqNode {
-                filter: eq_filter(&config),
+                filter_left: eq_filter(&config),
+                filter_right: eq_filter(&config),
             }),
             Effect::SimpleDelay { config } => {
                 let delay_samples = config.delay_ms / 1000.0 * SAMPLE_RATE as f32;
@@ -51,7 +52,7 @@ impl RenderGraph {
                 // Extend the graph duration by the delay amount.
                 self.sample_count += delay_samples;
 
-                BoxedNodeSend::new(new_delay_node(delay_samples))
+                BoxedNodeSend::new(DelayNode::new(delay_samples))
             }
             Effect::SimpleCompressor { config } => BoxedNodeSend::new(CompressorNode::new(config)),
             Effect::ModDelay { config } => BoxedNodeSend::new(ModDelayNode::new(config)),
@@ -100,14 +101,6 @@ impl RenderGraph {
         self.processor = make_processor();
         self.processed_samples_count = 0;
     }
-}
-
-/// The delay node is built into dasp_graph. This is just a helper to construct one.
-fn new_delay_node(delay_samples: usize) -> Delay<Vec<f32>> {
-    Delay(vec![dasp_ring_buffer::Fixed::from(vec![
-        0.0;
-        delay_samples
-    ])])
 }
 
 impl Iterator for RenderGraph {
