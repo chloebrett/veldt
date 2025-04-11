@@ -7,6 +7,7 @@ use crate::pmodel::{
 use crate::types::{Freq, KnobPosition, Milliseconds, Volume};
 use effect_instance_proto::Effect as EffectProto;
 use local_macro::{FromProto, IntoProto};
+use strum::{EnumIter, EnumString};
 
 type EffectId = usize;
 type _EffectInstanceId = usize;
@@ -61,7 +62,7 @@ impl From<Effect> for EffectProto {
     }
 }
 
-#[derive(Clone, Debug, PartialEq)]
+#[derive(Clone, Debug, PartialEq, EnumIter, EnumString)]
 pub enum Effect {
     SimpleDelay { config: DelayConfig },
     // simple as opposed to parametric.
@@ -80,9 +81,25 @@ pub struct EffectMeta {
     // TODO: pan
 }
 
+impl Default for EffectMeta {
+    fn default() -> Self {
+        EffectMeta {
+            id: 0,
+            wet: 1.0,
+            mute: false,
+        }
+    }
+}
+
 #[derive(Clone, Debug, PartialEq, FromProto, IntoProto)]
 pub struct DelayConfig {
     pub delay_ms: Milliseconds,
+}
+
+impl Default for DelayConfig {
+    fn default() -> Self {
+        DelayConfig { delay_ms: 100.0 }
+    }
 }
 
 /// Modulated delay, e.g. vibrato, flanger, chorus.
@@ -96,6 +113,17 @@ pub struct ModDelayConfig {
     // No support for feedback for now.
 }
 
+impl Default for ModDelayConfig {
+    fn default() -> Self {
+        ModDelayConfig {
+            min_depth: 100,
+            max_depth: 300,
+            freq: 10.0,
+            lfo_type: WaveType::Triangle,
+        }
+    }
+}
+
 #[derive(Clone, Debug, PartialEq, FromProto, IntoProto)]
 pub struct CompressorConfig {
     // TODO: use Decibels instead of Volume.
@@ -104,6 +132,18 @@ pub struct CompressorConfig {
     pub release_ms: Milliseconds,
     pub ratio: KnobPosition,
     pub gain: Volume,
+}
+
+impl Default for CompressorConfig {
+    fn default() -> Self {
+        CompressorConfig {
+            threshold: 0.5,
+            attack_ms: 30.0,
+            release_ms: 30.0,
+            ratio: 1.5,
+            gain: 1.0,
+        }
+    }
 }
 
 #[cfg(test)]

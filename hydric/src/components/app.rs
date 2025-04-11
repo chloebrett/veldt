@@ -142,7 +142,10 @@ impl eframe::App for App {
                     let mixer = &self.store.get().project.mixer;
                     for (mixer_index, channel) in mixer.iter().enumerate() {
                         for effect_index in 0..channel.effects.len() {
-                            if self.window_state.effects[mixer_index][effect_index] {
+                            if *self.window_state.effects[mixer_index]
+                                .get(effect_index)
+                                .unwrap_or(&false)
+                            {
                                 effect_control(
                                     ctx,
                                     &mut self.window_state,
