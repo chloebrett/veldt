@@ -1,5 +1,4 @@
 use egui::{Color32, Pos2, Rect, Ui, pos2, vec2};
-use ordered_float::OrderedFloat;
 use shared::model::Track;
 use state::{Action, Selector, Store};
 
@@ -42,17 +41,7 @@ impl SequencerObject<Track> for Track {
 
     fn to_rect(&self, range: Rect) -> Rect {
         let track_pos = self.to_pos(range);
-        let lengths: Vec<OrderedFloat<f32>> = self
-            .notes
-            .iter()
-            .map(|note| note.offset + OrderedFloat(note.note.beats))
-            .collect();
-        let max_length: f32 = lengths
-            .into_iter()
-            .max_by(|x, y| x.cmp(&y))
-            .unwrap_or(OrderedFloat(1.0))
-            .into();
-        let track_size = vec2(max_length, 1.0);
+        let track_size = vec2(self.duration, 1.0);
         Rect::from_min_size(track_pos, track_size)
     }
 
@@ -66,9 +55,8 @@ impl SequencerObject<Track> for Track {
         Action::NonReversible
     }
 
-    fn resize_action(&self, _x: f32, _range: Rect) -> Action {
-        // TODO implement for track
-        // This is a placeholder to satisfy trait
-        Action::NonReversible
+    fn resize_action(&self, x: f32, _range: Rect) -> Action {
+        let beats = x - *self.offset;
+        Action::SetTrackDuration(beats)
     }
 }
