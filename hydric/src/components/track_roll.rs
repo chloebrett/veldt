@@ -55,6 +55,7 @@ impl SequencerObject<PlacedTrack> for PlacedTrack {
 
     fn to_rect(&self, range: Rect) -> Rect {
         let track_pos = self.to_pos(range);
+        // If not clipped duration render length based on notes.
         let length: f32 = if self.placement.clipped_duration.is_some() {
             self.placement
                 .clipped_duration
