@@ -41,8 +41,20 @@ pub fn track_placement_control(store: &Store, ui: &mut Ui) {
         let duration = *placement.clipped_duration.unwrap_or(OrderedFloat(0.0)) as f64;
         let mut has_duration = placement.clipped_duration.is_some();
         ui.horizontal(|ui| {
+            if ui.checkbox(&mut has_duration, "").clicked() {
+                if has_duration {
+                    store.dispatch(
+                        &sel,
+                        Action::SetTrackPlacementClippedDuration(Some(duration as Beats)),
+                    );
+                } else {
+                    // TODO Consider storing the duration before setting it to None
+                    // So that it can be reloaded without having to re-set it from zero.
+                    store.dispatch(&sel, Action::SetTrackPlacementClippedDuration(None));
+                }
+            };
             ui.add_enabled(
-                placement.clipped_duration.is_some(),
+                has_duration,
                 egui::Slider::from_get_set(
                     0.0..=16.0,
                     get_set(duration, |it| {
@@ -54,16 +66,6 @@ pub fn track_placement_control(store: &Store, ui: &mut Ui) {
                 )
                 .text("Clipped Duration"),
             );
-            if ui.checkbox(&mut has_duration, "").clicked() {
-                if has_duration {
-                    store.dispatch(
-                        &sel,
-                        Action::SetTrackPlacementClippedDuration(Some(duration as Beats)),
-                    );
-                } else {
-                    store.dispatch(&sel, Action::SetTrackPlacementClippedDuration(None));
-                }
-            };
         });
 
         if ui.button("Delete").clicked() {
