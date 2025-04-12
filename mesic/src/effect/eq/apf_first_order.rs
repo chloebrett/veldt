@@ -10,5 +10,5 @@ pub fn apf_first_order(config: &EqConfig) -> FirstOrderFilter {
     let a1 = 1.0;
     let b1 = -alpha;
 
-    FirstOrderFilter::new(FirstOrderFilterConfig { a0, a1, b1 })
+    FirstOrderFilter::new_wet(FirstOrderFilterConfig { a0, a1, b1 })
 }

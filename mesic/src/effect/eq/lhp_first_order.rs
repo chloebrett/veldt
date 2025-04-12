@@ -11,13 +11,13 @@ pub fn lhp_first_order(config: &EqConfig, low_high: LowHigh) -> FirstOrderFilter
     let theta = TAU * config.fc / fs;
 
     // See "Designing Audio Effect Plugins in C++", W. Pirkle, p271
-    let gamma: f32 = theta.cos() / (1.0 + theta.sin());
-    let a0: f32 = match low_high {
+    let gamma = theta.cos() / (1.0 + theta.sin());
+    let a0 = match low_high {
         LowHigh::Low => 0.5 * (1.0 - gamma),
         LowHigh::High => 0.5 * (1.0 + gamma),
     };
-    let a1: f32 = a0;
-    let b1: f32 = -gamma;
+    let a1 = a0;
+    let b1 = -gamma;
 
-    FirstOrderFilter::new(FirstOrderFilterConfig { a0, a1, b1 })
+    FirstOrderFilter::new_wet(FirstOrderFilterConfig { a0, a1, b1 })
 }
