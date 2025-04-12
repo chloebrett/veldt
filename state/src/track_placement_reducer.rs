@@ -21,16 +21,8 @@ pub fn track_placement_reducer(track_placement: &mut TrackPlacement, action: &Ac
             Action::SetTrackPlacementOffset(*prev)
         }
         Action::SetTrackPlacementClippedDuration(duration) => {
-            let prev = if let Some(OrderedFloat(value)) = track_placement.clipped_duration {
-                Some(value)
-            } else {
-                None
-            };
-            let next = if let Some(value) = duration {
-                Some(OrderedFloat(*value))
-            } else {
-                None
-            };
+            let prev = track_placement.clipped_duration.map(|value| *value);
+            let next = duration.map(OrderedFloat);
             track_placement.clipped_duration = next;
             Action::SetTrackPlacementClippedDuration(prev)
         }
