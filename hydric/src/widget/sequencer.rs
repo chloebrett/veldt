@@ -1,7 +1,7 @@
 use crate::transform::Transform;
 use egui::{
-    Color32, CornerRadius, Frame, Pos2, Rect, Response, Sense, Shape, Stroke, Ui, Vec2, Widget,
-    emath::RectTransform, pos2, vec2,
+    Color32, CornerRadius, CursorIcon, Frame, Pos2, Rect, Response, Sense, Shape, Stroke, Ui, Vec2,
+    Widget, emath::RectTransform, pos2, vec2,
 };
 use state::Action;
 
@@ -75,6 +75,43 @@ impl<T: SequencerObject<T>, F: Fn(usize, Action)> Sequencer<T, F> {
         self
     }
 
+    fn resize_objects(
+        &self,
+        object: &T,
+        object_index: usize,
+        ui: &mut Ui,
+        response: &Response,
+        sequencer_transform: &RectTransform,
+    ) {
+        // TODO Handle this ID making better.
+        // IDs must be different between resize and move fuctions.
+        let id = response.id.with(object_index);
+        let id = response.id.with(id);
+        let rect = object.to_rect(self.range);
+        let x_size = 0.3;
+        let resize_rect = Rect::from_min_size(
+            rect.right_top() - vec2(x_size / 2.0, 0.0),
+            vec2(x_size / 2.0, rect.size().y),
+        );
+        let rect_response =
+            ui.interact(resize_rect.transform(*sequencer_transform), id, self.sense);
+        if rect_response.hovered() {
+            ui.ctx().set_cursor_icon(CursorIcon::ResizeColumn);
+        }
+        let drag_pos = rect_response.interact_pointer_pos();
+        let drag_delta = rect_response.drag_delta();
+        if let Some(drag_pos) = drag_pos {
+            let scaled_pos = drag_pos.transform(sequencer_transform.inverse()).clamp(
+                pos2(rect.left(), 0.0),
+                // Ensure entire rect stays on sequencer.
+                self.range.size().to_pos2(),
+            );
+            if drag_delta.x != 0.0 {
+                (self.dispatch)(object_index, object.resize_action(scaled_pos.x, self.range))
+            };
+        }
+    }
+
     fn update_objects(
         &self,
         object: &T,
@@ -132,6 +169,7 @@ impl<T: SequencerObject<T>, F: Fn(usize, Action)> Widget for Sequencer<T, F> {
                 .enumerate()
                 .map(|(index, object)| {
                     self.update_objects(object, index, ui, &response, &sequencer_transform);
+                    self.resize_objects(object, index, ui, &response, &sequencer_transform);
                     Shape::rect_filled(object.to_rect(range), CornerRadius::same(1), Color32::WHITE)
                 })
                 .collect();
@@ -151,4 +189,6 @@ pub trait SequencerObject<T> {
     fn x_action(&self, x: f32, range: Rect) -> Action;
 
     fn y_action(&self, y: f32, range: Rect) -> Action;
+
+    fn resize_action(&self, x: f32, range: Rect) -> Action;
 }

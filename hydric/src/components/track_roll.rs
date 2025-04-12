@@ -65,4 +65,10 @@ impl SequencerObject<Track> for Track {
         // This is a placeholder to satisfy trait
         Action::NonReversible
     }
+
+    fn resize_action(&self, _x: f32, _range: Rect) -> Action {
+        // TODO implement for track
+        // This is a placeholder to satisfy trait
+        Action::NonReversible
+    }
 }
