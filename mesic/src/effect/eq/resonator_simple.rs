@@ -1,9 +1,9 @@
-use super::filter::{SecondOrderFeedbackFilter, SecondOrderFeedbackFilterConfig};
+use super::filter::{SecondOrderFilter, SecondOrderFilterConfig};
 use crate::consts::SAMPLE_RATE;
 use shared::model::EqConfig;
 use std::f32::consts::TAU;
 
-pub fn resonator_simple(config: &EqConfig) -> SecondOrderFeedbackFilter {
+pub fn resonator_simple(config: &EqConfig) -> SecondOrderFilter {
     let fs = SAMPLE_RATE as f32;
     let theta = TAU * config.fc / fs;
     let bandwidth = config.fc / config.q;
@@ -13,5 +13,11 @@ pub fn resonator_simple(config: &EqConfig) -> SecondOrderFeedbackFilter {
     let b1: f32 = (-4.0 * b2) / (1.0 + b2) * theta.cos();
     let a0: f32 = (1.0 - b2) * (1.0 - ((b1 * b1) / (4.0 * b2))).sqrt();
 
-    SecondOrderFeedbackFilter::new(SecondOrderFeedbackFilterConfig { a0, b1, b2 })
+    SecondOrderFilter::new_wet(SecondOrderFilterConfig {
+        a0,
+        a1: 0.0,
+        b1,
+        a2: 0.0,
+        b2,
+    })
 }
