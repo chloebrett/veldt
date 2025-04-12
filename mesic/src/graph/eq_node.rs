@@ -1,4 +1,4 @@
-use super::dual_channel;
+use super::{extract_inputs, extract_outputs};
 use crate::effect::ApplyFilter;
 use dasp_graph::{Buffer, Input, Node};
 
@@ -9,12 +9,13 @@ pub struct EqNode {
 
 impl Node for EqNode {
     fn process(&mut self, inputs: &[Input], output: &mut [Buffer]) {
-        let (left_out, left_in, right_out, right_in) = dual_channel(inputs, output);
+        let (out_left, out_right) = extract_outputs(output);
+        let (in_left, in_right) = extract_inputs(inputs)[0];
 
-        left_out.copy_from_slice(left_in);
-        self.filter_left.apply(left_out);
+        out_left.copy_from_slice(in_left);
+        self.filter_left.apply(out_left);
 
-        right_out.copy_from_slice(right_in);
-        self.filter_right.apply(right_out);
+        out_right.copy_from_slice(in_right);
+        self.filter_right.apply(out_right);
     }
 }
