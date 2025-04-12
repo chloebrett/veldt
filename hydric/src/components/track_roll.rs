@@ -18,18 +18,24 @@ impl TrackRoll {
 
 impl View for TrackRoll {
     fn ui(&self, store: &Store, ui: &mut Ui) {
-        let mut placed_tracks = vec![];
-        for placement in &store.get().project.track_placements {
-            let track_index = placement.track_id;
-            let placed_track = PlacedTrack {
-                track: store.get().project.tracks[track_index].clone(),
+        let placed_tracks: Vec<PlacedTrack> = store
+            .get()
+            .project
+            .track_placements
+            .iter()
+            .map(|placement| PlacedTrack {
+                track: store.get().project.tracks[placement.track_id].clone(),
                 placement: placement.clone(),
-            };
-            placed_tracks.push(placed_track)
-        }
+            })
+            .collect();
+        let placed_track_ids: Vec<usize> = placed_tracks
+            .iter()
+            .map(|placed_track| placed_track.placement.track_id)
+            .collect();
         let range = Rect::from_min_max(pos2(0.0, 0.0), pos2(16.0, 1.0));
-        let dispatch =
-            |index: usize, action: Action| store.dispatch(&Selector::Track(index), action);
+        let dispatch = |index: usize, action: Action| {
+            store.dispatch(&Selector::TrackPlacement(placed_track_ids[index]), action);
+        };
         ui.add(
             Sequencer::new(range, dispatch)
                 .objects(placed_tracks)
@@ -56,12 +62,7 @@ impl SequencerObject<PlacedTrack> for PlacedTrack {
     fn to_rect(&self, range: Rect) -> Rect {
         let track_pos = self.to_pos(range);
         // If not clipped duration render length based on notes.
-        let length: f32 = if self.placement.clipped_duration.is_some() {
-            self.placement
-                .clipped_duration
-                .expect("Expected a duration.")
-                .into()
-        } else {
+        let length: f32 = *self.placement.clipped_duration.unwrap_or_else(|| {
             let lengths: Vec<OrderedFloat<f32>> = self
                 .track
                 .notes
@@ -72,15 +73,13 @@ impl SequencerObject<PlacedTrack> for PlacedTrack {
                 .into_iter()
                 .max_by(|x, y| x.cmp(y))
                 .unwrap_or(OrderedFloat(1.0))
-                .into()
-        };
+        });
         let track_size = vec2(length, 1.0);
         Rect::from_min_size(track_pos, track_size)
     }
 
-    fn x_action(&self, _x: f32, _range: Rect) -> Option<Action> {
-        // TODO Consider if offset should be changable from sequencer.
-        None
+    fn x_action(&self, x: f32, range: Rect) -> Option<Action> {
+        Some(Action::SetTrackPlacementOffset(x - range.left()))
     }
 
     fn y_action(&self, _y: f32, _range: Rect) -> Option<Action> {
@@ -89,11 +88,7 @@ impl SequencerObject<PlacedTrack> for PlacedTrack {
     }
 
     fn resize_action(&self, _x: f32, _range: Rect) -> Option<Action> {
-        // TODO Consider if clipped_duration should be changable from sequencer.
+        // TODO Implement changing clipped_duration
         None
-    }
-
-    fn is_interactable(&self) -> bool {
-        false
     }
 }

@@ -174,10 +174,8 @@ impl<T: SequencerObject<T>, F: Fn(usize, Action)> Widget for Sequencer<T, F> {
                 .iter()
                 .enumerate()
                 .map(|(index, object)| {
-                    if object.is_interactable() {
-                        self.update_objects(object, index, ui, &response, &sequencer_transform);
-                        self.resize_objects(object, index, ui, &response, &sequencer_transform);
-                    }
+                    self.update_objects(object, index, ui, &response, &sequencer_transform);
+                    self.resize_objects(object, index, ui, &response, &sequencer_transform);
                     Shape::rect_filled(object.to_rect(range), CornerRadius::same(1), Color32::WHITE)
                 })
                 .collect();
@@ -199,6 +197,4 @@ pub trait SequencerObject<T> {
     fn y_action(&self, y: f32, range: Rect) -> Option<Action>;
 
     fn resize_action(&self, x: f32, range: Rect) -> Option<Action>;
-
-    fn is_interactable(&self) -> bool;
 }

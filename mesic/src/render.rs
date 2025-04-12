@@ -5,7 +5,7 @@ use shared::model::Project;
 
 pub fn render(project: &Project) -> RenderGraph {
     // TODO account for multiple tracks and placements.
-    // This will break with mtuliple tracks
+    // This will break with multiple tracks
     let track_index = 0;
     let placement_index = 0;
     let mut track = project.tracks[track_index].clone();

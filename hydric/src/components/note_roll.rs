@@ -146,8 +146,4 @@ impl SequencerObject<PlacedNote> for PlacedNote {
         let beats = x - *self.offset;
         Some(Action::SetNoteDuration(beats))
     }
-
-    fn is_interactable(&self) -> bool {
-        true
-    }
 }
