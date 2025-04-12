@@ -2,6 +2,12 @@ use super::ApplyFilter;
 use dasp_graph::Buffer;
 use ringbuffer::{AllocRingBuffer, RingBuffer};
 
+pub struct Mix {
+    // Note: wet/dry below is independent from wet/dry on the mixer.
+    pub wet: f32,
+    pub dry: f32,
+}
+
 /// A filter which looks at:
 /// * x0 (current input)
 /// * x1 (input one sample back)
@@ -14,9 +20,8 @@ use ringbuffer::{AllocRingBuffer, RingBuffer};
 /// Because these are set to zero, we can simply use primitive ints instead of a ring buffer, and
 /// save an allocation.
 pub struct FirstOrderFilter {
-    a0: f32, // coefficient of x0.
-    a1: f32, // coefficient of x1.
-    b1: f32, // coefficient of y1.
+    config: FirstOrderFilterConfig,
+    mix: Option<Mix>, // if absent, assumed as wet = 1.0 and dry = 0.0.
 
     x_buffer: f32, // effectively a ring buffer with length 1.
     y_buffer: f32, // same as above.
@@ -24,22 +29,29 @@ pub struct FirstOrderFilter {
 
 /// Helps to prevent typos in param names.
 pub struct FirstOrderFilterConfig {
-    pub a0: f32,
-    pub a1: f32,
-    pub b1: f32,
+    pub a0: f32, // coefficient of x0.
+    pub a1: f32, // coefficient of x1.
+    pub b1: f32, // coefficient of y1.
 }
 
 impl FirstOrderFilter {
-    pub fn new(config: FirstOrderFilterConfig) -> Self {
+    pub fn new_wet(config: FirstOrderFilterConfig) -> Self {
+        Self::new_internal(config, None)
+    }
+
+    pub fn new(config: FirstOrderFilterConfig, mix: Mix) -> Self {
+        Self::new_internal(config, Some(mix))
+    }
+
+    fn new_internal(config: FirstOrderFilterConfig, mix: Option<Mix>) -> Self {
         // The buffers are initialized to zero, which means the first sample processed will act as though
         // silence preceded it.
         let x_buffer = 0.0;
         let y_buffer = 0.0;
 
         FirstOrderFilter {
-            a0: config.a0,
-            a1: config.a1,
-            b1: config.b1,
+            config,
+            mix,
             x_buffer,
             y_buffer,
         }
@@ -48,17 +60,18 @@ impl FirstOrderFilter {
 
 impl ApplyFilter for FirstOrderFilter {
     fn apply(&mut self, buffer: &mut Buffer) {
+        let FirstOrderFilterConfig { a0, a1, b1 } = self.config;
+
         for xn in buffer.iter_mut() {
             let xn1 = self.x_buffer;
             let yn1 = self.y_buffer;
 
-            let yn = self.a0 * *xn + self.a1 * xn1 - self.b1 * yn1;
+            let yn = a0 * *xn + a1 * xn1 - b1 * yn1;
 
             self.x_buffer = *xn;
             self.y_buffer = yn;
 
-            // Replace the input value with the corresponding output value.
-            *xn = yn;
+            apply_mix(xn, yn, *xn, &self.mix);
         }
     }
 }
@@ -72,46 +85,39 @@ impl ApplyFilter for FirstOrderFilter {
 ///
 /// In order to produce y0, the current output.
 pub struct SecondOrderFilter {
-    a0: f32, // coefficient of x0.
-    a1: f32, // coefficient of x1.
-    a2: f32, // coefficient of x2.
-    b1: f32, // coefficient of y1.
-    b2: f32, // coefficient of y2.
+    config: SecondOrderFilterConfig,
+    mix: Option<Mix>,
 
-    // Note: wet/dry below is independent from wet/dry on the mixer.
-    c0: f32, // wet
-    d0: f32, // dry
-
-    // TODO: consolidate the ring buffer types. We use dasp_ring_buffer for the delay nodes.
     x_buffer: AllocRingBuffer<f32>,
     y_buffer: AllocRingBuffer<f32>,
 }
 
 /// Helps to prevent typos in param names.
 pub struct SecondOrderFilterConfig {
-    pub a0: f32,
-    pub a1: f32,
-    pub a2: f32,
-    pub b1: f32,
-    pub b2: f32,
-    pub c0: f32,
-    pub d0: f32,
+    pub a0: f32, // coefficient of x0.
+    pub a1: f32, // coefficient of x1.
+    pub a2: f32, // coefficient of x2.
+    pub b1: f32, // coefficient of y1.
+    pub b2: f32, // coefficient of y2.
 }
 
 impl SecondOrderFilter {
-    pub fn new(config: SecondOrderFilterConfig) -> Self {
+    pub fn new_wet(config: SecondOrderFilterConfig) -> Self {
+        Self::new_internal(config, None)
+    }
+
+    pub fn new(config: SecondOrderFilterConfig, mix: Mix) -> Self {
+        Self::new_internal(config, Some(mix))
+    }
+
+    fn new_internal(config: SecondOrderFilterConfig, mix: Option<Mix>) -> Self {
         // Ring buffers store up to two samples back.
         let x_buffer = AllocRingBuffer::from([0.0; 2]);
         let y_buffer = AllocRingBuffer::from([0.0; 2]);
 
         SecondOrderFilter {
-            a0: config.a0,
-            a1: config.a1,
-            a2: config.a2,
-            b1: config.b1,
-            b2: config.b2,
-            c0: config.c0,
-            d0: config.d0,
+            config,
+            mix,
             x_buffer,
             y_buffer,
         }
@@ -120,6 +126,8 @@ impl SecondOrderFilter {
 
 impl ApplyFilter for SecondOrderFilter {
     fn apply(&mut self, buffer: &mut Buffer) {
+        let SecondOrderFilterConfig { a0, a1, a2, b1, b2 } = self.config;
+
         for xn in buffer.iter_mut() {
             // The oldest values should be removed from the ring buffer in each iteration.
             let xn2 = self.x_buffer.dequeue().expect("Expected value in x buffer");
@@ -130,72 +138,24 @@ impl ApplyFilter for SecondOrderFilter {
             let xn1 = self.x_buffer.front().expect("Expected value in x buffer");
             let yn1 = self.y_buffer.front().expect("Expected value in y buffer");
 
-            let yn = self.a0 * *xn + self.a1 * xn1 + self.a2 * xn2 - self.b1 * yn1 - self.b2 * yn2;
+            let yn = a0 * *xn + a1 * xn1 + a2 * xn2 - b1 * yn1 - b2 * yn2;
 
             self.x_buffer.push(*xn);
             self.y_buffer.push(yn);
 
-            if self.c0 == 1.0 && self.d0 == 0.0 {
-                // Slight optimization.
-                // Replace the input value with the corresponding output value.
-                *xn = yn;
-            } else {
-                // Apply the filter using the wet/dry values.
-                *xn = self.c0 * yn + self.d0 * *xn;
-            }
+            apply_mix(xn, yn, *xn, &self.mix);
         }
     }
 }
 
-/// A filter which looks at:
-/// * x0 (current input)
-/// * y1 (output one sample back)
-/// * y2 (output two samples back)
-///
-/// In order to produce y0, the current output.
-///
-/// This is a special case of the second order filter which doesn't rely on previous input values.
-pub struct SecondOrderFeedbackFilter {
-    a0: f32, // coefficient of x0.
-    b1: f32, // coefficient of y1.
-    b2: f32, // coefficient of y2.
-
-    y_buffer: AllocRingBuffer<f32>,
-    // Does not have x_buffer.
-}
-
-/// Helps to prevent typos in param names.
-pub struct SecondOrderFeedbackFilterConfig {
-    pub a0: f32,
-    pub b1: f32,
-    pub b2: f32,
-}
-
-impl SecondOrderFeedbackFilter {
-    pub fn new(config: SecondOrderFeedbackFilterConfig) -> Self {
-        let y_buffer = AllocRingBuffer::from([0.0; 2]);
-
-        SecondOrderFeedbackFilter {
-            a0: config.a0,
-            b1: config.b1,
-            b2: config.b2,
-            y_buffer,
-        }
-    }
-}
-
-impl ApplyFilter for SecondOrderFeedbackFilter {
-    fn apply(&mut self, buffer: &mut Buffer) {
-        for xn in buffer.iter_mut() {
-            let yn2 = self.y_buffer.dequeue().expect("Expected value in y buffer");
-            let yn1 = self.y_buffer.front().expect("Expected value in y buffer");
-
-            let yn = self.a0 * *xn - self.b1 * yn1 - self.b2 * yn2;
-
-            self.y_buffer.push(yn);
-
-            // Replace the input value with the corresponding output value.
-            *xn = yn;
-        }
+#[inline]
+fn apply_mix(o: &mut f32, w: f32, d: f32, mix: &Option<Mix>) {
+    if let Some(Mix { wet, dry }) = mix {
+        // Apply the filter using the wet/dry values.
+        *o = wet * w + dry * d;
+    } else {
+        // Slight optimization.
+        // Replace the input value with the corresponding output value.
+        *o = w;
     }
 }
