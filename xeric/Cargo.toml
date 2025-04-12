@@ -6,7 +6,7 @@ edition = "2024"
 [dependencies]
 shared = { path = "../shared" }
 tonic = "0.12.3"
-tokio = { version = "1.43.0", features = ["rt-multi-thread"] }
+tokio = { version = "1.44.2", features = ["rt-multi-thread"] }
 anyhow = "1.0.95"
 tonic-web = "0.12.3"
 tower = "0.5.2"
