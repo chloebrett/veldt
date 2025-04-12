@@ -269,4 +269,5 @@ enum EqTypeProto {
   ParametricSecondOrderNonConstantQEqType = 18;
   LowShelvingFirstOrderEqType = 19;
   HighShelvingFirstOrderEqType = 20;
+  ParametricSecondOrderConstantQEqType = 21;
 }

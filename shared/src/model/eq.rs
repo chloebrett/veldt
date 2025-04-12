@@ -27,6 +27,7 @@ pub enum EqType {
     FirstOrderAllPole,
     LowShelvingFirstOrder,
     HighShelvingFirstOrder,
+    ParametricSecondOrderConstantQ,
 }
 
 #[derive(Clone, Debug, PartialEq, FromProto, IntoProto)]

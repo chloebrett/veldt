@@ -11,6 +11,7 @@ mod parametric_second_order;
 mod resonator_sa;
 mod resonator_simple;
 mod shelf_first_order;
+mod parametric_constant_second_order;
 
 use apf_first_order::*;
 use apf_second_order::*;
@@ -26,6 +27,7 @@ use resonator_sa::*;
 use resonator_simple::*;
 use shared::model::{EqConfig, EqType};
 use shelf_first_order::*;
+use parametric_constant_second_order::*;
 
 pub trait ApplyFilter {
     fn apply(&mut self, buffer: &mut Buffer);
@@ -53,6 +55,7 @@ pub fn eq_filter(config: &EqConfig) -> Box<dyn ApplyFilter + Send> {
         EqType::FirstOrderAllPole => Box::new(first_order_all_pole(config)),
         EqType::LowShelvingFirstOrder => Box::new(shelf_first_order(config, LowHigh::Low)),
         EqType::HighShelvingFirstOrder => Box::new(shelf_first_order(config, LowHigh::High)),
+        EqType::ParametricSecondOrderConstantQ => Box::new(parametric_constant_q(config)),
         _ => panic!("EQ type not implemented!"),
     }
 }
