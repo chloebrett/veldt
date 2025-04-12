@@ -81,8 +81,7 @@ pub enum Action {
     // --- TrackPlacementSelector ---
     SetTrackPlacementTrackId(TrackId),
     SetTrackPlacementOffset(Beats),
-    SetTrackPlacementClippedDuration(Beats),
-    RemoveTrackPlacementClippedDuration(),
+    SetTrackPlacementClippedDuration(Option<Beats>),
 
     // -- other --
     /// Denotes the reverse-action for an action that isn't reversible.

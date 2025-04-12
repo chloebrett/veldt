@@ -38,7 +38,6 @@ pub fn track_placement_control(store: &Store, ui: &mut Ui) {
             .text("Start position"),
         );
 
-
         let duration = *placement.clipped_duration.unwrap_or(OrderedFloat(0.0)) as f64;
         let mut has_duration = placement.clipped_duration.is_some();
         ui.horizontal(|ui| {
@@ -47,16 +46,22 @@ pub fn track_placement_control(store: &Store, ui: &mut Ui) {
                 egui::Slider::from_get_set(
                     0.0..=16.0,
                     get_set(duration, |it| {
-                        store.dispatch(&sel, Action::SetTrackPlacementClippedDuration(it as Beats))
+                        store.dispatch(
+                            &sel,
+                            Action::SetTrackPlacementClippedDuration(Some(it as Beats)),
+                        )
                     }),
                 )
                 .text("Clipped Duration"),
             );
             if ui.checkbox(&mut has_duration, "").clicked() {
                 if has_duration {
-                    store.dispatch(&sel, Action::SetTrackPlacementClippedDuration(duration as Beats));
+                    store.dispatch(
+                        &sel,
+                        Action::SetTrackPlacementClippedDuration(Some(duration as Beats)),
+                    );
                 } else {
-                    store.dispatch(&sel, Action::RemoveTrackPlacementClippedDuration())
+                    store.dispatch(&sel, Action::SetTrackPlacementClippedDuration(None));
                 }
             };
         });
