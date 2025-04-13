@@ -1,6 +1,6 @@
 use super::effect_name;
 use crate::components::WindowState;
-use crate::widget::{FloatRange, checkbox, default_window, knob};
+use crate::widget::{checkbox, default_window, knob};
 use egui::Pos2;
 use shared::model::{Effect, EffectInstance, EffectMeta};
 use state::{Action, Selector, Store};
@@ -21,7 +21,8 @@ pub fn mixer_control(ctx: &egui::Context, window_state: &mut WindowState, store:
         .open(&mut window_state.mixer.visible)
         .show(ctx, |ui| {
             for effect_index in 0..mixer.effects.len() {
-                let sel = Selector::Effect(mixer_index, effect_index);
+                let effect_sel = Selector::Effect(mixer_index, effect_index);
+                let on_release = || store.dispatchr(Action::Release);
 
                 let effect = &mixer.effects[effect_index];
                 ui.label(effect_name(&effect.effect));
@@ -37,13 +38,14 @@ pub fn mixer_control(ctx: &egui::Context, window_state: &mut WindowState, store:
                     ui,
                     "Wet",
                     meta.wet,
-                    |it| store.dispatch(&sel, Action::SetEffectWet(it)),
-                    FloatRange(0.0, 1.0),
+                    |it| store.dispatch(&effect_sel, Action::SetEffectWet(it)),
+                    0.0..=1.0,
+                    on_release,
                 );
                 checkbox(
                     ui,
                     meta.mute,
-                    |it| store.dispatch(&sel, Action::SetEffectMute(it)),
+                    |it| store.dispatch(&effect_sel, Action::SetEffectMute(it)),
                     "Mute",
                 );
                 if ui.button("Delete").clicked() {

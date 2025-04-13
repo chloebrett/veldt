@@ -3,7 +3,7 @@ use crate::components::WindowState;
 use crate::widget::default_window;
 use egui::Pos2;
 use shared::model::Effect;
-use state::{Selector, Store};
+use state::{Action, Selector, Store};
 
 pub fn effect_name(effect: &Effect) -> &str {
     match effect {
@@ -23,6 +23,7 @@ pub fn effect_control(
 ) {
     let sel = Selector::Effect(mixer_index, effect_index);
     let dispatch = |action| store.dispatch(&sel, action);
+    let on_release = || store.dispatchr(Action::Release);
     let effect = &store.get().project.mixer[mixer_index].effects[effect_index];
     let title = effect_name(&effect.effect);
 
@@ -35,10 +36,12 @@ pub fn effect_control(
         .open(&mut window_state.effects[mixer_index][effect_index])
         .show(ctx, |ui| {
             match &effect.effect {
-                Effect::SimpleEq { config } => eq_control(config, dispatch, ui),
-                Effect::SimpleDelay { config } => delay_control(config, dispatch, ui),
-                Effect::SimpleCompressor { config } => compressor_control(config, dispatch, ui),
-                Effect::ModDelay { config } => mod_delay_control(config, dispatch, ui),
+                Effect::SimpleEq { config } => eq_control(config, dispatch, on_release, ui),
+                Effect::SimpleDelay { config } => delay_control(config, dispatch, on_release, ui),
+                Effect::SimpleCompressor { config } => {
+                    compressor_control(config, dispatch, on_release, ui)
+                }
+                Effect::ModDelay { config } => mod_delay_control(config, dispatch, on_release, ui),
             }
 
             ui.separator();
