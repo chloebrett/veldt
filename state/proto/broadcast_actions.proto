@@ -1,0 +1,17 @@
+syntax = "proto3";
+
+package broadcast_actions;
+
+import "action_proto.proto";
+
+service BroadcastActions {
+  rpc BroadcastActions (BroadcastActionsRequest) returns (BroadcastActionsReply) {}
+}
+
+message BroadcastActionsRequest {
+  repeated action_proto.ReversibleActionProto actions = 1;
+}
+
+message BroadcastActionsReply {
+  bool success = 1;
+}
