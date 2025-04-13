@@ -11,9 +11,10 @@ use std::sync::{Arc, Mutex};
 use tonic_web::GrpcWebLayer;
 use tower_http::cors::AllowHeaders;
 
-pub mod load_sample;
-pub mod render;
-pub mod save_load;
+mod collab;
+mod load_sample;
+mod render;
+mod save_load;
 
 pub async fn start_server() -> anyhow::Result<()> {
     let render = RenderServer::new(RenderContext);

@@ -1,14 +1,22 @@
+use crate::action_proto::ReversibleActionProto;
 use crate::{Action, BroadcastType, Selector, StoreData, broadcast_type, root_reducer};
+use local_macro::{FromProto, IntoProto};
 use shared::logger::log;
 use std::mem::discriminant;
 
 /// An action that can be applied forwards or backwards.
-#[derive(Clone, Debug)]
-struct ReversibleAction {
-    selector: Selector,
-    forward: Action,
-    reverse: Action,
-    is_compacted: bool,
+#[derive(Clone, Debug, IntoProto, FromProto)]
+pub struct ReversibleAction {
+    #[proto_optional]
+    pub selector: Selector,
+
+    #[proto_optional]
+    pub forward: Action,
+
+    #[proto_optional]
+    pub reverse: Action,
+
+    pub is_compacted: bool,
 }
 
 #[derive(Clone, Default, Debug)]

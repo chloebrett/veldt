@@ -532,6 +532,7 @@ dependencies = [
 name = "state"
 version = "0.1.0"
 dependencies = [
+ "local_macro",
  "ordered-float",
  "prost",
  "shared",

@@ -16,10 +16,12 @@ message ReversibleActionProto {
     ActionProto forward = 1;
     ActionProto reverse = 2;
     SelectorProto selector = 3;
+    bool is_compacted = 4; // TODO: what to do about this? Don't send over the wire?
 }
 
 message SelectorProto {
   oneof kind {
+    // TODO: fill in the remaining selectors and actions.
       uint32 root = 1; // TODO: empty data? Or just ignore value?
       uint32 generator = 2;
     }

@@ -10,7 +10,6 @@ use tonic::async_trait;
 
 // Save/load RPCs share some stateful context. Currently, we don't save/load to a file, we just
 // store the saved projects in memory while the server is running.
-#[derive(Clone)]
 pub struct SaveLoadContext {
     pub projects: SavedProjects,
 }
