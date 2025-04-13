@@ -26,6 +26,7 @@ pub use store::*;
 pub use store_data::*;
 use track_placement_reducer::*;
 use track_reducer::*;
+pub use undo::ReversibleAction;
 use undo::*;
 
 pub mod action_proto {

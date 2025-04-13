@@ -1020,6 +1020,18 @@ dependencies = [
 ]
 
 [[package]]
+name = "state"
+version = "0.1.0"
+dependencies = [
+ "local_macro",
+ "ordered-float",
+ "prost",
+ "shared",
+ "tonic",
+ "tonic-build",
+]
+
+[[package]]
 name = "strum"
 version = "0.27.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1497,6 +1509,7 @@ dependencies = [
  "http",
  "mesic",
  "shared",
+ "state",
  "tokio",
  "tonic",
  "tonic-web",
