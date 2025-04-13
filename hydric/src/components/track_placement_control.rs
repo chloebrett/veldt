@@ -41,9 +41,7 @@ pub fn track_placement_control(store: &Store, ui: &mut Ui) {
         // TODO: add slider + on/off for clipped duration.
 
         if ui.button("Delete").clicked() {
-            store.dispatchr(Action::DeleteTrackPlacement {
-                track_placement_index,
-            });
+            store.dispatchr(Action::DeleteTrackPlacement(track_placement_index));
             break;
         }
     }

@@ -67,7 +67,7 @@ pub fn track_control(store: &Store, ui: &mut Ui) {
         if ui.button("Delete").clicked() {
             store.dispatch(
                 &Selector::Track(track_index),
-                Action::DeleteNote { note_index },
+                Action::DeleteNote(note_index),
             );
             break;
         }
