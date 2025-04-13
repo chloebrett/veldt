@@ -108,6 +108,9 @@ impl<T: SequencerObject<T>, F: Fn(usize, Action), G: Fn()> Sequencer<T, F, G> {
                 self.range.size().to_pos2(),
             );
             if let Some(action) = object.resize_action(scaled_pos.x, self.range) {
+                // Only dispatch on_click if object can be resized. Otherwise on_release will be
+                // called with no actions in the stack.
+                // TODO improve this implementation.
                 if rect_response.drag_stopped() || rect_response.lost_focus() {
                     (self.on_release)();
                 } else {
@@ -131,12 +134,12 @@ impl<T: SequencerObject<T>, F: Fn(usize, Action), G: Fn()> Sequencer<T, F, G> {
         let drag_pos = rect_response.interact_pointer_pos();
         let drag_delta = rect_response.drag_delta();
         let next_rect_pos = object.to_pos(self.range).transform(*sequencer_transform) + drag_delta;
+        if rect_response.drag_stopped() || rect_response.lost_focus() {
+            (self.on_release)();
+        }
         if let Some(drag_pos) = drag_pos {
             // 'y' moves in increments and should update to to wherever the mouse is while dragging.
             // 'x' moves continiously and so move based on the drag detla.
-            if response.drag_stopped() || rect_response.lost_focus() {
-                (self.on_release)();
-            }
             let scaled_pos = pos2(next_rect_pos.x, drag_pos.y)
                 .transform(sequencer_transform.inverse())
                 .clamp(
@@ -146,20 +149,12 @@ impl<T: SequencerObject<T>, F: Fn(usize, Action), G: Fn()> Sequencer<T, F, G> {
                 );
             if drag_delta.y != 0.0 {
                 if let Some(action) = object.y_action(scaled_pos.y, self.range) {
-                    if rect_response.drag_stopped() || rect_response.lost_focus() {
-                        (self.on_release)();
-                    } else {
-                        (self.dispatch)(object_index, action)
-                    }
+                    (self.dispatch)(object_index, action)
                 };
             }
             if drag_delta.x != 0.0 {
                 if let Some(action) = object.x_action(scaled_pos.x, self.range) {
-                    if rect_response.drag_stopped() || rect_response.lost_focus() {
-                        (self.on_release)();
-                    } else {
-                        (self.dispatch)(object_index, action)
-                    }
+                    (self.dispatch)(object_index, action)
                 };
             }
         }
