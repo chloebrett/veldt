@@ -1,4 +1,4 @@
-use crate::action_proto::{SelectorProto, selector_proto::Kind as SelectorKind};
+use shared::action_proto::{SelectorProto, selector_proto::Kind as SelectorKind};
 
 #[derive(Clone, Debug, PartialEq)]
 pub enum Selector {
