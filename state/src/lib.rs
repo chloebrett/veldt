@@ -28,11 +28,3 @@ use track_placement_reducer::*;
 use track_reducer::*;
 pub use undo::ReversibleAction;
 use undo::*;
-
-pub mod action_proto {
-    tonic::include_proto!("action_proto");
-}
-
-pub mod broadcast_actions {
-    tonic::include_proto!("broadcast_actions");
-}

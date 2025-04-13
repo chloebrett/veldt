@@ -9,6 +9,8 @@ fn main() {
                 "proto/pmodel.proto",
                 "proto/render.proto",
                 "proto/save_load.proto",
+                "proto/action_proto.proto",
+                "proto/broadcast_actions.proto",
             ],
             &["proto"],
         )

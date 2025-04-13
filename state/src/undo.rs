@@ -1,6 +1,6 @@
-use crate::action_proto::ReversibleActionProto;
 use crate::{Action, BroadcastType, Selector, StoreData, broadcast_type, root_reducer};
 use local_macro::{FromProto, IntoProto};
+use shared::action_proto::ReversibleActionProto;
 use shared::logger::log;
 use std::mem::discriminant;
 

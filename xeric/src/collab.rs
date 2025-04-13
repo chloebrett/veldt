@@ -1,7 +1,7 @@
-use shared::serialize::map_vec;
-use state::broadcast_actions::{
+use shared::broadcast_actions::{
     BroadcastActionsReply, BroadcastActionsRequest, broadcast_actions_server::BroadcastActions,
 };
+use shared::serialize::map_vec;
 use state::{ReversibleAction, Store};
 use std::sync::{Arc, Mutex};
 use tonic::async_trait;

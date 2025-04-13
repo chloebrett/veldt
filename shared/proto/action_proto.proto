@@ -1,0 +1,71 @@
+syntax = "proto3";
+
+package action_proto;
+
+import "pmodel.proto";
+
+message ActionProto {
+  oneof kind {
+    pmodel.ScaleValueProto set_key = 1;
+    pmodel.ScaleProto set_scale = 2;
+    string set_project_name = 3;
+    float set_bpm = 4;
+    float set_volume = 5;
+    float set_generator_volume = 6;
+    bool set_generator_mute = 7;
+    uint32 delete_note = 8;
+    pmodel.PlacedNoteProto add_note = 9;
+    float set_track_offset = 10;
+    pmodel.ScaleValueProto set_note_scale_value = 11;
+    float set_note_offset = 12;
+    float set_note_duration = 13;
+    float set_generator_pan = 14;
+    pmodel.WaveTypeProto set_wave = 15;
+    uint32 set_osc_count = 16;
+    float set_detune_cents = 17;
+    pmodel.AdsrEnvelopeProto set_envelope = 18;
+    pmodel.AntiAliasingModeProto set_anti_aliasing_mode = 19;
+    int32 set_note_octave = 20;
+    pmodel.PitchNameProto set_note_pitch_name = 21;
+    uint32 set_oversample_factor = 22;
+    uint32 move_effect_up = 23;
+    uint32 move_effect_down = 24;
+    uint32 delete_effect = 25;
+    pmodel.EffectInstanceProto add_effect = 26;
+    float set_delay_ms = 27;
+    float set_effect_wet = 28;
+    bool set_effect_mute = 29;
+    float set_eq_fc = 30;
+    float set_eq_q = 31;
+    float set_eq_gain = 32;
+    float set_compressor_threshold = 33;
+    float set_compressor_attack_ms = 34;
+    float set_compressor_release_ms = 35;
+    float set_compressor_ratio = 36;
+    float set_compressor_gain = 37;
+    uint32 set_mod_delay_min_depth = 38;
+    uint32 set_mod_delay_max_depth = 39;
+    float set_mod_delay_lfo_freq = 40;
+    pmodel.WaveTypeProto set_mod_delay_lfo_type = 41;
+    uint32 set_track_placement_track_id = 42;
+    float set_track_placement_offset = 43;
+    pmodel.TrackPlacementProto add_track_placement = 44;
+    uint32 delete_track_placement = 45;
+    pmodel.EqTypeProto set_eq_kind = 46;
+  }
+}
+
+message ReversibleActionProto {
+    ActionProto forward = 1;
+    ActionProto reverse = 2;
+    SelectorProto selector = 3;
+    bool is_compacted = 4; // TODO: what to do about this? Don't send over the wire?
+}
+
+message SelectorProto {
+  oneof kind {
+    // TODO: fill in the remaining selectors and actions.
+      uint32 root = 1; // TODO: empty data? Or just ignore value?
+      uint32 generator = 2;
+    }
+}
