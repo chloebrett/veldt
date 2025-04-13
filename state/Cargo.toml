@@ -8,6 +8,7 @@ prost = "0.13.4"
 ordered-float = "5.0.0"
 shared = { path = "../shared" }
 tonic = { version = "0.12.3", default-features = false, features = ["codegen", "prost"] }
+local_macro = { path = "../local_macro" }
 
 [build-dependencies]
 tonic-build = { version = "0.12.3", default-features = false, features = ["prost"] }

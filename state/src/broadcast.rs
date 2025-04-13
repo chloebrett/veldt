@@ -67,6 +67,7 @@ pub fn broadcast_type(action: &Action) -> BroadcastType {
         Action::SetTrackPlacementTrackId(..) => BroadcastType::Immediate,
         Action::SetTrackPlacementOffset(..) => BroadcastType::OnRelease,
         Action::SetTrackPlacementClippedDuration(..) => BroadcastType::OnRelease,
+        Action::RemoveTrackPlacementClippedDuration(..) => BroadcastType::Immediate,
         Action::Release => BroadcastType::Never,
         Action::NonReversible => BroadcastType::Never,
     }

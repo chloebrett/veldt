@@ -48,7 +48,7 @@ pub fn track_placement_control(store: &Store, ui: &mut Ui) {
                 |it| {
                     store.dispatch(
                         &sel,
-                        Action::SetTrackPlacementClippedDuration(Some(it as Beats)),
+                        Action::SetTrackPlacementClippedDuration(it as Beats),
                     )
                 },
                 0.0..=16.0,
@@ -58,20 +58,16 @@ pub fn track_placement_control(store: &Store, ui: &mut Ui) {
                 if has_duration {
                     store.dispatch(
                         &sel,
-                        Action::SetTrackPlacementClippedDuration(Some(duration as Beats)),
+                        Action::SetTrackPlacementClippedDuration(duration as Beats),
                     );
                 } else {
-                    // TODO Consider storing the duration before setting it to None
-                    // So that it can be reloaded without having to re-set it from zero.
-                    store.dispatch(&sel, Action::SetTrackPlacementClippedDuration(None));
+                    store.dispatch(&sel, Action::RemoveTrackPlacementClippedDuration(true));
                 }
             };
         });
 
         if ui.button("Delete").clicked() {
-            store.dispatchr(Action::DeleteTrackPlacement {
-                track_placement_index,
-            });
+            store.dispatchr(Action::DeleteTrackPlacement(track_placement_index));
             break;
         }
     }

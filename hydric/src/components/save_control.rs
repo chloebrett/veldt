@@ -23,15 +23,11 @@ pub fn load_control(store: &Store, async_state: &mut AsyncState, ui: &mut Ui) {
     });
 
     poll(&mut async_state.project_list, |list| {
-        store.dispatchr(Action::SetProjectList {
-            projects: list.clone(),
-        });
+        store.dispatchr(Action::SetProjectList(list.clone()));
     });
 
     poll(&mut async_state.load_project, |project| {
-        store.dispatchr(Action::SetProject {
-            project: project.clone(),
-        });
+        store.dispatchr(Action::SetProject(project.clone()));
     });
 
     ui.horizontal(|ui| {
@@ -50,7 +46,7 @@ pub fn load_control(store: &Store, async_state: &mut AsyncState, ui: &mut Ui) {
                         ui,
                         get_set(store.get().load_project_name.clone(), |it| {
                             if let Some(it) = it {
-                                store.dispatchr(Action::SetLoadProjectName { project_name: it });
+                                store.dispatchr(Action::SetLoadProjectName(it));
                             }
                         }),
                         Some(name.clone()),

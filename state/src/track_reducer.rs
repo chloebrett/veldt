@@ -7,7 +7,7 @@ pub fn track_reducer(track: &mut Track, action: &Action) -> Action {
     log(&format!("note_reducer processing: {:?}", action.clone()));
 
     match action {
-        Action::DeleteNote { note_index } => {
+        Action::DeleteNote(note_index) => {
             let prev = track
                 .notes
                 .get(*note_index)
@@ -19,7 +19,7 @@ pub fn track_reducer(track: &mut Track, action: &Action) -> Action {
         Action::AddNote(note) => {
             let index = track.notes.len();
             track.notes.push(note.clone());
-            Action::DeleteNote { note_index: index }
+            Action::DeleteNote(index)
         }
         Action::SetTrackOffset(offset) => {
             let prev = track.offset;
