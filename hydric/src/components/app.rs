@@ -14,8 +14,9 @@ use crate::{audio_player::Handle, promise::AsyncResult, view::View};
 use egui::Pos2;
 use egui::{ScrollArea, scroll_area::ScrollBarVisibility};
 use shared::model::{GeneratorType, Project, Sample};
+use shared::state::Action;
 use shared::types::Beats;
-use state::{Action, Store, get_set};
+use state::{Store, get_set};
 
 /// Container for the various promises launchable by the app.
 #[derive(Default)]

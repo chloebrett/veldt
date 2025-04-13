@@ -1,4 +1,4 @@
-use crate::Action;
+use shared::state::Action;
 
 #[derive(PartialEq)]
 pub enum BroadcastType {

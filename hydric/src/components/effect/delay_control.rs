@@ -1,7 +1,7 @@
 use crate::widget::knob;
 use egui::Ui;
 use shared::model::DelayConfig;
-use state::Action;
+use shared::state::Action;
 
 pub fn delay_control<F, G>(config: &DelayConfig, dispatch: F, on_release: G, ui: &mut Ui)
 where

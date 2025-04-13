@@ -1,7 +1,7 @@
-use crate::Action;
 use ordered_float::OrderedFloat;
 use shared::logger::log;
 use shared::model::TrackPlacement;
+use shared::state::Action;
 
 pub fn track_placement_reducer(track_placement: &mut TrackPlacement, action: &Action) -> Action {
     log(&format!(

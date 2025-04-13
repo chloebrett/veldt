@@ -1,6 +1,6 @@
-use crate::Action;
 use shared::logger::log;
 use shared::model::{Effect, EffectInstance};
+use shared::state::Action;
 use std::cmp::{max, min};
 
 pub fn effect_reducer(effect: &mut EffectInstance, action: &Action) -> Action {

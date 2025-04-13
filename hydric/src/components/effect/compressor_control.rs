@@ -1,7 +1,7 @@
 use crate::widget::knob;
 use egui::Ui;
 use shared::model::CompressorConfig;
-use state::Action;
+use shared::state::Action;
 
 pub fn compressor_control<F, G>(config: &CompressorConfig, dispatch: F, on_release: G, ui: &mut Ui)
 where

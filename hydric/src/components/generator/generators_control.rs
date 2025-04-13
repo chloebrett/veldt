@@ -2,7 +2,8 @@ use crate::components::WindowState;
 use crate::widget::{checkbox, default_window, knob};
 use egui::Pos2;
 use shared::model::GeneratorType;
-use state::{Action, Selector, Store};
+use shared::state::{Action, Selector};
+use state::Store;
 
 pub fn generators_control(ctx: &egui::Context, window_state: &mut WindowState, store: &Store) {
     let generators = &store.get().project.generators;

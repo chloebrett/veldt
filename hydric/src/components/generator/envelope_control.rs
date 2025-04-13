@@ -7,7 +7,8 @@ use egui::{
     pos2, vec2,
 };
 use shared::model::{AdsrEnvelope, GeneratorType};
-use state::{Action, Selector, Store};
+use shared::state::{Action, Selector};
+use state::Store;
 
 pub fn envelope_control(store: &Store, ui: &mut Ui, generator_index: usize) {
     let sel = Selector::Generator(generator_index);

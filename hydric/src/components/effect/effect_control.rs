@@ -3,7 +3,8 @@ use crate::components::WindowState;
 use crate::widget::default_window;
 use egui::Pos2;
 use shared::model::Effect;
-use state::{Action, Selector, Store};
+use shared::state::{Action, Selector};
+use state::Store;
 
 pub fn effect_name(effect: &Effect) -> &str {
     match effect {

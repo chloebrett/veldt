@@ -1,8 +1,9 @@
 use crate::{
-    Action, Selector, StoreData, effect_reducer, generator_reducer, mixer_reducer, note_reducer,
+    StoreData, effect_reducer, generator_reducer, mixer_reducer, note_reducer,
     track_placement_reducer, track_reducer,
 };
 use shared::logger::log;
+use shared::state::{Action, Selector};
 
 pub fn root_reducer(data: &mut StoreData, selector: &Selector, action: &Action) -> Action {
     log(&format!("root_reducer processing: {:?}", action.clone()));

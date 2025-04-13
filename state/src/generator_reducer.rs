@@ -1,6 +1,6 @@
-use crate::Action;
 use shared::logger::log;
 use shared::model::{GeneratorInstance, GeneratorType};
+use shared::state::Action;
 
 pub fn generator_reducer(generator: &mut GeneratorInstance, action: &Action) -> Action {
     log(&format!(

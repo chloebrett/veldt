@@ -1,8 +1,8 @@
-use shared::model::{
+use crate::model::{
     AdsrEnvelope, AntiAliasingMode, EffectInstance, EqType, PitchName, PlacedNote, Project, Sample,
     Scale, ScaleValue, TrackId, TrackPlacement, WaveType,
 };
-use shared::types::{Beats, Freq, GainDB, KnobPosition, Milliseconds, Octave, Volume};
+use crate::types::{Beats, Freq, GainDB, KnobPosition, Milliseconds, Octave, Volume};
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum Action {

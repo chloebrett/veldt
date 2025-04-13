@@ -4,7 +4,8 @@ use crate::promise::{poll, spawn};
 use crate::rpc::load_sample;
 use egui::{Button, Ui};
 use mesic::graph::{AmpNode, RenderGraph};
-use state::{Action, Store};
+use shared::state::Action;
+use state::Store;
 
 pub fn sample_control(
     store: &Store,

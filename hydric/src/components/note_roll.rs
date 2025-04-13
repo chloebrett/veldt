@@ -1,4 +1,5 @@
-use state::{Action, Selector, Store};
+use shared::state::{Action, Selector};
+use state::Store;
 
 use egui::{Color32, Pos2, Rect, ScrollArea, Ui, pos2, vec2};
 use shared::{

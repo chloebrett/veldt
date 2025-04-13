@@ -1,7 +1,8 @@
 use super::{envelope_control, simple_wave_control};
 use egui::Ui;
 use shared::model::GeneratorType;
-use state::{Action, Selector, Store};
+use shared::state::{Action, Selector};
+use state::Store;
 
 pub fn generator_control(store: &Store, ui: &mut Ui, generator_index: usize) {
     let sel = Selector::Generator(generator_index);

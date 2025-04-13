@@ -1,7 +1,7 @@
-use crate::Action;
 use ordered_float::OrderedFloat;
 use shared::logger::log;
 use shared::model::Track;
+use shared::state::Action;
 
 pub fn track_reducer(track: &mut Track, action: &Action) -> Action {
     log(&format!("note_reducer processing: {:?}", action.clone()));

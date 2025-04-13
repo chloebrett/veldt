@@ -1,5 +1,6 @@
-use crate::{Action, Selector, StoreData, UndoStack};
+use crate::{StoreData, UndoStack};
 use shared::logger::log;
+use shared::state::{Action, Selector};
 use std::cell::RefCell;
 
 enum UndoRedoType {

@@ -2,8 +2,9 @@ use crate::view::View;
 use crate::widget::selectable_value;
 use egui::{ComboBox, Ui};
 use shared::model::{Scale, ScaleValue};
+use shared::state::Action;
+use state::Store;
 use state::get_set;
-use state::{Action, Store};
 use strum::IntoEnumIterator;
 
 pub struct KeyControl {

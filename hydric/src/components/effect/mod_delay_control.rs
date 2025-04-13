@@ -1,7 +1,8 @@
 use crate::widget::{knob, log_slider, selectable_value};
 use egui::Ui;
 use shared::model::{ModDelayConfig, WaveType};
-use state::{Action, get_set};
+use shared::state::Action;
+use state::get_set;
 use strum::IntoEnumIterator;
 
 pub fn mod_delay_control<F, G>(config: &ModDelayConfig, dispatch: F, on_release: G, ui: &mut Ui)

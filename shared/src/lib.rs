@@ -3,6 +3,7 @@ pub mod consts;
 pub mod logger;
 pub mod model;
 pub mod serialize;
+pub mod state;
 mod testing;
 pub mod types;
 

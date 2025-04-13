@@ -3,7 +3,8 @@ use crate::components::WindowState;
 use crate::widget::{checkbox, default_window, knob};
 use egui::Pos2;
 use shared::model::{Effect, EffectInstance, EffectMeta};
-use state::{Action, Selector, Store};
+use shared::state::{Action, Selector};
+use state::Store;
 use strum::IntoEnumIterator;
 
 pub fn mixer_control(ctx: &egui::Context, window_state: &mut WindowState, store: &Store) {

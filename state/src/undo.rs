@@ -1,5 +1,6 @@
-use crate::{Action, BroadcastType, Selector, StoreData, broadcast_type, root_reducer};
+use crate::{BroadcastType, StoreData, broadcast_type, root_reducer};
 use shared::logger::log;
+use shared::state::{Action, Selector};
 use std::mem::discriminant;
 
 /// An action that can be applied forwards or backwards.

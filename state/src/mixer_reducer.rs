@@ -1,6 +1,6 @@
-use crate::Action;
 use shared::logger::log;
 use shared::model::MixerChannel;
+use shared::state::Action;
 
 pub fn mixer_reducer(mixer: &mut MixerChannel, action: &Action) -> Action {
     log(&format!("mixer_reducer processing: {:?}", action.clone()));
