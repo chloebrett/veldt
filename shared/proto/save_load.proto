@@ -4,6 +4,7 @@ package save_load;
 
 import "pmodel.proto";
 
+// TODO: merge these into a single SaveLoad service with multiple actions
 service SaveProject {
   rpc SaveProject (SaveProjectRequest) returns (SaveProjectReply) {}
 }

@@ -533,7 +533,10 @@ name = "state"
 version = "0.1.0"
 dependencies = [
  "ordered-float",
+ "prost",
  "shared",
+ "tonic",
+ "tonic-build",
 ]
 
 [[package]]

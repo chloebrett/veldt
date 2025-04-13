@@ -1,0 +1,26 @@
+syntax = "proto3";
+
+package action_proto;
+
+message ActionProto {
+  oneof kind {
+    // Subset of actions as a proof of concept.
+    float set_bpm = 1;
+    float set_volume = 2;
+    float set_generator_volume = 3;
+    bool set_generator_mute = 4;
+  }
+}
+
+message ReversibleActionProto {
+    ActionProto forward = 1;
+    ActionProto reverse = 2;
+    SelectorProto selector = 3;
+}
+
+message SelectorProto {
+  oneof kind {
+      uint32 root = 1; // TODO: empty data? Or just ignore value?
+      uint32 generator = 2;
+    }
+}

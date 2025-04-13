@@ -27,3 +27,11 @@ pub use store_data::*;
 use track_placement_reducer::*;
 use track_reducer::*;
 use undo::*;
+
+pub mod action_proto {
+    tonic::include_proto!("action_proto");
+}
+
+pub mod broadcast_actions {
+    tonic::include_proto!("broadcast_actions");
+}
