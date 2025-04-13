@@ -21,6 +21,7 @@ pub struct ReversibleAction {
 
 pub struct UndoStack {
     // Broadcasts a set of actions (to the server).
+    // TODO: should probably be an async type.
     broadcast: Box<dyn Fn(Vec<ReversibleAction>) + Send>,
 
     // Actions that have been applied at least once. Includes actions that have been undone.
@@ -71,7 +72,7 @@ impl UndoStack {
 
         // TODO: store broadcast state of past actions / index of how far we have broadcasted.
         if broadcast_type(action) == BroadcastType::Immediate {
-            Self::broadcast(&reversible_action);
+            self.broadcast(reversible_action.clone());
         }
     }
 
@@ -120,7 +121,8 @@ impl UndoStack {
 
         // Broadcast the action if appropriate.
         if broadcast_type(&new_last_action.forward) == BroadcastType::OnRelease {
-            Self::broadcast(new_last_action);
+            let action = new_last_action.clone();
+            self.broadcast(action);
         }
 
         log(&format!(
@@ -129,9 +131,9 @@ impl UndoStack {
         ));
     }
 
-    fn broadcast(action: &ReversibleAction) {
+    fn broadcast(&self, action: ReversibleAction) {
         log(&format!("Broadcasting action to server! {:?}", action));
-        // TODO: actually broadcast!
+        (self.broadcast)(vec!(action));
     }
 
     /// Whether the stack has actions that can be undone.
