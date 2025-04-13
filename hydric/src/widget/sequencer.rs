@@ -5,23 +5,25 @@ use egui::{
 };
 use state::Action;
 
-pub struct Sequencer<T: SequencerObject<T>, F: Fn(usize, Action)> {
+pub struct Sequencer<T: SequencerObject<T>, F: Fn(usize, Action), G: Fn()> {
     range: Rect,
     size: Vec2,
     objects: Vec<T>,
     sense: Sense,
     dispatch: F, // A closure to modify object in Store. Takes object index and `Action` to dispatch chage.
+    on_release: G,
     background_shapes: Vec<Shape>,
 }
 
-impl<T: SequencerObject<T>, F: Fn(usize, Action)> Sequencer<T, F> {
-    pub fn new(range: Rect, dispatch: F) -> Self {
+impl<T: SequencerObject<T>, F: Fn(usize, Action), G: Fn()> Sequencer<T, F, G> {
+    pub fn new(range: Rect, dispatch: F, on_release: G) -> Self {
         Sequencer {
             range,
             size: vec2(400.0, 600.0),
             objects: vec![],
             sense: Sense::drag(),
             dispatch,
+            on_release,
             background_shapes: vec![],
         }
     }
@@ -54,7 +56,7 @@ impl<T: SequencerObject<T>, F: Fn(usize, Action)> Sequencer<T, F> {
     }
 
     #[inline]
-    pub fn horizontal_rects<G: Fn(i32) -> bool>(mut self, pattern: G, colour: Color32) -> Self {
+    pub fn horizontal_rects<H: Fn(i32) -> bool>(mut self, pattern: H, colour: Color32) -> Self {
         // Add horizontal rectangles across background of Sequencer.
         // Indicate where to paint rectangles with `pattern` a closure that takes `i32` the y coordinate as the
         // input and returns `true` if a rectangle should be rendered there.
@@ -99,15 +101,19 @@ impl<T: SequencerObject<T>, F: Fn(usize, Action)> Sequencer<T, F> {
             ui.ctx().set_cursor_icon(CursorIcon::ResizeColumn);
         }
         let drag_pos = rect_response.interact_pointer_pos();
-        let drag_delta = rect_response.drag_delta();
         if let Some(drag_pos) = drag_pos {
             let scaled_pos = drag_pos.transform(sequencer_transform.inverse()).clamp(
                 pos2(rect.left(), 0.0),
                 // Ensure entire rect stays on sequencer.
                 self.range.size().to_pos2(),
             );
-            if drag_delta.x != 0.0 {
-                if let Some(action) = object.resize_action(scaled_pos.x, self.range) {
+            if let Some(action) = object.resize_action(scaled_pos.x, self.range) {
+                // Only dispatch on_click if object can be resized. Otherwise on_release will be
+                // called with no actions in the stack.
+                // TODO improve this implementation.
+                if rect_response.drag_stopped() || rect_response.lost_focus() {
+                    (self.on_release)();
+                } else {
                     (self.dispatch)(object_index, action)
                 }
             };
@@ -128,6 +134,9 @@ impl<T: SequencerObject<T>, F: Fn(usize, Action)> Sequencer<T, F> {
         let drag_pos = rect_response.interact_pointer_pos();
         let drag_delta = rect_response.drag_delta();
         let next_rect_pos = object.to_pos(self.range).transform(*sequencer_transform) + drag_delta;
+        if rect_response.drag_stopped() || rect_response.lost_focus() {
+            (self.on_release)();
+        }
         if let Some(drag_pos) = drag_pos {
             // 'y' moves in increments and should update to to wherever the mouse is while dragging.
             // 'x' moves continiously and so move based on the drag detla.
@@ -138,23 +147,21 @@ impl<T: SequencerObject<T>, F: Fn(usize, Action)> Sequencer<T, F> {
                     // Ensure entire rect stays on sequencer.
                     (self.range.size() - vec2(rect.size().x, 1.0)).to_pos2(),
                 );
-            if drag_delta != Vec2::ZERO {
-                if drag_delta.x != 0.0 {
-                    if let Some(action) = object.x_action(scaled_pos.x, self.range) {
-                        (self.dispatch)(object_index, action)
-                    }
+            if drag_delta.y != 0.0 {
+                if let Some(action) = object.y_action(scaled_pos.y, self.range) {
+                    (self.dispatch)(object_index, action)
                 };
-                if drag_delta.y != 0.0 {
-                    if let Some(action) = object.y_action(scaled_pos.y, self.range) {
-                        (self.dispatch)(object_index, action)
-                    }
-                }
+            }
+            if drag_delta.x != 0.0 {
+                if let Some(action) = object.x_action(scaled_pos.x, self.range) {
+                    (self.dispatch)(object_index, action)
+                };
             }
         }
     }
 }
 
-impl<T: SequencerObject<T>, F: Fn(usize, Action)> Widget for Sequencer<T, F> {
+impl<T: SequencerObject<T>, F: Fn(usize, Action), G: Fn()> Widget for Sequencer<T, F, G> {
     fn ui(self, ui: &mut Ui) -> Response {
         let Sequencer {
             range,
@@ -162,6 +169,7 @@ impl<T: SequencerObject<T>, F: Fn(usize, Action)> Widget for Sequencer<T, F> {
             ref objects,
             sense,
             dispatch: _,
+            on_release: _,
             ref background_shapes,
         } = self;
         Frame::canvas(ui.style()).show(ui, |ui| {
