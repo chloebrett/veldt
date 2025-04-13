@@ -107,7 +107,9 @@ impl<T: SequencerObject<T>, F: Fn(usize, Action)> Sequencer<T, F> {
                 self.range.size().to_pos2(),
             );
             if drag_delta.x != 0.0 {
-                (self.dispatch)(object_index, object.resize_action(scaled_pos.x, self.range))
+                if let Some(action) = object.resize_action(scaled_pos.x, self.range) {
+                    (self.dispatch)(object_index, action)
+                }
             };
         }
     }
@@ -138,10 +140,14 @@ impl<T: SequencerObject<T>, F: Fn(usize, Action)> Sequencer<T, F> {
                 );
             if drag_delta != Vec2::ZERO {
                 if drag_delta.x != 0.0 {
-                    (self.dispatch)(object_index, object.x_action(scaled_pos.x, self.range))
+                    if let Some(action) = object.x_action(scaled_pos.x, self.range) {
+                        (self.dispatch)(object_index, action)
+                    }
                 };
                 if drag_delta.y != 0.0 {
-                    (self.dispatch)(object_index, object.y_action(scaled_pos.y, self.range))
+                    if let Some(action) = object.y_action(scaled_pos.y, self.range) {
+                        (self.dispatch)(object_index, action)
+                    }
                 }
             }
         }
@@ -186,9 +192,9 @@ pub trait SequencerObject<T> {
 
     fn to_rect(&self, range: Rect) -> Rect;
 
-    fn x_action(&self, x: f32, range: Rect) -> Action;
+    fn x_action(&self, x: f32, range: Rect) -> Option<Action>;
 
-    fn y_action(&self, y: f32, range: Rect) -> Action;
+    fn y_action(&self, y: f32, range: Rect) -> Option<Action>;
 
-    fn resize_action(&self, x: f32, range: Rect) -> Action;
+    fn resize_action(&self, x: f32, range: Rect) -> Option<Action>;
 }
