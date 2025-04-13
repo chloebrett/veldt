@@ -1,4 +1,4 @@
-use crate::widget::{FloatRange, knob};
+use crate::widget::knob;
 use egui::{
     Color32, Pos2, Rect, Ui,
     containers::Frame,
@@ -12,6 +12,7 @@ use state::{Action, Selector, Store};
 pub fn envelope_control(store: &Store, ui: &mut Ui, generator_index: usize) {
     let sel = Selector::Generator(generator_index);
     let dispatch = |action| store.dispatch(&sel, action);
+    let on_release = || store.dispatchr(Action::Release);
 
     let generator_type = store.get().project.generators[generator_index].kind.clone();
     let config = match generator_type {
@@ -24,14 +25,16 @@ pub fn envelope_control(store: &Store, ui: &mut Ui, generator_index: usize) {
         "Attack",
         envelope.attack,
         |attack| dispatch(Action::SetEnvelope(AdsrEnvelope { attack, ..envelope })),
-        FloatRange(0.0, 1.0),
+        0.0..=1.0,
+        on_release,
     );
     knob(
         ui,
         "Decay",
         envelope.decay,
         |decay| dispatch(Action::SetEnvelope(AdsrEnvelope { decay, ..envelope })),
-        FloatRange(0.0, 1.0),
+        0.0..=1.0,
+        on_release,
     );
     knob(
         ui,
@@ -43,7 +46,8 @@ pub fn envelope_control(store: &Store, ui: &mut Ui, generator_index: usize) {
                 ..envelope
             }))
         },
-        FloatRange(0.0, 1.0),
+        0.0..=1.0,
+        on_release,
     );
     knob(
         ui,
@@ -55,7 +59,8 @@ pub fn envelope_control(store: &Store, ui: &mut Ui, generator_index: usize) {
                 ..envelope
             }))
         },
-        FloatRange(0.0, 1.0),
+        0.0..=1.0,
+        on_release,
     );
 
     Frame::canvas(ui.style()).show(ui, |ui| {

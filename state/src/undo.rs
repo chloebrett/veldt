@@ -1,4 +1,4 @@
-use crate::{Action, Selector, StoreData, root_reducer};
+use crate::{Action, BroadcastType, Selector, StoreData, broadcast_type, root_reducer};
 use shared::logger::log;
 
 /// An action that can be applied forwards or backwards.
@@ -24,6 +24,12 @@ impl UndoStack {
     /// Performs an action for the first time.
     /// Saves instructions for how to undo the action so that it can be undone in future.
     pub fn apply(&mut self, store: &mut StoreData, selector: &Selector, action: &Action) {
+        // Special case: "release" marker actions should flatten actions of the same type that came before them.
+        if *action == Action::Release {
+            log("Got release action");
+            return;
+        }
+
         // Run the action, and remember how to reverse it.
         let reverse = root_reducer(store, selector, action);
 
@@ -38,6 +44,19 @@ impl UndoStack {
             reverse,
         });
         self.index += 1;
+
+        // TODO: store broadcast state of past actions / index of how far we have broadcasted.
+        if broadcast_type(action) == BroadcastType::Immediate {
+            self.broadcast(selector, action);
+        }
+    }
+
+    fn broadcast(&self, selector: &Selector, action: &Action) {
+        log(&format!(
+            "Broadcasting action to server! {:?}, {:?}",
+            action, selector
+        ));
+        // TODO: actually broadcast!
     }
 
     /// Whether the stack has actions that can be undone.

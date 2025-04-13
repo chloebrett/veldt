@@ -1,12 +1,13 @@
-use crate::widget::{FloatRange, knob, selectable_value};
+use crate::widget::{knob, selectable_value};
 use egui::Ui;
 use shared::model::{AntiAliasingMode, SimpleWaveConfig, WaveType};
 use state::{Action, get_set};
 use strum::IntoEnumIterator;
 
-pub fn simple_wave_control<F>(config: &SimpleWaveConfig, dispatch: F, ui: &mut Ui)
+pub fn simple_wave_control<F, G>(config: &SimpleWaveConfig, dispatch: F, on_release: G, ui: &mut Ui)
 where
     F: Fn(Action),
+    G: Fn(),
 {
     egui::ComboBox::from_label("Wave type")
         .selected_text(config.wave.to_string())
@@ -35,7 +36,8 @@ where
         "Osc detune",
         config.detune_cents,
         |it| dispatch(Action::SetDetuneCents(it)),
-        FloatRange(0.0, 100.0),
+        0.0..=100.0,
+        on_release,
     );
 
     egui::ComboBox::from_label("Anti aliasing mode")

@@ -2,6 +2,7 @@ mod checkbox;
 mod knob;
 mod selectable_value;
 mod sequencer;
+mod slider;
 mod string_observer;
 mod window;
 
@@ -9,5 +10,6 @@ pub use checkbox::*;
 pub use knob::*;
 pub use selectable_value::*;
 pub use sequencer::*;
+pub use slider::*;
 pub use string_observer::*;
 pub use window::*;

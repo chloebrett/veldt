@@ -1,17 +1,19 @@
-use crate::widget::{FloatRange, knob};
+use crate::widget::knob;
 use egui::Ui;
 use shared::model::DelayConfig;
 use state::Action;
 
-pub fn delay_control<F>(config: &DelayConfig, dispatch: F, ui: &mut Ui)
+pub fn delay_control<F, G>(config: &DelayConfig, dispatch: F, on_release: G, ui: &mut Ui)
 where
     F: Fn(Action),
+    G: Fn(),
 {
     knob(
         ui,
         "Delay ms",
         config.delay_ms,
         |it| dispatch(Action::SetDelayMs(it)),
-        FloatRange(1.0, 1000.0),
+        1.0..=1000.0,
+        on_release,
     );
 }
