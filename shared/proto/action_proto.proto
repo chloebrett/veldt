@@ -31,6 +31,9 @@ message ActionProto {
     uint32 move_effect_up = 23;
     uint32 move_effect_down = 24;
     uint32 delete_effect = 25;
+    // Note: this (EffectInstanceProto) might be the largest variant here.
+    // Check if this means that every action sent over the wire is this large.
+    // If so, maybe consider storing an optional field for large payloads instead (assuming that even helps).
     pmodel.EffectInstanceProto add_effect = 26;
     float set_delay_ms = 27;
     float set_effect_wet = 28;
@@ -64,8 +67,17 @@ message ReversibleActionProto {
 
 message SelectorProto {
   oneof kind {
-    // TODO: fill in the remaining selectors and actions.
-      uint32 root = 1; // TODO: empty data? Or just ignore value?
-      uint32 generator = 2;
+      uint32 root = 1; // dummy value
+      uint32 track = 2;
+      IndexPair note = 3;
+      uint32 mixer = 4;
+      IndexPair effect = 5;
+      uint32 generator = 6;
+      uint32 track_placement = 7;
+    }
+
+  message IndexPair {
+      uint32 first = 1;
+      uint32 second = 2;
     }
 }
