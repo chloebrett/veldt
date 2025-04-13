@@ -1,8 +1,8 @@
 use crate::model::{AdsrEnvelope, WaveType};
 use crate::pmodel::{
     AntiAliasingModeProto, GeneratorInstanceProto, GeneratorMetaProto, NoiseConfigProto,
-    NoiseProto, NoiseTypeProto, SimpleWaveConfigProto, SimpleWaveProto,
-    generator_instance_proto::Kind as GeneratorTypeProto,
+    NoiseProto, NoiseTypeProto, OscillatorConfigProto, SimpleWaveConfigProto, SimpleWaveProto,
+    TripleOscConfigProto, TripleOscProto, generator_instance_proto::Kind as GeneratorTypeProto,
 };
 use crate::types::{KnobPosition, Volume};
 use local_macro::{FromProto, IntoProto};
@@ -33,6 +33,9 @@ impl From<GeneratorType> for GeneratorTypeProto {
             GeneratorType::Noise { config } => GeneratorTypeProto::Noise(NoiseProto {
                 config: Some(config.into()),
             }),
+            GeneratorType::TripleOsc { config } => GeneratorTypeProto::TripleOsc(TripleOscProto {
+                config: Some(config.into()),
+            }),
         }
     }
 }
@@ -46,6 +49,9 @@ impl From<GeneratorTypeProto> for GeneratorType {
             GeneratorTypeProto::Noise(config) => GeneratorType::Noise {
                 config: config.config.unwrap().into(),
             },
+            GeneratorTypeProto::TripleOsc(config) => GeneratorType::TripleOsc {
+                config: config.config.unwrap().into(),
+            },
         }
     }
 }
@@ -54,6 +60,7 @@ impl From<GeneratorTypeProto> for GeneratorType {
 pub enum GeneratorType {
     SimpleWave { config: SimpleWaveConfig },
     Noise { config: NoiseConfig },
+    TripleOsc { config: TripleOscConfig },
 }
 
 #[derive(Clone, Debug, PartialEq, FromProto, IntoProto)]
@@ -85,6 +92,55 @@ pub enum NoiseType {
     White,
     Brown,
     Pink,
+}
+
+#[derive(Clone, Debug, PartialEq)]
+pub struct TripleOscConfig {
+    pub oscillators: [OscillatorConfig; 3],
+}
+
+impl From<TripleOscConfigProto> for TripleOscConfig {
+    fn from(proto: TripleOscConfigProto) -> Self {
+        let vec = proto.oscillators;
+        assert_eq!(
+            vec.len(),
+            3,
+            "TripleOscConfig must have exactly 3 oscillators"
+        );
+        TripleOscConfig {
+            oscillators: [
+                vec[0].clone().into(),
+                vec[1].clone().into(),
+                vec[2].clone().into(),
+            ],
+        }
+    }
+}
+
+impl From<TripleOscConfig> for TripleOscConfigProto {
+    fn from(config: TripleOscConfig) -> Self {
+        TripleOscConfigProto {
+            oscillators: config
+                .oscillators
+                .iter()
+                .map(|osc| osc.clone().into())
+                .collect(),
+        }
+    }
+}
+
+#[derive(Clone, Debug, PartialEq, FromProto, IntoProto)]
+pub struct OscillatorConfig {
+    #[proto_enum]
+    pub wave: WaveType,
+
+    pub volume: Volume,
+
+    pub pan: KnobPosition,
+
+    pub coarse_detune: i32,
+
+    pub fine_detune: f32,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, EnumString, Display, EnumIter, IntoProto, FromProto)]

@@ -15,6 +15,7 @@ pub fn generator_control(store: &Store, ui: &mut Ui, generator_index: usize) {
             simple_wave_control(&config, dispatch, on_release, ui)
         }
         GeneratorType::Noise { .. } => todo!(),
+        GeneratorType::TripleOsc { .. } => todo!(),
     };
 
     // TODO: move this to the individual generator UI.
