@@ -14,26 +14,16 @@ pub enum Action {
     SetBpm(Beats),
     SetVolume(Volume),
     AddTrackPlacement(TrackPlacement),
-    DeleteTrackPlacement {
-        track_placement_index: usize,
-    },
+    DeleteTrackPlacement(usize),
     // Sets the names of loadable projects.
-    SetProjectList {
-        projects: Vec<String>,
-    },
+    SetProjectList(Vec<String>),
     // Overwrites the whole project.
-    SetProject {
-        project: Project,
-    },
-    SetLoadProjectName {
-        project_name: String,
-    },
+    SetProject(Project),
+    SetLoadProjectName(String),
     AddSample(Sample),
 
     // --- TrackSelector ---
-    DeleteNote {
-        note_index: usize,
-    },
+    DeleteNote(usize),
     AddNote(PlacedNote),
     SetTrackOffset(Beats),
 
