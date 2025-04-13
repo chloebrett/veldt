@@ -36,8 +36,9 @@ impl View for TrackRoll {
         let dispatch = |index: usize, action: Action| {
             store.dispatch(&Selector::TrackPlacement(placed_track_ids[index]), action);
         };
+        let on_release = || store.dispatchr(Action::Release);
         ui.add(
-            Sequencer::new(range, dispatch)
+            Sequencer::new(range, dispatch, on_release)
                 .objects(placed_tracks)
                 .size(vec2(ui.available_width(), 100.0))
                 .vertical_bars(4.0, Color32::from_white_alpha(6))
