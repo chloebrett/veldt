@@ -1,8 +1,7 @@
 use crate::view::View;
-use crate::widget::selectable_value;
+use crate::widget::{get_set, selectable_value};
 use egui::{ComboBox, Ui};
 use shared::model::{Scale, ScaleValue};
-use state::get_set;
 use state::{Action, Store};
 use strum::IntoEnumIterator;
 
