@@ -4,6 +4,7 @@ use shared::broadcast_actions::{
 use shared::serialize::map_vec;
 use state::{ReversibleAction, Store};
 use std::marker::Send;
+use shared::logger::log;
 use std::sync::{Arc, Mutex};
 use tonic::async_trait;
 
@@ -44,6 +45,8 @@ impl BroadcastActions for CollabContext {
         }
 
         self.store.lock().unwrap().snapshot();
+
+        log(&format!("{:?}", self.store.lock().unwrap().get()));
 
         Ok(tonic::Response::new(BroadcastActionsReply {
             success: true,

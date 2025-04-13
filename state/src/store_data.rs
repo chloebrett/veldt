@@ -7,6 +7,7 @@ use shared::model::{
 };
 use shared::types::Volume;
 
+#[derive(Debug)]
 pub struct StoreData {
     pub project: Project,
     pub key: ScaleValue,

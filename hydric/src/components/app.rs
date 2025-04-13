@@ -16,6 +16,8 @@ use egui::{ScrollArea, scroll_area::ScrollBarVisibility};
 use shared::model::{GeneratorType, Project, Sample};
 use shared::types::Beats;
 use state::{Action, Store};
+use poll_promise::Promise;
+use crate::rpc::broadcast_actions;
 
 /// Container for the various promises launchable by the app.
 #[derive(Default)]
@@ -78,8 +80,11 @@ pub struct App {
 
 impl Default for App {
     fn default() -> Self {
+        let broadcast = |actions| {
+            let _ = Promise::spawn_local(broadcast_actions(actions));
+        };
         App {
-            store: Store::new(|_| {}),
+            store: Store::new(broadcast),
             async_state: AsyncState::default(),
             audio_state: AudioState::default(),
             window_state: WindowState::default(),
