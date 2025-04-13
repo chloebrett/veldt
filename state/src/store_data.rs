@@ -3,7 +3,7 @@ use shared::model::{
     AdsrEnvelope, AntiAliasingMode, CompressorConfig, DelayConfig, Effect, EffectInstance,
     EffectMeta, EqConfig, EqType, GeneratorInstance, GeneratorMeta, GeneratorType, MixerChannel,
     ModDelayConfig, ModMatrix, Note, PitchName, PlacedNote, Project, Scale, ScaleValue,
-    SimpleWaveConfig, Track, WaveType,
+    SimpleWaveConfig, Track, TrackPlacement, WaveType,
 };
 use shared::types::Volume;
 
@@ -34,7 +34,12 @@ impl Default for StoreData {
                     }],
                     offset: OrderedFloat(0.0),
                 }],
-                track_placements: vec![],
+                track_placements: vec![TrackPlacement {
+                    track_id: 0,
+                    clipped_duration: None,
+                    offset: OrderedFloat(0.0),
+                    visual_placement: 0,
+                }],
                 samples: vec![],
                 generators: vec![GeneratorInstance {
                     id: 0,

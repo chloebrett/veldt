@@ -1,9 +1,9 @@
 use super::AsyncState;
 use crate::promise::{poll, spawn};
 use crate::rpc::{load_project, load_project_list, save_project};
-use crate::widget::selectable_value;
+use crate::widget::{get_set, selectable_value};
 use egui::Ui;
-use state::{Action, Store, get_set};
+use state::{Action, Store};
 
 pub fn save_button(store: &Store, async_state: &mut AsyncState, ui: &mut Ui) {
     if ui.button("Save").clicked() {

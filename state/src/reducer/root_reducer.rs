@@ -1,7 +1,8 @@
-use crate::{
-    Action, Selector, StoreData, effect_reducer, generator_reducer, mixer_reducer, note_reducer,
-    track_placement_reducer, track_reducer,
+use super::{
+    effect_reducer, generator_reducer, mixer_reducer, note_reducer, track_placement_reducer,
+    track_reducer,
 };
+use crate::{Action, Selector, StoreData};
 use shared::logger::log;
 
 pub fn root_reducer(data: &mut StoreData, selector: &Selector, action: &Action) -> Action {

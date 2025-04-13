@@ -1,7 +1,9 @@
+use crate::collab::CollabContext;
 use crate::load_sample::LoadSampleContext;
 use crate::render::RenderContext;
 use crate::save_load::SaveLoadContext;
 use http::{HeaderValue, Method};
+use shared::broadcast_actions::broadcast_actions_server::BroadcastActionsServer;
 use shared::consts::{HYDRIC_URL, XERIC_SOCKET_ADDR};
 use shared::load_sample::load_sample_server::LoadSampleServer;
 use shared::render::render_server::RenderServer;
@@ -23,8 +25,10 @@ pub async fn start_server() -> anyhow::Result<()> {
     let save_load_context = SaveLoadContext {
         projects: Arc::new(Mutex::new(HashMap::new())),
     };
-
     let save_load = SaveLoadServer::new(save_load_context);
+
+    let collab_context = CollabContext::new();
+    let broadcast_actions = BroadcastActionsServer::new(collab_context);
 
     tonic::transport::Server::builder()
         .accept_http1(true)
@@ -41,6 +45,7 @@ pub async fn start_server() -> anyhow::Result<()> {
         .add_service(render)
         .add_service(load_sample)
         .add_service(save_load)
+        .add_service(broadcast_actions)
         .serve(*XERIC_SOCKET_ADDR)
         .await?;
 

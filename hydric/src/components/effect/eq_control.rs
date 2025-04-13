@@ -1,8 +1,8 @@
-use crate::widget::{knob, selectable_value};
+use crate::widget::{get_set, knob, selectable_value};
 use egui::Ui;
 use shared::model::EqConfig;
 use shared::model::EqType;
-use state::{Action, get_set};
+use state::Action;
 use strum::IntoEnumIterator;
 
 pub fn eq_control<F, G>(config: &EqConfig, dispatch: F, on_release: G, ui: &mut Ui)

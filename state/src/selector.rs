@@ -1,4 +1,6 @@
-use shared::action_proto::{SelectorProto, selector_proto::Kind as SelectorKind};
+use shared::action_proto::{
+    SelectorProto, selector_proto::IndexPair, selector_proto::Kind as SelectorKind,
+};
 
 #[derive(Clone, Debug, PartialEq)]
 pub enum Selector {
@@ -16,8 +18,12 @@ impl From<Selector> for SelectorProto {
         SelectorProto {
             kind: Some(match other {
                 Selector::Root => SelectorKind::Root(0),
+                Selector::Track(it) => SelectorKind::Track(it as u32),
+                Selector::Note(first, second) => SelectorKind::Note(pair(first, second)),
+                Selector::Mixer(it) => SelectorKind::Mixer(it as u32),
+                Selector::Effect(first, second) => SelectorKind::Effect(pair(first, second)),
                 Selector::Generator(it) => SelectorKind::Generator(it as u32),
-                _ => todo!(),
+                Selector::TrackPlacement(it) => SelectorKind::TrackPlacement(it as u32),
             }),
         }
     }
@@ -27,7 +33,23 @@ impl From<SelectorProto> for Selector {
     fn from(other: SelectorProto) -> Selector {
         match other.kind.unwrap() {
             SelectorKind::Root(..) => Selector::Root,
+            SelectorKind::Track(it) => Selector::Track(it as usize),
+            SelectorKind::Note(IndexPair { first, second }) => {
+                Selector::Note(first as usize, second as usize)
+            }
+            SelectorKind::Mixer(it) => Selector::Mixer(it as usize),
+            SelectorKind::Effect(IndexPair { first, second }) => {
+                Selector::Effect(first as usize, second as usize)
+            }
             SelectorKind::Generator(it) => Selector::Generator(it as usize),
+            SelectorKind::TrackPlacement(it) => Selector::TrackPlacement(it as usize),
         }
+    }
+}
+
+fn pair(first: usize, second: usize) -> IndexPair {
+    IndexPair {
+        first: first as u32,
+        second: second as u32,
     }
 }

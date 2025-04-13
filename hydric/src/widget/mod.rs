@@ -1,4 +1,5 @@
 mod checkbox;
+mod get_set;
 mod knob;
 mod selectable_value;
 mod sequencer;
@@ -7,6 +8,7 @@ mod string_observer;
 mod window;
 
 pub use checkbox::*;
+pub use get_set::*;
 pub use knob::*;
 pub use selectable_value::*;
 pub use sequencer::*;

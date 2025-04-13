@@ -15,7 +15,9 @@ pub struct Store {
     // The actions that have been queued to run but not run yet.
     // Each frame, the pending actions are applied to the state in order.
     // Contained within a RefCell so that it can be mutated with only an immutable reference to the
-    // store.
+    // store. This is safe because it's only borrowed for the duration of the dispatch() function,
+    // and it isn't read until we flush the actions at the start of the
+    // next frame.
     pending_actions: RefCell<Vec<(Selector, Action)>>,
 
     // State regarding actions that have been completed in the past and possibly undone.

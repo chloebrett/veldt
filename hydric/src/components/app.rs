@@ -9,13 +9,13 @@ use super::{
     track_roll::TrackRoll,
     undo_redo_control,
 };
-use crate::widget::{default_window, knob, slider, string_observer};
+use crate::widget::{default_window, get_set, knob, slider, string_observer};
 use crate::{audio_player::Handle, promise::AsyncResult, view::View};
 use egui::Pos2;
 use egui::{ScrollArea, scroll_area::ScrollBarVisibility};
 use shared::model::{GeneratorType, Project, Sample};
 use shared::types::Beats;
-use state::{Action, Store, get_set};
+use state::{Action, Store};
 
 /// Container for the various promises launchable by the app.
 #[derive(Default)]

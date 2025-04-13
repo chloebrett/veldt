@@ -1,9 +1,9 @@
-use crate::widget::{selectable_value, slider};
+use crate::widget::{get_set, selectable_value, slider};
 use egui::Ui;
 use ordered_float::OrderedFloat;
 use shared::model::{TrackId, TrackPlacement};
 use shared::types::Beats;
-use state::{Action, Selector, Store, get_set};
+use state::{Action, Selector, Store};
 
 pub fn track_placement_control(store: &Store, ui: &mut Ui) {
     let project = &store.get().project;
