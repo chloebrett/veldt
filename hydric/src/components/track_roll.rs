@@ -83,7 +83,7 @@ impl SequencerObject<PlacedTrack> for PlacedTrack {
     }
 
     fn y_action(&self, _y: f32, _range: Rect) -> Option<Action> {
-        // TODO implement multiple channels.
+        // TODO implement multiple tracks.
         None
     }
 
