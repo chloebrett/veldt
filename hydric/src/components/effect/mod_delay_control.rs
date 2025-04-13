@@ -1,4 +1,4 @@
-use crate::widget::{knob, selectable_value};
+use crate::widget::{knob, log_slider, selectable_value};
 use egui::Ui;
 use shared::model::{ModDelayConfig, WaveType};
 use state::{Action, get_set};
@@ -28,15 +28,13 @@ where
         &on_release,
     );
     // TODO: replace this with a knob once we have logarithmic knobs.
-    ui.add(
-        egui::Slider::from_get_set(
-            0.1..=100.0,
-            get_set(config.freq as f64, |it| {
-                dispatch(Action::SetModDelayLfoFreq(it as f32))
-            }),
-        )
-        .text("LFO frequency")
-        .logarithmic(true),
+    log_slider(
+        ui,
+        "LFO frequency",
+        config.freq as f64,
+        |it| dispatch(Action::SetModDelayLfoFreq(it as f32)),
+        0.1..=100.0,
+        &on_release,
     );
 
     egui::ComboBox::from_label("LFO wave type")
