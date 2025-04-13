@@ -9,7 +9,7 @@ use super::{
     track_roll::TrackRoll,
     undo_redo_control,
 };
-use crate::widget::{default_window, knob, log_slider, string_observer};
+use crate::widget::{default_window, knob, slider, string_observer};
 use crate::{audio_player::Handle, promise::AsyncResult, view::View};
 use egui::Pos2;
 use egui::{ScrollArea, scroll_area::ScrollBarVisibility};
@@ -198,7 +198,7 @@ impl eframe::App for App {
                             );
 
                             let bpm = self.store.get().project.bpm as f64;
-                            log_slider(
+                            slider(
                                 ui,
                                 "BPM",
                                 bpm,
