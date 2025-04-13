@@ -7,7 +7,6 @@ use std::sync::{Arc, Mutex};
 use tonic::async_trait;
 
 /// Context for collaborative editing.
-/// For now, just
 pub struct CollabContext {
     // Server's representation of the state store. Includes an undo stack which tracks which
     // actions have been processed so far.
