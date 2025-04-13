@@ -1,5 +1,5 @@
 use crate::components::WindowState;
-use crate::widget::{FloatRange, checkbox, default_window, knob};
+use crate::widget::{checkbox, default_window, knob};
 use egui::Pos2;
 use shared::model::GeneratorType;
 use state::{Action, Selector, Store};
@@ -17,6 +17,7 @@ pub fn generators_control(ctx: &egui::Context, window_state: &mut WindowState, s
         .show(ctx, |ui| {
             for generator_index in 0..generators.len() {
                 let sel = Selector::Generator(generator_index);
+                let on_release = || store.dispatchr(Action::Release);
 
                 let generator = &generators[generator_index];
                 let label = match &generator.kind {
@@ -37,7 +38,8 @@ pub fn generators_control(ctx: &egui::Context, window_state: &mut WindowState, s
                     "Volume",
                     meta.volume,
                     |it| store.dispatch(&sel, Action::SetGeneratorVolume(it)),
-                    FloatRange(0.0, 1.0),
+                    0.0..=1.0,
+                    on_release,
                 );
                 // TODO: make the pan knob centre at the top since it's bipolar.
                 knob(
@@ -45,7 +47,8 @@ pub fn generators_control(ctx: &egui::Context, window_state: &mut WindowState, s
                     "Pan",
                     meta.pan,
                     |it| store.dispatch(&sel, Action::SetGeneratorPan(it)),
-                    FloatRange(-1.0, 1.0),
+                    -1.0..=1.0,
+                    on_release,
                 );
                 checkbox(
                     ui,

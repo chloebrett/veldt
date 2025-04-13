@@ -1,18 +1,20 @@
-use crate::widget::{FloatRange, knob};
+use crate::widget::knob;
 use egui::Ui;
 use shared::model::CompressorConfig;
 use state::Action;
 
-pub fn compressor_control<F>(config: &CompressorConfig, dispatch: F, ui: &mut Ui)
+pub fn compressor_control<F, G>(config: &CompressorConfig, dispatch: F, on_release: G, ui: &mut Ui)
 where
     F: Fn(Action),
+    G: Fn(),
 {
     knob(
         ui,
         "Threshold",
         config.threshold,
         |it| dispatch(Action::SetCompressorThreshold(it)),
-        FloatRange(0.0, 1.0),
+        0.0..=1.0,
+        &on_release,
     );
 
     knob(
@@ -20,7 +22,8 @@ where
         "Attack (ms)",
         config.attack_ms,
         |it| dispatch(Action::SetCompressorAttackMs(it)),
-        FloatRange(0.0, 1000.0), // TODO: logarithmic
+        0.0..=1000.0, // TODO: logarithmic
+        &on_release,
     );
 
     knob(
@@ -28,7 +31,8 @@ where
         "Release (ms)",
         config.release_ms,
         |it| dispatch(Action::SetCompressorReleaseMs(it)),
-        FloatRange(0.0, 1000.0), // TODO: logarithmic
+        0.0..=1000.0, // TODO: logarithmic
+        &on_release,
     );
 
     knob(
@@ -36,6 +40,7 @@ where
         "Ratio",
         config.ratio,
         |it| dispatch(Action::SetCompressorRatio(it)),
-        FloatRange(1.0, 100.0),
+        1.0..=100.0,
+        &on_release,
     );
 }

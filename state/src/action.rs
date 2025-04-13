@@ -4,7 +4,7 @@ use shared::model::{
 };
 use shared::types::{Beats, Freq, GainDB, KnobPosition, Milliseconds, Octave, Volume};
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub enum Action {
     // --- RootSelector ---
     SetKey(ScaleValue),
@@ -83,6 +83,10 @@ pub enum Action {
     SetTrackPlacementOffset(Beats),
 
     // -- other --
+    /// Denotes that the mouse has been released from a UI element, finalizing its value.
+    /// This is how we know to flatten (in the undo stack) actions that modify floats.
+    /// This event is just a marker, it doesn't get passed on to the reducers.
+    Release,
     /// Denotes the reverse-action for an action that isn't reversible.
     /// Applying this is a no-op.
     /// There might be a better way of describing this concept, keep a look out.
