@@ -132,16 +132,18 @@ impl SequencerObject<PlacedNote> for PlacedNote {
         Rect::from_min_size(pos, note_size)
     }
 
-    fn x_action(&self, x: f32, range: Rect) -> Action {
-        Action::SetNoteOffset(x - range.left())
+    fn x_action(&self, x: f32, range: Rect) -> Option<Action> {
+        Some(Action::SetNoteOffset(x - range.left()))
     }
 
-    fn y_action(&self, y: f32, range: Rect) -> Action {
-        Action::SetNotePitchName(PitchName::from((range.bottom() - y) as i32))
+    fn y_action(&self, y: f32, range: Rect) -> Option<Action> {
+        Some(Action::SetNotePitchName(PitchName::from(
+            (range.bottom() - y) as i32,
+        )))
     }
 
-    fn resize_action(&self, x: f32, _range: Rect) -> Action {
+    fn resize_action(&self, x: f32, _range: Rect) -> Option<Action> {
         let beats = x - *self.offset;
-        Action::SetNoteDuration(beats)
+        Some(Action::SetNoteDuration(beats))
     }
 }
