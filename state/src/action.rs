@@ -1,3 +1,4 @@
+use crate::action_proto::{ActionProto, action_proto::Kind as ActionKind};
 use shared::model::{
     AdsrEnvelope, AntiAliasingMode, EffectInstance, EqType, PitchName, PlacedNote, Project, Sample,
     Scale, ScaleValue, TrackId, TrackPlacement, WaveType,
@@ -44,6 +45,8 @@ pub enum Action {
     SetNoteDuration(Beats),
 
     // --- GeneratorSelector ---
+    // TODO: rename this to SetVolume, and just differentiate by the selector. (Apply this idea to
+    // several action types).
     SetGeneratorVolume(Volume),
     SetGeneratorMute(bool),
     SetGeneratorPan(KnobPosition),
@@ -92,4 +95,32 @@ pub enum Action {
     /// Applying this is a no-op.
     /// There might be a better way of describing this concept, keep a look out.
     NonReversible,
+}
+
+impl From<ActionProto> for Action {
+    fn from(other: ActionProto) -> Action {
+        match other.kind.unwrap() {
+            // TODO: we could probably easily macro-ify this if all actions were required to have
+            // exactly one tuple parameter. More complex actions can pass a struct as their
+            // parameter.
+            ActionKind::SetBpm(it) => Action::SetBpm(it),
+            ActionKind::SetVolume(it) => Action::SetVolume(it),
+            ActionKind::SetGeneratorVolume(it) => Action::SetGeneratorVolume(it),
+            ActionKind::SetGeneratorMute(it) => Action::SetGeneratorMute(it),
+        }
+    }
+}
+
+impl From<Action> for ActionProto {
+    fn from(other: Action) -> ActionProto {
+        ActionProto {
+            kind: Some(match other {
+                Action::SetBpm(it) => ActionKind::SetBpm(it),
+                Action::SetVolume(it) => ActionKind::SetVolume(it),
+                Action::SetGeneratorVolume(it) => ActionKind::SetGeneratorVolume(it),
+                Action::SetGeneratorMute(it) => ActionKind::SetGeneratorMute(it),
+                _ => todo!(),
+            }),
+        }
+    }
 }

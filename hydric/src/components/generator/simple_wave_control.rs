@@ -1,4 +1,4 @@
-use crate::widget::{knob, selectable_value};
+use crate::widget::{int_slider, knob, selectable_value};
 use egui::Ui;
 use shared::model::{AntiAliasingMode, SimpleWaveConfig, WaveType};
 use state::{Action, get_set};
@@ -21,15 +21,14 @@ where
                 );
             }
         });
-    ui.add(
-        egui::Slider::from_get_set(
-            1.0..=24.0,
-            get_set(config.osc_count as f64, |it| {
-                dispatch(Action::SetOscCount(it as u32))
-            }),
-        )
-        .text("Osc count")
-        .fixed_decimals(0),
+
+    int_slider(
+        ui,
+        "Unison",
+        config.osc_count as f64,
+        |it| dispatch(Action::SetOscCount(it as u32)),
+        1..=24,
+        &on_release,
     );
     knob(
         ui,
@@ -37,7 +36,7 @@ where
         config.detune_cents,
         |it| dispatch(Action::SetDetuneCents(it)),
         0.0..=100.0,
-        on_release,
+        &on_release,
     );
 
     egui::ComboBox::from_label("Anti aliasing mode")
@@ -57,15 +56,13 @@ where
 
     // Only show oversample factor if the anti-aliasing mode is oversample.
     if let AntiAliasingMode::Oversample = config.anti_aliasing_mode {
-        ui.add(
-            egui::Slider::from_get_set(
-                2.0..=10.0,
-                get_set(config.oversample_factor as f64, |it| {
-                    dispatch(Action::SetOversampleFactor(it as u32))
-                }),
-            )
-            .text("Oversample factor")
-            .fixed_decimals(0),
+        int_slider(
+            ui,
+            "Oversample factor",
+            config.oversample_factor as f64,
+            |it| dispatch(Action::SetOversampleFactor(it as u32)),
+            2..=10,
+            &on_release,
         );
     }
 }

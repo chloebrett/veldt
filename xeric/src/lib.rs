@@ -5,9 +5,7 @@ use http::{HeaderValue, Method};
 use shared::consts::{HYDRIC_URL, XERIC_SOCKET_ADDR};
 use shared::load_sample::load_sample_server::LoadSampleServer;
 use shared::render::render_server::RenderServer;
-use shared::save_load::load_project_list_server::LoadProjectListServer;
-use shared::save_load::load_project_server::LoadProjectServer;
-use shared::save_load::save_project_server::SaveProjectServer;
+use shared::save_load::save_load_server::SaveLoadServer;
 use std::collections::HashMap;
 use std::sync::{Arc, Mutex};
 use tonic_web::GrpcWebLayer;
@@ -21,14 +19,11 @@ pub async fn start_server() -> anyhow::Result<()> {
     let render = RenderServer::new(RenderContext);
     let load_sample = LoadSampleServer::new(LoadSampleContext);
 
-    // Projects list gets shared when this is cloned.
     let save_load_context = SaveLoadContext {
         projects: Arc::new(Mutex::new(HashMap::new())),
     };
 
-    let save_project = SaveProjectServer::new(save_load_context.clone());
-    let load_project_list = LoadProjectListServer::new(save_load_context.clone());
-    let load_project = LoadProjectServer::new(save_load_context.clone());
+    let save_load = SaveLoadServer::new(save_load_context);
 
     tonic::transport::Server::builder()
         .accept_http1(true)
@@ -44,9 +39,7 @@ pub async fn start_server() -> anyhow::Result<()> {
         .layer(GrpcWebLayer::new())
         .add_service(render)
         .add_service(load_sample)
-        .add_service(save_project)
-        .add_service(load_project)
-        .add_service(load_project_list)
+        .add_service(save_load)
         .serve(*XERIC_SOCKET_ADDR)
         .await?;
 
