@@ -90,12 +90,6 @@ impl Store {
             .push((selector.clone(), action.clone()));
     }
 
-    /// Marks a "release" event. This signifies that a value being edited is no longer being
-    /// edited. This allows collapsing the relevant undo stack state.
-    pub fn release(&self) {
-        log(&format!("Recorded release!"));
-    }
-
     /// Shorthand for dispatch(Selector::Root, ..)
     pub fn dispatchr(&self, action: Action) {
         self.dispatch(&Selector::Root, action)
