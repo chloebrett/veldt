@@ -1,7 +1,7 @@
-use crate::widget::{int_slider, knob, selectable_value};
+use crate::widget::{get_set, int_slider, knob, selectable_value};
 use egui::Ui;
 use shared::model::{AntiAliasingMode, SimpleWaveConfig, WaveType};
-use state::{Action, get_set};
+use state::Action;
 use strum::IntoEnumIterator;
 
 pub fn simple_wave_control<F, G>(config: &SimpleWaveConfig, dispatch: F, on_release: G, ui: &mut Ui)

@@ -1,10 +1,10 @@
-use crate::widget::{int_slider, selectable_value};
+use crate::widget::{get_set, int_slider, selectable_value};
 use egui::Ui;
 use mesic::create_scale_values;
 use ordered_float::OrderedFloat;
 use shared::model::{Note, PitchName, PlacedNote};
 use shared::types::{Beats, Octave};
-use state::{Action, Selector, Store, get_set};
+use state::{Action, Selector, Store};
 
 pub fn track_control(store: &Store, ui: &mut Ui) {
     let scale_options = create_scale_values(store.get().scale, store.get().key);

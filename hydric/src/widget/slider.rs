@@ -1,5 +1,5 @@
+use super::get_set;
 use egui::Ui;
-use state::get_set;
 use std::ops::RangeInclusive;
 
 pub fn slider<T: PartialEq + Clone + Into<f64> + From<f64>, F: Fn(T), G: Fn()>(
