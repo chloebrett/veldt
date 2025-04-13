@@ -19,8 +19,10 @@ pub struct ReversibleAction {
     pub is_compacted: bool,
 }
 
-#[derive(Clone, Default, Debug)]
 pub struct UndoStack {
+    // Broadcasts a set of actions (to the server).
+    broadcast: Box<dyn Fn(Vec<ReversibleAction>) + Send>,
+
     // Actions that have been applied at least once. Includes actions that have been undone.
     // If a new action is applied while there are undone actions, the undone actions are discarded.
     actions: Vec<ReversibleAction>,
@@ -31,6 +33,14 @@ pub struct UndoStack {
 }
 
 impl UndoStack {
+    pub fn new(broadcast: impl Fn(Vec<ReversibleAction>) + Send + 'static) -> Self {
+        UndoStack {
+            broadcast: Box::new(broadcast),
+            actions: vec![],
+            index: 0,
+        }
+    }
+
     /// Performs an action for the first time.
     /// Saves instructions for how to undo the action so that it can be undone in future.
     pub fn apply(&mut self, store: &mut StoreData, selector: &Selector, action: &Action) {
@@ -137,7 +147,7 @@ impl UndoStack {
 
         log(&format!(
             "Undoing action. Stack state before: {:?}",
-            self.clone()
+            self.actions.clone()
         ));
         let action = self
             .actions
@@ -160,7 +170,7 @@ impl UndoStack {
 
         log(&format!(
             "Redoing action. Stack state before: {:?}",
-            self.clone()
+            self.actions.clone()
         ));
         let action = self
             .actions

@@ -69,12 +69,22 @@ impl Default for WindowState {
     }
 }
 
-#[derive(Default)]
 pub struct App {
     pub store: Store,
     pub async_state: AsyncState,
     pub audio_state: AudioState,
     pub window_state: WindowState,
+}
+
+impl Default for App {
+    fn default() -> Self {
+        App {
+            store: Store::new(|_| {}),
+            async_state: AsyncState::default(),
+            audio_state: AudioState::default(),
+            window_state: WindowState::default(),
+        }
+    }
 }
 
 impl App {
