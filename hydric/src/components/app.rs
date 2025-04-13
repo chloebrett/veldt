@@ -9,15 +9,15 @@ use super::{
     track_roll::TrackRoll,
     undo_redo_control,
 };
+use crate::rpc::broadcast_actions;
 use crate::widget::{default_window, get_set, knob, slider, string_observer};
 use crate::{audio_player::Handle, promise::AsyncResult, view::View};
 use egui::Pos2;
 use egui::{ScrollArea, scroll_area::ScrollBarVisibility};
+use poll_promise::Promise;
 use shared::model::{GeneratorType, Project, Sample};
 use shared::types::Beats;
 use state::{Action, Store};
-use poll_promise::Promise;
-use crate::rpc::broadcast_actions;
 
 /// Container for the various promises launchable by the app.
 #[derive(Default)]

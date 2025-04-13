@@ -1,8 +1,9 @@
+use shared::broadcast_actions::{
+    BroadcastActionsRequest, broadcast_actions_client::BroadcastActionsClient,
+};
+use shared::consts::XERIC_URL;
 use shared::serialize::map_vec;
 use state::ReversibleAction;
-use shared::consts::XERIC_URL;
-use shared::model::Project;
-use shared::broadcast_actions::{BroadcastActionsRequest, broadcast_actions_client::BroadcastActionsClient};
 use tonic_web_wasm_client::Client;
 
 pub async fn broadcast_actions(actions: Vec<ReversibleAction>) -> Result<(), ()> {

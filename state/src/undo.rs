@@ -133,7 +133,7 @@ impl UndoStack {
 
     fn broadcast(&self, action: ReversibleAction) {
         log(&format!("Broadcasting action to server! {:?}", action));
-        (self.broadcast)(vec!(action));
+        (self.broadcast)(vec![action]);
     }
 
     /// Whether the stack has actions that can be undone.
