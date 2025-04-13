@@ -20,15 +20,7 @@ pub fn band_pass_basic(config: &EqConfig) -> SecondOrderFilter {
     let b1: f32 = 2.0 * (k2_q - q) * delta_recip;
     let b2: f32 = (k2_q - k + q) * delta_recip;
 
-    SecondOrderFilter::new(SecondOrderFilterConfig {
-        a0,
-        a1,
-        a2,
-        b1,
-        b2,
-        c0: 1.0,
-        d0: 0.0,
-    })
+    SecondOrderFilter::new_wet(SecondOrderFilterConfig { a0, a1, a2, b1, b2 })
 }
 
 pub fn band_stop_basic(config: &EqConfig) -> SecondOrderFilter {
@@ -48,13 +40,5 @@ pub fn band_stop_basic(config: &EqConfig) -> SecondOrderFilter {
     let b1: f32 = a1;
     let b2: f32 = (k2_q - k + q) * delta_recip;
 
-    SecondOrderFilter::new(SecondOrderFilterConfig {
-        a0,
-        a1,
-        a2,
-        b1,
-        b2,
-        c0: 1.0,
-        d0: 0.0,
-    })
+    SecondOrderFilter::new_wet(SecondOrderFilterConfig { a0, a1, a2, b1, b2 })
 }

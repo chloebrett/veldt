@@ -1,7 +1,8 @@
-use crate::{
-    Action, Selector, StoreData, effect_reducer, generator_reducer, mixer_reducer, note_reducer,
-    track_placement_reducer, track_reducer,
+use super::{
+    effect_reducer, generator_reducer, mixer_reducer, note_reducer, track_placement_reducer,
+    track_reducer,
 };
+use crate::{Action, Selector, StoreData};
 use shared::logger::log;
 
 pub fn root_reducer(data: &mut StoreData, selector: &Selector, action: &Action) -> Action {
@@ -31,15 +32,11 @@ pub fn root_reducer(data: &mut StoreData, selector: &Selector, action: &Action) 
         ),
         Selector::Root => match action {
             Action::AddTrackPlacement(track_placement) => {
-                let track_placement_index = data.project.track_placements.len();
+                let index = data.project.track_placements.len();
                 data.project.track_placements.push(track_placement.clone());
-                Action::DeleteTrackPlacement {
-                    track_placement_index,
-                }
+                Action::DeleteTrackPlacement(index)
             }
-            Action::DeleteTrackPlacement {
-                track_placement_index,
-            } => {
+            Action::DeleteTrackPlacement(track_placement_index) => {
                 let prev = data
                     .project
                     .track_placements
@@ -74,15 +71,15 @@ pub fn root_reducer(data: &mut StoreData, selector: &Selector, action: &Action) 
                 data.volume = *volume;
                 Action::SetVolume(prev)
             }
-            Action::SetProjectList { projects } => {
+            Action::SetProjectList(projects) => {
                 data.project_list = projects.clone();
                 Action::NonReversible
             }
-            Action::SetProject { project } => {
+            Action::SetProject(project) => {
                 data.project = project.clone();
                 Action::NonReversible
             }
-            Action::SetLoadProjectName { project_name } => {
+            Action::SetLoadProjectName(project_name) => {
                 data.load_project_name = Some(project_name.clone());
                 Action::NonReversible
             }

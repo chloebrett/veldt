@@ -1,12 +1,13 @@
-use crate::widget::{FloatRange, knob, selectable_value};
+use crate::widget::{get_set, knob, log_slider, selectable_value};
 use egui::Ui;
 use shared::model::{ModDelayConfig, WaveType};
-use state::{Action, get_set};
+use state::Action;
 use strum::IntoEnumIterator;
 
-pub fn mod_delay_control<F>(config: &ModDelayConfig, dispatch: F, ui: &mut Ui)
+pub fn mod_delay_control<F, G>(config: &ModDelayConfig, dispatch: F, on_release: G, ui: &mut Ui)
 where
     F: Fn(Action),
+    G: Fn(),
 {
     // TODO: support integer knobs.
     // TODO: clamp the value within each frame to prevent min_depth from exceeding max_depth.
@@ -15,25 +16,25 @@ where
         "Min depth (samples)",
         config.min_depth as f32,
         |it| dispatch(Action::SetModDelayMinDepth(it as u32)),
-        FloatRange(0.0, 1_000.0),
+        0.0..=1_000.0,
+        &on_release,
     );
     knob(
         ui,
         "Max depth (samples)",
         config.max_depth as f32,
         |it| dispatch(Action::SetModDelayMaxDepth(it as u32)),
-        FloatRange(0.0, 1_000.0),
+        0.0..=1_000.0,
+        &on_release,
     );
     // TODO: replace this with a knob once we have logarithmic knobs.
-    ui.add(
-        egui::Slider::from_get_set(
-            0.1..=100.0,
-            get_set(config.freq as f64, |it| {
-                dispatch(Action::SetModDelayLfoFreq(it as f32))
-            }),
-        )
-        .text("LFO frequency")
-        .logarithmic(true),
+    log_slider(
+        ui,
+        "LFO frequency",
+        config.freq as f64,
+        |it| dispatch(Action::SetModDelayLfoFreq(it as f32)),
+        0.1..=100.0,
+        &on_release,
     );
 
     egui::ComboBox::from_label("LFO wave type")

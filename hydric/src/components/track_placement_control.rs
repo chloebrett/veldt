@@ -1,12 +1,13 @@
-use crate::widget::selectable_value;
+use crate::widget::{get_set, selectable_value, slider};
 use egui::Ui;
 use ordered_float::OrderedFloat;
 use shared::model::{TrackId, TrackPlacement};
 use shared::types::Beats;
-use state::{Action, Selector, Store, get_set};
+use state::{Action, Selector, Store};
 
 pub fn track_placement_control(store: &Store, ui: &mut Ui) {
     let project = &store.get().project;
+    let on_release = || store.dispatchr(Action::Release);
 
     for track_placement_index in 0..project.track_placements.len() {
         let placement = &project.track_placements[track_placement_index];
@@ -28,22 +29,19 @@ pub fn track_placement_control(store: &Store, ui: &mut Ui) {
             });
 
         let offset = *placement.offset as f64;
-        ui.add(
-            egui::Slider::from_get_set(
-                0.0..=16.0,
-                get_set(offset, |it| {
-                    store.dispatch(&sel, Action::SetTrackPlacementOffset(it as Beats))
-                }),
-            )
-            .text("Start position"),
+        slider(
+            ui,
+            "Start position",
+            offset,
+            |it| store.dispatch(&sel, Action::SetTrackPlacementOffset(it as Beats)),
+            0.0..=16.0,
+            on_release,
         );
 
         // TODO: add slider + on/off for clipped duration.
 
         if ui.button("Delete").clicked() {
-            store.dispatchr(Action::DeleteTrackPlacement {
-                track_placement_index,
-            });
+            store.dispatchr(Action::DeleteTrackPlacement(track_placement_index));
             break;
         }
     }

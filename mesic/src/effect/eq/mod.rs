@@ -56,6 +56,5 @@ pub fn eq_filter(config: &EqConfig) -> Box<dyn ApplyFilter + Send> {
         EqType::LowShelvingFirstOrder => Box::new(shelf_first_order(config, LowHigh::Low)),
         EqType::HighShelvingFirstOrder => Box::new(shelf_first_order(config, LowHigh::High)),
         EqType::ParametricSecondOrderConstantQ => Box::new(parametric_constant_q(config)),
-        _ => panic!("EQ type not implemented!"),
     }
 }

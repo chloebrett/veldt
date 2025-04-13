@@ -21,3 +21,11 @@ pub mod pmodel {
 pub mod save_load {
     tonic::include_proto!("save_load");
 }
+
+pub mod action_proto {
+    tonic::include_proto!("action_proto");
+}
+
+pub mod broadcast_actions {
+    tonic::include_proto!("broadcast_actions");
+}

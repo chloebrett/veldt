@@ -4,15 +4,9 @@ package save_load;
 
 import "pmodel.proto";
 
-service SaveProject {
+service SaveLoad {
   rpc SaveProject (SaveProjectRequest) returns (SaveProjectReply) {}
-}
-
-service LoadProjectList {
   rpc LoadProjectList (LoadProjectListRequest) returns (LoadProjectListReply) {}
-}
-
-service LoadProject {
   rpc LoadProject (LoadProjectRequest) returns (LoadProjectReply) {}
 }
 

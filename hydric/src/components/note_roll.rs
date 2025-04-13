@@ -102,10 +102,11 @@ impl View for NoteRoll {
                 let dispatch = move |note_index: usize, action: Action| {
                     store.dispatch(&Selector::Note(track_index, note_index), action)
                 };
+                let on_release = || store.dispatchr(Action::Release);
                 ui.horizontal(|ui| {
                     Piano::new(max_note, min_note - 1).ui(store, ui);
                     ui.add(
-                        Sequencer::new(range, dispatch)
+                        Sequencer::new(range, dispatch, on_release)
                             .objects(notes)
                             .horizontal_rects(white_note_pattern, Color32::from_white_alpha(4))
                             .vertical_bars(bar_length, Color32::from_white_alpha(6))
@@ -132,11 +133,18 @@ impl SequencerObject<PlacedNote> for PlacedNote {
         Rect::from_min_size(pos, note_size)
     }
 
-    fn x_action(&self, x: f32, range: Rect) -> Action {
-        Action::SetNoteOffset(x - range.left())
+    fn x_action(&self, x: f32, range: Rect) -> Option<Action> {
+        Some(Action::SetNoteOffset(x - range.left()))
     }
 
-    fn y_action(&self, y: f32, range: Rect) -> Action {
-        Action::SetNotePitchName(PitchName::from((range.bottom() - y) as i32))
+    fn y_action(&self, y: f32, range: Rect) -> Option<Action> {
+        Some(Action::SetNotePitchName(PitchName::from(
+            (range.bottom() - y) as i32,
+        )))
+    }
+
+    fn resize_action(&self, x: f32, _range: Rect) -> Option<Action> {
+        let beats = x - *self.offset;
+        Some(Action::SetNoteDuration(beats))
     }
 }

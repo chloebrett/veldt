@@ -1,20 +1,22 @@
-use crate::widget::{FloatRange, knob, selectable_value};
+use crate::widget::{get_set, knob, selectable_value};
 use egui::Ui;
 use shared::model::EqConfig;
 use shared::model::EqType;
-use state::{Action, get_set};
+use state::Action;
 use strum::IntoEnumIterator;
 
-pub fn eq_control<F>(config: &EqConfig, dispatch: F, ui: &mut Ui)
+pub fn eq_control<F, G>(config: &EqConfig, dispatch: F, on_release: G, ui: &mut Ui)
 where
     F: Fn(Action),
+    G: Fn(),
 {
     knob(
         ui,
         "Freq",
         config.fc,
         |it| dispatch(Action::SetEqFc(it)),
-        FloatRange(20.0, 20000.0), // TODO: logarithmic
+        20.0..=20000.0, // TODO: logarithmic
+        &on_release,
     );
 
     knob(
@@ -22,7 +24,8 @@ where
         "Q",
         config.q,
         |it| dispatch(Action::SetEqQ(it)),
-        FloatRange(0.1, 100.0), // TODO: logarithmic
+        0.1..=100.0, // TODO: logarithmic
+        &on_release,
     );
 
     knob(
@@ -30,7 +33,8 @@ where
         "Gain",
         config.gain,
         |it| dispatch(Action::SetEqGain(it)),
-        FloatRange(-60.0, 60.0),
+        -60.0..=60.0,
+        &on_release,
     );
 
     let eq_type = config.kind.clone();

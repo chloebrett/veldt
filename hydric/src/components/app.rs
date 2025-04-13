@@ -1,6 +1,6 @@
 use super::{
     effect::{effect_control, mixer_control},
-    generator::{envelope_control, generator_control, generators_control},
+    generator::{generator_control, generators_control},
     key_control::KeyControl,
     load_control,
     note_roll::NoteRoll,
@@ -9,13 +9,13 @@ use super::{
     track_roll::TrackRoll,
     undo_redo_control,
 };
-use crate::widget::{FloatRange, default_window, knob, string_observer};
+use crate::widget::{default_window, get_set, knob, slider, string_observer};
 use crate::{audio_player::Handle, promise::AsyncResult, view::View};
 use egui::Pos2;
 use egui::{ScrollArea, scroll_area::ScrollBarVisibility};
 use shared::model::{GeneratorType, Project, Sample};
 use shared::types::Beats;
-use state::{Action, Store, get_set};
+use state::{Action, Store};
 
 /// Container for the various promises launchable by the app.
 #[derive(Default)]
@@ -130,9 +130,6 @@ impl eframe::App for App {
                                 .default_pos(Pos2 { x: 1100.0, y: 20.0 })
                                 .show(ctx, |ui| {
                                     generator_control(&self.store, ui, generator_index);
-                                    ui.separator();
-                                    ui.label("Envelope");
-                                    envelope_control(&self.store, ui, generator_index);
                                 });
                         }
                     }
@@ -188,25 +185,26 @@ impl eframe::App for App {
                     default_window("Toolbar")
                         .default_pos(Pos2 { x: 600.0, y: 20.0 })
                         .show(ctx, |ui| {
+                            let on_release = || self.store.dispatchr(Action::Release);
+
                             let volume = self.store.get().volume;
                             knob(
                                 ui,
                                 "Volume",
                                 volume,
                                 |it| self.store.dispatchr(Action::SetVolume(it)),
-                                FloatRange(0.0, 1.0),
+                                0.0..=1.0,
+                                on_release,
                             );
 
                             let bpm = self.store.get().project.bpm as f64;
-                            ui.add(
-                                egui::Slider::from_get_set(
-                                    20.0..=200.0,
-                                    get_set(bpm, |it| {
-                                        self.store.dispatchr(Action::SetBpm(it as Beats))
-                                    }),
-                                )
-                                .text("BPM")
-                                .logarithmic(true),
+                            slider(
+                                ui,
+                                "BPM",
+                                bpm,
+                                |it| self.store.dispatchr(Action::SetBpm(it as Beats)),
+                                20.0..=200.0,
+                                on_release,
                             );
                             undo_redo_control(&mut self.store, ui);
                             ui.separator();

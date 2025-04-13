@@ -257,10 +257,6 @@ enum EqTypeProto {
   SimpleSecondOrderHighPassEqType = 6;
   SimpleSecondOrderResonatorEqType = 7;
   SimpleSecondOrderBandStopEqType = 8;
-  ButterworthLowPassEqType = 9;
-  ButterworthHighPassEqType = 10;
-  ButterworthResonatorEqType = 11;
-  ButterworthBandStopEqType = 12;
   FirstOrderAllPassEqType = 13;
   SecondOrderAllPassEqType = 14;
   LinkwitzRileySecondOrderLowPassEqType = 15;

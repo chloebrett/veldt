@@ -1,12 +1,13 @@
-use crate::widget::{FloatRange, knob, selectable_value};
+use crate::widget::{get_set, int_slider, knob, selectable_value};
 use egui::Ui;
 use shared::model::{AntiAliasingMode, SimpleWaveConfig, WaveType};
-use state::{Action, get_set};
+use state::Action;
 use strum::IntoEnumIterator;
 
-pub fn simple_wave_control<F>(config: &SimpleWaveConfig, dispatch: F, ui: &mut Ui)
+pub fn simple_wave_control<F, G>(config: &SimpleWaveConfig, dispatch: F, on_release: G, ui: &mut Ui)
 where
     F: Fn(Action),
+    G: Fn(),
 {
     egui::ComboBox::from_label("Wave type")
         .selected_text(config.wave.to_string())
@@ -20,22 +21,22 @@ where
                 );
             }
         });
-    ui.add(
-        egui::Slider::from_get_set(
-            1.0..=24.0,
-            get_set(config.osc_count as f64, |it| {
-                dispatch(Action::SetOscCount(it as u32))
-            }),
-        )
-        .text("Osc count")
-        .fixed_decimals(0),
+
+    int_slider(
+        ui,
+        "Unison",
+        config.osc_count as f64,
+        |it| dispatch(Action::SetOscCount(it as u32)),
+        1..=24,
+        &on_release,
     );
     knob(
         ui,
         "Osc detune",
         config.detune_cents,
         |it| dispatch(Action::SetDetuneCents(it)),
-        FloatRange(0.0, 100.0),
+        0.0..=100.0,
+        &on_release,
     );
 
     egui::ComboBox::from_label("Anti aliasing mode")
@@ -55,15 +56,13 @@ where
 
     // Only show oversample factor if the anti-aliasing mode is oversample.
     if let AntiAliasingMode::Oversample = config.anti_aliasing_mode {
-        ui.add(
-            egui::Slider::from_get_set(
-                2.0..=10.0,
-                get_set(config.oversample_factor as f64, |it| {
-                    dispatch(Action::SetOversampleFactor(it as u32))
-                }),
-            )
-            .text("Oversample factor")
-            .fixed_decimals(0),
+        int_slider(
+            ui,
+            "Oversample factor",
+            config.oversample_factor as f64,
+            |it| dispatch(Action::SetOversampleFactor(it as u32)),
+            2..=10,
+            &on_release,
         );
     }
 }

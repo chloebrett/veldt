@@ -4,11 +4,13 @@ use dasp_graph::{BoxedNodeSend, NodeData};
 use shared::model::Project;
 
 pub fn render(project: &Project) -> RenderGraph {
-    let mut track = project.tracks[0].clone();
-
-    // Offset note offsets by track offset
+    // TODO account for multiple tracks and placements.
+    // This will break with multiple tracks
+    let track_index = 0;
+    let placement_index = 0;
+    let mut track = project.tracks[track_index].clone();
     for note in track.notes.iter_mut() {
-        note.offset += track.offset
+        note.offset += project.track_placements[placement_index].offset
     }
 
     let bpm = project.bpm;
