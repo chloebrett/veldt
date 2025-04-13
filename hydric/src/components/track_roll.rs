@@ -88,8 +88,9 @@ impl SequencerObject<PlacedTrack> for PlacedTrack {
         None
     }
 
-    fn resize_action(&self, _x: f32, _range: Rect) -> Option<Action> {
-        // TODO Implement changing clipped_duration
-        None
+    fn resize_action(&self, x: f32, _range: Rect) -> Option<Action> {
+        Some(Action::SetTrackPlacementClippedDuration(
+            x - *self.placement.offset,
+        ))
     }
 }

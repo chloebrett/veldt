@@ -38,7 +38,28 @@ pub fn track_placement_control(store: &Store, ui: &mut Ui) {
             on_release,
         );
 
-        // TODO: add slider + on/off for clipped duration.
+        let duration = *placement.clipped_duration.unwrap_or(OrderedFloat(0.0)) as f64;
+        let mut has_duration = placement.clipped_duration.is_some();
+        ui.horizontal(|ui| {
+            slider(
+                ui,
+                "Clipped Duration",
+                duration,
+                |it| store.dispatch(&sel, Action::SetTrackPlacementClippedDuration(it as Beats)),
+                0.0..=16.0,
+                on_release,
+            );
+            if ui.checkbox(&mut has_duration, "").clicked() {
+                if has_duration {
+                    store.dispatch(
+                        &sel,
+                        Action::SetTrackPlacementClippedDuration(duration as Beats),
+                    );
+                } else {
+                    store.dispatch(&sel, Action::RemoveTrackPlacementClippedDuration(true));
+                }
+            };
+        });
 
         if ui.button("Delete").clicked() {
             store.dispatchr(Action::DeleteTrackPlacement(track_placement_index));
