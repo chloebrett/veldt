@@ -1,6 +1,6 @@
 use super::{
     effect::{effect_control, mixer_control},
-    generator::{envelope_control, generator_control, generators_control},
+    generator::{generator_control, generators_control},
     key_control::KeyControl,
     load_control,
     note_roll::NoteRoll,
