@@ -151,8 +151,12 @@ impl From<ActionProto> for Action {
             ActionKind::SetEqKind(it) => {
                 Action::SetEqKind(EqTypeProto::try_from(it).unwrap().into())
             }
-            ActionKind::SetTrackPlacementClippedDuration(it) => Action::SetTrackPlacementClippedDuration(it as Beats),
-            ActionKind::RemoveTrackPlacementClippedDuration(it) => Action::RemoveTrackPlacementClippedDuration(it)
+            ActionKind::SetTrackPlacementClippedDuration(it) => {
+                Action::SetTrackPlacementClippedDuration(it as Beats)
+            }
+            ActionKind::RemoveTrackPlacementClippedDuration(it) => {
+                Action::RemoveTrackPlacementClippedDuration(it)
+            }
         }
     }
 }
@@ -217,14 +221,17 @@ impl From<Action> for ActionProto {
                     ActionKind::SetTrackPlacementTrackId(it as u32)
                 }
                 Action::SetTrackPlacementOffset(it) => ActionKind::SetTrackPlacementOffset(it),
-                Action::SetTrackPlacementClippedDuration(it) => ActionKind::SetTrackPlacementClippedDuration(it),
+                Action::SetTrackPlacementClippedDuration(it) => {
+                    ActionKind::SetTrackPlacementClippedDuration(it)
+                }
                 Action::AddTrackPlacement(it) => ActionKind::AddTrackPlacement(it.into()),
                 Action::DeleteTrackPlacement(it) => ActionKind::DeleteTrackPlacement(it as u32),
                 Action::SetEqKind(it) => {
                     ActionKind::SetEqKind(EqTypeProto::try_from(it).unwrap().into())
                 }
-                Action::RemoveTrackPlacementClippedDuration(it) => ActionKind::RemoveTrackPlacementClippedDuration(it),
-
+                Action::RemoveTrackPlacementClippedDuration(it) => {
+                    ActionKind::RemoveTrackPlacementClippedDuration(it)
+                }
 
                 // Non-serializable actions
                 Action::Release => panic!(),

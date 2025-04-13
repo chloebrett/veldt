@@ -45,12 +45,7 @@ pub fn track_placement_control(store: &Store, ui: &mut Ui) {
                 ui,
                 "Clipped Duration",
                 duration,
-                |it| {
-                    store.dispatch(
-                        &sel,
-                        Action::SetTrackPlacementClippedDuration(it as Beats),
-                    )
-                },
+                |it| store.dispatch(&sel, Action::SetTrackPlacementClippedDuration(it as Beats)),
                 0.0..=16.0,
                 on_release,
             );
