@@ -18,7 +18,7 @@ pub fn envelope_control(store: &Store, ui: &mut Ui, generator_index: usize) {
     let config = match generator_type {
         GeneratorType::SimpleWave { config } => config,
         GeneratorType::Noise { .. } => todo!(),
-        GeneratorType::TripleOsc { .. } => todo!(),
+        GeneratorType::SubSynth { .. } => todo!(),
     };
     let envelope = config.envelope.clone();
     knob(

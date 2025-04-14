@@ -2,8 +2,9 @@ use crate::model::{AdsrEnvelope, WaveType};
 use crate::pmodel::{
     AntiAliasingModeProto, GeneratorInstanceProto, GeneratorMetaProto, NoiseConfigProto,
     NoiseProto, NoiseTypeProto, OscillatorConfigProto, SimpleWaveConfigProto, SimpleWaveProto,
-    TripleOscConfigProto, TripleOscProto, generator_instance_proto::Kind as GeneratorTypeProto,
+    SubSynthConfigProto, SubSynthProto, generator_instance_proto::Kind as GeneratorTypeProto,
 };
+use crate::serialize::map_vec;
 use crate::types::{KnobPosition, Volume};
 use local_macro::{FromProto, IntoProto};
 use strum::{Display, EnumIter, EnumString};
@@ -33,7 +34,7 @@ impl From<GeneratorType> for GeneratorTypeProto {
             GeneratorType::Noise { config } => GeneratorTypeProto::Noise(NoiseProto {
                 config: Some(config.into()),
             }),
-            GeneratorType::TripleOsc { config } => GeneratorTypeProto::TripleOsc(TripleOscProto {
+            GeneratorType::SubSynth { config } => GeneratorTypeProto::SubSynth(SubSynthProto {
                 config: Some(config.into()),
             }),
         }
@@ -49,7 +50,7 @@ impl From<GeneratorTypeProto> for GeneratorType {
             GeneratorTypeProto::Noise(config) => GeneratorType::Noise {
                 config: config.config.unwrap().into(),
             },
-            GeneratorTypeProto::TripleOsc(config) => GeneratorType::TripleOsc {
+            GeneratorTypeProto::SubSynth(config) => GeneratorType::SubSynth {
                 config: config.config.unwrap().into(),
             },
         }
@@ -60,7 +61,7 @@ impl From<GeneratorTypeProto> for GeneratorType {
 pub enum GeneratorType {
     SimpleWave { config: SimpleWaveConfig },
     Noise { config: NoiseConfig },
-    TripleOsc { config: TripleOscConfig },
+    SubSynth { config: SubSynthConfig },
 }
 
 #[derive(Clone, Debug, PartialEq, FromProto, IntoProto)]
@@ -95,19 +96,19 @@ pub enum NoiseType {
 }
 
 #[derive(Clone, Debug, PartialEq)]
-pub struct TripleOscConfig {
+pub struct SubSynthConfig {
     pub oscillators: [OscillatorConfig; 3],
 }
 
-impl From<TripleOscConfigProto> for TripleOscConfig {
-    fn from(proto: TripleOscConfigProto) -> Self {
+impl From<SubSynthConfigProto> for SubSynthConfig {
+    fn from(proto: SubSynthConfigProto) -> Self {
         let vec = proto.oscillators;
         assert_eq!(
             vec.len(),
             3,
-            "TripleOscConfig must have exactly 3 oscillators"
+            "SubSynthConfig must have exactly 3 oscillators"
         );
-        TripleOscConfig {
+        SubSynthConfig {
             oscillators: [
                 vec[0].clone().into(),
                 vec[1].clone().into(),
@@ -117,14 +118,10 @@ impl From<TripleOscConfigProto> for TripleOscConfig {
     }
 }
 
-impl From<TripleOscConfig> for TripleOscConfigProto {
-    fn from(config: TripleOscConfig) -> Self {
-        TripleOscConfigProto {
-            oscillators: config
-                .oscillators
-                .iter()
-                .map(|osc| osc.clone().into())
-                .collect(),
+impl From<SubSynthConfig> for SubSynthConfigProto {
+    fn from(config: SubSynthConfig) -> Self {
+        SubSynthConfigProto {
+            oscillators: map_vec(config.oscillators.to_vec()),
         }
     }
 }
@@ -138,7 +135,7 @@ pub struct OscillatorConfig {
 
     pub pan: KnobPosition,
 
-    pub coarse_detune: i32,
+    pub coarse_detune: f32,
 
     pub fine_detune: f32,
 }

@@ -78,6 +78,6 @@ pub fn generator_reducer(generator: &mut GeneratorInstance, action: &Action) -> 
             _ => Action::NonReversible,
         },
         GeneratorType::Noise { .. } => todo!(),
-        GeneratorType::TripleOsc { config } => todo!(),
+        GeneratorType::SubSynth { config } => todo!(),
     }
 }

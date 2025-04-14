@@ -23,7 +23,7 @@ pub fn generators_control(ctx: &egui::Context, window_state: &mut WindowState, s
                 let label = match &generator.kind {
                     GeneratorType::SimpleWave { .. } => "Simple Wave Generator",
                     GeneratorType::Noise { .. } => "Noise Generator",
-                    GeneratorType::TripleOsc { .. } => "Triple Oscillator Generator",
+                    GeneratorType::SubSynth { .. } => "Subtractive Synthesiser",
                 };
                 ui.label(label);
 

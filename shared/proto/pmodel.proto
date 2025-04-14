@@ -106,7 +106,7 @@ message GeneratorInstanceProto {
   oneof kind {
     SimpleWaveProto simple_wave = 3;
     NoiseProto noise = 4;
-    TripleOscProto triple_osc = 5;
+    SubSynthProto sub_synth = 5;
   };
 }
 
@@ -125,11 +125,11 @@ enum NoiseTypeProto {
   PinkNoiseType = 3;
 }
 
-message TripleOscProto {
-  TripleOscConfigProto config = 1;
+message SubSynthProto {
+  SubSynthConfigProto config = 1;
 }
 
-message TripleOscConfigProto {
+message SubSynthConfigProto {
   repeated OscillatorConfigProto oscillators = 1; 
 }
 
@@ -137,7 +137,7 @@ message OscillatorConfigProto {
   WaveTypeProto wave = 1;
   float volume = 2;
   float pan = 3;
-  int32 coarse_detune = 4;
+  float coarse_detune = 4;
   float fine_detune = 5;
 }
 
