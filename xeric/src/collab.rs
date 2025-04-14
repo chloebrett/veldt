@@ -1,12 +1,15 @@
 use shared::broadcast_actions::{
     BroadcastActionsReply, BroadcastActionsRequest, broadcast_actions_server::BroadcastActions,
 };
+use shared::logger::log;
 use shared::serialize::map_vec;
 use state::{ReversibleAction, Store};
+use std::marker::Send;
 use std::sync::{Arc, Mutex};
 use tonic::async_trait;
 
 /// Context for collaborative editing.
+/// So far, just contains a state store which is updated when the client broadcasts actions.
 pub struct CollabContext {
     // Server's representation of the state store. Includes an undo stack which tracks which
     // actions have been processed so far.
@@ -18,9 +21,9 @@ pub struct CollabContext {
 }
 
 impl CollabContext {
-    pub fn new() -> Self {
+    pub fn new(broadcast: impl Fn(Vec<ReversibleAction>) + Send + 'static) -> Self {
         CollabContext {
-            store: Arc::new(Mutex::new(Store::default())),
+            store: Arc::new(Mutex::new(Store::new(broadcast))),
         }
     }
 }
@@ -40,6 +43,10 @@ impl BroadcastActions for CollabContext {
                 .dispatch(&action.selector, action.forward);
             // TODO: validate that reverse actions match up - if not, then we need conflict resolution.
         }
+
+        self.store.lock().unwrap().snapshot();
+
+        log(&format!("{:?}", self.store.lock().unwrap().get()));
 
         Ok(tonic::Response::new(BroadcastActionsReply {
             success: true,
