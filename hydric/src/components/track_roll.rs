@@ -89,8 +89,20 @@ impl SequencerObject<PlacedTrack> for PlacedTrack {
     }
 
     fn resize_action(&self, x: f32, _range: Rect) -> Option<Action> {
-        Some(Action::SetTrackPlacementClippedDuration(Some(
-            x - *self.placement.offset,
-        )))
+        let clipped_duration = x - *self.placement.offset;
+        let max_note_length = *self
+            .track
+            .notes
+            .iter()
+            .map(|note| note.offset + OrderedFloat(note.note.beats))
+            .max_by(|x, y| x.cmp(y))
+            .unwrap_or(OrderedFloat(0.0));
+        if clipped_duration >= max_note_length {
+            Some(Action::SetTrackPlacementClippedDuration(None))
+        } else {
+            Some(Action::SetTrackPlacementClippedDuration(Some(
+                clipped_duration,
+            )))
+        }
     }
 }

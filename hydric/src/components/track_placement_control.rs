@@ -38,8 +38,15 @@ pub fn track_placement_control(store: &Store, ui: &mut Ui) {
             on_release,
         );
 
-        let duration = *placement.clipped_duration.unwrap_or(OrderedFloat(0.0)) as f64;
-        let mut has_duration = placement.clipped_duration.is_some();
+        let max_note_length = *store.get().project.tracks[placement.track_id]
+            .notes
+            .iter()
+            .map(|note| note.offset + OrderedFloat(note.note.beats))
+            .max_by(|x, y| x.cmp(y))
+            .unwrap_or(OrderedFloat(0.0));
+        let duration = *placement
+            .clipped_duration
+            .unwrap_or(OrderedFloat(max_note_length)) as f64;
         ui.horizontal(|ui| {
             slider(
                 ui,
@@ -48,22 +55,16 @@ pub fn track_placement_control(store: &Store, ui: &mut Ui) {
                 |it| {
                     store.dispatch(
                         &sel,
-                        Action::SetTrackPlacementClippedDuration(Some(it as Beats)),
+                        if it < max_note_length as f64 {
+                            Action::SetTrackPlacementClippedDuration(Some(it as Beats))
+                        } else {
+                            Action::SetTrackPlacementClippedDuration(None)
+                        },
                     )
                 },
-                0.0..=16.0,
+                0.0..=max_note_length as f64,
                 on_release,
             );
-            if ui.checkbox(&mut has_duration, "").clicked() {
-                if has_duration {
-                    store.dispatch(
-                        &sel,
-                        Action::SetTrackPlacementClippedDuration(Some(duration as Beats)),
-                    );
-                } else {
-                    store.dispatch(&sel, Action::SetTrackPlacementClippedDuration(None));
-                }
-            };
         });
 
         if ui.button("Delete").clicked() {
