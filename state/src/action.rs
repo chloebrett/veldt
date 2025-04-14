@@ -116,9 +116,7 @@ impl From<ActionProto> for Action {
                 Action::SetAntiAliasingMode(AntiAliasingModeProto::try_from(it).unwrap().into())
             }
             ActionKind::SetNoteOctave(it) => Action::SetNoteOctave(it),
-            ActionKind::SetNotePitchName(it) => {
-                Action::SetNotePitchName(PitchNameProto::try_from(it).unwrap().into())
-            }
+            ActionKind::SetNotePitchName(it) => Action::SetNotePitchName(it.into()),
             ActionKind::SetOversampleFactor(it) => Action::SetOversampleFactor(it),
             ActionKind::MoveEffectUp(it) => Action::MoveEffectUp(it as usize),
             ActionKind::MoveEffectDown(it) => Action::MoveEffectDown(it as usize),
@@ -163,9 +161,7 @@ impl From<Action> for ActionProto {
             kind: Some(match other {
                 // TODO: macro-ify this.
                 Action::SetKey(it) => ActionKind::SetKey(it.into()),
-                Action::SetScale(it) => {
-                    ActionKind::SetScale(ScaleProto::try_from(it).unwrap().into())
-                }
+                Action::SetScale(it) => ActionKind::SetScale(ScaleProto::from(it).into()),
                 Action::SetProjectName(it) => ActionKind::SetProjectName(it),
                 Action::SetBpm(it) => ActionKind::SetBpm(it),
                 Action::SetVolume(it) => ActionKind::SetVolume(it),
@@ -178,18 +174,16 @@ impl From<Action> for ActionProto {
                 Action::SetNoteOffset(it) => ActionKind::SetNoteOffset(it),
                 Action::SetNoteDuration(it) => ActionKind::SetNoteDuration(it),
                 Action::SetGeneratorPan(it) => ActionKind::SetGeneratorPan(it),
-                Action::SetWave(it) => {
-                    ActionKind::SetWave(WaveTypeProto::try_from(it).unwrap().into())
-                }
+                Action::SetWave(it) => ActionKind::SetWave(WaveTypeProto::from(it).into()),
                 Action::SetOscCount(it) => ActionKind::SetOscCount(it),
                 Action::SetDetuneCents(it) => ActionKind::SetDetuneCents(it),
                 Action::SetEnvelope(it) => ActionKind::SetEnvelope(it.into()),
-                Action::SetAntiAliasingMode(it) => ActionKind::SetAntiAliasingMode(
-                    AntiAliasingModeProto::try_from(it).unwrap().into(),
-                ),
+                Action::SetAntiAliasingMode(it) => {
+                    ActionKind::SetAntiAliasingMode(AntiAliasingModeProto::from(it).into())
+                }
                 Action::SetNoteOctave(it) => ActionKind::SetNoteOctave(it),
                 Action::SetNotePitchName(it) => {
-                    ActionKind::SetNotePitchName(PitchNameProto::try_from(it).unwrap().into())
+                    ActionKind::SetNotePitchName(PitchNameProto::from(it))
                 }
                 Action::SetOversampleFactor(it) => ActionKind::SetOversampleFactor(it),
                 Action::MoveEffectUp(it) => ActionKind::MoveEffectUp(it as u32),
@@ -211,7 +205,7 @@ impl From<Action> for ActionProto {
                 Action::SetModDelayMaxDepth(it) => ActionKind::SetModDelayMaxDepth(it),
                 Action::SetModDelayLfoFreq(it) => ActionKind::SetModDelayLfoFreq(it),
                 Action::SetModDelayLfoType(it) => {
-                    ActionKind::SetModDelayLfoType(WaveTypeProto::try_from(it).unwrap().into())
+                    ActionKind::SetModDelayLfoType(WaveTypeProto::from(it).into())
                 }
                 Action::SetTrackPlacementTrackId(it) => {
                     ActionKind::SetTrackPlacementTrackId(it as u32)
@@ -222,9 +216,7 @@ impl From<Action> for ActionProto {
                 }
                 Action::AddTrackPlacement(it) => ActionKind::AddTrackPlacement(it.into()),
                 Action::DeleteTrackPlacement(it) => ActionKind::DeleteTrackPlacement(it as u32),
-                Action::SetEqKind(it) => {
-                    ActionKind::SetEqKind(EqTypeProto::try_from(it).unwrap().into())
-                }
+                Action::SetEqKind(it) => ActionKind::SetEqKind(EqTypeProto::from(it).into()),
 
                 // Non-serializable actions
                 Action::Release => panic!(),
