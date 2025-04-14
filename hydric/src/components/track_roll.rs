@@ -1,6 +1,9 @@
 use egui::{Color32, Pos2, Rect, Ui, pos2, vec2};
 use ordered_float::OrderedFloat;
-use shared::model::{Track, TrackPlacement};
+use shared::{
+    model::{Track, TrackPlacement},
+    types::Beats,
+};
 use state::{Action, Selector, Store};
 
 use crate::{
@@ -97,12 +100,11 @@ impl SequencerObject<PlacedTrack> for PlacedTrack {
             .map(|note| note.offset + OrderedFloat(note.note.beats))
             .max_by(|x, y| x.cmp(y))
             .unwrap_or(OrderedFloat(0.0));
-        if clipped_duration >= max_note_length {
-            Some(Action::SetTrackPlacementClippedDuration(None))
+        let clipped_duration = if clipped_duration < max_note_length {
+            Some(clipped_duration as Beats)
         } else {
-            Some(Action::SetTrackPlacementClippedDuration(Some(
-                clipped_duration,
-            )))
-        }
+            None
+        };
+        Some(Action::SetTrackPlacementClippedDuration(clipped_duration))
     }
 }
