@@ -18,9 +18,7 @@ pub mod pmodel {
     tonic::include_proto!("pmodel");
     impl From<Option<f32>> for FloatOptionProto {
         fn from(item: Option<f32>) -> FloatOptionProto {
-            FloatOptionProto {
-                value: item
-            }
+            FloatOptionProto { value: item }
         }
     }
 }
