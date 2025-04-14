@@ -67,7 +67,7 @@ pub fn track_placement_control(store: &Store, ui: &mut Ui) {
             );
         });
 
-        if ui.button("Delete").clicked() {
+        if store.get().project.track_placements.len() > 1 && ui.button("Delete").clicked() {
             store.dispatchr(Action::DeleteTrackPlacement(track_placement_index));
             break;
         }
