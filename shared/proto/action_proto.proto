@@ -55,8 +55,7 @@ message ActionProto {
     pmodel.TrackPlacementProto add_track_placement = 44;
     uint32 delete_track_placement = 45;
     pmodel.EqTypeProto set_eq_kind = 46;
-    float set_track_placement_clipped_duration = 47;
-    bool remove_track_placement_clipped_duration = 48;
+    FloatOptionProto set_track_placement_clipped_duration = 47;
   }
 }
 
@@ -82,4 +81,8 @@ message SelectorProto {
       uint32 first = 1;
       uint32 second = 2;
     }
+}
+
+message FloatOptionProto {
+  optional float value = 1;
 }

@@ -1,4 +1,5 @@
-use shared::action_proto::{ActionProto, action_proto::Kind as ActionKind};
+use local_macro::{FromProto, IntoProto};
+use shared::action_proto::{ActionProto, FloatOptionProto, action_proto::Kind as ActionKind};
 use shared::model::{
     AdsrEnvelope, AntiAliasingMode, EffectInstance, EqType, PitchName, PlacedNote, Project, Sample,
     Scale, ScaleValue, TrackId, TrackPlacement, WaveType,
@@ -7,6 +8,11 @@ use shared::pmodel::{
     AntiAliasingModeProto, EqTypeProto, PitchNameProto, ScaleProto, WaveTypeProto,
 };
 use shared::types::{Beats, Freq, GainDB, KnobPosition, Milliseconds, Octave, Volume};
+
+#[derive(FromProto, IntoProto)]
+pub struct FloatOption {
+    value: Option<f32>,
+}
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum Action {
@@ -77,8 +83,7 @@ pub enum Action {
     // --- TrackPlacementSelector ---
     SetTrackPlacementTrackId(TrackId),
     SetTrackPlacementOffset(Beats),
-    SetTrackPlacementClippedDuration(Beats),
-    RemoveTrackPlacementClippedDuration(bool),
+    SetTrackPlacementClippedDuration(Option<f32>),
 
     // -- other --
     /// Denotes that the mouse has been released from a UI element, finalizing its value.
@@ -152,10 +157,7 @@ impl From<ActionProto> for Action {
                 Action::SetEqKind(EqTypeProto::try_from(it).unwrap().into())
             }
             ActionKind::SetTrackPlacementClippedDuration(it) => {
-                Action::SetTrackPlacementClippedDuration(it as Beats)
-            }
-            ActionKind::RemoveTrackPlacementClippedDuration(it) => {
-                Action::RemoveTrackPlacementClippedDuration(it)
+                Action::SetTrackPlacementClippedDuration(it.value)
             }
         }
     }
@@ -222,15 +224,12 @@ impl From<Action> for ActionProto {
                 }
                 Action::SetTrackPlacementOffset(it) => ActionKind::SetTrackPlacementOffset(it),
                 Action::SetTrackPlacementClippedDuration(it) => {
-                    ActionKind::SetTrackPlacementClippedDuration(it)
+                    ActionKind::SetTrackPlacementClippedDuration(FloatOptionProto { value: it })
                 }
                 Action::AddTrackPlacement(it) => ActionKind::AddTrackPlacement(it.into()),
                 Action::DeleteTrackPlacement(it) => ActionKind::DeleteTrackPlacement(it as u32),
                 Action::SetEqKind(it) => {
                     ActionKind::SetEqKind(EqTypeProto::try_from(it).unwrap().into())
-                }
-                Action::RemoveTrackPlacementClippedDuration(it) => {
-                    ActionKind::RemoveTrackPlacementClippedDuration(it)
                 }
 
                 // Non-serializable actions
