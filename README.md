@@ -1,6 +1,8 @@
 # veldt
 Collaborative, self-hosted, web-based digital audio workstation built in Rust
 
+![Screenshot](assets/Screenshot-2025-04-13.png)
+
 ## Structure
 
 * `hydric/` front end

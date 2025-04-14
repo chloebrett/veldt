@@ -102,10 +102,11 @@ impl View for NoteRoll {
                 let dispatch = move |note_index: usize, action: Action| {
                     store.dispatch(&Selector::Note(track_index, note_index), action)
                 };
+                let on_release = || store.dispatchr(Action::Release);
                 ui.horizontal(|ui| {
                     Piano::new(max_note, min_note - 1).ui(store, ui);
                     ui.add(
-                        Sequencer::new(range, dispatch)
+                        Sequencer::new(range, dispatch, on_release)
                             .objects(notes)
                             .horizontal_rects(white_note_pattern, Color32::from_white_alpha(4))
                             .vertical_bars(bar_length, Color32::from_white_alpha(6))
