@@ -1,6 +1,7 @@
 use crate::SAMPLE_RATE;
 use crate::graph::{GeneratorNode, RenderGraph, make_graph};
 use dasp_graph::{BoxedNodeSend, NodeData};
+use ordered_float::OrderedFloat;
 use shared::model::Project;
 
 pub fn render(project: &Project) -> RenderGraph {
@@ -16,13 +17,17 @@ pub fn render(project: &Project) -> RenderGraph {
     let bpm = project.bpm;
 
     // Work out how many samples the graph needs to render.
-    let track_beats: f32 = track
-        .notes
-        .iter()
-        .map(|placed_note| *placed_note.offset + placed_note.note.beats)
-        .max_by(|a, b| a.total_cmp(b))
-        .unwrap_or(0.0);
-    let track_samples = (track_beats / bpm * 60.0 * SAMPLE_RATE as f32) as usize;
+    let track_length = project.track_placements[placement_index]
+        .clipped_duration
+        .unwrap_or_else(|| {
+            track
+                .notes
+                .iter()
+                .map(|placed_note| placed_note.offset + OrderedFloat(placed_note.note.beats))
+                .max_by(|a, b| a.cmp(b))
+                .unwrap_or(OrderedFloat(0.0))
+        });
+    let track_samples = (*track_length / bpm * 60.0 * SAMPLE_RATE as f32) as usize;
 
     // Create a generator node, and create a render graph that uses it as the starting point.
     let mut graph = make_graph();
