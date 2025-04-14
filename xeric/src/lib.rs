@@ -27,7 +27,10 @@ pub async fn start_server() -> anyhow::Result<()> {
     };
     let save_load = SaveLoadServer::new(save_load_context);
 
-    let collab_context = CollabContext::new();
+    // Broadcasting on the server version of the stack shouldn't do anything.
+    // TODO: handle this better.
+    let broadcast = |_| {};
+    let collab_context = CollabContext::new(broadcast);
     let broadcast_actions = BroadcastActionsServer::new(collab_context);
 
     tonic::transport::Server::builder()
