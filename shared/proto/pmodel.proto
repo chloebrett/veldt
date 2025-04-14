@@ -266,3 +266,7 @@ enum EqTypeProto {
   LowShelvingFirstOrderEqType = 19;
   HighShelvingFirstOrderEqType = 20;
 }
+
+message FloatOptionProto {
+  optional float value = 1;
+}

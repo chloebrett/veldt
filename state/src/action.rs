@@ -1,18 +1,12 @@
-use local_macro::{FromProto, IntoProto};
-use shared::action_proto::{ActionProto, FloatOptionProto, action_proto::Kind as ActionKind};
+use shared::action_proto::{ActionProto, action_proto::Kind as ActionKind};
 use shared::model::{
     AdsrEnvelope, AntiAliasingMode, EffectInstance, EqType, PitchName, PlacedNote, Project, Sample,
     Scale, ScaleValue, TrackId, TrackPlacement, WaveType,
 };
 use shared::pmodel::{
-    AntiAliasingModeProto, EqTypeProto, PitchNameProto, ScaleProto, WaveTypeProto,
+    AntiAliasingModeProto, EqTypeProto, FloatOptionProto, PitchNameProto, ScaleProto, WaveTypeProto,
 };
 use shared::types::{Beats, Freq, GainDB, KnobPosition, Milliseconds, Octave, Volume};
-
-#[derive(FromProto, IntoProto)]
-pub struct FloatOption {
-    value: Option<f32>,
-}
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum Action {
