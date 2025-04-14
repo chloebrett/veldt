@@ -1,4 +1,4 @@
-use crate::{Action, Selector, StoreData, UndoStack};
+use crate::{Action, ReversibleAction, Selector, StoreData, UndoStack};
 use shared::logger::log;
 use std::cell::RefCell;
 
@@ -7,7 +7,6 @@ enum UndoRedoType {
     Redo,
 }
 
-#[derive(Default)]
 pub struct Store {
     // The canonical view of the store state, which can be mutated indirectly through actions.
     data: StoreData,
@@ -33,6 +32,15 @@ pub struct Store {
 }
 
 impl Store {
+    pub fn new(broadcast: impl Fn(Vec<ReversibleAction>) + Send + 'static) -> Self {
+        Store {
+            data: StoreData::default(),
+            pending_actions: RefCell::new(vec![]),
+            undo_stack: UndoStack::new(broadcast),
+            pending_undo_redo: None,
+        }
+    }
+
     /// Snapshots the state by applying all of the pending actions.
     pub fn snapshot(&mut self) {
         if let Some(undo_redo) = &self.pending_undo_redo {

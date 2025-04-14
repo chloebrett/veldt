@@ -49,14 +49,14 @@ pub fn track_placement_control(store: &Store, ui: &mut Ui) {
                 "Clipped Duration",
                 duration,
                 |it| {
-                    store.dispatch(
-                        &sel,
-                        if it < max_note_length as f64 {
-                            Action::SetTrackPlacementClippedDuration(Some(it as Beats))
+                    store.dispatch(&sel, {
+                        let clipped_duration = if it < max_note_length as f64 {
+                            Some(it as Beats)
                         } else {
-                            Action::SetTrackPlacementClippedDuration(None)
-                        },
-                    )
+                            None
+                        };
+                        Action::SetTrackPlacementClippedDuration(clipped_duration)
+                    })
                 },
                 0.0..=max_note_length as f64,
                 on_release,

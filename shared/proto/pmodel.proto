@@ -267,6 +267,7 @@ enum EqTypeProto {
   HighShelvingFirstOrderEqType = 20;
 }
 
+// Wrapper to allow passing Option<f32> as arguments for enums in protos.
 message FloatOptionProto {
   optional float value = 1;
 }
