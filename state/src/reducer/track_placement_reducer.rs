@@ -22,21 +22,8 @@ pub fn track_placement_reducer(track_placement: &mut TrackPlacement, action: &Ac
         }
         Action::SetTrackPlacementClippedDuration(duration) => {
             let prev = track_placement.clipped_duration.map(|value| *value);
-            track_placement.clipped_duration = Some(OrderedFloat(*duration));
-            if let Some(value) = prev {
-                Action::SetTrackPlacementClippedDuration(value)
-            } else {
-                Action::RemoveTrackPlacementClippedDuration(true)
-            }
-        }
-        Action::RemoveTrackPlacementClippedDuration(..) => {
-            let prev = track_placement.clipped_duration.map(|value| *value);
-            track_placement.clipped_duration = None;
-            if let Some(value) = prev {
-                Action::SetTrackPlacementClippedDuration(value)
-            } else {
-                Action::RemoveTrackPlacementClippedDuration(true)
-            }
+            track_placement.clipped_duration = duration.map(OrderedFloat);
+            Action::SetTrackPlacementClippedDuration(prev)
         }
 
         _ => Action::NonReversible,
