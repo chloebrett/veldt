@@ -4,7 +4,7 @@ use shared::model::{
     Scale, ScaleValue, TrackId, TrackPlacement, WaveType,
 };
 use shared::pmodel::{
-    AntiAliasingModeProto, EqTypeProto, FloatOptionProto, PitchNameProto, ScaleProto, WaveTypeProto,
+    AntiAliasingModeProto, EqTypeProto, PitchNameProto, ScaleProto, WaveTypeProto,
 };
 use shared::types::{Beats, Freq, GainDB, KnobPosition, Milliseconds, Octave, Volume};
 
@@ -218,7 +218,7 @@ impl From<Action> for ActionProto {
                 }
                 Action::SetTrackPlacementOffset(it) => ActionKind::SetTrackPlacementOffset(it),
                 Action::SetTrackPlacementClippedDuration(it) => {
-                    ActionKind::SetTrackPlacementClippedDuration(FloatOptionProto { value: it })
+                    ActionKind::SetTrackPlacementClippedDuration(it.into())
                 }
                 Action::AddTrackPlacement(it) => ActionKind::AddTrackPlacement(it.into()),
                 Action::DeleteTrackPlacement(it) => ActionKind::DeleteTrackPlacement(it as u32),
