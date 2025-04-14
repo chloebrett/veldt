@@ -20,6 +20,12 @@ pub fn track_placement_reducer(track_placement: &mut TrackPlacement, action: &Ac
             track_placement.offset = OrderedFloat(*offset);
             Action::SetTrackPlacementOffset(*prev)
         }
+        Action::SetTrackPlacementClippedDuration(duration) => {
+            let prev = track_placement.clipped_duration.map(|value| *value);
+            track_placement.clipped_duration = duration.map(OrderedFloat);
+            Action::SetTrackPlacementClippedDuration(prev)
+        }
+
         _ => Action::NonReversible,
     }
 }

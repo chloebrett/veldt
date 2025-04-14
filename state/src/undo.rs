@@ -19,8 +19,11 @@ pub struct ReversibleAction {
     pub is_compacted: bool,
 }
 
-#[derive(Clone, Default, Debug)]
 pub struct UndoStack {
+    // Broadcasts a set of actions (to the server).
+    // TODO: should probably be an async type.
+    broadcast: Box<dyn Fn(Vec<ReversibleAction>) + Send>,
+
     // Actions that have been applied at least once. Includes actions that have been undone.
     // If a new action is applied while there are undone actions, the undone actions are discarded.
     actions: Vec<ReversibleAction>,
@@ -31,6 +34,14 @@ pub struct UndoStack {
 }
 
 impl UndoStack {
+    pub fn new(broadcast: impl Fn(Vec<ReversibleAction>) + Send + 'static) -> Self {
+        UndoStack {
+            broadcast: Box::new(broadcast),
+            actions: vec![],
+            index: 0,
+        }
+    }
+
     /// Performs an action for the first time.
     /// Saves instructions for how to undo the action so that it can be undone in future.
     pub fn apply(&mut self, store: &mut StoreData, selector: &Selector, action: &Action) {
@@ -61,7 +72,7 @@ impl UndoStack {
 
         // TODO: store broadcast state of past actions / index of how far we have broadcasted.
         if broadcast_type(action) == BroadcastType::Immediate {
-            Self::broadcast(&reversible_action);
+            self.broadcast(reversible_action.clone());
         }
     }
 
@@ -110,7 +121,8 @@ impl UndoStack {
 
         // Broadcast the action if appropriate.
         if broadcast_type(&new_last_action.forward) == BroadcastType::OnRelease {
-            Self::broadcast(new_last_action);
+            let action = new_last_action.clone();
+            self.broadcast(action);
         }
 
         log(&format!(
@@ -119,9 +131,9 @@ impl UndoStack {
         ));
     }
 
-    fn broadcast(action: &ReversibleAction) {
+    fn broadcast(&self, action: ReversibleAction) {
         log(&format!("Broadcasting action to server! {:?}", action));
-        // TODO: actually broadcast!
+        (self.broadcast)(vec![action]);
     }
 
     /// Whether the stack has actions that can be undone.
@@ -137,7 +149,7 @@ impl UndoStack {
 
         log(&format!(
             "Undoing action. Stack state before: {:?}",
-            self.clone()
+            self.actions.clone()
         ));
         let action = self
             .actions
@@ -160,7 +172,7 @@ impl UndoStack {
 
         log(&format!(
             "Redoing action. Stack state before: {:?}",
-            self.clone()
+            self.actions.clone()
         ));
         let action = self
             .actions

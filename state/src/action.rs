@@ -4,7 +4,7 @@ use shared::model::{
     Scale, ScaleValue, TrackId, TrackPlacement, WaveType,
 };
 use shared::pmodel::{
-    AntiAliasingModeProto, EqTypeProto, PitchNameProto, ScaleProto, WaveTypeProto,
+    AntiAliasingModeProto, EqTypeProto, FloatOptionProto, PitchNameProto, ScaleProto, WaveTypeProto,
 };
 use shared::types::{Beats, Freq, GainDB, KnobPosition, Milliseconds, Octave, Volume};
 
@@ -77,6 +77,7 @@ pub enum Action {
     // --- TrackPlacementSelector ---
     SetTrackPlacementTrackId(TrackId),
     SetTrackPlacementOffset(Beats),
+    SetTrackPlacementClippedDuration(Option<f32>),
 
     // -- other --
     /// Denotes that the mouse has been released from a UI element, finalizing its value.
@@ -149,6 +150,9 @@ impl From<ActionProto> for Action {
             ActionKind::SetEqKind(it) => {
                 Action::SetEqKind(EqTypeProto::try_from(it).unwrap().into())
             }
+            ActionKind::SetTrackPlacementClippedDuration(it) => {
+                Action::SetTrackPlacementClippedDuration(it.value)
+            }
         }
     }
 }
@@ -213,6 +217,9 @@ impl From<Action> for ActionProto {
                     ActionKind::SetTrackPlacementTrackId(it as u32)
                 }
                 Action::SetTrackPlacementOffset(it) => ActionKind::SetTrackPlacementOffset(it),
+                Action::SetTrackPlacementClippedDuration(it) => {
+                    ActionKind::SetTrackPlacementClippedDuration(FloatOptionProto { value: it })
+                }
                 Action::AddTrackPlacement(it) => ActionKind::AddTrackPlacement(it.into()),
                 Action::DeleteTrackPlacement(it) => ActionKind::DeleteTrackPlacement(it as u32),
                 Action::SetEqKind(it) => {

@@ -38,9 +38,32 @@ pub fn track_placement_control(store: &Store, ui: &mut Ui) {
             on_release,
         );
 
-        // TODO: add slider + on/off for clipped duration.
+        let max_note_length =
+            *store.get().project.tracks[placement.track_id].find_max_note_length();
+        let duration = *placement
+            .clipped_duration
+            .unwrap_or(OrderedFloat(max_note_length)) as f64;
+        ui.horizontal(|ui| {
+            slider(
+                ui,
+                "Clipped Duration",
+                duration,
+                |it| {
+                    store.dispatch(&sel, {
+                        let clipped_duration = if it < max_note_length as f64 {
+                            Some(it as Beats)
+                        } else {
+                            None
+                        };
+                        Action::SetTrackPlacementClippedDuration(clipped_duration)
+                    })
+                },
+                0.0..=max_note_length as f64,
+                on_release,
+            );
+        });
 
-        if ui.button("Delete").clicked() {
+        if store.get().project.track_placements.len() > 1 && ui.button("Delete").clicked() {
             store.dispatchr(Action::DeleteTrackPlacement(track_placement_index));
             break;
         }

@@ -9,10 +9,12 @@ use super::{
     track_roll::TrackRoll,
     undo_redo_control,
 };
+use crate::rpc::broadcast_actions;
 use crate::widget::{default_window, get_set, knob, slider, string_observer};
 use crate::{audio_player::Handle, promise::AsyncResult, view::View};
 use egui::Pos2;
 use egui::{ScrollArea, scroll_area::ScrollBarVisibility};
+use poll_promise::Promise;
 use shared::model::{GeneratorType, Project, Sample};
 use shared::types::Beats;
 use state::{Action, Store};
@@ -69,12 +71,25 @@ impl Default for WindowState {
     }
 }
 
-#[derive(Default)]
 pub struct App {
     pub store: Store,
     pub async_state: AsyncState,
     pub audio_state: AudioState,
     pub window_state: WindowState,
+}
+
+impl Default for App {
+    fn default() -> Self {
+        let broadcast = |actions| {
+            let _ = Promise::spawn_local(broadcast_actions(actions));
+        };
+        App {
+            store: Store::new(broadcast),
+            async_state: AsyncState::default(),
+            audio_state: AudioState::default(),
+            window_state: WindowState::default(),
+        }
+    }
 }
 
 impl App {
