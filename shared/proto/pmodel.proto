@@ -106,6 +106,7 @@ message GeneratorInstanceProto {
   oneof kind {
     SimpleWaveProto simple_wave = 3;
     NoiseProto noise = 4;
+    SubSynthProto sub_synth = 5;
   };
 }
 
@@ -122,6 +123,22 @@ enum NoiseTypeProto {
   WhiteNoiseType = 1;
   BrownNoiseType = 2;
   PinkNoiseType = 3;
+}
+
+message SubSynthProto {
+  SubSynthConfigProto config = 1;
+}
+
+message SubSynthConfigProto {
+  repeated OscillatorConfigProto oscillators = 1; 
+}
+
+message OscillatorConfigProto {
+  WaveTypeProto wave = 1;
+  float volume = 2;
+  float pan = 3;
+  float coarse_detune = 4;
+  float fine_detune = 5;
 }
 
 message GeneratorMetaProto {

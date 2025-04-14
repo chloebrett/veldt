@@ -139,6 +139,7 @@ impl eframe::App for App {
                             let title = match &generator.kind {
                                 GeneratorType::SimpleWave { .. } => "Simple Wave Generator",
                                 GeneratorType::Noise { .. } => "Noise Generator",
+                                GeneratorType::SubSynth { .. } => "Subtractive Synth",
                             };
                             default_window(title)
                                 .open(&mut self.window_state.generators[0])
