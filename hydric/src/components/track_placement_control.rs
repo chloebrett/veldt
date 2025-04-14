@@ -38,12 +38,8 @@ pub fn track_placement_control(store: &Store, ui: &mut Ui) {
             on_release,
         );
 
-        let max_note_length = *store.get().project.tracks[placement.track_id]
-            .notes
-            .iter()
-            .map(|note| note.offset + OrderedFloat(note.note.beats))
-            .max_by(|x, y| x.cmp(y))
-            .unwrap_or(OrderedFloat(0.0));
+        let max_note_length =
+            *store.get().project.tracks[placement.track_id].find_max_note_length();
         let duration = *placement
             .clipped_duration
             .unwrap_or(OrderedFloat(max_note_length)) as f64;

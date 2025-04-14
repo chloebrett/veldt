@@ -13,6 +13,16 @@ pub struct Track {
     pub offset: OrderedFloat<Beats>,
 }
 
+impl Track {
+    pub fn find_max_note_length(&self) -> OrderedFloat<f32> {
+        self.notes
+            .iter()
+            .map(|note| note.offset + OrderedFloat(note.note.beats))
+            .max_by(|x, y| x.cmp(y))
+            .unwrap_or(OrderedFloat(0.0))
+    }
+}
+
 /// Ordered by offset.
 #[derive(Clone, Debug, FromProto, IntoProto)]
 pub struct PlacedNote {
