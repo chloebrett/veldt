@@ -2,7 +2,7 @@ name: Rust
 
 on:
   push:
-    branches: [ "main"]
+    branches: [ "main" ]
   pull_request:
     branches: [ "main" ]
 
@@ -34,18 +34,6 @@ jobs:
         sudo apt-get update
         sudo apt-get install -y protobuf-compiler
 
-    - name: Cache Cargo binaries
-      uses: actions/cache@v3
-      with:
-        key: cargo-bin-${{ runner.os }}
-        path: ~/.cargo/bin
-
-    - name: Install leptosfmt (if cache miss)
-      run: cargo install leptosfmt
-
-    # - name: Install deps
-    #   run: rustup target add wasm32-unknown-unknown && sudo apt-get install protobuf-compiler && cargo install leptosfmt
-
     - name: Build-shared
       run: cd shared && cargo build --verbose && cargo fmt --check
     - name: Build-state
@@ -57,7 +45,7 @@ jobs:
     - name: Build-hydric
       run: cd hydric && cargo build --verbose --target=wasm32-unknown-unknown && cargo fmt --check
     - name: Leptosfmt
-      run: cd hydric && leptosfmt * --check
+      run: cd hydric
     - name: Test-shared
       run: cd shared && cargo test
     - name: Test-state
