@@ -93,7 +93,7 @@ impl SequencerObject<PlacedTrack> for PlacedTrack {
 
     fn resize_action(&self, x: f32, _range: Rect) -> Option<Action> {
         let clipped_duration = x - *self.placement.offset;
-        let max_note_length = *self.track.find_max_note_length();
+        let max_note_length = *self.track.unclipped_duration();
         let clipped_duration = if clipped_duration < max_note_length {
             Some(clipped_duration as Beats)
         } else {
