@@ -20,11 +20,11 @@ jobs:
       uses: Swatinem/rust-cache@v2
 
     - name: Cache WASM target
+      id: cache-wasm  # Add an ID to check cache hit later
       uses: actions/cache@v3
       with:
         key: wasm-target-${{ runner.os }}
         path: ~/.rustup/toolchains/*/lib/rustlib/wasm32-unknown-unknown
-        id: cache-wasm  # Add an ID to check cache hit later
 
     - name: Install WASM target (if cache miss)
       if: steps.cache-wasm.outputs.cache-hit != 'true'  # Only run if cache missed
