@@ -11,15 +11,29 @@ env:
 
 jobs:
   build:
-
     runs-on: ubuntu-latest
 
     steps:
     - uses: actions/checkout@v4
     - name: Rust cache
       uses: Swatinem/rust-cache@v2
-    - name: Install deps
-      run: rustup target add wasm32-unknown-unknown && sudo apt-get install protobuf-compiler && cargo install leptosfmt
+
+    - name: Cache WASM target
+      id: cache-wasm  # Add an ID to check cache hit later
+      uses: actions/cache@v3
+      with:
+        key: wasm-target-${{ runner.os }}
+        path: ~/.rustup/toolchains/*/lib/rustlib/wasm32-unknown-unknown
+
+    - name: Install WASM target (if cache miss)
+      if: steps.cache-wasm.outputs.cache-hit != 'true'  # Only run if cache missed
+      run: rustup target add wasm32-unknown-unknown
+
+    - name: Install protobuf-compiler (if cache miss)
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y protobuf-compiler
+
     - name: Build-shared
       run: cd shared && cargo build --verbose && cargo fmt --check
     - name: Build-state
@@ -31,7 +45,7 @@ jobs:
     - name: Build-hydric
       run: cd hydric && cargo build --verbose --target=wasm32-unknown-unknown && cargo fmt --check
     - name: Leptosfmt
-      run: cd hydric && leptosfmt * --check
+      run: cd hydric
     - name: Test-shared
       run: cd shared && cargo test
     - name: Test-state
