@@ -24,8 +24,10 @@ jobs:
       with:
         key: wasm-target-${{ runner.os }}
         path: ~/.rustup/toolchains/*/lib/rustlib/wasm32-unknown-unknown
+        id: cache-wasm  # Add an ID to check cache hit later
 
     - name: Install WASM target (if cache miss)
+      if: steps.cache-wasm.outputs.cache-hit != 'true'  # Only run if cache missed
       run: rustup target add wasm32-unknown-unknown
 
     - name: Cache APT packages
@@ -52,7 +54,7 @@ jobs:
 
     # - name: Install deps
     #   run: rustup target add wasm32-unknown-unknown && sudo apt-get install protobuf-compiler && cargo install leptosfmt
-    
+
     - name: Build-shared
       run: cd shared && cargo build --verbose && cargo fmt --check
     - name: Build-state
