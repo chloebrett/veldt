@@ -18,8 +18,40 @@ jobs:
     - uses: actions/checkout@v4
     - name: Rust cache
       uses: Swatinem/rust-cache@v2
-    - name: Install deps
-      run: rustup target add wasm32-unknown-unknown && sudo apt-get install protobuf-compiler && cargo install leptosfmt
+
+    - name: Cache WASM target
+      uses: actions/cache@v3
+      with:
+        key: wasm-target-${{ runner.os }}
+        path: ~/.rustup/toolchains/*/lib/rustlib/wasm32-unknown-unknown
+
+    - name: Install WASM target (if cache miss)
+      run: rustup target add wasm32-unknown-unknown
+
+    - name: Cache APT packages
+      uses: actions/cache@v3
+      with:
+        key: apt-${{ runner.os }}-${{ hashFiles('**/apt-packages.txt') }}
+        path: |
+          /var/cache/apt
+          /var/lib/apt/lists
+
+    - name: Install protobuf-compiler (if cache miss)
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y protobuf-compiler
+
+    - name: Cache Cargo binaries
+      uses: actions/cache@v3
+      with:
+        key: cargo-bin-${{ runner.os }}
+        path: ~/.cargo/bin
+
+    - name: Install leptosfmt (if cache miss)
+      run: cargo install leptosfmt
+
+    # - name: Install deps
+    #   run: rustup target add wasm32-unknown-unknown && sudo apt-get install protobuf-compiler && cargo install leptosfmt
     - name: Build-shared
       run: cd shared && cargo build --verbose && cargo fmt --check
     - name: Build-state
