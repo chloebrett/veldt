@@ -80,7 +80,7 @@ impl UndoStack {
     /// This enables the undo/redo stack to handle floats appropriately.
     fn compact_last_actions(&mut self) {
         // This should only happen if there is nothing to redo, and at least one stored action.
-        debug_assert!(self.actions.is_empty());
+        debug_assert!(!self.actions.is_empty());
         debug_assert!(self.index == self.actions.len());
         log(&format!("Compacting actions! {:?}", self.actions,));
 
