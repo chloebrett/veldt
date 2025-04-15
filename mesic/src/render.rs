@@ -18,7 +18,7 @@ pub fn render(project: &Project) -> RenderGraph {
     // Work out how many samples the graph needs to render.
     let track_length = project.track_placements[placement_index]
         .clipped_duration
-        .unwrap_or(track.find_max_note_length());
+        .unwrap_or(track.unclipped_duration());
     let track_samples = (*track_length / bpm * 60.0 * SAMPLE_RATE as f32) as usize;
 
     // Create a generator node, and create a render graph that uses it as the starting point.

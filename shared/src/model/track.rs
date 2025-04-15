@@ -14,7 +14,7 @@ pub struct Track {
 }
 
 impl Track {
-    pub fn find_max_note_length(&self) -> OrderedFloat<f32> {
+    pub fn unclipped_duration(&self) -> OrderedFloat<f32> {
         self.notes
             .iter()
             .map(|note| note.offset + OrderedFloat(note.note.beats))
