@@ -1,4 +1,4 @@
-use super::filter::{FirstOrderFilter, FirstOrderFilterConfig};
+use super::filter::{FirstOrderFilter, FirstOrderFilterConfig, Mix};
 use super::low_high::LowHigh;
 use crate::consts::SAMPLE_RATE;
 use shared::model::EqConfig;
@@ -31,8 +31,8 @@ pub fn shelf_first_order(config: &EqConfig, low_high: LowHigh) -> FirstOrderFilt
     let b1 = -gamma;
 
     // TODO: add support for wet/dry to first-order filters
-    // let c0: f32 = mu - 1.0;
-    // let d0: f32 = 1.0;
+    let wet: f32 = mu - 1.0;
+    let dry: f32 = 1.0;
 
-    FirstOrderFilter::new_wet(FirstOrderFilterConfig { a0, a1, b1 })
+    FirstOrderFilter::new(FirstOrderFilterConfig { a0, a1, b1 }, Mix { wet, dry })
 }
