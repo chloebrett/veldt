@@ -12,7 +12,7 @@ env:
 jobs:
   build:
     runs-on: ubuntu-latest
-    
+
     steps:
     - uses: actions/checkout@v4
     - name: Rust cache
@@ -28,14 +28,6 @@ jobs:
     - name: Install WASM target (if cache miss)
       if: steps.cache-wasm.outputs.cache-hit != 'true'  # Only run if cache missed
       run: rustup target add wasm32-unknown-unknown
-
-    - name: Cache APT packages
-      uses: actions/cache@v3
-      with:
-        key: apt-${{ runner.os }}-${{ hashFiles('**/apt-packages.txt') }}
-        path: |
-          /var/cache/apt
-          /var/lib/apt/lists
 
     - name: Install protobuf-compiler (if cache miss)
       run: |
