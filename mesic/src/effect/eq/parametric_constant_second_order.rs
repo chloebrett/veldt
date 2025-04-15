@@ -30,7 +30,5 @@ pub fn parametric_constant_q(config: &EqConfig) -> SecondOrderFilter {
         (d0 * e0, beta * e0, delta * e0, beta * e0, eta * e0)
     };
 
-    SecondOrderFilter::new_wet(
-        SecondOrderFilterConfig { a0, a1, a2, b1, b2 }
-    )
+    SecondOrderFilter::new_wet(SecondOrderFilterConfig { a0, a1, a2, b1, b2 })
 }
