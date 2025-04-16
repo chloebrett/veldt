@@ -10,8 +10,8 @@ use super::{
     track_roll::TrackRoll,
     undo_redo_control,
 };
-use crate::promise::spawn;
 use crate::components::FrameHistory;
+use crate::promise::spawn;
 use crate::rpc::broadcast_actions;
 use crate::rpc::load_project_list;
 use crate::widget::{default_window, get_set, knob, slider, string_observer};
