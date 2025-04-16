@@ -109,11 +109,7 @@ impl From<SubSynthConfigProto> for SubSynthConfig {
             "SubSynthConfig must have exactly 3 oscillators"
         );
         SubSynthConfig {
-            oscillators: [
-                vec[0].clone().into(),
-                vec[1].clone().into(),
-                vec[2].clone().into(),
-            ],
+            oscillators: [vec[0].into(), vec[1].into(), vec[2].into()],
         }
     }
 }

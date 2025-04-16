@@ -39,7 +39,7 @@ pub fn make_processor() -> Processor {
 
 /// Extracts left/right outputs from an outputs slice.
 /// Panics if there aren't enough channels.
-fn extract_outputs<'a>(output: &'a mut [Buffer]) -> (&'a mut Buffer, &'a mut Buffer) {
+fn extract_outputs(output: &mut [Buffer]) -> (&mut Buffer, &mut Buffer) {
     let output = &mut output.iter_mut();
     let left = output.next().expect("Expected left output");
     let right = output.next().expect("Expected right output");
@@ -48,7 +48,7 @@ fn extract_outputs<'a>(output: &'a mut [Buffer]) -> (&'a mut Buffer, &'a mut Buf
 
 /// Extracts left/right inputs from an inputs slice.
 /// Panics if there aren't enough channels for any of the inputs.
-fn extract_inputs<'a>(input: &'a [Input]) -> Vec<(&'a Buffer, &'a Buffer)> {
+fn extract_inputs(input: &[Input]) -> Vec<(&Buffer, &Buffer)> {
     input
         .iter()
         .map(|input| {
@@ -63,7 +63,7 @@ fn extract_inputs<'a>(input: &'a [Input]) -> Vec<(&'a Buffer, &'a Buffer)> {
 }
 
 /// Extracts exactly two sets of input channels.
-fn extract_inputs_2<'a>(input: &'a [Input]) -> [(&'a Buffer, &'a Buffer); 2] {
+fn extract_inputs_2(input: &[Input]) -> [(&Buffer, &Buffer); 2] {
     debug_assert!(input.len() >= 2);
     let x = extract_inputs(input);
     [x[0], x[1]]
