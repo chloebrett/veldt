@@ -1,7 +1,8 @@
-use egui::{pos2, vec2, Color32, Id, Pos2, Rect, Ui};
+use egui::{Color32, Id, Pos2, Rect, Ui, pos2, vec2};
 use ordered_float::OrderedFloat;
 use shared::{
-    model::{Track, TrackPlacement}, types::Beats
+    model::{Track, TrackPlacement},
+    types::Beats,
 };
 use state::{Action, Selector, Store};
 
@@ -41,7 +42,7 @@ impl View for TrackRoll {
         let on_release = || store.dispatchr(Action::Release);
         let on_click = |ui: &mut Ui, _index: usize| {
             let window_id = Id::new("note_roll_window");
-            ui.data_mut(|data| data.insert_temp::<bool>(window_id, true));
+            ui.data_mut(|data| data.insert_temp(window_id, true));
         };
         ui.add(
             Sequencer::new(range, dispatch, on_release, on_click)

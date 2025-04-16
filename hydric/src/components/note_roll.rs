@@ -1,6 +1,6 @@
 use state::{Action, Selector, Store};
 
-use egui::{pos2, vec2, Color32, Pos2, Rect, ScrollArea, Ui};
+use egui::{Color32, Pos2, Rect, ScrollArea, Ui, pos2, vec2};
 use shared::{
     model::{Note, PitchName, PlacedNote, Scale, ScaleValue},
     types::PitchValue,

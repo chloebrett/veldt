@@ -17,7 +17,9 @@ pub struct Sequencer<T: SequencerObject<T>, F: Fn(usize, Action), G: Fn(), H: Fn
     background_shapes: Vec<Shape>,
 }
 
-impl<T: SequencerObject<T>, F: Fn(usize, Action), G: Fn(), H: Fn(&mut Ui, usize)> Sequencer<T, F, G, H> {
+impl<T: SequencerObject<T>, F: Fn(usize, Action), G: Fn(), H: Fn(&mut Ui, usize)>
+    Sequencer<T, F, G, H>
+{
     pub fn new(range: Rect, dispatch: F, on_release: G, on_click: H) -> Self {
         Sequencer {
             range,
@@ -171,7 +173,9 @@ impl<T: SequencerObject<T>, F: Fn(usize, Action), G: Fn(), H: Fn(&mut Ui, usize)
     }
 }
 
-impl<T: SequencerObject<T>, F: Fn(usize, Action), G: Fn(), H: Fn(&mut Ui, usize)> Widget for Sequencer<T, F, G, H> {
+impl<T: SequencerObject<T>, F: Fn(usize, Action), G: Fn(), H: Fn(&mut Ui, usize)> Widget
+    for Sequencer<T, F, G, H>
+{
     fn ui(self, ui: &mut Ui) -> Response {
         let Sequencer {
             range,
