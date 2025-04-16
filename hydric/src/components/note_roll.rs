@@ -14,7 +14,8 @@ use crate::{
     widget::{Sequencer, SequencerObject},
 };
 
-pub struct NoteRoll {
+pub struct NoteRoll<'a> {
+    store: &'a Store,
     track_index: usize,
     min_note: PitchValue,
     max_note: PitchValue,
@@ -23,9 +24,10 @@ pub struct NoteRoll {
     bar_length: f32,
 }
 
-impl NoteRoll {
-    pub fn new(track_index: usize) -> Self {
+impl<'a> NoteRoll<'a> {
+    pub fn new(store: &'a Store, track_index: usize) -> Self {
         NoteRoll {
+            store,
             track_index,
             min_note: PitchName {
                 scale_value: ScaleValue::A,
@@ -67,9 +69,10 @@ impl NoteRoll {
     }
 }
 
-impl View for NoteRoll {
-    fn ui(&self, store: &Store, ui: &mut Ui) {
+impl View for NoteRoll<'_> {
+    fn ui(&self, ui: &mut Ui) {
         let NoteRoll {
+            ref store,
             track_index,
             min_note,
             max_note,
@@ -104,7 +107,7 @@ impl View for NoteRoll {
                 };
                 let on_release = || store.dispatchr(Action::Release);
                 ui.horizontal(|ui| {
-                    Piano::new(max_note, min_note - 1).ui(store, ui);
+                    Piano::new(max_note, min_note - 1).ui(ui);
                     ui.add(
                         Sequencer::new(range, dispatch, on_release)
                             .objects(notes)
