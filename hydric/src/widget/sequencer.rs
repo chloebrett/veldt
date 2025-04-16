@@ -81,7 +81,7 @@ impl<T: SequencerObject<T>, F: Fn(usize, Action), G: Fn(), H: Fn(&mut Ui, usize)
         self
     }
 
-    fn resize_objects(
+    fn resize_object(
         &self,
         object: &T,
         object_index: usize,
@@ -91,8 +91,7 @@ impl<T: SequencerObject<T>, F: Fn(usize, Action), G: Fn(), H: Fn(&mut Ui, usize)
     ) {
         // TODO Handle this ID making better.
         // IDs must be different between resize and move fuctions.
-        let id = response.id.with(object_index);
-        let id = response.id.with(id);
+        let id = response.id.with(format!("resize {}", object_index));
         let rect = object.to_rect(self.range);
         let x_size = 0.3;
         let resize_rect = Rect::from_min_size(
@@ -124,7 +123,7 @@ impl<T: SequencerObject<T>, F: Fn(usize, Action), G: Fn(), H: Fn(&mut Ui, usize)
         }
     }
 
-    fn update_objects(
+    fn interact_object(
         &self,
         object: &T,
         object_index: usize,
@@ -132,7 +131,7 @@ impl<T: SequencerObject<T>, F: Fn(usize, Action), G: Fn(), H: Fn(&mut Ui, usize)
         response: &Response,
         sequencer_transform: &RectTransform,
     ) {
-        let id = response.id.with(object_index);
+        let id = response.id.with(format!("update {}", object_index));
         let rect = object.to_rect(self.range);
         let rect_response = ui.interact(rect.transform(*sequencer_transform), id, self.sense);
         if rect_response.interact(Sense::click()).double_clicked() {
@@ -195,8 +194,8 @@ impl<T: SequencerObject<T>, F: Fn(usize, Action), G: Fn(), H: Fn(&mut Ui, usize)
                 .iter()
                 .enumerate()
                 .map(|(index, object)| {
-                    self.update_objects(object, index, ui, &response, &sequencer_transform);
-                    self.resize_objects(object, index, ui, &response, &sequencer_transform);
+                    self.interact_object(object, index, ui, &response, &sequencer_transform);
+                    self.resize_object(object, index, ui, &response, &sequencer_transform);
                     Shape::rect_filled(object.to_rect(range), CornerRadius::same(1), Color32::WHITE)
                 })
                 .collect();
