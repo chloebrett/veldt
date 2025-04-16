@@ -1,32 +1,48 @@
+use crate::view::View;
 use crate::widget::{get_set, int_slider, selectable_value};
-use egui::Ui;
-use mesic::create_scale_values;
-use ordered_float::OrderedFloat;
-use shared::model::{Note, PitchName, PlacedNote};
+use egui::{Id, Ui};
+use shared::model::ScaleValue;
 use shared::types::{Beats, Octave};
 use state::{Action, Selector, Store};
+use strum::IntoEnumIterator;
 
-pub fn track_control(store: &Store, ui: &mut Ui) {
-    let scale_options = create_scale_values(store.get().scale, store.get().key);
-    let track_index = 0;
-    let track = &store.get().project.tracks[track_index];
-    let on_release = || store.dispatchr(Action::Release);
+pub struct NoteControl<'a> {
+    store: &'a Store,
+    track_index: usize,
+    note_index: usize,
+}
 
-    for note_index in 0..track.notes.len() {
-        let note = &track.notes[note_index];
+impl<'a> NoteControl<'a> {
+    pub fn new(store: &'a Store, track_index: usize, note_index: usize) -> Self {
+        NoteControl {
+            store,
+            track_index,
+            note_index,
+        }
+    }
+}
+
+impl View for NoteControl<'_> {
+    fn ui(&mut self, ui: &mut Ui) {
+        let NoteControl {
+            store,
+            track_index,
+            note_index,
+        } = *self;
+        let note = &store.get().project.tracks[track_index].notes[note_index];
+        let on_release = || store.dispatchr(Action::Release);
         let sel = Selector::Note(track_index, note_index);
-
         egui::ComboBox::from_id_salt(format!("note_{note_index}"))
             .selected_text(note.note.pitch_name.scale_value.to_string())
             .show_ui(ui, |ui| {
-                for scale_note in scale_options.iter() {
+                for scale_note in ScaleValue::iter() {
                     let scale_value = note.note.pitch_name.scale_value;
                     selectable_value(
                         ui,
                         get_set(&scale_value, |it| {
                             store.dispatch(&sel, Action::SetNoteScaleValue(*it))
                         }),
-                        scale_note,
+                        &scale_note,
                         scale_note.to_string(),
                     );
                 }
@@ -69,31 +85,12 @@ pub fn track_control(store: &Store, ui: &mut Ui) {
                 &Selector::Track(track_index),
                 Action::DeleteNote(note_index),
             );
-            break;
+            ui.data_mut(|data| {
+                let window_id = Id::new("note_window");
+                let active_note = Id::new("active_note_index");
+                data.insert_temp(window_id, false);
+                data.insert_temp::<Option<usize>>(active_note, None);
+            });
         }
-    }
-
-    let track_length = track
-        .notes
-        .clone()
-        .into_iter()
-        .map(|it| it.offset + it.note.beats)
-        .max()
-        .unwrap_or(OrderedFloat(0.0));
-
-    if ui.button("New note").clicked() {
-        store.dispatch(
-            &Selector::Track(track_index),
-            Action::AddNote(PlacedNote {
-                note: Note {
-                    pitch_name: PitchName {
-                        scale_value: store.get().key,
-                        octave: 4,
-                    },
-                    beats: 1.0,
-                },
-                offset: track_length,
-            }),
-        );
     }
 }

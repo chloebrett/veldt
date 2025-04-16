@@ -10,12 +10,12 @@ enum Tag {
     Optional,
     Enum,
     Repeated,
-    NoTag,
+    None,
 }
 
 /// Extracts up to one tag from a struct field. Used to determine what to codegen for that field.
 fn extract_tag(field: &Field) -> Tag {
-    let mut tag = Tag::NoTag;
+    let mut tag = Tag::None;
     for attr in &field.attrs {
         // if tagged with proto_type_u32, then set "as <type>" for the model type.
         if attr.path().is_ident("proto_type_u8") {
@@ -69,7 +69,7 @@ pub fn derive_from_proto(input: TokenStream) -> TokenStream {
         if let Fields::Named(ref fields) = data.fields {
             let field_vals = fields.named.iter().map(|field| {
                 let name = &field.ident;
-                let tag = extract_tag(&field);
+                let tag = extract_tag(field);
 
                 match tag {
                     Tag::AsType { model_type, .. } => {
@@ -80,7 +80,7 @@ pub fn derive_from_proto(input: TokenStream) -> TokenStream {
                         quote!(#name: item.#name.into_iter().map(|it| it.into()).collect())
                     }
                     Tag::Enum => quote!(#name: item.#name().into()),
-                    Tag::NoTag => quote!(#name: item.#name.into()),
+                    Tag::None => quote!(#name: item.#name.into()),
                 }
             });
 
@@ -142,7 +142,7 @@ pub fn derive_into_proto(input: TokenStream) -> TokenStream {
         if let Fields::Named(ref fields) = data.fields {
             let field_vals = fields.named.iter().map(|field| {
                 let name = &field.ident;
-                let tag = extract_tag(&field);
+                let tag = extract_tag(field);
 
                 match tag {
                     Tag::AsType { proto_type, .. } => {
@@ -156,7 +156,7 @@ pub fn derive_into_proto(input: TokenStream) -> TokenStream {
                     // increment by 1 to account for Unknown = 0.
                     // TODO improve implementation. See PR #151.
                     Tag::Enum => quote!(#name: item.#name as i32 + 1),
-                    Tag::NoTag => quote!(#name: item.#name.into()),
+                    Tag::None => quote!(#name: item.#name.into()),
                 }
             });
 
