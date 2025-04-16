@@ -106,9 +106,11 @@ impl View for NoteRoll<'_> {
                     store.dispatch(&Selector::Note(track_index, note_index), action)
                 };
                 let on_release = || store.dispatchr(Action::Release);
-                let on_click = |ui: &mut Ui, _index: usize| {
+                let on_click = |ui: &mut Ui, index: usize| {
                     let note_id = Id::new("note_window");
-                    ui.data_mut(|data| data.insert_temp(note_id, true))
+                    let note_index_id = Id::new("active_note_index");
+                    ui.data_mut(|data| data.insert_temp(note_id, true));
+                    ui.data_mut(|data| data.insert_temp(note_index_id, index));
                 };
                 ui.horizontal(|ui| {
                     Piano::new(max_note, min_note - 1).ui(ui);
