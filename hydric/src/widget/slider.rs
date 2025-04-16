@@ -45,7 +45,7 @@ pub fn int_slider<T: PartialEq + Clone + Into<f64> + From<f64>, F: Fn(T), G: Fn(
         setter,
         (*range.start() as f32).into()..=(*range.end() as f32).into(),
         on_release,
-        /* logarithmic= */ true,
+        /* logarithmic= */ false,
         /* fixed_decimals= */ Some(0),
     );
 }
