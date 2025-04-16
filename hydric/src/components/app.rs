@@ -9,6 +9,7 @@ use super::{
     track_roll::TrackRoll,
     undo_redo_control,
 };
+use crate::components::FrameHistory;
 use crate::rpc::broadcast_actions;
 use crate::widget::{default_window, get_set, knob, slider, string_observer};
 use crate::{audio_player::Handle, promise::AsyncResult, view::View};
@@ -69,6 +70,7 @@ impl Default for WindowState {
 
 pub struct App {
     pub store: Store,
+    pub frame_history: FrameHistory,
     pub async_state: AsyncState,
     pub audio_state: AudioState,
     pub window_state: WindowState,
@@ -81,6 +83,7 @@ impl Default for App {
         };
         App {
             store: Store::new(broadcast),
+            frame_history: FrameHistory::default(),
             async_state: AsyncState::default(),
             audio_state: AudioState::default(),
             window_state: WindowState::default(),
@@ -99,10 +102,13 @@ impl App {
 }
 
 impl eframe::App for App {
-    fn update(&mut self, ctx: &egui::Context, _frame: &mut eframe::Frame) {
+    fn update(&mut self, ctx: &egui::Context, frame: &mut eframe::Frame) {
         // Snapshot the state at the start of each frame.
         // This applies all of the pending actions. It avoids cloning the state.
         self.store.snapshot();
+
+        self.frame_history
+            .on_new_frame(ctx.input(|i| i.time), frame.info().cpu_usage);
 
         egui::CentralPanel::default().show(ctx, |ui| {
             ScrollArea::vertical()
@@ -261,7 +267,7 @@ impl eframe::App for App {
                     TrackRoll::new(&self.store).ui(ui);
 
                     ui.with_layout(egui::Layout::bottom_up(egui::Align::LEFT), |ui| {
-                        egui::warn_if_debug_build(ui);
+                        self.frame_history.ui(ui);
                     });
                 });
         });
