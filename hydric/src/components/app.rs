@@ -3,9 +3,10 @@ use super::{
     generator::{generator_control, generators_control},
     key_control::KeyControl,
     load_control,
+    note_control::NoteControl,
     note_roll::NoteRoll,
     play::{play_control, sample_control},
-    save_button, toggle_window_panel, note_control::NoteControl, track_placement_control,
+    save_button, toggle_window_panel, track_placement_control,
     track_roll::TrackRoll,
     undo_redo_control,
 };
@@ -183,15 +184,27 @@ impl eframe::App for App {
                     let note_id = Id::new("note_window");
                     if ui.data_mut(|data| *data.get_temp_mut_or(note_id, false)) {
                         let mut open = true;
+                        let track_index = ui.data_mut(|data| {
+                            let id = Id::new("active_track_index");
+                            *data.get_temp_mut_or(id, 0)
+                        });
+                        let note_index = ui.data_mut(|data| {
+                            let id = Id::new("active_note_index");
+                            *data.get_temp_mut_or(id, 0)
+                        });
                         default_window("Notes")
                             .open(&mut open)
                             .default_pos(Pos2 { x: 600.0, y: 20.0 })
                             .show(ctx, |ui| {
-                                let track_index = 0;
-                                NoteControl::new(track_index, 0).ui(&self.store, ui);
+                                NoteControl::new(&self.store, track_index, note_index).ui(ui);
                             });
                         ui.data_mut(|data| {
-                            data.insert_temp(note_id, open);
+                            // Check if state has been changed within component as well as with
+                            // x'ing out of window.
+                            data.insert_temp(
+                                note_id,
+                                data.get_temp(note_id).unwrap_or(false) && open,
+                            );
                         })
                     };
 

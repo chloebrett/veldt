@@ -1,44 +1,48 @@
 use crate::view::View;
 use crate::widget::{get_set, int_slider, selectable_value};
-use egui::Ui;
-use mesic::create_scale_values;
-use ordered_float::OrderedFloat;
-use shared::model::{Note, PitchName, PlacedNote};
+use egui::{Id, Ui};
+use shared::model::ScaleValue;
 use shared::types::{Beats, Octave};
 use state::{Action, Selector, Store};
+use strum::IntoEnumIterator;
 
-pub struct NoteControl {
+pub struct NoteControl<'a> {
+    store: &'a Store,
     track_index: usize,
     note_index: usize,
 }
 
-impl NoteControl {
-    pub fn new(track_index: usize, note_index: usize) -> Self {
+impl<'a> NoteControl<'a> {
+    pub fn new(store: &'a Store, track_index: usize, note_index: usize) -> Self {
         NoteControl {
+            store,
             track_index,
             note_index,
         }
     }
 }
 
-impl View for NoteControl {
-    fn ui(&self, store: &Store, ui: &mut Ui) {
-        let NoteControl { track_index, note_index } = *self;
-        let scale_options = create_scale_values(store.get().scale, store.get().key);
+impl View for NoteControl<'_> {
+    fn ui(&self, ui: &mut Ui) {
+        let NoteControl {
+            store,
+            track_index,
+            note_index,
+        } = *self;
         let note = &store.get().project.tracks[track_index].notes[note_index];
         let on_release = || store.dispatchr(Action::Release);
         let sel = Selector::Note(track_index, note_index);
         egui::ComboBox::from_id_salt(format!("note_{note_index}"))
             .selected_text(note.note.pitch_name.scale_value.to_string())
             .show_ui(ui, |ui| {
-                for scale_note in scale_options.iter() {
+                for scale_note in ScaleValue::iter() {
                     let scale_value = note.note.pitch_name.scale_value;
                     selectable_value(
                         ui,
                         get_set(&scale_value, |it| {
                             store.dispatch(&sel, Action::SetNoteScaleValue(*it))
                         }),
-                        scale_note,
+                        &scale_note,
                         scale_note.to_string(),
                     );
                 }
@@ -81,6 +85,10 @@ impl View for NoteControl {
                 &Selector::Track(track_index),
                 Action::DeleteNote(note_index),
             );
+            ui.data_mut(|data| {
+                let id = Id::new("note_window");
+                data.insert_temp(id, false);
+            });
         }
     }
 }
