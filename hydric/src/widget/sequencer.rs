@@ -91,7 +91,7 @@ impl<T: SequencerObject<T>, F: Fn(usize, Action), G: Fn(), H: Fn(&mut Ui, usize)
     ) {
         // TODO Handle this ID making better.
         // IDs must be different between resize and move fuctions.
-        let id = response.id.with(format!("resize {}", object_index));
+        let id = response.id.with(format!("resize_{}", object_index));
         let rect = object.to_rect(self.range);
         let x_size = 0.3;
         let resize_rect = Rect::from_min_size(
@@ -131,7 +131,7 @@ impl<T: SequencerObject<T>, F: Fn(usize, Action), G: Fn(), H: Fn(&mut Ui, usize)
         response: &Response,
         sequencer_transform: &RectTransform,
     ) {
-        let id = response.id.with(format!("update {}", object_index));
+        let id = response.id.with(format!("update_{}", object_index));
         let rect = object.to_rect(self.range);
         let rect_response = ui.interact(rect.transform(*sequencer_transform), id, self.sense);
         if rect_response.interact(Sense::click()).double_clicked() {
