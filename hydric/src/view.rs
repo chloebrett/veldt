@@ -1,7 +1,7 @@
 use egui::Ui;
-use state::Store;
 
 pub trait View {
-    // TODO consider returning a Reponse to handle other interactions.
-    fn ui(&self, store: &Store, ui: &mut Ui);
+    // TODO consider returning a Response to handle other interactions.
+    // TODO: should this be &mut self instead?
+    fn ui(&self, ui: &mut Ui);
 }
