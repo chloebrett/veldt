@@ -110,7 +110,7 @@ impl View for NoteRoll<'_> {
                     let note_id = Id::new("note_window");
                     let note_index_id = Id::new("active_note_index");
                     ui.data_mut(|data| data.insert_temp(note_id, true));
-                    ui.data_mut(|data| data.insert_temp(note_index_id, index));
+                    ui.data_mut(|data| data.insert_temp(note_index_id, Some(index)));
                 };
                 ui.horizontal(|ui| {
                     Piano::new(max_note, min_note - 1).ui(ui);
