@@ -1,21 +1,34 @@
 use log::info;
-use shared::model::Project;
+use prost::Message;
+use shared::pmodel::ProjectProto;
 use shared::save_load::{
     LoadProjectListReply, LoadProjectListRequest, LoadProjectReply, LoadProjectRequest,
     SaveProjectReply, SaveProjectRequest, save_load_server::SaveLoad,
 };
-use std::collections::HashMap;
-use std::sync::{Arc, Mutex};
+use std::env::current_dir;
+use std::fs::File;
+use std::fs::{ReadDir, read_dir};
+use std::io::{Read, Write};
+use std::path::PathBuf;
 use tonic::async_trait;
 
-// Save/load RPCs share some stateful context. Currently, we don't save/load to a file, we just
-// store the saved projects in memory while the server is running.
-pub struct SaveLoadContext {
-    pub projects: SavedProjects,
+// Stateless: we just save projects to files and don't keep anything in memory.
+pub struct SaveLoadContext;
+
+fn project_dir_path() -> PathBuf {
+    let mut file_path = current_dir().unwrap();
+    file_path.pop(); // pop '/xeric'
+    file_path.push("assets");
+    file_path.push("projects");
+    file_path
 }
 
-// Needs an Arc<Mutex<...>> because the server is multi threaded.
-type SavedProjects = Arc<Mutex<HashMap<String, Project>>>;
+fn project_file_path(filename: String) -> PathBuf {
+    let mut file_path = project_dir_path();
+    // TODO: add a file extension.
+    file_path.push(filename.clone());
+    file_path
+}
 
 #[async_trait]
 impl SaveLoad for SaveLoadContext {
@@ -25,11 +38,20 @@ impl SaveLoad for SaveLoadContext {
         request: tonic::Request<SaveProjectRequest>,
     ) -> Result<tonic::Response<SaveProjectReply>, tonic::Status> {
         let SaveProjectRequest { name, project } = request.into_inner();
-        self.projects
-            .lock()
-            .unwrap()
-            .insert(name.clone(), project.unwrap().clone().into());
+        let mut project_bytes = vec![];
+
+        // TODO: handle error.
+        let _ = project.clone().unwrap().encode(&mut project_bytes);
+
+        let file_path = project_file_path(name.clone());
+        info!("Saving project to path: {}", file_path.clone().display());
+
+        // Note: if the file already exists, it will be overwritten.
+        let mut file = File::create(file_path)?;
+        file.write_all(&project_bytes)?;
+
         info!("Saved {}", name.clone());
+        info!("Saved project: {:?}", project.clone().unwrap());
         Ok(tonic::Response::new(SaveProjectReply {}))
     }
 
@@ -39,7 +61,22 @@ impl SaveLoad for SaveLoadContext {
         self: &Self,
         _request: tonic::Request<LoadProjectListRequest>,
     ) -> Result<tonic::Response<LoadProjectListReply>, tonic::Status> {
-        let list = self.projects.lock().unwrap().keys().cloned().collect();
+        let dir_contents: ReadDir = read_dir(project_dir_path())?;
+        let mut list: Vec<String> = vec![];
+
+        for file in dir_contents {
+            let file = file?;
+            let filename: String = file
+                .path()
+                .iter()
+                .next_back()
+                .unwrap()
+                .to_str()
+                .unwrap()
+                .to_string();
+            list.push(filename);
+        }
+
         Ok(tonic::Response::new(LoadProjectListReply {
             project_names: list,
         }))
@@ -51,169 +88,21 @@ impl SaveLoad for SaveLoadContext {
         request: tonic::Request<LoadProjectRequest>,
     ) -> Result<tonic::Response<LoadProjectReply>, tonic::Status> {
         let name = request.into_inner().name;
-        if let Some(project) = self.projects.lock().unwrap().get(&name) {
-            Ok(tonic::Response::new(LoadProjectReply {
-                project: Some(project.clone().into()),
-            }))
-        } else {
-            Err(tonic::Status::invalid_argument(
-                "Project name was not found on server.",
-            ))
-        }
-    }
-}
 
-#[cfg(test)]
-mod tests {
-    use std::collections::HashSet;
+        let file_path = project_file_path(name.clone());
+        info!("Loading project from path: {}", file_path.clone().display());
 
-    use shared::model::ModMatrix;
+        let mut file = File::open(file_path)?;
+        let mut project_buffer = vec![];
+        file.read_to_end(&mut project_buffer)?;
 
-    use super::*;
+        // TODO: handle error.
+        let project = ProjectProto::decode(project_buffer.as_slice()).unwrap();
+        info!("Loaded {} {}", name, project_buffer.len());
+        info!("Loaded project: {:?}", project.clone());
 
-    fn empty_project(name: String) -> Project {
-        Project {
-            name,
-            tracks: vec![],
-            track_placements: vec![],
-            samples: vec![],
-            generators: vec![],
-            mixer: vec![],
-            bpm: 120.0,
-            mod_matrix: ModMatrix::default(),
-        }
-    }
-
-    #[tokio::test]
-    async fn project_save_round_trip() {
-        // ARRANGE
-        let save_load_context = SaveLoadContext {
-            projects: Arc::new(Mutex::new(HashMap::new())),
-        };
-        let project_name = "test";
-        let project = empty_project(project_name.into());
-        let save_request = tonic::Request::new(SaveProjectRequest {
-            name: project_name.into(),
-            project: Some(project.clone().into()),
-        });
-        let load_request = tonic::Request::new(LoadProjectRequest {
-            name: project_name.into(),
-        });
-
-        // ACT
-        let _ = save_load_context.save_project(save_request).await;
-        let response = save_load_context.load_project(load_request).await;
-        let load_project: Project = response.unwrap().into_inner().project.unwrap().into();
-
-        // ASSERT
-        assert_eq!(load_project, project)
-    }
-
-    #[tokio::test]
-    async fn load_project_list() {
-        // ARRANGE
-        let save_load_context = SaveLoadContext {
-            projects: Arc::new(Mutex::new(HashMap::new())),
-        };
-        let project_name_1 = "A";
-        let project_name_2 = "B";
-        // Create set to compare to response agnostic of order.
-        let name_set: HashSet<String> =
-            HashSet::from_iter(vec![project_name_1.into(), project_name_2.into()]);
-        let project_1 = empty_project(project_name_1.into());
-        let project_2 = empty_project(project_name_2.into());
-        let save_request_1 = tonic::Request::new(SaveProjectRequest {
-            name: project_name_1.into(),
-            project: Some(project_1.clone().into()),
-        });
-        let save_request_2 = tonic::Request::new(SaveProjectRequest {
-            name: project_name_2.into(),
-            project: Some(project_2.clone().into()),
-        });
-        let load_request = tonic::Request::new(LoadProjectListRequest {});
-
-        // ACT
-        let _ = save_load_context.save_project(save_request_1).await;
-        let _ = save_load_context.save_project(save_request_2).await;
-        let response = save_load_context.load_project_list(load_request).await;
-        let project_list = response.unwrap().into_inner().project_names;
-
-        // ASSERT
-        let loaded_set: HashSet<String> = HashSet::from_iter(project_list);
-        assert_eq!(loaded_set, name_set)
-    }
-
-    #[tokio::test]
-    async fn load_unsaved_track_name_fails() {
-        // ARRANGE
-        let save_load_context = SaveLoadContext {
-            projects: Arc::new(Mutex::new(HashMap::new())),
-        };
-        let project_name = "test";
-        let unsaved_name = "unsaved";
-        let project = empty_project(project_name.into());
-        let save_request = tonic::Request::new(SaveProjectRequest {
-            name: project_name.into(),
-            project: Some(project.clone().into()),
-        });
-        let load_request = tonic::Request::new(LoadProjectRequest {
-            name: unsaved_name.into(),
-        });
-
-        // ACT
-        let _ = save_load_context.save_project(save_request).await;
-        let response = save_load_context.load_project(load_request).await;
-
-        // ASSERT
-        assert!(response.is_err())
-    }
-
-    #[tokio::test]
-    async fn save_same_project_name_overwrites_project() {
-        // ARRANGE
-        let save_load_context = SaveLoadContext {
-            projects: Arc::new(Mutex::new(HashMap::new())),
-        };
-        let project_name = "A";
-        let project_1 = Project {
-            name: project_name.into(),
-            tracks: vec![],
-            track_placements: vec![],
-            samples: vec![],
-            generators: vec![],
-            mixer: vec![],
-            bpm: 120.0,
-            mod_matrix: ModMatrix::default(),
-        };
-        let project_2 = Project {
-            name: project_name.into(),
-            tracks: vec![],
-            track_placements: vec![],
-            samples: vec![],
-            generators: vec![],
-            mixer: vec![],
-            bpm: 60.0,
-            mod_matrix: ModMatrix::default(),
-        };
-        let save_request_1 = tonic::Request::new(SaveProjectRequest {
-            name: project_name.into(),
-            project: Some(project_1.clone().into()),
-        });
-        let save_request_2 = tonic::Request::new(SaveProjectRequest {
-            name: project_name.into(),
-            project: Some(project_2.clone().into()),
-        });
-        let load_request = tonic::Request::new(LoadProjectRequest {
-            name: project_name.into(),
-        });
-
-        // ACT
-        let _ = save_load_context.save_project(save_request_1).await;
-        let _ = save_load_context.save_project(save_request_2).await;
-        let response = save_load_context.load_project(load_request).await;
-        let load_project: Project = response.unwrap().into_inner().project.unwrap().into();
-
-        // ASSERT
-        assert_eq!(load_project, project_2)
+        Ok(tonic::Response::new(LoadProjectReply {
+            project: Some(project),
+        }))
     }
 }

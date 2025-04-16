@@ -3961,6 +3961,7 @@ dependencies = [
  "log",
  "mesic",
  "pretty_env_logger",
+ "prost",
  "shared",
  "state",
  "tokio",

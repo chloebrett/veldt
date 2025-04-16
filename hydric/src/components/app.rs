@@ -11,7 +11,9 @@ use super::{
     undo_redo_control,
 };
 use crate::components::FrameHistory;
+use crate::promise::spawn;
 use crate::rpc::broadcast_actions;
+use crate::rpc::load_project_list;
 use crate::widget::{default_window, get_set, knob, slider, string_observer};
 use crate::{audio_player::Handle, promise::AsyncResult, view::View};
 use egui::{Id, Pos2};
@@ -98,7 +100,13 @@ impl App {
         // This is also where you can customize the look and feel of egui using
         // `cc.egui_ctx.set_visuals` and `cc.egui_ctx.set_fonts`.
 
-        Default::default()
+        let mut app = App::default();
+
+        spawn(&mut app.async_state.project_list, async move {
+            load_project_list().await
+        });
+
+        app
     }
 }
 
