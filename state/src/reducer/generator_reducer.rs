@@ -1,12 +1,9 @@
 use crate::Action;
-use shared::logger::log;
+use log::info;
 use shared::model::{GeneratorInstance, GeneratorType};
 
 pub fn generator_reducer(generator: &mut GeneratorInstance, action: &Action) -> Action {
-    log(&format!(
-        "generator_reducer processing: {:?}",
-        action.clone()
-    ));
+    info!("generator_reducer processing: {:?}", action.clone());
 
     match action {
         Action::SetGeneratorVolume(volume) => {
@@ -78,6 +75,6 @@ pub fn generator_reducer(generator: &mut GeneratorInstance, action: &Action) -> 
             _ => Action::NonReversible,
         },
         GeneratorType::Noise { .. } => todo!(),
-        GeneratorType::SubSynth { config } => todo!(),
+        GeneratorType::SubSynth { .. } => todo!(),
     }
 }

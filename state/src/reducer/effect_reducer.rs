@@ -1,10 +1,10 @@
 use crate::Action;
-use shared::logger::log;
+use log::info;
 use shared::model::{Effect, EffectInstance};
 use std::cmp::{max, min};
 
 pub fn effect_reducer(effect: &mut EffectInstance, action: &Action) -> Action {
-    log(&format!("effect_reducer processing: {:?}", action.clone()));
+    info!("effect_reducer processing: {:?}", action.clone());
 
     match action {
         Action::SetEffectWet(wet) => {

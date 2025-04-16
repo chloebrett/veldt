@@ -39,7 +39,7 @@ impl Node for GeneratorNode {
         let config = match &self.instance.kind {
             GeneratorType::SimpleWave { config } => config,
             GeneratorType::Noise { .. } => todo!(),
-            GeneratorType::SubSynth { config } => todo!(),
+            GeneratorType::SubSynth { .. } => todo!(),
         };
 
         let mut buffer = Buffer::SILENT;

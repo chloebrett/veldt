@@ -80,6 +80,8 @@ yarn xb # xeric
 yarn r # everything (hydric and xeric)
 yarn hr # hydric - note: visit localhost:8080
 yarn xr # xeric
+# Note: `yarn xr` / `yarn r` sets RUST_LOG=trace for xeric.
+# Without this, you won't get logs.
 # Note: mesic, shared, and state can't be run as they're libraries.
 # They get built by implication when hydric/xeric are run.
 

@@ -1,13 +1,10 @@
 use crate::Action;
+use log::info;
 use ordered_float::OrderedFloat;
-use shared::logger::log;
 use shared::model::TrackPlacement;
 
 pub fn track_placement_reducer(track_placement: &mut TrackPlacement, action: &Action) -> Action {
-    log(&format!(
-        "track_placement_reducer processing: {:?}",
-        action.clone()
-    ));
+    info!("track_placement_reducer processing: {:?}", action.clone());
 
     match action {
         Action::SetTrackPlacementTrackId(track_id) => {
