@@ -2,8 +2,8 @@ use chrono::{DateTime, Utc};
 use cpal::Stream;
 use cpal::traits::{DeviceTrait, HostTrait, StreamTrait};
 use dasp_frame::Stereo;
+use log::error;
 use mesic::graph::RenderGraph;
-use shared::logger::error;
 use std::sync::mpsc;
 
 pub struct Handle {
@@ -19,7 +19,7 @@ pub fn play(mut graph: RenderGraph, pre_render: bool) -> Handle {
     let config = device.default_output_config().unwrap();
     let config: &cpal::StreamConfig = &config.into();
 
-    let err_fn = |err| error(&format!("an error occurred on stream: {}", err));
+    let err_fn = |err| error!("an error occurred on stream: {}", err);
     let channels = config.channels as usize;
 
     let (tx, rx) = mpsc::channel();

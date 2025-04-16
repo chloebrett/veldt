@@ -1,10 +1,10 @@
 use crate::Action;
+use log::info;
 use ordered_float::OrderedFloat;
-use shared::logger::log;
 use shared::model::{PitchName, PlacedNote};
 
 pub fn note_reducer(note: &mut PlacedNote, action: &Action) -> Action {
-    log(&format!("note_reducer processing: {:?}", action.clone()));
+    info!("note_reducer processing: {:?}", action.clone());
 
     match action {
         Action::SetNoteScaleValue(new_note) => {

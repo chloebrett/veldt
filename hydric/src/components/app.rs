@@ -12,7 +12,7 @@ use super::{
 use crate::rpc::broadcast_actions;
 use crate::widget::{default_window, get_set, knob, slider, string_observer};
 use crate::{audio_player::Handle, promise::AsyncResult, view::View};
-use egui::Pos2;
+use egui::{Id, Pos2};
 use egui::{ScrollArea, scroll_area::ScrollBarVisibility};
 use poll_promise::Promise;
 use shared::model::{GeneratorType, Project, Sample};
@@ -46,11 +46,9 @@ pub struct MixerWindowState {
 pub struct WindowState {
     pub mixer: MixerWindowState,
     pub effects: Vec<Vec<bool>>, // by ID (within each mixer)
-    pub manual_notes: bool,
     pub generator_list: bool,
     pub generators: Vec<bool>, // by ID
     pub scale: bool,
-    pub note_roll: bool,
 }
 
 impl Default for WindowState {
@@ -62,11 +60,9 @@ impl Default for WindowState {
                 channel: 0,
             },
             effects: vec![vec![false, false, false, false]],
-            manual_notes: false,
             generator_list: false,
             generators: vec![false],
             scale: false,
-            note_roll: false,
         }
     }
 }
@@ -183,24 +179,40 @@ impl eframe::App for App {
                                 .ui(ui);
                             });
                     }
-                    if self.window_state.manual_notes {
+
+                    let note_id = Id::new("note_window");
+                    if ui.data_mut(|data| *data.get_temp_mut_or(note_id, false)) {
+                        let mut open = true;
                         default_window("Notes")
-                            .open(&mut self.window_state.manual_notes)
+                            .open(&mut open)
                             .default_pos(Pos2 { x: 600.0, y: 20.0 })
                             .show(ctx, |ui| {
                                 track_control(&self.store, ui);
                             });
-                    }
+                        ui.data_mut(|data| {
+                            data.insert_temp(note_id, open);
+                        })
+                    };
 
-                    if self.window_state.note_roll {
-                        default_window("Note roll")
-                            .open(&mut self.window_state.note_roll)
+                    let note_roll_id = Id::new("note_roll_window");
+                    if ui.data_mut(|data| {
+                        *data.get_temp_mut_or_insert_with(note_roll_id, move || false)
+                    }) {
+                        let track_index = ui.data_mut(|data| {
+                            let id = Id::new("active_track_index");
+                            *data.get_temp_mut_or(id, 0)
+                        });
+                        let mut open = true;
+                        default_window(&format!("Track: {}", track_index))
+                            .open(&mut open)
                             .default_pos(Pos2 { x: 600.0, y: 20.0 })
                             .resizable(true)
                             .show(ctx, |ui| {
-                                let track_index = 0;
                                 NoteRoll::new(&self.store, track_index).ui(ui);
                             });
+                        ui.data_mut(|data| {
+                            data.insert_temp(note_roll_id, open);
+                        })
                     }
 
                     default_window("Toolbar")

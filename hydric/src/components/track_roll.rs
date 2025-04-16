@@ -1,4 +1,4 @@
-use egui::{Color32, Pos2, Rect, Ui, pos2, vec2};
+use egui::{Color32, Id, Pos2, Rect, Ui, pos2, vec2};
 use ordered_float::OrderedFloat;
 use shared::{
     model::{Track, TrackPlacement},
@@ -43,8 +43,14 @@ impl View for TrackRoll<'_> {
             store.dispatch(&Selector::TrackPlacement(placed_track_ids[index]), action);
         };
         let on_release = || store.dispatchr(Action::Release);
+        let on_click = |ui: &mut Ui, index: usize| {
+            let window_id = Id::new("note_roll_window");
+            let track_id = Id::new("active_track_index");
+            ui.data_mut(|data| data.insert_temp(window_id, true));
+            ui.data_mut(|data| data.insert_temp(track_id, index));
+        };
         ui.add(
-            Sequencer::new(range, dispatch, on_release)
+            Sequencer::new(range, dispatch, on_release, on_click)
                 .objects(placed_tracks)
                 .size(vec2(ui.available_width(), 100.0))
                 .vertical_bars(4.0, Color32::from_white_alpha(6))

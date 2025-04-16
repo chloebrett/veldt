@@ -1,7 +1,7 @@
 use crate::{Action, BroadcastType, Selector, StoreData, broadcast_type, root_reducer};
 use local_macro::{FromProto, IntoProto};
+use log::info;
 use shared::action_proto::ReversibleActionProto;
-use shared::logger::log;
 use std::mem::discriminant;
 
 /// An action that can be applied forwards or backwards.
@@ -47,7 +47,7 @@ impl UndoStack {
     pub fn apply(&mut self, store: &mut StoreData, selector: &Selector, action: &Action) {
         // Special case: "release" marker actions should flatten actions of the same type that came before them.
         if *action == Action::Release {
-            log("Got release action");
+            info!("Got release action");
             self.compact_last_actions();
             return;
         }
@@ -82,7 +82,7 @@ impl UndoStack {
         // This should only happen if there is nothing to redo, and at least one stored action.
         debug_assert!(!self.actions.is_empty());
         debug_assert!(self.index == self.actions.len());
-        log(&format!("Compacting actions! {:?}", self.actions,));
+        info!("Compacting actions! {:?}", self.actions);
 
         let last_action = &self.actions.last().unwrap();
         let last_action_type = discriminant(&last_action.forward);
@@ -125,14 +125,14 @@ impl UndoStack {
             self.broadcast(action);
         }
 
-        log(&format!(
+        info!(
             "Compacted actions! {:?}, {}",
             self.actions, compact_from_index,
-        ));
+        );
     }
 
     fn broadcast(&self, action: ReversibleAction) {
-        log(&format!("Broadcasting action to server! {:?}", action));
+        info!("Broadcasting action to server! {:?}", action);
         (self.broadcast)(vec![action]);
     }
 
@@ -147,10 +147,10 @@ impl UndoStack {
             panic!("Tried to undo when there was nothing to undo!");
         }
 
-        log(&format!(
+        info!(
             "Undoing action. Stack state before: {:?}",
             self.actions.clone()
-        ));
+        );
         let action = self
             .actions
             .get(self.index - 1)
@@ -170,10 +170,10 @@ impl UndoStack {
             panic!("Tried to redo when there was nothing to redo!");
         }
 
-        log(&format!(
+        info!(
             "Redoing action. Stack state before: {:?}",
             self.actions.clone()
-        ));
+        );
         let action = self
             .actions
             .get(self.index)

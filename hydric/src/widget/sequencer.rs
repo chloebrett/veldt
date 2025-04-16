@@ -5,18 +5,21 @@ use egui::{
 };
 use state::Action;
 
-pub struct Sequencer<T: SequencerObject<T>, F: Fn(usize, Action), G: Fn()> {
+pub struct Sequencer<T: SequencerObject<T>, F: Fn(usize, Action), G: Fn(), H: Fn(&mut Ui, usize)> {
     range: Rect,
     size: Vec2,
     objects: Vec<T>,
     sense: Sense,
     dispatch: F, // A closure to modify object in Store. Takes object index and `Action` to dispatch chage.
     on_release: G,
+    on_click: H,
     background_shapes: Vec<Shape>,
 }
 
-impl<T: SequencerObject<T>, F: Fn(usize, Action), G: Fn()> Sequencer<T, F, G> {
-    pub fn new(range: Rect, dispatch: F, on_release: G) -> Self {
+impl<T: SequencerObject<T>, F: Fn(usize, Action), G: Fn(), H: Fn(&mut Ui, usize)>
+    Sequencer<T, F, G, H>
+{
+    pub fn new(range: Rect, dispatch: F, on_release: G, on_click: H) -> Self {
         Sequencer {
             range,
             size: vec2(400.0, 600.0),
@@ -24,6 +27,7 @@ impl<T: SequencerObject<T>, F: Fn(usize, Action), G: Fn()> Sequencer<T, F, G> {
             sense: Sense::drag(),
             dispatch,
             on_release,
+            on_click,
             background_shapes: vec![],
         }
     }
@@ -56,7 +60,7 @@ impl<T: SequencerObject<T>, F: Fn(usize, Action), G: Fn()> Sequencer<T, F, G> {
     }
 
     #[inline]
-    pub fn horizontal_rects<H: Fn(i32) -> bool>(mut self, pattern: H, colour: Color32) -> Self {
+    pub fn horizontal_rects<J: Fn(i32) -> bool>(mut self, pattern: J, colour: Color32) -> Self {
         // Add horizontal rectangles across background of Sequencer.
         // Indicate where to paint rectangles with `pattern` a closure that takes `i32` the y coordinate as the
         // input and returns `true` if a rectangle should be rendered there.
@@ -131,12 +135,13 @@ impl<T: SequencerObject<T>, F: Fn(usize, Action), G: Fn()> Sequencer<T, F, G> {
         let id = response.id.with(object_index);
         let rect = object.to_rect(self.range);
         let rect_response = ui.interact(rect.transform(*sequencer_transform), id, self.sense);
+        if rect_response.interact(Sense::click()).double_clicked() {
+            (self.on_click)(ui, object_index)
+        }
         let drag_pos = rect_response.interact_pointer_pos();
         let drag_delta = rect_response.drag_delta();
         let next_rect_pos = object.to_pos(self.range).transform(*sequencer_transform) + drag_delta;
-        if rect_response.drag_stopped() || rect_response.lost_focus() {
-            (self.on_release)();
-        }
+        let mut action_dispatched = false;
         if let Some(drag_pos) = drag_pos {
             // 'y' moves in increments and should update to to wherever the mouse is while dragging.
             // 'x' moves continiously and so move based on the drag detla.
@@ -149,19 +154,26 @@ impl<T: SequencerObject<T>, F: Fn(usize, Action), G: Fn()> Sequencer<T, F, G> {
                 );
             if drag_delta.y != 0.0 {
                 if let Some(action) = object.y_action(scaled_pos.y, self.range) {
-                    (self.dispatch)(object_index, action)
+                    (self.dispatch)(object_index, action);
+                    action_dispatched = true;
                 };
             }
             if drag_delta.x != 0.0 {
                 if let Some(action) = object.x_action(scaled_pos.x, self.range) {
-                    (self.dispatch)(object_index, action)
+                    (self.dispatch)(object_index, action);
+                    action_dispatched = true;
                 };
             }
+        }
+        if action_dispatched && (rect_response.drag_stopped() || rect_response.lost_focus()) {
+            (self.on_release)();
         }
     }
 }
 
-impl<T: SequencerObject<T>, F: Fn(usize, Action), G: Fn()> Widget for Sequencer<T, F, G> {
+impl<T: SequencerObject<T>, F: Fn(usize, Action), G: Fn(), H: Fn(&mut Ui, usize)> Widget
+    for Sequencer<T, F, G, H>
+{
     fn ui(self, ui: &mut Ui) -> Response {
         let Sequencer {
             range,
@@ -170,6 +182,7 @@ impl<T: SequencerObject<T>, F: Fn(usize, Action), G: Fn()> Widget for Sequencer<
             sense,
             dispatch: _,
             on_release: _,
+            on_click: _,
             ref background_shapes,
         } = self;
         Frame::canvas(ui.style()).show(ui, |ui| {

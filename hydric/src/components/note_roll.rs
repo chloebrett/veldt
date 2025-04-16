@@ -1,6 +1,6 @@
 use state::{Action, Selector, Store};
 
-use egui::{Color32, Pos2, Rect, ScrollArea, Ui, pos2, vec2};
+use egui::{Color32, Id, Pos2, Rect, ScrollArea, Ui, pos2, vec2};
 use shared::{
     model::{Note, PitchName, PlacedNote, Scale, ScaleValue},
     types::PitchValue,
@@ -106,10 +106,14 @@ impl View for NoteRoll<'_> {
                     store.dispatch(&Selector::Note(track_index, note_index), action)
                 };
                 let on_release = || store.dispatchr(Action::Release);
+                let on_click = |ui: &mut Ui, _index: usize| {
+                    let note_id = Id::new("note_window");
+                    ui.data_mut(|data| data.insert_temp(note_id, true))
+                };
                 ui.horizontal(|ui| {
                     Piano::new(max_note, min_note - 1).ui(ui);
                     ui.add(
-                        Sequencer::new(range, dispatch, on_release)
+                        Sequencer::new(range, dispatch, on_release, on_click)
                             .objects(notes)
                             .horizontal_rects(white_note_pattern, Color32::from_white_alpha(4))
                             .vertical_bars(bar_length, Color32::from_white_alpha(6))
