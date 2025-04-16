@@ -5,7 +5,7 @@ use super::{
     load_control,
     note_roll::NoteRoll,
     play::{play_control, sample_control},
-    save_button, toggle_window_panel, track_control, track_placement_control,
+    save_button, toggle_window_panel, note_control::NoteControl, track_placement_control,
     track_roll::TrackRoll,
     undo_redo_control,
 };
@@ -181,7 +181,8 @@ impl eframe::App for App {
                             .open(&mut self.window_state.manual_notes)
                             .default_pos(Pos2 { x: 600.0, y: 20.0 })
                             .show(ctx, |ui| {
-                                track_control(&self.store, ui);
+                                let track_index = 0;
+                                NoteControl::new(track_index, 0).ui(&self.store, ui);
                             });
                     }
 

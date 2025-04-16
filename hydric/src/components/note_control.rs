@@ -1,3 +1,4 @@
+use crate::view::View;
 use crate::widget::{get_set, int_slider, selectable_value};
 use egui::Ui;
 use mesic::create_scale_values;
@@ -6,16 +7,27 @@ use shared::model::{Note, PitchName, PlacedNote};
 use shared::types::{Beats, Octave};
 use state::{Action, Selector, Store};
 
-pub fn track_control(store: &Store, ui: &mut Ui) {
-    let scale_options = create_scale_values(store.get().scale, store.get().key);
-    let track_index = 0;
-    let track = &store.get().project.tracks[track_index];
-    let on_release = || store.dispatchr(Action::Release);
+pub struct NoteControl {
+    track_index: usize,
+    note_index: usize,
+}
 
-    for note_index in 0..track.notes.len() {
-        let note = &track.notes[note_index];
+impl NoteControl {
+    pub fn new(track_index: usize, note_index: usize) -> Self {
+        NoteControl {
+            track_index,
+            note_index,
+        }
+    }
+}
+
+impl View for NoteControl {
+    fn ui(&self, store: &Store, ui: &mut Ui) {
+        let NoteControl { track_index, note_index } = *self;
+        let scale_options = create_scale_values(store.get().scale, store.get().key);
+        let note = &store.get().project.tracks[track_index].notes[note_index];
+        let on_release = || store.dispatchr(Action::Release);
         let sel = Selector::Note(track_index, note_index);
-
         egui::ComboBox::from_id_salt(format!("note_{note_index}"))
             .selected_text(note.note.pitch_name.scale_value.to_string())
             .show_ui(ui, |ui| {
@@ -69,31 +81,6 @@ pub fn track_control(store: &Store, ui: &mut Ui) {
                 &Selector::Track(track_index),
                 Action::DeleteNote(note_index),
             );
-            break;
         }
-    }
-
-    let track_length = track
-        .notes
-        .clone()
-        .into_iter()
-        .map(|it| it.offset + it.note.beats)
-        .max()
-        .unwrap_or(OrderedFloat(0.0));
-
-    if ui.button("New note").clicked() {
-        store.dispatch(
-            &Selector::Track(track_index),
-            Action::AddNote(PlacedNote {
-                note: Note {
-                    pitch_name: PitchName {
-                        scale_value: store.get().key,
-                        octave: 4,
-                    },
-                    beats: 1.0,
-                },
-                offset: track_length,
-            }),
-        );
     }
 }
