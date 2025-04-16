@@ -86,8 +86,10 @@ impl View for NoteControl<'_> {
                 Action::DeleteNote(note_index),
             );
             ui.data_mut(|data| {
-                let id = Id::new("note_window");
-                data.insert_temp(id, false);
+                let window_id = Id::new("note_window");
+                let active_note = Id::new("active_note_index");
+                data.insert_temp(window_id, false);
+                data.insert_temp::<Option<usize>>(active_note, None);
             });
         }
     }

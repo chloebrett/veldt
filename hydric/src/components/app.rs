@@ -193,16 +193,18 @@ impl eframe::App for App {
                             let id = Id::new("active_track_index");
                             *data.get_temp_mut_or(id, 0)
                         });
-                        let note_index = ui.data_mut(|data| {
+                        let active_note = ui.data_mut(|data| {
                             let id = Id::new("active_note_index");
-                            *data.get_temp_mut_or(id, 0)
+                            *data.get_temp_mut_or(id, None)
                         });
-                        default_window("Notes")
-                            .open(&mut open)
-                            .default_pos(Pos2 { x: 600.0, y: 20.0 })
-                            .show(ctx, |ui| {
-                                NoteControl::new(&self.store, track_index, note_index).ui(ui);
-                            });
+                        if let Some(note_index) = active_note {
+                            default_window("Notes")
+                                .open(&mut open)
+                                .default_pos(Pos2 { x: 600.0, y: 20.0 })
+                                .show(ctx, |ui| {
+                                    NoteControl::new(&self.store, track_index, note_index).ui(ui);
+                                });
+                        }
                         ui.data_mut(|data| {
                             // Check if state has been changed within component as well as with
                             // x'ing out of window.
