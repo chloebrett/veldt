@@ -1,11 +1,11 @@
 use super::{
+    SaveLoadView,
     effect::{effect_control, mixer_control},
     generator::{generator_control, generators_control},
     key_control::KeyControl,
-    load_control,
     note_roll::NoteRoll,
     play::{play_control, sample_control},
-    save_button, toggle_window_panel, track_control, track_placement_control,
+    toggle_window_panel, track_control, track_placement_control,
     track_roll::TrackRoll,
     undo_redo_control,
 };
@@ -119,8 +119,7 @@ impl eframe::App for App {
                             project_name.clone(),
                         );
                         ui.text_edit_singleline(&mut name_observer);
-                        save_button(&self.store, &mut self.async_state, ui);
-                        load_control(&self.store, &mut self.async_state, ui);
+                        SaveLoadView::new(&self.store, &mut self.async_state).ui(ui);
                     });
                     toggle_window_panel(&mut self.window_state, ui);
 

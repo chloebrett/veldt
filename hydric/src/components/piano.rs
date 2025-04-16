@@ -114,7 +114,7 @@ impl Piano {
 }
 
 impl View for Piano {
-    fn ui(&self, ui: &mut Ui) {
+    fn ui(&mut self, ui: &mut Ui) {
         let Piano {
             max_note,
             min_note,
