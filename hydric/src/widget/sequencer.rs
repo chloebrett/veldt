@@ -3,7 +3,6 @@ use egui::{
     Color32, CornerRadius, CursorIcon, Frame, Pos2, Rect, Response, Sense, Shape, Stroke, Ui, Vec2,
     Widget, emath::RectTransform, pos2, vec2,
 };
-use shared::logger;
 use state::Action;
 
 pub struct Sequencer<T: SequencerObject<T>, F: Fn(usize, Action), G: Fn(), H: Fn(&mut Ui, usize)> {
@@ -137,7 +136,6 @@ impl<T: SequencerObject<T>, F: Fn(usize, Action), G: Fn(), H: Fn(&mut Ui, usize)
         let rect = object.to_rect(self.range);
         let rect_response = ui.interact(rect.transform(*sequencer_transform), id, self.sense);
         if rect_response.interact(Sense::click()).double_clicked() {
-            logger::log("!!");
             (self.on_click)(ui, object_index)
         }
         let drag_pos = rect_response.interact_pointer_pos();
