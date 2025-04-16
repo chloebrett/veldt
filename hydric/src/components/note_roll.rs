@@ -72,7 +72,7 @@ impl<'a> NoteRoll<'a> {
 impl View for NoteRoll<'_> {
     fn ui(&mut self, ui: &mut Ui) {
         let NoteRoll {
-            ref store,
+            store,
             track_index,
             min_note,
             max_note,
