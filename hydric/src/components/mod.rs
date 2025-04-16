@@ -1,20 +1,22 @@
 mod app;
 mod effect;
+mod frame_history;
 mod generator;
 mod key_control;
 mod note_control;
 mod note_roll;
 mod piano;
 mod play;
-mod save_control;
+mod save_load_view;
 mod track_placement_control;
 mod track_roll;
 mod undo_redo;
 mod window_toggle;
 
 pub use app::*;
+use frame_history::*;
 use piano::*;
-use save_control::*;
+use save_load_view::*;
 use track_placement_control::*;
 use undo_redo::*;
 use window_toggle::*;

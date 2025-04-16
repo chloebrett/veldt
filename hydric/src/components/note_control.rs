@@ -23,7 +23,7 @@ impl<'a> NoteControl<'a> {
 }
 
 impl View for NoteControl<'_> {
-    fn ui(&self, ui: &mut Ui) {
+    fn ui(&mut self, ui: &mut Ui) {
         let NoteControl {
             store,
             track_index,
