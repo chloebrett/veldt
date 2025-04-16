@@ -1,6 +1,6 @@
+use log::info;
 use shared::load_sample::load_sample_server::LoadSample;
 use shared::load_sample::{LoadSampleReply, LoadSampleRequest};
-use shared::logger::log;
 use shared::model::Sample;
 use std::env::current_dir;
 use tonic::async_trait;
@@ -37,10 +37,7 @@ impl LoadSample for LoadSampleContext {
         file_path.push("assets");
         file_path.push("samples");
         file_path.push(filename.clone());
-        log(&format!(
-            "Loading sample from path: {}",
-            file_path.clone().display()
-        ));
+        info!("Loading sample from path: {}", file_path.clone().display());
 
         // TODO: reading this seems to load at half the speed.
         // Perhaps the sample rate needs to be adjusted?

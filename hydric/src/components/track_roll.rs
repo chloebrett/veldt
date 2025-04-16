@@ -11,16 +11,19 @@ use crate::{
     widget::{Sequencer, SequencerObject},
 };
 
-pub struct TrackRoll;
+pub struct TrackRoll<'a> {
+    store: &'a Store,
+}
 
-impl TrackRoll {
-    pub fn new() -> Self {
-        TrackRoll {}
+impl<'a> TrackRoll<'a> {
+    pub fn new(store: &'a Store) -> Self {
+        TrackRoll { store }
     }
 }
 
-impl View for TrackRoll {
-    fn ui(&self, store: &Store, ui: &mut Ui) {
+impl View for TrackRoll<'_> {
+    fn ui(&self, ui: &mut Ui) {
+        let store = self.store;
         let placed_tracks: Vec<PlacedTrack> = store
             .get()
             .project

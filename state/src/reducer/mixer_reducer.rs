@@ -1,9 +1,9 @@
 use crate::Action;
-use shared::logger::log;
+use log::info;
 use shared::model::MixerChannel;
 
 pub fn mixer_reducer(mixer: &mut MixerChannel, action: &Action) -> Action {
-    log(&format!("mixer_reducer processing: {:?}", action.clone()));
+    info!("mixer_reducer processing: {:?}", action.clone());
 
     match action {
         Action::MoveEffectDown(effect_index) => {

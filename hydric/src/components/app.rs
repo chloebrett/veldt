@@ -170,8 +170,13 @@ impl eframe::App for App {
                             .open(&mut self.window_state.scale)
                             .default_pos(Pos2 { x: 600.0, y: 20.0 })
                             .show(ctx, |ui| {
-                                KeyControl::new(self.store.get().key, self.store.get().scale)
-                                    .ui(&self.store, ui);
+                                let dispatch = |action| self.store.dispatchr(action);
+                                KeyControl::new(
+                                    &dispatch,
+                                    self.store.get().key,
+                                    self.store.get().scale,
+                                )
+                                .ui(ui);
                             });
                     }
 
@@ -204,7 +209,7 @@ impl eframe::App for App {
                             .default_pos(Pos2 { x: 600.0, y: 20.0 })
                             .resizable(true)
                             .show(ctx, |ui| {
-                                NoteRoll::new(track_index).ui(&self.store, ui);
+                                NoteRoll::new(&self.store, track_index).ui(ui);
                             });
                         ui.data_mut(|data| {
                             data.insert_temp(note_roll_id, open);
@@ -255,7 +260,7 @@ impl eframe::App for App {
                     ui.separator();
                     track_placement_control(&self.store, ui);
                     ui.separator();
-                    TrackRoll::new().ui(&self.store, ui);
+                    TrackRoll::new(&self.store).ui(ui);
 
                     ui.with_layout(egui::Layout::bottom_up(egui::Align::LEFT), |ui| {
                         egui::warn_if_debug_build(ui);

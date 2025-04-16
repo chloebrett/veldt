@@ -1,7 +1,7 @@
+use log::info;
 use shared::broadcast_actions::{
     BroadcastActionsReply, BroadcastActionsRequest, broadcast_actions_server::BroadcastActions,
 };
-use shared::logger::log;
 use shared::serialize::map_vec;
 use state::{ReversibleAction, Store};
 use std::marker::Send;
@@ -46,7 +46,7 @@ impl BroadcastActions for CollabContext {
 
         self.store.lock().unwrap().snapshot();
 
-        log(&format!("{:?}", self.store.lock().unwrap().get()));
+        info!("{:?}", self.store.lock().unwrap().get());
 
         Ok(tonic::Response::new(BroadcastActionsReply {
             success: true,

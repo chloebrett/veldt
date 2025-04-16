@@ -6,7 +6,6 @@ use shared::{
     model::{Note, PlacedNote, ScaleValue},
     types::PitchValue,
 };
-use state::Store;
 
 use crate::{transform::Transform, view::View, widget::SequencerObject};
 
@@ -115,7 +114,7 @@ impl Piano {
 }
 
 impl View for Piano {
-    fn ui(&self, _store: &Store, ui: &mut Ui) {
+    fn ui(&self, ui: &mut Ui) {
         let Piano {
             max_note,
             min_note,
