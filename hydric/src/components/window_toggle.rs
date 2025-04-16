@@ -12,6 +12,5 @@ pub fn toggle_window_panel(window_state: &mut WindowState, ui: &mut Ui) {
         window_state.generator_list =
             window_toggle_button(window_state.generator_list, ui, "Generators");
         window_state.scale = window_toggle_button(window_state.scale, ui, "Scale");
-        window_state.note_roll = window_toggle_button(window_state.note_roll, ui, "Note Roll");
     });
 }

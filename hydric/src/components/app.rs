@@ -12,7 +12,7 @@ use super::{
 use crate::rpc::broadcast_actions;
 use crate::widget::{default_window, get_set, knob, slider, string_observer};
 use crate::{audio_player::Handle, promise::AsyncResult, view::View};
-use egui::Pos2;
+use egui::{Id, Pos2};
 use egui::{ScrollArea, scroll_area::ScrollBarVisibility};
 use poll_promise::Promise;
 use shared::model::{GeneratorType, Project, Sample};
@@ -50,7 +50,6 @@ pub struct WindowState {
     pub generator_list: bool,
     pub generators: Vec<bool>, // by ID
     pub scale: bool,
-    pub note_roll: bool,
 }
 
 impl Default for WindowState {
@@ -66,7 +65,6 @@ impl Default for WindowState {
             generator_list: false,
             generators: vec![false],
             scale: false,
-            note_roll: false,
         }
     }
 }
@@ -187,15 +185,22 @@ impl eframe::App for App {
                             });
                     }
 
-                    if self.window_state.note_roll {
+                    let note_roll_id = Id::new("note_roll_window");
+                    if ui.data_mut(|data| {
+                        *data.get_temp_mut_or_insert_with(note_roll_id, move || false)
+                    }) {
+                        let mut open = true;
                         default_window("Note roll")
-                            .open(&mut self.window_state.note_roll)
+                            .open(&mut open)
                             .default_pos(Pos2 { x: 600.0, y: 20.0 })
                             .resizable(true)
                             .show(ctx, |ui| {
                                 let track_index = 0;
                                 NoteRoll::new(track_index).ui(&self.store, ui);
                             });
+                        ui.data_mut(|data| {
+                            data.insert_temp(note_roll_id, open);
+                        })
                     }
 
                     default_window("Toolbar")
