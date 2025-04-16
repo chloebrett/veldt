@@ -1,5 +1,6 @@
 mod app;
 mod effect;
+mod frame_history;
 mod generator;
 mod key_control;
 mod note_roll;
@@ -13,6 +14,7 @@ mod undo_redo;
 mod window_toggle;
 
 pub use app::*;
+use frame_history::*;
 use piano::*;
 use save_load_view::*;
 use track_control::*;
