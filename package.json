@@ -35,7 +35,7 @@
     "stt": "cd state; cargo test",
     "xb": "cd xeric; cargo build",
     "xf": "cd xeric; cargo fmt",
-    "xr": "cd xeric; cargo run",
+    "xr": "cd xeric; RUST_LOG=trace cargo run",
     "xl": "cd xeric; cargo clippy -- -W clippy::all",
     "xt": "cd xeric; cargo test"
   }

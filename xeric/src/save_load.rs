@@ -1,4 +1,4 @@
-use shared::logger::log;
+use log::info;
 use shared::model::Project;
 use shared::save_load::{
     LoadProjectListReply, LoadProjectListRequest, LoadProjectReply, LoadProjectRequest,
@@ -29,7 +29,7 @@ impl SaveLoad for SaveLoadContext {
             .lock()
             .unwrap()
             .insert(name.clone(), project.unwrap().clone().into());
-        log(&format!("Saved {}", name.clone()));
+        info!("Saved {}", name.clone());
         Ok(tonic::Response::new(SaveProjectReply {}))
     }
 

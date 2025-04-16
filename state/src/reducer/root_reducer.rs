@@ -3,10 +3,10 @@ use super::{
     track_reducer,
 };
 use crate::{Action, Selector, StoreData};
-use shared::logger::log;
+use log::info;
 
 pub fn root_reducer(data: &mut StoreData, selector: &Selector, action: &Action) -> Action {
-    log(&format!("root_reducer processing: {:?}", action.clone()));
+    info!("root_reducer processing: {:?}", action.clone());
 
     match selector {
         Selector::Track(track_index) => {
