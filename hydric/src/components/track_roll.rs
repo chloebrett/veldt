@@ -40,9 +40,11 @@ impl View for TrackRoll {
             store.dispatch(&Selector::TrackPlacement(placed_track_ids[index]), action);
         };
         let on_release = || store.dispatchr(Action::Release);
-        let on_click = |ui: &mut Ui, _index: usize| {
+        let on_click = |ui: &mut Ui, index: usize| {
             let window_id = Id::new("note_roll_window");
+            let track_id = Id::new("active_track_index");
             ui.data_mut(|data| data.insert_temp(window_id, true));
+            ui.data_mut(|data| data.insert_temp(track_id, index));
         };
         ui.add(
             Sequencer::new(range, dispatch, on_release, on_click)
