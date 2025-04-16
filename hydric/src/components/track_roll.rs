@@ -22,7 +22,7 @@ impl<'a> TrackRoll<'a> {
 }
 
 impl View for TrackRoll<'_> {
-    fn ui(&self, ui: &mut Ui) {
+    fn ui(&mut self, ui: &mut Ui) {
         let store = self.store;
         let placed_tracks: Vec<PlacedTrack> = store
             .get()

@@ -22,7 +22,7 @@ impl<F: Fn(Action)> KeyControl<F> {
 }
 
 impl<F: Fn(Action)> View for KeyControl<F> {
-    fn ui(&self, ui: &mut Ui) {
+    fn ui(&mut self, ui: &mut Ui) {
         let KeyControl {
             ref dispatch,
             key,
