@@ -19,7 +19,7 @@ pub fn track_placement_control(store: &Store, ui: &mut Ui) {
                 for track_index in 0..project.tracks.len() {
                     selectable_value(
                         ui,
-                        get_set(&track_index, |it| {
+                        get_set(&placement.track_id, |it| {
                             store.dispatch(&sel, Action::SetTrackPlacementTrackId(*it))
                         }),
                         &track_index,
