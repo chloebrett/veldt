@@ -196,7 +196,7 @@ impl<T: SequencerObject<T>, F: Fn(usize, Action), G: Fn(), H: Fn(&mut Ui, usize)
                 .map(|(index, object)| {
                     self.interact_object(object, index, ui, &response, &sequencer_transform);
                     self.resize_object(object, index, ui, &response, &sequencer_transform);
-                    Shape::rect_filled(object.to_rect(range), CornerRadius::same(1), Color32::WHITE)
+                    object.shape(self.range)
                 })
                 .collect();
             painter.extend(background_shapes.clone().transform(sequencer_transform));
@@ -217,4 +217,6 @@ pub trait SequencerObject<T> {
     fn y_action(&self, y: f32, range: Rect) -> Option<Action>;
 
     fn resize_action(&self, x: f32, range: Rect) -> Option<Action>;
+
+    fn shape(&self, range: Rect) -> Shape;
 }
