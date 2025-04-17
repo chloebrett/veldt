@@ -1,8 +1,7 @@
 use super::{
-    effect_reducer, generator_reducer, mixer_reducer, note_reducer, track_placement_reducer,
-    track_reducer,
+    generator_reducer, mixer_reducer, note_reducer, track_placement_reducer, track_reducer,
 };
-use crate::{Action, Selector, StoreData};
+use crate::{Action, Selector, StoreData, receiver::ActionReceiver};
 use log::info;
 
 pub fn root_reducer(data: &mut StoreData, selector: &Selector, action: &Action) -> Action {
@@ -15,10 +14,10 @@ pub fn root_reducer(data: &mut StoreData, selector: &Selector, action: &Action) 
         Selector::Generator(generator_index) => {
             generator_reducer(&mut data.project.generators[*generator_index], action)
         }
-        Selector::Effect(mixer_index, effect_index) => effect_reducer(
-            &mut data.project.mixer[*mixer_index].effects[*effect_index],
-            action,
-        ),
+        Selector::Effect(mixer_index, effect_index) => {
+            let effect = &mut data.project.mixer[*mixer_index].effects[*effect_index];
+            effect.apply(action)
+        }
         Selector::Mixer(mixer_index) => {
             mixer_reducer(&mut data.project.mixer[*mixer_index], action)
         }
