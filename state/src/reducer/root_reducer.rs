@@ -87,6 +87,21 @@ pub fn root_reducer(data: &mut StoreData, selector: &Selector, action: &Action) 
                 data.project.samples.push(sample.clone());
                 Action::NonReversible
             }
+            Action::AddTrack(track) => {
+                let prev = data.project.tracks.len();
+                data.project.tracks.push(track.clone());
+                Action::DeleteTrack(prev)
+            }
+            Action::DeleteTrack(track_index) => {
+                let prev = data
+                    .project
+                    .tracks
+                    .get(*track_index)
+                    .expect("Can't delete non-existant track")
+                    .clone();
+                data.project.tracks.remove(*track_index);
+                Action::AddTrack(prev)
+            }
             _ => Action::NonReversible,
         },
     }
