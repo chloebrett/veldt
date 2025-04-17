@@ -41,8 +41,8 @@ impl View for TrackRoll<'_> {
             .iter()
             .map(|placed_track| placed_track.placement.track_id)
             .collect();
-        let n_tracks = store.get().project.tracks.len();
-        let range = Rect::from_min_max(pos2(0.0, 0.0), pos2(16.0, n_tracks as f32));
+        let track_count = store.get().project.tracks.len();
+        let range = Rect::from_min_max(pos2(0.0, 0.0), pos2(16.0, track_count as f32));
         let dispatch = |index: usize, action: Action| {
             store.dispatch(&Selector::TrackPlacement(index), action);
         };
@@ -59,7 +59,7 @@ impl View for TrackRoll<'_> {
         ui.add(
             Sequencer::new(range, dispatch, on_release, on_click)
                 .objects(placed_tracks)
-                .size(vec2(ui.available_width(), 100.0 * n_tracks as f32))
+                .size(vec2(ui.available_width(), 100.0 * track_count as f32))
                 .vertical_bars(4.0, Color32::from_white_alpha(6))
                 .vertical_bars(1.0, Color32::from_white_alpha(3)),
         );
@@ -86,7 +86,7 @@ impl SequencerObject<PlacedTrack> for PlacedTrack {
             .placement
             .clipped_duration
             .unwrap_or(self.track.unclipped_duration());
-        // Ensure part of the object is still visable to interact with.
+        // Min `track_size.x` of 0.4 to ensure part of the object is still visible to interact with.
         let track_size = vec2(length.max(0.4), 1.0);
         Rect::from_min_size(track_pos, track_size)
     }
