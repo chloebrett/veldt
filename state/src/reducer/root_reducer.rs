@@ -97,7 +97,7 @@ pub fn root_reducer(data: &mut StoreData, selector: &Selector, action: &Action) 
                     .project
                     .tracks
                     .get(*track_index)
-                    .expect("Can't delete non-existant track")
+                    .expect("Can't delete non-existent track")
                     .clone();
                 data.project.tracks.remove(*track_index);
                 Action::AddTrack(prev)
