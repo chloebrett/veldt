@@ -92,7 +92,7 @@ impl View for NoteRoll<'_> {
         if ui.button("New note").clicked() {
             store.dispatch(&Selector::Track(track_index), Action::AddNote(default_note));
         }
-        let clipped_duration = store.get().project.tracks[track_index].unclipped_duration();
+        let unclipped_duration = store.get().project.tracks[track_index].unclipped_duration();
         ScrollArea::vertical()
             .min_scrolled_height(200.0)
             .show(ui, |ui| {
@@ -101,7 +101,7 @@ impl View for NoteRoll<'_> {
                     // NoteRoll is at least 1 bar long
                     // Extends with extra notes.
                     pos2(
-                        bar_length.max(*clipped_duration + 0.5) as f32,
+                        bar_length.max(*unclipped_duration + 0.5) as f32,
                         max_note as f32,
                     ),
                 );
