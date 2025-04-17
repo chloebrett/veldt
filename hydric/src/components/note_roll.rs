@@ -1,6 +1,6 @@
 use state::{Action, Selector, Store};
 
-use egui::{Color32, Id, Pos2, Rect, ScrollArea, Slider, Ui, pos2, vec2};
+use egui::{Color32, Id, Pos2, Rect, ScrollArea, Ui, pos2, vec2};
 use shared::{
     model::{Note, PitchName, PlacedNote, Scale, ScaleValue},
     types::PitchValue,
@@ -89,21 +89,21 @@ impl View for NoteRoll<'_> {
         };
         let notes = store.get().project.tracks[track_index].notes.clone();
         let white_note_pattern = self.make_white_note_pattern(max_note);
-        let id = Id::new("note_roll_bar_count");
-        let mut bar_count = ui.data_mut(|data| *data.get_temp_mut_or(id, 1.0));
-        ui.horizontal(|ui| {
-            if ui.button("New note").clicked() {
-                store.dispatch(&Selector::Track(track_index), Action::AddNote(default_note));
-            }
-            ui.add(Slider::new(&mut bar_count, 1.0..=8.0).integer());
-            ui.data_mut(|data| data.insert_temp(id, bar_count));
-        });
+        if ui.button("New note").clicked() {
+            store.dispatch(&Selector::Track(track_index), Action::AddNote(default_note));
+        }
+        let clipped_duration = store.get().project.tracks[track_index].unclipped_duration();
         ScrollArea::vertical()
             .min_scrolled_height(200.0)
             .show(ui, |ui| {
                 let range = Rect::from_min_max(
                     pos2(offset, min_note as f32 - 1.0),
-                    pos2(bar_count as f32 * bar_length, max_note as f32),
+                    // NoteRoll is at least 1 bar long
+                    // Extends with extra notes.
+                    pos2(
+                        bar_length.max(*clipped_duration + 0.5) as f32,
+                        max_note as f32,
+                    ),
                 );
                 let dispatch = move |note_index: usize, action: Action| {
                     store.dispatch(&Selector::Note(track_index, note_index), action)
