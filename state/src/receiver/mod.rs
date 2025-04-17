@@ -2,6 +2,7 @@ use crate::Action;
 
 mod effect;
 mod generator;
+mod mixer_channel;
 
 /// A model object that can receive actions.
 pub trait ActionReceiver {
