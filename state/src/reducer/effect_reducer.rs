@@ -27,6 +27,11 @@ pub fn effect_reducer(effect: &mut EffectInstance, action: &Action) -> Action {
                 config.delay_ms = *delay_ms;
                 Action::SetDelayMs(prev)
             }
+            Action::SetDelayFeedback(feedback) => {
+                let prev = config.feedback;
+                config.feedback = *feedback;
+                Action::SetDelayFeedback(prev)
+            }
             _ => Action::NonReversible,
         },
         Effect::SimpleEq { config } => match action {

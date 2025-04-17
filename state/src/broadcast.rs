@@ -49,6 +49,7 @@ pub fn broadcast_type(action: &Action) -> BroadcastType {
         Action::DeleteEffect(..) => BroadcastType::Immediate,
         Action::AddEffect(..) => BroadcastType::Immediate,
         Action::SetDelayMs(..) => BroadcastType::OnRelease,
+        Action::SetDelayFeedback(..) => BroadcastType::OnRelease,
         Action::SetEffectWet(..) => BroadcastType::OnRelease,
         Action::SetEffectMute(..) => BroadcastType::Immediate,
         Action::SetEqKind(..) => BroadcastType::Immediate,

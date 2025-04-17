@@ -180,7 +180,9 @@ message SimpleDelayProto {
 }
 
 message DelayConfigProto {
-  float delay_ms = 2;
+  float delay_ms = 1;
+
+  float feedback = 2;
 }
 
 message SimpleEqProto {

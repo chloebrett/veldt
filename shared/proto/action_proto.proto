@@ -56,6 +56,7 @@ message ActionProto {
     uint32 delete_track_placement = 45;
     pmodel.EqTypeProto set_eq_kind = 46;
     pmodel.FloatOptionProto set_track_placement_clipped_duration = 47;
+    float set_delay_feedback = 48;
   }
 }
 

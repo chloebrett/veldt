@@ -52,7 +52,7 @@ impl RenderGraph {
                 // Extend the graph duration by the delay amount.
                 self.sample_count += delay_samples;
 
-                BoxedNodeSend::new(DelayNode::new(delay_samples))
+                BoxedNodeSend::new(DelayNode::new(delay_samples, config.feedback))
             }
             Effect::SimpleCompressor { config } => BoxedNodeSend::new(CompressorNode::new(config)),
             Effect::ModDelay { config } => BoxedNodeSend::new(ModDelayNode::new(config)),

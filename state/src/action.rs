@@ -58,6 +58,7 @@ pub enum Action {
 
     // --- EffectSelector ---
     SetDelayMs(Milliseconds),
+    SetDelayFeedback(Volume),
     SetEffectWet(KnobPosition),
     SetEffectMute(bool),
     SetEqKind(EqType),
@@ -123,6 +124,7 @@ impl From<ActionProto> for Action {
             ActionKind::DeleteEffect(it) => Action::DeleteEffect(it as usize),
             ActionKind::AddEffect(it) => Action::AddEffect(it.into()),
             ActionKind::SetDelayMs(it) => Action::SetDelayMs(it),
+            ActionKind::SetDelayFeedback(it) => Action::SetDelayFeedback(it),
             ActionKind::SetEffectWet(it) => Action::SetEffectWet(it),
             ActionKind::SetEffectMute(it) => Action::SetEffectMute(it),
             ActionKind::SetEqFc(it) => Action::SetEqFc(it),
@@ -160,6 +162,8 @@ impl From<Action> for ActionProto {
         ActionProto {
             kind: Some(match other {
                 // TODO: macro-ify this.
+                // But also, we could just make the whole app more modular instead of having
+                // centralised actions like this.
                 Action::SetKey(it) => ActionKind::SetKey(it.into()),
                 Action::SetScale(it) => ActionKind::SetScale(ScaleProto::from(it).into()),
                 Action::SetProjectName(it) => ActionKind::SetProjectName(it),
@@ -191,6 +195,7 @@ impl From<Action> for ActionProto {
                 Action::DeleteEffect(it) => ActionKind::DeleteEffect(it as u32),
                 Action::AddEffect(it) => ActionKind::AddEffect(it.into()),
                 Action::SetDelayMs(it) => ActionKind::SetDelayMs(it),
+                Action::SetDelayFeedback(it) => ActionKind::SetDelayFeedback(it),
                 Action::SetEffectWet(it) => ActionKind::SetEffectWet(it),
                 Action::SetEffectMute(it) => ActionKind::SetEffectMute(it),
                 Action::SetEqFc(it) => ActionKind::SetEqFc(it),

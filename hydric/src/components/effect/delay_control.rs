@@ -14,6 +14,14 @@ where
         config.delay_ms,
         |it| dispatch(Action::SetDelayMs(it)),
         1.0..=1000.0,
-        on_release,
+        &on_release,
+    );
+    knob(
+        ui,
+        "Feedback",
+        config.feedback,
+        |it| dispatch(Action::SetDelayFeedback(it)),
+        0.0..=0.99,
+        &on_release,
     );
 }

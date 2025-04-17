@@ -84,7 +84,7 @@ impl Default for StoreData {
                         },
                         EffectInstance {
                             effect: Effect::SimpleDelay {
-                                config: DelayConfig { delay_ms: 250.0 },
+                                config: DelayConfig { delay_ms: 250.0, feedback: 0.5 },
                             },
                             meta: EffectMeta {
                                 id: 1,
