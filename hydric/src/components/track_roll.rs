@@ -61,7 +61,8 @@ impl View for TrackRoll<'_> {
                 .objects(placed_tracks)
                 .size(vec2(ui.available_width(), 100.0 * n_tracks as f32))
                 .vertical_bars(4.0, Color32::from_white_alpha(6))
-                .vertical_bars(1.0, Color32::from_white_alpha(3)),
+                .vertical_bars(1.0, Color32::from_white_alpha(3))
+                .horizontal_rects(|index| index % 2 == 1, Color32::from_white_alpha(1)),
         );
     }
 }
@@ -95,9 +96,9 @@ impl SequencerObject<PlacedTrack> for PlacedTrack {
         Some(Action::SetTrackPlacementOffset(x - range.left()))
     }
 
-    fn y_action(&self, _y: f32, _range: Rect) -> Option<Action> {
+    fn y_action(&self, y: f32, _range: Rect) -> Option<Action> {
         // TODO implement multiple tracks.
-        None
+        Some(Action::SetTrackPlacementTrackId(y as usize))
     }
 
     fn resize_action(&self, x: f32, _range: Rect) -> Option<Action> {
