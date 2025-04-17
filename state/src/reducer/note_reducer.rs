@@ -18,7 +18,7 @@ pub fn note_reducer(note: &mut PlacedNote, action: &Action) -> Action {
             Action::SetNoteOctave(prev)
         }
         Action::SetNotePitchName(pitch_name) => {
-            let prev: PitchName = note.note.pitch_name;
+            let prev = note.note.pitch_name;
             note.note.pitch_name = *pitch_name;
             Action::SetNotePitchName(prev)
         }
