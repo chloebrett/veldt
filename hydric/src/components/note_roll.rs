@@ -99,7 +99,7 @@ impl View for NoteRoll<'_> {
                 let range = Rect::from_min_max(
                     pos2(offset, min_note as f32 - 1.0),
                     // NoteRoll is at least 1 bar long
-                    // Extends with extra notes.
+                    // Extends when notes are dragged or set beyond 1 bar.
                     pos2(
                         bar_length.max(*unclipped_duration + 0.5) as f32,
                         max_note as f32,
