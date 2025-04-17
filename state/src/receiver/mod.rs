@@ -1,11 +1,12 @@
 use crate::Action;
 
-mod compressor_config;
-mod delay_config;
-mod effect_instance;
-mod eq_config;
-mod mod_delay_config;
+mod effect;
+mod generator;
 
+/// A model object that can receive actions.
 pub trait ActionReceiver {
-    fn apply(&mut self, action: &Action) -> Action;
+    /// Tries to apply an action to a model object.
+    /// If the action is applied, returns Some(action) where `action` reverses the change.
+    /// If the action isn't relevant, returns None.
+    fn apply(&mut self, action: &Action) -> Option<Action>;
 }

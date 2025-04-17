@@ -1,10 +1,10 @@
-use super::ActionReceiver;
 use crate::Action;
+use crate::receiver::ActionReceiver;
 use shared::model::EqConfig;
 
 impl ActionReceiver for EqConfig {
-    fn apply(&mut self, action: &Action) -> Action {
-        match action {
+    fn apply(&mut self, action: &Action) -> Option<Action> {
+        Some(match action {
             Action::SetEqKind(kind) => {
                 let prev = self.kind.clone();
                 self.kind = kind.clone();
@@ -25,7 +25,7 @@ impl ActionReceiver for EqConfig {
                 self.gain = *gain;
                 Action::SetEqGain(prev)
             }
-            _ => Action::NonReversible,
-        }
+            _ => return None,
+        })
     }
 }
