@@ -8,8 +8,6 @@ use shared::consts::{HYDRIC_URL, XERIC_SOCKET_ADDR};
 use shared::load_sample::load_sample_server::LoadSampleServer;
 use shared::render::render_server::RenderServer;
 use shared::save_load::save_load_server::SaveLoadServer;
-use std::collections::HashMap;
-use std::sync::{Arc, Mutex};
 use tonic_web::GrpcWebLayer;
 use tower_http::cors::AllowHeaders;
 
@@ -22,10 +20,7 @@ pub async fn start_server() -> anyhow::Result<()> {
     let render = RenderServer::new(RenderContext);
     let load_sample = LoadSampleServer::new(LoadSampleContext);
 
-    let save_load_context = SaveLoadContext {
-        projects: Arc::new(Mutex::new(HashMap::new())),
-    };
-    let save_load = SaveLoadServer::new(save_load_context);
+    let save_load = SaveLoadServer::new(SaveLoadContext);
 
     // Broadcasting on the server version of the stack shouldn't do anything.
     // TODO: handle this better.

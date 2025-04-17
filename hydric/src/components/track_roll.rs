@@ -1,5 +1,4 @@
 use egui::{Color32, Id, Pos2, Rect, Ui, pos2, vec2};
-use ordered_float::OrderedFloat;
 use shared::{
     model::{Track, TrackPlacement},
     types::Beats,
@@ -24,6 +23,10 @@ impl<'a> TrackRoll<'a> {
 impl View for TrackRoll<'_> {
     fn ui(&mut self, ui: &mut Ui) {
         let store = self.store;
+        let default_track = Track {
+            notes: vec![],
+            offset: 0.0.into(),
+        };
         let placed_tracks: Vec<PlacedTrack> = store
             .get()
             .project
@@ -38,7 +41,8 @@ impl View for TrackRoll<'_> {
             .iter()
             .map(|placed_track| placed_track.placement.track_id)
             .collect();
-        let range = Rect::from_min_max(pos2(0.0, 0.0), pos2(16.0, 1.0));
+        let track_count = store.get().project.tracks.len();
+        let range = Rect::from_min_max(pos2(0.0, 0.0), pos2(16.0, track_count as f32));
         let dispatch = |index: usize, action: Action| {
             store.dispatch(&Selector::TrackPlacement(index), action);
         };
@@ -49,12 +53,16 @@ impl View for TrackRoll<'_> {
             ui.data_mut(|data| data.insert_temp(window_id, true));
             ui.data_mut(|data| data.insert_temp(track_id, placed_track_ids[index]));
         };
+        if ui.button("New track").clicked() {
+            store.dispatchr(Action::AddTrack(default_track));
+        }
         ui.add(
             Sequencer::new(range, dispatch, on_release, on_click)
                 .objects(placed_tracks)
-                .size(vec2(ui.available_width(), 100.0))
+                .size(vec2(ui.available_width(), 100.0 * track_count as f32))
                 .vertical_bars(4.0, Color32::from_white_alpha(6))
-                .vertical_bars(1.0, Color32::from_white_alpha(3)),
+                .vertical_bars(1.0, Color32::from_white_alpha(3))
+                .horizontal_rects(|index| index % 2 == 1, Color32::from_white_alpha(1)),
         );
     }
 }
@@ -67,7 +75,7 @@ struct PlacedTrack {
 impl SequencerObject<PlacedTrack> for PlacedTrack {
     fn to_pos(&self, range: Rect) -> Pos2 {
         // TODO handling multiple channels. Currently all are at `y=0`.
-        let y = 0.0;
+        let y = self.placement.track_id as f32;
         let x = *self.placement.offset - range.left();
         pos2(x, y)
     }
@@ -75,19 +83,12 @@ impl SequencerObject<PlacedTrack> for PlacedTrack {
     fn to_rect(&self, range: Rect) -> Rect {
         let track_pos = self.to_pos(range);
         // If not clipped duration render length based on notes.
-        let length: f32 = *self.placement.clipped_duration.unwrap_or_else(|| {
-            let lengths: Vec<OrderedFloat<f32>> = self
-                .track
-                .notes
-                .iter()
-                .map(|note| note.offset + OrderedFloat(note.note.beats))
-                .collect();
-            lengths
-                .into_iter()
-                .max_by(|x, y| x.cmp(y))
-                .unwrap_or(OrderedFloat(1.0))
-        });
-        let track_size = vec2(length, 1.0);
+        let length: f32 = *self
+            .placement
+            .clipped_duration
+            .unwrap_or(self.track.unclipped_duration());
+        // Min `track_size.x` of 0.4 to ensure part of the object is still visible to interact with.
+        let track_size = vec2(length.max(0.4), 1.0);
         Rect::from_min_size(track_pos, track_size)
     }
 
@@ -95,9 +96,9 @@ impl SequencerObject<PlacedTrack> for PlacedTrack {
         Some(Action::SetTrackPlacementOffset(x - range.left()))
     }
 
-    fn y_action(&self, _y: f32, _range: Rect) -> Option<Action> {
+    fn y_action(&self, y: f32, _range: Rect) -> Option<Action> {
         // TODO implement multiple tracks.
-        None
+        Some(Action::SetTrackPlacementTrackId(y as usize))
     }
 
     fn resize_action(&self, x: f32, _range: Rect) -> Option<Action> {

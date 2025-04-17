@@ -27,6 +27,8 @@ pub fn broadcast_type(action: &Action) -> BroadcastType {
         // TODO: handle sample load/save better. Currently this could mean clients get out of sync with
         // each other.
         Action::AddSample(..) => BroadcastType::Never,
+        Action::AddTrack(..) => BroadcastType::Immediate,
+        Action::DeleteTrack(..) => BroadcastType::Immediate,
         Action::DeleteNote { .. } => BroadcastType::Immediate,
         Action::AddNote(..) => BroadcastType::Immediate,
         Action::SetTrackOffset(..) => BroadcastType::OnRelease,

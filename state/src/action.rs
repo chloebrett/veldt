@@ -1,7 +1,7 @@
 use shared::action_proto::{ActionProto, action_proto::Kind as ActionKind};
 use shared::model::{
     AdsrEnvelope, AntiAliasingMode, EffectInstance, EqType, PitchName, PlacedNote, Project, Sample,
-    Scale, ScaleValue, TrackId, TrackPlacement, WaveType,
+    Scale, ScaleValue, Track, TrackId, TrackPlacement, WaveType,
 };
 use shared::pmodel::{
     AntiAliasingModeProto, EqTypeProto, PitchNameProto, ScaleProto, WaveTypeProto,
@@ -24,6 +24,8 @@ pub enum Action {
     SetProject(Project),
     SetLoadProjectName(String),
     AddSample(Sample),
+    AddTrack(Track),
+    DeleteTrack(usize),
 
     // --- TrackSelector ---
     DeleteNote(usize),
@@ -153,6 +155,8 @@ impl From<ActionProto> for Action {
             ActionKind::SetTrackPlacementClippedDuration(it) => {
                 Action::SetTrackPlacementClippedDuration(it.value)
             }
+            ActionKind::AddTrack(it) => Action::AddTrack(it.into()),
+            ActionKind::DeleteTrack(it) => Action::DeleteTrack(it as usize),
         }
     }
 }
@@ -222,6 +226,8 @@ impl From<Action> for ActionProto {
                 Action::AddTrackPlacement(it) => ActionKind::AddTrackPlacement(it.into()),
                 Action::DeleteTrackPlacement(it) => ActionKind::DeleteTrackPlacement(it as u32),
                 Action::SetEqKind(it) => ActionKind::SetEqKind(EqTypeProto::from(it).into()),
+                Action::AddTrack(it) => ActionKind::AddTrack(it.into()),
+                Action::DeleteTrack(it) => ActionKind::DeleteTrack(it as u32),
 
                 // Non-serializable actions
                 Action::Release => panic!(),
