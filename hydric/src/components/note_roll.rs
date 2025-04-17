@@ -1,6 +1,6 @@
 use state::{Action, Selector, Store};
 
-use egui::{Color32, Id, Pos2, Rect, ScrollArea, Ui, pos2, vec2};
+use egui::{Color32, CornerRadius, Id, Pos2, Rect, ScrollArea, Shape, Ui, pos2, vec2};
 use shared::{
     model::{Note, PitchName, PlacedNote, Scale, ScaleValue},
     types::PitchValue,
@@ -155,5 +155,9 @@ impl SequencerObject<PlacedNote> for PlacedNote {
     fn resize_action(&self, x: f32, _range: Rect) -> Option<Action> {
         let beats = x - *self.offset;
         Some(Action::SetNoteDuration(beats))
+    }
+
+    fn shape(&self, range: Rect) -> egui::Shape {
+        Shape::rect_filled(self.to_rect(range), CornerRadius::same(1), Color32::WHITE)
     }
 }
