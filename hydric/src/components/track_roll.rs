@@ -24,6 +24,10 @@ impl<'a> TrackRoll<'a> {
 impl View for TrackRoll<'_> {
     fn ui(&mut self, ui: &mut Ui) {
         let store = self.store;
+        let default_track = Track {
+            notes: vec![],
+            offset: 0.0.into(),
+        };
         let placed_tracks: Vec<PlacedTrack> = store
             .get()
             .project
@@ -49,6 +53,9 @@ impl View for TrackRoll<'_> {
             ui.data_mut(|data| data.insert_temp(window_id, true));
             ui.data_mut(|data| data.insert_temp(track_id, placed_track_ids[index]));
         };
+        if ui.button("New track").clicked() {
+            store.dispatchr(Action::AddTrack(default_track));
+        }
         ui.add(
             Sequencer::new(range, dispatch, on_release, on_click)
                 .objects(placed_tracks)
