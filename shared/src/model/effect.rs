@@ -99,7 +99,10 @@ pub struct DelayConfig {
 
 impl Default for DelayConfig {
     fn default() -> Self {
-        DelayConfig { delay_ms: 100.0, feedback: 0.5 }
+        DelayConfig {
+            delay_ms: 100.0,
+            feedback: 0.5,
+        }
     }
 }
 
