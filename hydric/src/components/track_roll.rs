@@ -1,4 +1,4 @@
-use egui::{Color32, Id, Pos2, Rect, Ui, pos2, vec2};
+use egui::{Color32, CornerRadius, Id, Pos2, Rect, Shape, Ui, pos2, vec2};
 use shared::{
     model::{Track, TrackPlacement},
     types::Beats,
@@ -110,5 +110,17 @@ impl SequencerObject<PlacedTrack> for PlacedTrack {
             None
         };
         Some(Action::SetTrackPlacementClippedDuration(clipped_duration))
+    }
+
+    fn shape(&self, range: Rect) -> Shape {
+        if self.track.notes.is_empty() {
+            Shape::rect_filled(
+                self.to_rect(range),
+                CornerRadius::same(1),
+                Color32::from_white_alpha(32),
+            )
+        } else {
+            Shape::rect_filled(self.to_rect(range), CornerRadius::same(1), Color32::WHITE)
+        }
     }
 }
