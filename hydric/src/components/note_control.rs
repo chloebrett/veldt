@@ -40,7 +40,7 @@ impl View for NoteControl<'_> {
                     selectable_value(
                         ui,
                         get_set(&scale_value, |it| {
-                            store.dispatch(&sel, Action::SetNoteScaleValue(*it))
+                            store.dispatch(&sel, Action::SetScaleValue(*it))
                         }),
                         &scale_note,
                         scale_note.to_string(),
@@ -53,7 +53,7 @@ impl View for NoteControl<'_> {
             ui,
             "Octave",
             octave,
-            |it| store.dispatch(&sel, Action::SetNoteOctave(it as Octave)),
+            |it| store.dispatch(&sel, Action::SetOctave(it as Octave)),
             0..=8,
             on_release,
         );

@@ -148,7 +148,7 @@ impl SequencerObject<PlacedNote> for PlacedNote {
     }
 
     fn y_action(&self, y: f32, range: Rect) -> Option<Action> {
-        Some(Action::SetNotePitchName(PitchName::from(
+        Some(Action::SetPitchName(PitchName::from(
             (range.bottom() - y) as i32,
         )))
     }

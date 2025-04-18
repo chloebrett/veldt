@@ -43,9 +43,7 @@ where
             for wave in WaveType::iter() {
                 selectable_value(
                     ui,
-                    get_set(config.lfo_type, |it| {
-                        dispatch(Action::SetModDelayLfoType(it))
-                    }),
+                    get_set(config.lfo_type, |it| dispatch(Action::SetWave(it))),
                     wave,
                     wave.to_string(),
                 );

@@ -108,7 +108,7 @@ impl SequencerObject<PlacedTrack> for PlacedTrack {
         } else {
             None
         };
-        Some(Action::SetTrackPlacementClippedDuration(clipped_duration))
+        Some(Action::SetClippedDuration(clipped_duration))
     }
 
     fn shape(&self, range: Rect) -> Shape {
