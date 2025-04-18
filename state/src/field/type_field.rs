@@ -1,7 +1,4 @@
-use shared::action_proto::{
-    TypeFieldProto,
-    type_field_proto::Kind as TypeFieldKind,
-};
+use shared::action_proto::{TypeFieldProto, type_field_proto::Kind as TypeFieldKind};
 use shared::model::{
     AdsrEnvelope, AntiAliasingMode, EffectInstance, EqType, PitchName, PlacedNote, Project, Sample,
     Scale, ScaleValue, Track, TrackPlacement, WaveType,

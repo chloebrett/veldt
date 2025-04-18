@@ -1,6 +1,4 @@
-use shared::action_proto::{
-    IndexFieldProto, index_field_proto::Kind as IndexFieldKind,
-};
+use shared::action_proto::{IndexFieldProto, index_field_proto::Kind as IndexFieldKind};
 
 /// Fields that index into a list.
 /// Used to distinguish *which* index is being referred to, and also contains the index value.
