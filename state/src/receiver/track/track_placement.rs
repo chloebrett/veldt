@@ -1,5 +1,5 @@
 use crate::receiver::ActionReceiver;
-use crate::{Action, FloatField, UintField};
+use crate::{Action, FloatField, TypeField, UintField};
 use ordered_float::OrderedFloat;
 use shared::model::TrackPlacement;
 
@@ -16,10 +16,10 @@ impl ActionReceiver for TrackPlacement {
                 self.offset = OrderedFloat(*offset);
                 Action::SetFloat(FloatField::Offset, *prev)
             }
-            Action::SetClippedDuration(duration) => {
+            Action::SetChild(TypeField::ClippedDuration(duration)) => {
                 let prev = self.clipped_duration.map(|value| *value);
                 self.clipped_duration = duration.map(OrderedFloat);
-                Action::SetClippedDuration(prev)
+                Action::SetChild(TypeField::ClippedDuration(prev))
             }
             _ => return None,
         })

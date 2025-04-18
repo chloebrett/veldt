@@ -6,33 +6,44 @@ import "pmodel.proto";
 
 message ActionProto {
   oneof kind {
-    pmodel.ScaleValueProto set_key = 1;
-    pmodel.ScaleProto set_scale = 2;
-    string set_project_name = 3;
-    bool set_mute = 4;
-    uint32 delete_note = 5;
-    pmodel.PlacedNoteProto add_note = 6;
-    pmodel.ScaleValueProto set_scale_value = 7;
-    pmodel.WaveTypeProto set_wave = 8;
-    pmodel.AdsrEnvelopeProto set_envelope = 10;
-    pmodel.AntiAliasingModeProto set_anti_aliasing_mode = 11;
-    int32 set_octave = 12;
-    pmodel.PitchNameProto set_pitch_name = 13;
-    uint32 move_effect_up = 15;
-    uint32 move_effect_down = 16;
-    uint32 delete_effect = 17;
-    // Note: this (EffectInstanceProto) might be the largest variant here.
-    // Check if this means that every action sent over the wire is this large.
-    // If so, maybe consider storing an optional field for large payloads instead (assuming that even helps).
-    pmodel.EffectInstanceProto add_effect = 18;
-    pmodel.TrackPlacementProto add_track_placement = 23;
-    uint32 delete_track_placement = 24;
-    pmodel.EqTypeProto set_eq_kind = 25;
-    pmodel.FloatOptionProto set_clipped_duration = 26;
-    pmodel.TrackProto add_track = 27;
-    uint32 delete_track = 28;
-    SetFloatProto set_float = 29;
-    SetUintProto set_uint = 30;
+    uint32 move_effect_up = 1;
+    uint32 move_effect_down = 2;
+    SetFloatProto set_float = 3;
+    SetUintProto set_uint = 4;
+    TypeFieldProto set_child = 5;
+    TypeFieldProto add_child = 6;
+    IndexFieldProto delete_child = 7;
+  }
+}
+
+message IndexFieldProto {
+  oneof kind {
+    uint32 track = 1;
+    uint32 note = 2;
+    uint32 track_placement = 3;
+    uint32 effect = 4;
+    uint32 generator = 5;
+  }
+}
+
+message TypeFieldProto {
+  oneof kind {
+    pmodel.ScaleValueProto scale_value = 1;
+    pmodel.ScaleProto scale = 2;
+    pmodel.TrackPlacementProto track_placement = 3;
+    pmodel.ProjectProto project = 4;
+    string project_name = 5;
+    pmodel.SampleProto sample = 6;
+    pmodel.TrackProto track = 7;
+    pmodel.NoteProto note = 8;
+    pmodel.WaveTypeProto wave = 9;
+    pmodel.AdsrEnvelopeProto adsr_envelope = 10;
+    pmodel.AntiAliasingModeProto anti_aliasing_mode = 11;
+    pmodel.EqTypeProto eq_type = 12;
+    pmodel.EffectInstanceProto effect_instance = 13;
+    pmodel.FloatOptionProto clipped_duration = 14;
+    bool mute = 15;
+    int32 octave = 16;
   }
 }
 

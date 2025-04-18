@@ -1,17 +1,16 @@
 use shared::action_proto::{
-    ActionProto, SetFloatProto, SetUintProto, action_proto::Kind as ActionKind,
+    ActionProto, IndexFieldProto, SetFloatProto, SetUintProto, TypeFieldProto,
+    action_proto::Kind as ActionKind,
 };
 use shared::model::{
-    AdsrEnvelope, AntiAliasingMode, EffectInstance, EqType, PitchName, PlacedNote, Project, Sample,
-    Scale, ScaleValue, Track, TrackPlacement, WaveType,
+    AdsrEnvelope, AntiAliasingMode, EffectInstance, EqType, PitchName, PlacedNote, Project,
+    Sample, Scale, ScaleValue, Track, TrackPlacement, WaveType,
 };
-use shared::pmodel::{
-    AntiAliasingModeProto, EqTypeProto, PitchNameProto, ScaleProto, WaveTypeProto,
-};
-use shared::types::Octave;
 use std::str::FromStr;
 use strum::{Display, EnumString};
 
+/// Fields of type f32.
+/// Used to distinguish *which* field of this type is being referred to.
 #[derive(EnumString, Display, PartialEq, Clone, Debug)]
 pub enum FloatField {
     Bpm,
@@ -33,6 +32,8 @@ pub enum FloatField {
     Feedback,
 }
 
+/// Fields of type u32.
+/// Used to distinguish *which* field of this type is being referred to.
 #[derive(EnumString, Display, PartialEq, Clone, Debug)]
 pub enum UintField {
     OscCount,
@@ -42,55 +43,96 @@ pub enum UintField {
     TrackId,
 }
 
+/// Fields of various types.
+/// Used to distinguish *which* field of this type is being referred to,
+/// and also contains the appropriate value.
+/// TODO: investigate size cost of these, and consider boxing large types e.g. Project.
+#[derive(PartialEq, Clone, Debug)]
+pub enum TypeField {
+    ScaleValue(ScaleValue),
+    Effect(EffectInstance),
+    PitchName(PitchName),
+    Key(ScaleValue),
+    Scale(Scale),
+    TrackPlacement(TrackPlacement),
+    Project(Project),
+    ProjectName(String),
+    ProjectList(Vec<String>),
+    LoadProjectName(String),
+    Sample(Sample),
+    Track(Track),
+    PlacedNote(PlacedNote),
+    Wave(WaveType),
+    Envelope(AdsrEnvelope),
+    AntiAliasingMode(AntiAliasingMode),
+    EqType(EqType),
+    EffectInstance(EffectInstance),
+    ClippedDuration(Option<f32>),
+
+    // Note: if we end up with more bools/primitives, make dedicated types for them so that we
+    // don't have to keep expanding the proto.
+    Mute(bool),
+    Octave(i32),
+}
+
+impl From<TypeFieldProto> for TypeField {
+    fn from(other: TypeFieldProto) -> Self {
+        match other.kind {
+            _ => panic!(),
+        }
+    }
+}
+
+impl From<TypeField> for TypeFieldProto {
+    fn from(other: TypeField) -> Self {
+        match other {
+            TypeField::Project(_) => panic!(),
+            TypeField::ProjectList(_) => panic!(),
+            TypeField::Sample(_) => panic!(),
+            _ => panic!(),
+        }
+    }
+}
+
+/// Fields that index into a list.
+/// Used to distinguish *which* index is being referred to, and also contains the index value.
+#[derive(PartialEq, Clone, Debug)]
+pub enum IndexField {
+    Track(usize),
+    PlacedNote(usize),
+    TrackPlacement(usize),
+    Effect(usize),
+    Generator(usize),
+}
+
+impl From<IndexFieldProto> for IndexField {
+    fn from(other: IndexFieldProto) -> Self {
+        match other.kind {
+            _ => panic!(),
+        }
+    }
+}
+
+impl From<IndexField> for IndexFieldProto {
+    fn from(other: IndexField) -> Self {
+        match other {
+            _ => panic!(),
+        }
+    }
+}
+
 #[derive(Debug, Clone, PartialEq)]
 pub enum Action {
-    // --- RootSelector ---
-    SetKey(ScaleValue),
-    SetScale(Scale),
-    SetProjectName(String),
-    AddTrackPlacement(TrackPlacement),
-    DeleteTrackPlacement(usize),
-    // Sets the names of loadable projects.
-    SetProjectList(Vec<String>),
-    // Overwrites the whole project.
-    SetProject(Project),
-    SetLoadProjectName(String),
-    AddSample(Sample),
-    AddTrack(Track),
-    DeleteTrack(usize),
-
-    // --- TrackSelector ---
-    DeleteNote(usize),
-    AddNote(PlacedNote),
-
-    // --- NoteSelector ---
-    SetScaleValue(ScaleValue),
-    SetOctave(Octave),
-    SetPitchName(PitchName),
-
-    // --- GeneratorSelector ---
-    // TODO: rename this to SetVolume, and just differentiate by the selector. (Apply this idea to
-    // several action types).
-    SetWave(WaveType),
-    SetEnvelope(AdsrEnvelope),
-    SetAntiAliasingMode(AntiAliasingMode),
-
     // --- MixerSelector ---
     MoveEffectUp(usize),
     MoveEffectDown(usize),
-    DeleteEffect(usize),
-    AddEffect(EffectInstance),
-
-    // --- EffectSelector ---
-    SetEqKind(EqType),
-
-    // --- TrackPlacementSelector ---
-    SetClippedDuration(Option<f32>),
 
     // --- used by several selectors ---
-    SetMute(bool),
     SetFloat(FloatField, f32),
     SetUint(UintField, u32),
+    DeleteChild(IndexField),
+    SetChild(TypeField),
+    AddChild(TypeField),
 
     // -- other --
     /// Denotes that the mouse has been released from a UI element, finalizing its value.
@@ -106,33 +148,8 @@ pub enum Action {
 impl From<ActionProto> for Action {
     fn from(other: ActionProto) -> Action {
         match other.kind.unwrap() {
-            // TODO: macro-ify this.
-            ActionKind::SetKey(it) => Action::SetKey(it.into()),
-            ActionKind::SetScale(it) => Action::SetScale(ScaleProto::try_from(it).unwrap().into()),
-            ActionKind::SetProjectName(it) => Action::SetProjectName(it),
-            ActionKind::SetMute(it) => Action::SetMute(it),
-            ActionKind::AddNote(it) => Action::AddNote(it.into()),
-            ActionKind::DeleteNote(it) => Action::DeleteNote(it as usize),
-            ActionKind::SetScaleValue(it) => Action::SetScaleValue(it.into()),
-            ActionKind::SetWave(it) => Action::SetWave(WaveTypeProto::try_from(it).unwrap().into()),
-            ActionKind::SetEnvelope(it) => Action::SetEnvelope(it.into()),
-            ActionKind::SetAntiAliasingMode(it) => {
-                Action::SetAntiAliasingMode(AntiAliasingModeProto::try_from(it).unwrap().into())
-            }
-            ActionKind::SetOctave(it) => Action::SetOctave(it),
-            ActionKind::SetPitchName(it) => Action::SetPitchName(it.into()),
             ActionKind::MoveEffectUp(it) => Action::MoveEffectUp(it as usize),
             ActionKind::MoveEffectDown(it) => Action::MoveEffectDown(it as usize),
-            ActionKind::DeleteEffect(it) => Action::DeleteEffect(it as usize),
-            ActionKind::AddEffect(it) => Action::AddEffect(it.into()),
-            ActionKind::AddTrackPlacement(it) => Action::AddTrackPlacement(it.into()),
-            ActionKind::DeleteTrackPlacement(it) => Action::DeleteTrackPlacement(it as usize),
-            ActionKind::SetEqKind(it) => {
-                Action::SetEqKind(EqTypeProto::try_from(it).unwrap().into())
-            }
-            ActionKind::SetClippedDuration(it) => Action::SetClippedDuration(it.value),
-            ActionKind::AddTrack(it) => Action::AddTrack(it.into()),
-            ActionKind::DeleteTrack(it) => Action::DeleteTrack(it as usize),
             ActionKind::SetFloat(it) => Action::SetFloat(
                 FloatField::from_str(&it.key)
                     .expect(&format!("Expected float field name: {}", it.key)),
@@ -143,6 +160,9 @@ impl From<ActionProto> for Action {
                     .expect(&format!("Expected uint field name: {}", it.key)),
                 it.value,
             ),
+            ActionKind::DeleteChild(index) => Action::DeleteChild(index.into()),
+            ActionKind::AddChild(child) => Action::AddChild(child.into()),
+            ActionKind::SetChild(child) => Action::SetChild(child.into()),
         }
     }
 }
@@ -151,33 +171,6 @@ impl From<Action> for ActionProto {
     fn from(other: Action) -> ActionProto {
         ActionProto {
             kind: Some(match other {
-                // TODO: macro-ify this.
-                // But also, we could just make the whole app more modular instead of having
-                // centralised actions like this.
-                Action::SetKey(it) => ActionKind::SetKey(it.into()),
-                Action::SetScale(it) => ActionKind::SetScale(ScaleProto::from(it).into()),
-                Action::SetProjectName(it) => ActionKind::SetProjectName(it),
-                Action::SetMute(it) => ActionKind::SetMute(it),
-                Action::AddNote(it) => ActionKind::AddNote(it.into()),
-                Action::DeleteNote(it) => ActionKind::DeleteNote(it as u32),
-                Action::SetScaleValue(it) => ActionKind::SetScaleValue(it.into()),
-                Action::SetWave(it) => ActionKind::SetWave(WaveTypeProto::from(it).into()),
-                Action::SetEnvelope(it) => ActionKind::SetEnvelope(it.into()),
-                Action::SetAntiAliasingMode(it) => {
-                    ActionKind::SetAntiAliasingMode(AntiAliasingModeProto::from(it).into())
-                }
-                Action::SetOctave(it) => ActionKind::SetOctave(it),
-                Action::SetPitchName(it) => ActionKind::SetPitchName(PitchNameProto::from(it)),
-                Action::MoveEffectUp(it) => ActionKind::MoveEffectUp(it as u32),
-                Action::MoveEffectDown(it) => ActionKind::MoveEffectDown(it as u32),
-                Action::DeleteEffect(it) => ActionKind::DeleteEffect(it as u32),
-                Action::AddEffect(it) => ActionKind::AddEffect(it.into()),
-                Action::SetClippedDuration(it) => ActionKind::SetClippedDuration(it.into()),
-                Action::AddTrackPlacement(it) => ActionKind::AddTrackPlacement(it.into()),
-                Action::DeleteTrackPlacement(it) => ActionKind::DeleteTrackPlacement(it as u32),
-                Action::SetEqKind(it) => ActionKind::SetEqKind(EqTypeProto::from(it).into()),
-                Action::AddTrack(it) => ActionKind::AddTrack(it.into()),
-                Action::DeleteTrack(it) => ActionKind::DeleteTrack(it as u32),
                 Action::SetFloat(key, value) => ActionKind::SetFloat(SetFloatProto {
                     key: key.to_string(),
                     value,
@@ -186,14 +179,15 @@ impl From<Action> for ActionProto {
                     key: key.to_string(),
                     value,
                 }),
+                Action::SetChild(child) => ActionKind::SetChild(child.into()),
+                Action::AddChild(child) => ActionKind::AddChild(child.into()),
+                Action::DeleteChild(index) => ActionKind::DeleteChild(index.into()),
+                Action::MoveEffectUp(index) => ActionKind::MoveEffectUp(index as u32),
+                Action::MoveEffectDown(index) => ActionKind::MoveEffectDown(index as u32),
 
                 // Non-serializable actions
                 Action::Release => panic!(),
                 Action::NonReversible => panic!(),
-                Action::SetProjectList(_) => panic!(),
-                Action::SetProject(_) => panic!(),
-                Action::SetLoadProjectName(_) => panic!(),
-                Action::AddSample(_) => panic!(),
             }),
         }
     }

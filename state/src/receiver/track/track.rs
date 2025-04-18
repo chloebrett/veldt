@@ -1,24 +1,24 @@
 use crate::receiver::ActionReceiver;
-use crate::{Action, FloatField};
+use crate::{Action, FloatField, IndexField, TypeField};
 use ordered_float::OrderedFloat;
 use shared::model::Track;
 
 impl ActionReceiver for Track {
     fn apply(&mut self, action: &Action) -> Option<Action> {
         Some(match action {
-            Action::DeleteNote(note_index) => {
+            Action::DeleteChild(IndexField::PlacedNote(note_index)) => {
                 let prev = self
                     .notes
                     .get(*note_index)
                     .expect("Can't delete non-existent track!")
                     .clone();
                 self.notes.remove(*note_index);
-                Action::AddNote(prev)
+                Action::AddChild(TypeField::PlacedNote(prev))
             }
-            Action::AddNote(note) => {
+            Action::AddChild(TypeField::PlacedNote(note)) => {
                 let index = self.notes.len();
                 self.notes.push(note.clone());
-                Action::DeleteNote(index)
+                Action::DeleteChild(IndexField::PlacedNote(index))
             }
             Action::SetFloat(FloatField::Offset, offset) => {
                 let prev = self.offset;

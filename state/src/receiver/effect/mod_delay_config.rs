@@ -1,5 +1,5 @@
 use crate::receiver::ActionReceiver;
-use crate::{Action, FloatField, UintField};
+use crate::{Action, FloatField, TypeField, UintField};
 use shared::model::ModDelayConfig;
 use std::cmp::{max, min};
 
@@ -23,10 +23,10 @@ impl ActionReceiver for ModDelayConfig {
                 self.freq = *freq;
                 Action::SetFloat(FloatField::LfoFreq, prev)
             }
-            Action::SetWave(lfo_type) => {
+            Action::SetChild(TypeField::Wave(lfo_type)) => {
                 let prev = self.lfo_type;
                 self.lfo_type = *lfo_type;
-                Action::SetWave(prev)
+                Action::SetChild(TypeField::Wave(prev))
             }
             _ => return None,
         })

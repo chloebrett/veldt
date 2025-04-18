@@ -1,14 +1,14 @@
 use crate::receiver::ActionReceiver;
-use crate::{Action, FloatField, UintField};
+use crate::{Action, FloatField, TypeField, UintField};
 use shared::model::SimpleWaveConfig;
 
 impl ActionReceiver for SimpleWaveConfig {
     fn apply(&mut self, action: &Action) -> Option<Action> {
         Some(match action {
-            Action::SetWave(wave) => {
+            Action::SetChild(TypeField::Wave(wave)) => {
                 let prev = self.wave;
                 self.wave = *wave;
-                Action::SetWave(prev)
+                Action::SetChild(TypeField::Wave(prev))
             }
             Action::SetUint(UintField::OscCount, osc_count) => {
                 let prev = self.osc_count;
@@ -20,7 +20,7 @@ impl ActionReceiver for SimpleWaveConfig {
                 self.detune_cents = *detune_cents;
                 Action::SetFloat(FloatField::Detune, prev)
             }
-            Action::SetEnvelope(envelope) => {
+            Action::SetChild(TypeField::Envelope(envelope)) => {
                 let mut envelope = envelope.clone();
                 let headroom = 1.0 - envelope.attack - envelope.decay - envelope.release;
                 let max_attack = headroom + envelope.attack;
@@ -39,12 +39,12 @@ impl ActionReceiver for SimpleWaveConfig {
 
                 let prev = self.envelope.clone();
                 self.envelope = envelope;
-                Action::SetEnvelope(prev)
+                Action::SetChild(TypeField::Envelope(prev))
             }
-            Action::SetAntiAliasingMode(mode) => {
+            Action::SetChild(TypeField::AntiAliasingMode(mode)) => {
                 let prev = self.anti_aliasing_mode;
                 self.anti_aliasing_mode = *mode;
-                Action::SetAntiAliasingMode(prev)
+                Action::SetChild(TypeField::AntiAliasingMode(prev))
             }
             Action::SetUint(UintField::OversampleFactor, factor) => {
                 let prev = self.oversample_factor;
