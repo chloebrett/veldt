@@ -39,21 +39,19 @@ impl Default for RenderGraph {
 
 impl RenderGraph {
     // Add node with edge directed to graph output.
-    pub fn add_node(&mut self, node: impl Node + 'static + Send) {
+    pub fn add_node(&mut self, node: impl Node + 'static + Send) -> NodeIndex {
         let node_index = self
             .graph
             .add_node(NodeData::new2(BoxedNodeSend::new(node)));
         self.graph.add_edge(node_index, self.output_node_index, ());
+        node_index
     }
 
     // Add node and set as graph output.
     pub fn add_output_node(&mut self, node: impl Node + 'static + Send) {
-        let node_index = self
-            .graph
-            .add_node(NodeData::new2(BoxedNodeSend::new(node)));
-        self.graph.add_edge(self.output_node_index, node_index, ());
+        let node_index = self.add_node(node);
         // Set node as new output
-        self.output_node_index = node_index
+        self.output_node_index = node_index;
     }
 
     pub fn add_generator(&mut self, node: impl Node + 'static + Send, sample_count: usize) {
