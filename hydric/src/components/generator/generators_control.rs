@@ -38,7 +38,7 @@ pub fn generators_control(ctx: &egui::Context, window_state: &mut WindowState, s
                     ui,
                     "Volume",
                     meta.volume,
-                    |it| store.dispatch(&sel, Action::SetGeneratorVolume(it)),
+                    |it| store.dispatch(&sel, Action::SetVolume(it)),
                     0.0..=1.0,
                     on_release,
                 );
@@ -47,14 +47,14 @@ pub fn generators_control(ctx: &egui::Context, window_state: &mut WindowState, s
                     ui,
                     "Pan",
                     meta.pan,
-                    |it| store.dispatch(&sel, Action::SetGeneratorPan(it)),
+                    |it| store.dispatch(&sel, Action::SetPan(it)),
                     -1.0..=1.0,
                     on_release,
                 );
                 checkbox(
                     ui,
                     meta.mute,
-                    |it| store.dispatch(&sel, Action::SetGeneratorMute(it)),
+                    |it| store.dispatch(&sel, Action::SetMute(it)),
                     "Mute",
                 );
 

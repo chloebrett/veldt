@@ -5,15 +5,15 @@ use shared::model::EffectMeta;
 impl ActionReceiver for EffectMeta {
     fn apply(&mut self, action: &Action) -> Option<Action> {
         Some(match action {
-            Action::SetEffectWet(wet) => {
+            Action::SetWet(wet) => {
                 let prev = self.wet;
                 self.wet = *wet;
-                Action::SetEffectWet(prev)
+                Action::SetWet(prev)
             }
-            Action::SetEffectMute(mute) => {
+            Action::SetMute(mute) => {
                 let prev = self.mute;
                 self.mute = *mute;
-                Action::SetEffectMute(prev)
+                Action::SetMute(prev)
             }
             _ => return None,
         })

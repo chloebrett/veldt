@@ -38,14 +38,14 @@ pub fn mixer_control(ctx: &egui::Context, window_state: &mut WindowState, store:
                     ui,
                     "Wet",
                     meta.wet,
-                    |it| store.dispatch(&effect_sel, Action::SetEffectWet(it)),
+                    |it| store.dispatch(&effect_sel, Action::SetWet(it)),
                     0.0..=1.0,
                     on_release,
                 );
                 checkbox(
                     ui,
                     meta.mute,
-                    |it| store.dispatch(&effect_sel, Action::SetEffectMute(it)),
+                    |it| store.dispatch(&effect_sel, Action::SetMute(it)),
                     "Mute",
                 );
                 if ui.button("Delete").clicked() {

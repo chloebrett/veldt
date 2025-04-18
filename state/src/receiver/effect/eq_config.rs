@@ -20,10 +20,10 @@ impl ActionReceiver for EqConfig {
                 self.q = *q;
                 Action::SetEqQ(prev)
             }
-            Action::SetEqGain(gain) => {
+            Action::SetGain(gain) => {
                 let prev = self.gain;
                 self.gain = *gain;
-                Action::SetEqGain(prev)
+                Action::SetGain(prev)
             }
             _ => return None,
         })

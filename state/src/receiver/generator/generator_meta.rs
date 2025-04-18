@@ -5,20 +5,20 @@ use shared::model::GeneratorMeta;
 impl ActionReceiver for GeneratorMeta {
     fn apply(&mut self, action: &Action) -> Option<Action> {
         Some(match action {
-            Action::SetGeneratorVolume(volume) => {
+            Action::SetVolume(volume) => {
                 let prev = self.volume;
                 self.volume = *volume;
-                Action::SetGeneratorVolume(prev)
+                Action::SetVolume(prev)
             }
-            Action::SetGeneratorMute(mute) => {
+            Action::SetMute(mute) => {
                 let prev = self.mute;
                 self.mute = *mute;
-                Action::SetGeneratorMute(prev)
+                Action::SetMute(prev)
             }
-            Action::SetGeneratorPan(pan) => {
+            Action::SetPan(pan) => {
                 let prev = self.pan;
                 self.pan = *pan;
-                Action::SetGeneratorPan(prev)
+                Action::SetPan(prev)
             }
             _ => return None,
         })

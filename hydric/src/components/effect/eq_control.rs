@@ -32,7 +32,7 @@ where
         ui,
         "Gain",
         config.gain,
-        |it| dispatch(Action::SetEqGain(it)),
+        |it| dispatch(Action::SetGain(it)),
         -60.0..=60.0,
         &on_release,
     );
