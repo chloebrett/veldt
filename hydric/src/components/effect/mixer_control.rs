@@ -3,7 +3,7 @@ use crate::components::WindowState;
 use crate::widget::{checkbox, default_window, knob};
 use egui::Pos2;
 use shared::model::{Effect, EffectInstance, EffectMeta};
-use state::{Action, FloatField, Selector, Store};
+use state::{Action, FloatField, IndexField, Selector, Store, TypeField};
 use strum::IntoEnumIterator;
 
 pub fn mixer_control(ctx: &egui::Context, window_state: &mut WindowState, store: &Store) {
@@ -45,11 +45,14 @@ pub fn mixer_control(ctx: &egui::Context, window_state: &mut WindowState, store:
                 checkbox(
                     ui,
                     meta.mute,
-                    |it| store.dispatch(&effect_sel, Action::SetMute(it)),
+                    |it| store.dispatch(&effect_sel, Action::SetChild(TypeField::Mute(it))),
                     "Mute",
                 );
                 if ui.button("Delete").clicked() {
-                    store.dispatch(&mixer_sel, Action::DeleteEffect(effect_index));
+                    store.dispatch(
+                        &mixer_sel,
+                        Action::DeleteChild(IndexField::Effect(effect_index)),
+                    );
                     window_state.effects[mixer_index].remove(effect_index);
 
                     // Skip iterating for this frame.
@@ -78,7 +81,7 @@ pub fn mixer_control(ctx: &egui::Context, window_state: &mut WindowState, store:
                         effect,
                         meta: EffectMeta::default(),
                     };
-                    store.dispatch(&mixer_sel, Action::AddEffect(instance));
+                    store.dispatch(&mixer_sel, Action::AddChild(TypeField::Effect(instance)));
                     window_state.effects[mixer_index].push(false);
                 }
             }

@@ -2,7 +2,7 @@ use crate::view::View;
 use crate::widget::{get_set, selectable_value};
 use egui::{ComboBox, Ui};
 use shared::model::{Scale, ScaleValue};
-use state::Action;
+use state::{Action, TypeField};
 use strum::IntoEnumIterator;
 
 pub struct KeyControl<F: Fn(Action)> {
@@ -34,7 +34,7 @@ impl<F: Fn(Action)> View for KeyControl<F> {
                 for scale_note in ScaleValue::iter() {
                     selectable_value(
                         ui,
-                        get_set(key, |it| dispatch(Action::SetKey(it))),
+                        get_set(key, |it| dispatch(Action::SetChild(TypeField::Key(it)))),
                         scale_note,
                         scale_note.to_string(),
                     );
@@ -46,7 +46,7 @@ impl<F: Fn(Action)> View for KeyControl<F> {
                 for scale_option in Scale::iter() {
                     selectable_value(
                         ui,
-                        get_set(scale, |it| dispatch(Action::SetScale(it))),
+                        get_set(scale, |it| dispatch(Action::SetChild(TypeField::Scale(it)))),
                         scale_option,
                         scale_option.to_string(),
                     );

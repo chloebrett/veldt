@@ -1,7 +1,7 @@
 use crate::widget::{get_set, knob, log_slider, selectable_value};
 use egui::Ui;
 use shared::model::{ModDelayConfig, WaveType};
-use state::{Action, FloatField, UintField};
+use state::{Action, FloatField, TypeField, UintField};
 use strum::IntoEnumIterator;
 
 pub fn mod_delay_control<F, G>(config: &ModDelayConfig, dispatch: F, on_release: G, ui: &mut Ui)
@@ -43,7 +43,9 @@ where
             for wave in WaveType::iter() {
                 selectable_value(
                     ui,
-                    get_set(config.lfo_type, |it| dispatch(Action::SetWave(it))),
+                    get_set(config.lfo_type, |it| {
+                        dispatch(Action::SetChild(TypeField::Wave(it)))
+                    }),
                     wave,
                     wave.to_string(),
                 );

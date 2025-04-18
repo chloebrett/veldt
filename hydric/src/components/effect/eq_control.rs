@@ -2,7 +2,7 @@ use crate::widget::{get_set, knob, selectable_value};
 use egui::Ui;
 use shared::model::EqConfig;
 use shared::model::EqType;
-use state::{Action, FloatField};
+use state::{Action, FloatField, TypeField};
 use strum::IntoEnumIterator;
 
 pub fn eq_control<F, G>(config: &EqConfig, dispatch: F, on_release: G, ui: &mut Ui)
@@ -44,7 +44,9 @@ where
             for eq_type in EqType::iter() {
                 selectable_value(
                     ui,
-                    get_set(config.kind.clone(), |it| dispatch(Action::SetEqKind(it))),
+                    get_set(config.kind.clone(), |it| {
+                        dispatch(Action::SetChild(TypeField::EqType(it)))
+                    }),
                     eq_type.clone(),
                     eq_type.to_string(),
                 );

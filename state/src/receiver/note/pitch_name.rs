@@ -1,19 +1,19 @@
-use crate::Action;
 use crate::receiver::ActionReceiver;
+use crate::{Action, TypeField};
 use shared::model::PitchName;
 
 impl ActionReceiver for PitchName {
     fn apply(&mut self, action: &Action) -> Option<Action> {
         Some(match action {
-            Action::SetScaleValue(new_note) => {
+            Action::SetChild(TypeField::ScaleValue(new_note)) => {
                 let prev = self.scale_value;
                 self.scale_value = *new_note;
-                Action::SetScaleValue(prev)
+                Action::SetChild(TypeField::ScaleValue(prev))
             }
-            Action::SetOctave(octave) => {
+            Action::SetChild(TypeField::Octave(octave)) => {
                 let prev = self.octave;
                 self.octave = *octave;
-                Action::SetOctave(prev)
+                Action::SetChild(TypeField::Octave(prev))
             }
             _ => return None,
         })

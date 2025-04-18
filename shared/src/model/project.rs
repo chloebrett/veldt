@@ -76,7 +76,7 @@ impl From<TrackPlacementProto> for TrackPlacement {
 impl From<TrackPlacement> for TrackPlacementProto {
     fn from(item: TrackPlacement) -> Self {
         TrackPlacementProto {
-            track_id: item.track_id as u32,
+            track_id: item.track_id,
             offset: *item.offset,
             clipped_duration: item.clipped_duration.map(|it| *it),
             visual_placement: item.visual_placement,

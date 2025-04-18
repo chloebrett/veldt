@@ -21,7 +21,7 @@ use egui::{ScrollArea, scroll_area::ScrollBarVisibility};
 use poll_promise::Promise;
 use shared::model::{GeneratorType, Project, Sample};
 use shared::types::Beats;
-use state::{Action, FloatField, Store};
+use state::{Action, FloatField, Store, TypeField};
 
 /// Container for the various promises launchable by the app.
 #[derive(Default)]
@@ -129,7 +129,8 @@ impl eframe::App for App {
                         let project_name = self.store.get().project.name.clone();
                         let mut name_observer = string_observer(
                             get_set(project_name.clone(), |it| {
-                                self.store.dispatchr(Action::SetProjectName(it))
+                                self.store
+                                    .dispatchr(Action::SetChild(TypeField::ProjectName(it)))
                             }),
                             project_name.clone(),
                         );

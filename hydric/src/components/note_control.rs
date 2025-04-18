@@ -3,7 +3,7 @@ use crate::widget::{get_set, int_slider, selectable_value};
 use egui::{Id, Ui};
 use shared::model::ScaleValue;
 use shared::types::{Beats, Octave};
-use state::{Action, FloatField, Selector, Store};
+use state::{Action, FloatField, IndexField, Selector, Store, TypeField};
 use strum::IntoEnumIterator;
 
 pub struct NoteControl<'a> {
@@ -40,7 +40,7 @@ impl View for NoteControl<'_> {
                     selectable_value(
                         ui,
                         get_set(&scale_value, |it| {
-                            store.dispatch(&sel, Action::SetScaleValue(*it))
+                            store.dispatch(&sel, Action::SetChild(TypeField::ScaleValue(*it)))
                         }),
                         &scale_note,
                         scale_note.to_string(),
@@ -53,7 +53,7 @@ impl View for NoteControl<'_> {
             ui,
             "Octave",
             octave,
-            |it| store.dispatch(&sel, Action::SetOctave(it as Octave)),
+            |it| store.dispatch(&sel, Action::SetChild(TypeField::Octave(it as Octave))),
             0..=8,
             on_release,
         );
@@ -83,7 +83,7 @@ impl View for NoteControl<'_> {
         if ui.button("Delete").clicked() {
             store.dispatch(
                 &Selector::Track(track_index),
-                Action::DeleteNote(note_index),
+                Action::DeleteChild(IndexField::PlacedNote(note_index)),
             );
             ui.data_mut(|data| {
                 let window_id = Id::new("note_window");

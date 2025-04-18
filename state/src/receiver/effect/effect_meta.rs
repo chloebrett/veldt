@@ -1,5 +1,5 @@
 use crate::receiver::ActionReceiver;
-use crate::{Action, FloatField};
+use crate::{Action, FloatField, TypeField};
 use shared::model::EffectMeta;
 
 impl ActionReceiver for EffectMeta {
@@ -10,10 +10,10 @@ impl ActionReceiver for EffectMeta {
                 self.wet = *wet;
                 Action::SetFloat(FloatField::Wet, prev)
             }
-            Action::SetMute(mute) => {
+            Action::SetChild(TypeField::Mute(mute)) => {
                 let prev = self.mute;
                 self.mute = *mute;
-                Action::SetMute(prev)
+                Action::SetChild(TypeField::Mute(prev))
             }
             _ => return None,
         })
