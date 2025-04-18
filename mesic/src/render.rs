@@ -7,7 +7,7 @@ pub fn render(project: &Project) -> RenderGraph {
     let bpm = project.bpm;
     // Add tracks with a placement to graph.
     for (index, placement) in project.track_placements.iter().enumerate() {
-        let mut track = project.tracks[placement.track_id].clone();
+        let mut track = project.tracks[placement.track_id as usize].clone();
         for note in track.notes.iter_mut() {
             note.offset += placement.offset
         }
