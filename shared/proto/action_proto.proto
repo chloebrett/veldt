@@ -47,26 +47,26 @@ message SetFloatProto {
 }
 
 message ReversibleActionProto {
-    ActionProto forward = 1;
-    ActionProto reverse = 2;
-    SelectorProto selector = 3;
-    bool is_compacted = 4; // TODO: what to do about this? Don't send over the wire?
+  ActionProto forward = 1;
+  ActionProto reverse = 2;
+  SelectorProto selector = 3;
+  bool is_compacted = 4; // TODO: what to do about this? Don't send over the wire?
 }
 
 message SelectorProto {
   oneof kind {
-      uint32 root = 1; // dummy value
-      uint32 track = 2;
-      IndexPair note = 3;
-      uint32 mixer = 4;
-      IndexPair effect = 5;
-      uint32 generator = 6;
-      uint32 track_placement = 7;
-    }
+    uint32 root = 1; // dummy value
+    uint32 track = 2;
+    IndexPair note = 3;
+    uint32 mixer = 4;
+    IndexPair effect = 5;
+    uint32 generator = 6;
+    uint32 track_placement = 7;
+  }
 
   message IndexPair {
-      uint32 first = 1;
-      uint32 second = 2;
-    }
+    uint32 first = 1;
+    uint32 second = 2;
+  }
 }
 
