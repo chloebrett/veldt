@@ -100,8 +100,9 @@ impl View for NoteRoll<'_> {
                     pos2(offset, min_note as f32 - 1.0),
                     // NoteRoll is at least 1 bar long
                     // Extends when notes are dragged or set beyond 1 bar.
+                    // Add 0.5 to X as a small buffer after max note.
                     pos2(
-                        bar_length.max(*unclipped_duration + 0.5) as f32,
+                        f32::max(bar_length, *unclipped_duration) + 0.5,
                         max_note as f32,
                     ),
                 );
