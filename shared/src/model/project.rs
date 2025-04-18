@@ -6,7 +6,7 @@ use local_macro::{FromProto, IntoProto};
 use ordered_float::OrderedFloat;
 use std::cmp::Ordering;
 
-pub type TrackId = usize;
+pub type TrackId = u32;
 type _SampleId = usize;
 
 #[derive(Clone, Debug, PartialEq, FromProto, IntoProto)]
@@ -65,7 +65,7 @@ impl Ord for TrackPlacement {
 impl From<TrackPlacementProto> for TrackPlacement {
     fn from(item: TrackPlacementProto) -> Self {
         TrackPlacement {
-            track_id: item.track_id as usize,
+            track_id: item.track_id,
             offset: item.offset.into(),
             clipped_duration: item.clipped_duration.map(OrderedFloat),
             visual_placement: item.visual_placement,
