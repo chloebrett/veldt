@@ -1,5 +1,6 @@
-use super::{compressor_control::compressor_control, delay_control, eq_control, mod_delay_control};
+use super::{CompressorView, DelayView, ModDelayView, eq_control};
 use crate::components::WindowState;
+use crate::view::View;
 use crate::widget::default_window;
 use egui::Pos2;
 use shared::model::Effect;
@@ -37,11 +38,15 @@ pub fn effect_control(
         .show(ctx, |ui| {
             match &effect.effect {
                 Effect::SimpleEq { config } => eq_control(config, dispatch, on_release, ui),
-                Effect::SimpleDelay { config } => delay_control(config, dispatch, on_release, ui),
-                Effect::SimpleCompressor { config } => {
-                    compressor_control(config, dispatch, on_release, ui)
+                Effect::SimpleDelay { config } => {
+                    DelayView::new(config, dispatch, on_release).ui(ui)
                 }
-                Effect::ModDelay { config } => mod_delay_control(config, dispatch, on_release, ui),
+                Effect::SimpleCompressor { config } => {
+                    CompressorView::new(config, dispatch, on_release).ui(ui)
+                }
+                Effect::ModDelay { config } => {
+                    ModDelayView::new(config, dispatch, on_release).ui(ui)
+                }
             }
 
             ui.separator();
