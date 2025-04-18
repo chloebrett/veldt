@@ -7,7 +7,7 @@ use shared::{
     model::{Track, TrackPlacement},
     types::Beats,
 };
-use state::{Action, FloatField, Selector, Store};
+use state::{Action, FloatField, Selector, Store, UintField};
 
 pub struct TrackRoll<'a> {
     store: &'a Store,
@@ -32,11 +32,11 @@ impl View for TrackRoll<'_> {
             .track_placements
             .iter()
             .map(|placement| PlacedTrack {
-                track: store.get().project.tracks[placement.track_id].clone(),
+                track: store.get().project.tracks[placement.track_id as usize].clone(),
                 placement: placement.clone(),
             })
             .collect();
-        let placed_track_ids: Vec<usize> = placed_tracks
+        let placed_track_ids: Vec<u32> = placed_tracks
             .iter()
             .map(|placed_track| placed_track.placement.track_id)
             .collect();
@@ -97,7 +97,7 @@ impl SequencerObject<PlacedTrack> for PlacedTrack {
 
     fn y_action(&self, y: f32, _range: Rect) -> Option<Action> {
         // TODO implement multiple tracks.
-        Some(Action::SetTrackPlacementTrackId(y as usize))
+        Some(Action::SetUint(UintField::TrackId, y as u32))
     }
 
     fn resize_action(&self, x: f32, _range: Rect) -> Option<Action> {
