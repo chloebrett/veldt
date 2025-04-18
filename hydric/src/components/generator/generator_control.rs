@@ -1,4 +1,4 @@
-use super::simple_wave_control;
+use super::{simple_wave_control, subsynth_control};
 use egui::Ui;
 use shared::model::GeneratorType;
 use state::{Action, Selector, Store};
@@ -15,6 +15,8 @@ pub fn generator_control(store: &Store, ui: &mut Ui, generator_index: usize) {
             simple_wave_control(&config, dispatch, on_release, ui)
         }
         GeneratorType::Noise { .. } => todo!(),
-        GeneratorType::SubSynth { .. } => todo!(),
+        GeneratorType::SubSynth { config } => {
+            subsynth_control(&config, dispatch, on_release, ui)
+        },
     };
 }
