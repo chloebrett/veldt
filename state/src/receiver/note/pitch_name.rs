@@ -5,15 +5,15 @@ use shared::model::PitchName;
 impl ActionReceiver for PitchName {
     fn apply(&mut self, action: &Action) -> Option<Action> {
         Some(match action {
-            Action::SetNoteScaleValue(new_note) => {
+            Action::SetScaleValue(new_note) => {
                 let prev = self.scale_value;
                 self.scale_value = *new_note;
-                Action::SetNoteScaleValue(prev)
+                Action::SetScaleValue(prev)
             }
-            Action::SetNoteOctave(octave) => {
+            Action::SetOctave(octave) => {
                 let prev = self.octave;
                 self.octave = *octave;
-                Action::SetNoteOctave(prev)
+                Action::SetOctave(prev)
             }
             _ => return None,
         })

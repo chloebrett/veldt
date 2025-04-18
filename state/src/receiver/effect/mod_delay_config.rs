@@ -23,10 +23,10 @@ impl ActionReceiver for ModDelayConfig {
                 self.freq = *freq;
                 Action::SetFloat(FloatField::LfoFreq, prev)
             }
-            Action::SetModDelayLfoType(lfo_type) => {
+            Action::SetWave(lfo_type) => {
                 let prev = self.lfo_type;
                 self.lfo_type = *lfo_type;
-                Action::SetModDelayLfoType(prev)
+                Action::SetWave(prev)
             }
             _ => return None,
         })

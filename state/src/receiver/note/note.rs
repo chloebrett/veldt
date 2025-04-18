@@ -9,10 +9,10 @@ impl ActionReceiver for Note {
         }
 
         Some(match action {
-            Action::SetNotePitchName(pitch_name) => {
+            Action::SetPitchName(pitch_name) => {
                 let prev = self.pitch_name;
                 self.pitch_name = *pitch_name;
-                Action::SetNotePitchName(prev)
+                Action::SetPitchName(prev)
             }
             Action::SetFloat(FloatField::Duration, duration) => {
                 let prev = self.beats;

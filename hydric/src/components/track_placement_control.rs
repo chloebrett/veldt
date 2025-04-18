@@ -55,7 +55,7 @@ pub fn track_placement_control(store: &Store, ui: &mut Ui) {
                         } else {
                             None
                         };
-                        Action::SetTrackPlacementClippedDuration(clipped_duration)
+                        Action::SetClippedDuration(clipped_duration)
                     })
                 },
                 0.0..=max_note_length as f64,
