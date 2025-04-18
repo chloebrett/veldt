@@ -5,7 +5,7 @@ use super::{
 use crate::consts::SAMPLE_RATE;
 use crate::effect::eq_filter;
 use dasp_frame::Stereo;
-use dasp_graph::{BoxedNodeSend, Buffer, Node, NodeData, node::SumBuffers};
+use dasp_graph::{BoxedNodeSend, Buffer, Node, NodeData, node::Sum};
 use petgraph::stable_graph::NodeIndex;
 use shared::model::{Effect, EffectInstance};
 
@@ -24,8 +24,8 @@ pub struct RenderGraph {
 impl Default for RenderGraph {
     fn default() -> Self {
         let mut graph = make_graph();
-        // Set a Buffer Summer as output all inputs on the graph.
-        let output_node_index = graph.add_node(NodeData::new2(BoxedNodeSend::new(SumBuffers {})));
+        // Set a Sum node as output to add inputs on the graph.
+        let output_node_index = graph.add_node(NodeData::new2(BoxedNodeSend::new(Sum {})));
         RenderGraph {
             graph,
             sample_count: 0,
@@ -38,6 +38,24 @@ impl Default for RenderGraph {
 }
 
 impl RenderGraph {
+    // Add node with edge directed to graph output.
+    pub fn add_node(&mut self, node: impl Node + 'static + Send) {
+        let node_index = self
+            .graph
+            .add_node(NodeData::new2(BoxedNodeSend::new(node)));
+        self.graph.add_edge(node_index, self.output_node_index, ());
+    }
+
+    // Add node and set as graph output.
+    pub fn add_output_node(&mut self, node: impl Node + 'static + Send) {
+        let node_index = self
+            .graph
+            .add_node(NodeData::new2(BoxedNodeSend::new(node)));
+        self.graph.add_edge(self.output_node_index, node_index, ());
+        // Set node as new output
+        self.output_node_index = node_index
+    }
+
     pub fn add_generator(&mut self, node: impl Node + 'static + Send, sample_count: usize) {
         let node_index = self
             .graph
@@ -48,23 +66,14 @@ impl RenderGraph {
         self.graph.add_edge(node_index, self.output_node_index, ());
     }
 
-    pub fn add_node(&mut self, node: impl Node + 'static + Send) {
-        let node_index = self
-            .graph
-            .add_node(NodeData::new2(BoxedNodeSend::new(node)));
-        self.graph.add_edge(node_index, self.output_node_index, ());
-    }
-
-    pub fn add_output_node(&mut self, node: impl Node + 'static + Send) {
-        let node_index = self
-            .graph
-            .add_node(NodeData::new2(BoxedNodeSend::new(node)));
-        self.graph.add_edge(self.output_node_index, node_index, ());
-        // Set node as new output
-        self.output_node_index = node_index
-    }
-
-    pub fn add_effect_with_mixer(&mut self, effect: EffectInstance, generator_index: usize) {
+    // Add node with Effect and Mixer.
+    // If a Generator index is passed it will connect generator to effects.
+    // Else Effects and Mixer will be added to the end of the graph.
+    pub fn add_effect_with_mixer(
+        &mut self,
+        effect: EffectInstance,
+        generator_index: Option<usize>,
+    ) {
         let effect_node = match effect.effect {
             Effect::SimpleEq { config } => BoxedNodeSend::new(EqNode {
                 filter_left: eq_filter(&config),
@@ -87,14 +96,20 @@ impl RenderGraph {
             mute: effect.meta.mute,
         };
 
-        let dry = *self
-            .generator_indexes
-            .get(generator_index)
-            .expect("Should have been a generator on the graph with this index.");
         let effect = self.graph.add_node(NodeData::new2(effect_node));
         let mixer = self
             .graph
             .add_node(NodeData::new2(BoxedNodeSend::new(mixer_node)));
+
+        // Get dry node from generator index if supplied else effects and mixer are added to output of graph.
+        let dry = if let Some(index) = generator_index {
+            *self
+                .generator_indexes
+                .get(index)
+                .expect("Should have been a generator on the graph with this index.")
+        } else {
+            self.output_node_index
+        };
 
         // Route the signal like this:
         // dry --|
@@ -112,11 +127,18 @@ impl RenderGraph {
         self.graph.add_edge(effect, mixer, ());
         self.graph.add_edge(dry, mixer, ());
 
-        // Conect to output summer
-        self.graph.add_edge(mixer, self.output_node_index, ());
+        // Disconnected direct edge from generator to output.
         if let Some(edge) = self.graph.find_edge(dry, self.output_node_index) {
             self.graph.remove_edge(edge);
         };
+
+        // If no generator index was supplied set mixer as output
+        // Else connect to output
+        if generator_index.is_none() {
+            self.output_node_index = mixer
+        } else {
+            self.graph.add_edge(mixer, self.output_node_index, ());
+        }
     }
 
     /// Creates a graph that plays the buffer contained in a Vec.
