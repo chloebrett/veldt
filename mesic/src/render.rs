@@ -29,7 +29,7 @@ pub fn render(project: &Project) -> RenderGraph {
         // TODO allow multiple effects
         let mixer_channel = &project.mixer[0];
         for effect in &mixer_channel.effects {
-            render_graph.add_effect_with_mixer(effect.clone(), Some(index));
+            render_graph.add_generator_effect_with_mixer(effect.clone(), index);
         }
     }
 

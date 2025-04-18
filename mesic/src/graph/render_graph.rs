@@ -25,7 +25,7 @@ impl Default for RenderGraph {
     fn default() -> Self {
         let mut graph = make_graph();
         // Set a Sum node as output to add inputs on the graph.
-        let output_node_index = graph.add_node(NodeData::new2(BoxedNodeSend::new(Sum {})));
+        let output_node_index = graph.add_node(NodeData::new2(BoxedNodeSend::new(Sum)));
         RenderGraph {
             graph,
             sample_count: 0,
@@ -66,14 +66,31 @@ impl RenderGraph {
         self.graph.add_edge(node_index, self.output_node_index, ());
     }
 
-    // Add node with Effect and Mixer.
-    // If a Generator index is passed it will connect generator to effects.
-    // Else Effects and Mixer will be added to the end of the graph.
-    pub fn add_effect_with_mixer(
+    pub fn add_generator_effect_with_mixer(
         &mut self,
         effect: EffectInstance,
-        generator_index: Option<usize>,
+        generator_index: usize,
     ) {
+        let dry = *self
+            .generator_indexes
+            .get(generator_index)
+            .expect("Should be a generator node at this index.");
+        let mixer = self.add_effect_with_mixer(effect, dry);
+        // Disconnected direct edge from generator to output.
+        if let Some(edge) = self.graph.find_edge(dry, self.output_node_index) {
+            self.graph.remove_edge(edge);
+        };
+        self.graph.add_edge(mixer, self.output_node_index, ());
+        self.output_node_index = mixer
+    }
+
+    pub fn add_master_effect_with_mixer(&mut self, effect: EffectInstance) {
+        let dry = self.output_node_index;
+        let mixer = self.add_effect_with_mixer(effect, dry);
+        self.output_node_index = mixer;
+    }
+
+    fn add_effect_with_mixer(&mut self, effect: EffectInstance, dry: NodeIndex) -> NodeIndex {
         let effect_node = match effect.effect {
             Effect::SimpleEq { config } => BoxedNodeSend::new(EqNode {
                 filter_left: eq_filter(&config),
@@ -101,16 +118,6 @@ impl RenderGraph {
             .graph
             .add_node(NodeData::new2(BoxedNodeSend::new(mixer_node)));
 
-        // Get dry node from generator index if supplied else effects and mixer are added to output of graph.
-        let dry = if let Some(index) = generator_index {
-            *self
-                .generator_indexes
-                .get(index)
-                .expect("Should have been a generator on the graph with this index.")
-        } else {
-            self.output_node_index
-        };
-
         // Route the signal like this:
         // dry --|
         //  |    |
@@ -126,19 +133,7 @@ impl RenderGraph {
         // inverted!
         self.graph.add_edge(effect, mixer, ());
         self.graph.add_edge(dry, mixer, ());
-
-        // Disconnected direct edge from generator to output.
-        if let Some(edge) = self.graph.find_edge(dry, self.output_node_index) {
-            self.graph.remove_edge(edge);
-        };
-
-        // If no generator index was supplied set mixer as output
-        // Else connect to output
-        if generator_index.is_none() {
-            self.output_node_index = mixer
-        } else {
-            self.graph.add_edge(mixer, self.output_node_index, ());
-        }
+        mixer
     }
 
     /// Creates a graph that plays the buffer contained in a Vec.
