@@ -17,7 +17,7 @@ pub fn generators_control(ctx: &egui::Context, window_state: &mut WindowState, s
         .show(ctx, |ui| {
             for generator_index in 0..generators.len() {
                 let sel = Selector::Generator(generator_index);
-                let on_release = || store.dispatchr(Action::Release);
+                let on_release = || store.(Action::Release);
 
                 let generator = &generators[generator_index];
                 let label = match &generator.kind {
@@ -31,6 +31,13 @@ pub fn generators_control(ctx: &egui::Context, window_state: &mut WindowState, s
                 let text = if *show { "Hide" } else { "Show" };
                 if ui.button(text).clicked() {
                     *show = !*show;
+                }
+
+                if generators.len() > 1 && ui.button("Delete").clicked() {
+                    store.(Action::DeleteChild(IndexField::generators(
+                        sel,
+                    )));
+                    break;
                 }
 
                 let meta = generator.meta.clone();
