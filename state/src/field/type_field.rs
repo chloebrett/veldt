@@ -1,5 +1,5 @@
 use shared::action_proto::{
-    IndexFieldProto, TypeFieldProto, index_field_proto::Kind as IndexFieldKind,
+    TypeFieldProto,
     type_field_proto::Kind as TypeFieldKind,
 };
 use shared::model::{
@@ -9,41 +9,6 @@ use shared::model::{
 use shared::pmodel::{
     AdsrEnvelopeProto, AntiAliasingModeProto, EqTypeProto, ScaleProto, WaveTypeProto,
 };
-use strum::{Display, EnumString};
-
-/// Fields of type f32.
-/// Used to distinguish *which* field of this type is being referred to.
-#[derive(EnumString, Display, PartialEq, Clone, Debug)]
-pub enum FloatField {
-    Bpm,
-    Volume,
-    Offset,
-    Duration,
-    Pan,
-    Detune,
-    DelayMs,
-    Wet,
-    Fc,
-    Q,
-    Gain,
-    Threshold,
-    AttackMs,
-    ReleaseMs,
-    Ratio,
-    LfoFreq,
-    Feedback,
-}
-
-/// Fields of type u32.
-/// Used to distinguish *which* field of this type is being referred to.
-#[derive(EnumString, Display, PartialEq, Clone, Debug)]
-pub enum UintField {
-    OscCount,
-    OversampleFactor,
-    MinDepth,
-    MaxDepth,
-    TrackId,
-}
 
 /// Fields of various types.
 /// Used to distinguish *which* field of this type is being referred to,
@@ -141,43 +106,6 @@ impl From<TypeField> for TypeFieldProto {
                 // don't have to keep expanding the proto.
                 TypeField::Mute(it) => TypeFieldKind::Mute(it),
                 TypeField::Octave(it) => TypeFieldKind::Octave(it),
-            }),
-        }
-    }
-}
-
-/// Fields that index into a list.
-/// Used to distinguish *which* index is being referred to, and also contains the index value.
-#[derive(PartialEq, Clone, Debug)]
-pub enum IndexField {
-    Track(usize),
-    PlacedNote(usize),
-    TrackPlacement(usize),
-    Effect(usize),
-    Generator(usize),
-}
-
-impl From<IndexFieldProto> for IndexField {
-    fn from(other: IndexFieldProto) -> Self {
-        match other.kind.unwrap() {
-            IndexFieldKind::Track(it) => IndexField::Track(it as usize),
-            IndexFieldKind::PlacedNote(it) => IndexField::PlacedNote(it as usize),
-            IndexFieldKind::TrackPlacement(it) => IndexField::TrackPlacement(it as usize),
-            IndexFieldKind::Effect(it) => IndexField::Effect(it as usize),
-            IndexFieldKind::Generator(it) => IndexField::Generator(it as usize),
-        }
-    }
-}
-
-impl From<IndexField> for IndexFieldProto {
-    fn from(other: IndexField) -> Self {
-        IndexFieldProto {
-            kind: Some(match other {
-                IndexField::Track(it) => IndexFieldKind::Track(it as u32),
-                IndexField::PlacedNote(it) => IndexFieldKind::PlacedNote(it as u32),
-                IndexField::TrackPlacement(it) => IndexFieldKind::TrackPlacement(it as u32),
-                IndexField::Effect(it) => IndexFieldKind::Effect(it as u32),
-                IndexField::Generator(it) => IndexFieldKind::Generator(it as u32),
             }),
         }
     }

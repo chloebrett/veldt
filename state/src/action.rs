@@ -6,18 +6,19 @@ use std::str::FromStr;
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum Action {
-    // --- MixerSelector ---
-    MoveEffectUp(usize),
-    MoveEffectDown(usize),
-
-    // --- used by several selectors ---
+    // Generic actions which act on multiple entities.
     SetFloat(FloatField, f32),
     SetUint(UintField, u32),
     DeleteChild(IndexField),
     SetChild(TypeField),
     AddChild(TypeField),
 
-    // -- other --
+    // Note: avoid creating new ad hoc action types.
+    // Try to encapsulate them within a generic action type like the ones above.
+    // Perhaps a generic "MoveChild" action could work.
+    MoveEffectUp(usize),
+    MoveEffectDown(usize),
+
     /// Denotes that the mouse has been released from a UI element, finalizing its value.
     /// This is how we know to flatten (in the undo stack) actions that modify floats.
     /// This event is just a marker, it doesn't get passed on to the reducers.
