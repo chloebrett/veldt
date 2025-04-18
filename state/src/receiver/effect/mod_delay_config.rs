@@ -1,11 +1,11 @@
-use super::ActionReceiver;
 use crate::Action;
+use crate::receiver::ActionReceiver;
 use shared::model::ModDelayConfig;
 use std::cmp::{max, min};
 
 impl ActionReceiver for ModDelayConfig {
-    fn apply(&mut self, action: &Action) -> Action {
-        match action {
+    fn apply(&mut self, action: &Action) -> Option<Action> {
+        Some(match action {
             Action::SetModDelayMinDepth(min_depth) => {
                 let prev = self.min_depth;
                 // Prevent min_depth from going above max_depth.
@@ -28,7 +28,7 @@ impl ActionReceiver for ModDelayConfig {
                 self.lfo_type = *lfo_type;
                 Action::SetModDelayLfoType(prev)
             }
-            _ => Action::NonReversible,
-        }
+            _ => return None,
+        })
     }
 }

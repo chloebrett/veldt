@@ -1,10 +1,10 @@
-use super::ActionReceiver;
 use crate::Action;
+use crate::receiver::ActionReceiver;
 use shared::model::CompressorConfig;
 
 impl ActionReceiver for CompressorConfig {
-    fn apply(&mut self, action: &Action) -> Action {
-        match action {
+    fn apply(&mut self, action: &Action) -> Option<Action> {
+        Some(match action {
             Action::SetCompressorThreshold(volume) => {
                 let prev = self.threshold;
                 self.threshold = *volume;
@@ -30,7 +30,7 @@ impl ActionReceiver for CompressorConfig {
                 self.gain = *gain;
                 Action::SetCompressorGain(prev)
             }
-            _ => Action::NonReversible,
-        }
+            _ => return None,
+        })
     }
 }
