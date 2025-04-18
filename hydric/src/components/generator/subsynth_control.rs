@@ -1,7 +1,7 @@
 use crate::widget::{get_set, int_slider, knob, selectable_value};
 use eframe::egui;
 use egui::{Ui, Color32};
-use shared::model::{SubSynthConfig, OscillatorConfig, WaveType};
+use shared::model::{SubSynthConfig, WaveType};
 use state::Action;
 use super::{SubsynthOscillator, OscillatorId};
 
@@ -37,7 +37,7 @@ where
             Color32::from_rgb(119, 167, 43),
             Color32::from_rgba_unmultiplied(147, 175, 100, (0.44 * 255.0) as u8),
         );
-        osc1.show(ui);
+        osc1.show(ui, &dispatch, &on_release);
         
         // Update state and trigger action if changed
         let new_wave_type = osc1.wave_type();
@@ -58,7 +58,7 @@ where
             Color32::from_rgb(246, 83, 192),
             Color32::from_rgba_unmultiplied(212, 132, 170, (0.44 * 255.0) as u8),
         );
-        osc2.show(ui);
+        osc2.show(ui, &dispatch, &on_release);
         
         // Update state and trigger action
         let new_wave_type = osc2.wave_type();
@@ -79,7 +79,7 @@ where
             Color32::from_rgb(227, 172, 84),
             Color32::from_rgba_unmultiplied(215, 171, 53, (0.44 * 255.0) as u8),
         );
-        osc3.show(ui);
+        osc3.show(ui, &dispatch, &on_release);
         
         // Update state and trigger action if changed
         let new_wave_type = osc3.wave_type();
@@ -90,6 +90,6 @@ where
         }
     });
     
-    // Store state for next frame
+    // // Store state for next frame
     ui.ctx().data_mut(|data| data.insert_temp(id, state));
 }
