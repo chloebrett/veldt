@@ -7,7 +7,7 @@ use egui::{
     pos2, vec2,
 };
 use shared::model::{AdsrEnvelope, GeneratorType};
-use state::{Action, Selector, Store};
+use state::{Action, Selector, Store, TypeField};
 
 pub fn envelope_control(store: &Store, ui: &mut Ui, generator_index: usize) {
     let sel = Selector::Generator(generator_index);
@@ -25,7 +25,12 @@ pub fn envelope_control(store: &Store, ui: &mut Ui, generator_index: usize) {
         ui,
         "Attack",
         envelope.attack,
-        |attack| dispatch(Action::SetEnvelope(AdsrEnvelope { attack, ..envelope })),
+        |attack| {
+            dispatch(Action::SetChild(TypeField::Envelope(AdsrEnvelope {
+                attack,
+                ..envelope
+            })))
+        },
         0.0..=1.0,
         on_release,
     );
@@ -33,7 +38,12 @@ pub fn envelope_control(store: &Store, ui: &mut Ui, generator_index: usize) {
         ui,
         "Decay",
         envelope.decay,
-        |decay| dispatch(Action::SetEnvelope(AdsrEnvelope { decay, ..envelope })),
+        |decay| {
+            dispatch(Action::SetChild(TypeField::Envelope(AdsrEnvelope {
+                decay,
+                ..envelope
+            })))
+        },
         0.0..=1.0,
         on_release,
     );
@@ -42,10 +52,10 @@ pub fn envelope_control(store: &Store, ui: &mut Ui, generator_index: usize) {
         "Sustain",
         envelope.sustain,
         |sustain| {
-            dispatch(Action::SetEnvelope(AdsrEnvelope {
+            dispatch(Action::SetChild(TypeField::Envelope(AdsrEnvelope {
                 sustain,
                 ..envelope
-            }))
+            })))
         },
         0.0..=1.0,
         on_release,
@@ -55,10 +65,10 @@ pub fn envelope_control(store: &Store, ui: &mut Ui, generator_index: usize) {
         "Release",
         envelope.release,
         |release| {
-            dispatch(Action::SetEnvelope(AdsrEnvelope {
+            dispatch(Action::SetChild(TypeField::Envelope(AdsrEnvelope {
                 release,
                 ..envelope
-            }))
+            })))
         },
         0.0..=1.0,
         on_release,

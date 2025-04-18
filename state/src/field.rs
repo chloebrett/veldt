@@ -7,8 +7,7 @@ use shared::model::{
     Scale, ScaleValue, Track, TrackPlacement, WaveType,
 };
 use shared::pmodel::{
-    AdsrEnvelopeProto, AntiAliasingModeProto, EqTypeProto,
-    ScaleProto, WaveTypeProto,
+    AdsrEnvelopeProto, AntiAliasingModeProto, EqTypeProto, ScaleProto, WaveTypeProto,
 };
 use strum::{Display, EnumString};
 

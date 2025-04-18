@@ -7,7 +7,7 @@ use shared::{
     model::{Track, TrackPlacement},
     types::Beats,
 };
-use state::{Action, FloatField, Selector, Store, UintField};
+use state::{Action, FloatField, Selector, Store, TypeField, UintField};
 
 pub struct TrackRoll<'a> {
     store: &'a Store,
@@ -53,7 +53,7 @@ impl View for TrackRoll<'_> {
             ui.data_mut(|data| data.insert_temp(track_id, placed_track_ids[index]));
         };
         if ui.button("New track").clicked() {
-            store.dispatchr(Action::AddTrack(default_track));
+            store.dispatchr(Action::AddChild(TypeField::Track(default_track)));
         }
         ui.add(
             Sequencer::new(range, dispatch, on_release, on_click)
@@ -108,7 +108,9 @@ impl SequencerObject<PlacedTrack> for PlacedTrack {
         } else {
             None
         };
-        Some(Action::SetClippedDuration(clipped_duration))
+        Some(Action::SetChild(TypeField::ClippedDuration(
+            clipped_duration,
+        )))
     }
 
     fn shape(&self, range: Rect) -> Shape {

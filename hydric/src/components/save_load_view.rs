@@ -4,7 +4,7 @@ use crate::rpc::{load_project, load_project_list, save_project};
 use crate::view::View;
 use crate::widget::{get_set, selectable_value};
 use egui::Ui;
-use state::{Action, Store};
+use state::{Action, Store, TypeField};
 
 pub struct SaveLoadView<'a> {
     store: &'a Store,
@@ -33,11 +33,13 @@ impl View for SaveLoadView<'_> {
         });
 
         poll(&mut self.async_state.project_list, |list| {
-            self.store.dispatchr(Action::SetProjectList(list.clone()));
+            self.store
+                .dispatchr(Action::SetChild(TypeField::ProjectList(list.clone())));
         });
 
         poll(&mut self.async_state.load_project, |project| {
-            self.store.dispatchr(Action::SetProject(project.clone()));
+            self.store
+                .dispatchr(Action::SetChild(TypeField::Project(project.clone())));
         });
 
         let load_project_name = self.store.get().load_project_name.clone();
@@ -56,7 +58,9 @@ impl View for SaveLoadView<'_> {
                             ui,
                             get_set(load_project_name.clone(), |it| {
                                 if let Some(it) = it {
-                                    self.store.dispatchr(Action::SetLoadProjectName(it));
+                                    self.store.dispatchr(Action::SetChild(
+                                        TypeField::LoadProjectName(it),
+                                    ));
                                 }
                             }),
                             Some(name.clone()),

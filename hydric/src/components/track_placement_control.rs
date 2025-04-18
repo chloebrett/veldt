@@ -3,7 +3,7 @@ use egui::Ui;
 use ordered_float::OrderedFloat;
 use shared::model::{TrackId, TrackPlacement};
 use shared::types::Beats;
-use state::{Action, FloatField, Selector, Store, UintField};
+use state::{Action, FloatField, IndexField, Selector, Store, TypeField, UintField};
 
 pub fn track_placement_control(store: &Store, ui: &mut Ui) {
     let project = &store.get().project;
@@ -55,7 +55,7 @@ pub fn track_placement_control(store: &Store, ui: &mut Ui) {
                         } else {
                             None
                         };
-                        Action::SetClippedDuration(clipped_duration)
+                        Action::SetChild(TypeField::ClippedDuration(clipped_duration))
                     })
                 },
                 0.0..=max_note_length as f64,
@@ -64,17 +64,21 @@ pub fn track_placement_control(store: &Store, ui: &mut Ui) {
         });
 
         if store.get().project.track_placements.len() > 1 && ui.button("Delete").clicked() {
-            store.dispatchr(Action::DeleteTrackPlacement(track_placement_index));
+            store.dispatchr(Action::DeleteChild(IndexField::TrackPlacement(
+                track_placement_index,
+            )));
             break;
         }
     }
 
     if ui.button("New track placement").clicked() {
-        store.dispatchr(Action::AddTrackPlacement(TrackPlacement {
-            track_id: 0 as TrackId,
-            offset: OrderedFloat(0.0 as Beats),
-            clipped_duration: None,
-            visual_placement: 0,
-        }));
+        store.dispatchr(Action::AddChild(TypeField::TrackPlacement(
+            TrackPlacement {
+                track_id: 0 as TrackId,
+                offset: OrderedFloat(0.0 as Beats),
+                clipped_duration: None,
+                visual_placement: 0,
+            },
+        )));
     }
 }

@@ -2,7 +2,7 @@ use crate::components::WindowState;
 use crate::widget::{checkbox, default_window, knob};
 use egui::Pos2;
 use shared::model::GeneratorType;
-use state::{Action, FloatField, Selector, Store};
+use state::{Action, FloatField, Selector, Store, TypeField};
 
 pub fn generators_control(ctx: &egui::Context, window_state: &mut WindowState, store: &Store) {
     let generators = &store.get().project.generators;
@@ -54,7 +54,7 @@ pub fn generators_control(ctx: &egui::Context, window_state: &mut WindowState, s
                 checkbox(
                     ui,
                     meta.mute,
-                    |it| store.dispatch(&sel, Action::SetMute(it)),
+                    |it| store.dispatch(&sel, Action::SetChild(TypeField::Mute(it))),
                     "Mute",
                 );
 

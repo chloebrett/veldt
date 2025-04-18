@@ -9,7 +9,7 @@ use shared::{
     model::{Note, PitchName, PlacedNote, Scale, ScaleValue},
     types::PitchValue,
 };
-use state::{Action, FloatField, Selector, Store};
+use state::{Action, FloatField, Selector, Store, TypeField};
 
 pub struct NoteRoll<'a> {
     store: &'a Store,
@@ -87,7 +87,10 @@ impl View for NoteRoll<'_> {
         let notes = store.get().project.tracks[track_index].notes.clone();
         let white_note_pattern = self.make_white_note_pattern(max_note);
         if ui.button("New note").clicked() {
-            store.dispatch(&Selector::Track(track_index), Action::AddNote(default_note));
+            store.dispatch(
+                &Selector::Track(track_index),
+                Action::AddChild(TypeField::PlacedNote(default_note)),
+            );
         }
         let unclipped_duration = store.get().project.tracks[track_index].unclipped_duration();
         ScrollArea::vertical()
@@ -148,9 +151,9 @@ impl SequencerObject<PlacedNote> for PlacedNote {
     }
 
     fn y_action(&self, y: f32, range: Rect) -> Option<Action> {
-        Some(Action::SetPitchName(PitchName::from(
+        Some(Action::SetChild(TypeField::PitchName(PitchName::from(
             (range.bottom() - y) as i32,
-        )))
+        ))))
     }
 
     fn resize_action(&self, x: f32, _range: Rect) -> Option<Action> {
