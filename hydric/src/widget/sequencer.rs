@@ -3,7 +3,6 @@ use egui::{
     Color32, CornerRadius, CursorIcon, Frame, Pos2, Rect, Response, Sense, Shape, Stroke, Ui, Vec2,
     Widget, emath::RectTransform, pos2, vec2,
 };
-use log::info;
 use state::Action;
 
 pub struct Sequencer<T: SequencerObject<T>, F: Fn(usize, Action), G: Fn(), H: Fn(&mut Ui, usize)> {
@@ -164,10 +163,8 @@ impl<T: SequencerObject<T>, F: Fn(usize, Action), G: Fn(), H: Fn(&mut Ui, usize)
         if let Some(drag_pos) = drag_pos {
             let scaled_pos = drag_pos.transform(to_sequencer.inverse()).clamp(
                 pos2(response.rect.transform(to_sequencer.inverse()).left(), 0.0),
-                // Ensure entire rect stays on sequencer.
                 self.range.size().to_pos2(),
             );
-            info!("{}", scaled_pos);
             if let Some(action) = object.resize_action(scaled_pos.x, self.range) {
                 (self.dispatch)(index, action);
                 action_dispatched = true;
