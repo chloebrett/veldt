@@ -85,10 +85,11 @@ impl<T: SequencerObject<T>, F: Fn(usize, Action), G: Fn(), H: Fn(&mut Ui, usize)
         let make_movable_rect = |object: &T| object.to_rect(self.range);
         let make_resize_rect = |object: &T| {
             let rect = object.to_rect(self.range);
+            // Width of window where shape can be grabbed to resize.
             let x_size = 0.3;
             Rect::from_min_size(
-                rect.right_top() - vec2(x_size / 2.0, 0.0),
-                vec2(x_size / 2.0, rect.size().y),
+                rect.right_top() - vec2(x_size * 0.5, 0.0),
+                vec2(x_size * 0.5, rect.size().y),
             )
         };
         let to_sequencer = RectTransform::from_to(
