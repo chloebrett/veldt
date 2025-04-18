@@ -1,9 +1,9 @@
 use ordered_float::OrderedFloat;
 use shared::model::{
     AdsrEnvelope, AntiAliasingMode, CompressorConfig, DelayConfig, Effect, EffectInstance,
-    EffectMeta, EqConfig, EqType, FileTreeConfig, FilenameTree, GeneratorInstance, GeneratorMeta,
-    GeneratorType, MixerChannel, ModDelayConfig, ModMatrix, Note, PitchName, PlacedNote, Project,
-    Scale, ScaleValue, SimpleWaveConfig, Track, TrackPlacement, WaveType,
+    EffectMeta, EqConfig, EqType, GeneratorInstance, GeneratorMeta, GeneratorType, MixerChannel,
+    ModDelayConfig, ModMatrix, Note, PitchName, PlacedNote, Project, Scale, ScaleValue,
+    SimpleWaveConfig, Track, TrackPlacement, WaveType, SubSynthConfig, OscillatorConfig, FileTreeConfig, FilenameTree
 };
 use shared::types::Volume;
 
@@ -60,6 +60,40 @@ impl Default for StoreData {
                             anti_aliasing_mode: AntiAliasingMode::Off,
                             oversample_factor: 2,
                         },
+                    },
+                    meta: GeneratorMeta {
+                        volume: 1.0,
+                        mute: false,
+                        pan: 0.0,
+                    },
+                },
+                GeneratorInstance {
+                    id: 1,
+                    kind: GeneratorType::SubSynth {
+                        config: SubSynthConfig{
+                            oscillators: [
+                            OscillatorConfig{
+                                wave: WaveType::Sine,
+                                volume: 1.0,
+                                pan: 0.0,
+                                coarse_detune: 0.0,
+                                fine_detune: 0.0,
+                            }, 
+                            OscillatorConfig{
+                                wave: WaveType::Saw,
+                                volume: 1.0,
+                                pan: 0.0,
+                                coarse_detune: 0.0,
+                                fine_detune: 0.0,
+                            },
+                            OscillatorConfig{
+                                wave: WaveType::Square,
+                                volume: 1.0,
+                                pan: 0.0,
+                                coarse_detune: 0.0,
+                                fine_detune: 0.0,
+                            }]
+                        }
                     },
                     meta: GeneratorMeta {
                         volume: 1.0,
