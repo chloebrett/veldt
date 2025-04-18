@@ -274,14 +274,17 @@ mod tests {
 
     fn make_graph(input: Vec<f32>, config: CompressorConfig) -> RenderGraph {
         let mut graph = RenderGraph::from_vec(input.clone());
-        graph.add_effect_with_mixer(EffectInstance {
-            effect: Effect::SimpleCompressor { config },
-            meta: EffectMeta {
-                id: 0,
-                wet: 1.0,
-                mute: false,
+        graph.add_effect_with_mixer(
+            EffectInstance {
+                effect: Effect::SimpleCompressor { config },
+                meta: EffectMeta {
+                    id: 0,
+                    wet: 1.0,
+                    mute: false,
+                },
             },
-        });
+            None,
+        );
         graph
     }
 
