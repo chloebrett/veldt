@@ -24,6 +24,21 @@ impl<'a, F: Fn(Action), G: Fn()> EnvelopeView<'a, F, G> {
             on_release,
         }
     }
+
+    fn envelope_line(&self) -> Vec<Pos2> {
+        let envelope = &self.envelope;
+        let mut points = vec![];
+        if envelope.attack > 0.0 {
+            points.push(pos2(0.0, 0.0));
+        }
+        points.push(pos2(envelope.attack, 1.0));
+        points.push(pos2(envelope.attack + envelope.decay, envelope.sustain));
+        points.push(pos2(1.0 - envelope.release, envelope.sustain));
+        if envelope.release > 0.0 {
+            points.push(pos2(1.0, 0.0));
+        }
+        points
+    }
 }
 
 impl<F: Fn(Action), G: Fn()> View for EnvelopeView<'_, F, G> {
@@ -94,7 +109,7 @@ impl<F: Fn(Action), G: Fn()> View for EnvelopeView<'_, F, G> {
 
             let thickness = 2.0;
             let shape = Shape::line(
-                envelope_line(&envelope)
+                self.envelope_line()
                     .into_iter()
                     .map(|it| to_screen * it)
                     .collect(),
@@ -103,18 +118,4 @@ impl<F: Fn(Action), G: Fn()> View for EnvelopeView<'_, F, G> {
             ui.painter().extend(vec![shape]);
         });
     }
-}
-
-fn envelope_line(envelope: &AdsrEnvelope) -> Vec<Pos2> {
-    let mut points = vec![];
-    if envelope.attack > 0.0 {
-        points.push(pos2(0.0, 0.0));
-    }
-    points.push(pos2(envelope.attack, 1.0));
-    points.push(pos2(envelope.attack + envelope.decay, envelope.sustain));
-    points.push(pos2(1.0 - envelope.release, envelope.sustain));
-    if envelope.release > 0.0 {
-        points.push(pos2(1.0, 0.0));
-    }
-    points
 }
