@@ -1,4 +1,4 @@
-use super::{mixer_reducer, note_reducer, track_placement_reducer, track_reducer};
+use super::{note_reducer, track_placement_reducer, track_reducer};
 use crate::{Action, Selector, StoreData, receiver::ActionReceiver};
 use log::info;
 
@@ -18,7 +18,8 @@ pub fn root_reducer(data: &mut StoreData, selector: &Selector, action: &Action) 
             effect.apply(action).unwrap_or(Action::NonReversible)
         }
         Selector::Mixer(mixer_index) => {
-            mixer_reducer(&mut data.project.mixer[*mixer_index], action)
+            let mixer_channel = &mut data.project.mixer[*mixer_index];
+            mixer_channel.apply(action).unwrap_or(Action::NonReversible)
         }
         Selector::Note(track_index, note_index) => note_reducer(
             &mut data.project.tracks[*track_index].notes[*note_index],
