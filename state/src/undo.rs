@@ -1,4 +1,4 @@
-use crate::{Action, BroadcastType, Selector, StoreData, broadcast_type, root_reducer};
+use crate::{Action, BroadcastType, Selector, StoreData, broadcast_type, reducer};
 use local_macro::{FromProto, IntoProto};
 use log::info;
 use shared::action_proto::ReversibleActionProto;
@@ -53,7 +53,7 @@ impl UndoStack {
         }
 
         // Run the action, and remember how to reverse it.
-        let reverse = root_reducer(store, selector, action);
+        let reverse = reducer(store, selector, action);
 
         // Discard any available redos in the stack.
         if self.index < self.actions.len() {
@@ -155,7 +155,7 @@ impl UndoStack {
             .actions
             .get(self.index - 1)
             .expect("UndoStack index was invalid!");
-        root_reducer(store, &action.selector, &action.reverse);
+        reducer(store, &action.selector, &action.reverse);
         self.index -= 1;
     }
 
@@ -178,7 +178,7 @@ impl UndoStack {
             .actions
             .get(self.index)
             .expect("UndoStack index was invalid!");
-        root_reducer(store, &action.selector, &action.forward);
+        reducer(store, &action.selector, &action.forward);
         self.index += 1;
     }
 }

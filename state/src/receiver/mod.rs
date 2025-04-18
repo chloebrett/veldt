@@ -4,6 +4,8 @@ mod effect;
 mod generator;
 mod mixer_channel;
 mod note;
+mod project;
+mod store_data;
 mod track;
 
 /// A model object that can receive actions.
