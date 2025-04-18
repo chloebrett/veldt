@@ -9,35 +9,35 @@ message ActionProto {
     pmodel.ScaleValueProto set_key = 1;
     pmodel.ScaleProto set_scale = 2;
     string set_project_name = 3;
-    bool set_mute = 6;
-    uint32 delete_note = 7;
-    pmodel.PlacedNoteProto add_note = 8;
-    pmodel.ScaleValueProto set_note_scale_value = 10;
-    pmodel.WaveTypeProto set_wave = 14;
-    uint32 set_osc_count = 15;
-    pmodel.AdsrEnvelopeProto set_envelope = 17;
-    pmodel.AntiAliasingModeProto set_anti_aliasing_mode = 18;
-    int32 set_note_octave = 19;
-    pmodel.PitchNameProto set_note_pitch_name = 20;
-    uint32 set_oversample_factor = 21;
-    uint32 move_effect_up = 22;
-    uint32 move_effect_down = 23;
-    uint32 delete_effect = 24;
+    bool set_mute = 4;
+    uint32 delete_note = 5;
+    pmodel.PlacedNoteProto add_note = 6;
+    pmodel.ScaleValueProto set_note_scale_value = 7;
+    pmodel.WaveTypeProto set_wave = 8;
+    uint32 set_osc_count = 9;
+    pmodel.AdsrEnvelopeProto set_envelope = 10;
+    pmodel.AntiAliasingModeProto set_anti_aliasing_mode = 11;
+    int32 set_note_octave = 12;
+    pmodel.PitchNameProto set_note_pitch_name = 13;
+    uint32 set_oversample_factor = 14;
+    uint32 move_effect_up = 15;
+    uint32 move_effect_down = 16;
+    uint32 delete_effect = 17;
     // Note: this (EffectInstanceProto) might be the largest variant here.
     // Check if this means that every action sent over the wire is this large.
     // If so, maybe consider storing an optional field for large payloads instead (assuming that even helps).
-    pmodel.EffectInstanceProto add_effect = 25;
-    uint32 set_mod_delay_min_depth = 35;
-    uint32 set_mod_delay_max_depth = 36;
-    pmodel.WaveTypeProto set_mod_delay_lfo_type = 38;
-    uint32 set_track_placement_track_id = 39;
-    pmodel.TrackPlacementProto add_track_placement = 41;
-    uint32 delete_track_placement = 42;
-    pmodel.EqTypeProto set_eq_kind = 43;
-    pmodel.FloatOptionProto set_track_placement_clipped_duration = 44;
-    pmodel.TrackProto add_track = 45;
-    uint32 delete_track = 46;
-    SetFloatProto set_float = 47;
+    pmodel.EffectInstanceProto add_effect = 18;
+    uint32 set_mod_delay_min_depth = 19;
+    uint32 set_mod_delay_max_depth = 20;
+    pmodel.WaveTypeProto set_mod_delay_lfo_type = 21;
+    uint32 set_track_placement_track_id = 22;
+    pmodel.TrackPlacementProto add_track_placement = 23;
+    uint32 delete_track_placement = 24;
+    pmodel.EqTypeProto set_eq_kind = 25;
+    pmodel.FloatOptionProto set_track_placement_clipped_duration = 26;
+    pmodel.TrackProto add_track = 27;
+    uint32 delete_track = 28;
+    SetFloatProto set_float = 29;
   }
 }
 
