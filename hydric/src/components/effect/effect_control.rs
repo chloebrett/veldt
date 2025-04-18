@@ -1,4 +1,4 @@
-use super::{CompressorView, DelayView, ModDelayView, eq_control};
+use super::{CompressorView, DelayView, EqView, ModDelayView};
 use crate::components::WindowState;
 use crate::view::View;
 use crate::widget::default_window;
@@ -37,7 +37,7 @@ pub fn effect_control(
         .open(&mut window_state.effects[mixer_index][effect_index])
         .show(ctx, |ui| {
             match &effect.effect {
-                Effect::SimpleEq { config } => eq_control(config, dispatch, on_release, ui),
+                Effect::SimpleEq { config } => EqView::new(config, dispatch, on_release).ui(ui),
                 Effect::SimpleDelay { config } => {
                     DelayView::new(config, dispatch, on_release).ui(ui)
                 }
