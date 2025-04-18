@@ -7,6 +7,7 @@ mod lhp_first_order;
 mod lhp_second_order;
 mod lhp_second_order_lr;
 mod low_high;
+mod parametric_constant_second_order;
 mod parametric_second_order;
 mod resonator_sa;
 mod resonator_simple;
@@ -21,6 +22,7 @@ use lhp_first_order::*;
 use lhp_second_order::*;
 use lhp_second_order_lr::*;
 use low_high::LowHigh;
+use parametric_constant_second_order::*;
 use parametric_second_order::*;
 use resonator_sa::*;
 use resonator_simple::*;
@@ -53,5 +55,6 @@ pub fn eq_filter(config: &EqConfig) -> Box<dyn ApplyFilter + Send> {
         EqType::FirstOrderAllPole => Box::new(first_order_all_pole(config)),
         EqType::LowShelvingFirstOrder => Box::new(shelf_first_order(config, LowHigh::Low)),
         EqType::HighShelvingFirstOrder => Box::new(shelf_first_order(config, LowHigh::High)),
+        EqType::ParametricSecondOrderConstantQ => Box::new(parametric_constant_q(config)),
     }
 }
