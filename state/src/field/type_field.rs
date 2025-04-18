@@ -3,9 +3,7 @@ use shared::model::{
     AdsrEnvelope, AntiAliasingMode, EffectInstance, EqType, PitchName, PlacedNote, Project, Sample,
     Scale, ScaleValue, Track, TrackPlacement, WaveType,
 };
-use shared::pmodel::{
-    AntiAliasingModeProto, EqTypeProto, ScaleProto, WaveTypeProto,
-};
+use shared::pmodel::{AntiAliasingModeProto, EqTypeProto, ScaleProto, WaveTypeProto};
 
 /// Fields of various types.
 /// Used to distinguish *which* field of this type is being referred to,
