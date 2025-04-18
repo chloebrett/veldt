@@ -1,6 +1,6 @@
 use super::{
     SaveLoadView,
-    effect::{effect_control, mixer_control},
+    effect::{EffectWindow, mixer_control},
     generator::{generator_control, generators_control},
     key_control::KeyControl,
     note_control::NoteControl,
@@ -14,6 +14,7 @@ use crate::components::FrameHistory;
 use crate::promise::spawn;
 use crate::rpc::broadcast_actions;
 use crate::rpc::load_project_list;
+use crate::view::WindowView;
 use crate::widget::{default_window, get_set, knob, slider, string_observer};
 use crate::{audio_player::Handle, promise::AsyncResult, view::View};
 use egui::{Id, Pos2};
@@ -21,7 +22,7 @@ use egui::{ScrollArea, scroll_area::ScrollBarVisibility};
 use poll_promise::Promise;
 use shared::model::{GeneratorType, Project, Sample};
 use shared::types::Beats;
-use state::{Action, FloatField, Store, TypeField};
+use state::{Action, FloatField, Selector, Store, TypeField};
 
 /// Container for the various promises launchable by the app.
 #[derive(Default)]
@@ -170,13 +171,18 @@ impl eframe::App for App {
                                 .get(effect_index)
                                 .unwrap_or(&false)
                             {
-                                effect_control(
-                                    ctx,
-                                    &mut self.window_state,
+                                let sel = Selector::Effect(mixer_index, effect_index);
+                                let dispatch = |action| self.store.dispatch(&sel, action);
+                                let on_release = || self.store.dispatchr(Action::Release);
+                                EffectWindow::new(
                                     &self.store,
                                     mixer_index,
                                     effect_index,
-                                );
+                                    &mut self.window_state,
+                                    dispatch,
+                                    on_release,
+                                )
+                                .ui(ctx);
                             }
                         }
                     }
