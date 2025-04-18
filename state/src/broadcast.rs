@@ -24,12 +24,12 @@ pub fn broadcast_type(action: &Action) -> BroadcastType {
             _ => BroadcastType::Immediate,
         },
         Action::AddChild(child) => match child {
+            // TODO: handle sample load/save better. Currently this could mean clients get out of sync with
+            // each other.
             TypeField::Sample(..) => BroadcastType::Never,
             _ => BroadcastType::Immediate,
         },
         Action::DeleteChild(..) => BroadcastType::Immediate,
-        // TODO: handle sample load/save better. Currently this could mean clients get out of sync with
-        // each other.
         Action::MoveEffectUp(..) => BroadcastType::Immediate,
         Action::MoveEffectDown(..) => BroadcastType::Immediate,
         Action::Release => BroadcastType::Never,

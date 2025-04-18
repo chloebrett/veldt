@@ -6,7 +6,7 @@ use std::str::FromStr;
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum Action {
-    // Generic actions which act on multiple entities.
+    // Generic actions which act generically on entities.
     SetFloat(FloatField, f32),
     SetUint(UintField, u32),
     DeleteChild(IndexField),
