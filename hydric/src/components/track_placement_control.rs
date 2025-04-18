@@ -3,7 +3,7 @@ use egui::Ui;
 use ordered_float::OrderedFloat;
 use shared::model::{TrackId, TrackPlacement};
 use shared::types::Beats;
-use state::{Action, Selector, Store};
+use state::{Action, FloatField, Selector, Store};
 
 pub fn track_placement_control(store: &Store, ui: &mut Ui) {
     let project = &store.get().project;
@@ -33,7 +33,7 @@ pub fn track_placement_control(store: &Store, ui: &mut Ui) {
             ui,
             "Start position",
             offset,
-            |it| store.dispatch(&sel, Action::SetTrackPlacementOffset(it as Beats)),
+            |it| store.dispatch(&sel, Action::SetFloat(FloatField::Offset, it as Beats)),
             0.0..=16.0,
             on_release,
         );

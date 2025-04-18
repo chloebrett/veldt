@@ -1,7 +1,7 @@
 use crate::widget::{get_set, int_slider, knob, selectable_value};
 use egui::Ui;
 use shared::model::{AntiAliasingMode, SimpleWaveConfig, WaveType};
-use state::Action;
+use state::{Action, FloatField};
 use strum::IntoEnumIterator;
 
 pub fn simple_wave_control<F, G>(config: &SimpleWaveConfig, dispatch: F, on_release: G, ui: &mut Ui)
@@ -34,7 +34,7 @@ where
         ui,
         "Osc detune",
         config.detune_cents,
-        |it| dispatch(Action::SetDetuneCents(it)),
+        |it| dispatch(Action::SetFloat(FloatField::Detune, it)),
         0.0..=100.0,
         &on_release,
     );

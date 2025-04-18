@@ -1,7 +1,7 @@
 use crate::widget::knob;
 use egui::Ui;
 use shared::model::DelayConfig;
-use state::Action;
+use state::{Action, FloatField};
 
 pub fn delay_control<F, G>(config: &DelayConfig, dispatch: F, on_release: G, ui: &mut Ui)
 where
@@ -12,7 +12,7 @@ where
         ui,
         "Delay ms",
         config.delay_ms,
-        |it| dispatch(Action::SetDelayMs(it)),
+        |it| dispatch(Action::SetFloat(FloatField::DelayMs, it)),
         1.0..=1000.0,
         &on_release,
     );
@@ -20,7 +20,7 @@ where
         ui,
         "Feedback",
         config.feedback,
-        |it| dispatch(Action::SetDelayFeedback(it)),
+        |it| dispatch(Action::SetFloat(FloatField::Feedback, it)),
         0.0..=0.99,
         &on_release,
     );

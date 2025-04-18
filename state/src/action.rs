@@ -193,6 +193,10 @@ impl From<Action> for ActionProto {
                 Action::SetEqKind(it) => ActionKind::SetEqKind(EqTypeProto::from(it).into()),
                 Action::AddTrack(it) => ActionKind::AddTrack(it.into()),
                 Action::DeleteTrack(it) => ActionKind::DeleteTrack(it as u32),
+                Action::SetFloat(key, value) => ActionKind::SetFloat(SetFloatProto {
+                    key: key.to_string(),
+                    value,
+                }),
 
                 // Non-serializable actions
                 Action::Release => panic!(),
@@ -201,10 +205,6 @@ impl From<Action> for ActionProto {
                 Action::SetProject(_) => panic!(),
                 Action::SetLoadProjectName(_) => panic!(),
                 Action::AddSample(_) => panic!(),
-                Action::SetFloat(key, value) => ActionKind::SetFloat(SetFloatProto {
-                    key: key.to_string(),
-                    value,
-                }),
             }),
         }
     }

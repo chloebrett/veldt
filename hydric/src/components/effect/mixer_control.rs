@@ -3,7 +3,7 @@ use crate::components::WindowState;
 use crate::widget::{checkbox, default_window, knob};
 use egui::Pos2;
 use shared::model::{Effect, EffectInstance, EffectMeta};
-use state::{Action, Selector, Store};
+use state::{Action, FloatField, Selector, Store};
 use strum::IntoEnumIterator;
 
 pub fn mixer_control(ctx: &egui::Context, window_state: &mut WindowState, store: &Store) {
@@ -38,7 +38,7 @@ pub fn mixer_control(ctx: &egui::Context, window_state: &mut WindowState, store:
                     ui,
                     "Wet",
                     meta.wet,
-                    |it| store.dispatch(&effect_sel, Action::SetWet(it)),
+                    |it| store.dispatch(&effect_sel, Action::SetFloat(FloatField::Wet, it)),
                     0.0..=1.0,
                     on_release,
                 );
