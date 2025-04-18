@@ -1,3 +1,3 @@
 mod note;
 mod pitch_name;
-pub mod placed_note;
+mod placed_note;

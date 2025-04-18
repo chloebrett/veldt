@@ -4,17 +4,11 @@ use shared::model::Note;
 
 impl ActionReceiver for Note {
     fn apply(&mut self, action: &Action) -> Option<Action> {
+        if let Some(undo) = self.pitch_name.apply(action) {
+            return Some(undo);
+        }
+
         Some(match action {
-            Action::SetNoteScaleValue(new_note) => {
-                let prev = self.pitch_name.scale_value;
-                self.pitch_name.scale_value = *new_note;
-                Action::SetNoteScaleValue(prev)
-            }
-            Action::SetNoteOctave(octave) => {
-                let prev = self.pitch_name.octave;
-                self.pitch_name.octave = *octave;
-                Action::SetNoteOctave(prev)
-            }
             Action::SetNotePitchName(pitch_name) => {
                 let prev = self.pitch_name;
                 self.pitch_name = *pitch_name;
