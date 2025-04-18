@@ -1,5 +1,5 @@
 use super::effect_name;
-use crate::components::WindowState;
+use crate::WindowState;
 use crate::view::WindowView;
 use crate::widget::{checkbox, default_window, knob};
 use egui::{Context, Pos2};

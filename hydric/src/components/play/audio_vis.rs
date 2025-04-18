@@ -1,4 +1,4 @@
-use crate::components::AudioState;
+use crate::AudioState;
 use chrono::TimeDelta;
 use egui::{Color32, Rect, Ui, containers::Frame, emath, epaint, epaint::PathStroke, pos2, vec2};
 use mesic::SAMPLE_RATE;

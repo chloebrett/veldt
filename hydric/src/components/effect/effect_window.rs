@@ -1,5 +1,5 @@
 use super::{CompressorView, DelayView, EqView, ModDelayView};
-use crate::components::WindowState;
+use crate::WindowState;
 use crate::view::{View, WindowView};
 use crate::widget::default_window;
 use egui::{Context, Pos2};

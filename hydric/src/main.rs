@@ -2,12 +2,14 @@ mod audio_player;
 mod components;
 mod promise;
 mod rpc;
+mod state;
 mod transform;
 mod view;
 mod widget;
 
 use crate::components::App;
 use eframe::web_sys;
+use state::*;
 
 fn main() {
     use eframe::wasm_bindgen::JsCast as _;
