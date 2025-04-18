@@ -1,7 +1,7 @@
 use crate::widget::{get_set, int_slider, knob, selectable_value};
 use egui::Ui;
 use shared::model::{AntiAliasingMode, SimpleWaveConfig, WaveType};
-use state::{Action, FloatField};
+use state::{Action, FloatField, UintField};
 use strum::IntoEnumIterator;
 
 pub fn simple_wave_control<F, G>(config: &SimpleWaveConfig, dispatch: F, on_release: G, ui: &mut Ui)
@@ -26,7 +26,7 @@ where
         ui,
         "Unison",
         config.osc_count as f64,
-        |it| dispatch(Action::SetOscCount(it as u32)),
+        |it| dispatch(Action::SetUint(UintField::OscCount, it as u32)),
         1..=24,
         &on_release,
     );
@@ -60,7 +60,7 @@ where
             ui,
             "Oversample factor",
             config.oversample_factor as f64,
-            |it| dispatch(Action::SetOversampleFactor(it as u32)),
+            |it| dispatch(Action::SetUint(UintField::OversampleFactor, it as u32)),
             2..=10,
             &on_release,
         );

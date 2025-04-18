@@ -3,7 +3,7 @@ use egui::Ui;
 use ordered_float::OrderedFloat;
 use shared::model::{TrackId, TrackPlacement};
 use shared::types::Beats;
-use state::{Action, FloatField, Selector, Store};
+use state::{Action, FloatField, Selector, Store, UintField};
 
 pub fn track_placement_control(store: &Store, ui: &mut Ui) {
     let project = &store.get().project;
@@ -20,9 +20,9 @@ pub fn track_placement_control(store: &Store, ui: &mut Ui) {
                     selectable_value(
                         ui,
                         get_set(&placement.track_id, |it| {
-                            store.dispatch(&sel, Action::SetTrackPlacementTrackId(*it))
+                            store.dispatch(&sel, Action::SetUint(UintField::TrackId, *it))
                         }),
-                        &track_index,
+                        &(track_index as u32),
                         track_index.to_string(),
                     );
                 }
@@ -38,7 +38,8 @@ pub fn track_placement_control(store: &Store, ui: &mut Ui) {
             on_release,
         );
 
-        let max_note_length = *store.get().project.tracks[placement.track_id].unclipped_duration();
+        let max_note_length =
+            *store.get().project.tracks[placement.track_id as usize].unclipped_duration();
         let duration = *placement
             .clipped_duration
             .unwrap_or(OrderedFloat(max_note_length)) as f64;

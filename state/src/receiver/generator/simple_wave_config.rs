@@ -1,5 +1,5 @@
 use crate::receiver::ActionReceiver;
-use crate::{Action, FloatField};
+use crate::{Action, FloatField, UintField};
 use shared::model::SimpleWaveConfig;
 
 impl ActionReceiver for SimpleWaveConfig {
@@ -10,10 +10,10 @@ impl ActionReceiver for SimpleWaveConfig {
                 self.wave = *wave;
                 Action::SetWave(prev)
             }
-            Action::SetOscCount(osc_count) => {
+            Action::SetUint(UintField::OscCount, osc_count) => {
                 let prev = self.osc_count;
                 self.osc_count = *osc_count;
-                Action::SetOscCount(prev)
+                Action::SetUint(UintField::OscCount, prev)
             }
             Action::SetFloat(FloatField::Detune, detune_cents) => {
                 let prev = self.detune_cents;
@@ -46,10 +46,10 @@ impl ActionReceiver for SimpleWaveConfig {
                 self.anti_aliasing_mode = *mode;
                 Action::SetAntiAliasingMode(prev)
             }
-            Action::SetOversampleFactor(factor) => {
+            Action::SetUint(UintField::OversampleFactor, factor) => {
                 let prev = self.oversample_factor;
                 self.oversample_factor = *factor;
-                Action::SetOversampleFactor(prev)
+                Action::SetUint(UintField::OversampleFactor, prev)
             }
             _ => return None,
         })

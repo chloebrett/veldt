@@ -1,7 +1,9 @@
-use shared::action_proto::{ActionProto, SetFloatProto, action_proto::Kind as ActionKind};
+use shared::action_proto::{
+    ActionProto, SetFloatProto, SetUintProto, action_proto::Kind as ActionKind,
+};
 use shared::model::{
     AdsrEnvelope, AntiAliasingMode, EffectInstance, EqType, PitchName, PlacedNote, Project, Sample,
-    Scale, ScaleValue, Track, TrackId, TrackPlacement, WaveType,
+    Scale, ScaleValue, Track, TrackPlacement, WaveType,
 };
 use shared::pmodel::{
     AntiAliasingModeProto, EqTypeProto, PitchNameProto, ScaleProto, WaveTypeProto,
@@ -29,6 +31,15 @@ pub enum FloatField {
     Ratio,
     LfoFreq,
     Feedback,
+}
+
+#[derive(EnumString, Display, PartialEq, Clone, Debug)]
+pub enum UintField {
+    OscCount,
+    OversampleFactor,
+    MinDepth,
+    MaxDepth,
+    TrackId,
 }
 
 #[derive(Debug, Clone, PartialEq)]
@@ -61,10 +72,8 @@ pub enum Action {
     // TODO: rename this to SetVolume, and just differentiate by the selector. (Apply this idea to
     // several action types).
     SetWave(WaveType),
-    SetOscCount(u32),
     SetEnvelope(AdsrEnvelope),
     SetAntiAliasingMode(AntiAliasingMode),
-    SetOversampleFactor(u32),
 
     // --- MixerSelector ---
     MoveEffectUp(usize),
@@ -74,17 +83,15 @@ pub enum Action {
 
     // --- EffectSelector ---
     SetEqKind(EqType),
-    SetModDelayMinDepth(u32),
-    SetModDelayMaxDepth(u32),
     SetModDelayLfoType(WaveType),
 
     // --- TrackPlacementSelector ---
-    SetTrackPlacementTrackId(TrackId),
     SetTrackPlacementClippedDuration(Option<f32>),
 
     // --- used by several selectors ---
     SetMute(bool),
     SetFloat(FloatField, f32),
+    SetUint(UintField, u32),
 
     // -- other --
     /// Denotes that the mouse has been released from a UI element, finalizing its value.
@@ -109,25 +116,18 @@ impl From<ActionProto> for Action {
             ActionKind::DeleteNote(it) => Action::DeleteNote(it as usize),
             ActionKind::SetNoteScaleValue(it) => Action::SetNoteScaleValue(it.into()),
             ActionKind::SetWave(it) => Action::SetWave(WaveTypeProto::try_from(it).unwrap().into()),
-            ActionKind::SetOscCount(it) => Action::SetOscCount(it),
             ActionKind::SetEnvelope(it) => Action::SetEnvelope(it.into()),
             ActionKind::SetAntiAliasingMode(it) => {
                 Action::SetAntiAliasingMode(AntiAliasingModeProto::try_from(it).unwrap().into())
             }
             ActionKind::SetNoteOctave(it) => Action::SetNoteOctave(it),
             ActionKind::SetNotePitchName(it) => Action::SetNotePitchName(it.into()),
-            ActionKind::SetOversampleFactor(it) => Action::SetOversampleFactor(it),
             ActionKind::MoveEffectUp(it) => Action::MoveEffectUp(it as usize),
             ActionKind::MoveEffectDown(it) => Action::MoveEffectDown(it as usize),
             ActionKind::DeleteEffect(it) => Action::DeleteEffect(it as usize),
             ActionKind::AddEffect(it) => Action::AddEffect(it.into()),
-            ActionKind::SetModDelayMinDepth(it) => Action::SetModDelayMinDepth(it),
-            ActionKind::SetModDelayMaxDepth(it) => Action::SetModDelayMaxDepth(it),
             ActionKind::SetModDelayLfoType(it) => {
                 Action::SetModDelayLfoType(WaveTypeProto::try_from(it).unwrap().into())
-            }
-            ActionKind::SetTrackPlacementTrackId(it) => {
-                Action::SetTrackPlacementTrackId(it as usize)
             }
             ActionKind::AddTrackPlacement(it) => Action::AddTrackPlacement(it.into()),
             ActionKind::DeleteTrackPlacement(it) => Action::DeleteTrackPlacement(it as usize),
@@ -142,6 +142,11 @@ impl From<ActionProto> for Action {
             ActionKind::SetFloat(it) => Action::SetFloat(
                 FloatField::from_str(&it.key)
                     .expect(&format!("Expected float field name: {}", it.key)),
+                it.value,
+            ),
+            ActionKind::SetUint(it) => Action::SetUint(
+                UintField::from_str(&it.key)
+                    .expect(&format!("Expected uint field name: {}", it.key)),
                 it.value,
             ),
         }
@@ -163,7 +168,6 @@ impl From<Action> for ActionProto {
                 Action::DeleteNote(it) => ActionKind::DeleteNote(it as u32),
                 Action::SetNoteScaleValue(it) => ActionKind::SetNoteScaleValue(it.into()),
                 Action::SetWave(it) => ActionKind::SetWave(WaveTypeProto::from(it).into()),
-                Action::SetOscCount(it) => ActionKind::SetOscCount(it),
                 Action::SetEnvelope(it) => ActionKind::SetEnvelope(it.into()),
                 Action::SetAntiAliasingMode(it) => {
                     ActionKind::SetAntiAliasingMode(AntiAliasingModeProto::from(it).into())
@@ -172,18 +176,12 @@ impl From<Action> for ActionProto {
                 Action::SetNotePitchName(it) => {
                     ActionKind::SetNotePitchName(PitchNameProto::from(it))
                 }
-                Action::SetOversampleFactor(it) => ActionKind::SetOversampleFactor(it),
                 Action::MoveEffectUp(it) => ActionKind::MoveEffectUp(it as u32),
                 Action::MoveEffectDown(it) => ActionKind::MoveEffectDown(it as u32),
                 Action::DeleteEffect(it) => ActionKind::DeleteEffect(it as u32),
                 Action::AddEffect(it) => ActionKind::AddEffect(it.into()),
-                Action::SetModDelayMinDepth(it) => ActionKind::SetModDelayMinDepth(it),
-                Action::SetModDelayMaxDepth(it) => ActionKind::SetModDelayMaxDepth(it),
                 Action::SetModDelayLfoType(it) => {
                     ActionKind::SetModDelayLfoType(WaveTypeProto::from(it).into())
-                }
-                Action::SetTrackPlacementTrackId(it) => {
-                    ActionKind::SetTrackPlacementTrackId(it as u32)
                 }
                 Action::SetTrackPlacementClippedDuration(it) => {
                     ActionKind::SetTrackPlacementClippedDuration(it.into())
@@ -194,6 +192,10 @@ impl From<Action> for ActionProto {
                 Action::AddTrack(it) => ActionKind::AddTrack(it.into()),
                 Action::DeleteTrack(it) => ActionKind::DeleteTrack(it as u32),
                 Action::SetFloat(key, value) => ActionKind::SetFloat(SetFloatProto {
+                    key: key.to_string(),
+                    value,
+                }),
+                Action::SetUint(key, value) => ActionKind::SetUint(SetUintProto {
                     key: key.to_string(),
                     value,
                 }),

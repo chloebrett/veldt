@@ -14,12 +14,10 @@ message ActionProto {
     pmodel.PlacedNoteProto add_note = 6;
     pmodel.ScaleValueProto set_note_scale_value = 7;
     pmodel.WaveTypeProto set_wave = 8;
-    uint32 set_osc_count = 9;
     pmodel.AdsrEnvelopeProto set_envelope = 10;
     pmodel.AntiAliasingModeProto set_anti_aliasing_mode = 11;
     int32 set_note_octave = 12;
     pmodel.PitchNameProto set_note_pitch_name = 13;
-    uint32 set_oversample_factor = 14;
     uint32 move_effect_up = 15;
     uint32 move_effect_down = 16;
     uint32 delete_effect = 17;
@@ -27,10 +25,7 @@ message ActionProto {
     // Check if this means that every action sent over the wire is this large.
     // If so, maybe consider storing an optional field for large payloads instead (assuming that even helps).
     pmodel.EffectInstanceProto add_effect = 18;
-    uint32 set_mod_delay_min_depth = 19;
-    uint32 set_mod_delay_max_depth = 20;
     pmodel.WaveTypeProto set_mod_delay_lfo_type = 21;
-    uint32 set_track_placement_track_id = 22;
     pmodel.TrackPlacementProto add_track_placement = 23;
     uint32 delete_track_placement = 24;
     pmodel.EqTypeProto set_eq_kind = 25;
@@ -38,12 +33,18 @@ message ActionProto {
     pmodel.TrackProto add_track = 27;
     uint32 delete_track = 28;
     SetFloatProto set_float = 29;
+    SetUintProto set_uint = 30;
   }
 }
 
 message SetFloatProto {
   string key = 1;
   float value = 2;
+}
+
+message SetUintProto {
+  string key = 1;
+  uint32 value = 2;
 }
 
 message ReversibleActionProto {
