@@ -1,0 +1,130 @@
+use shared::action_proto::{
+    IndexFieldProto, TypeFieldProto, index_field_proto::Kind as IndexFieldKind,
+};
+use shared::model::{
+    AdsrEnvelope, AntiAliasingMode, EffectInstance, EqType, PitchName, PlacedNote, Project, Sample,
+    Scale, ScaleValue, Track, TrackPlacement, WaveType,
+};
+use strum::{Display, EnumString};
+
+/// Fields of type f32.
+/// Used to distinguish *which* field of this type is being referred to.
+#[derive(EnumString, Display, PartialEq, Clone, Debug)]
+pub enum FloatField {
+    Bpm,
+    Volume,
+    Offset,
+    Duration,
+    Pan,
+    Detune,
+    DelayMs,
+    Wet,
+    Fc,
+    Q,
+    Gain,
+    Threshold,
+    AttackMs,
+    ReleaseMs,
+    Ratio,
+    LfoFreq,
+    Feedback,
+}
+
+/// Fields of type u32.
+/// Used to distinguish *which* field of this type is being referred to.
+#[derive(EnumString, Display, PartialEq, Clone, Debug)]
+pub enum UintField {
+    OscCount,
+    OversampleFactor,
+    MinDepth,
+    MaxDepth,
+    TrackId,
+}
+
+/// Fields of various types.
+/// Used to distinguish *which* field of this type is being referred to,
+/// and also contains the appropriate value.
+/// TODO: investigate size cost of these, and consider boxing large types e.g. Project.
+#[derive(PartialEq, Clone, Debug)]
+pub enum TypeField {
+    ScaleValue(ScaleValue),
+    Effect(EffectInstance),
+    PitchName(PitchName),
+    Key(ScaleValue),
+    Scale(Scale),
+    TrackPlacement(TrackPlacement),
+    Project(Project),
+    ProjectName(String),
+    ProjectList(Vec<String>),
+    LoadProjectName(String),
+    Sample(Sample),
+    Track(Track),
+    PlacedNote(PlacedNote),
+    Wave(WaveType),
+    Envelope(AdsrEnvelope),
+    AntiAliasingMode(AntiAliasingMode),
+    EqType(EqType),
+    EffectInstance(EffectInstance),
+    ClippedDuration(Option<f32>),
+
+    // Note: if we end up with more bools/primitives, make dedicated types for them so that we
+    // don't have to keep expanding the proto.
+    Mute(bool),
+    Octave(i32),
+}
+
+impl From<TypeFieldProto> for TypeField {
+    fn from(other: TypeFieldProto) -> Self {
+        match other.kind {
+            _ => panic!(),
+        }
+    }
+}
+
+impl From<TypeField> for TypeFieldProto {
+    fn from(other: TypeField) -> Self {
+        match other {
+            TypeField::Project(_) => panic!(),
+            TypeField::ProjectList(_) => panic!(),
+            TypeField::Sample(_) => panic!(),
+            _ => panic!(),
+        }
+    }
+}
+
+/// Fields that index into a list.
+/// Used to distinguish *which* index is being referred to, and also contains the index value.
+#[derive(PartialEq, Clone, Debug)]
+pub enum IndexField {
+    Track(usize),
+    PlacedNote(usize),
+    TrackPlacement(usize),
+    Effect(usize),
+    Generator(usize),
+}
+
+impl From<IndexFieldProto> for IndexField {
+    fn from(other: IndexFieldProto) -> Self {
+        match other.kind.unwrap() {
+            IndexFieldKind::Track(it) => IndexField::Track(it as usize),
+            IndexFieldKind::PlacedNote(it) => IndexField::PlacedNote(it as usize),
+            IndexFieldKind::TrackPlacement(it) => IndexField::TrackPlacement(it as usize),
+            IndexFieldKind::Effect(it) => IndexField::Effect(it as usize),
+            IndexFieldKind::Generator(it) => IndexField::Generator(it as usize),
+        }
+    }
+}
+
+impl From<IndexField> for IndexFieldProto {
+    fn from(other: IndexField) -> Self {
+        IndexFieldProto {
+            kind: Some(match other {
+                IndexField::Track(it) => IndexFieldKind::Track(it as u32),
+                IndexField::PlacedNote(it) => IndexFieldKind::PlacedNote(it as u32),
+                IndexField::TrackPlacement(it) => IndexFieldKind::TrackPlacement(it as u32),
+                IndexField::Effect(it) => IndexFieldKind::Effect(it as u32),
+                IndexField::Generator(it) => IndexFieldKind::Generator(it as u32),
+            }),
+        }
+    }
+}
