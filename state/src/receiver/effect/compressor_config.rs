@@ -25,10 +25,10 @@ impl ActionReceiver for CompressorConfig {
                 self.ratio = *ratio;
                 Action::SetCompressorRatio(prev)
             }
-            Action::SetCompressorGain(gain) => {
+            Action::SetGain(gain) => {
                 let prev = self.gain;
                 self.gain = *gain;
-                Action::SetCompressorGain(prev)
+                Action::SetGain(prev)
             }
             _ => return None,
         })
