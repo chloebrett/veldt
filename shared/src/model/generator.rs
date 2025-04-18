@@ -98,18 +98,28 @@ pub enum NoiseType {
 #[derive(Clone, Debug, PartialEq)]
 pub struct SubSynthConfig {
     pub oscillators: [OscillatorConfig; 3],
+    pub envelopes: [AdsrEnvelope; 3],
 }
 
 impl From<SubSynthConfigProto> for SubSynthConfig {
     fn from(proto: SubSynthConfigProto) -> Self {
-        let vec = proto.oscillators;
+        let osc_vec = proto.oscillators;
         assert_eq!(
-            vec.len(),
+            osc_vec.len(),
             3,
             "SubSynthConfig must have exactly 3 oscillators"
         );
+
+        let env_vec = proto.envelopes;
+        assert_eq!(
+            env_vec.len(),
+            3,
+            "SubSynthConfig must have exactly 3 envelopes"
+        );
+
         SubSynthConfig {
-            oscillators: [vec[0].into(), vec[1].into(), vec[2].into()],
+            oscillators: [osc_vec[0].into(), osc_vec[1].into(), osc_vec[2].into()],
+            envelopes: [env_vec[0].into(), env_vec[1].into(), env_vec[2].into()],
         }
     }
 }
@@ -118,6 +128,7 @@ impl From<SubSynthConfig> for SubSynthConfigProto {
     fn from(config: SubSynthConfig) -> Self {
         SubSynthConfigProto {
             oscillators: map_vec(config.oscillators.to_vec()),
+            envelopes: map_vec(config.envelopes.to_vec()),
         }
     }
 }

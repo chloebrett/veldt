@@ -131,6 +131,7 @@ message SubSynthProto {
 
 message SubSynthConfigProto {
   repeated OscillatorConfigProto oscillators = 1; 
+  repeated AdsrEnvelopeProto envelopes = 2;
 }
 
 message OscillatorConfigProto {
