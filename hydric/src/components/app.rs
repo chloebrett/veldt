@@ -21,7 +21,7 @@ use egui::{ScrollArea, scroll_area::ScrollBarVisibility};
 use poll_promise::Promise;
 use shared::model::{GeneratorType, Project, Sample};
 use shared::types::Beats;
-use state::{Action, Store};
+use state::{Action, FloatField, Store};
 
 /// Container for the various promises launchable by the app.
 #[derive(Default)]
@@ -254,7 +254,10 @@ impl eframe::App for App {
                                 ui,
                                 "Volume",
                                 volume,
-                                |it| self.store.dispatchr(Action::SetVolume(it)),
+                                |it| {
+                                    self.store
+                                        .dispatchr(Action::SetFloat(FloatField::Volume, it))
+                                },
                                 0.0..=1.0,
                                 on_release,
                             );
@@ -264,7 +267,10 @@ impl eframe::App for App {
                                 ui,
                                 "BPM",
                                 bpm,
-                                |it| self.store.dispatchr(Action::SetBpm(it as Beats)),
+                                |it| {
+                                    self.store
+                                        .dispatchr(Action::SetFloat(FloatField::Bpm, it as Beats))
+                                },
                                 20.0..=200.0,
                                 on_release,
                             );

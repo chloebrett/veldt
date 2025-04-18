@@ -1,14 +1,13 @@
+use crate::{
+    view::View,
+    widget::{Sequencer, SequencerObject},
+};
 use egui::{Color32, CornerRadius, Id, Pos2, Rect, Shape, Ui, pos2, vec2};
 use shared::{
     model::{Track, TrackPlacement},
     types::Beats,
 };
-use state::{Action, Selector, Store};
-
-use crate::{
-    view::View,
-    widget::{Sequencer, SequencerObject},
-};
+use state::{Action, FloatField, Selector, Store};
 
 pub struct TrackRoll<'a> {
     store: &'a Store,
@@ -93,7 +92,7 @@ impl SequencerObject<PlacedTrack> for PlacedTrack {
     }
 
     fn x_action(&self, x: f32, range: Rect) -> Option<Action> {
-        Some(Action::SetTrackPlacementOffset(x - range.left()))
+        Some(Action::SetFloat(FloatField::Offset, x - range.left()))
     }
 
     fn y_action(&self, y: f32, _range: Rect) -> Option<Action> {

@@ -2,7 +2,7 @@ use crate::components::WindowState;
 use crate::widget::{checkbox, default_window, knob};
 use egui::Pos2;
 use shared::model::GeneratorType;
-use state::{Action, Selector, Store};
+use state::{Action, FloatField, Selector, Store};
 
 pub fn generators_control(ctx: &egui::Context, window_state: &mut WindowState, store: &Store) {
     let generators = &store.get().project.generators;
@@ -38,7 +38,7 @@ pub fn generators_control(ctx: &egui::Context, window_state: &mut WindowState, s
                     ui,
                     "Volume",
                     meta.volume,
-                    |it| store.dispatch(&sel, Action::SetVolume(it)),
+                    |it| store.dispatch(&sel, Action::SetFloat(FloatField::Volume, it)),
                     0.0..=1.0,
                     on_release,
                 );
@@ -47,7 +47,7 @@ pub fn generators_control(ctx: &egui::Context, window_state: &mut WindowState, s
                     ui,
                     "Pan",
                     meta.pan,
-                    |it| store.dispatch(&sel, Action::SetPan(it)),
+                    |it| store.dispatch(&sel, Action::SetFloat(FloatField::Pan, it)),
                     -1.0..=1.0,
                     on_release,
                 );

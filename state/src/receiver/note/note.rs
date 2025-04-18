@@ -1,5 +1,5 @@
-use crate::Action;
 use crate::receiver::ActionReceiver;
+use crate::{Action, FloatField};
 use shared::model::Note;
 
 impl ActionReceiver for Note {
@@ -14,10 +14,10 @@ impl ActionReceiver for Note {
                 self.pitch_name = *pitch_name;
                 Action::SetNotePitchName(prev)
             }
-            Action::SetNoteDuration(duration) => {
+            Action::SetFloat(FloatField::Duration, duration) => {
                 let prev = self.beats;
                 self.beats = *duration;
-                Action::SetNoteDuration(prev)
+                Action::SetFloat(FloatField::Duration, prev)
             }
             _ => return None,
         })

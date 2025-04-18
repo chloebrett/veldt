@@ -9,77 +9,64 @@ message ActionProto {
     pmodel.ScaleValueProto set_key = 1;
     pmodel.ScaleProto set_scale = 2;
     string set_project_name = 3;
-    float set_bpm = 4;
-    float set_volume = 5;
-    bool set_mute = 6;
-    uint32 delete_note = 7;
-    pmodel.PlacedNoteProto add_note = 8;
-    float set_track_offset = 9;
-    pmodel.ScaleValueProto set_note_scale_value = 10;
-    float set_note_offset = 11;
-    float set_note_duration = 12;
-    float set_pan = 13;
-    pmodel.WaveTypeProto set_wave = 14;
-    uint32 set_osc_count = 15;
-    float set_detune_cents = 16;
-    pmodel.AdsrEnvelopeProto set_envelope = 17;
-    pmodel.AntiAliasingModeProto set_anti_aliasing_mode = 18;
-    int32 set_note_octave = 19;
-    pmodel.PitchNameProto set_note_pitch_name = 20;
-    uint32 set_oversample_factor = 21;
-    uint32 move_effect_up = 22;
-    uint32 move_effect_down = 23;
-    uint32 delete_effect = 24;
+    bool set_mute = 4;
+    uint32 delete_note = 5;
+    pmodel.PlacedNoteProto add_note = 6;
+    pmodel.ScaleValueProto set_note_scale_value = 7;
+    pmodel.WaveTypeProto set_wave = 8;
+    uint32 set_osc_count = 9;
+    pmodel.AdsrEnvelopeProto set_envelope = 10;
+    pmodel.AntiAliasingModeProto set_anti_aliasing_mode = 11;
+    int32 set_note_octave = 12;
+    pmodel.PitchNameProto set_note_pitch_name = 13;
+    uint32 set_oversample_factor = 14;
+    uint32 move_effect_up = 15;
+    uint32 move_effect_down = 16;
+    uint32 delete_effect = 17;
     // Note: this (EffectInstanceProto) might be the largest variant here.
     // Check if this means that every action sent over the wire is this large.
     // If so, maybe consider storing an optional field for large payloads instead (assuming that even helps).
-    pmodel.EffectInstanceProto add_effect = 25;
-    float set_delay_ms = 26;
-    float set_wet = 27;
-    float set_eq_fc = 28;
-    float set_eq_q = 29;
-    float set_gain = 30;
-    float set_compressor_threshold = 31;
-    float set_compressor_attack_ms = 32;
-    float set_compressor_release_ms = 33;
-    float set_compressor_ratio = 34;
-    uint32 set_mod_delay_min_depth = 35;
-    uint32 set_mod_delay_max_depth = 36;
-    float set_mod_delay_lfo_freq = 37;
-    pmodel.WaveTypeProto set_mod_delay_lfo_type = 38;
-    uint32 set_track_placement_track_id = 39;
-    float set_track_placement_offset = 40;
-    pmodel.TrackPlacementProto add_track_placement = 41;
-    uint32 delete_track_placement = 42;
-    pmodel.EqTypeProto set_eq_kind = 43;
-    pmodel.FloatOptionProto set_track_placement_clipped_duration = 44;
-    pmodel.TrackProto add_track = 45;
-    uint32 delete_track = 46;
-    float set_delay_feedback = 47;
+    pmodel.EffectInstanceProto add_effect = 18;
+    uint32 set_mod_delay_min_depth = 19;
+    uint32 set_mod_delay_max_depth = 20;
+    pmodel.WaveTypeProto set_mod_delay_lfo_type = 21;
+    uint32 set_track_placement_track_id = 22;
+    pmodel.TrackPlacementProto add_track_placement = 23;
+    uint32 delete_track_placement = 24;
+    pmodel.EqTypeProto set_eq_kind = 25;
+    pmodel.FloatOptionProto set_track_placement_clipped_duration = 26;
+    pmodel.TrackProto add_track = 27;
+    uint32 delete_track = 28;
+    SetFloatProto set_float = 29;
   }
 }
 
+message SetFloatProto {
+  string key = 1;
+  float value = 2;
+}
+
 message ReversibleActionProto {
-    ActionProto forward = 1;
-    ActionProto reverse = 2;
-    SelectorProto selector = 3;
-    bool is_compacted = 4; // TODO: what to do about this? Don't send over the wire?
+  ActionProto forward = 1;
+  ActionProto reverse = 2;
+  SelectorProto selector = 3;
+  bool is_compacted = 4; // TODO: what to do about this? Don't send over the wire?
 }
 
 message SelectorProto {
   oneof kind {
-      uint32 root = 1; // dummy value
-      uint32 track = 2;
-      IndexPair note = 3;
-      uint32 mixer = 4;
-      IndexPair effect = 5;
-      uint32 generator = 6;
-      uint32 track_placement = 7;
-    }
+    uint32 root = 1; // dummy value
+    uint32 track = 2;
+    IndexPair note = 3;
+    uint32 mixer = 4;
+    IndexPair effect = 5;
+    uint32 generator = 6;
+    uint32 track_placement = 7;
+  }
 
   message IndexPair {
-      uint32 first = 1;
-      uint32 second = 2;
-    }
+    uint32 first = 1;
+    uint32 second = 2;
+  }
 }
 

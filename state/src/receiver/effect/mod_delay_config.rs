@@ -1,5 +1,5 @@
-use crate::Action;
 use crate::receiver::ActionReceiver;
+use crate::{Action, FloatField};
 use shared::model::ModDelayConfig;
 use std::cmp::{max, min};
 
@@ -18,10 +18,10 @@ impl ActionReceiver for ModDelayConfig {
                 self.max_depth = max(*max_depth, self.min_depth);
                 Action::SetModDelayMaxDepth(prev)
             }
-            Action::SetModDelayLfoFreq(freq) => {
+            Action::SetFloat(FloatField::LfoFreq, freq) => {
                 let prev = self.freq;
                 self.freq = *freq;
-                Action::SetModDelayLfoFreq(prev)
+                Action::SetFloat(FloatField::LfoFreq, prev)
             }
             Action::SetModDelayLfoType(lfo_type) => {
                 let prev = self.lfo_type;

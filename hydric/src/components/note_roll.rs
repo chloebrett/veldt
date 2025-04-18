@@ -1,18 +1,15 @@
-use state::{Action, Selector, Store};
-
-use egui::{Color32, CornerRadius, Id, Pos2, Rect, ScrollArea, Shape, Ui, pos2, vec2};
-use shared::{
-    model::{Note, PitchName, PlacedNote, Scale, ScaleValue},
-    types::PitchValue,
-};
-
-use mesic::create_scale_values;
-
 use super::Piano;
 use crate::{
     view::View,
     widget::{Sequencer, SequencerObject},
 };
+use egui::{Color32, CornerRadius, Id, Pos2, Rect, ScrollArea, Shape, Ui, pos2, vec2};
+use mesic::create_scale_values;
+use shared::{
+    model::{Note, PitchName, PlacedNote, Scale, ScaleValue},
+    types::PitchValue,
+};
+use state::{Action, FloatField, Selector, Store};
 
 pub struct NoteRoll<'a> {
     store: &'a Store,
@@ -147,7 +144,7 @@ impl SequencerObject<PlacedNote> for PlacedNote {
     }
 
     fn x_action(&self, x: f32, range: Rect) -> Option<Action> {
-        Some(Action::SetNoteOffset(x - range.left()))
+        Some(Action::SetFloat(FloatField::Offset, x - range.left()))
     }
 
     fn y_action(&self, y: f32, range: Rect) -> Option<Action> {
@@ -158,7 +155,7 @@ impl SequencerObject<PlacedNote> for PlacedNote {
 
     fn resize_action(&self, x: f32, _range: Rect) -> Option<Action> {
         let beats = x - *self.offset;
-        Some(Action::SetNoteDuration(beats))
+        Some(Action::SetFloat(FloatField::Duration, beats))
     }
 
     fn shape(&self, range: Rect) -> egui::Shape {

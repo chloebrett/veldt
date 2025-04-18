@@ -1,7 +1,7 @@
 use crate::widget::{get_set, knob, log_slider, selectable_value};
 use egui::Ui;
 use shared::model::{ModDelayConfig, WaveType};
-use state::Action;
+use state::{Action, FloatField};
 use strum::IntoEnumIterator;
 
 pub fn mod_delay_control<F, G>(config: &ModDelayConfig, dispatch: F, on_release: G, ui: &mut Ui)
@@ -32,7 +32,7 @@ where
         ui,
         "LFO frequency",
         config.freq as f64,
-        |it| dispatch(Action::SetModDelayLfoFreq(it as f32)),
+        |it| dispatch(Action::SetFloat(FloatField::LfoFreq, it as f32)),
         0.1..=100.0,
         &on_release,
     );

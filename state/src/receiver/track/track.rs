@@ -1,5 +1,5 @@
-use crate::Action;
 use crate::receiver::ActionReceiver;
+use crate::{Action, FloatField};
 use ordered_float::OrderedFloat;
 use shared::model::Track;
 
@@ -20,10 +20,10 @@ impl ActionReceiver for Track {
                 self.notes.push(note.clone());
                 Action::DeleteNote(index)
             }
-            Action::SetTrackOffset(offset) => {
+            Action::SetFloat(FloatField::Offset, offset) => {
                 let prev = self.offset;
                 self.offset = OrderedFloat(*offset);
-                Action::SetTrackOffset(*prev)
+                Action::SetFloat(FloatField::Offset, *prev)
             }
             _ => return None,
         })

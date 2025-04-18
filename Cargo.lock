@@ -2836,6 +2836,7 @@ dependencies = [
  "ordered-float",
  "prost",
  "shared",
+ "strum",
  "tonic",
  "tonic-build",
 ]

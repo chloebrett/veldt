@@ -1,5 +1,5 @@
-use crate::Action;
 use crate::receiver::ActionReceiver;
+use crate::{Action, FloatField};
 use shared::model::EqConfig;
 
 impl ActionReceiver for EqConfig {
@@ -10,20 +10,20 @@ impl ActionReceiver for EqConfig {
                 self.kind = kind.clone();
                 Action::SetEqKind(prev)
             }
-            Action::SetEqFc(fc) => {
+            Action::SetFloat(FloatField::Fc, fc) => {
                 let prev = self.fc;
                 self.fc = *fc;
-                Action::SetEqFc(prev)
+                Action::SetFloat(FloatField::Fc, prev)
             }
-            Action::SetEqQ(q) => {
+            Action::SetFloat(FloatField::Q, q) => {
                 let prev = self.q;
                 self.q = *q;
-                Action::SetEqQ(prev)
+                Action::SetFloat(FloatField::Q, prev)
             }
-            Action::SetGain(gain) => {
+            Action::SetFloat(FloatField::Gain, gain) => {
                 let prev = self.gain;
                 self.gain = *gain;
-                Action::SetGain(prev)
+                Action::SetFloat(FloatField::Gain, prev)
             }
             _ => return None,
         })

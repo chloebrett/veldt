@@ -2,7 +2,7 @@ use crate::widget::{get_set, knob, selectable_value};
 use egui::Ui;
 use shared::model::EqConfig;
 use shared::model::EqType;
-use state::Action;
+use state::{Action, FloatField};
 use strum::IntoEnumIterator;
 
 pub fn eq_control<F, G>(config: &EqConfig, dispatch: F, on_release: G, ui: &mut Ui)
@@ -14,7 +14,7 @@ where
         ui,
         "Freq",
         config.fc,
-        |it| dispatch(Action::SetEqFc(it)),
+        |it| dispatch(Action::SetFloat(FloatField::Fc, it)),
         20.0..=20000.0, // TODO: logarithmic
         &on_release,
     );
@@ -23,7 +23,7 @@ where
         ui,
         "Q",
         config.q,
-        |it| dispatch(Action::SetEqQ(it)),
+        |it| dispatch(Action::SetFloat(FloatField::Q, it)),
         0.1..=100.0, // TODO: logarithmic
         &on_release,
     );
@@ -32,7 +32,7 @@ where
         ui,
         "Gain",
         config.gain,
-        |it| dispatch(Action::SetGain(it)),
+        |it| dispatch(Action::SetFloat(FloatField::Gain, it)),
         -60.0..=60.0,
         &on_release,
     );
