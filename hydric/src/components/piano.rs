@@ -1,3 +1,4 @@
+use crate::{transform::Transform, view::View, widget::SequencerObject};
 use egui::{
     Color32, CornerRadius, Frame, Pos2, Rect, Sense, Shape, Stroke, StrokeKind, Ui, Vec2,
     emath::RectTransform, pos2, vec2,
@@ -6,8 +7,6 @@ use shared::{
     model::{Note, PlacedNote, ScaleValue},
     types::PitchValue,
 };
-
-use crate::{transform::Transform, view::View, widget::SequencerObject};
 
 pub struct Piano {
     max_note: PitchValue,

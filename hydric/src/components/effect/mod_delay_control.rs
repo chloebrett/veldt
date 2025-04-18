@@ -1,7 +1,7 @@
 use crate::widget::{get_set, knob, log_slider, selectable_value};
 use egui::Ui;
 use shared::model::{ModDelayConfig, WaveType};
-use state::Action;
+use state::{Action, FloatField, TypeField, UintField};
 use strum::IntoEnumIterator;
 
 pub fn mod_delay_control<F, G>(config: &ModDelayConfig, dispatch: F, on_release: G, ui: &mut Ui)
@@ -15,7 +15,7 @@ where
         ui,
         "Min depth (samples)",
         config.min_depth as f32,
-        |it| dispatch(Action::SetModDelayMinDepth(it as u32)),
+        |it| dispatch(Action::SetUint(UintField::MinDepth, it as u32)),
         0.0..=1_000.0,
         &on_release,
     );
@@ -23,7 +23,7 @@ where
         ui,
         "Max depth (samples)",
         config.max_depth as f32,
-        |it| dispatch(Action::SetModDelayMaxDepth(it as u32)),
+        |it| dispatch(Action::SetUint(UintField::MaxDepth, it as u32)),
         0.0..=1_000.0,
         &on_release,
     );
@@ -32,7 +32,7 @@ where
         ui,
         "LFO frequency",
         config.freq as f64,
-        |it| dispatch(Action::SetModDelayLfoFreq(it as f32)),
+        |it| dispatch(Action::SetFloat(FloatField::LfoFreq, it as f32)),
         0.1..=100.0,
         &on_release,
     );
@@ -44,7 +44,7 @@ where
                 selectable_value(
                     ui,
                     get_set(config.lfo_type, |it| {
-                        dispatch(Action::SetModDelayLfoType(it))
+                        dispatch(Action::SetChild(TypeField::Wave(it)))
                     }),
                     wave,
                     wave.to_string(),

@@ -1,18 +1,15 @@
-use state::{Action, Selector, Store};
-
-use egui::{Color32, CornerRadius, Id, Pos2, Rect, ScrollArea, Shape, Ui, pos2, vec2};
-use shared::{
-    model::{Note, PitchName, PlacedNote, Scale, ScaleValue},
-    types::PitchValue,
-};
-
-use mesic::create_scale_values;
-
 use super::Piano;
 use crate::{
     view::View,
     widget::{Sequencer, SequencerObject},
 };
+use egui::{Color32, CornerRadius, Id, Pos2, Rect, ScrollArea, Shape, Ui, pos2, vec2};
+use mesic::create_scale_values;
+use shared::{
+    model::{Note, PitchName, PlacedNote, Scale, ScaleValue},
+    types::PitchValue,
+};
+use state::{Action, FloatField, Selector, Store, TypeField};
 
 pub struct NoteRoll<'a> {
     store: &'a Store,
@@ -20,7 +17,6 @@ pub struct NoteRoll<'a> {
     min_note: PitchValue,
     max_note: PitchValue,
     offset: f32,
-    bars: f32,
     bar_length: f32,
 }
 
@@ -40,7 +36,6 @@ impl<'a> NoteRoll<'a> {
             }
             .into(),
             offset: 0.0,
-            bars: 4.0,
             bar_length: 4.0,
         }
     }
@@ -77,7 +72,6 @@ impl View for NoteRoll<'_> {
             min_note,
             max_note,
             offset,
-            bars,
             bar_length,
         } = *self;
         let default_note = PlacedNote {
@@ -93,14 +87,24 @@ impl View for NoteRoll<'_> {
         let notes = store.get().project.tracks[track_index].notes.clone();
         let white_note_pattern = self.make_white_note_pattern(max_note);
         if ui.button("New note").clicked() {
-            store.dispatch(&Selector::Track(track_index), Action::AddNote(default_note));
+            store.dispatch(
+                &Selector::Track(track_index),
+                Action::AddChild(TypeField::PlacedNote(default_note)),
+            );
         }
+        let unclipped_duration = store.get().project.tracks[track_index].unclipped_duration();
         ScrollArea::vertical()
             .min_scrolled_height(200.0)
             .show(ui, |ui| {
                 let range = Rect::from_min_max(
                     pos2(offset, min_note as f32 - 1.0),
-                    pos2(bars * bar_length, max_note as f32),
+                    // NoteRoll is at least 1 bar long
+                    // Extends when notes are dragged or set beyond 1 bar.
+                    // Add 0.5 to X as a small buffer after max note.
+                    pos2(
+                        f32::max(bar_length, *unclipped_duration) + 0.5,
+                        max_note as f32,
+                    ),
                 );
                 let dispatch = move |note_index: usize, action: Action| {
                     store.dispatch(&Selector::Note(track_index, note_index), action)
@@ -143,18 +147,18 @@ impl SequencerObject<PlacedNote> for PlacedNote {
     }
 
     fn x_action(&self, x: f32, range: Rect) -> Option<Action> {
-        Some(Action::SetNoteOffset(x - range.left()))
+        Some(Action::SetFloat(FloatField::Offset, x - range.left()))
     }
 
     fn y_action(&self, y: f32, range: Rect) -> Option<Action> {
-        Some(Action::SetNotePitchName(PitchName::from(
+        Some(Action::SetChild(TypeField::PitchName(PitchName::from(
             (range.bottom() - y) as i32,
-        )))
+        ))))
     }
 
     fn resize_action(&self, x: f32, _range: Rect) -> Option<Action> {
         let beats = x - *self.offset;
-        Some(Action::SetNoteDuration(beats))
+        Some(Action::SetFloat(FloatField::Duration, beats))
     }
 
     fn shape(&self, range: Rect) -> egui::Shape {

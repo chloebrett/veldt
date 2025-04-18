@@ -21,7 +21,7 @@ use egui::{ScrollArea, scroll_area::ScrollBarVisibility};
 use poll_promise::Promise;
 use shared::model::{GeneratorType, Project, Sample};
 use shared::types::Beats;
-use state::{Action, Store};
+use state::{Action, FloatField, Store, TypeField};
 
 /// Container for the various promises launchable by the app.
 #[derive(Default)]
@@ -129,7 +129,8 @@ impl eframe::App for App {
                         let project_name = self.store.get().project.name.clone();
                         let mut name_observer = string_observer(
                             get_set(project_name.clone(), |it| {
-                                self.store.dispatchr(Action::SetProjectName(it))
+                                self.store
+                                    .dispatchr(Action::SetChild(TypeField::ProjectName(it)))
                             }),
                             project_name.clone(),
                         );
@@ -254,7 +255,10 @@ impl eframe::App for App {
                                 ui,
                                 "Volume",
                                 volume,
-                                |it| self.store.dispatchr(Action::SetVolume(it)),
+                                |it| {
+                                    self.store
+                                        .dispatchr(Action::SetFloat(FloatField::Volume, it))
+                                },
                                 0.0..=1.0,
                                 on_release,
                             );
@@ -264,7 +268,10 @@ impl eframe::App for App {
                                 ui,
                                 "BPM",
                                 bpm,
-                                |it| self.store.dispatchr(Action::SetBpm(it as Beats)),
+                                |it| {
+                                    self.store
+                                        .dispatchr(Action::SetFloat(FloatField::Bpm, it as Beats))
+                                },
                                 20.0..=200.0,
                                 on_release,
                             );

@@ -1,14 +1,13 @@
+use crate::{
+    view::View,
+    widget::{Sequencer, SequencerObject},
+};
 use egui::{Color32, CornerRadius, Id, Pos2, Rect, Shape, Ui, pos2, vec2};
 use shared::{
     model::{Track, TrackPlacement},
     types::Beats,
 };
-use state::{Action, Selector, Store};
-
-use crate::{
-    view::View,
-    widget::{Sequencer, SequencerObject},
-};
+use state::{Action, FloatField, Selector, Store, TypeField, UintField};
 
 pub struct TrackRoll<'a> {
     store: &'a Store,
@@ -33,11 +32,11 @@ impl View for TrackRoll<'_> {
             .track_placements
             .iter()
             .map(|placement| PlacedTrack {
-                track: store.get().project.tracks[placement.track_id].clone(),
+                track: store.get().project.tracks[placement.track_id as usize].clone(),
                 placement: placement.clone(),
             })
             .collect();
-        let placed_track_ids: Vec<usize> = placed_tracks
+        let placed_track_ids: Vec<u32> = placed_tracks
             .iter()
             .map(|placed_track| placed_track.placement.track_id)
             .collect();
@@ -54,7 +53,7 @@ impl View for TrackRoll<'_> {
             ui.data_mut(|data| data.insert_temp(track_id, placed_track_ids[index]));
         };
         if ui.button("New track").clicked() {
-            store.dispatchr(Action::AddTrack(default_track));
+            store.dispatchr(Action::AddChild(TypeField::Track(default_track)));
         }
         ui.add(
             Sequencer::new(range, dispatch, on_release, on_click)
@@ -93,12 +92,12 @@ impl SequencerObject<PlacedTrack> for PlacedTrack {
     }
 
     fn x_action(&self, x: f32, range: Rect) -> Option<Action> {
-        Some(Action::SetTrackPlacementOffset(x - range.left()))
+        Some(Action::SetFloat(FloatField::Offset, x - range.left()))
     }
 
     fn y_action(&self, y: f32, _range: Rect) -> Option<Action> {
         // TODO implement multiple tracks.
-        Some(Action::SetTrackPlacementTrackId(y as usize))
+        Some(Action::SetUint(UintField::TrackId, y as u32))
     }
 
     fn resize_action(&self, x: f32, _range: Rect) -> Option<Action> {
@@ -109,7 +108,9 @@ impl SequencerObject<PlacedTrack> for PlacedTrack {
         } else {
             None
         };
-        Some(Action::SetTrackPlacementClippedDuration(clipped_duration))
+        Some(Action::SetChild(TypeField::ClippedDuration(
+            clipped_duration,
+        )))
     }
 
     fn shape(&self, range: Rect) -> Shape {

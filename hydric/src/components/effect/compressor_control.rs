@@ -1,7 +1,7 @@
 use crate::widget::knob;
 use egui::Ui;
 use shared::model::CompressorConfig;
-use state::Action;
+use state::{Action, FloatField};
 
 pub fn compressor_control<F, G>(config: &CompressorConfig, dispatch: F, on_release: G, ui: &mut Ui)
 where
@@ -12,7 +12,7 @@ where
         ui,
         "Threshold",
         config.threshold,
-        |it| dispatch(Action::SetCompressorThreshold(it)),
+        |it| dispatch(Action::SetFloat(FloatField::Threshold, it)),
         0.0..=1.0,
         &on_release,
     );
@@ -21,7 +21,7 @@ where
         ui,
         "Attack (ms)",
         config.attack_ms,
-        |it| dispatch(Action::SetCompressorAttackMs(it)),
+        |it| dispatch(Action::SetFloat(FloatField::AttackMs, it)),
         0.0..=1000.0, // TODO: logarithmic
         &on_release,
     );
@@ -30,7 +30,7 @@ where
         ui,
         "Release (ms)",
         config.release_ms,
-        |it| dispatch(Action::SetCompressorReleaseMs(it)),
+        |it| dispatch(Action::SetFloat(FloatField::ReleaseMs, it)),
         0.0..=1000.0, // TODO: logarithmic
         &on_release,
     );
@@ -39,7 +39,7 @@ where
         ui,
         "Ratio",
         config.ratio,
-        |it| dispatch(Action::SetCompressorRatio(it)),
+        |it| dispatch(Action::SetFloat(FloatField::Ratio, it)),
         1.0..=100.0,
         &on_release,
     );

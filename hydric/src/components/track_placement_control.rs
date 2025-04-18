@@ -3,7 +3,7 @@ use egui::Ui;
 use ordered_float::OrderedFloat;
 use shared::model::{TrackId, TrackPlacement};
 use shared::types::Beats;
-use state::{Action, Selector, Store};
+use state::{Action, FloatField, IndexField, Selector, Store, TypeField, UintField};
 
 pub fn track_placement_control(store: &Store, ui: &mut Ui) {
     let project = &store.get().project;
@@ -20,9 +20,9 @@ pub fn track_placement_control(store: &Store, ui: &mut Ui) {
                     selectable_value(
                         ui,
                         get_set(&placement.track_id, |it| {
-                            store.dispatch(&sel, Action::SetTrackPlacementTrackId(*it))
+                            store.dispatch(&sel, Action::SetUint(UintField::TrackId, *it))
                         }),
-                        &track_index,
+                        &(track_index as u32),
                         track_index.to_string(),
                     );
                 }
@@ -33,12 +33,13 @@ pub fn track_placement_control(store: &Store, ui: &mut Ui) {
             ui,
             "Start position",
             offset,
-            |it| store.dispatch(&sel, Action::SetTrackPlacementOffset(it as Beats)),
+            |it| store.dispatch(&sel, Action::SetFloat(FloatField::Offset, it as Beats)),
             0.0..=16.0,
             on_release,
         );
 
-        let max_note_length = *store.get().project.tracks[placement.track_id].unclipped_duration();
+        let max_note_length =
+            *store.get().project.tracks[placement.track_id as usize].unclipped_duration();
         let duration = *placement
             .clipped_duration
             .unwrap_or(OrderedFloat(max_note_length)) as f64;
@@ -54,7 +55,7 @@ pub fn track_placement_control(store: &Store, ui: &mut Ui) {
                         } else {
                             None
                         };
-                        Action::SetTrackPlacementClippedDuration(clipped_duration)
+                        Action::SetChild(TypeField::ClippedDuration(clipped_duration))
                     })
                 },
                 0.0..=max_note_length as f64,
@@ -63,17 +64,21 @@ pub fn track_placement_control(store: &Store, ui: &mut Ui) {
         });
 
         if store.get().project.track_placements.len() > 1 && ui.button("Delete").clicked() {
-            store.dispatchr(Action::DeleteTrackPlacement(track_placement_index));
+            store.dispatchr(Action::DeleteChild(IndexField::TrackPlacement(
+                track_placement_index,
+            )));
             break;
         }
     }
 
     if ui.button("New track placement").clicked() {
-        store.dispatchr(Action::AddTrackPlacement(TrackPlacement {
-            track_id: 0 as TrackId,
-            offset: OrderedFloat(0.0 as Beats),
-            clipped_duration: None,
-            visual_placement: 0,
-        }));
+        store.dispatchr(Action::AddChild(TypeField::TrackPlacement(
+            TrackPlacement {
+                track_id: 0 as TrackId,
+                offset: OrderedFloat(0.0 as Beats),
+                clipped_duration: None,
+                visual_placement: 0,
+            },
+        )));
     }
 }

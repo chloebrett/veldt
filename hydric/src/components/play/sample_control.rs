@@ -4,7 +4,7 @@ use crate::promise::{poll, spawn};
 use crate::rpc::load_sample;
 use egui::{Button, Ui};
 use mesic::graph::{AmpNode, RenderGraph};
-use state::{Action, Store};
+use state::{Action, Store, TypeField};
 
 pub fn sample_control(
     store: &Store,
@@ -37,6 +37,6 @@ pub fn sample_control(
     }
 
     poll(&mut async_state.load_sample, |sample| {
-        store.dispatchr(Action::AddSample(sample.clone()))
+        store.dispatchr(Action::AddChild(TypeField::Sample(sample.clone())))
     });
 }
