@@ -104,7 +104,7 @@ impl eframe::App for App {
                                 GeneratorType::SubSynth { .. } => "Subtractive Synth",
                             };
                             default_window(title)
-                                .open(&mut self.window_state.generators[0])
+                                .open(&mut self.window_state.generators[generator_index])
                                 .default_pos(Pos2 { x: 1100.0, y: 20.0 })
                                 .show(ctx, |ui| {
                                     generator_control(&self.store, ui, generator_index);
