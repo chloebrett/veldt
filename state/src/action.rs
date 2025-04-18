@@ -36,12 +36,12 @@ impl From<ActionProto> for Action {
             ActionKind::MoveEffectDown(it) => Action::MoveEffectDown(it as usize),
             ActionKind::SetFloat(it) => Action::SetFloat(
                 FloatField::from_str(&it.key)
-                    .expect(&format!("Expected float field name: {}", it.key)),
+                    .unwrap_or_else(|_| panic!("Expected float field name: {}", it.key)),
                 it.value,
             ),
             ActionKind::SetUint(it) => Action::SetUint(
                 UintField::from_str(&it.key)
-                    .expect(&format!("Expected uint field name: {}", it.key)),
+                    .unwrap_or_else(|_| panic!("Expected uint field name: {}", it.key)),
                 it.value,
             ),
             ActionKind::DeleteChild(index) => Action::DeleteChild(index.into()),

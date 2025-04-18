@@ -4,7 +4,7 @@ use shared::model::{
     Scale, ScaleValue, Track, TrackPlacement, WaveType,
 };
 use shared::pmodel::{
-    AdsrEnvelopeProto, AntiAliasingModeProto, EqTypeProto, ScaleProto, WaveTypeProto,
+    AntiAliasingModeProto, EqTypeProto, ScaleProto, WaveTypeProto,
 };
 
 /// Fields of various types.
@@ -44,16 +44,14 @@ impl From<TypeFieldProto> for TypeField {
             TypeFieldKind::Effect(it) => TypeField::Effect(it.into()),
             TypeFieldKind::PitchName(it) => TypeField::PitchName(it.into()),
             TypeFieldKind::Key(it) => TypeField::Key(it.into()),
-            TypeFieldKind::ScaleValue(it) => {
-                TypeField::ScaleValue(ScaleValue::try_from(it).unwrap().into())
-            }
+            TypeFieldKind::ScaleValue(it) => TypeField::ScaleValue(it.into()),
             TypeFieldKind::Scale(it) => TypeField::Scale(ScaleProto::try_from(it).unwrap().into()),
             TypeFieldKind::TrackPlacement(it) => TypeField::TrackPlacement(it.into()),
             TypeFieldKind::ProjectName(it) => TypeField::ProjectName(it),
             TypeFieldKind::Track(it) => TypeField::Track(it.into()),
             TypeFieldKind::PlacedNote(it) => TypeField::PlacedNote(it.into()),
             TypeFieldKind::Wave(it) => TypeField::Wave(WaveTypeProto::try_from(it).unwrap().into()),
-            TypeFieldKind::Envelope(it) => TypeField::Envelope(AdsrEnvelopeProto::from(it).into()),
+            TypeFieldKind::Envelope(it) => TypeField::Envelope(it.into()),
             TypeFieldKind::AntiAliasingMode(it) => {
                 TypeField::AntiAliasingMode(AntiAliasingModeProto::try_from(it).unwrap().into())
             }
@@ -90,9 +88,7 @@ impl From<TypeField> for TypeFieldProto {
                 TypeField::Track(it) => TypeFieldKind::Track(it.into()),
                 TypeField::PlacedNote(it) => TypeFieldKind::PlacedNote(it.into()),
                 TypeField::Wave(it) => TypeFieldKind::Wave(WaveTypeProto::from(it).into()),
-                TypeField::Envelope(it) => {
-                    TypeFieldKind::Envelope(AdsrEnvelopeProto::from(it).into())
-                }
+                TypeField::Envelope(it) => TypeFieldKind::Envelope(it.into()),
                 TypeField::AntiAliasingMode(it) => {
                     TypeFieldKind::AntiAliasingMode(AntiAliasingModeProto::from(it).into())
                 }
