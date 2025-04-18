@@ -1,13 +1,10 @@
-use super::{note_reducer, track_placement_reducer, track_reducer};
 use crate::{Action, Selector, StoreData, receiver::ActionReceiver};
-use log::info;
 
 pub fn root_reducer(data: &mut StoreData, selector: &Selector, action: &Action) -> Action {
-    info!("root_reducer processing: {:?}", action.clone());
-
     match selector {
         Selector::Track(track_index) => {
-            track_reducer(&mut data.project.tracks[*track_index], action)
+            let track = &mut data.project.tracks[*track_index];
+            track.apply(action).unwrap_or(Action::NonReversible)
         }
         Selector::Generator(generator_index) => {
             let generator = &mut data.project.generators[*generator_index];
@@ -21,14 +18,16 @@ pub fn root_reducer(data: &mut StoreData, selector: &Selector, action: &Action) 
             let mixer_channel = &mut data.project.mixer[*mixer_index];
             mixer_channel.apply(action).unwrap_or(Action::NonReversible)
         }
-        Selector::Note(track_index, note_index) => note_reducer(
-            &mut data.project.tracks[*track_index].notes[*note_index],
-            action,
-        ),
-        Selector::TrackPlacement(track_placement_index) => track_placement_reducer(
-            &mut data.project.track_placements[*track_placement_index],
-            action,
-        ),
+        Selector::Note(track_index, note_index) => {
+            let note = &mut data.project.tracks[*track_index].notes[*note_index];
+            note.apply(action).unwrap_or(Action::NonReversible)
+        }
+        Selector::TrackPlacement(track_placement_index) => {
+            let track_placement = &mut data.project.track_placements[*track_placement_index];
+            track_placement
+                .apply(action)
+                .unwrap_or(Action::NonReversible)
+        }
         Selector::Root => match action {
             Action::AddTrackPlacement(track_placement) => {
                 let index = data.project.track_placements.len();

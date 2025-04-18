@@ -3,6 +3,8 @@ use crate::Action;
 mod effect;
 mod generator;
 mod mixer_channel;
+mod note;
+mod track;
 
 /// A model object that can receive actions.
 pub trait ActionReceiver {
