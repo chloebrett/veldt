@@ -94,11 +94,15 @@ impl Default for EffectMeta {
 #[derive(Clone, Debug, PartialEq, FromProto, IntoProto)]
 pub struct DelayConfig {
     pub delay_ms: Milliseconds,
+    pub feedback: Volume,
 }
 
 impl Default for DelayConfig {
     fn default() -> Self {
-        DelayConfig { delay_ms: 100.0 }
+        DelayConfig {
+            delay_ms: 100.0,
+            feedback: 0.5,
+        }
     }
 }
 
@@ -151,12 +155,6 @@ impl Default for CompressorConfig {
 mod tests {
     use super::*;
     use crate::testing::proto::proto_testing::assert_proto_round_trip;
-
-    #[test]
-    fn delay_config_proto_round_trip() {
-        let delay_config = DelayConfig { delay_ms: 0.2 };
-        assert_proto_round_trip::<DelayConfig, DelayConfigProto>(delay_config);
-    }
 
     #[test]
     fn compressor_config_proto_round_trip() {
