@@ -1,3 +1,5 @@
+use super::EnvelopeView;
+use crate::view::View;
 use crate::widget::{get_set, int_slider, knob, selectable_value};
 use egui::Ui;
 use shared::model::{AntiAliasingMode, SimpleWaveConfig, WaveType};
@@ -67,4 +69,9 @@ where
             &on_release,
         );
     }
+
+    // TODO: move this to the individual generator UI.
+    ui.separator();
+    ui.label("Envelope");
+    EnvelopeView::new(&config.envelope, dispatch, on_release).ui(ui);
 }
