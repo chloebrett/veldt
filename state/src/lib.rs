@@ -7,7 +7,7 @@ mod store;
 mod store_data;
 mod undo;
 
-pub use action::Action;
+pub use action::*;
 use broadcast::*;
 use reducer::*;
 pub use selector::*;

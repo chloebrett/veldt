@@ -1,5 +1,5 @@
-use crate::Action;
 use crate::receiver::ActionReceiver;
+use crate::{Action, FloatField};
 use shared::model::SimpleWaveConfig;
 
 impl ActionReceiver for SimpleWaveConfig {
@@ -15,10 +15,10 @@ impl ActionReceiver for SimpleWaveConfig {
                 self.osc_count = *osc_count;
                 Action::SetOscCount(prev)
             }
-            Action::SetDetuneCents(detune_cents) => {
+            Action::SetFloat(FloatField::Detune, detune_cents) => {
                 let prev = self.detune_cents;
                 self.detune_cents = *detune_cents;
-                Action::SetDetuneCents(prev)
+                Action::SetFloat(FloatField::Detune, prev)
             }
             Action::SetEnvelope(envelope) => {
                 let mut envelope = envelope.clone();

@@ -1,5 +1,5 @@
-use crate::Action;
 use crate::receiver::ActionReceiver;
+use crate::{Action, FloatField};
 use shared::model::Project;
 
 impl ActionReceiver for Project {
@@ -24,10 +24,10 @@ impl ActionReceiver for Project {
                 self.name = name.to_string();
                 Action::SetProjectName(prev)
             }
-            Action::SetBpm(bpm) => {
+            Action::SetFloat(FloatField::Bpm, bpm) => {
                 let prev = self.bpm;
                 self.bpm = *bpm;
-                Action::SetBpm(prev)
+                Action::SetFloat(FloatField::Bpm, prev)
             }
             Action::AddSample(sample) => {
                 self.samples.push(sample.clone());

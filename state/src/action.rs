@@ -1,4 +1,4 @@
-use shared::action_proto::{ActionProto, action_proto::Kind as ActionKind};
+use shared::action_proto::{ActionProto, SetFloatProto, action_proto::Kind as ActionKind};
 use shared::model::{
     AdsrEnvelope, AntiAliasingMode, EffectInstance, EqType, PitchName, PlacedNote, Project, Sample,
     Scale, ScaleValue, Track, TrackId, TrackPlacement, WaveType,
@@ -6,7 +6,30 @@ use shared::model::{
 use shared::pmodel::{
     AntiAliasingModeProto, EqTypeProto, PitchNameProto, ScaleProto, WaveTypeProto,
 };
-use shared::types::{Beats, Freq, GainDB, KnobPosition, Milliseconds, Octave, Volume};
+use shared::types::Octave;
+use std::str::FromStr;
+use strum::{Display, EnumString};
+
+#[derive(EnumString, Display, PartialEq, Clone, Debug)]
+pub enum FloatField {
+    Bpm,
+    Volume,
+    Offset,
+    Duration,
+    Pan,
+    Detune,
+    DelayMs,
+    Wet,
+    Fc,
+    Q,
+    Gain,
+    Threshold,
+    AttackMs,
+    ReleaseMs,
+    Ratio,
+    LfoFreq,
+    Feedback,
+}
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum Action {
@@ -14,7 +37,6 @@ pub enum Action {
     SetKey(ScaleValue),
     SetScale(Scale),
     SetProjectName(String),
-    SetBpm(Beats),
     AddTrackPlacement(TrackPlacement),
     DeleteTrackPlacement(usize),
     // Sets the names of loadable projects.
@@ -29,21 +51,17 @@ pub enum Action {
     // --- TrackSelector ---
     DeleteNote(usize),
     AddNote(PlacedNote),
-    SetTrackOffset(Beats),
 
     // --- NoteSelector ---
     SetNoteScaleValue(ScaleValue),
     SetNoteOctave(Octave),
     SetNotePitchName(PitchName),
-    SetNoteOffset(Beats),
-    SetNoteDuration(Beats),
 
     // --- GeneratorSelector ---
     // TODO: rename this to SetVolume, and just differentiate by the selector. (Apply this idea to
     // several action types).
     SetWave(WaveType),
     SetOscCount(u32),
-    SetDetuneCents(KnobPosition),
     SetEnvelope(AdsrEnvelope),
     SetAntiAliasingMode(AntiAliasingMode),
     SetOversampleFactor(u32),
@@ -55,31 +73,18 @@ pub enum Action {
     AddEffect(EffectInstance),
 
     // --- EffectSelector ---
-    SetDelayMs(Milliseconds),
-    SetDelayFeedback(Volume),
     SetEqKind(EqType),
-    SetEqFc(Freq),
-    SetEqQ(KnobPosition),
-    SetCompressorThreshold(Volume),
-    SetCompressorAttackMs(Milliseconds),
-    SetCompressorReleaseMs(Milliseconds),
-    SetCompressorRatio(KnobPosition),
     SetModDelayMinDepth(u32),
     SetModDelayMaxDepth(u32),
-    SetModDelayLfoFreq(f32),
     SetModDelayLfoType(WaveType),
 
     // --- TrackPlacementSelector ---
     SetTrackPlacementTrackId(TrackId),
-    SetTrackPlacementOffset(Beats),
     SetTrackPlacementClippedDuration(Option<f32>),
 
     // --- used by several selectors ---
-    SetVolume(Volume),
     SetMute(bool),
-    SetGain(GainDB),
-    SetWet(KnobPosition),
-    SetPan(KnobPosition),
+    SetFloat(FloatField, f32),
 
     // -- other --
     /// Denotes that the mouse has been released from a UI element, finalizing its value.
@@ -99,21 +104,12 @@ impl From<ActionProto> for Action {
             ActionKind::SetKey(it) => Action::SetKey(it.into()),
             ActionKind::SetScale(it) => Action::SetScale(ScaleProto::try_from(it).unwrap().into()),
             ActionKind::SetProjectName(it) => Action::SetProjectName(it),
-            ActionKind::SetBpm(it) => Action::SetBpm(it),
-            ActionKind::SetVolume(it) => Action::SetVolume(it),
             ActionKind::SetMute(it) => Action::SetMute(it),
-            ActionKind::SetGain(it) => Action::SetGain(it),
-            ActionKind::SetWet(it) => Action::SetWet(it),
-            ActionKind::SetPan(it) => Action::SetPan(it),
             ActionKind::AddNote(it) => Action::AddNote(it.into()),
             ActionKind::DeleteNote(it) => Action::DeleteNote(it as usize),
-            ActionKind::SetTrackOffset(it) => Action::SetTrackOffset(it),
             ActionKind::SetNoteScaleValue(it) => Action::SetNoteScaleValue(it.into()),
-            ActionKind::SetNoteOffset(it) => Action::SetNoteOffset(it),
-            ActionKind::SetNoteDuration(it) => Action::SetNoteDuration(it),
             ActionKind::SetWave(it) => Action::SetWave(WaveTypeProto::try_from(it).unwrap().into()),
             ActionKind::SetOscCount(it) => Action::SetOscCount(it),
-            ActionKind::SetDetuneCents(it) => Action::SetDetuneCents(it),
             ActionKind::SetEnvelope(it) => Action::SetEnvelope(it.into()),
             ActionKind::SetAntiAliasingMode(it) => {
                 Action::SetAntiAliasingMode(AntiAliasingModeProto::try_from(it).unwrap().into())
@@ -125,24 +121,14 @@ impl From<ActionProto> for Action {
             ActionKind::MoveEffectDown(it) => Action::MoveEffectDown(it as usize),
             ActionKind::DeleteEffect(it) => Action::DeleteEffect(it as usize),
             ActionKind::AddEffect(it) => Action::AddEffect(it.into()),
-            ActionKind::SetDelayMs(it) => Action::SetDelayMs(it),
-            ActionKind::SetDelayFeedback(it) => Action::SetDelayFeedback(it),
-            ActionKind::SetEqFc(it) => Action::SetEqFc(it),
-            ActionKind::SetEqQ(it) => Action::SetEqQ(it),
-            ActionKind::SetCompressorThreshold(it) => Action::SetCompressorThreshold(it),
-            ActionKind::SetCompressorAttackMs(it) => Action::SetCompressorAttackMs(it),
-            ActionKind::SetCompressorReleaseMs(it) => Action::SetCompressorReleaseMs(it),
-            ActionKind::SetCompressorRatio(it) => Action::SetCompressorRatio(it),
             ActionKind::SetModDelayMinDepth(it) => Action::SetModDelayMinDepth(it),
             ActionKind::SetModDelayMaxDepth(it) => Action::SetModDelayMaxDepth(it),
-            ActionKind::SetModDelayLfoFreq(it) => Action::SetModDelayLfoFreq(it),
             ActionKind::SetModDelayLfoType(it) => {
                 Action::SetModDelayLfoType(WaveTypeProto::try_from(it).unwrap().into())
             }
             ActionKind::SetTrackPlacementTrackId(it) => {
                 Action::SetTrackPlacementTrackId(it as usize)
             }
-            ActionKind::SetTrackPlacementOffset(it) => Action::SetTrackPlacementOffset(it),
             ActionKind::AddTrackPlacement(it) => Action::AddTrackPlacement(it.into()),
             ActionKind::DeleteTrackPlacement(it) => Action::DeleteTrackPlacement(it as usize),
             ActionKind::SetEqKind(it) => {
@@ -153,6 +139,11 @@ impl From<ActionProto> for Action {
             }
             ActionKind::AddTrack(it) => Action::AddTrack(it.into()),
             ActionKind::DeleteTrack(it) => Action::DeleteTrack(it as usize),
+            ActionKind::SetFloat(it) => Action::SetFloat(
+                FloatField::from_str(&it.key)
+                    .expect(&format!("Expected float field name: {}", it.key)),
+                it.value,
+            ),
         }
     }
 }
@@ -167,21 +158,12 @@ impl From<Action> for ActionProto {
                 Action::SetKey(it) => ActionKind::SetKey(it.into()),
                 Action::SetScale(it) => ActionKind::SetScale(ScaleProto::from(it).into()),
                 Action::SetProjectName(it) => ActionKind::SetProjectName(it),
-                Action::SetBpm(it) => ActionKind::SetBpm(it),
-                Action::SetVolume(it) => ActionKind::SetVolume(it),
                 Action::SetMute(it) => ActionKind::SetMute(it),
-                Action::SetPan(it) => ActionKind::SetPan(it),
-                Action::SetGain(it) => ActionKind::SetGain(it),
-                Action::SetWet(it) => ActionKind::SetWet(it),
                 Action::AddNote(it) => ActionKind::AddNote(it.into()),
                 Action::DeleteNote(it) => ActionKind::DeleteNote(it as u32),
-                Action::SetTrackOffset(it) => ActionKind::SetTrackOffset(it),
                 Action::SetNoteScaleValue(it) => ActionKind::SetNoteScaleValue(it.into()),
-                Action::SetNoteOffset(it) => ActionKind::SetNoteOffset(it),
-                Action::SetNoteDuration(it) => ActionKind::SetNoteDuration(it),
                 Action::SetWave(it) => ActionKind::SetWave(WaveTypeProto::from(it).into()),
                 Action::SetOscCount(it) => ActionKind::SetOscCount(it),
-                Action::SetDetuneCents(it) => ActionKind::SetDetuneCents(it),
                 Action::SetEnvelope(it) => ActionKind::SetEnvelope(it.into()),
                 Action::SetAntiAliasingMode(it) => {
                     ActionKind::SetAntiAliasingMode(AntiAliasingModeProto::from(it).into())
@@ -195,24 +177,14 @@ impl From<Action> for ActionProto {
                 Action::MoveEffectDown(it) => ActionKind::MoveEffectDown(it as u32),
                 Action::DeleteEffect(it) => ActionKind::DeleteEffect(it as u32),
                 Action::AddEffect(it) => ActionKind::AddEffect(it.into()),
-                Action::SetDelayMs(it) => ActionKind::SetDelayMs(it),
-                Action::SetDelayFeedback(it) => ActionKind::SetDelayFeedback(it),
-                Action::SetEqFc(it) => ActionKind::SetEqFc(it),
-                Action::SetEqQ(it) => ActionKind::SetEqQ(it),
-                Action::SetCompressorThreshold(it) => ActionKind::SetCompressorThreshold(it),
-                Action::SetCompressorAttackMs(it) => ActionKind::SetCompressorAttackMs(it),
-                Action::SetCompressorReleaseMs(it) => ActionKind::SetCompressorReleaseMs(it),
-                Action::SetCompressorRatio(it) => ActionKind::SetCompressorRatio(it),
                 Action::SetModDelayMinDepth(it) => ActionKind::SetModDelayMinDepth(it),
                 Action::SetModDelayMaxDepth(it) => ActionKind::SetModDelayMaxDepth(it),
-                Action::SetModDelayLfoFreq(it) => ActionKind::SetModDelayLfoFreq(it),
                 Action::SetModDelayLfoType(it) => {
                     ActionKind::SetModDelayLfoType(WaveTypeProto::from(it).into())
                 }
                 Action::SetTrackPlacementTrackId(it) => {
                     ActionKind::SetTrackPlacementTrackId(it as u32)
                 }
-                Action::SetTrackPlacementOffset(it) => ActionKind::SetTrackPlacementOffset(it),
                 Action::SetTrackPlacementClippedDuration(it) => {
                     ActionKind::SetTrackPlacementClippedDuration(it.into())
                 }
@@ -229,6 +201,10 @@ impl From<Action> for ActionProto {
                 Action::SetProject(_) => panic!(),
                 Action::SetLoadProjectName(_) => panic!(),
                 Action::AddSample(_) => panic!(),
+                Action::SetFloat(key, value) => ActionKind::SetFloat(SetFloatProto {
+                    key: key.to_string(),
+                    value,
+                }),
             }),
         }
     }

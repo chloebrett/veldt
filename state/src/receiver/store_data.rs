@@ -1,5 +1,5 @@
 use crate::receiver::ActionReceiver;
-use crate::{Action, StoreData};
+use crate::{Action, FloatField, StoreData};
 
 impl ActionReceiver for StoreData {
     fn apply(&mut self, action: &Action) -> Option<Action> {
@@ -18,10 +18,10 @@ impl ActionReceiver for StoreData {
                 self.scale = *scale;
                 Action::SetScale(prev)
             }
-            Action::SetVolume(volume) => {
+            Action::SetFloat(FloatField::Volume, volume) => {
                 let prev = self.volume;
                 self.volume = *volume;
-                Action::SetVolume(prev)
+                Action::SetFloat(FloatField::Volume, prev)
             }
             Action::SetProjectList(projects) => {
                 self.project_list = projects.clone();
