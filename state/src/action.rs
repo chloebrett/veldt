@@ -64,9 +64,9 @@ pub enum Action {
     AddNote(PlacedNote),
 
     // --- NoteSelector ---
-    SetNoteScaleValue(ScaleValue),
-    SetNoteOctave(Octave),
-    SetNotePitchName(PitchName),
+    SetScaleValue(ScaleValue),
+    SetOctave(Octave),
+    SetPitchName(PitchName),
 
     // --- GeneratorSelector ---
     // TODO: rename this to SetVolume, and just differentiate by the selector. (Apply this idea to
@@ -83,10 +83,9 @@ pub enum Action {
 
     // --- EffectSelector ---
     SetEqKind(EqType),
-    SetModDelayLfoType(WaveType),
 
     // --- TrackPlacementSelector ---
-    SetTrackPlacementClippedDuration(Option<f32>),
+    SetClippedDuration(Option<f32>),
 
     // --- used by several selectors ---
     SetMute(bool),
@@ -114,29 +113,24 @@ impl From<ActionProto> for Action {
             ActionKind::SetMute(it) => Action::SetMute(it),
             ActionKind::AddNote(it) => Action::AddNote(it.into()),
             ActionKind::DeleteNote(it) => Action::DeleteNote(it as usize),
-            ActionKind::SetNoteScaleValue(it) => Action::SetNoteScaleValue(it.into()),
+            ActionKind::SetScaleValue(it) => Action::SetScaleValue(it.into()),
             ActionKind::SetWave(it) => Action::SetWave(WaveTypeProto::try_from(it).unwrap().into()),
             ActionKind::SetEnvelope(it) => Action::SetEnvelope(it.into()),
             ActionKind::SetAntiAliasingMode(it) => {
                 Action::SetAntiAliasingMode(AntiAliasingModeProto::try_from(it).unwrap().into())
             }
-            ActionKind::SetNoteOctave(it) => Action::SetNoteOctave(it),
-            ActionKind::SetNotePitchName(it) => Action::SetNotePitchName(it.into()),
+            ActionKind::SetOctave(it) => Action::SetOctave(it),
+            ActionKind::SetPitchName(it) => Action::SetPitchName(it.into()),
             ActionKind::MoveEffectUp(it) => Action::MoveEffectUp(it as usize),
             ActionKind::MoveEffectDown(it) => Action::MoveEffectDown(it as usize),
             ActionKind::DeleteEffect(it) => Action::DeleteEffect(it as usize),
             ActionKind::AddEffect(it) => Action::AddEffect(it.into()),
-            ActionKind::SetModDelayLfoType(it) => {
-                Action::SetModDelayLfoType(WaveTypeProto::try_from(it).unwrap().into())
-            }
             ActionKind::AddTrackPlacement(it) => Action::AddTrackPlacement(it.into()),
             ActionKind::DeleteTrackPlacement(it) => Action::DeleteTrackPlacement(it as usize),
             ActionKind::SetEqKind(it) => {
                 Action::SetEqKind(EqTypeProto::try_from(it).unwrap().into())
             }
-            ActionKind::SetTrackPlacementClippedDuration(it) => {
-                Action::SetTrackPlacementClippedDuration(it.value)
-            }
+            ActionKind::SetClippedDuration(it) => Action::SetClippedDuration(it.value),
             ActionKind::AddTrack(it) => Action::AddTrack(it.into()),
             ActionKind::DeleteTrack(it) => Action::DeleteTrack(it as usize),
             ActionKind::SetFloat(it) => Action::SetFloat(
@@ -166,26 +160,19 @@ impl From<Action> for ActionProto {
                 Action::SetMute(it) => ActionKind::SetMute(it),
                 Action::AddNote(it) => ActionKind::AddNote(it.into()),
                 Action::DeleteNote(it) => ActionKind::DeleteNote(it as u32),
-                Action::SetNoteScaleValue(it) => ActionKind::SetNoteScaleValue(it.into()),
+                Action::SetScaleValue(it) => ActionKind::SetScaleValue(it.into()),
                 Action::SetWave(it) => ActionKind::SetWave(WaveTypeProto::from(it).into()),
                 Action::SetEnvelope(it) => ActionKind::SetEnvelope(it.into()),
                 Action::SetAntiAliasingMode(it) => {
                     ActionKind::SetAntiAliasingMode(AntiAliasingModeProto::from(it).into())
                 }
-                Action::SetNoteOctave(it) => ActionKind::SetNoteOctave(it),
-                Action::SetNotePitchName(it) => {
-                    ActionKind::SetNotePitchName(PitchNameProto::from(it))
-                }
+                Action::SetOctave(it) => ActionKind::SetOctave(it),
+                Action::SetPitchName(it) => ActionKind::SetPitchName(PitchNameProto::from(it)),
                 Action::MoveEffectUp(it) => ActionKind::MoveEffectUp(it as u32),
                 Action::MoveEffectDown(it) => ActionKind::MoveEffectDown(it as u32),
                 Action::DeleteEffect(it) => ActionKind::DeleteEffect(it as u32),
                 Action::AddEffect(it) => ActionKind::AddEffect(it.into()),
-                Action::SetModDelayLfoType(it) => {
-                    ActionKind::SetModDelayLfoType(WaveTypeProto::from(it).into())
-                }
-                Action::SetTrackPlacementClippedDuration(it) => {
-                    ActionKind::SetTrackPlacementClippedDuration(it.into())
-                }
+                Action::SetClippedDuration(it) => ActionKind::SetClippedDuration(it.into()),
                 Action::AddTrackPlacement(it) => ActionKind::AddTrackPlacement(it.into()),
                 Action::DeleteTrackPlacement(it) => ActionKind::DeleteTrackPlacement(it as u32),
                 Action::SetEqKind(it) => ActionKind::SetEqKind(EqTypeProto::from(it).into()),

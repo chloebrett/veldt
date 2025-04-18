@@ -12,12 +12,12 @@ message ActionProto {
     bool set_mute = 4;
     uint32 delete_note = 5;
     pmodel.PlacedNoteProto add_note = 6;
-    pmodel.ScaleValueProto set_note_scale_value = 7;
+    pmodel.ScaleValueProto set_scale_value = 7;
     pmodel.WaveTypeProto set_wave = 8;
     pmodel.AdsrEnvelopeProto set_envelope = 10;
     pmodel.AntiAliasingModeProto set_anti_aliasing_mode = 11;
-    int32 set_note_octave = 12;
-    pmodel.PitchNameProto set_note_pitch_name = 13;
+    int32 set_octave = 12;
+    pmodel.PitchNameProto set_pitch_name = 13;
     uint32 move_effect_up = 15;
     uint32 move_effect_down = 16;
     uint32 delete_effect = 17;
@@ -25,11 +25,10 @@ message ActionProto {
     // Check if this means that every action sent over the wire is this large.
     // If so, maybe consider storing an optional field for large payloads instead (assuming that even helps).
     pmodel.EffectInstanceProto add_effect = 18;
-    pmodel.WaveTypeProto set_mod_delay_lfo_type = 21;
     pmodel.TrackPlacementProto add_track_placement = 23;
     uint32 delete_track_placement = 24;
     pmodel.EqTypeProto set_eq_kind = 25;
-    pmodel.FloatOptionProto set_track_placement_clipped_duration = 26;
+    pmodel.FloatOptionProto set_clipped_duration = 26;
     pmodel.TrackProto add_track = 27;
     uint32 delete_track = 28;
     SetFloatProto set_float = 29;

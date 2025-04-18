@@ -16,10 +16,10 @@ impl ActionReceiver for TrackPlacement {
                 self.offset = OrderedFloat(*offset);
                 Action::SetFloat(FloatField::Offset, *prev)
             }
-            Action::SetTrackPlacementClippedDuration(duration) => {
+            Action::SetClippedDuration(duration) => {
                 let prev = self.clipped_duration.map(|value| *value);
                 self.clipped_duration = duration.map(OrderedFloat);
-                Action::SetTrackPlacementClippedDuration(prev)
+                Action::SetClippedDuration(prev)
             }
             _ => return None,
         })
