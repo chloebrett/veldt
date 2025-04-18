@@ -28,19 +28,19 @@ message IndexFieldProto {
 
 message TypeFieldProto {
   oneof kind {
-    pmodel.ScaleValueProto scale_value = 1;
+    pmodel.ScaleValueProto key = 1;
     pmodel.ScaleProto scale = 2;
     pmodel.TrackPlacementProto track_placement = 3;
-    pmodel.ProjectProto project = 4;
+    pmodel.PitchNameProto pitch_name = 4;
     string project_name = 5;
-    pmodel.SampleProto sample = 6;
+    pmodel.ScaleValueProto scale_value = 6;
     pmodel.TrackProto track = 7;
-    pmodel.NoteProto note = 8;
+    pmodel.PlacedNoteProto placed_note = 8;
     pmodel.WaveTypeProto wave = 9;
-    pmodel.AdsrEnvelopeProto adsr_envelope = 10;
+    pmodel.AdsrEnvelopeProto envelope = 10;
     pmodel.AntiAliasingModeProto anti_aliasing_mode = 11;
     pmodel.EqTypeProto eq_type = 12;
-    pmodel.EffectInstanceProto effect_instance = 13;
+    pmodel.EffectInstanceProto effect = 13;
     pmodel.FloatOptionProto clipped_duration = 14;
     bool mute = 15;
     int32 octave = 16;

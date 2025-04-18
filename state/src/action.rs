@@ -1,7 +1,6 @@
 use crate::{FloatField, IndexField, TypeField, UintField};
 use shared::action_proto::{
-    ActionProto, SetFloatProto, SetUintProto,
-    action_proto::Kind as ActionKind,
+    ActionProto, SetFloatProto, SetUintProto, action_proto::Kind as ActionKind,
 };
 use std::str::FromStr;
 
