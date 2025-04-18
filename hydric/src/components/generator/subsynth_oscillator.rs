@@ -1,8 +1,9 @@
-use eframe::{Frame, egui};
-use egui::{Color32, ComboBox, Slider};
-use wasm_bindgen::prelude::*;
-use shared::model::WaveType;
 use super::SimpleWaveVisualiser;
+use crate::widget::knob;
+use eframe::egui;
+use egui::{Color32, ComboBox, Slider};
+use shared::model::WaveType;
+use state::Action;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum OscillatorId {
@@ -43,29 +44,12 @@ impl SubsynthOscillator {
         }
     }
 
-    // Styling methods (builder pattern) prob won't need this anynore
-    // pub fn border_color(mut self, color: Color32) -> Self {
-    //     self.border_color = color;
-    //     self
-    // }
-
-    // pub fn border_width(mut self, width: f32) -> Self {
-    //     self.border_width = width;
-    //     self
-    // }
-
-    // pub fn border_radius(mut self, radius: f32) -> Self {
-    //     self.border_radius = radius;
-    //     self
-    // }
-
-    // pub fn background_color(mut self, color: Color32) -> Self {
-    //     self.background_color = color;
-    //     self
-    // }
-
     // Method to show the component in the UI
-    pub fn show(&mut self, ui: &mut egui::Ui) -> egui::Response {
+    pub fn show<F, G>(&mut self, ui: &mut egui::Ui, dispatch: F, on_release: G) -> egui::Response
+    where
+        F: Fn(Action),
+        G: Fn(),
+    {
         let frame = egui::Frame::new()
             .fill(self.background_color)
             .stroke(egui::Stroke::new(self.border_width, self.border_color))
@@ -74,35 +58,89 @@ impl SubsynthOscillator {
 
         frame
             .show(ui, |ui| {
-                // Wave type dropdown
                 ui.horizontal(|ui| {
-                    let wave_type_str = match self.wave_type {
-                        WaveType::Sine => "Sine",
-                        WaveType::Square => "Square",
-                        WaveType::Saw => "Saw",
-                        WaveType::Triangle => "Triangle",
-                    };
+                    ui.vertical(|ui| {
+                        // Wave type dropdown
+                        ui.horizontal(|ui| {
+                            let wave_type_str = match self.wave_type {
+                                WaveType::Sine => "Sine",
+                                WaveType::Square => "Square",
+                                WaveType::Saw => "Saw",
+                                WaveType::Triangle => "Triangle",
+                            };
 
-                    ComboBox::from_label("")
-                        .selected_text(wave_type_str)
-                        .show_ui(ui, |ui| {
-                            ui.selectable_value(&mut self.wave_type, WaveType::Sine, "Sine");
-                            ui.selectable_value(&mut self.wave_type, WaveType::Square, "Square");
-                            ui.selectable_value(&mut self.wave_type, WaveType::Saw, "Saw");
-                            ui.selectable_value(
-                                &mut self.wave_type,
-                                WaveType::Triangle,
-                                "Triangle",
-                            );
+                            ComboBox::from_label("")
+                                .selected_text(wave_type_str)
+                                .show_ui(ui, |ui| {
+                                    ui.selectable_value(
+                                        &mut self.wave_type,
+                                        WaveType::Sine,
+                                        "Sine",
+                                    );
+                                    ui.selectable_value(
+                                        &mut self.wave_type,
+                                        WaveType::Square,
+                                        "Square",
+                                    );
+                                    ui.selectable_value(&mut self.wave_type, WaveType::Saw, "Saw");
+                                    ui.selectable_value(
+                                        &mut self.wave_type,
+                                        WaveType::Triangle,
+                                        "Triangle",
+                                    );
+                                });
                         });
+                        ui.add_space(10.0);
+                        let visualiser = SimpleWaveVisualiser::new(
+                            self.wave_type,
+                            self.line_color,
+                            self.fill_color,
+                        );
+
+                        visualiser.show(ui);
+                    });
+                    ui.add_space(14.0);
+                    ui.vertical(|ui| {
+                        knob(
+                            ui,
+                            "Volume",
+                            0.0, // placeholder value fix this to be config instead
+                            |it| dispatch(Action::SetGeneratorVolume(it)), // this action is prob not the right action idk
+                            0.0..=1.0,
+                            &on_release,
+                        );
+                        ui.add_space(3.0);
+
+                        knob(
+                            ui,
+                            "Pan",
+                            0.0, // placeholder value
+                            |it| dispatch(Action::SetGeneratorVolume(it)), // TODO fix action its a placeholder rn
+                            0.0..=1.0,
+                            &on_release,
+                        );
+                        ui.add_space(3.0);
+
+                        knob(
+                            ui,
+                            "Coarse",
+                            0.0, // placeholder value
+                            |it| dispatch(Action::SetGeneratorVolume(it)), // TODO fix action its a placeholder rn
+                            0.0..=1.0,
+                            &on_release,
+                        );
+                        ui.add_space(3.0);
+
+                        knob(
+                            ui,
+                            "Fine",
+                            0.0, // placeholder value
+                            |it| dispatch(Action::SetGeneratorVolume(it)), // TODO fix action its a placeholder rn
+                            0.0..=1.0,
+                            &on_release,
+                        );
+                    });
                 });
-
-                ui.add_space(10.0);
-
-                let visualiser =
-                    SimpleWaveVisualiser::new(self.wave_type, self.line_color, self.fill_color);
-
-                visualiser.show(ui);
             })
             .response
     }
