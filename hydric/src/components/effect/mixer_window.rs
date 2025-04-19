@@ -61,6 +61,7 @@ impl WindowView for MixerWindow<'_> {
                         meta.wet,
                         |it| dispatch_effect(Action::SetFloat(FloatField::Wet, it)),
                         0.0..=1.0,
+                        /* neutral= */ 0.5,
                         on_release,
                     );
                     checkbox(
