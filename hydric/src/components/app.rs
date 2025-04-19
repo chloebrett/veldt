@@ -191,7 +191,7 @@ impl eframe::App for App {
                     }) {
                         let active_track = ui.data_mut(|data| {
                             let id = Id::new("active_track_index");
-                            *data.get_temp_mut_or::<Option<usize>>(id, None)
+                            *data.get_temp_mut_or(id, None)
                         });
                         if let Some(track_index) = active_track {
                             let mut open = true;
