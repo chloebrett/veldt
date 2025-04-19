@@ -84,7 +84,7 @@ impl RenderGraph {
         self.output_node_index = mixer
     }
 
-    pub fn add_master_effect_with_mixer(&mut self, effect: EffectInstance) {
+    pub fn add_main_effect_with_mixer(&mut self, effect: EffectInstance) {
         let dry = self.output_node_index;
         let mixer = self.add_effect_with_mixer(effect, dry);
         self.output_node_index = mixer;
@@ -302,7 +302,8 @@ mod tests {
     fn empty_render_graph_renders_nothing() {
         let graph = RenderGraph::default();
         // Iterator should be empty.
-        assert!(graph.peekable().peek().is_none())
+        let output: Vec<[f32; 2]> = graph.collect();
+        assert!(output.is_empty())
     }
 
     #[test]
@@ -344,12 +345,14 @@ mod tests {
             octave: 4,
         };
         let samples = 120;
-        let input = (0..samples as usize)
+        let input: Vec<f32> = (0..samples as usize)
             .map(|it| (it as f32 / SAMPLE_RATE as f32 * freq(pitch)).sin())
             .collect();
         // Act
-        let graph = RenderGraph::from_vec(input);
+        let graph = RenderGraph::from_vec(input.clone());
+        let output: Vec<[f32; 2]> = graph.collect();
+        let output_mono: Vec<f32> = output.iter().map(|[left, right]| (left + right) * 0.5 ).collect();
         // Assert
-        assert!(graph.peekable().peek().is_some());
+        assert_eq!(output_mono, input)
     }
 }
