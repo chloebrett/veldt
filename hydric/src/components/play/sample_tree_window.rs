@@ -11,7 +11,10 @@ pub struct SampleTreeWindow<'a> {
 
 impl<'a> SampleTreeWindow<'a> {
     pub fn new(store: &'a Store, visible: &'a mut bool) -> Self {
-        SampleTreeWindow { _store: store, visible }
+        SampleTreeWindow {
+            _store: store,
+            visible,
+        }
     }
 }
 
