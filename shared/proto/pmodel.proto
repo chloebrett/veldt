@@ -291,3 +291,15 @@ enum EqTypeProto {
 message FloatOptionProto {
   optional float value = 1;
 }
+
+message FilenameTreeProto {
+  oneof kind {
+    string filename = 1;
+    DirectoryProto directory = 2;
+  }
+}
+
+message DirectoryProto {
+  string name = 1;
+  repeated FilenameTreeProto contents = 2;
+}
