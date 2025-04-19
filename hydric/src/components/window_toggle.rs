@@ -1,4 +1,4 @@
-use super::WindowState;
+use crate::WindowState;
 use egui::Ui;
 
 pub fn window_toggle_button(toggle_value: bool, ui: &mut Ui, toggle_name: &str) -> bool {

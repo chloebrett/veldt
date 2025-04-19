@@ -1,4 +1,4 @@
-use super::{envelope_control, simple_wave_control};
+use super::simple_wave_control;
 use egui::Ui;
 use shared::model::GeneratorType;
 use state::{Action, Selector, Store};
@@ -17,9 +17,4 @@ pub fn generator_control(store: &Store, ui: &mut Ui, generator_index: usize) {
         GeneratorType::Noise { .. } => todo!(),
         GeneratorType::SubSynth { .. } => todo!(),
     };
-
-    // TODO: move this to the individual generator UI.
-    ui.separator();
-    ui.label("Envelope");
-    envelope_control(store, ui, generator_index);
 }

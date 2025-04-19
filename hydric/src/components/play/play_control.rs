@@ -1,8 +1,8 @@
 use super::audio_vis::audio_vis;
 use crate::audio_player::play;
-use crate::components::{AsyncState, AudioState};
 use crate::promise::{poll, spawn};
 use crate::rpc::render as server_render;
+use crate::{AsyncState, AudioState};
 use egui::Ui;
 use mesic::graph::{AmpNode, RenderGraph};
 use mesic::render as local_render;
@@ -17,7 +17,7 @@ pub fn play_control(
     if ui.button("Play (local)").clicked() {
         let volume = store.get().volume;
         let mut graph = local_render(&store.get().project);
-        graph.add_output_node(AmpNode {
+        graph.add_node(AmpNode {
             volume,
             should_clip: true,
         });
@@ -28,7 +28,7 @@ pub fn play_control(
         // TODO: visualise both channels, not just the left.
         audio_state.audio = audio.to_vec();
         let mut graph = RenderGraph::from_vec(audio_state.audio.clone());
-        graph.add_output_node(AmpNode {
+        graph.add_node(AmpNode {
             volume,
             should_clip: true,
         });

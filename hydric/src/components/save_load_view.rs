@@ -1,4 +1,4 @@
-use super::AsyncState;
+use crate::AsyncState;
 use crate::promise::{poll, spawn};
 use crate::rpc::{load_project, load_project_list, save_project};
 use crate::view::View;
