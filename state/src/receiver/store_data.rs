@@ -39,6 +39,10 @@ impl ActionReceiver for StoreData {
                 self.sample_tree = Some(tree.clone());
                 Action::NonReversible
             }
+            Action::SetChild(TypeField::SampleTreeConfig(config)) => {
+                self.sample_tree_config = config.clone();
+                Action::NonReversible
+            }
             _ => return None,
         })
     }

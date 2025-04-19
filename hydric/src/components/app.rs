@@ -59,8 +59,9 @@ impl App {
             load_project_list().await
         });
 
+        let config = app.store.get().sample_tree_config.clone();
         spawn(&mut app.async_state.load_sample_tree, async move {
-            load_sample_tree().await
+            load_sample_tree(config).await
         });
 
         app
