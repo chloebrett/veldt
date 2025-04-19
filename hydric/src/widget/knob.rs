@@ -272,10 +272,19 @@ impl Widget for Knob<'_> {
 
         let center = knob_rect.center();
         let radius = knob_size.x / 2.0;
-        let range = 0.9;
-        let remainder = 1.0 - range * 0.5;
-        let angle = (*self.value - self.min) / (self.max - self.min) * TAU * range
-            - TAU * (0.25 - remainder);
+
+        // The range of motion of the knob. 1.0 means a full rotation.
+        let range = 0.85;
+
+        // 0.0 points right. 0.25 points down.
+        let down = 0.25;
+
+        // The necessary offset from pointing down, in order for motion to be symmetrical.
+        let offset = (1.0 - range) * 0.5;
+
+        let start_angle = down + offset;
+
+        let angle = TAU * ((*self.value - self.min) / (self.max - self.min) * range + start_angle);
 
         painter.circle_stroke(
             center,
