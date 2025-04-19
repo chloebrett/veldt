@@ -36,6 +36,7 @@ pub fn knob<F>(
 }
 
 /// Position of the label relative to the knob
+#[allow(dead_code)]
 enum LabelPosition {
     Top,
     Bottom,
@@ -44,6 +45,7 @@ enum LabelPosition {
 }
 
 /// Visual style of the knob indicator
+#[allow(dead_code)]
 enum KnobStyle {
     /// A line extending from the center to the edge
     Wiper,
@@ -155,6 +157,7 @@ impl<'a> Knob<'a> {
     }
 
     /// Sets the spacing between the knob and its label
+    #[allow(dead_code)]
     pub fn with_label_offset(mut self, offset: f32) -> Self {
         self.label_offset = offset;
         self
@@ -168,6 +171,7 @@ impl<'a> Knob<'a> {
     /// Knob::new(&mut value, 0.0, 1.0, KnobStyle::Wiper)
     ///     .with_label_format(|v| format!("{:.1}%", v * 100.0));
     /// ```
+    #[allow(dead_code)]
     pub fn with_label_format(mut self, format: impl Fn(f32) -> String + 'static) -> Self {
         self.label_format = Box::new(format);
         self
@@ -176,6 +180,7 @@ impl<'a> Knob<'a> {
     /// Sets the step size for value changes
     ///
     /// When set, the value will snap to discrete steps as the knob is dragged.
+    #[allow(dead_code)]
     pub fn with_step(mut self, step: f32) -> Self {
         self.step = Some(step);
         self
