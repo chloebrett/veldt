@@ -15,7 +15,7 @@ impl SimpleWaveVisualiser {
             wave_type,
             line_color,
             fill_color,
-            size: Vec2::new(130.0, 80.0),
+            size: Vec2::new(130.0, 74.0),
         }
     }
 
