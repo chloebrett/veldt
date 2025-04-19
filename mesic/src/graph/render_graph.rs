@@ -141,7 +141,7 @@ impl RenderGraph {
         let sample_count = vec.len();
         let buffer_node: BufferNode = vec.into();
         let mut graph = RenderGraph {
-            sample_count, 
+            sample_count,
             ..Default::default()
         };
         graph.add_node(buffer_node);
