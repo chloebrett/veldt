@@ -39,17 +39,19 @@ impl Default for RenderGraph {
 
 impl RenderGraph {
     // Add node with edge directed to graph output.
-    pub fn add_node(&mut self, node: impl Node + 'static + Send) -> NodeIndex {
+    pub fn add_node(&mut self, node: impl Node + 'static + Send) {
         let node_index = self
             .graph
             .add_node(NodeData::new2(BoxedNodeSend::new(node)));
         self.graph.add_edge(node_index, self.output_node_index, ());
-        node_index
     }
 
     // Add node and set as graph output.
     pub fn add_output_node(&mut self, node: impl Node + 'static + Send) {
-        let node_index = self.add_node(node);
+        let node_index = self
+            .graph
+            .add_node(NodeData::new2(BoxedNodeSend::new(node)));
+        self.graph.add_edge(self.output_node_index, node_index, ());
         // Set node as new output
         self.output_node_index = node_index;
     }
@@ -179,4 +181,175 @@ impl Iterator for RenderGraph {
     }
 
     // TODO: implement size_hint or SizedIterator to make collection more efficient.
+}
+
+#[cfg(test)]
+mod tests {
+    use shared::model::{
+        AdsrEnvelope, AntiAliasingMode, DelayConfig, EffectMeta, EqConfig, EqType,
+        GeneratorInstance, GeneratorMeta, GeneratorType, MixerChannel, ModDelayConfig, Note,
+        PitchName, PlacedNote, ScaleValue, SimpleWaveConfig, Track, TrackPlacement, WaveType,
+    };
+
+    use crate::{
+        graph::{AmpNode, GeneratorNode},
+        wave::{beats_to_samples, freq},
+    };
+
+    use super::*;
+
+    fn make_generator_node() -> (usize, GeneratorNode) {
+        let track = Track {
+            notes: vec![PlacedNote {
+                note: Note {
+                    pitch_name: PitchName {
+                        scale_value: ScaleValue::C,
+                        octave: 4,
+                    },
+                    beats: 2.0,
+                },
+                offset: 0.0.into(),
+            }],
+            offset: 0.0.into(),
+        };
+        let track_placement = TrackPlacement {
+            track_id: 3,
+            offset: 2.5.into(),
+            clipped_duration: Some(5.2.into()),
+            visual_placement: 6,
+        };
+        let generator = GeneratorInstance {
+            id: 0,
+            kind: GeneratorType::SimpleWave {
+                config: SimpleWaveConfig {
+                    wave: WaveType::Sine,
+                    envelope: AdsrEnvelope {
+                        attack: 0.1,
+                        decay: 0.1,
+                        sustain: 0.8,
+                        release: 0.1,
+                    },
+                    osc_count: 4,
+                    detune_cents: 5.0,
+                    anti_aliasing_mode: AntiAliasingMode::Off,
+                    oversample_factor: 2,
+                },
+            },
+            meta: GeneratorMeta {
+                volume: 1.0,
+                mute: false,
+                pan: 0.0,
+            },
+        };
+        let bpm = 120.0;
+        let track_samples =
+            beats_to_samples(*track_placement.clipped_duration.unwrap(), bpm) as usize;
+        let generator_node = GeneratorNode::new(generator, track, bpm);
+        (track_samples, generator_node)
+    }
+
+    fn make_mixer_channel() -> MixerChannel {
+        MixerChannel {
+            effects: vec![
+                EffectInstance {
+                    effect: Effect::SimpleEq {
+                        config: EqConfig {
+                            kind: EqType::SimpleResonator,
+                            fc: 1000.0,
+                            q: 1.0,
+                            gain: 0.0,
+                        },
+                    },
+                    meta: EffectMeta {
+                        id: 0,
+                        wet: 1.0,
+                        mute: false,
+                    },
+                },
+                EffectInstance {
+                    effect: Effect::SimpleDelay {
+                        config: DelayConfig {
+                            delay_ms: 250.0,
+                            feedback: 0.5,
+                        },
+                    },
+                    meta: EffectMeta {
+                        id: 1,
+                        wet: 0.5,
+                        mute: false,
+                    },
+                },
+                EffectInstance {
+                    effect: Effect::ModDelay {
+                        config: ModDelayConfig {
+                            min_depth: 100,
+                            max_depth: 200,
+                            freq: 10.0,
+                            lfo_type: WaveType::Triangle,
+                        },
+                    },
+                    meta: EffectMeta {
+                        id: 1,
+                        wet: 0.5,
+                        mute: false,
+                    },
+                },
+            ],
+        }
+    }
+
+    #[test]
+    fn empty_render_graph_renders_nothing() {
+        let graph = RenderGraph::default();
+        // Iterator should be empty.
+        assert!(graph.peekable().peek().is_none())
+    }
+
+    #[test]
+    fn basic_render_graph_renders_something() {
+        // Arrange
+        let (track_samples, generator_node) = make_generator_node();
+        let mixer_channel = make_mixer_channel();
+        let amp_node = AmpNode {
+            volume: 2.3,
+            should_clip: false,
+        };
+        let mut graph = RenderGraph::default();
+        // Act
+        graph.add_generator(generator_node, track_samples);
+        for effect in mixer_channel.effects {
+            graph.add_generator_effect_with_mixer(effect, 0);
+        }
+        graph.add_output_node(amp_node);
+        // Assert
+        assert!(graph.peekable().peek().is_some())
+    }
+
+    #[test]
+    fn graph_with_only_generator_renders_something() {
+        // Arrange
+        let (track_samples, generator_node) = make_generator_node();
+        let mut graph = RenderGraph::default();
+        // Act
+        graph.add_generator(generator_node, track_samples);
+        // Assert
+        assert!(graph.peekable().peek().is_some())
+    }
+
+    #[test]
+    fn graph_built_from_sample_renders_something() {
+        // Arrange
+        let pitch = PitchName {
+            scale_value: ScaleValue::A,
+            octave: 4,
+        };
+        let samples = 120;
+        let input = (0..samples as usize)
+            .map(|it| (it as f32 / SAMPLE_RATE as f32 * freq(pitch)).sin())
+            .collect();
+        // Act
+        let graph = RenderGraph::from_vec(input);
+        // Assert
+        assert!(graph.peekable().peek().is_some());
+    }
 }
