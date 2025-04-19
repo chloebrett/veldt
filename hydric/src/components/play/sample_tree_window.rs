@@ -20,11 +20,7 @@ impl<'a> SampleTreeWindow<'a> {
 }
 
 /// Adds a FilenameTree to a TreeViewBuilder. Returns the next unused ID.
-fn add_node(
-    builder: &mut TreeViewBuilder<usize>,
-    node: &FilenameTree,
-    start_id: usize,
-) -> usize {
+fn add_node(builder: &mut TreeViewBuilder<usize>, node: &FilenameTree, start_id: usize) -> usize {
     match node {
         FilenameTree::File(name) => {
             builder.leaf(start_id, name);
