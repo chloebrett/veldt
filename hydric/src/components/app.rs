@@ -2,6 +2,7 @@ use super::{
     KeyView, SaveLoadView,
     effect::{EffectWindow, MixerWindow},
     generator::{generator_control, generators_control},
+    menu::Menu,
     note_control::NoteControl,
     note_roll::NoteRoll,
     play::{SampleTreeWindow, play_control, sample_control},
@@ -77,6 +78,7 @@ impl eframe::App for App {
             .on_new_frame(ctx.input(|i| i.time), frame.info().cpu_usage);
 
         egui::CentralPanel::default().show(ctx, |ui| {
+            Menu::new(&mut self.store).ui(ui);
             ScrollArea::vertical()
                 .auto_shrink(false)
                 .scroll_bar_visibility(ScrollBarVisibility::VisibleWhenNeeded)
