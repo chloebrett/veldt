@@ -26,7 +26,12 @@ impl<'a> SampleTreeWindow<'a> {
 
 /// Adds a FilenameTree to a TreeViewBuilder. Returns the next unused ID.
 /// If ignore_top = true, does not push the top-level directory.
-fn add_node(builder: &mut TreeViewBuilder<usize>, node: &FilenameTree, start_id: usize, ignore_top: bool) -> usize {
+fn add_node(
+    builder: &mut TreeViewBuilder<usize>,
+    node: &FilenameTree,
+    start_id: usize,
+    ignore_top: bool,
+) -> usize {
     match node {
         FilenameTree::File(name) => {
             builder.leaf(start_id, name);
@@ -71,7 +76,10 @@ impl View for SampleTreeWindow<'_> {
                         .show(ui, |ui| {
                             let id = ui.make_persistent_id("sample_tree");
                             TreeView::new(id).show(ui, |builder| {
-                                add_node(builder, &tree, /* start_id= */ 0, /* ignore_top= */ true);
+                                add_node(
+                                    builder, &tree, /* start_id= */ 0,
+                                    /* ignore_top= */ true,
+                                );
                             });
                         });
                 }
