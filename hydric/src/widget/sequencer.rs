@@ -144,7 +144,7 @@ impl<T: SequencerObject<T>, F: Fn(usize, Action), G: Fn(), H: Fn(&mut Ui, usize)
                 .transform(to_sequencer.inverse())
                 .clamp(
                     pos2(0.0, 0.0),
-                    // Clamp to `y` range - 1 so that object cannot be dragged bottom of sequencer.
+                    // Clamp to `y` range - 1 so that object cannot be dragged beyond bottom of sequencer.
                     vec2(f32::INFINITY, self.range.size().y - 1.0).to_pos2(),
                 );
             if drag_delta.y != 0.0 {
