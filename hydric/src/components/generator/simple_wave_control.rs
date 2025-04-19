@@ -36,10 +36,11 @@ where
     );
     knob(
         ui,
-        "Osc detune",
+        "Osc detune (cents)",
         config.detune_cents,
         |it| dispatch(Action::SetFloat(FloatField::Detune, it)),
         0.0..=100.0,
+        /* neutral= */ 10.0,
         &on_release,
     );
 

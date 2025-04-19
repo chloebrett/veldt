@@ -4,7 +4,7 @@ use super::{
     generator::{generator_control, generators_control},
     note_control::NoteControl,
     note_roll::NoteRoll,
-    play::{ToolBar, play_control, sample_control},
+    play::{SampleTreeWindow,ToolBar, play_control, sample_control},
     toggle_window_panel, track_placement_control,
     track_roll::TrackRoll,
     undo_redo_control,
@@ -211,6 +211,8 @@ impl eframe::App for App {
                             data.insert_temp(note_roll_id, open);
                         })
                     }
+
+                    SampleTreeWindow::new(&self.store, &mut self.window_state.sample_tree).ui(ui);
 
                     ui.separator();
                     track_placement_control(&self.store, ui);

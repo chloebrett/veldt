@@ -844,9 +844,10 @@ dependencies = [
 ]
 
 [[package]]
-name = "egui_knob"
+name = "egui_ltreeview"
 version = "0.2.0"
-source = "git+https://github.com/chloebrett/egui_knob#0a2915f31b2c0a5bcfa1c56469ff02f9c3c35a7a"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "2785814fd481eb8d064e0e7190aa37b38c7d24b234f879c0f0932feb719e6049"
 dependencies = [
  "egui",
 ]
@@ -1313,7 +1314,7 @@ dependencies = [
  "ecolor",
  "eframe",
  "egui",
- "egui_knob",
+ "egui_ltreeview",
  "log",
  "mesic",
  "ordered-float",
