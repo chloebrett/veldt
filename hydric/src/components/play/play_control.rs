@@ -17,7 +17,7 @@ pub fn play_control(
     if ui.button("Play (local)").clicked() {
         let volume = store.get().volume;
         let mut graph = local_render(&store.get().project);
-        graph.add_output_node(AmpNode {
+        graph.add_node(AmpNode {
             volume,
             should_clip: true,
         });
@@ -28,7 +28,7 @@ pub fn play_control(
         // TODO: visualise both channels, not just the left.
         audio_state.audio = audio.to_vec();
         let mut graph = RenderGraph::from_vec(audio_state.audio.clone());
-        graph.add_output_node(AmpNode {
+        graph.add_node(AmpNode {
             volume,
             should_clip: true,
         });
