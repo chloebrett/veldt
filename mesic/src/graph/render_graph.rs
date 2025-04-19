@@ -1,6 +1,5 @@
 use super::{
-    BufferNode, CompressorNode, DelayNode, EqNode, Graph, MixerNode, ModDelayNode, Processor,
-    make_graph, make_processor,
+    make_graph, make_processor, BufferNode, CompressorNode, DelayNode, EqNode, GeneratorNode, Graph, MixerNode, ModDelayNode, Processor
 };
 use crate::consts::SAMPLE_RATE;
 use crate::effect::eq_filter;
@@ -56,13 +55,13 @@ impl RenderGraph {
         self.output_node_index = node_index;
     }
 
-    pub fn add_generator(&mut self, node: impl Node + 'static + Send, sample_count: usize) {
+    pub fn add_generator(&mut self, node: GeneratorNode) {
+        self.sample_count = usize::max(self.sample_count, node.sample_count);
         let node_index = self
             .graph
             .add_node(NodeData::new2(BoxedNodeSend::new(node)));
         // Keep track of node index to easily connect to Effects and Mixers
         self.generator_indexes.push(node_index);
-        self.sample_count = usize::max(self.sample_count, sample_count);
         self.graph.add_edge(node_index, self.output_node_index, ());
     }
 
@@ -198,7 +197,7 @@ mod tests {
 
     use super::*;
 
-    fn make_generator_node() -> (usize, GeneratorNode) {
+    fn make_generator_node() -> GeneratorNode {
         let track = Track {
             notes: vec![PlacedNote {
                 note: Note {
@@ -242,10 +241,8 @@ mod tests {
             },
         };
         let bpm = 120.0;
-        let track_samples =
-            beats_to_samples(*track_placement.clipped_duration.unwrap(), bpm) as usize;
-        let generator_node = GeneratorNode::new(generator, track, bpm);
-        (track_samples, generator_node)
+        let generator_node = GeneratorNode::new(generator, track, track_placement, bpm);
+        generator_node
     }
 
     fn make_mixer_channel() -> MixerChannel {
@@ -308,7 +305,7 @@ mod tests {
     #[test]
     fn basic_render_graph_renders_something() {
         // Arrange
-        let (track_samples, generator_node) = make_generator_node();
+        let generator_node = make_generator_node();
         let mixer_channel = make_mixer_channel();
         let amp_node = AmpNode {
             volume: 2.3,
@@ -316,7 +313,7 @@ mod tests {
         };
         let mut graph = RenderGraph::default();
         // Act
-        graph.add_generator(generator_node, track_samples);
+        graph.add_generator(generator_node);
         for effect in mixer_channel.effects {
             graph.add_generator_effect_with_mixer(effect, 0);
         }
@@ -328,10 +325,10 @@ mod tests {
     #[test]
     fn graph_with_only_generator_renders_something() {
         // Arrange
-        let (track_samples, generator_node) = make_generator_node();
+        let generator_node = make_generator_node();
         let mut graph = RenderGraph::default();
         // Act
-        graph.add_generator(generator_node, track_samples);
+        graph.add_generator(generator_node);
         // Assert
         assert!(graph.peekable().peek().is_some())
     }
