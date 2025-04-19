@@ -33,8 +33,15 @@ pub fn generators_control(ctx: &egui::Context, window_state: &mut WindowState, s
                     *show = !*show;
                 }
 
+                if ui.button("Add").clicked() { //is there a limit to the no. of generators we want?
+                    store.dispatch(
+                        sel,
+                        Action::AddChild(TypeField::Effect(EffectInstance)), 
+                    );
+                }
+
                 if generators.len() > 1 && ui.button("Delete").clicked() {
-                    store.(Action::DeleteChild(IndexField::generators(
+                    store.(Action::DeleteChild(IndexField::Generator(
                         sel,
                     )));
                     break;
