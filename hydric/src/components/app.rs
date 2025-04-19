@@ -12,7 +12,7 @@ use super::{
 use crate::components::FrameHistory;
 use crate::promise::spawn;
 use crate::rpc::broadcast_actions;
-use crate::rpc::load_project_list;
+use crate::rpc::{load_project_list, load_sample_tree};
 use crate::view::View;
 use crate::view::WindowView;
 use crate::widget::{default_window, get_set, knob, slider, string_observer};
@@ -57,6 +57,10 @@ impl App {
 
         spawn(&mut app.async_state.project_list, async move {
             load_project_list().await
+        });
+
+        spawn(&mut app.async_state.load_sample_tree, async move {
+            load_sample_tree().await
         });
 
         app
@@ -208,7 +212,12 @@ impl eframe::App for App {
                         }
                     }
 
-                    SampleTreeWindow::new(&self.store, &mut self.window_state.sample_tree).ui(ui);
+                    SampleTreeWindow::new(
+                        &self.store,
+                        &mut self.async_state,
+                        &mut self.window_state.sample_tree,
+                    )
+                    .ui(ui);
 
                     default_window("Toolbar")
                         .default_pos(Pos2 { x: 600.0, y: 20.0 })

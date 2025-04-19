@@ -1,7 +1,9 @@
 use log::info;
 use shared::load_sample::load_sample_server::LoadSample;
-use shared::load_sample::{LoadSampleReply, LoadSampleRequest};
-use shared::model::Sample;
+use shared::load_sample::{
+    LoadSampleReply, LoadSampleRequest, LoadSampleTreeReply, LoadSampleTreeRequest,
+};
+use shared::model::{FilenameTree, Sample};
 use std::env::current_dir;
 use tonic::async_trait;
 
@@ -55,6 +57,39 @@ impl LoadSample for LoadSampleContext {
         };
         Ok(tonic::Response::new(LoadSampleReply {
             sample: Some(sample.into()),
+        }))
+    }
+
+    async fn load_sample_tree(
+        self: &Self,
+        _request: tonic::Request<LoadSampleTreeRequest>,
+    ) -> Result<tonic::Response<LoadSampleTreeReply>, tonic::Status> {
+        // Hard coded for now.
+        let tree = FilenameTree::Directory(
+            "Samples".to_string(),
+            vec![
+                FilenameTree::Directory(
+                    "Drum kit".to_string(),
+                    vec![
+                        FilenameTree::File("Kick".to_string()),
+                        FilenameTree::File("Snare".to_string()),
+                        FilenameTree::File("Hi hat".to_string()),
+                        FilenameTree::File("Tom".to_string()),
+                        FilenameTree::File("Cymbal".to_string()),
+                    ],
+                ),
+                FilenameTree::Directory(
+                    "Loops".to_string(),
+                    vec![
+                        FilenameTree::File("Bass".to_string()),
+                        FilenameTree::File("Guitar".to_string()),
+                        FilenameTree::File("Piano".to_string()),
+                    ],
+                ),
+            ],
+        );
+        Ok(tonic::Response::new(LoadSampleTreeReply {
+            tree: Some(tree.into()),
         }))
     }
 }
