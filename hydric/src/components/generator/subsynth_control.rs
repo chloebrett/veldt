@@ -1,11 +1,19 @@
-use crate::widget::{get_set, int_slider, knob, selectable_value};
+ use crate::widget::{Sequencer, get_set, int_slider, knob, selectable_value};
 use eframe::egui;
-use egui::{Ui, Color32};
+use egui::{Ui, Color32, Rect, pos2};
 use shared::model::{SubSynthConfig, WaveType};
-use state::Action;
+use state::{Action, Store};
 use super::{SubsynthOscillator, OscillatorId};
+use super::super::{Piano, PianoOrientation};
+use crate::{
+    view::View,
+};
+use shared::{
+    model::{PitchName, ScaleValue},
+    types::PitchValue,
+};
 
-pub fn subsynth_control<F, G>(config: &SubSynthConfig, dispatch: F, on_release: G, ui: &mut Ui)
+pub fn subsynth_control<F, G>(config: &SubSynthConfig, dispatch: F, on_release: G, ui: &mut Ui, store: &Store)
 where
     F: Fn(Action),
     G: Fn(),
@@ -48,7 +56,7 @@ where
         }
     });
 
-    ui.add_space(20.0);
+    ui.add_space(8.0);
 
     // OSC 2
     ui.push_id(OscillatorId::Osc2, |ui| {
@@ -69,7 +77,7 @@ where
         }
     });
     
-    ui.add_space(20.0);
+    ui.add_space(8.0);
 
     // OSC 3
     ui.push_id(OscillatorId::Osc3, |ui| {
@@ -89,7 +97,17 @@ where
             on_release();
         }
     });
-    
+
+    let min_note: PitchValue = PitchName {
+        scale_value: ScaleValue::A,
+        octave: 1,
+    }.into();
+    let max_note: PitchValue = PitchName {
+        scale_value: ScaleValue::C,
+        octave: 8,
+    }.into();
+    Piano::new(max_note, min_note - 1).with_orientation(PianoOrientation::Horizontal).ui(store, ui);
+
     // // Store state for next frame
     ui.ctx().data_mut(|data| data.insert_temp(id, state));
 }
