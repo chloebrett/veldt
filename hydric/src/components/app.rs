@@ -1,6 +1,6 @@
 use super::{
     SaveLoadView,
-    effect::{EffectWindow, mixer_control},
+    effect::{EffectWindow, MixerWindow},
     generator::{generator_control, generators_control},
     key_control::KeyControl,
     note_control::NoteControl,
@@ -162,7 +162,7 @@ impl eframe::App for App {
                         }
                     }
                     if self.window_state.mixer.visible {
-                        mixer_control(ctx, &mut self.window_state, &self.store);
+                        MixerWindow::new(&mut self.window_state, &self.store).ui(ctx);
                     }
                     let mixer = &self.store.get().project.mixer;
                     for (mixer_index, channel) in mixer.iter().enumerate() {
