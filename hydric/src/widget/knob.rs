@@ -1,5 +1,6 @@
 use egui::{Align2, Color32, Rect, Response, Sense, Stroke, Ui, Vec2, Widget};
 use shared::types::KnobPosition;
+use std::f32::consts::TAU;
 use std::ops::RangeInclusive;
 
 /// Forked from egui_knob: https://github.com/obsqrbtz/egui_knob
@@ -250,8 +251,10 @@ impl Widget for Knob<'_> {
 
         let center = knob_rect.center();
         let radius = knob_size.x / 2.0;
-        let angle = (*self.value - self.min) / (self.max - self.min) * std::f32::consts::PI * 1.5
-            - std::f32::consts::PI;
+        let range = 0.9;
+        let remainder = 1.0 - range * 0.5;
+        let angle = (*self.value - self.min) / (self.max - self.min) * TAU * range
+            - TAU * (0.25 - remainder);
 
         painter.circle_stroke(
             center,

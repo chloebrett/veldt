@@ -40,7 +40,7 @@ impl<F: Fn(Action), G: Fn()> View for CompressorView<'_, F, G> {
             "Attack (ms)",
             config.attack_ms,
             |it| dispatch(Action::SetFloat(FloatField::AttackMs, it)),
-            0.0..=1000.0, // TODO: logarithmic
+            0.0..=1000.0,
             &self.on_release,
         );
 
@@ -49,7 +49,7 @@ impl<F: Fn(Action), G: Fn()> View for CompressorView<'_, F, G> {
             "Release (ms)",
             config.release_ms,
             |it| dispatch(Action::SetFloat(FloatField::ReleaseMs, it)),
-            0.0..=1000.0, // TODO: logarithmic
+            0.0..=1000.0,
             &self.on_release,
         );
 
@@ -58,7 +58,7 @@ impl<F: Fn(Action), G: Fn()> View for CompressorView<'_, F, G> {
             "Ratio",
             config.ratio,
             |it| dispatch(Action::SetFloat(FloatField::Ratio, it)),
-            1.0..=100.0,
+            1.0..=100.0, // TODO: logarithmic
             &self.on_release,
         );
     }
