@@ -32,6 +32,7 @@ impl<F: Fn(Action), G: Fn()> View for CompressorView<'_, F, G> {
             config.threshold,
             |it| dispatch(Action::SetFloat(FloatField::Threshold, it)),
             0.0..=1.0,
+            /* neutral= */ 0.5,
             &self.on_release,
         );
 
@@ -41,6 +42,7 @@ impl<F: Fn(Action), G: Fn()> View for CompressorView<'_, F, G> {
             config.attack_ms,
             |it| dispatch(Action::SetFloat(FloatField::AttackMs, it)),
             0.0..=1000.0,
+            /* neutral= */ 100.0,
             &self.on_release,
         );
 
@@ -50,6 +52,7 @@ impl<F: Fn(Action), G: Fn()> View for CompressorView<'_, F, G> {
             config.release_ms,
             |it| dispatch(Action::SetFloat(FloatField::ReleaseMs, it)),
             0.0..=1000.0,
+            /* neutral= */ 100.0,
             &self.on_release,
         );
 
@@ -59,6 +62,7 @@ impl<F: Fn(Action), G: Fn()> View for CompressorView<'_, F, G> {
             config.ratio,
             |it| dispatch(Action::SetFloat(FloatField::Ratio, it)),
             1.0..=100.0, // TODO: logarithmic
+            /* neutral= */ 3.0,
             &self.on_release,
         );
     }

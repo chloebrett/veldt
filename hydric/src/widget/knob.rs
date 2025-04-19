@@ -1,4 +1,5 @@
 use egui::{Align2, Color32, Rect, Response, Sense, Stroke, Ui, Vec2, Widget};
+use log::info;
 use shared::types::KnobPosition;
 use std::f32::consts::TAU;
 use std::ops::RangeInclusive;
@@ -12,6 +13,7 @@ pub fn knob<F>(
     value: KnobPosition,
     setter: impl Fn(KnobPosition),
     range: RangeInclusive<f32>,
+    neutral: f32,
     on_release: F,
 ) where
     F: Fn(),
@@ -19,7 +21,7 @@ pub fn knob<F>(
     let min = *range.start();
     let max = *range.end();
     let mut temp = value.clamp(min, max);
-    let knob = Knob::new(&mut temp, min, max, KnobStyle::Wiper)
+    let knob = Knob::new(&mut temp, min, max, neutral, KnobStyle::Wiper)
         .with_size(20.0)
         .with_font_size(12.0)
         .with_stroke_width(2.0)
@@ -68,6 +70,7 @@ struct Knob<'a> {
     value: &'a mut f32,
     min: f32,
     max: f32,
+    neutral: f32,
     size: f32,
     font_size: f32,
     stroke_width: f32,
@@ -90,11 +93,12 @@ impl<'a> Knob<'a> {
     /// * `min` - Minimum value
     /// * `max` - Maximum value
     /// * `style` - Visual style of the knob indicator
-    pub fn new(value: &'a mut f32, min: f32, max: f32, style: KnobStyle) -> Self {
+    pub fn new(value: &'a mut f32, min: f32, max: f32, neutral: f32, style: KnobStyle) -> Self {
         Self {
             value,
             min,
             max,
+            neutral,
             size: 40.0,
             font_size: 12.0,
             stroke_width: 2.0,
@@ -203,6 +207,9 @@ impl Widget for Knob<'_> {
         };
 
         let label_padding = 2.0;
+        let vertical_margin = 4.0;
+
+        ui.add_space(vertical_margin);
 
         let adjusted_size = match self.label_position {
             LabelPosition::Top | LabelPosition::Bottom => Vec2::new(
@@ -215,10 +222,24 @@ impl Widget for Knob<'_> {
             ),
         };
 
-        let (rect, mut response) = ui.allocate_exact_size(adjusted_size, Sense::drag());
+        info!("{} {:?}", self.label.clone().unwrap(), label_size);
 
-        if response.dragged() {
-            let delta = response.drag_delta().y;
+        let (rect, mut response) = ui.allocate_exact_size(adjusted_size, Sense::click_and_drag());
+
+        // Double click to return to neutral state.
+        if response.double_clicked() {
+            *self.value = self.neutral;
+            response.mark_changed();
+        } else if response.dragged() {
+            let mut delta = response.drag_delta().y;
+
+            // Hold ctrl, alt or shift to move finely.
+            ui.input(|input| {
+                if input.modifiers.ctrl || input.modifiers.shift || input.modifiers.alt {
+                    delta *= 0.2;
+                }
+            });
+
             let range = self.max - self.min;
             let step = self.step.unwrap_or(range * 0.005);
             let new_value = (*self.value - delta * step).clamp(self.min, self.max);
@@ -294,11 +315,13 @@ impl Widget for Knob<'_> {
                 ),
                 LabelPosition::Left => (
                     Vec2::new(rect.min.x - self.label_offset, rect.center().y),
+                    // Might be wrong!
                     Align2::LEFT_CENTER,
                 ),
                 LabelPosition::Right => (
-                    Vec2::new(rect.max.x + self.label_offset, rect.center().y),
-                    Align2::RIGHT_CENTER,
+                    Vec2::new(rect.max.x - label_size.x, rect.center().y),
+                    // Fixed this - it was right_center before which caused alignment issues.
+                    Align2::LEFT_CENTER,
                 ),
             };
 
@@ -312,7 +335,10 @@ impl Widget for Knob<'_> {
         }
 
         // Draw the bounding rect
-        //painter.rect_stroke(rect, 0.0, Stroke::new(1.0, Color32::RED));
+        // painter.rect_stroke(rect, 0.0, Stroke::new(1.0, Color32::RED), egui::StrokeKind::Inside);
+        // painter.rect_stroke(knob_rect, 0.0, Stroke::new(1.0, Color32::GREEN), egui::StrokeKind::Inside);
+
+        ui.add_space(vertical_margin);
 
         response
     }

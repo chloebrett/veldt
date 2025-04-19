@@ -34,6 +34,7 @@ impl<F: Fn(Action), G: Fn()> View for EqView<'_, F, G> {
             config.fc,
             |it| dispatch(Action::SetFloat(FloatField::Fc, it)),
             20.0..=20000.0, // TODO: logarithmic
+            /* neutral= */ 2000.0,
             &self.on_release,
         );
 
@@ -43,6 +44,7 @@ impl<F: Fn(Action), G: Fn()> View for EqView<'_, F, G> {
             config.q,
             |it| dispatch(Action::SetFloat(FloatField::Q, it)),
             0.1..=100.0, // TODO: logarithmic
+            /* neutral= */ 1.0,
             &self.on_release,
         );
 
@@ -52,6 +54,7 @@ impl<F: Fn(Action), G: Fn()> View for EqView<'_, F, G> {
             config.gain,
             |it| dispatch(Action::SetFloat(FloatField::Gain, it)),
             -60.0..=60.0,
+            /* neutral= */ 0.0,
             &self.on_release,
         );
 
