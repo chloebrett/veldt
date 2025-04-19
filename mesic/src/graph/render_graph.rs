@@ -71,7 +71,6 @@ impl RenderGraph {
         effect: EffectInstance,
         generator_index: usize,
     ) {
-        println!("Gen indices: {:?}", self.generator_indexes);
         let dry = *self
             .generator_indexes
             .get(generator_index)
