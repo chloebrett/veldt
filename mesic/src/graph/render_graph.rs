@@ -140,8 +140,10 @@ impl RenderGraph {
     pub fn from_vec(vec: Vec<f32>) -> Self {
         let sample_count = vec.len();
         let buffer_node: BufferNode = vec.into();
-        let mut graph = RenderGraph::default();
-        graph.sample_count = sample_count;
+        let mut graph = RenderGraph {
+            sample_count, 
+            ..Default::default()
+        };
         graph.add_node(buffer_node);
         graph
     }
