@@ -96,6 +96,7 @@ impl<F: Fn(Action), G: Fn()> View for EnvelopeView<'_, F, G> {
                 })))
             },
             0.0..=1.0,
+            /* neutral= */ 0.2,
             on_release,
         );
         knob(
@@ -109,6 +110,7 @@ impl<F: Fn(Action), G: Fn()> View for EnvelopeView<'_, F, G> {
                 })))
             },
             0.0..=1.0,
+            /* neutral= */ 0.2,
             on_release,
         );
         knob(
@@ -122,6 +124,7 @@ impl<F: Fn(Action), G: Fn()> View for EnvelopeView<'_, F, G> {
                 })))
             },
             0.0..=1.0,
+            /* neutral= */ 0.8,
             on_release,
         );
         knob(
@@ -135,6 +138,7 @@ impl<F: Fn(Action), G: Fn()> View for EnvelopeView<'_, F, G> {
                 })))
             },
             0.0..=1.0,
+            /* neutral= */ 0.2,
             on_release,
         );
 

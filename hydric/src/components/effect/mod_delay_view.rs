@@ -35,6 +35,7 @@ impl<F: Fn(Action), G: Fn()> View for ModDelayView<'_, F, G> {
             config.min_depth as f32,
             |it| dispatch(Action::SetUint(UintField::MinDepth, it as u32)),
             0.0..=1_000.0,
+            /* neutral= */ 100.0,
             &self.on_release,
         );
         knob(
@@ -43,12 +44,13 @@ impl<F: Fn(Action), G: Fn()> View for ModDelayView<'_, F, G> {
             config.max_depth as f32,
             |it| dispatch(Action::SetUint(UintField::MaxDepth, it as u32)),
             0.0..=1_000.0,
+            /* neutral= */ 200.0,
             &self.on_release,
         );
         // TODO: replace this with a knob once we have logarithmic knobs.
         log_slider(
             ui,
-            "LFO frequency",
+            "LFO frequency (Hz)",
             config.freq as f64,
             |it| dispatch(Action::SetFloat(FloatField::LfoFreq, it as f32)),
             0.1..=100.0,
