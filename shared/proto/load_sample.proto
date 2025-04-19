@@ -19,7 +19,9 @@ message LoadSampleReply {
 }
 
 message LoadSampleTreeRequest {
-  // Note: consider allowing the client to request a specific subtree.
+  optional string search = 1;
+  bool skip_non_audio = 2;
+  bool skip_hidden = 3;
 }
 
 message LoadSampleTreeReply {

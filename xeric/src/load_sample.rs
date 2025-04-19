@@ -4,10 +4,12 @@ use shared::load_sample::{
     LoadSampleReply, LoadSampleRequest, LoadSampleTreeReply, LoadSampleTreeRequest,
 };
 use shared::model::{FilenameTree, Sample};
+use std::collections::HashSet;
 use std::env::current_dir;
+use std::ffi::OsStr;
 use std::fs::{ReadDir, read_dir};
 use std::io::Error;
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 use tonic::async_trait;
 
 const PCM_MAX_I16: i16 = 0x7FFF; // 2^15 - 1
@@ -34,7 +36,30 @@ fn sample_dir_path() -> PathBuf {
     file_path
 }
 
-fn read_dir_as_tree(path: PathBuf) -> Result<FilenameTree, Error> {
+fn audio_file_types() -> HashSet<&'static str> {
+    let mut audio_file_types = HashSet::new();
+    audio_file_types.insert("wav");
+    audio_file_types.insert("mp3");
+    audio_file_types
+}
+
+fn get_extension_from_filename(filename: &str) -> Option<&str> {
+    Path::new(filename).extension().and_then(OsStr::to_str)
+}
+
+fn dir_is_empty(dir: &FilenameTree) -> bool {
+    match dir {
+        FilenameTree::Directory(_, children) => children.len() == 0,
+        FilenameTree::File(_) => true,
+    }
+}
+
+fn read_dir_as_tree(
+    path: PathBuf,
+    search: &Option<String>,
+    skip_non_audio: bool,
+    skip_hidden: bool,
+) -> Result<FilenameTree, Error> {
     let dir_contents: ReadDir = read_dir(&path)?;
     let filename = path
         .as_path()
@@ -47,13 +72,32 @@ fn read_dir_as_tree(path: PathBuf) -> Result<FilenameTree, Error> {
     let FilenameTree::Directory(_, children) = &mut tree else {
         panic!()
     };
+    let audio_ext = audio_file_types();
 
     for file in dir_contents {
         let file = file?;
         let filename: String = file.file_name().to_str().unwrap().to_string();
         if file.metadata()?.is_dir() {
-            children.push(read_dir_as_tree(file.path())?);
+            if skip_hidden && (filename.starts_with(".") || filename.starts_with("__MACOSX")) {
+                continue;
+            }
+            let dir = read_dir_as_tree(file.path(), search, skip_non_audio, skip_hidden)?;
+            if !dir_is_empty(&dir) {
+                children.push(dir);
+            }
         } else {
+            let ext = get_extension_from_filename(&filename);
+            if let Some(search) = search {
+                if !filename.to_lowercase().contains(&search.to_lowercase()) {
+                    continue;
+                }
+            }
+            if skip_non_audio && (ext.is_none() || !audio_ext.contains(ext.unwrap())) {
+                continue;
+            }
+            if skip_hidden && filename.starts_with(".") {
+                continue;
+            }
             children.push(FilenameTree::File(filename));
         }
     }
@@ -72,10 +116,7 @@ impl LoadSample for LoadSampleContext {
     ) -> Result<tonic::Response<LoadSampleReply>, tonic::Status> {
         let LoadSampleRequest { filename } = request.into_inner();
 
-        let mut file_path = current_dir().unwrap();
-        file_path.pop(); // pop '/xeric'
-        file_path.push("assets");
-        file_path.push("samples");
+        let mut file_path = sample_dir_path();
         file_path.push(filename.clone());
         info!("Loading sample from path: {}", file_path.clone().display());
 
@@ -100,9 +141,15 @@ impl LoadSample for LoadSampleContext {
 
     async fn load_sample_tree(
         self: &Self,
-        _request: tonic::Request<LoadSampleTreeRequest>,
+        request: tonic::Request<LoadSampleTreeRequest>,
     ) -> Result<tonic::Response<LoadSampleTreeReply>, tonic::Status> {
-        let tree = read_dir_as_tree(sample_dir_path())?;
+        let LoadSampleTreeRequest {
+            search,
+            skip_non_audio,
+            skip_hidden,
+        } = request.into_inner();
+
+        let tree = read_dir_as_tree(sample_dir_path(), &search, skip_non_audio, skip_hidden)?;
 
         Ok(tonic::Response::new(LoadSampleTreeReply {
             tree: Some(tree.into()),
@@ -124,11 +171,11 @@ mod tests {
         });
 
         // ACT
-        let load_request = my_load_sample.load_sample(load_request).await;
+        let load_reply = my_load_sample.load_sample(load_request).await;
 
         // ASSERT
         // TODO more meaningful check of return.
-        assert!(load_request.is_ok())
+        assert!(load_reply.is_ok())
     }
 
     #[tokio::test]
@@ -141,10 +188,10 @@ mod tests {
         });
 
         // ACT
-        let load_request = my_load_sample.load_sample(load_request).await;
+        let load_reply = my_load_sample.load_sample(load_request).await;
 
         // ASSERT
         // TODO more meaningful check of return.
-        assert!(load_request.is_err())
+        assert!(load_reply.is_err())
     }
 }

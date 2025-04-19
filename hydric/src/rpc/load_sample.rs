@@ -20,7 +20,13 @@ pub async fn load_sample_tree() -> Result<FilenameTree, ()> {
     let client = Client::new(XERIC_URL.to_string());
     let mut grpc = LoadSampleClient::new(client);
 
-    let result = grpc.load_sample_tree(LoadSampleTreeRequest {}).await;
+    let result = grpc
+        .load_sample_tree(LoadSampleTreeRequest {
+            search: None,
+            skip_non_audio: true,
+            skip_hidden: true,
+        })
+        .await;
 
     result
         .map(|it| it.into_inner().tree.unwrap().into())
