@@ -144,7 +144,8 @@ impl<T: SequencerObject<T>, F: Fn(usize, Action), G: Fn(), H: Fn(&mut Ui, usize)
                 .transform(to_sequencer.inverse())
                 .clamp(
                     pos2(0.0, 0.0),
-                    vec2(f32::INFINITY, self.range.size().y).to_pos2(),
+                    // Clip to `y` range - 1 so that object cannot go off bottom of sequencer.
+                    vec2(f32::INFINITY, self.range.size().y - 1.0).to_pos2(),
                 );
             if drag_delta.y != 0.0 {
                 if let Some(action) = object.y_action(scaled_pos.y, self.range) {
