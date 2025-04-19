@@ -1,8 +1,7 @@
 use super::{
-    SaveLoadView,
+    KeyView, SaveLoadView,
     effect::{EffectWindow, MixerWindow},
     generator::{generator_control, generators_control},
-    key_control::KeyControl,
     note_control::NoteControl,
     note_roll::NoteRoll,
     play::{play_control, sample_control},
@@ -192,7 +191,7 @@ impl eframe::App for App {
                             .default_pos(Pos2 { x: 600.0, y: 20.0 })
                             .show(ctx, |ui| {
                                 let dispatch = |action| self.store.dispatchr(action);
-                                KeyControl::new(
+                                KeyView::new(
                                     &dispatch,
                                     self.store.get().key,
                                     self.store.get().scale,

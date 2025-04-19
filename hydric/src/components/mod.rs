@@ -2,7 +2,7 @@ mod app;
 mod effect;
 mod frame_history;
 mod generator;
-mod key_control;
+mod key_view;
 mod note_control;
 mod note_roll;
 mod piano;
@@ -15,6 +15,7 @@ mod window_toggle;
 
 pub use app::*;
 use frame_history::*;
+use key_view::*;
 use piano::*;
 use save_load_view::*;
 use track_placement_control::*;

@@ -5,15 +5,15 @@ use shared::model::{Scale, ScaleValue};
 use state::{Action, TypeField};
 use strum::IntoEnumIterator;
 
-pub struct KeyControl<F: Fn(Action)> {
+pub struct KeyView<F: Fn(Action)> {
     dispatch: F,
     key: ScaleValue,
     scale: Scale,
 }
 
-impl<F: Fn(Action)> KeyControl<F> {
+impl<F: Fn(Action)> KeyView<F> {
     pub fn new(dispatch: F, key: ScaleValue, scale: Scale) -> Self {
-        KeyControl {
+        KeyView {
             dispatch,
             key,
             scale,
@@ -21,13 +21,14 @@ impl<F: Fn(Action)> KeyControl<F> {
     }
 }
 
-impl<F: Fn(Action)> View for KeyControl<F> {
+impl<F: Fn(Action)> View for KeyView<F> {
     fn ui(&mut self, ui: &mut Ui) {
-        let KeyControl {
+        let KeyView {
             ref dispatch,
             key,
             scale,
         } = *self;
+
         ComboBox::from_label("Key")
             .selected_text(key.to_string())
             .show_ui(ui, |ui| {
