@@ -844,6 +844,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "egui_ltreeview"
+version = "0.2.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "2785814fd481eb8d064e0e7190aa37b38c7d24b234f879c0f0932feb719e6049"
+dependencies = [
+ "egui",
+]
+
+[[package]]
 name = "either"
 version = "1.15.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1305,6 +1314,7 @@ dependencies = [
  "ecolor",
  "eframe",
  "egui",
+ "egui_ltreeview",
  "log",
  "mesic",
  "ordered-float",

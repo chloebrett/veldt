@@ -25,7 +25,12 @@ pub fn knob<F>(
         .with_size(20.0)
         .with_font_size(12.0)
         .with_stroke_width(2.0)
-        .with_colors(Color32::GRAY, Color32::WHITE, Color32::WHITE, Color32::WHITE)
+        .with_colors(
+            Color32::GRAY,
+            Color32::WHITE,
+            Color32::WHITE,
+            Color32::WHITE,
+        )
         .with_label(label, LabelPosition::Right)
         .with_label_offset(4.0);
     let response = ui.add(knob);
@@ -298,12 +303,12 @@ impl Widget for Knob<'_> {
 
         let angle = TAU * ((*self.value - self.min) / (self.max - self.min) * range + start_angle);
 
-        let knob_color = if is_dragging { self.knob_dragging_color } else { self.knob_color };
-        painter.circle_stroke(
-            center,
-            radius,
-            Stroke::new(self.stroke_width, knob_color),
-        );
+        let knob_color = if is_dragging {
+            self.knob_dragging_color
+        } else {
+            self.knob_color
+        };
+        painter.circle_stroke(center, radius, Stroke::new(self.stroke_width, knob_color));
 
         match self.style {
             KnobStyle::Wiper => {
