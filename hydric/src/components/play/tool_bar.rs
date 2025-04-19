@@ -55,6 +55,7 @@ impl WindowView for ToolBar<'_> {
                             .dispatchr(Action::SetFloat(FloatField::Volume, it))
                     },
                     0.0..=1.0,
+                    /* neutral= */ 1.0,
                     on_release,
                 );
 
