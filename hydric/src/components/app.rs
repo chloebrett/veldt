@@ -208,7 +208,7 @@ impl eframe::App for App {
                         }
                     }
 
-                    SampleTreeWindow::new(&self.store, &mut self.window_state.sample_tree).ui(ui);
+                    SampleTreeWindow::new(&self.store, &mut self.async_state, &mut self.window_state.sample_tree).ui(ui);
 
                     default_window("Toolbar")
                         .default_pos(Pos2 { x: 600.0, y: 20.0 })

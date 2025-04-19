@@ -4,16 +4,21 @@ use egui::{Pos2, Ui};
 use egui_ltreeview::{TreeView, TreeViewBuilder};
 use shared::model::FilenameTree;
 use state::Store;
+use crate::rpc::load_sample_tree;
+use crate::promise::spawn;
+use crate::AsyncState;
 
 pub struct SampleTreeWindow<'a> {
     _store: &'a Store,
+    async_state: &'a mut AsyncState,
     visible: &'a mut bool,
 }
 
 impl<'a> SampleTreeWindow<'a> {
-    pub fn new(store: &'a Store, visible: &'a mut bool) -> Self {
+    pub fn new(store: &'a Store, async_state: &'a mut AsyncState, visible: &'a mut bool) -> Self {
         SampleTreeWindow {
             _store: store,
+            async_state,
             visible,
         }
     }
@@ -44,6 +49,12 @@ impl View for SampleTreeWindow<'_> {
             .open(self.visible)
             .default_pos(Pos2 { x: 600.0, y: 20.0 })
             .show(ui.ctx(), |ui| {
+                if ui.button("Refresh").clicked() {
+                    spawn(&mut self.async_state.load_sample_tree, async move {
+                        load_sample_tree().await
+                    })
+                }
+
                 let id = ui.make_persistent_id("sample_tree");
                 // Hard coded for now.
                 let tree = FilenameTree::Directory(

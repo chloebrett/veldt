@@ -6,6 +6,8 @@ import "pmodel.proto";
 
 service LoadSample {
   rpc LoadSample (LoadSampleRequest) returns (LoadSampleReply) {}
+
+  rpc LoadSampleTree (LoadSampleTreeRequest) returns (LoadSampleTreeReply) {}
 }
 
 message LoadSampleRequest {
@@ -14,4 +16,12 @@ message LoadSampleRequest {
 
 message LoadSampleReply {
   pmodel.SampleProto sample = 1;
+}
+
+message LoadSampleTreeRequest {
+  // Note: consider allowing the client to request a specific subtree.
+}
+
+message LoadSampleTreeReply {
+  pmodel.FilenameTreeProto tree = 1;
 }

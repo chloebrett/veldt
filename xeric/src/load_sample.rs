@@ -1,7 +1,9 @@
 use log::info;
 use shared::load_sample::load_sample_server::LoadSample;
-use shared::load_sample::{LoadSampleReply, LoadSampleRequest};
-use shared::model::Sample;
+use shared::load_sample::{
+    LoadSampleReply, LoadSampleRequest, LoadSampleTreeReply, LoadSampleTreeRequest,
+};
+use shared::model::{FilenameTree, Sample};
 use std::env::current_dir;
 use tonic::async_trait;
 
@@ -55,6 +57,15 @@ impl LoadSample for LoadSampleContext {
         };
         Ok(tonic::Response::new(LoadSampleReply {
             sample: Some(sample.into()),
+        }))
+    }
+
+    async fn load_sample_tree(
+        self: &Self,
+        _request: tonic::Request<LoadSampleTreeRequest>,
+    ) -> Result<tonic::Response<LoadSampleTreeReply>, tonic::Status> {
+        Ok(tonic::Response::new(LoadSampleTreeReply {
+            tree: Some(FilenameTree::File("Test".to_string()).into()),
         }))
     }
 }
