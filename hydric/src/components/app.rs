@@ -4,9 +4,10 @@ use super::{
     generator::{generator_control, generators_control},
     note_control::NoteControl,
     note_roll::NoteRoll,
-    play::ToolBar,
+    play::{ToolBar, play_control, sample_control},
     toggle_window_panel, track_placement_control,
     track_roll::TrackRoll,
+    undo_redo_control,
 };
 use crate::components::FrameHistory;
 use crate::promise::spawn;
@@ -14,13 +15,14 @@ use crate::rpc::broadcast_actions;
 use crate::rpc::load_project_list;
 use crate::view::View;
 use crate::view::WindowView;
-use crate::widget::{default_window, get_set, string_observer};
+use crate::widget::{default_window, get_set, knob, slider, string_observer};
 use crate::{AsyncState, AudioState, WindowState};
 use egui::{Id, Pos2};
 use egui::{ScrollArea, scroll_area::ScrollBarVisibility};
 use poll_promise::Promise;
 use shared::model::GeneratorType;
-use state::{Action, Selector, Store, TypeField};
+use shared::types::Beats;
+use state::{Action, FloatField, Selector, Store, TypeField};
 
 pub struct App {
     pub store: Store,
