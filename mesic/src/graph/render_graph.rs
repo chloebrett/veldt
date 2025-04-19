@@ -1,5 +1,6 @@
 use super::{
-    make_graph, make_processor, BufferNode, CompressorNode, DelayNode, EqNode, GeneratorNode, Graph, MixerNode, ModDelayNode, Processor
+    BufferNode, CompressorNode, DelayNode, EqNode, GeneratorNode, Graph, MixerNode, ModDelayNode,
+    Processor, make_graph, make_processor,
 };
 use crate::consts::SAMPLE_RATE;
 use crate::effect::eq_filter;
@@ -70,6 +71,7 @@ impl RenderGraph {
         effect: EffectInstance,
         generator_index: usize,
     ) {
+        println!("Gen indices: {:?}", self.generator_indexes);
         let dry = *self
             .generator_indexes
             .get(generator_index)
@@ -80,7 +82,6 @@ impl RenderGraph {
             self.graph.remove_edge(edge);
         };
         self.graph.add_edge(mixer, self.output_node_index, ());
-        self.output_node_index = mixer
     }
 
     pub fn add_main_effect_with_mixer(&mut self, effect: EffectInstance) {
@@ -197,7 +198,7 @@ mod tests {
 
     use super::*;
 
-    fn make_generator_node() -> GeneratorNode {
+    fn make_track_and_track_placement() -> (Track, TrackPlacement) {
         let track = Track {
             notes: vec![PlacedNote {
                 note: Note {
@@ -205,19 +206,23 @@ mod tests {
                         scale_value: ScaleValue::C,
                         octave: 4,
                     },
-                    beats: 2.0,
+                    beats: 1.0,
                 },
                 offset: 0.0.into(),
             }],
             offset: 0.0.into(),
         };
         let track_placement = TrackPlacement {
-            track_id: 3,
-            offset: 2.5.into(),
-            clipped_duration: Some(5.2.into()),
-            visual_placement: 6,
+            track_id: 0,
+            offset: 0.0.into(),
+            clipped_duration: None,
+            visual_placement: 0,
         };
-        let generator = GeneratorInstance {
+        (track, track_placement)
+    }
+
+    fn make_generator() -> GeneratorInstance {
+        GeneratorInstance {
             id: 0,
             kind: GeneratorType::SimpleWave {
                 config: SimpleWaveConfig {
@@ -239,7 +244,12 @@ mod tests {
                 mute: false,
                 pan: 0.0,
             },
-        };
+        }
+    }
+
+    fn make_generator_node() -> GeneratorNode {
+        let (track, track_placement) = make_track_and_track_placement();
+        let generator = make_generator();
         let bpm = 120.0;
         let generator_node = GeneratorNode::new(generator, track, track_placement, bpm);
         generator_node
@@ -354,5 +364,88 @@ mod tests {
             .collect();
         // Assert
         assert_eq!(output_mono, input)
+    }
+
+    #[test]
+    fn graph_with_clipped_duration_clips() {
+        // ARRANGE
+        let (track, mut track_placement) = make_track_and_track_placement();
+        let generator = make_generator();
+        let bpm = 120.0;
+        // Set up graph with no clipping.
+        let mut unclipped_graph = RenderGraph::default();
+        let unclipped_generator_node = GeneratorNode::new(
+            generator.clone(),
+            track.clone(),
+            track_placement.clone(),
+            bpm,
+        );
+        // Set up identical graph but with a clipped duration
+        let clipped_duration = 0.5;
+        track_placement.clipped_duration = Some(clipped_duration.into());
+        let mut clipped_graph = RenderGraph::default();
+        let clipped_generator_node = GeneratorNode::new(
+            generator.clone(),
+            track.clone(),
+            track_placement.clone(),
+            bpm,
+        );
+        // Find what should be length of the clipped track.
+        let clipped_sample_length =
+            beats_to_samples(*track_placement.offset + clipped_duration, bpm) as usize;
+        // ACT
+        unclipped_graph.add_generator(unclipped_generator_node);
+        clipped_graph.add_generator(clipped_generator_node);
+        let unclipped_output: Vec<[f32; 2]> = unclipped_graph.collect();
+        let clipped_output: Vec<[f32; 2]> = clipped_graph.collect();
+        // ASSERT
+        let expected_output: Vec<[f32; 2]> = unclipped_output[0..clipped_sample_length].to_vec();
+        assert_eq!(clipped_output, expected_output)
+    }
+
+    #[test]
+    fn clipped_second_track_duration_doesnt_clip_first() {
+        // ARRANGE
+        let (track, track_placement) = make_track_and_track_placement();
+        let generator = make_generator();
+        let bpm = 120.0;
+        // Set two tracks' offsets so they do not overlap.
+        let mut placement_1 = track_placement.clone();
+        placement_1.offset = 0.0.into();
+        let mut placement_2 = track_placement.clone();
+        placement_2.offset = 5.0.into();
+        // Create a graph with both tracks and no clipped audio
+        let mut unclipped_graph = RenderGraph::default();
+        let generator_node_1 =
+            GeneratorNode::new(generator.clone(), track.clone(), placement_1.clone(), bpm);
+        let generator_node_2 =
+            GeneratorNode::new(generator.clone(), track.clone(), placement_2.clone(), bpm);
+        unclipped_graph.add_generator(generator_node_1);
+        unclipped_graph.add_generator(generator_node_2);
+        // Set up identical graph but with a clipped duration on the second track
+        let mut placement_2_clipped = placement_2.clone();
+        let clipped_duration = 0.5;
+        placement_2_clipped.clipped_duration = Some(clipped_duration.into());
+        let mut clipped_graph = RenderGraph::default();
+        let clip_generator_node_1 =
+            GeneratorNode::new(generator.clone(), track.clone(), placement_1.clone(), bpm);
+        let clip_generator_node_2 = GeneratorNode::new(
+            generator.clone(),
+            track.clone(),
+            placement_2_clipped.clone(),
+            bpm,
+        );
+        clipped_graph.add_generator(clip_generator_node_1);
+        clipped_graph.add_generator(clip_generator_node_2);
+        // Find what should be length of the clipped track graph output.
+        let clipped_sample_length =
+            beats_to_samples(*placement_2_clipped.offset + clipped_duration, bpm) as usize;
+        // ACT
+        // Get output of graphs
+        let unclipped_output: Vec<[f32; 2]> = unclipped_graph.collect();
+        let clipped_output: Vec<[f32; 2]> = clipped_graph.collect();
+        // ASSERT
+        let expected_output: Vec<[f32; 2]> = unclipped_output[0..clipped_sample_length].to_vec();
+        assert_eq!(clipped_output, expected_output)
     }
 }

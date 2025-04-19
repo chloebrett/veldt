@@ -9,12 +9,23 @@ pub struct GeneratorNode {
     track: Track,
     track_placement: TrackPlacement,
     bpm: Beats,
-    pub sample_count: usize
+    pub sample_count: usize,
 }
 
 impl GeneratorNode {
-    pub fn new(instance: GeneratorInstance, track: Track, track_placement: TrackPlacement, bpm: Beats) -> Self {
-        let sample_count = beats_to_samples(*track_placement.clipped_duration.unwrap_or(track.unclipped_duration()), bpm) as usize;
+    pub fn new(
+        instance: GeneratorInstance,
+        track: Track,
+        track_placement: TrackPlacement,
+        bpm: Beats,
+    ) -> Self {
+        let sample_count = beats_to_samples(
+            *track_placement.offset
+                + *track_placement
+                    .clipped_duration
+                    .unwrap_or(track.unclipped_duration()),
+            bpm,
+        ) as usize;
         GeneratorNode {
             instance,
             track,
@@ -53,13 +64,20 @@ impl Node for GeneratorNode {
             // TODO: use a segment tree to determine which notes are in range of the current
             // buffer, instead of always iterating over all notes.
             // Then apply the same idea to tracks.
-            let note_start_sample = beats_to_samples(*note.offset + *track_placement.offset, self.bpm);
+            let note_start_sample =
+                beats_to_samples(*note.offset + *track_placement.offset, self.bpm);
             // Clip note end to sample_count
             // Skip notes that are outside of track sample_length
             if note_start_sample > self.sample_count as u32 {
-                continue
+                continue;
             }
-            let note_end_sample = u32::min(beats_to_samples(*note.offset + note.note.beats, self.bpm), self.sample_count as u32);
+            let note_end_sample = u32::min(
+                beats_to_samples(
+                    *note.offset + note.note.beats + *track_placement.offset,
+                    self.bpm,
+                ),
+                self.sample_count as u32,
+            );
 
             // Don't play notes that aren't relevant to this buffer segment.
             if note_start_sample > self.sample_index + Buffer::LEN as u32
