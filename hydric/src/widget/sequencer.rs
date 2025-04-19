@@ -3,6 +3,7 @@ use egui::{
     Color32, CornerRadius, CursorIcon, Frame, Pos2, Rect, Response, Sense, Shape, Stroke, Ui, Vec2,
     Widget, emath::RectTransform, pos2, vec2,
 };
+use shared::types::Beats;
 use state::Action;
 
 pub struct Sequencer<T: SequencerObject<T>, F: Fn(usize, Action), G: Fn(), H: Fn(&mut Ui, usize)> {
@@ -10,7 +11,9 @@ pub struct Sequencer<T: SequencerObject<T>, F: Fn(usize, Action), G: Fn(), H: Fn
     size: Vec2,
     objects: Vec<T>,
     sense: Sense,
-    dispatch: F, // A closure to modify object in Store. Takes object index and `Action` to dispatch chage.
+    quantise_level: Beats,
+    // A closure to modify object in Store. Takes object index and `Action` to dispatch change.
+    dispatch: F,
     on_release: G,
     on_click: H,
     background_shapes: Vec<Shape>,
@@ -25,6 +28,7 @@ impl<T: SequencerObject<T>, F: Fn(usize, Action), G: Fn(), H: Fn(&mut Ui, usize)
             size: vec2(400.0, 600.0),
             objects: vec![],
             sense: Sense::drag(),
+            quantise_level: 0.25,
             dispatch,
             on_release,
             on_click,
@@ -115,13 +119,16 @@ impl<T: SequencerObject<T>, F: Fn(usize, Action), G: Fn(), H: Fn(&mut Ui, usize)
             if resize_resp.hovered() {
                 ui.ctx().set_cursor_icon(CursorIcon::ResizeColumn);
             }
-            let mut release = false;
-            release = release || self.move_object(index, movable_resp, to_sequencer);
-            release = release || self.resize_object(index, resize_resp, to_sequencer);
+            let release = self.move_object(index, movable_resp, to_sequencer)
+                || self.resize_object(index, resize_resp, to_sequencer);
             if release {
                 (self.on_release)()
             }
         }
+    }
+
+    fn quantise(&self, value: Beats) -> Beats {
+        (value / self.quantise_level).round() * self.quantise_level
     }
 
     fn move_object(&self, index: usize, response: Response, to_sequencer: RectTransform) -> bool {
@@ -132,7 +139,7 @@ impl<T: SequencerObject<T>, F: Fn(usize, Action), G: Fn(), H: Fn(&mut Ui, usize)
         let mut action_dispatched = false;
         if let Some(drag_pos) = drag_pos {
             // 'y' moves in increments and should update to to wherever the mouse is while dragging.
-            // 'x' moves continiously and so move based on the drag detla.
+            // 'x' moves continiously and so move based on the drag delta.
             let scaled_pos = pos2(next_pos.x, drag_pos.y)
                 .transform(to_sequencer.inverse())
                 .clamp(
@@ -165,7 +172,7 @@ impl<T: SequencerObject<T>, F: Fn(usize, Action), G: Fn(), H: Fn(&mut Ui, usize)
                 pos2(response.rect.transform(to_sequencer.inverse()).left(), 0.0),
                 self.range.size().to_pos2(),
             );
-            if let Some(action) = object.resize_action(scaled_pos.x, self.range) {
+            if let Some(action) = object.resize_action(self.quantise(scaled_pos.x), self.range) {
                 (self.dispatch)(index, action);
                 action_dispatched = true;
             };
