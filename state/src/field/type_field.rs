@@ -1,7 +1,7 @@
 use shared::action_proto::{TypeFieldProto, type_field_proto::Kind as TypeFieldKind};
 use shared::model::{
-    AdsrEnvelope, AntiAliasingMode, EffectInstance, EqType, FilenameTree, PitchName, PlacedNote,
-    Project, Sample, Scale, ScaleValue, Track, TrackPlacement, WaveType,
+    AdsrEnvelope, AntiAliasingMode, EffectInstance, EqType, FileTreeConfig, FilenameTree,
+    PitchName, PlacedNote, Project, Sample, Scale, ScaleValue, Track, TrackPlacement, WaveType,
 };
 use shared::pmodel::{AntiAliasingModeProto, EqTypeProto, ScaleProto, WaveTypeProto};
 
@@ -30,11 +30,13 @@ pub enum TypeField {
     AntiAliasingMode(AntiAliasingMode),
     EqType(EqType),
     ClippedDuration(Option<f32>),
+    SampleTreeConfig(FileTreeConfig),
 
     // Note: if we end up with more bools/primitives, make dedicated types for them so that we
     // don't have to keep expanding the proto.
     Mute(bool),
     Octave(i32),
+    // Note: when you add a new type, make sure to configure its broadcast behaviour in broadcast.rs as well.
 }
 
 impl From<TypeFieldProto> for TypeField {
@@ -59,6 +61,7 @@ impl From<TypeFieldProto> for TypeField {
             }
             TypeFieldKind::ClippedDuration(it) => TypeField::ClippedDuration(it.into()),
             TypeFieldKind::SampleTree(it) => TypeField::SampleTree(it.into()),
+            TypeFieldKind::SampleTreeConfig(it) => TypeField::SampleTreeConfig(it.into()),
 
             // Note: if we end up with more bools/primitives, make dedicated types for them so that we
             // don't have to keep expanding the proto.
@@ -95,6 +98,7 @@ impl From<TypeField> for TypeFieldProto {
                 }
                 TypeField::EqType(it) => TypeFieldKind::EqType(EqTypeProto::from(it).into()),
                 TypeField::ClippedDuration(it) => TypeFieldKind::ClippedDuration(it.into()),
+                TypeField::SampleTreeConfig(it) => TypeFieldKind::SampleTreeConfig(it.into()),
 
                 // Note: if we end up with more bools/primitives, make dedicated types for them so that we
                 // don't have to keep expanding the proto.
