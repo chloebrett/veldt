@@ -3,31 +3,31 @@ use crate::pmodel::{
 };
 use crate::serialize::map_vec;
 
-pub type FilenameTreeNode = FileTreeNode<String, String>;
+pub type FilenameTree = FileTree<String, String>;
 
 #[derive(Debug, PartialEq, Clone)]
-pub enum FileTreeNode</* FileData= */ T, /* DirectoryData= */ U> {
+pub enum FileTree</* FileData= */ T, /* DirectoryData= */ U> {
     File(T),
-    Directory(U, Vec<FileTreeNode<T, U>>),
+    Directory(U, Vec<FileTree<T, U>>),
 }
 
-impl From<FilenameTreeProto> for FilenameTreeNode {
+impl From<FilenameTreeProto> for FilenameTree {
     fn from(other: FilenameTreeProto) -> Self {
         match other.kind.unwrap() {
-            FilenameTreeProtoKind::Filename(name) => FilenameTreeNode::File(name),
+            FilenameTreeProtoKind::Filename(name) => FilenameTree::File(name),
             FilenameTreeProtoKind::Directory(directory) => {
-                FilenameTreeNode::Directory(directory.name, map_vec(directory.contents))
+                FilenameTree::Directory(directory.name, map_vec(directory.contents))
             }
         }
     }
 }
 
-impl From<FilenameTreeNode> for FilenameTreeProto {
-    fn from(other: FilenameTreeNode) -> Self {
+impl From<FilenameTree> for FilenameTreeProto {
+    fn from(other: FilenameTree) -> Self {
         FilenameTreeProto {
             kind: Some(match other {
-                FilenameTreeNode::File(name) => FilenameTreeProtoKind::Filename(name),
-                FilenameTreeNode::Directory(name, contents) => {
+                FilenameTree::File(name) => FilenameTreeProtoKind::Filename(name),
+                FilenameTree::Directory(name, contents) => {
                     FilenameTreeProtoKind::Directory(DirectoryProto {
                         name,
                         contents: map_vec(contents),
@@ -46,36 +46,36 @@ mod tests {
 
     #[test]
     fn file_tree_proto_round_trip() {
-        let tree = FilenameTreeNode::Directory(
+        let tree = FilenameTree::Directory(
             "Samples".to_string(),
             vec![
-                FilenameTreeNode::Directory(
+                FilenameTree::Directory(
                     "Drum kit".to_string(),
                     vec![
-                        FilenameTreeNode::File("Kick".to_string()),
-                        FilenameTreeNode::Directory(
+                        FilenameTree::File("Kick".to_string()),
+                        FilenameTree::Directory(
                             "Snares".to_string(),
                             vec![
-                                FilenameTreeNode::File("Snare 1".to_string()),
-                                FilenameTreeNode::File("Snare 2".to_string()),
+                                FilenameTree::File("Snare 1".to_string()),
+                                FilenameTree::File("Snare 2".to_string()),
                             ],
                         ),
-                        FilenameTreeNode::File("Hi hat".to_string()),
-                        FilenameTreeNode::File("Tom".to_string()),
-                        FilenameTreeNode::File("Cymbal".to_string()),
+                        FilenameTree::File("Hi hat".to_string()),
+                        FilenameTree::File("Tom".to_string()),
+                        FilenameTree::File("Cymbal".to_string()),
                     ],
                 ),
-                FilenameTreeNode::Directory(
+                FilenameTree::Directory(
                     "Loops".to_string(),
                     vec![
-                        FilenameTreeNode::File("Bass".to_string()),
-                        FilenameTreeNode::File("Guitar".to_string()),
-                        FilenameTreeNode::File("Piano".to_string()),
+                        FilenameTree::File("Bass".to_string()),
+                        FilenameTree::File("Guitar".to_string()),
+                        FilenameTree::File("Piano".to_string()),
                     ],
                 ),
             ],
         );
 
-        assert_proto_round_trip::<FilenameTreeNode, FilenameTreeProto>(tree);
+        assert_proto_round_trip::<FilenameTree, FilenameTreeProto>(tree);
     }
 }

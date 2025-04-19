@@ -2,7 +2,7 @@ use crate::view::View;
 use crate::widget::default_window;
 use egui::{Pos2, Ui};
 use egui_ltreeview::{TreeView, TreeViewBuilder};
-use shared::model::FilenameTreeNode;
+use shared::model::FilenameTree;
 use state::Store;
 
 pub struct SampleTreeWindow<'a> {
@@ -19,18 +19,18 @@ impl<'a> SampleTreeWindow<'a> {
     }
 }
 
-/// Adds a FilenameTreeNode to a TreeViewBuilder. Returns the next unused ID.
+/// Adds a FilenameTree to a TreeViewBuilder. Returns the next unused ID.
 fn add_node(
     builder: &mut TreeViewBuilder<usize>,
-    node: &FilenameTreeNode,
+    node: &FilenameTree,
     start_id: usize,
 ) -> usize {
     match node {
-        FilenameTreeNode::File(name) => {
+        FilenameTree::File(name) => {
             builder.leaf(start_id, name);
             return start_id + 1;
         }
-        FilenameTreeNode::Directory(name, contents) => {
+        FilenameTree::Directory(name, contents) => {
             builder.dir(start_id, name);
             let mut next_id = start_id + 1;
             for child in contents {
@@ -50,25 +50,25 @@ impl View for SampleTreeWindow<'_> {
             .show(ui.ctx(), |ui| {
                 let id = ui.make_persistent_id("sample_tree");
                 // Hard coded for now.
-                let tree = FilenameTreeNode::Directory(
+                let tree = FilenameTree::Directory(
                     "Samples".to_string(),
                     vec![
-                        FilenameTreeNode::Directory(
+                        FilenameTree::Directory(
                             "Drum kit".to_string(),
                             vec![
-                                FilenameTreeNode::File("Kick".to_string()),
-                                FilenameTreeNode::File("Snare".to_string()),
-                                FilenameTreeNode::File("Hi hat".to_string()),
-                                FilenameTreeNode::File("Tom".to_string()),
-                                FilenameTreeNode::File("Cymbal".to_string()),
+                                FilenameTree::File("Kick".to_string()),
+                                FilenameTree::File("Snare".to_string()),
+                                FilenameTree::File("Hi hat".to_string()),
+                                FilenameTree::File("Tom".to_string()),
+                                FilenameTree::File("Cymbal".to_string()),
                             ],
                         ),
-                        FilenameTreeNode::Directory(
+                        FilenameTree::Directory(
                             "Loops".to_string(),
                             vec![
-                                FilenameTreeNode::File("Bass".to_string()),
-                                FilenameTreeNode::File("Guitar".to_string()),
-                                FilenameTreeNode::File("Piano".to_string()),
+                                FilenameTree::File("Bass".to_string()),
+                                FilenameTree::File("Guitar".to_string()),
+                                FilenameTree::File("Piano".to_string()),
                             ],
                         ),
                     ],
