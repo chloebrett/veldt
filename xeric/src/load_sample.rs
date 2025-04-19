@@ -5,6 +5,9 @@ use shared::load_sample::{
 };
 use shared::model::{FilenameTree, Sample};
 use std::env::current_dir;
+use std::fs::{ReadDir, read_dir};
+use std::io::Error;
+use std::path::PathBuf;
 use tonic::async_trait;
 
 const PCM_MAX_I16: i16 = 0x7FFF; // 2^15 - 1
@@ -22,6 +25,41 @@ pub fn to_f32(sample: i32) -> f32 {
 // This is a stateless RPC, at least as far as in-memory state is concerned (it does
 // depend on filesystem state). Therefore the context can be empty.
 pub struct LoadSampleContext;
+
+fn sample_dir_path() -> PathBuf {
+    let mut file_path = current_dir().unwrap();
+    file_path.pop(); // pop '/xeric'
+    file_path.push("assets");
+    file_path.push("samples");
+    file_path
+}
+
+fn read_dir_as_tree(path: PathBuf) -> Result<FilenameTree, Error> {
+    let dir_contents: ReadDir = read_dir(&path)?;
+    let filename = path
+        .as_path()
+        .file_name()
+        .unwrap()
+        .to_str()
+        .unwrap()
+        .to_string();
+    let mut tree = FilenameTree::Directory(filename, vec![]);
+    let FilenameTree::Directory(_, children) = &mut tree else {
+        panic!()
+    };
+
+    for file in dir_contents {
+        let file = file?;
+        let filename: String = file.file_name().to_str().unwrap().to_string();
+        if file.metadata()?.is_dir() {
+            children.push(read_dir_as_tree(file.path())?);
+        } else {
+            children.push(FilenameTree::File(filename));
+        }
+    }
+
+    Ok(tree)
+}
 
 #[async_trait]
 impl LoadSample for LoadSampleContext {
@@ -64,8 +102,10 @@ impl LoadSample for LoadSampleContext {
         self: &Self,
         _request: tonic::Request<LoadSampleTreeRequest>,
     ) -> Result<tonic::Response<LoadSampleTreeReply>, tonic::Status> {
+        let tree = read_dir_as_tree(sample_dir_path())?;
+
         // Hard coded for now.
-        let tree = FilenameTree::Directory(
+        let tree2 = FilenameTree::Directory(
             "Samples".to_string(),
             vec![
                 FilenameTree::Directory(

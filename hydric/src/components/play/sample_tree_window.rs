@@ -3,7 +3,7 @@ use crate::promise::{poll, spawn};
 use crate::rpc::load_sample_tree;
 use crate::view::View;
 use crate::widget::default_window;
-use egui::{Pos2, Ui};
+use egui::{Pos2, ScrollArea, Ui};
 use egui_ltreeview::{TreeView, TreeViewBuilder};
 use shared::model::FilenameTree;
 use state::{Action, Store, TypeField};
@@ -25,19 +25,24 @@ impl<'a> SampleTreeWindow<'a> {
 }
 
 /// Adds a FilenameTree to a TreeViewBuilder. Returns the next unused ID.
-fn add_node(builder: &mut TreeViewBuilder<usize>, node: &FilenameTree, start_id: usize) -> usize {
+/// If ignore_top = true, does not push the top-level directory.
+fn add_node(builder: &mut TreeViewBuilder<usize>, node: &FilenameTree, start_id: usize, ignore_top: bool) -> usize {
     match node {
         FilenameTree::File(name) => {
             builder.leaf(start_id, name);
             return start_id + 1;
         }
         FilenameTree::Directory(name, contents) => {
-            builder.dir(start_id, name);
+            if !ignore_top {
+                builder.dir(start_id, name);
+            }
             let mut next_id = start_id + 1;
             for node in contents {
-                next_id = add_node(builder, node, next_id);
+                next_id = add_node(builder, node, next_id, /* ignore_top= */ false);
             }
-            builder.close_dir();
+            if !ignore_top {
+                builder.close_dir();
+            }
             return next_id;
         }
     }
@@ -61,10 +66,14 @@ impl View for SampleTreeWindow<'_> {
                 });
 
                 if let Some(tree) = &self.store.get().sample_tree {
-                    let id = ui.make_persistent_id("sample_tree");
-                    TreeView::new(id).show(ui, |builder| {
-                        add_node(builder, &tree, 0);
-                    });
+                    ScrollArea::vertical()
+                        .min_scrolled_height(200.0)
+                        .show(ui, |ui| {
+                            let id = ui.make_persistent_id("sample_tree");
+                            TreeView::new(id).show(ui, |builder| {
+                                add_node(builder, &tree, /* start_id= */ 0, /* ignore_top= */ true);
+                            });
+                        });
                 }
             });
     }
