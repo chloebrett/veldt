@@ -3,6 +3,7 @@ mod effect;
 mod frame_history;
 mod generator;
 mod key_view;
+mod menu;
 mod note_control;
 mod note_roll;
 mod piano;
