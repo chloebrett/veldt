@@ -1,12 +1,12 @@
+use crate::AsyncState;
+use crate::promise::spawn;
+use crate::rpc::load_sample_tree;
 use crate::view::View;
 use crate::widget::default_window;
 use egui::{Pos2, Ui};
 use egui_ltreeview::{TreeView, TreeViewBuilder};
 use shared::model::FilenameTree;
 use state::Store;
-use crate::rpc::load_sample_tree;
-use crate::promise::spawn;
-use crate::AsyncState;
 
 pub struct SampleTreeWindow<'a> {
     _store: &'a Store,
