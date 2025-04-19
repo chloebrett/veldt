@@ -39,7 +39,9 @@ pub fn generators_control(ctx: &egui::Context, window_state: &mut WindowState, s
                     "Volume",
                     meta.volume,
                     |it| store.dispatch(&sel, Action::SetFloat(FloatField::Volume, it)),
+                    // TODO: let this go up a bit past 1?
                     0.0..=1.0,
+                    /* neutral= */ 0.8,
                     on_release,
                 );
                 // TODO: make the pan knob centre at the top since it's bipolar.
@@ -49,6 +51,7 @@ pub fn generators_control(ctx: &egui::Context, window_state: &mut WindowState, s
                     meta.pan,
                     |it| store.dispatch(&sel, Action::SetFloat(FloatField::Pan, it)),
                     -1.0..=1.0,
+                    /* neutral= */ 0.0,
                     on_release,
                 );
                 checkbox(
