@@ -64,8 +64,32 @@ impl LoadSample for LoadSampleContext {
         self: &Self,
         _request: tonic::Request<LoadSampleTreeRequest>,
     ) -> Result<tonic::Response<LoadSampleTreeReply>, tonic::Status> {
+        // Hard coded for now.
+        let tree = FilenameTree::Directory(
+            "Samples".to_string(),
+            vec![
+                FilenameTree::Directory(
+                    "Drum kit".to_string(),
+                    vec![
+                        FilenameTree::File("Kick".to_string()),
+                        FilenameTree::File("Snare".to_string()),
+                        FilenameTree::File("Hi hat".to_string()),
+                        FilenameTree::File("Tom".to_string()),
+                        FilenameTree::File("Cymbal".to_string()),
+                    ],
+                ),
+                FilenameTree::Directory(
+                    "Loops".to_string(),
+                    vec![
+                        FilenameTree::File("Bass".to_string()),
+                        FilenameTree::File("Guitar".to_string()),
+                        FilenameTree::File("Piano".to_string()),
+                    ],
+                ),
+            ],
+        );
         Ok(tonic::Response::new(LoadSampleTreeReply {
-            tree: Some(FilenameTree::File("Test".to_string()).into()),
+            tree: Some(tree.into()),
         }))
     }
 }

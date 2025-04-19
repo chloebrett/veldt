@@ -1,7 +1,7 @@
 use shared::action_proto::{TypeFieldProto, type_field_proto::Kind as TypeFieldKind};
 use shared::model::{
-    AdsrEnvelope, AntiAliasingMode, EffectInstance, EqType, PitchName, PlacedNote, Project, Sample,
-    Scale, ScaleValue, Track, TrackPlacement, WaveType,
+    AdsrEnvelope, AntiAliasingMode, EffectInstance, EqType, FilenameTree, PitchName, PlacedNote,
+    Project, Sample, Scale, ScaleValue, Track, TrackPlacement, WaveType,
 };
 use shared::pmodel::{AntiAliasingModeProto, EqTypeProto, ScaleProto, WaveTypeProto};
 
@@ -22,6 +22,7 @@ pub enum TypeField {
     ProjectList(Vec<String>),
     LoadProjectName(String),
     Sample(Sample),
+    SampleTree(FilenameTree),
     Track(Track),
     PlacedNote(PlacedNote),
     Wave(WaveType),
@@ -57,6 +58,7 @@ impl From<TypeFieldProto> for TypeField {
                 TypeField::EqType(EqTypeProto::try_from(it).unwrap().into())
             }
             TypeFieldKind::ClippedDuration(it) => TypeField::ClippedDuration(it.into()),
+            TypeFieldKind::SampleTree(it) => TypeField::SampleTree(it.into()),
 
             // Note: if we end up with more bools/primitives, make dedicated types for them so that we
             // don't have to keep expanding the proto.
@@ -76,6 +78,7 @@ impl From<TypeField> for TypeFieldProto {
                 TypeField::ProjectList(_) => panic!(),
                 TypeField::Sample(_) => panic!(),
 
+                TypeField::SampleTree(it) => TypeFieldKind::SampleTree(it.into()),
                 TypeField::Effect(it) => TypeFieldKind::Effect(it.into()),
                 TypeField::PitchName(it) => TypeFieldKind::PitchName(it.into()),
                 TypeField::Key(it) => TypeFieldKind::Key(it.into()),

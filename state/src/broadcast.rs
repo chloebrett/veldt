@@ -20,6 +20,7 @@ pub fn broadcast_type(action: &Action) -> BroadcastType {
             TypeField::ProjectList(..) => BroadcastType::Never,
             TypeField::Project(..) => BroadcastType::Never,
             TypeField::LoadProjectName(..) => BroadcastType::Never,
+            TypeField::SampleTree(..) => BroadcastType::Never,
             TypeField::Octave(..) => BroadcastType::OnRelease,
             _ => BroadcastType::Immediate,
         },

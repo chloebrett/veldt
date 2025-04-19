@@ -1,15 +1,15 @@
 use crate::AsyncState;
-use crate::promise::spawn;
+use crate::promise::{poll, spawn};
 use crate::rpc::load_sample_tree;
 use crate::view::View;
 use crate::widget::default_window;
 use egui::{Pos2, Ui};
 use egui_ltreeview::{TreeView, TreeViewBuilder};
 use shared::model::FilenameTree;
-use state::Store;
+use state::{Action, Store, TypeField};
 
 pub struct SampleTreeWindow<'a> {
-    _store: &'a Store,
+    store: &'a Store,
     async_state: &'a mut AsyncState,
     visible: &'a mut bool,
 }
@@ -17,7 +17,7 @@ pub struct SampleTreeWindow<'a> {
 impl<'a> SampleTreeWindow<'a> {
     pub fn new(store: &'a Store, async_state: &'a mut AsyncState, visible: &'a mut bool) -> Self {
         SampleTreeWindow {
-            _store: store,
+            store,
             async_state,
             visible,
         }
@@ -34,8 +34,8 @@ fn add_node(builder: &mut TreeViewBuilder<usize>, node: &FilenameTree, start_id:
         FilenameTree::Directory(name, contents) => {
             builder.dir(start_id, name);
             let mut next_id = start_id + 1;
-            for child in contents {
-                next_id = add_node(builder, child, next_id);
+            for node in contents {
+                next_id = add_node(builder, node, next_id);
             }
             builder.close_dir();
             return next_id;
@@ -55,34 +55,17 @@ impl View for SampleTreeWindow<'_> {
                     })
                 }
 
-                let id = ui.make_persistent_id("sample_tree");
-                // Hard coded for now.
-                let tree = FilenameTree::Directory(
-                    "Samples".to_string(),
-                    vec![
-                        FilenameTree::Directory(
-                            "Drum kit".to_string(),
-                            vec![
-                                FilenameTree::File("Kick".to_string()),
-                                FilenameTree::File("Snare".to_string()),
-                                FilenameTree::File("Hi hat".to_string()),
-                                FilenameTree::File("Tom".to_string()),
-                                FilenameTree::File("Cymbal".to_string()),
-                            ],
-                        ),
-                        FilenameTree::Directory(
-                            "Loops".to_string(),
-                            vec![
-                                FilenameTree::File("Bass".to_string()),
-                                FilenameTree::File("Guitar".to_string()),
-                                FilenameTree::File("Piano".to_string()),
-                            ],
-                        ),
-                    ],
-                );
-                TreeView::new(id).show(ui, |builder| {
-                    add_node(builder, &tree, 0);
+                poll(&mut self.async_state.load_sample_tree, |tree| {
+                    self.store
+                        .dispatchr(Action::SetChild(TypeField::SampleTree(tree.clone())))
                 });
+
+                if let Some(tree) = &self.store.get().sample_tree {
+                    let id = ui.make_persistent_id("sample_tree");
+                    TreeView::new(id).show(ui, |builder| {
+                        add_node(builder, &tree, 0);
+                    });
+                }
             });
     }
 }
