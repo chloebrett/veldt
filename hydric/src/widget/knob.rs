@@ -26,7 +26,8 @@ pub fn knob<F>(
         .with_font_size(12.0)
         .with_stroke_width(2.0)
         .with_colors(Color32::GRAY, Color32::WHITE, Color32::WHITE)
-        .with_label(label, LabelPosition::Right);
+        .with_label(label, LabelPosition::Right)
+        .with_label_offset(4.0);
     let response = ui.add(knob);
 
     if temp != value {
