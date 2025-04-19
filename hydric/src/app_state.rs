@@ -31,6 +31,7 @@ pub struct WindowState {
     pub generator_list: bool,
     pub generators: Vec<bool>, // by ID
     pub scale: bool,
+    pub sample_tree: bool,
 }
 
 impl Default for WindowState {
@@ -45,6 +46,7 @@ impl Default for WindowState {
             generator_list: false,
             generators: vec![false],
             scale: false,
+            sample_tree: false,
         }
     }
 }

@@ -4,7 +4,7 @@ use super::{
     generator::{generator_control, generators_control},
     note_control::NoteControl,
     note_roll::NoteRoll,
-    play::{play_control, sample_control},
+    play::{SampleTreeWindow, play_control, sample_control},
     toggle_window_panel, track_placement_control,
     track_roll::TrackRoll,
     undo_redo_control,
@@ -207,6 +207,8 @@ impl eframe::App for App {
                             })
                         }
                     }
+
+                    SampleTreeWindow::new(&self.store, &mut self.window_state.sample_tree).ui(ui);
 
                     default_window("Toolbar")
                         .default_pos(Pos2 { x: 600.0, y: 20.0 })
