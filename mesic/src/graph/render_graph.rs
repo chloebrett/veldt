@@ -351,7 +351,10 @@ mod tests {
         // Act
         let graph = RenderGraph::from_vec(input.clone());
         let output: Vec<[f32; 2]> = graph.collect();
-        let output_mono: Vec<f32> = output.iter().map(|[left, right]| (left + right) * 0.5 ).collect();
+        let output_mono: Vec<f32> = output
+            .iter()
+            .map(|[left, right]| (left + right) * 0.5)
+            .collect();
         // Assert
         assert_eq!(output_mono, input)
     }
