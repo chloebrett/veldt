@@ -25,7 +25,7 @@ pub fn knob<F>(
         .with_size(20.0)
         .with_font_size(12.0)
         .with_stroke_width(2.0)
-        .with_colors(Color32::GRAY, Color32::WHITE, Color32::WHITE)
+        .with_colors(Color32::GRAY, Color32::WHITE, Color32::WHITE, Color32::WHITE)
         .with_label(label, LabelPosition::Right)
         .with_label_offset(4.0);
     let response = ui.add(knob);
@@ -76,6 +76,7 @@ struct Knob<'a> {
     font_size: f32,
     stroke_width: f32,
     knob_color: Color32,
+    knob_dragging_color: Color32,
     line_color: Color32,
     text_color: Color32,
     label: Option<String>,
@@ -104,6 +105,7 @@ impl<'a> Knob<'a> {
             font_size: 12.0,
             stroke_width: 2.0,
             knob_color: Color32::GRAY,
+            knob_dragging_color: Color32::WHITE,
             line_color: Color32::GRAY,
             text_color: Color32::WHITE,
             label: None,
@@ -142,10 +144,12 @@ impl<'a> Knob<'a> {
     pub fn with_colors(
         mut self,
         knob_color: Color32,
+        knob_dragging_color: Color32,
         line_color: Color32,
         text_color: Color32,
     ) -> Self {
         self.knob_color = knob_color;
+        self.knob_dragging_color = knob_dragging_color;
         self.line_color = line_color;
         self.text_color = text_color;
         self
@@ -227,11 +231,14 @@ impl Widget for Knob<'_> {
 
         let (rect, mut response) = ui.allocate_exact_size(adjusted_size, Sense::click_and_drag());
 
+        let mut is_dragging = false;
+
         // Double click to return to neutral state.
         if response.double_clicked() {
             *self.value = self.neutral;
             response.mark_changed();
         } else if response.dragged() {
+            is_dragging = true;
             let mut delta = response.drag_delta().y;
 
             // Hold ctrl, alt or shift to move finely.
@@ -272,7 +279,11 @@ impl Widget for Knob<'_> {
         };
 
         let center = knob_rect.center();
-        let radius = knob_size.x / 2.0;
+        let radius = if is_dragging {
+            knob_size.x * 0.55
+        } else {
+            knob_size.x * 0.5
+        };
 
         // The range of motion of the knob. 1.0 means a full rotation.
         let range = 0.85;
@@ -287,10 +298,11 @@ impl Widget for Knob<'_> {
 
         let angle = TAU * ((*self.value - self.min) / (self.max - self.min) * range + start_angle);
 
+        let knob_color = if is_dragging { self.knob_dragging_color } else { self.knob_color };
         painter.circle_stroke(
             center,
             radius,
-            Stroke::new(self.stroke_width, self.knob_color),
+            Stroke::new(self.stroke_width, knob_color),
         );
 
         match self.style {
