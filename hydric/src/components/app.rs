@@ -212,53 +212,6 @@ impl eframe::App for App {
                         })
                     }
 
-                    // default_window("Toolbar")
-                    //     .default_pos(Pos2 { x: 600.0, y: 20.0 })
-                    //     .show(ctx, |ui| {
-                    //         let on_release = || self.store.dispatchr(Action::Release);
-
-                    //         let volume = self.store.get().volume;
-                    //         knob(
-                    //             ui,
-                    //             "Volume",
-                    //             volume,
-                    //             |it| {
-                    //                 self.store
-                    //                     .dispatchr(Action::SetFloat(FloatField::Volume, it))
-                    //             },
-                    //             0.0..=1.0,
-                    //             on_release,
-                    //         );
-
-                    //         let bpm = self.store.get().project.bpm as f64;
-                    //         slider(
-                    //             ui,
-                    //             "BPM",
-                    //             bpm,
-                    //             |it| {
-                    //                 self.store
-                    //                     .dispatchr(Action::SetFloat(FloatField::Bpm, it as Beats))
-                    //             },
-                    //             20.0..=200.0,
-                    //             on_release,
-                    //         );
-                    //         undo_redo_control(&mut self.store, ui);
-                    //         ui.separator();
-                    //         play_control(
-                    //             &self.store,
-                    //             &mut self.async_state,
-                    //             &mut self.audio_state,
-                    //             ui,
-                    //         );
-                    //         ui.separator();
-                    //         sample_control(
-                    //             &self.store,
-                    //             &mut self.audio_state,
-                    //             &mut self.async_state,
-                    //             ui,
-                    //         );
-                    //     });
-
                     ui.separator();
                     track_placement_control(&self.store, ui);
                     ui.separator();
