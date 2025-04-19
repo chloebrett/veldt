@@ -4,7 +4,7 @@ use super::{
     generator::{generator_control, generators_control},
     note_control::NoteControl,
     note_roll::NoteRoll,
-    play::{SampleTreeWindow,ToolBar, play_control, sample_control},
+    play::{SampleTreeWindow, ToolBar, play_control, sample_control},
     toggle_window_panel, track_placement_control,
     track_roll::TrackRoll,
     undo_redo_control,
