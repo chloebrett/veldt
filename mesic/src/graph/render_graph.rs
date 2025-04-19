@@ -199,8 +199,8 @@ mod tests {
 
     use super::*;
 
-    fn make_track_and_track_placement() -> (Track, TrackPlacement) {
-        let track = Track {
+    fn make_track() -> Track {
+        Track {
             notes: vec![PlacedNote {
                 note: Note {
                     pitch_name: PitchName {
@@ -212,14 +212,16 @@ mod tests {
                 offset: 0.0.into(),
             }],
             offset: 0.0.into(),
-        };
-        let track_placement = TrackPlacement {
+        }
+    }
+
+    fn make_track_placement() -> TrackPlacement {
+        TrackPlacement {
             track_id: 0,
             offset: 0.0.into(),
             clipped_duration: None,
             visual_placement: 0,
-        };
-        (track, track_placement)
+        }
     }
 
     fn make_generator() -> GeneratorInstance {
@@ -249,7 +251,8 @@ mod tests {
     }
 
     fn make_generator_node() -> GeneratorNode {
-        let (track, track_placement) = make_track_and_track_placement();
+        let track = make_track();
+        let track_placement = make_track_placement();
         let generator = make_generator();
         let bpm = 120.0;
         let generator_node = GeneratorNode::new(generator, track, track_placement, bpm);
@@ -370,7 +373,8 @@ mod tests {
     #[test]
     fn graph_with_clipped_duration_clips() {
         // ARRANGE
-        let (track, mut track_placement) = make_track_and_track_placement();
+        let track = make_track();
+        let mut track_placement = make_track_placement();
         let generator = make_generator();
         let bpm = 120.0;
         // Set up graph with no clipping.
@@ -407,7 +411,8 @@ mod tests {
     #[test]
     fn clipped_second_track_duration_doesnt_clip_first() {
         // ARRANGE
-        let (track, track_placement) = make_track_and_track_placement();
+        let track = make_track();
+        let track_placement = make_track_placement();
         let generator = make_generator();
         let bpm = 120.0;
         // Set two tracks' offsets so they do not overlap.
