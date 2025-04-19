@@ -1,5 +1,7 @@
+use crate::transform::Transform;
 use crate::view::View;
 use crate::widget::knob;
+use egui::cache::{ComputerMut, FrameCache};
 use egui::{
     Color32, Pos2, Rect, Ui,
     containers::Frame,
@@ -7,6 +9,8 @@ use egui::{
     epaint::{PathStroke, Shape},
     pos2, vec2,
 };
+use log::info;
+use ordered_float::OrderedFloat;
 use shared::model::AdsrEnvelope;
 use state::{Action, TypeField};
 
@@ -24,22 +28,56 @@ impl<'a, F: Fn(Action), G: Fn()> EnvelopeView<'a, F, G> {
             on_release,
         }
     }
+}
 
-    fn envelope_line(&self) -> Vec<Pos2> {
-        let envelope = &self.envelope;
-        let mut points = vec![];
-        if envelope.attack > 0.0 {
-            points.push(pos2(0.0, 0.0));
+fn envelope_line(envelope: &EnvelopeKey) -> Vec<Pos2> {
+    let mut points = vec![];
+    if *envelope.attack > 0.0 {
+        points.push(pos2(0.0, 0.0));
+    }
+    points.push(pos2(*envelope.attack, 1.0));
+    points.push(pos2(*envelope.attack + *envelope.decay, *envelope.sustain));
+    points.push(pos2(1.0 - *envelope.release, *envelope.sustain));
+    if *envelope.release > 0.0 {
+        points.push(pos2(1.0, 0.0));
+    }
+    points
+}
+
+#[derive(Default)]
+struct AdsrEnvelopeComputer;
+
+#[derive(Hash, Copy, Clone, Debug)]
+struct EnvelopeKey {
+    attack: OrderedFloat<f32>,
+    decay: OrderedFloat<f32>,
+    sustain: OrderedFloat<f32>,
+    release: OrderedFloat<f32>,
+}
+
+impl From<AdsrEnvelope> for EnvelopeKey {
+    fn from(other: AdsrEnvelope) -> Self {
+        EnvelopeKey {
+            attack: OrderedFloat(other.attack),
+            decay: OrderedFloat(other.decay),
+            sustain: OrderedFloat(other.sustain),
+            release: OrderedFloat(other.release),
         }
-        points.push(pos2(envelope.attack, 1.0));
-        points.push(pos2(envelope.attack + envelope.decay, envelope.sustain));
-        points.push(pos2(1.0 - envelope.release, envelope.sustain));
-        if envelope.release > 0.0 {
-            points.push(pos2(1.0, 0.0));
-        }
-        points
     }
 }
+
+impl ComputerMut<EnvelopeKey, Shape> for AdsrEnvelopeComputer {
+    fn compute(&mut self, envelope: EnvelopeKey) -> Shape {
+        info!("Computing shapes for ADSR envelope: {:?}", envelope);
+        let thickness = 2.0;
+        Shape::line(
+            envelope_line(&envelope),
+            PathStroke::new(thickness, Color32::WHITE),
+        )
+    }
+}
+
+type AdsrEnvelopeCache<'a> = FrameCache<Shape, AdsrEnvelopeComputer>;
 
 impl<F: Fn(Action), G: Fn()> View for EnvelopeView<'_, F, G> {
     fn ui(&mut self, ui: &mut Ui) {
@@ -107,15 +145,12 @@ impl<F: Fn(Action), G: Fn()> View for EnvelopeView<'_, F, G> {
             let to_screen =
                 RectTransform::from_to(Rect::from_x_y_ranges(0.0..=1.0, 1.0..=0.0), rect);
 
-            let thickness = 2.0;
-            let shape = Shape::line(
-                self.envelope_line()
-                    .into_iter()
-                    .map(|it| to_screen * it)
-                    .collect(),
-                PathStroke::new(thickness, Color32::WHITE),
-            );
-            ui.painter().extend(vec![shape]);
+            let shape = ui.memory_mut(|memory| {
+                let cache = memory.caches.cache::<AdsrEnvelopeCache<'_>>();
+                cache.get(self.envelope.clone().into())
+            });
+
+            ui.painter().extend(vec![shape].transform(to_screen));
         });
     }
 }
