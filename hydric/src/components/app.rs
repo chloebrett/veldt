@@ -1,14 +1,5 @@
 use super::{
-    KeyView, SaveLoadView,
-    effect::{EffectWindow, MixerWindow},
-    generator::{generator_control, generators_control},
-    menu::Menu,
-    note_control::NoteControl,
-    note_roll::NoteRoll,
-    play::{SampleTreeWindow, play_control, sample_control},
-    toggle_window_panel, track_placement_control,
-    track_roll::TrackRoll,
-    undo_redo_control,
+    effect::{EffectWindow, MixerWindow}, freq_display::FrequencyDisplay, generator::{generator_control, generators_control}, menu::Menu, note_control::NoteControl, note_roll::NoteRoll, play::{play_control, sample_control, SampleTreeWindow}, toggle_window_panel, track_placement_control, track_roll::TrackRoll, undo_redo_control, KeyView, SaveLoadView
 };
 use crate::components::FrameHistory;
 use crate::promise::spawn;
@@ -273,6 +264,8 @@ impl eframe::App for App {
                     track_placement_control(&self.store, ui);
                     ui.separator();
                     TrackRoll::new(&self.store).ui(ui);
+                    ui.separator();
+                    FrequencyDisplay::new(&mut self.audio_state).ui(ui);
 
                     ui.with_layout(egui::Layout::bottom_up(egui::Align::LEFT), |ui| {
                         self.frame_history.ui(ui);

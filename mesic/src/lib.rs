@@ -1,5 +1,5 @@
 mod consts;
-mod dft;
+pub mod dft;
 mod effect;
 mod envelope;
 pub mod graph;

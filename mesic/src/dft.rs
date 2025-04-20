@@ -1,5 +1,9 @@
 use std::f32::consts::PI;
 
+use ordered_float::Float;
+
+use crate::SAMPLE_RATE;
+
 const TWO_PI: f32 = 2.0 * PI;
 
 pub fn dft(length: usize, signal: Vec<f32>) -> (Vec<f32>, Vec<f32>) {
@@ -19,8 +23,35 @@ pub fn dft(length: usize, signal: Vec<f32>) -> (Vec<f32>, Vec<f32>) {
     (re, im)
 }
 
+pub fn get_freq_response(signal: Vec<f32>, frequency: f32) -> f32 {
+    let required_length = (SAMPLE_RATE as f32 / frequency) as usize;
+    let inv_length = 1.0 / required_length as f32;
+    if signal.len() < required_length {
+       return 0.0 
+    }
+    let slice = hann_window(signal[0..required_length].to_vec());
+    let re = slice.iter().enumerate().map(|(index, it)| {
+        it * (TWO_PI * index as f32 * inv_length).cos() * inv_length
+    }).sum::<f32>().powf(2.0);
+    let im = slice.iter().enumerate().map(|(index, it)| {
+        it * (TWO_PI * index as f32 * inv_length).sin() * inv_length
+    }).sum::<f32>().powf(2.0);
+    (re + im).sqrt()
+}
+
+pub fn hann_window(signal: Vec<f32>) -> Vec<f32> {
+    let inv_length = 1.0 / signal.len() as f32;
+    signal.iter().enumerate().map(|(index, it)| {
+        it * (PI * index as f32 * inv_length).sin().powf(2.0)
+    }).collect()
+}
+
 #[cfg(test)]
 mod tests {
+    use shared::model::{PitchName, ScaleValue};
+
+    use crate::wave::freq;
+
     use super::*;
 
     #[test]
@@ -40,5 +71,30 @@ mod tests {
             .enumerate()
             .all(|(index, value)| (value - expected[index]).abs() < epsilon);
         assert!(approx_diff);
+    }
+
+    #[test]
+    fn a_note_is_detected() {
+        // Arrange
+        let pitch = PitchName {
+            scale_value: ScaleValue::A,
+            octave: 4,
+        };
+        let samples = 630;
+        let input: Vec<f32> = (0..samples as usize)
+            .map(|it| (it as f32 / SAMPLE_RATE as f32 * freq(pitch)).sin())
+            .collect();
+        let res1 = get_freq_response(input.clone(), 200.0);
+        let res2 = get_freq_response(input.clone(), 420.0);
+        let res3 = get_freq_response(input.clone(), 7000.0);
+        let res4 = get_freq_response(input.clone(), 460.0);
+        let res5 = get_freq_response(input.clone(), 70.0);
+        println!("{:?}", res1);
+        println!("{:?}", res2);
+        println!("{:?}", res3);
+        println!("{:?}", res4);
+        println!("{:?}", res5);
+        assert!(1==2);
+
     }
 }
