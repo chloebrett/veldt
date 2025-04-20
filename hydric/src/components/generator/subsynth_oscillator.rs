@@ -1,60 +1,19 @@
 use super::SimpleWaveVisualiser;
-use crate::widget::{knob, int_slider, get_set};
+use crate::widget::{knob, int_slider, get_set, selectable_value};
 use eframe::egui;
 use egui::{Color32, ComboBox};
-use shared::model::WaveType;
-use state::{Action, FloatField, UintField};
+use shared::model::{WaveType, OscillatorConfig};
+use state::{Action, FloatField, UintField, TypeField};
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
-pub enum OscillatorId {
-    Osc1,
-    Osc2,
-    Osc3,
-}
-
-// TODO fix this make sure its hooked up to config instead
-pub struct SubsynthOscillator {
-    id: OscillatorId,
-    wave_type: WaveType,
-    line_color: Color32,
-    fill_color: Color32,
-    // for styling
-    border_color: Color32,
-    border_width: f32,
-    border_radius: f32,
-    background_color: Color32,
-}
-
-impl SubsynthOscillator {
-    pub fn new(
-        id: OscillatorId,
-        wave_type: WaveType,
-        line_color: Color32,
-        fill_color: Color32,
-    ) -> Self {
-        Self {
-            id,
-            wave_type,
-            line_color,
-            fill_color,
-            // Default styling
-            border_color: Color32::from_rgb(60, 60, 60),
-            border_width: 1.0,
-            border_radius: 8.0,
-            background_color: Color32::from_rgb(50, 50, 50),
-        }
-    }
-
-    // Method to show the component in the UI
-    pub fn show<F, G>(&mut self, ui: &mut egui::Ui, dispatch: F, on_release: G) -> egui::Response
+pub fn subsynth_oscillator<F, G>(config: &OscillatorConfig, ui: &mut egui::Ui, dispatch: &F, on_release: &G, line_colour: Color32, fill_colour: Color32) -> egui::Response
     where
         F: Fn(Action),
         G: Fn(),
     {
         let frame = egui::Frame::new()
-            .fill(self.background_color)
-            .stroke(egui::Stroke::new(self.border_width, self.border_color))
-            .corner_radius(self.border_radius)
+            .fill(Color32::from_rgb(50, 50, 50))
+            .stroke(egui::Stroke::new(1.0, Color32::from_rgb(60, 60, 60)))
+            .corner_radius(8.0)
             .inner_margin(6.0);
 
         frame
@@ -69,7 +28,7 @@ impl SubsynthOscillator {
                     osc_selection_frame.show(ui, |ui| {
                         ui.vertical(|ui| {
                             ui.horizontal(|ui| {
-                                let wave_type_str = match self.wave_type {
+                                let wave_type_str = match config.wave {
                                     WaveType::Sine => "Sine",
                                     WaveType::Square => "Square",
                                     WaveType::Saw => "Saw",
@@ -79,29 +38,46 @@ impl SubsynthOscillator {
                                 ComboBox::from_label("")
                                     .selected_text(wave_type_str)
                                     .show_ui(ui, |ui| {
-                                        ui.selectable_value(
-                                            &mut self.wave_type,
+                                        selectable_value(
+                                            ui,
+                                            get_set(config.wave, |_wave_type| {
+                                                dispatch(Action::SetChild(TypeField::Wave(WaveType::Sine)))
+                                            }),
                                             WaveType::Sine,
-                                            "Sine",
+                                            WaveType::Sine.to_string(),
                                         );
-                                        ui.selectable_value(
-                                            &mut self.wave_type,
+                                        selectable_value(
+                                            ui,
+                                            get_set(config.wave, |_wave_type| {
+                                                dispatch(Action::SetChild(TypeField::Wave(WaveType::Square)))
+                                            }),
                                             WaveType::Square,
-                                            "Square",
+                                            WaveType::Square.to_string(),
                                         );
-                                        ui.selectable_value(&mut self.wave_type, WaveType::Saw, "Saw");
-                                        ui.selectable_value(
-                                            &mut self.wave_type,
+                                        selectable_value(
+                                            ui,
+                                            get_set(config.wave, |_wave_type| {
+                                                dispatch(Action::SetChild(TypeField::Wave(WaveType::Saw)))
+                                            }),
+                                            WaveType::Saw,
+                                            WaveType::Saw.to_string(),
+                                        );
+                                        selectable_value(
+                                            ui,
+                                            get_set(config.wave, |_wave_type| {
+                                                dispatch(Action::SetChild(TypeField::Wave(WaveType::Triangle)))
+                                            }),
                                             WaveType::Triangle,
-                                            "Triangle",
+                                            WaveType::Triangle.to_string(),
                                         );
-                                    });
+                                    }
+                                );
                             });
                             ui.add_space(10.0);
                             let visualiser = SimpleWaveVisualiser::new(
-                                self.wave_type,
-                                self.line_color,
-                                self.fill_color,
+                                config.wave,
+                                line_colour,
+                                fill_colour,
                             );
     
                             visualiser.show(ui);
@@ -118,7 +94,7 @@ impl SubsynthOscillator {
                             knob(
                                 ui,
                                 "Volume",
-                                0.0, // placeholder value fix this to be config instead
+                                config.volume, // placeholder value fix this to be config instead
                                 |it| dispatch(Action::SetFloat(FloatField::Volume, it)), // this action is prob not the right action idk
                                 0.0..=1.0,
                                 &on_release,
@@ -128,7 +104,7 @@ impl SubsynthOscillator {
                             knob(
                                 ui,
                                 "Pan",
-                                0.0, // placeholder value
+                                config.pan, // placeholder value
                                 |it| dispatch(Action::SetFloat(FloatField::Pan, it)), // TODO fix action its a placeholder rn
                                 0.0..=1.0,
                                 &on_release,
@@ -138,7 +114,7 @@ impl SubsynthOscillator {
                             knob(
                                 ui,
                                 "Coarse",
-                                0.0, // placeholder value
+                                config.coarse_detune, // placeholder value
                                 |it| dispatch(Action::SetFloat(FloatField::Detune, it)), // TODO fix action its a placeholder rn
                                 0.0..=1.0,
                                 &on_release,
@@ -148,7 +124,7 @@ impl SubsynthOscillator {
                             knob(
                                 ui,
                                 "Fine",
-                                0.0, // placeholder value
+                                config.fine_detune, // placeholder value
                                 |it| dispatch(Action::SetFloat(FloatField::Detune, it)), // TODO fix action its a placeholder rn
                                 0.0..=1.0,
                                 &on_release,
@@ -200,12 +176,3 @@ impl SubsynthOscillator {
             .response
     }
 
-    // Getter for current wave type
-    pub fn wave_type(&self) -> WaveType {
-        self.wave_type
-    }
-    // gett for osc id
-    pub fn id(&self) -> OscillatorId {
-        self.id
-    }
-}
