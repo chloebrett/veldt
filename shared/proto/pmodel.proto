@@ -139,6 +139,8 @@ message OscillatorConfigProto {
   float pan = 3;
   float coarse_detune = 4;
   float fine_detune = 5;
+  float osc_count = 6;
+  float osc_detune = 7;
 }
 
 message GeneratorMetaProto {

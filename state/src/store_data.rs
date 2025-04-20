@@ -78,6 +78,8 @@ impl Default for StoreData {
                                 pan: 0.0,
                                 coarse_detune: 0.0,
                                 fine_detune: 0.0,
+                                osc_count: 1.0,
+                                osc_detune: 0.0,
                             }, 
                             OscillatorConfig{
                                 wave: WaveType::Saw,
@@ -85,6 +87,8 @@ impl Default for StoreData {
                                 pan: 0.0,
                                 coarse_detune: 0.0,
                                 fine_detune: 0.0,
+                                osc_count: 1.0,
+                                osc_detune: 0.0,
                             },
                             OscillatorConfig{
                                 wave: WaveType::Square,
@@ -92,6 +96,8 @@ impl Default for StoreData {
                                 pan: 0.0,
                                 coarse_detune: 0.0,
                                 fine_detune: 0.0,
+                                osc_count: 1.0,
+                                osc_detune: 0.0,
                             }]
                         }
                     },
