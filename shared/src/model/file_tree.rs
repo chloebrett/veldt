@@ -1,7 +1,9 @@
 use crate::pmodel::{
-    DirectoryProto, FilenameTreeProto, filename_tree_proto::Kind as FilenameTreeProtoKind,
+    DirectoryProto, FileTreeConfigProto, FilenameTreeProto,
+    filename_tree_proto::Kind as FilenameTreeProtoKind,
 };
 use crate::serialize::map_vec;
+use local_macro::{FromProto, IntoProto};
 
 pub type FilenameTree = FileTree<String, String>;
 
@@ -9,6 +11,14 @@ pub type FilenameTree = FileTree<String, String>;
 pub enum FileTree</* FileData= */ T, /* DirectoryData= */ U> {
     File(T),
     Directory(U, Vec<FileTree<T, U>>),
+}
+
+#[derive(Debug, PartialEq, Clone, FromProto, IntoProto)]
+pub struct FileTreeConfig {
+    // TODO: consider just making this a regular String and special-casing the empty string.
+    pub search: Option<String>,
+    pub skip_non_audio: bool,
+    pub skip_hidden: bool,
 }
 
 impl From<FilenameTreeProto> for FilenameTree {

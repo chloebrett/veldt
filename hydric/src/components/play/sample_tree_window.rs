@@ -2,10 +2,10 @@ use crate::AsyncState;
 use crate::promise::{poll, spawn};
 use crate::rpc::load_sample_tree;
 use crate::view::View;
-use crate::widget::default_window;
+use crate::widget::{checkbox, default_window, get_set, string_observer};
 use egui::{Pos2, ScrollArea, Ui};
 use egui_ltreeview::{TreeView, TreeViewBuilder};
-use shared::model::FilenameTree;
+use shared::model::{FileTreeConfig, FilenameTree};
 use state::{Action, Store, TypeField};
 
 pub struct SampleTreeWindow<'a> {
@@ -56,12 +56,75 @@ fn add_node(
 impl View for SampleTreeWindow<'_> {
     fn ui(&mut self, ui: &mut Ui) {
         default_window("Samples")
+            .resizable(true)
             .open(self.visible)
             .default_pos(Pos2 { x: 600.0, y: 20.0 })
             .show(ui.ctx(), |ui| {
-                if ui.button("Refresh").clicked() {
+                let config = &self.store.get().sample_tree_config;
+                let search = config.search.clone().unwrap_or("".to_string());
+
+                let mut search_observer = string_observer(
+                    get_set(search.clone(), |it| {
+                        // TODO: just special-case the empty string on the back end and pass a string around.
+                        let search = if it.len() > 0 { Some(it) } else { None };
+
+                        self.store
+                            .dispatchr(Action::SetChild(TypeField::SampleTreeConfig(
+                                FileTreeConfig {
+                                    search,
+                                    ..config.clone()
+                                },
+                            )));
+                    }),
+                    search.clone(),
+                );
+                ui.text_edit_singleline(&mut search_observer);
+
+                let mut reload = false;
+                if ui.button("Search").clicked() {
+                    reload = true;
+                }
+
+                checkbox(
+                    ui,
+                    config.skip_non_audio,
+                    |skip_non_audio| {
+                        self.store
+                            .dispatchr(Action::SetChild(TypeField::SampleTreeConfig(
+                                FileTreeConfig {
+                                    skip_non_audio,
+                                    ..config.clone()
+                                },
+                            )));
+                        reload = true;
+                    },
+                    "Audio files only",
+                );
+
+                checkbox(
+                    ui,
+                    config.skip_hidden,
+                    |skip_hidden| {
+                        self.store
+                            .dispatchr(Action::SetChild(TypeField::SampleTreeConfig(
+                                FileTreeConfig {
+                                    skip_hidden,
+                                    ..config.clone()
+                                },
+                            )));
+                        reload = true;
+                    },
+                    "Ignore hidden files",
+                );
+
+                // TODO: the config check boxes don't seem to be working properly - sometimes
+                // they do the opposite of what they are meant to.
+                // * Look into showing a loading spinner while data is loading
+                // * Investigate if there's a race condition happening
+                if reload {
+                    let config = config.clone();
                     spawn(&mut self.async_state.load_sample_tree, async move {
-                        load_sample_tree().await
+                        load_sample_tree(config).await
                     })
                 }
 

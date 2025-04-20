@@ -5,25 +5,23 @@ use super::{
     menu::Menu,
     note_control::NoteControl,
     note_roll::NoteRoll,
-    play::{SampleTreeWindow, play_control, sample_control},
+    play::{SampleTreeWindow, ToolBarView},
     track_placement_control,
     track_roll::TrackRoll,
-    undo_redo_control,
 };
 use crate::components::FrameHistory;
 use crate::promise::spawn;
 use crate::rpc::broadcast_actions;
-use crate::rpc::{load_project_list, load_sample_tree};
+use crate::rpc::load_project_list;
 use crate::view::View;
 use crate::view::WindowView;
-use crate::widget::{default_window, get_set, knob, slider, string_observer};
+use crate::widget::{default_window, get_set, string_observer};
 use crate::{AsyncState, AudioState, WindowState};
 use egui::{Id, Pos2};
 use egui::{ScrollArea, scroll_area::ScrollBarVisibility};
 use poll_promise::Promise;
 use shared::model::GeneratorType;
-use shared::types::Beats;
-use state::{Action, FloatField, Selector, Store, TypeField};
+use state::{Action, Selector, Store, TypeField};
 
 pub struct App {
     pub store: Store,
@@ -58,10 +56,6 @@ impl App {
 
         spawn(&mut app.async_state.project_list, async move {
             load_project_list().await
-        });
-
-        spawn(&mut app.async_state.load_sample_tree, async move {
-            load_sample_tree().await
         });
 
         app
@@ -120,6 +114,15 @@ impl eframe::App for App {
                     if self.window_state.mixer.visible {
                         MixerWindow::new(&mut self.window_state, &self.store).ui(ctx);
                     }
+
+                    ToolBarView::new(
+                        &mut self.window_state,
+                        &mut self.store,
+                        &mut self.async_state,
+                        &mut self.audio_state,
+                    )
+                    .ui(ui);
+
                     let mixer = &self.store.get().project.mixer;
                     for (mixer_index, channel) in mixer.iter().enumerate() {
                         for effect_index in 0..channel.effects.len() {
@@ -160,24 +163,21 @@ impl eframe::App for App {
                     let note_id = Id::new("note_window");
                     if ui.data_mut(|data| *data.get_temp_mut_or(note_id, false)) {
                         let mut open = true;
-                        let active_track = ui.data_mut(|data| {
+                        let track_index = ui.data_mut(|data| {
                             let id = Id::new("active_track_index");
-                            *data.get_temp_mut_or(id, None)
+                            *data.get_temp_mut_or(id, 0)
                         });
                         let active_note = ui.data_mut(|data| {
                             let id = Id::new("active_note_index");
                             *data.get_temp_mut_or(id, None)
                         });
-                        if let Some(track_index) = active_track {
-                            if let Some(note_index) = active_note {
-                                default_window("Notes")
-                                    .open(&mut open)
-                                    .default_pos(Pos2 { x: 600.0, y: 20.0 })
-                                    .show(ctx, |ui| {
-                                        NoteControl::new(&self.store, track_index, note_index)
-                                            .ui(ui);
-                                    });
-                            }
+                        if let Some(note_index) = active_note {
+                            default_window("Notes")
+                                .open(&mut open)
+                                .default_pos(Pos2 { x: 600.0, y: 20.0 })
+                                .show(ctx, |ui| {
+                                    NoteControl::new(&self.store, track_index, note_index).ui(ui);
+                                });
                         }
                         ui.data_mut(|data| {
                             // Check if state has been changed within component as well as with
@@ -193,23 +193,21 @@ impl eframe::App for App {
                     if ui.data_mut(|data| {
                         *data.get_temp_mut_or_insert_with(note_roll_id, move || false)
                     }) {
-                        let active_track = ui.data_mut(|data| {
+                        let track_index = ui.data_mut(|data| {
                             let id = Id::new("active_track_index");
-                            *data.get_temp_mut_or(id, None)
+                            *data.get_temp_mut_or(id, 0)
                         });
-                        if let Some(track_index) = active_track {
-                            let mut open = true;
-                            default_window(&format!("Track: {}", track_index))
-                                .open(&mut open)
-                                .default_pos(Pos2 { x: 600.0, y: 20.0 })
-                                .resizable(true)
-                                .show(ctx, |ui| {
-                                    NoteRoll::new(&self.store, track_index).ui(ui);
-                                });
-                            ui.data_mut(|data| {
-                                data.insert_temp(note_roll_id, open);
-                            })
-                        }
+                        let mut open = true;
+                        default_window(&format!("Track: {}", track_index))
+                            .open(&mut open)
+                            .default_pos(Pos2 { x: 600.0, y: 20.0 })
+                            .resizable(true)
+                            .show(ctx, |ui| {
+                                NoteRoll::new(&self.store, track_index).ui(ui);
+                            });
+                        ui.data_mut(|data| {
+                            data.insert_temp(note_roll_id, open);
+                        })
                     }
 
                     SampleTreeWindow::new(
@@ -218,54 +216,6 @@ impl eframe::App for App {
                         &mut self.window_state.sample_tree,
                     )
                     .ui(ui);
-
-                    default_window("Toolbar")
-                        .default_pos(Pos2 { x: 600.0, y: 20.0 })
-                        .show(ctx, |ui| {
-                            let on_release = || self.store.dispatchr(Action::Release);
-
-                            let volume = self.store.get().volume;
-                            knob(
-                                ui,
-                                "Volume",
-                                volume,
-                                |it| {
-                                    self.store
-                                        .dispatchr(Action::SetFloat(FloatField::Volume, it))
-                                },
-                                0.0..=1.0,
-                                /* neutral= */ 1.0,
-                                on_release,
-                            );
-
-                            let bpm = self.store.get().project.bpm as f64;
-                            slider(
-                                ui,
-                                "BPM",
-                                bpm,
-                                |it| {
-                                    self.store
-                                        .dispatchr(Action::SetFloat(FloatField::Bpm, it as Beats))
-                                },
-                                20.0..=200.0,
-                                on_release,
-                            );
-                            undo_redo_control(&mut self.store, ui);
-                            ui.separator();
-                            play_control(
-                                &self.store,
-                                &mut self.async_state,
-                                &mut self.audio_state,
-                                ui,
-                            );
-                            ui.separator();
-                            sample_control(
-                                &self.store,
-                                &mut self.audio_state,
-                                &mut self.async_state,
-                                ui,
-                            );
-                        });
 
                     ui.separator();
                     track_placement_control(&self.store, ui);
