@@ -16,7 +16,7 @@ pub fn generator_control(store: &Store, ui: &mut Ui, generator_index: usize) {
         }
         GeneratorType::Noise { .. } => todo!(),
         GeneratorType::SubSynth { config } => {
-            subsynth_control(&config, dispatch, on_release, ui, store)
+            subsynth_control(&config, dispatch, on_release, ui)
         },
     };
 }
