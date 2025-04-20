@@ -2,7 +2,7 @@
 use eframe::egui;
 use egui::{Ui, Color32, Rect, pos2};
 use shared::model::{SubSynthConfig, WaveType};
-use state::{Action, Store};
+use state::{Action, Store, TypeField};
 use super::{SubsynthOscillator, OscillatorId};
 use super::super::{Piano, PianoOrientation};
 use crate::{
@@ -51,7 +51,7 @@ where
         let new_wave_type = osc1.wave_type();
         if state.wave_types[0] != new_wave_type {
             state.wave_types[0] = new_wave_type;
-            dispatch(Action::SetOscWaveType1(new_wave_type));
+            dispatch(Action::SetChild(TypeField::Wave(new_wave_type)));
             on_release();
         }
     });
@@ -72,7 +72,7 @@ where
         let new_wave_type = osc2.wave_type();
         if state.wave_types[1] != new_wave_type {
             state.wave_types[1] = new_wave_type;
-            dispatch(Action::SetOscWaveType2(new_wave_type));
+            dispatch(Action::SetChild(TypeField::Wave(new_wave_type)));
             on_release();
         }
     });
@@ -93,7 +93,7 @@ where
         let new_wave_type = osc3.wave_type();
         if state.wave_types[2] != new_wave_type {
             state.wave_types[2] = new_wave_type;
-            dispatch(Action::SetOscWaveType3(new_wave_type));
+            dispatch(Action::SetChild(TypeField::Wave(new_wave_type)));
             on_release();
         }
     });
@@ -106,7 +106,7 @@ where
         scale_value: ScaleValue::C,
         octave: 8,
     }.into();
-    Piano::new(max_note, min_note - 1).with_orientation(PianoOrientation::Horizontal).ui(store, ui);
+    Piano::new(max_note, min_note - 1).with_orientation(PianoOrientation::Horizontal).ui(ui);
 
     // // Store state for next frame
     ui.ctx().data_mut(|data| data.insert_temp(id, state));

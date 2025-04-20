@@ -3,7 +3,7 @@ use crate::widget::{knob, int_slider, get_set};
 use eframe::egui;
 use egui::{Color32, ComboBox};
 use shared::model::WaveType;
-use state::Action;
+use state::{Action, FloatField, UintField};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum OscillatorId {
@@ -119,7 +119,7 @@ impl SubsynthOscillator {
                                 ui,
                                 "Volume",
                                 0.0, // placeholder value fix this to be config instead
-                                |it| dispatch(Action::SetGeneratorVolume(it)), // this action is prob not the right action idk
+                                |it| dispatch(Action::SetFloat(FloatField::Volume, it)), // this action is prob not the right action idk
                                 0.0..=1.0,
                                 &on_release,
                             );
@@ -129,7 +129,7 @@ impl SubsynthOscillator {
                                 ui,
                                 "Pan",
                                 0.0, // placeholder value
-                                |it| dispatch(Action::SetGeneratorVolume(it)), // TODO fix action its a placeholder rn
+                                |it| dispatch(Action::SetFloat(FloatField::Pan, it)), // TODO fix action its a placeholder rn
                                 0.0..=1.0,
                                 &on_release,
                             );
@@ -139,7 +139,7 @@ impl SubsynthOscillator {
                                 ui,
                                 "Coarse",
                                 0.0, // placeholder value
-                                |it| dispatch(Action::SetGeneratorVolume(it)), // TODO fix action its a placeholder rn
+                                |it| dispatch(Action::SetFloat(FloatField::Detune, it)), // TODO fix action its a placeholder rn
                                 0.0..=1.0,
                                 &on_release,
                             );
@@ -149,7 +149,7 @@ impl SubsynthOscillator {
                                 ui,
                                 "Fine",
                                 0.0, // placeholder value
-                                |it| dispatch(Action::SetGeneratorVolume(it)), // TODO fix action its a placeholder rn
+                                |it| dispatch(Action::SetFloat(FloatField::Detune, it)), // TODO fix action its a placeholder rn
                                 0.0..=1.0,
                                 &on_release,
                             );
@@ -169,7 +169,7 @@ impl SubsynthOscillator {
                                 ui,
                                 "Unison",
                                 1.0 as f64, // TODO placeholder value remember to hook it up to config instead
-                                |it| dispatch(Action::SetOscCount(it as u32)), // need diff action probably
+                                |it| dispatch(Action::SetUint(UintField::OscCount, it as u32)), // need diff action probably
                                 1..=24,
                                 &on_release,
                             );
@@ -178,7 +178,7 @@ impl SubsynthOscillator {
                                 ui,
                                 "Osc detune",
                                 0.0, // TODO placeholder value remember to hook it up to config instead
-                                |it| dispatch(Action::SetDetuneCents(it)), // need diff action probably
+                                |it| dispatch(Action::SetFloat(FloatField::Detune, it)), // need diff action probably
                                 0.0..=100.0,
                                 &on_release,
                             );

@@ -36,8 +36,5 @@ pub fn broadcast_type(action: &Action) -> BroadcastType {
         Action::MoveEffectDown(..) => BroadcastType::Immediate,
         Action::Release => BroadcastType::Never,
         Action::NonReversible => BroadcastType::Never,
-        Action::SetOscWaveType1(..) => BroadcastType::Immediate,
-        Action::SetOscWaveType2(..) => BroadcastType::Immediate,
-        Action::SetOscWaveType3(..) => BroadcastType::Immediate,
     }
 }
