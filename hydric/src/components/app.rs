@@ -1,13 +1,9 @@
 use super::{
-    KeyView, SaveLoadView,
+    KeyView, NoteControl, NoteRoll, SaveLoadView, TrackPlacementControl, TrackRoll,
     effect::{EffectWindow, MixerWindow},
     generator::{generator_control, generators_control},
     menu::Menu,
-    note_control::NoteControl,
-    note_roll::NoteRoll,
     play::{SampleTreeWindow, play_control, sample_control},
-    track_placement_control,
-    track_roll::TrackRoll,
     undo_redo_control,
 };
 use crate::components::FrameHistory;
@@ -212,6 +208,37 @@ impl eframe::App for App {
                         }
                     }
 
+                    let placement_window_id = Id::new("track_placement_window");
+                    if ui.data_mut(|data| {
+                        *data.get_temp_mut_or_insert_with(placement_window_id, move || false)
+                    }) {
+                        let active_track_placement = ui.data_mut(|data| {
+                            let id = Id::new("active_track_placement_index");
+                            *data.get_temp_mut_or::<Option<usize>>(id, None)
+                        });
+                        if let Some(placement_index) = active_track_placement {
+                            let mut open = true;
+                            default_window(&format!("Track Placement {}", placement_index))
+                                .open(&mut open)
+                                .default_pos(Pos2 { x: 100.0, y: 20.0 })
+                                .resizable(true)
+                                .show(ctx, |ui| {
+                                    TrackPlacementControl::new(&self.store, placement_index).ui(ui);
+                                });
+                            ui.data_mut(|data| {
+                                data.insert_temp(placement_window_id, open);
+                            })
+                        }
+                    }
+
+                    default_window("Track Roll")
+                        .default_pos(pos2(30.0, 200.0))
+                        .resizable(true)
+                        .open(&mut self.window_state.track_roll)
+                        .show(ctx, |ui| {
+                            TrackRoll::new(&self.store).ui(ui);
+                        });
+
                     SampleTreeWindow::new(
                         &self.store,
                         &mut self.async_state,
@@ -266,36 +293,6 @@ impl eframe::App for App {
                                 ui,
                             );
                         });
-                    default_window("Track Roll")
-                        .default_pos(pos2(30.0, 200.0))
-                        .resizable(true)
-                        .open(&mut self.window_state.track_roll)
-                        .show(ctx, |ui| {
-                            TrackRoll::new(&self.store).ui(ui);
-                        });
-
-                    let placement_window_id = Id::new("track_placement_window");
-                    if ui.data_mut(|data| {
-                        *data.get_temp_mut_or_insert_with(placement_window_id, move || false)
-                    }) {
-                        let active_track_placement = ui.data_mut(|data| {
-                            let id = Id::new("active_track_placement_index");
-                            *data.get_temp_mut_or::<Option<usize>>(id, None)
-                        });
-                        if let Some(placement_index) = active_track_placement {
-                            let mut open = true;
-                            default_window(&format!("Track Placement {}", placement_index))
-                                .open(&mut open)
-                                .default_pos(Pos2 { x: 100.0, y: 20.0 })
-                                .resizable(true)
-                                .show(ctx, |ui| {
-                                    track_placement_control(&self.store, ui);
-                                });
-                            ui.data_mut(|data| {
-                                data.insert_temp(placement_window_id, open);
-                            })
-                        }
-                    }
 
                     ui.with_layout(egui::Layout::bottom_up(egui::Align::LEFT), |ui| {
                         self.frame_history.ui(ui);

@@ -4,7 +4,7 @@ use crate::{
 };
 use egui::{Color32, CornerRadius, Id, Pos2, Rect, ScrollArea, Shape, Ui, pos2, vec2};
 use shared::{
-    model::{Track, TrackPlacement},
+    model::{Track, TrackId, TrackPlacement},
     types::Beats,
 };
 use state::{Action, FloatField, Selector, Store, TypeField, UintField};
@@ -25,6 +25,12 @@ impl View for TrackRoll<'_> {
         let default_track = Track {
             notes: vec![],
             offset: 0.0.into(),
+        };
+        let default_track_placement = TrackPlacement {
+            track_id: 0 as TrackId,
+            offset: (0.0 as Beats).into(),
+            clipped_duration: None,
+            visual_placement: 0,
         };
         let placed_tracks: Vec<PlacedTrack> = store
             .get()
@@ -60,9 +66,16 @@ impl View for TrackRoll<'_> {
                 data.insert_temp::<Option<usize>>(placement_id, Some(index));
             })
         };
-        if ui.button("New track").clicked() {
-            store.dispatchr(Action::AddChild(TypeField::Track(default_track)));
-        }
+        ui.horizontal(|ui| {
+            if ui.button("New track").clicked() {
+                store.dispatchr(Action::AddChild(TypeField::Track(default_track)));
+            }
+            if ui.button("New track placement").clicked() {
+                store.dispatchr(Action::AddChild(TypeField::TrackPlacement(
+                    default_track_placement,
+                )));
+            }
+        });
         ScrollArea::vertical()
             .min_scrolled_height(400.0)
             .show(ui, |ui| {

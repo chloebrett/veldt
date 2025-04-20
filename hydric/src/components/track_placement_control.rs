@@ -1,22 +1,37 @@
+use crate::view::View;
 use crate::widget::{get_set, selectable_value, slider};
-use egui::Ui;
+use egui::{Id, Ui};
 use ordered_float::OrderedFloat;
-use shared::model::{TrackId, TrackPlacement};
 use shared::types::Beats;
 use state::{Action, FloatField, IndexField, Selector, Store, TypeField, UintField};
 
-pub fn track_placement_control(store: &Store, ui: &mut Ui) {
-    let project = &store.get().project;
-    let on_release = || store.dispatchr(Action::Release);
+pub struct TrackPlacementControl<'a> {
+    store: &'a Store,
+    placement_index: usize,
+}
 
-    for track_placement_index in 0..project.track_placements.len() {
-        let placement = &project.track_placements[track_placement_index];
-        let sel = Selector::TrackPlacement(track_placement_index);
+impl<'a> TrackPlacementControl<'a> {
+    pub fn new(store: &'a Store, placement_index: usize) -> Self {
+        TrackPlacementControl {
+            store,
+            placement_index,
+        }
+    }
+}
 
-        egui::ComboBox::from_id_salt(format!("track_placement_{track_placement_index}"))
+impl View for TrackPlacementControl<'_> {
+    fn ui(&mut self, ui: &mut Ui) {
+        let store = &mut self.store;
+        let placement_index = self.placement_index;
+        let placement = &store.get().project.track_placements[placement_index];
+        let tracks_length = store.get().project.tracks.len();
+        let sel = Selector::TrackPlacement(placement_index);
+        let on_release = || store.dispatchr(Action::Release);
+
+        egui::ComboBox::from_id_salt(format!("track_placement_{placement_index}"))
             .selected_text(format!("Track {}", placement.track_id))
             .show_ui(ui, |ui| {
-                for track_index in 0..project.tracks.len() {
+                for track_index in 0..tracks_length {
                     selectable_value(
                         ui,
                         get_set(&placement.track_id, |it| {
@@ -63,22 +78,16 @@ pub fn track_placement_control(store: &Store, ui: &mut Ui) {
             );
         });
 
-        if store.get().project.track_placements.len() > 1 && ui.button("Delete").clicked() {
+        if ui.button("Delete").clicked() {
             store.dispatchr(Action::DeleteChild(IndexField::TrackPlacement(
-                track_placement_index,
+                placement_index,
             )));
-            break;
+            ui.data_mut(|data| {
+                let window_id = Id::new("track_placement_window");
+                let active_track_placement = Id::new("active_track_placement_index");
+                data.insert_temp(window_id, false);
+                data.insert_temp::<Option<usize>>(active_track_placement, None);
+            });
         }
-    }
-
-    if ui.button("New track placement").clicked() {
-        store.dispatchr(Action::AddChild(TypeField::TrackPlacement(
-            TrackPlacement {
-                track_id: 0 as TrackId,
-                offset: OrderedFloat(0.0 as Beats),
-                clipped_duration: None,
-                visual_placement: 0,
-            },
-        )));
     }
 }
