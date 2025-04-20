@@ -17,7 +17,7 @@ use crate::view::View;
 use crate::view::WindowView;
 use crate::widget::{default_window, get_set, string_observer};
 use crate::{AsyncState, AudioState, WindowState};
-use egui::{Id, Pos2};
+use egui::{Id, Pos2, pos2};
 use egui::{ScrollArea, scroll_area::ScrollBarVisibility};
 use poll_promise::Promise;
 use shared::model::GeneratorType;
@@ -216,11 +216,9 @@ impl eframe::App for App {
                         &mut self.window_state.sample_tree,
                     )
                     .ui(ui);
-
+                    TrackRoll::new(&self.store, &mut self.window_state).ui(ui);
                     ui.separator();
                     track_placement_control(&self.store, ui);
-                    ui.separator();
-                    TrackRoll::new(&self.store).ui(ui);
 
                     ui.with_layout(egui::Layout::bottom_up(egui::Align::LEFT), |ui| {
                         self.frame_history.ui(ui);
