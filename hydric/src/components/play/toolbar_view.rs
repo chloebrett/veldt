@@ -9,21 +9,21 @@ use state::{Action, FloatField, Store};
 
 use super::{play_control::*, sample_control::*};
 
-pub struct ToolBar<'a> {
+pub struct ToolBarView<'a> {
     window_state: &'a mut WindowState,
     store: &'a mut Store,
     async_state: &'a mut AsyncState,
     audio_state: &'a mut AudioState,
 }
 
-impl<'a> ToolBar<'a> {
+impl<'a> ToolBarView<'a> {
     pub fn new(
         window_state: &'a mut WindowState,
         store: &'a mut Store,
         async_state: &'a mut AsyncState,
         audio_state: &'a mut AudioState,
     ) -> Self {
-        ToolBar {
+        ToolBarView {
             window_state,
             store,
             async_state,
@@ -32,9 +32,9 @@ impl<'a> ToolBar<'a> {
     }
 }
 
-impl View for ToolBar<'_> {
+impl View for ToolBarView<'_> {
     fn ui(&mut self, ui: &mut Ui) {
-        let ToolBar {
+        let ToolBarView {
             window_state,
             store,
             ..

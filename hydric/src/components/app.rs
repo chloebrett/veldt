@@ -4,7 +4,7 @@ use super::{
     generator::{generator_control, generators_control},
     note_control::NoteControl,
     note_roll::NoteRoll,
-    play::{SampleTreeWindow, ToolBar, play_control, sample_control},
+    play::{SampleTreeWindow, ToolBarView, play_control, sample_control},
     toggle_window_panel, track_placement_control,
     track_roll::TrackRoll,
     undo_redo_control,
@@ -117,7 +117,7 @@ impl eframe::App for App {
                         MixerWindow::new(&mut self.window_state, &self.store).ui(ctx);
                     }
 
-                    ToolBar::new(
+                    ToolBarView::new(
                         &mut self.window_state,
                         &mut self.store,
                         &mut self.async_state,
