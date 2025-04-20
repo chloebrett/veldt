@@ -218,14 +218,14 @@ impl View for Piano {
             painter.extend(piano_keys.transform(piano_transform));
         });
 
-        egui::Window::new("Piano Debug").show(ui.ctx(), |ui| {
-            ui.label(format!("min_note: {}, max_note: {}", self.min_note, self.max_note));
-            ui.label(format!("min_note: {}, max_note: {}", self.min_note, self.max_note));
-            ui.label(format!("range: {:?}", range));
-            ui.label(format!("Total notes: {}", self.max_note - self.min_note));
-            let piano_keys = self.make_all_piano_keys(self.get_piano_notes(range), range);
-            ui.label(format!("Piano keys: {:?}", piano_keys))
-        });
+        // keep just in case
+        // egui::Window::new("Piano Debug").show(ui.ctx(), |ui| {
+        //     ui.label(format!("min_note: {}, max_note: {}", self.min_note, self.max_note));
+        //     ui.label(format!("range: {:?}", range));
+        //     ui.label(format!("Total notes: {}", self.max_note - self.min_note));
+        //     let piano_keys = self.make_all_piano_keys(self.get_piano_notes(range), range);
+        //     ui.label(format!("Piano keys: {:?}", piano_keys))
+        // });
     }
 }
 
