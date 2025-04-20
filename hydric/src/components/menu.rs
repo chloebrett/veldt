@@ -45,7 +45,7 @@ impl View for Menu<'_> {
                 let mut button_with_tick = |label, state: &mut bool| {
                     let suffix = if *state { " ✅" } else { "" };
                     if ui.button(format!("{}{}", label, suffix)).clicked() {
-                        *state ^= true
+                        *state = !*state
                     }
                 };
                 button_with_tick("Mixers", &mut window_state.mixer.visible);

@@ -1,6 +1,7 @@
 use crate::{
+    app_state::WindowState,
     view::View,
-    widget::{Sequencer, SequencerObject},
+    widget::{Sequencer, SequencerObject, default_window},
 };
 use egui::{Color32, CornerRadius, Id, Pos2, Rect, ScrollArea, Shape, Ui, pos2, vec2};
 use shared::{
@@ -11,11 +12,15 @@ use state::{Action, FloatField, Selector, Store, TypeField, UintField};
 
 pub struct TrackRoll<'a> {
     store: &'a Store,
+    window_state: &'a mut WindowState,
 }
 
 impl<'a> TrackRoll<'a> {
-    pub fn new(store: &'a Store) -> Self {
-        TrackRoll { store }
+    pub fn new(store: &'a Store, window_state: &'a mut WindowState) -> Self {
+        TrackRoll {
+            store,
+            window_state,
+        }
     }
 }
 
@@ -54,20 +59,29 @@ impl View for TrackRoll<'_> {
                 data.insert_temp::<Option<usize>>(track_id, Some(placed_track_ids[index] as usize))
             });
         };
-        if ui.button("New track").clicked() {
-            store.dispatchr(Action::AddChild(TypeField::Track(default_track)));
-        }
-        ScrollArea::vertical()
-            .min_scrolled_height(400.0)
-            .show(ui, |ui| {
-                ui.add(
-                    Sequencer::new(range, dispatch, on_release, on_click)
-                        .objects(placed_tracks)
-                        .size(vec2(600.0, 100.0 * track_count as f32))
-                        .vertical_bars(4.0, Color32::from_white_alpha(6))
-                        .vertical_bars(1.0, Color32::from_white_alpha(3))
-                        .horizontal_rects(|index| index % 2 == 1, Color32::from_white_alpha(1)),
-                );
+        default_window("Track Roll")
+            .default_pos(pos2(30.0, 200.0))
+            .resizable(true)
+            .open(&mut self.window_state.track_roll)
+            .show(ui.ctx(), |ui| {
+                if ui.button("New track").clicked() {
+                    store.dispatchr(Action::AddChild(TypeField::Track(default_track)));
+                }
+                ScrollArea::vertical()
+                    .min_scrolled_height(400.0)
+                    .show(ui, |ui| {
+                        ui.add(
+                            Sequencer::new(range, dispatch, on_release, on_click)
+                                .objects(placed_tracks)
+                                .size(vec2(600.0, 100.0 * track_count as f32))
+                                .vertical_bars(4.0, Color32::from_white_alpha(6))
+                                .vertical_bars(1.0, Color32::from_white_alpha(3))
+                                .horizontal_rects(
+                                    |index| index % 2 == 1,
+                                    Color32::from_white_alpha(1),
+                                ),
+                        );
+                    });
             });
     }
 }
