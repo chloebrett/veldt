@@ -72,12 +72,6 @@ impl WindowView for MixerWindow<'_> {
                     );
                     if ui.button("Delete").clicked() {
                         dispatch_mixer(Action::DeleteChild(IndexField::Effect(effect_index)));
-
-                        // TODO: window state is not synced up with undo/redo, which causes a crash
-                        // when undoing deletion of effects. Fix this. Perhaps fill in the window
-                        // state with 'false' values for anything missing at the start of each
-                        // frame? This would scale fine once we move towards ID based (instead of
-                        // index based) window state.
                         window_state.effects[mixer_index].remove(effect_index);
 
                         // Skip iterating for this frame.

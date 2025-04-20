@@ -66,7 +66,14 @@ impl SaveLoad for SaveLoadContext {
 
         for file in dir_contents {
             let file = file?;
-            let filename: String = file.file_name().to_str().unwrap().to_string();
+            let filename: String = file
+                .path()
+                .iter()
+                .next_back()
+                .unwrap()
+                .to_str()
+                .unwrap()
+                .to_string();
             list.push(filename);
         }
 

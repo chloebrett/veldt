@@ -1,5 +1,5 @@
 use crate::{audio_player::Handle, promise::AsyncResult};
-use shared::model::{FilenameTree, Project, Sample};
+use shared::model::{Project, Sample};
 
 /// Container for the various promises launchable by the app.
 #[derive(Default)]
@@ -9,7 +9,6 @@ pub struct AsyncState {
     pub project_list: AsyncResult<Vec<String>, ()>,
     pub load_project: AsyncResult<Project, ()>,
     pub load_sample: AsyncResult<Sample, ()>,
-    pub load_sample_tree: AsyncResult<FilenameTree, ()>,
 }
 
 #[derive(Default)]

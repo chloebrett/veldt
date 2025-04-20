@@ -1,9 +1,9 @@
 use ordered_float::OrderedFloat;
 use shared::model::{
     AdsrEnvelope, AntiAliasingMode, CompressorConfig, DelayConfig, Effect, EffectInstance,
-    EffectMeta, EqConfig, EqType, FileTreeConfig, FilenameTree, GeneratorInstance, GeneratorMeta,
-    GeneratorType, MixerChannel, ModDelayConfig, ModMatrix, Note, PitchName, PlacedNote, Project,
-    Scale, ScaleValue, SimpleWaveConfig, Track, TrackPlacement, WaveType,
+    EffectMeta, EqConfig, EqType, GeneratorInstance, GeneratorMeta, GeneratorType, MixerChannel,
+    ModDelayConfig, ModMatrix, Note, PitchName, PlacedNote, Project, Scale, ScaleValue,
+    SimpleWaveConfig, Track, TrackPlacement, WaveType,
 };
 use shared::types::Volume;
 
@@ -13,8 +13,6 @@ pub struct StoreData {
     pub key: ScaleValue,
     pub scale: Scale,
     pub volume: Volume,
-    pub sample_tree: Option<FilenameTree>,
-    pub sample_tree_config: FileTreeConfig,
     pub project_list: Vec<String>,
     pub load_project_name: Option<String>,
 }
@@ -136,12 +134,6 @@ impl Default for StoreData {
             volume: 1.0,
             key: ScaleValue::A,
             scale: Scale::Chromatic,
-            sample_tree: None,
-            sample_tree_config: FileTreeConfig {
-                search: None,
-                skip_non_audio: true,
-                skip_hidden: true,
-            },
             project_list: vec![],
             load_project_name: None,
         }

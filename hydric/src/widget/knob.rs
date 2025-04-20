@@ -1,4 +1,5 @@
 use egui::{Align2, Color32, Rect, Response, Sense, Stroke, Ui, Vec2, Widget};
+use log::info;
 use shared::types::KnobPosition;
 use std::f32::consts::TAU;
 use std::ops::RangeInclusive;
@@ -230,6 +231,8 @@ impl Widget for Knob<'_> {
                 knob_size.y.max(label_size.y + label_padding * 2.0),
             ),
         };
+
+        info!("{} {:?}", self.label.clone().unwrap(), label_size);
 
         let (rect, mut response) = ui.allocate_exact_size(adjusted_size, Sense::click_and_drag());
 

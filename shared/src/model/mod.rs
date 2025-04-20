@@ -1,7 +1,6 @@
 mod adsr_envelope;
 mod effect;
 mod eq;
-mod file_tree;
 mod generator;
 mod mod_matrix;
 mod note;
@@ -15,7 +14,6 @@ mod wave_type;
 pub use adsr_envelope::*;
 pub use effect::*;
 pub use eq::*;
-pub use file_tree::*;
 pub use generator::*;
 pub use mod_matrix::*;
 pub use note::*;

@@ -50,9 +50,7 @@ impl View for TrackRoll<'_> {
             let window_id = Id::new("note_roll_window");
             let track_id = Id::new("active_track_index");
             ui.data_mut(|data| data.insert_temp(window_id, true));
-            ui.data_mut(|data| {
-                data.insert_temp::<Option<usize>>(track_id, Some(placed_track_ids[index] as usize))
-            });
+            ui.data_mut(|data| data.insert_temp(track_id, placed_track_ids[index]));
         };
         if ui.button("New track").clicked() {
             store.dispatchr(Action::AddChild(TypeField::Track(default_track)));
