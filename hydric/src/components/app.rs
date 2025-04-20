@@ -6,7 +6,7 @@ use super::{
     note_control::NoteControl,
     note_roll::NoteRoll,
     play::{SampleTreeWindow, play_control, sample_control},
-    toggle_window_panel, track_placement_control,
+    track_placement_control,
     track_roll::TrackRoll,
     undo_redo_control,
 };
@@ -78,12 +78,11 @@ impl eframe::App for App {
             .on_new_frame(ctx.input(|i| i.time), frame.info().cpu_usage);
 
         egui::CentralPanel::default().show(ctx, |ui| {
-            Menu::new(&mut self.store).ui(ui);
+            Menu::new(&mut self.store, &mut self.window_state).ui(ui);
             ScrollArea::vertical()
                 .auto_shrink(false)
                 .scroll_bar_visibility(ScrollBarVisibility::VisibleWhenNeeded)
                 .show(ui, |ui| {
-                    ui.heading("Veldt");
                     ui.horizontal(|ui| {
                         let project_name = self.store.get().project.name.clone();
                         let mut name_observer = string_observer(
@@ -96,7 +95,6 @@ impl eframe::App for App {
                         ui.text_edit_singleline(&mut name_observer);
                         SaveLoadView::new(&self.store, &mut self.async_state).ui(ui);
                     });
-                    toggle_window_panel(&mut self.window_state, ui);
 
                     if self.window_state.generator_list {
                         generators_control(ctx, &mut self.window_state, &self.store);
