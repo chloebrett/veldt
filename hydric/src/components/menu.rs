@@ -1,20 +1,25 @@
-use crate::view::View;
+use crate::{app_state::WindowState, view::View};
 use egui::{Button, Ui, menu::bar};
 use state::Store;
 
 pub struct Menu<'a> {
     store: &'a mut Store,
+    window_state: &'a mut WindowState,
 }
 
 impl<'a> Menu<'a> {
-    pub fn new(store: &'a mut Store) -> Self {
-        Menu { store }
+    pub fn new(store: &'a mut Store, window_state: &'a mut WindowState) -> Self {
+        Menu {
+            store,
+            window_state,
+        }
     }
 }
 
 impl View for Menu<'_> {
     fn ui(&mut self, ui: &mut Ui) {
         let store = &mut self.store;
+        let window_state = &mut self.window_state;
         bar(ui, |ui| {
             ui.label("Veldt");
             ui.menu_button("File", |ui| {
@@ -37,10 +42,16 @@ impl View for Menu<'_> {
                 }
             });
             ui.menu_button("Windows", |ui| {
-                if ui.button("Mixers").clicked() {}
-                if ui.button("Generators").clicked() {}
-                if ui.button("Scale").clicked() {}
-                if ui.button("Sample").clicked() {}
+                let mut button_with_tick = |label, state: &mut bool| {
+                    let suffix = if *state { " ✅" } else { "" };
+                    if ui.button(format!("{}{}", label, suffix)).clicked() {
+                        *state = !*state
+                    }
+                };
+                button_with_tick("Mixers", &mut window_state.mixer.visible);
+                button_with_tick("Generators", &mut window_state.generator_list);
+                button_with_tick("Scale", &mut window_state.scale);
+                button_with_tick("Samples", &mut window_state.sample_tree);
             });
             ui.menu_button("Effects", |ui| if ui.button("Add effect").clicked() {});
             ui.menu_button(
@@ -49,10 +60,28 @@ impl View for Menu<'_> {
                     if ui.button("Add generator").clicked() {}
                 },
             );
-            ui.menu_button("📂", |_| {});
-            ui.menu_button("🎷", |_| {});
-            ui.menu_button("🎨", |_| {});
-            ui.menu_button("📄", |_| {});
+            let sample_response = ui.add(Button::new("📂").selected(window_state.sample_tree));
+            if sample_response.clicked() {
+                window_state.sample_tree ^= true;
+            }
+            sample_response.on_hover_ui(|ui| {
+                ui.label("Samples");
+            });
+            let sound_response = ui.add(Button::new("🎷"));
+            sound_response.on_hover_ui(|ui| {
+                ui.label("Sound library");
+            });
+            let effect_response = ui.add(Button::new("🎨").selected(window_state.mixer.visible));
+            if effect_response.clicked() {
+                window_state.mixer.visible ^= true;
+            }
+            effect_response.on_hover_ui(|ui| {
+                ui.label("Effects/Mixers");
+            });
+            let track_response = ui.add(Button::new("📄"));
+            track_response.on_hover_ui(|ui| {
+                ui.label("Track placements");
+            })
         });
     }
 }

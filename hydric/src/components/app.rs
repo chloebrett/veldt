@@ -2,12 +2,12 @@ use super::{
     KeyView, SaveLoadView,
     effect::{EffectWindow, MixerWindow},
     generator::{generator_control, generators_control},
+    menu::Menu,
     note_control::NoteControl,
     note_roll::NoteRoll,
-    play::{SampleTreeWindow, ToolBarView, play_control, sample_control},
-    toggle_window_panel, track_placement_control,
+    play::{SampleTreeWindow, ToolBarView},
+    track_placement_control,
     track_roll::TrackRoll,
-    undo_redo_control,
 };
 use crate::components::FrameHistory;
 use crate::promise::spawn;
@@ -15,14 +15,13 @@ use crate::rpc::broadcast_actions;
 use crate::rpc::load_project_list;
 use crate::view::View;
 use crate::view::WindowView;
-use crate::widget::{default_window, get_set, knob, slider, string_observer};
+use crate::widget::{default_window, get_set, string_observer};
 use crate::{AsyncState, AudioState, WindowState};
 use egui::{Id, Pos2};
 use egui::{ScrollArea, scroll_area::ScrollBarVisibility};
 use poll_promise::Promise;
 use shared::model::GeneratorType;
-use shared::types::Beats;
-use state::{Action, FloatField, Selector, Store, TypeField};
+use state::{Action, Selector, Store, TypeField};
 
 pub struct App {
     pub store: Store,
@@ -73,11 +72,11 @@ impl eframe::App for App {
             .on_new_frame(ctx.input(|i| i.time), frame.info().cpu_usage);
 
         egui::CentralPanel::default().show(ctx, |ui| {
+            Menu::new(&mut self.store, &mut self.window_state).ui(ui);
             ScrollArea::vertical()
                 .auto_shrink(false)
                 .scroll_bar_visibility(ScrollBarVisibility::VisibleWhenNeeded)
                 .show(ui, |ui| {
-                    ui.heading("Veldt");
                     ui.horizontal(|ui| {
                         let project_name = self.store.get().project.name.clone();
                         let mut name_observer = string_observer(
@@ -90,7 +89,6 @@ impl eframe::App for App {
                         ui.text_edit_singleline(&mut name_observer);
                         SaveLoadView::new(&self.store, &mut self.async_state).ui(ui);
                     });
-                    toggle_window_panel(&mut self.window_state, ui);
 
                     if self.window_state.generator_list {
                         generators_control(ctx, &mut self.window_state, &self.store);
