@@ -2,7 +2,7 @@ use crate::{
     view::View,
     widget::{Sequencer, SequencerObject},
 };
-use egui::{Color32, CornerRadius, Id, Pos2, Rect, Shape, Ui, pos2, vec2};
+use egui::{Color32, CornerRadius, Id, Pos2, Rect, ScrollArea, Shape, Ui, pos2, vec2};
 use shared::{
     model::{Track, TrackPlacement},
     types::Beats,
@@ -57,14 +57,18 @@ impl View for TrackRoll<'_> {
         if ui.button("New track").clicked() {
             store.dispatchr(Action::AddChild(TypeField::Track(default_track)));
         }
-        ui.add(
-            Sequencer::new(range, dispatch, on_release, on_click)
-                .objects(placed_tracks)
-                .size(vec2(ui.available_width(), 100.0 * track_count as f32))
-                .vertical_bars(4.0, Color32::from_white_alpha(6))
-                .vertical_bars(1.0, Color32::from_white_alpha(3))
-                .horizontal_rects(|index| index % 2 == 1, Color32::from_white_alpha(1)),
-        );
+        ScrollArea::vertical()
+            .min_scrolled_height(400.0)
+            .show(ui, |ui| {
+                ui.add(
+                    Sequencer::new(range, dispatch, on_release, on_click)
+                        .objects(placed_tracks)
+                        .size(vec2(600.0, 100.0 * track_count as f32))
+                        .vertical_bars(4.0, Color32::from_white_alpha(6))
+                        .vertical_bars(1.0, Color32::from_white_alpha(3))
+                        .horizontal_rects(|index| index % 2 == 1, Color32::from_white_alpha(1)),
+                );
+            });
     }
 }
 

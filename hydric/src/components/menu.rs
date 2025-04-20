@@ -52,6 +52,7 @@ impl View for Menu<'_> {
                 button_with_tick("Generators", &mut window_state.generator_list);
                 button_with_tick("Scale", &mut window_state.scale);
                 button_with_tick("Samples", &mut window_state.sample_tree);
+                button_with_tick("Track Roll", &mut window_state.track_roll);
             });
             ui.menu_button("Effects", |ui| if ui.button("Add effect").clicked() {});
             ui.menu_button(
@@ -78,9 +79,12 @@ impl View for Menu<'_> {
             effect_response.on_hover_ui(|ui| {
                 ui.label("Effects/Mixers");
             });
-            let track_response = ui.add(Button::new("📄"));
+            let track_response = ui.add(Button::new("📄").selected(window_state.track_roll));
+            if track_response.clicked() {
+                window_state.track_roll ^= true;
+            }
             track_response.on_hover_ui(|ui| {
-                ui.label("Track placements");
+                ui.label("Track Roll");
             })
         });
     }

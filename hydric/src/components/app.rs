@@ -18,7 +18,7 @@ use crate::view::View;
 use crate::view::WindowView;
 use crate::widget::{default_window, get_set, knob, slider, string_observer};
 use crate::{AsyncState, AudioState, WindowState};
-use egui::{Id, Pos2};
+use egui::{Id, Pos2, pos2};
 use egui::{ScrollArea, scroll_area::ScrollBarVisibility};
 use poll_promise::Promise;
 use shared::model::GeneratorType;
@@ -266,11 +266,16 @@ impl eframe::App for App {
                                 ui,
                             );
                         });
+                    default_window("Track Roll")
+                        .default_pos(pos2(30.0, 200.0))
+                        .resizable(true)
+                        .open(&mut self.window_state.track_roll)
+                        .show(ctx, |ui| {
+                            TrackRoll::new(&self.store).ui(ui);
+                        });
 
                     ui.separator();
                     track_placement_control(&self.store, ui);
-                    ui.separator();
-                    TrackRoll::new(&self.store).ui(ui);
 
                     ui.with_layout(egui::Layout::bottom_up(egui::Align::LEFT), |ui| {
                         self.frame_history.ui(ui);
