@@ -123,7 +123,7 @@ impl eframe::App for App {
                         &mut self.async_state,
                         &mut self.audio_state,
                     )
-                    .ui(ctx);
+                    .ui(ui);
 
                     let mixer = &self.store.get().project.mixer;
                     for (mixer_index, channel) in mixer.iter().enumerate() {

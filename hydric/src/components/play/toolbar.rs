@@ -1,9 +1,9 @@
 use crate::WindowState;
 use crate::app_state::{AsyncState, AudioState};
 use crate::components::{App, undo_redo_control};
-use crate::view::WindowView;
+use crate::view::View;
 use crate::widget::{default_window, knob, slider};
-use egui::{Context, Pos2};
+use egui::{Context, Pos2, Ui};
 use shared::types::Beats;
 use state::{Action, FloatField, Store};
 
@@ -32,8 +32,8 @@ impl<'a> ToolBar<'a> {
     }
 }
 
-impl WindowView for ToolBar<'_> {
-    fn ui(&mut self, ctx: &Context) {
+impl View for ToolBar<'_> {
+    fn ui(&mut self, ui: &mut Ui) {
         let ToolBar {
             window_state,
             store,
@@ -42,7 +42,7 @@ impl WindowView for ToolBar<'_> {
 
         default_window("Toolbar")
             .default_pos(Pos2 { x: 600.0, y: 20.0 })
-            .show(ctx, |ui| {
+            .show(ui.ctx(), |ui| {
                 let on_release = || self.store.dispatchr(Action::Release);
 
                 let volume = self.store.get().volume;
