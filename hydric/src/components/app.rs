@@ -274,8 +274,28 @@ impl eframe::App for App {
                             TrackRoll::new(&self.store).ui(ui);
                         });
 
-                    ui.separator();
-                    track_placement_control(&self.store, ui);
+                    let placement_window_id = Id::new("track_placement_window");
+                    if ui.data_mut(|data| {
+                        *data.get_temp_mut_or_insert_with(placement_window_id, move || false)
+                    }) {
+                        let active_track_placement = ui.data_mut(|data| {
+                            let id = Id::new("active_track_placement_index");
+                            *data.get_temp_mut_or::<Option<usize>>(id, None)
+                        });
+                        if let Some(placement_index) = active_track_placement {
+                            let mut open = true;
+                            default_window(&format!("Track Placement {}", placement_index))
+                                .open(&mut open)
+                                .default_pos(Pos2 { x: 100.0, y: 20.0 })
+                                .resizable(true)
+                                .show(ctx, |ui| {
+                                    track_placement_control(&self.store, ui);
+                                });
+                            ui.data_mut(|data| {
+                                data.insert_temp(placement_window_id, open);
+                            })
+                        }
+                    }
 
                     ui.with_layout(egui::Layout::bottom_up(egui::Align::LEFT), |ui| {
                         self.frame_history.ui(ui);

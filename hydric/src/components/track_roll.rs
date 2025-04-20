@@ -47,12 +47,18 @@ impl View for TrackRoll<'_> {
         };
         let on_release = || store.dispatchr(Action::Release);
         let on_click = |ui: &mut Ui, index: usize| {
-            let window_id = Id::new("note_roll_window");
+            let note_window_id = Id::new("note_roll_window");
+            let placement_window_id = Id::new("track_placement_window");
             let track_id = Id::new("active_track_index");
-            ui.data_mut(|data| data.insert_temp(window_id, true));
+            let placement_id = Id::new("active_track_placement_index");
+            ui.data_mut(|data| data.insert_temp(note_window_id, true));
+            ui.data_mut(|data| data.insert_temp(placement_window_id, true));
             ui.data_mut(|data| {
                 data.insert_temp::<Option<usize>>(track_id, Some(placed_track_ids[index] as usize))
             });
+            ui.data_mut(|data| {
+                data.insert_temp::<Option<usize>>(placement_id, Some(index));
+            })
         };
         if ui.button("New track").clicked() {
             store.dispatchr(Action::AddChild(TypeField::Track(default_track)));
