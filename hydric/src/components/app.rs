@@ -212,7 +212,12 @@ impl eframe::App for App {
                         })
                     }
 
-                    SampleTreeWindow::new(&self.store, &mut self.window_state.sample_tree).ui(ui);
+                    SampleTreeWindow::new(
+                        &self.store,
+                        &mut self.async_state,
+                        &mut self.window_state.sample_tree,
+                    )
+                    .ui(ui);
 
                     ui.separator();
                     track_placement_control(&self.store, ui);
