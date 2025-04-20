@@ -99,6 +99,12 @@ impl SequencerObject<PlacedTrack> for PlacedTrack {
         pos2(x, y)
     }
 
+    fn to_pos_horizontal(&self, range: Rect) -> Pos2 {
+        let y = self.placement.track_id as f32;
+        let x = *self.placement.offset - range.left();
+        pos2(x, y)
+    }
+
     fn to_rect(&self, range: Rect) -> Rect {
         let track_pos = self.to_pos(range);
         // If not clipped duration render length based on notes.

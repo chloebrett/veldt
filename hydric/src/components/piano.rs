@@ -9,6 +9,7 @@ use shared::{
 };
 
 /// Defines the orientation of the piano
+#[derive(Copy, Clone)]
 pub enum PianoOrientation {
     Vertical,
     Horizontal,
@@ -51,15 +52,6 @@ impl Piano {
     }
 
     fn get_piano_notes(&self, range: Rect) -> Vec<PlacedNote> {
-        // (range.top() as i32..=range.bottom() as i32)
-        // .map(|pitch_value| PlacedNote {
-        //     note: Note {
-        //         pitch_name: pitch_value.into(),
-        //         beats: 0.0,
-        //     },
-        //     offset: 0.0.into(),
-        // })
-        // .collect()
         match self.orientation {
             PianoOrientation::Vertical => {
                 (range.top() as i32..=range.bottom() as i32)
@@ -134,7 +126,7 @@ impl Piano {
                 )
             },
             PianoOrientation::Horizontal => {
-                let note_pos = self.to_pos_horizontal(note, range) + vec2(offset, 0.0);
+                let note_pos = note.to_pos_horizontal(range) + vec2(offset, 0.0);
                 let size = vec2(note_size, 1.0);
                 let rect = Rect::from_min_size(note_pos, size);
                 Shape::rect_stroke(
@@ -169,7 +161,7 @@ impl Piano {
                 )
             },
             PianoOrientation::Horizontal => {
-                let note_pos = self.to_pos_horizontal(note, range);
+                let note_pos = note.to_pos_horizontal(range);
                 let note_size = vec2(1.0, black_note_length);
                 let rect = Rect::from_min_size(note_pos, note_size);
                 
@@ -187,18 +179,7 @@ impl Piano {
             }
         }
     }
-        // New horizontal positioning method
-        fn to_pos_horizontal(&self, note: PlacedNote, range: Rect) -> Pos2 {
-            let offset: f32 = note.offset.into();
-            let y = offset - range.top();
-            let pitch_value: PitchValue = note.note.pitch_name.into();
-            
-            // In horizontal layout, pitch runs left to right
-            // Lower pitches (left) have smaller x values
-            let x = pitch_value - self.min_note;
-            
-            pos2(x as f32, y)
-        }
+
 }
 
 impl View for Piano {
@@ -208,24 +189,21 @@ impl View for Piano {
             min_note,
             size,
             orientation,
-        } = self;
+        } = *self;
         
-        // // The range is always defined in the VERTICAL orientation's coordinate system
-        // // because the PlacedNote.to_pos() expects this:
-        // let range = Rect::from_min_max(pos2(0.0, *min_note as f32), pos2(1.0, *max_note as f32));
         // Define range based on orientation
         let range = match orientation {
             PianoOrientation::Vertical => {
-                Rect::from_min_max(pos2(0.0, *min_note as f32), pos2(1.0, *max_note as f32))
+                Rect::from_min_max(pos2(0.0, min_note as f32), pos2(1.0, max_note as f32))
             },
             PianoOrientation::Horizontal => {
-                // For horizontal, define a range with pitch along x-axis
-                Rect::from_min_max(pos2(0.0, 0.0), pos2((*max_note - *min_note) as f32, 1.0))
+                // min is top left corner which is 0,0 and max is bottom right which is 76,1
+                Rect::from_min_max(pos2(0.0, 0.0), pos2((max_note - min_note) as f32, 1.0))
             }
         };
         
-        Frame::canvas(ui.style()).show(ui, |ui| {
-            let (response, painter) = ui.allocate_painter(*size, Sense::hover());
+        Frame::canvas(ui.style()).show(ui, |ui|{
+            let (response, painter) = ui.allocate_painter(size, Sense::hover());
             let piano_transform = RectTransform::from_to(
                 Rect::from_min_size(Pos2::ZERO, range.size()),
                 response.rect,
@@ -241,6 +219,7 @@ impl View for Piano {
         });
 
         egui::Window::new("Piano Debug").show(ui.ctx(), |ui| {
+            ui.label(format!("min_note: {}, max_note: {}", self.min_note, self.max_note));
             ui.label(format!("min_note: {}, max_note: {}", self.min_note, self.max_note));
             ui.label(format!("range: {:?}", range));
             ui.label(format!("Total notes: {}", self.max_note - self.min_note));
