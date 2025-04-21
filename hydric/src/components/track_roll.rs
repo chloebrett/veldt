@@ -5,7 +5,7 @@ use crate::{
 };
 use egui::{Color32, CornerRadius, Id, Pos2, Rect, ScrollArea, Shape, Ui, pos2, vec2};
 use shared::{
-    model::{Track, TrackPlacement},
+    model::{Track, TrackId, TrackPlacement},
     types::Beats,
 };
 use state::{Action, FloatField, Selector, Store, TypeField, UintField};
@@ -31,6 +31,12 @@ impl View for TrackRoll<'_> {
             notes: vec![],
             offset: 0.0.into(),
         };
+        let default_track_placement = TrackPlacement {
+            track_id: 0 as TrackId,
+            offset: (0.0 as Beats).into(),
+            clipped_duration: None,
+            visual_placement: 0,
+        };
         let placed_tracks: Vec<PlacedTrack> = store
             .get()
             .project
@@ -52,11 +58,17 @@ impl View for TrackRoll<'_> {
         };
         let on_release = || store.dispatchr(Action::Release);
         let on_click = |ui: &mut Ui, index: usize| {
-            let window_id = Id::new("note_roll_window");
+            let note_window_id = Id::new("note_roll_window");
+            let placement_window_id = Id::new("track_placement_window");
             let track_id = Id::new("active_track_index");
-            ui.data_mut(|data| data.insert_temp(window_id, true));
+            let placement_id = Id::new("active_track_placement_index");
+            ui.data_mut(|data| data.insert_temp(note_window_id, true));
+            ui.data_mut(|data| data.insert_temp(placement_window_id, true));
             ui.data_mut(|data| {
                 data.insert_temp::<Option<usize>>(track_id, Some(placed_track_ids[index] as usize))
+            });
+            ui.data_mut(|data| {
+                data.insert_temp::<Option<usize>>(placement_id, Some(index));
             });
         };
         default_window("Track Roll")
@@ -64,9 +76,16 @@ impl View for TrackRoll<'_> {
             .resizable(true)
             .open(&mut self.window_state.track_roll)
             .show(ui.ctx(), |ui| {
-                if ui.button("New track").clicked() {
-                    store.dispatchr(Action::AddChild(TypeField::Track(default_track)));
-                }
+                ui.horizontal(|ui| {
+                    if ui.button("New track").clicked() {
+                        store.dispatchr(Action::AddChild(TypeField::Track(default_track)));
+                    }
+                    if ui.button("New track placement").clicked() {
+                        store.dispatchr(Action::AddChild(TypeField::TrackPlacement(
+                            default_track_placement,
+                        )));
+                    }
+                });
                 ScrollArea::vertical()
                     .min_scrolled_height(400.0)
                     .show(ui, |ui| {

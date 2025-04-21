@@ -1,13 +1,9 @@
 use super::{
-    KeyView, SaveLoadView,
+    KeyView, NoteControl, NoteRoll, SaveLoadView, TrackPlacementView, TrackRoll,
     effect::{EffectWindow, MixerWindow},
     generator::{generator_control, generators_control},
     menu::Menu,
-    note_control::NoteControl,
-    note_roll::NoteRoll,
     play::{SampleTreeWindow, ToolBarView},
-    track_placement_control,
-    track_roll::TrackRoll,
 };
 use crate::components::FrameHistory;
 use crate::promise::spawn;
@@ -210,6 +206,8 @@ impl eframe::App for App {
                         })
                     }
 
+                    TrackPlacementView::new(&self.store).ui(ui);
+
                     SampleTreeWindow::new(
                         &self.store,
                         &mut self.async_state,
@@ -218,7 +216,6 @@ impl eframe::App for App {
                     .ui(ui);
                     TrackRoll::new(&self.store, &mut self.window_state).ui(ui);
                     ui.separator();
-                    track_placement_control(&self.store, ui);
 
                     ui.with_layout(egui::Layout::bottom_up(egui::Align::LEFT), |ui| {
                         self.frame_history.ui(ui);
