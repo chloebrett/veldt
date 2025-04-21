@@ -31,14 +31,14 @@ impl Piano {
             orientation: PianoOrientation::Vertical,
         }
     }
-    
+
     pub fn with_orientation(mut self, orientation: PianoOrientation) -> Self {
         // Adjust size based on orientation
         self.size = match orientation {
             PianoOrientation::Vertical => vec2(50.0, 600.0),
             PianoOrientation::Horizontal => vec2(600.0, 50.0),
         };
-        
+
         self.orientation = orientation;
         self
     }
@@ -53,28 +53,24 @@ impl Piano {
 
     fn get_piano_notes(&self, range: Rect) -> Vec<PlacedNote> {
         match self.orientation {
-            PianoOrientation::Vertical => {
-                (range.top() as i32..=range.bottom() as i32)
-                    .map(|pitch_value| PlacedNote {
-                        note: Note {
-                            pitch_name: pitch_value.into(),
-                            beats: 0.0,
-                        },
-                        offset: 0.0.into(),
-                    })
-                    .collect()
-            },
-            PianoOrientation::Horizontal => {
-                (range.left() as i32..=range.right() as i32)
-                    .map(|pitch_value| PlacedNote {
-                        note: Note {
-                            pitch_name: pitch_value.into(),
-                            beats: 0.0,
-                        },
-                        offset: 0.0.into(),
-                    })
-                    .collect()
-            }
+            PianoOrientation::Vertical => (range.top() as i32..=range.bottom() as i32)
+                .map(|pitch_value| PlacedNote {
+                    note: Note {
+                        pitch_name: pitch_value.into(),
+                        beats: 0.0,
+                    },
+                    offset: 0.0.into(),
+                })
+                .collect(),
+            PianoOrientation::Horizontal => (range.left() as i32..=range.right() as i32)
+                .map(|pitch_value| PlacedNote {
+                    note: Note {
+                        pitch_name: pitch_value.into(),
+                        beats: 0.0,
+                    },
+                    offset: 0.0.into(),
+                })
+                .collect(),
         }
     }
 
@@ -106,13 +102,7 @@ impl Piano {
         self.make_white_key(note, offset, note_size, range)
     }
 
-    fn make_white_key(
-        &self,
-        note: PlacedNote,
-        offset: f32,
-        note_size: f32,
-        range: Rect,
-    ) -> Shape {
+    fn make_white_key(&self, note: PlacedNote, offset: f32, note_size: f32, range: Rect) -> Shape {
         match self.orientation {
             PianoOrientation::Vertical => {
                 let note_pos = note.to_pos(range) + vec2(0.0, offset);
@@ -124,7 +114,7 @@ impl Piano {
                     Stroke::new(1.0, Color32::from_black_alpha(64)),
                     StrokeKind::Inside,
                 )
-            },
+            }
             PianoOrientation::Horizontal => {
                 let note_pos = note.to_pos_horizontal(range) + vec2(offset, 0.0);
                 let size = vec2(note_size, 1.0);
@@ -141,7 +131,7 @@ impl Piano {
 
     fn make_black_key(&self, note: PlacedNote, range: Rect) -> Shape {
         let black_note_length = 0.6;
-        
+
         match self.orientation {
             PianoOrientation::Vertical => {
                 let note_pos = note.to_pos(range);
@@ -159,12 +149,12 @@ impl Piano {
                     },
                     Color32::BLACK,
                 )
-            },
+            }
             PianoOrientation::Horizontal => {
                 let note_pos = note.to_pos_horizontal(range);
                 let note_size = vec2(1.0, black_note_length);
                 let rect = Rect::from_min_size(note_pos, note_size);
-                
+
                 Shape::rect_filled(
                     rect,
                     // No radius on the top and small radius on the bottom
@@ -179,7 +169,6 @@ impl Piano {
             }
         }
     }
-
 }
 
 impl View for Piano {
@@ -190,19 +179,19 @@ impl View for Piano {
             size,
             orientation,
         } = *self;
-        
+
         // Define range based on orientation
         let range = match orientation {
             PianoOrientation::Vertical => {
                 Rect::from_min_max(pos2(0.0, min_note as f32), pos2(1.0, max_note as f32))
-            },
+            }
             PianoOrientation::Horizontal => {
                 // min is top left corner which is 0,0 and max is bottom right which is 76,1
                 Rect::from_min_max(pos2(0.0, 0.0), pos2((max_note - min_note) as f32, 1.0))
             }
         };
-        
-        Frame::canvas(ui.style()).show(ui, |ui|{
+
+        Frame::canvas(ui.style()).show(ui, |ui| {
             let (response, painter) = ui.allocate_painter(size, Sense::hover());
             let piano_transform = RectTransform::from_to(
                 Rect::from_min_size(Pos2::ZERO, range.size()),
@@ -210,10 +199,10 @@ impl View for Piano {
             );
             let piano_board = self.make_piano_board(range);
             let piano_keys = self.make_all_piano_keys(self.get_piano_notes(range), range);
-            
+
             // Draw piano board first
             painter.extend(vec![piano_board].transform(piano_transform));
-            
+
             // Then draw keys on top
             painter.extend(piano_keys.transform(piano_transform));
         });
@@ -228,4 +217,3 @@ impl View for Piano {
         // });
     }
 }
-
