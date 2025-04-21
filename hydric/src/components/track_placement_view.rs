@@ -95,7 +95,6 @@ impl View for TrackPlacementView<'_> {
                     store.dispatchr(Action::DeleteChild(IndexField::TrackPlacement(
                         placement_index,
                     )));
-                    log::info!("!");
                     ui.data_mut(|data| {
                         data.insert_temp(window_id, false);
                         data.insert_temp::<Option<usize>>(placement_id, None);
