@@ -1,6 +1,6 @@
 use crate::app_state::DataState;
 use crate::view::View;
-use crate::widget::{default_window, get_set, int_slider, selectable_value, window_state_show};
+use crate::widget::{StateWindow, default_window, get_set, int_slider, selectable_value};
 use egui::{Ui, pos2};
 use shared::model::ScaleValue;
 use shared::types::{Beats, Octave};
@@ -30,8 +30,8 @@ impl View for NoteView<'_> {
         let on_release = || store.dispatchr(Action::Release);
         let sel = Selector::Note(track_index, note_index);
         let ctx = &ui.ctx().clone();
-        let window = default_window("Notes").default_pos(pos2(600.0, 20.0));
-        window_state_show(ui, DataState::NoteWindow, window, ctx, |ui| {
+        let window = StateWindow(default_window("Notes").default_pos(pos2(600.0, 20.0)));
+        window.show(ui, DataState::NoteWindow, ctx, |ui| {
             egui::ComboBox::from_id_salt(format!("note_{note_index}"))
                 .selected_text(note.note.pitch_name.scale_value.to_string())
                 .show_ui(ui, |ui| {

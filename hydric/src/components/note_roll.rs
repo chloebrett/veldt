@@ -2,7 +2,7 @@ use super::Piano;
 use crate::{
     app_state::DataState,
     view::View,
-    widget::{Sequencer, SequencerObject, default_window, window_state_show},
+    widget::{Sequencer, SequencerObject, StateWindow, default_window},
 };
 use egui::{Color32, CornerRadius, Pos2, Rect, ScrollArea, Shape, Ui, pos2, vec2};
 use mesic::create_scale_values;
@@ -108,10 +108,12 @@ impl View for NoteRoll<'_> {
         };
         let ctx = &ui.ctx().clone();
         let title = format!("Track {track_index}");
-        let window = default_window(&title)
-            .default_pos(Pos2 { x: 600.0, y: 20.0 })
-            .resizable(true);
-        window_state_show(ui, DataState::NoteRollWindow, window, ctx, |ui| {
+        let window = StateWindow(
+            default_window(&title)
+                .default_pos(Pos2 { x: 600.0, y: 20.0 })
+                .resizable(true),
+        );
+        window.show(ui, DataState::NoteRollWindow, ctx, |ui| {
             if ui.button("New note").clicked() {
                 store.dispatch(
                     &Selector::Track(track_index),

@@ -1,6 +1,6 @@
 use crate::app_state::DataState;
 use crate::view::View;
-use crate::widget::{default_window, get_set, selectable_value, slider, window_state_show};
+use crate::widget::{StateWindow, default_window, get_set, selectable_value, slider};
 use egui::{Ui, pos2};
 use ordered_float::OrderedFloat;
 use shared::types::Beats;
@@ -30,10 +30,13 @@ impl View for TrackPlacementView<'_> {
         let sel = Selector::TrackPlacement(placement_index);
         let title = format!("Track Placement {placement_index}");
         let ctx = &ui.ctx().clone();
-        let window = default_window(&title)
-            .default_pos(pos2(100.0, 20.0))
-            .resizable(true);
-        window_state_show(ui, DataState::TrackPlacementViewWindow, window, ctx, |ui| {
+
+        let window = StateWindow(
+            default_window(&title)
+                .default_pos(pos2(100.0, 20.0))
+                .resizable(true),
+        );
+        window.show(ui, DataState::TrackPlacementViewWindow, ctx, |ui| {
             egui::ComboBox::from_id_salt(format!("track_placement_{placement_index}"))
                 .selected_text(format!("Track {}", placement.track_id))
                 .show_ui(ui, |ui| {
