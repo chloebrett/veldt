@@ -2,7 +2,7 @@ use super::Piano;
 use crate::{
     app_state::DataState,
     view::View,
-    widget::{Sequencer, SequencerObject, default_window},
+    widget::{Sequencer, SequencerObject, default_window, window_state_show},
 };
 use egui::{Color32, CornerRadius, Pos2, Rect, ScrollArea, Shape, Ui, pos2, vec2};
 use mesic::create_scale_values;
@@ -75,11 +75,6 @@ impl View for NoteRoll<'_> {
         let Some(track_index): Option<usize> = DataState::ActiveTrackIndex.get_value(ui) else {
             return;
         };
-        let window_state = DataState::NoteRollWindow.get_value(ui).unwrap_or(false);
-        if !window_state {
-            return;
-        };
-        let mut open = window_state;
         let default_note = PlacedNote {
             note: Note {
                 pitch_name: PitchName {
@@ -111,39 +106,34 @@ impl View for NoteRoll<'_> {
             DataState::NoteWindow.set_value(ui, true);
             DataState::ActiveNoteIndex.set_value(ui, index);
         };
-        default_window(&format!("Track: {track_index}"))
-            .open(&mut open)
+        let ctx = &ui.ctx().clone();
+        let title = format!("Track {track_index}");
+        let window = default_window(&title)
             .default_pos(Pos2 { x: 600.0, y: 20.0 })
-            .resizable(true)
-            .show(ui.ctx(), |ui| {
-                if ui.button("New note").clicked() {
-                    store.dispatch(
-                        &Selector::Track(track_index),
-                        Action::AddChild(TypeField::PlacedNote(default_note)),
-                    );
-                }
-                ScrollArea::vertical()
-                    .min_scrolled_height(200.0)
-                    .show(ui, |ui| {
-                        ui.horizontal(|ui| {
-                            Piano::new(max_note, min_note - 1).ui(ui);
-                            ui.add(
-                                Sequencer::new(range, dispatch, on_release, on_click)
-                                    .objects(notes)
-                                    .horizontal_rects(
-                                        white_note_pattern,
-                                        Color32::from_white_alpha(4),
-                                    )
-                                    .vertical_bars(bar_length, Color32::from_white_alpha(6))
-                                    .vertical_bars(1.0, Color32::from_white_alpha(3))
-                                    .vertical_bars(1.0 / bar_length, Color32::from_white_alpha(1)),
-                            );
-                        });
+            .resizable(true);
+        window_state_show(ui, DataState::NoteRollWindow, window, ctx, |ui| {
+            if ui.button("New note").clicked() {
+                store.dispatch(
+                    &Selector::Track(track_index),
+                    Action::AddChild(TypeField::PlacedNote(default_note)),
+                );
+            }
+            ScrollArea::vertical()
+                .min_scrolled_height(200.0)
+                .show(ui, |ui| {
+                    ui.horizontal(|ui| {
+                        Piano::new(max_note, min_note - 1).ui(ui);
+                        ui.add(
+                            Sequencer::new(range, dispatch, on_release, on_click)
+                                .objects(notes)
+                                .horizontal_rects(white_note_pattern, Color32::from_white_alpha(4))
+                                .vertical_bars(bar_length, Color32::from_white_alpha(6))
+                                .vertical_bars(1.0, Color32::from_white_alpha(3))
+                                .vertical_bars(1.0 / bar_length, Color32::from_white_alpha(1)),
+                        );
                     });
-            });
-        if window_state != open {
-            DataState::NoteRollWindow.set_value(ui, false);
-        }
+                });
+        });
     }
 }
 
