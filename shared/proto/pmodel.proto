@@ -303,3 +303,9 @@ message DirectoryProto {
   string name = 1;
   repeated FilenameTreeProto contents = 2;
 }
+
+message FileTreeConfigProto {
+  optional string search = 1;
+  bool skip_non_audio = 2;
+  bool skip_hidden = 3;
+}

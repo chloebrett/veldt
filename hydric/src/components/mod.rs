@@ -9,7 +9,7 @@ mod note_roll;
 mod piano;
 mod play;
 mod save_load_view;
-mod track_placement_control;
+mod track_placement_view;
 mod track_roll;
 mod undo_redo;
 
@@ -20,6 +20,6 @@ use note_control::*;
 use note_roll::*;
 use piano::*;
 use save_load_view::*;
-use track_placement_control::*;
+use track_placement_view::*;
 use track_roll::*;
 use undo_redo::*;

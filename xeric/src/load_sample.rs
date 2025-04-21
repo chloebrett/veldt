@@ -3,7 +3,7 @@ use shared::load_sample::load_sample_server::LoadSample;
 use shared::load_sample::{
     LoadSampleReply, LoadSampleRequest, LoadSampleTreeReply, LoadSampleTreeRequest,
 };
-use shared::model::{FilenameTree, Sample};
+use shared::model::{FileTreeConfig, FilenameTree, Sample};
 use std::collections::HashSet;
 use std::env::current_dir;
 use std::ffi::OsStr;
@@ -54,12 +54,10 @@ fn dir_is_empty(dir: &FilenameTree) -> bool {
     }
 }
 
-fn read_dir_as_tree(
-    path: PathBuf,
-    search: &Option<String>,
-    skip_non_audio: bool,
-    skip_hidden: bool,
-) -> Result<FilenameTree, Error> {
+// TODO: also search within directory names.
+// If a directory matches the search, then all files within should display (except hidden/non-audio
+// as appropriate).
+fn read_dir_as_tree(path: PathBuf, config: &FileTreeConfig) -> Result<FilenameTree, Error> {
     let dir_contents: ReadDir = read_dir(&path)?;
     let filename = path
         .as_path()
@@ -78,24 +76,25 @@ fn read_dir_as_tree(
         let file = file?;
         let filename: String = file.file_name().to_str().unwrap().to_string();
         if file.metadata()?.is_dir() {
-            if skip_hidden && (filename.starts_with(".") || filename.starts_with("__MACOSX")) {
+            if config.skip_hidden && (filename.starts_with(".") || filename.starts_with("__MACOSX"))
+            {
                 continue;
             }
-            let dir = read_dir_as_tree(file.path(), search, skip_non_audio, skip_hidden)?;
+            let dir = read_dir_as_tree(file.path(), config)?;
             if !dir_is_empty(&dir) {
                 children.push(dir);
             }
         } else {
             let ext = get_extension_from_filename(&filename);
-            if let Some(search) = search {
+            if let Some(search) = &config.search {
                 if !filename.to_lowercase().contains(&search.to_lowercase()) {
                     continue;
                 }
             }
-            if skip_non_audio && (ext.is_none() || !audio_ext.contains(ext.unwrap())) {
+            if config.skip_non_audio && (ext.is_none() || !audio_ext.contains(ext.unwrap())) {
                 continue;
             }
-            if skip_hidden && filename.starts_with(".") {
+            if config.skip_hidden && filename.starts_with(".") {
                 continue;
             }
             children.push(FilenameTree::File(filename));
@@ -143,13 +142,10 @@ impl LoadSample for LoadSampleContext {
         self: &Self,
         request: tonic::Request<LoadSampleTreeRequest>,
     ) -> Result<tonic::Response<LoadSampleTreeReply>, tonic::Status> {
-        let LoadSampleTreeRequest {
-            search,
-            skip_non_audio,
-            skip_hidden,
-        } = request.into_inner();
+        let LoadSampleTreeRequest { config } = request.into_inner();
+        let config: FileTreeConfig = config.unwrap().into();
 
-        let tree = read_dir_as_tree(sample_dir_path(), &search, skip_non_audio, skip_hidden)?;
+        let tree = read_dir_as_tree(sample_dir_path(), &config)?;
 
         Ok(tonic::Response::new(LoadSampleTreeReply {
             tree: Some(tree.into()),
