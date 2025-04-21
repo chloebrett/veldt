@@ -1,9 +1,9 @@
 use crate::{
-    app_state::WindowState,
+    app_state::{DataState, WindowState},
     view::View,
     widget::{Sequencer, SequencerObject, default_window},
 };
-use egui::{Color32, CornerRadius, Id, Pos2, Rect, ScrollArea, Shape, Ui, pos2, vec2};
+use egui::{Color32, CornerRadius, Pos2, Rect, ScrollArea, Shape, Ui, pos2, vec2};
 use shared::{
     model::{Track, TrackId, TrackPlacement},
     types::Beats,
@@ -58,18 +58,10 @@ impl View for TrackRoll<'_> {
         };
         let on_release = || store.dispatchr(Action::Release);
         let on_click = |ui: &mut Ui, index: usize| {
-            let note_window_id = Id::new("note_roll_window");
-            let placement_window_id = Id::new("track_placement_window");
-            let track_id = Id::new("active_track_index");
-            let placement_id = Id::new("active_track_placement_index");
-            ui.data_mut(|data| data.insert_temp(note_window_id, true));
-            ui.data_mut(|data| data.insert_temp(placement_window_id, true));
-            ui.data_mut(|data| {
-                data.insert_temp::<Option<usize>>(track_id, Some(placed_track_ids[index] as usize))
-            });
-            ui.data_mut(|data| {
-                data.insert_temp::<Option<usize>>(placement_id, Some(index));
-            });
+            DataState::NoteRollWindow.set_value(ui, true);
+            DataState::TrackPlacementViewWindow.set_value(ui, true);
+            DataState::ActiveTrackIndex.set_value(ui, placed_track_ids[index] as usize);
+            DataState::ActiveTrackPlacementIndex.set_value(ui, index);
         };
         default_window("Track Roll")
             .default_pos(pos2(30.0, 200.0))

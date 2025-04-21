@@ -5,7 +5,6 @@ use super::{
     menu::Menu,
     play::{SampleTreeWindow, ToolBarView},
 };
-use crate::components::FrameHistory;
 use crate::promise::spawn;
 use crate::rpc::broadcast_actions;
 use crate::rpc::load_project_list;
@@ -13,6 +12,7 @@ use crate::view::View;
 use crate::view::WindowView;
 use crate::widget::{default_window, get_set, string_observer};
 use crate::{AsyncState, AudioState, WindowState};
+use crate::{app_state::DataState, components::FrameHistory};
 use egui::{Id, Pos2, pos2};
 use egui::{ScrollArea, scroll_area::ScrollBarVisibility};
 use poll_promise::Promise;
@@ -156,56 +156,27 @@ impl eframe::App for App {
                             });
                     }
 
-                    let note_id = Id::new("note_window");
-                    if ui.data_mut(|data| *data.get_temp_mut_or(note_id, false)) {
+                    if DataState::NoteWindow.get_value(ui).unwrap_or(false) {
                         let mut open = true;
-                        let track_index = ui.data_mut(|data| {
-                            let id = Id::new("active_track_index");
-                            *data.get_temp_mut_or(id, 0)
-                        });
-                        let active_note = ui.data_mut(|data| {
-                            let id = Id::new("active_note_index");
-                            *data.get_temp_mut_or(id, None)
-                        });
-                        if let Some(note_index) = active_note {
+                        let track_index = DataState::ActiveTrackIndex.get_value(ui);
+                        let note_index = DataState::ActiveNoteIndex.get_value(ui);
+                        if track_index.is_some() && note_index.is_some() {
                             default_window("Notes")
                                 .open(&mut open)
                                 .default_pos(Pos2 { x: 600.0, y: 20.0 })
                                 .show(ctx, |ui| {
-                                    NoteControl::new(&self.store, track_index, note_index).ui(ui);
+                                    NoteControl::new(
+                                        &self.store,
+                                        track_index.unwrap(),
+                                        note_index.unwrap(),
+                                    )
+                                    .ui(ui);
                                 });
                         }
-                        ui.data_mut(|data| {
-                            // Check if state has been changed within component as well as with
-                            // x'ing out of window.
-                            data.insert_temp(
-                                note_id,
-                                data.get_temp(note_id).unwrap_or(false) && open,
-                            );
-                        })
+                        DataState::NoteWindow.set_value(ui, open);
                     };
 
-                    let note_roll_id = Id::new("note_roll_window");
-                    if ui.data_mut(|data| {
-                        *data.get_temp_mut_or_insert_with(note_roll_id, move || false)
-                    }) {
-                        let track_index = ui.data_mut(|data| {
-                            let id = Id::new("active_track_index");
-                            *data.get_temp_mut_or(id, 0)
-                        });
-                        let mut open = true;
-                        default_window(&format!("Track: {}", track_index))
-                            .open(&mut open)
-                            .default_pos(Pos2 { x: 600.0, y: 20.0 })
-                            .resizable(true)
-                            .show(ctx, |ui| {
-                                NoteRoll::new(&self.store, track_index).ui(ui);
-                            });
-                        ui.data_mut(|data| {
-                            data.insert_temp(note_roll_id, open);
-                        })
-                    }
-
+                    NoteRoll::new(&self.store).ui(ui);
                     TrackPlacementView::new(&self.store).ui(ui);
 
                     SampleTreeWindow::new(
