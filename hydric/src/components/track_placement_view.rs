@@ -1,6 +1,7 @@
+use crate::app_state::DataState;
 use crate::view::View;
 use crate::widget::{default_window, get_set, selectable_value, slider};
-use egui::{Id, Ui, pos2};
+use egui::{Ui, pos2};
 use ordered_float::OrderedFloat;
 use shared::types::Beats;
 use state::{Action, FloatField, IndexField, Selector, Store, TypeField, UintField};
@@ -18,17 +19,15 @@ impl<'a> TrackPlacementView<'a> {
 impl View for TrackPlacementView<'_> {
     fn ui(&mut self, ui: &mut Ui) {
         let store = &mut self.store;
-        let window_id = Id::new("track_placement_window");
-        let window_state =
-            ui.data_mut(|data| *data.get_temp_mut_or_insert_with(window_id, move || false));
-        let placement_id = Id::new("active_track_placement_index");
-        let active_index = ui.data_mut(|data| {
-            *data.get_temp_mut_or_insert_with::<Option<usize>>(placement_id, move || None)
-        });
-        // Return if there is no active track_placement or window is not open
-        let placement_index = if let Some(index) = active_index {
-            if window_state { index } else { return }
-        } else {
+        let window_state = DataState::TrackPlacementViewWindow
+            .get_value(ui)
+            .unwrap_or(false);
+        if !window_state {
+            return;
+        };
+        let Some(placement_index): Option<usize> =
+            DataState::ActiveTrackPlacementIndex.get_value(ui)
+        else {
             return;
         };
         let on_release = || store.dispatchr(Action::Release);
@@ -95,17 +94,12 @@ impl View for TrackPlacementView<'_> {
                     store.dispatchr(Action::DeleteChild(IndexField::TrackPlacement(
                         placement_index,
                     )));
-                    log::info!("!");
-                    ui.data_mut(|data| {
-                        data.insert_temp(window_id, false);
-                        data.insert_temp::<Option<usize>>(placement_id, None);
-                    });
+                    DataState::TrackPlacementViewWindow.set_value(false, ui);
+                    DataState::ActiveTrackPlacementIndex.remove_value(ui);
                 }
             });
         if window_state != open {
-            ui.data_mut(|data| {
-                data.insert_temp(window_id, false);
-            })
+            DataState::TrackPlacementViewWindow.set_value(false, ui);
         }
     }
 }
