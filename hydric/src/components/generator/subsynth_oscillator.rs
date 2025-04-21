@@ -97,6 +97,7 @@ pub fn subsynth_oscillator<F, G>(config: &OscillatorConfig, ui: &mut egui::Ui, d
                                 config.volume, // placeholder value fix this to be config instead
                                 |it| dispatch(Action::SetFloat(FloatField::Volume, it)), // this action is prob not the right action idk
                                 0.0..=1.0,
+                                0.0,
                                 &on_release,
                             );
                             ui.add_space(6.0);
@@ -107,6 +108,7 @@ pub fn subsynth_oscillator<F, G>(config: &OscillatorConfig, ui: &mut egui::Ui, d
                                 config.pan, // placeholder value
                                 |it| dispatch(Action::SetFloat(FloatField::Pan, it)), // TODO fix action its a placeholder rn
                                 0.0..=1.0,
+                                0.0,
                                 &on_release,
                             );
                             ui.add_space(6.0);
@@ -117,6 +119,7 @@ pub fn subsynth_oscillator<F, G>(config: &OscillatorConfig, ui: &mut egui::Ui, d
                                 config.coarse_detune, // placeholder value
                                 |it| dispatch(Action::SetFloat(FloatField::Detune, it)), // TODO fix action its a placeholder rn
                                 0.0..=1.0,
+                                0.0,
                                 &on_release,
                             );
                             ui.add_space(6.0);
@@ -127,6 +130,7 @@ pub fn subsynth_oscillator<F, G>(config: &OscillatorConfig, ui: &mut egui::Ui, d
                                 config.fine_detune, // placeholder value
                                 |it| dispatch(Action::SetFloat(FloatField::Detune, it)), // TODO fix action its a placeholder rn
                                 0.0..=1.0,
+                                0.0,
                                 &on_release,
                             );
                         });
@@ -156,6 +160,7 @@ pub fn subsynth_oscillator<F, G>(config: &OscillatorConfig, ui: &mut egui::Ui, d
                                 0.0, // TODO placeholder value remember to hook it up to config instead
                                 |it| dispatch(Action::SetFloat(FloatField::Detune, it)), // need diff action probably
                                 0.0..=100.0,
+                                0.0,
                                 &on_release,
                             );
                         });
