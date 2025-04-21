@@ -2,7 +2,7 @@ use shared::consts::XERIC_URL;
 use shared::load_sample::{
     LoadSampleRequest, LoadSampleTreeRequest, load_sample_client::LoadSampleClient,
 };
-use shared::model::{FilenameTree, Sample};
+use shared::model::{FileTreeConfig, FilenameTree, Sample};
 use tonic_web_wasm_client::Client;
 
 pub async fn load_sample(filename: String) -> Result<Sample, ()> {
@@ -16,15 +16,13 @@ pub async fn load_sample(filename: String) -> Result<Sample, ()> {
         .map_err(|_| ())
 }
 
-pub async fn load_sample_tree() -> Result<FilenameTree, ()> {
+pub async fn load_sample_tree(config: FileTreeConfig) -> Result<FilenameTree, ()> {
     let client = Client::new(XERIC_URL.to_string());
     let mut grpc = LoadSampleClient::new(client);
 
     let result = grpc
         .load_sample_tree(LoadSampleTreeRequest {
-            search: None,
-            skip_non_audio: true,
-            skip_hidden: true,
+            config: Some(config.into()),
         })
         .await;
 

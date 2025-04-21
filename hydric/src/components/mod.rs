@@ -12,7 +12,6 @@ mod save_load_view;
 mod track_placement_control;
 mod track_roll;
 mod undo_redo;
-mod window_toggle;
 mod freq_display;
 
 pub use app::*;
@@ -22,4 +21,3 @@ use piano::*;
 use save_load_view::*;
 use track_placement_control::*;
 use undo_redo::*;
-use window_toggle::*;

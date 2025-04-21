@@ -25,6 +25,7 @@ pub fn dft(length: usize, signal: Vec<f32>) -> (Vec<f32>, Vec<f32>) {
 
 pub fn get_freq_response(signal: Vec<f32>, frequency: f32) -> f32 {
     let required_length = (SAMPLE_RATE as f32 / frequency) as usize;
+    println!("{:?}", required_length);
     let inv_length = 1.0 / required_length as f32;
     if signal.len() < required_length {
        return 0.0 
@@ -82,18 +83,10 @@ mod tests {
         };
         let samples = 630;
         let input: Vec<f32> = (0..samples as usize)
-            .map(|it| (it as f32 / SAMPLE_RATE as f32 * freq(pitch)).sin())
+            .map(|it| (it as f32 / SAMPLE_RATE as f32 * freq(pitch)).cos())
             .collect();
-        let res1 = get_freq_response(input.clone(), 200.0);
-        let res2 = get_freq_response(input.clone(), 420.0);
-        let res3 = get_freq_response(input.clone(), 7000.0);
-        let res4 = get_freq_response(input.clone(), 460.0);
-        let res5 = get_freq_response(input.clone(), 70.0);
-        println!("{:?}", res1);
-        println!("{:?}", res2);
-        println!("{:?}", res3);
-        println!("{:?}", res4);
-        println!("{:?}", res5);
+        let res: Vec<f32> = (0..30).map(|it| get_freq_response(input.clone(), it as f32 * 10.0)).collect();
+        println!("{:?}", res);
         assert!(1==2);
 
     }
