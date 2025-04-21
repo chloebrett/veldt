@@ -94,12 +94,12 @@ impl View for TrackPlacementView<'_> {
                     store.dispatchr(Action::DeleteChild(IndexField::TrackPlacement(
                         placement_index,
                     )));
-                    DataState::TrackPlacementViewWindow.set_value(false, ui);
+                    DataState::TrackPlacementViewWindow.set_value(ui, false);
                     DataState::ActiveTrackPlacementIndex.remove_value(ui);
                 }
             });
         if window_state != open {
-            DataState::TrackPlacementViewWindow.set_value(false, ui);
+            DataState::TrackPlacementViewWindow.set_value(ui, false);
         }
     }
 }

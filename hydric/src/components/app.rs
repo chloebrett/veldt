@@ -173,7 +173,7 @@ impl eframe::App for App {
                                     .ui(ui);
                                 });
                         }
-                        DataState::NoteWindow.set_value(open, ui);
+                        DataState::NoteWindow.set_value(ui, open);
                     };
 
                     NoteRoll::new(&self.store).ui(ui);

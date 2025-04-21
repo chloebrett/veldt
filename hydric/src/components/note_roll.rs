@@ -108,8 +108,8 @@ impl View for NoteRoll<'_> {
         };
         let on_release = || store.dispatchr(Action::Release);
         let on_click = |ui: &mut Ui, index: usize| {
-            DataState::NoteWindow.set_value(true, ui);
-            DataState::ActiveNoteIndex.set_value(index, ui);
+            DataState::NoteWindow.set_value(ui, true);
+            DataState::ActiveNoteIndex.set_value(ui, index);
         };
         default_window(&format!("Track: {track_index}"))
             .open(&mut open)
@@ -142,7 +142,7 @@ impl View for NoteRoll<'_> {
                     });
             });
         if window_state != open {
-            DataState::NoteRollWindow.set_value(false, ui);
+            DataState::NoteRollWindow.set_value(ui, false);
         }
     }
 }
