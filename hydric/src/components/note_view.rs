@@ -95,11 +95,11 @@ impl View for NoteView<'_> {
                         Action::DeleteChild(IndexField::PlacedNote(note_index)),
                     );
                     DataState::ActiveNoteIndex.remove_value(ui);
-                    DataState::NoteWindow.set_value(false, ui);
+                    DataState::NoteWindow.set_value(ui, false);
                 }
             });
         if window_state != open {
-            DataState::NoteWindow.set_value(false, ui);
+            DataState::NoteWindow.set_value(ui, false);
         }
     }
 }

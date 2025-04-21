@@ -55,6 +55,13 @@ impl Default for WindowState {
     }
 }
 
+// Interact with UI level state.
+// State is stored in a `IdTypeMap` on `Ui` (native to egui) and so requires `&mut` access to `Ui`.
+// Only store superficial, cheap to clone state variables that are local to a User and required to
+// render the UI.
+// E.g.
+//   - Current selected track
+//   - If an editor window is open.
 pub enum DataState {
     ActiveTrackIndex,
     ActiveTrackPlacementIndex,
@@ -66,14 +73,14 @@ pub enum DataState {
 
 impl DataState {
     fn get_id(&self) -> Id {
-        match self {
-            Self::ActiveNoteIndex => Id::new("active_note_index"),
-            Self::ActiveTrackPlacementIndex => Id::new("active_track_placement_index"),
-            Self::ActiveTrackIndex => Id::new("active_track_index"),
-            Self::TrackPlacementViewWindow => Id::new("track_placement_window"),
-            Self::NoteRollWindow => Id::new("note_roll_window"),
-            Self::NoteWindow => Id::new("note_window"),
-        }
+        Id::new(match self {
+            Self::ActiveNoteIndex => "active_note_index",
+            Self::ActiveTrackPlacementIndex => "active_track_placement_index",
+            Self::ActiveTrackIndex => "active_track_index",
+            Self::TrackPlacementViewWindow => "track_placement_window",
+            Self::NoteRollWindow => "note_roll_window",
+            Self::NoteWindow => "note_window",
+        })
     }
 
     pub fn get_value<T: 'static + Clone + Send + Sync>(self, ui: &mut Ui) -> Option<T> {
@@ -83,7 +90,7 @@ impl DataState {
         })
     }
 
-    pub fn set_value<T: 'static + Clone + Send + Sync>(self, value: T, ui: &mut Ui) {
+    pub fn set_value<T: 'static + Clone + Send + Sync>(self, ui: &mut Ui, value: T) {
         ui.data_mut(|data| {
             data.insert_temp(self.get_id(), Some(value));
         })
@@ -91,7 +98,8 @@ impl DataState {
 
     pub fn remove_value(self, ui: &mut Ui) {
         ui.data_mut(|data| {
-            // Value are stores by (Id, type) and so `Some` type must be known.
+            // Value are stores by (Id, type) and so type of the value when not `None` must be
+            // known.
             match self {
                 Self::TrackPlacementViewWindow | Self::NoteWindow | Self::NoteRollWindow => {
                     data.insert_temp::<Option<bool>>(self.get_id(), None)

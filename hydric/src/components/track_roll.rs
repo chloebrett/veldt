@@ -58,10 +58,10 @@ impl View for TrackRoll<'_> {
         };
         let on_release = || store.dispatchr(Action::Release);
         let on_click = |ui: &mut Ui, index: usize| {
-            DataState::NoteRollWindow.set_value(true, ui);
-            DataState::TrackPlacementViewWindow.set_value(true, ui);
-            DataState::ActiveTrackIndex.set_value(placed_track_ids[index] as usize, ui);
-            DataState::ActiveTrackPlacementIndex.set_value(index, ui);
+            DataState::NoteRollWindow.set_value(ui, true);
+            DataState::TrackPlacementViewWindow.set_value(ui, true);
+            DataState::ActiveTrackIndex.set_value(ui, placed_track_ids[index] as usize);
+            DataState::ActiveTrackPlacementIndex.set_value(ui, index);
         };
         default_window("Track Roll")
             .default_pos(pos2(30.0, 200.0))
