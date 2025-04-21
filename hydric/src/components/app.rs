@@ -1,5 +1,5 @@
 use super::{
-    KeyView, NoteControl, NoteRoll, SaveLoadView, TrackPlacementView, TrackRoll,
+    KeyView, NoteRoll, NoteView, SaveLoadView, TrackPlacementView, TrackRoll,
     effect::{EffectWindow, MixerWindow},
     generator::{generator_control, generators_control},
     menu::Menu,
@@ -13,7 +13,7 @@ use crate::view::View;
 use crate::view::WindowView;
 use crate::widget::{default_window, get_set, string_observer};
 use crate::{AsyncState, AudioState, WindowState};
-use egui::{Id, Pos2, pos2};
+use egui::Pos2;
 use egui::{ScrollArea, scroll_area::ScrollBarVisibility};
 use poll_promise::Promise;
 use shared::model::GeneratorType;
@@ -156,56 +156,8 @@ impl eframe::App for App {
                             });
                     }
 
-                    let note_id = Id::new("note_window");
-                    if ui.data_mut(|data| *data.get_temp_mut_or(note_id, false)) {
-                        let mut open = true;
-                        let track_index = ui.data_mut(|data| {
-                            let id = Id::new("active_track_index");
-                            *data.get_temp_mut_or(id, 0)
-                        });
-                        let active_note = ui.data_mut(|data| {
-                            let id = Id::new("active_note_index");
-                            *data.get_temp_mut_or(id, None)
-                        });
-                        if let Some(note_index) = active_note {
-                            default_window("Notes")
-                                .open(&mut open)
-                                .default_pos(Pos2 { x: 600.0, y: 20.0 })
-                                .show(ctx, |ui| {
-                                    NoteControl::new(&self.store, track_index, note_index).ui(ui);
-                                });
-                        }
-                        ui.data_mut(|data| {
-                            // Check if state has been changed within component as well as with
-                            // x'ing out of window.
-                            data.insert_temp(
-                                note_id,
-                                data.get_temp(note_id).unwrap_or(false) && open,
-                            );
-                        })
-                    };
-
-                    let note_roll_id = Id::new("note_roll_window");
-                    if ui.data_mut(|data| {
-                        *data.get_temp_mut_or_insert_with(note_roll_id, move || false)
-                    }) {
-                        let track_index = ui.data_mut(|data| {
-                            let id = Id::new("active_track_index");
-                            *data.get_temp_mut_or(id, 0)
-                        });
-                        let mut open = true;
-                        default_window(&format!("Track: {}", track_index))
-                            .open(&mut open)
-                            .default_pos(Pos2 { x: 600.0, y: 20.0 })
-                            .resizable(true)
-                            .show(ctx, |ui| {
-                                NoteRoll::new(&self.store, track_index).ui(ui);
-                            });
-                        ui.data_mut(|data| {
-                            data.insert_temp(note_roll_id, open);
-                        })
-                    }
-
+                    NoteView::new(&self.store).ui(ui);
+                    NoteRoll::new(&self.store).ui(ui);
                     TrackPlacementView::new(&self.store).ui(ui);
 
                     SampleTreeWindow::new(
