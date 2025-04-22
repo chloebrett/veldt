@@ -8,8 +8,6 @@ use shared::{
     types::PitchValue,
 };
 
-/// Defines the orientation of the piano
-// #[derive(Copy, Clone)]
 pub enum PianoOrientation {
     Vertical,
     Horizontal,
@@ -103,30 +101,28 @@ impl Piano {
     }
 
     fn make_white_key(&self, note: PlacedNote, offset: f32, note_size: f32, range: Rect) -> Shape {
-        match self.orientation {
+        let rect = match self.orientation {
             PianoOrientation::Vertical => {
                 let note_pos = note.to_pos(range) + vec2(0.0, offset);
                 let size = vec2(1.0, note_size);
                 let rect = Rect::from_min_size(note_pos, size);
-                Shape::rect_stroke(
-                    rect,
-                    CornerRadius::ZERO,
-                    Stroke::new(1.0, Color32::from_black_alpha(64)),
-                    StrokeKind::Inside,
-                )
+                rect
             }
             PianoOrientation::Horizontal => {
                 let note_pos = note.to_pos_horizontal(range) + vec2(offset, 0.0);
                 let size = vec2(note_size, 1.0);
                 let rect = Rect::from_min_size(note_pos, size);
-                Shape::rect_stroke(
-                    rect,
-                    CornerRadius::ZERO,
-                    Stroke::new(1.0, Color32::from_black_alpha(64)),
-                    StrokeKind::Inside,
-                )
+                rect
             }
-        }
+        };
+        let white_key = Shape::rect_stroke(
+            rect,
+            CornerRadius::ZERO,
+            Stroke::new(1.0, Color32::from_black_alpha(64)),
+            StrokeKind::Inside,
+        );
+
+        white_key
     }
 
     fn make_black_key(&self, note: PlacedNote, range: Rect) -> Shape {
