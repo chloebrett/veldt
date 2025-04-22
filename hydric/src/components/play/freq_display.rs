@@ -4,7 +4,8 @@ use egui::{
     emath::RectTransform,
     pos2, vec2,
 };
-use mesic::dft::{self, dft, hann_window};
+use egui_plot::{Line, Plot, PlotPoints};
+use mesic::{dft::{self, dft, hann_window}, SAMPLE_RATE};
 use ordered_float::OrderedFloat;
 use shared::serialize::map_vec;
 
@@ -25,13 +26,8 @@ impl FrequencyDisplay {
     }
 }
 
-fn resopnse_points(signal: Vec<f32>, bin_count: usize) -> Vec<Pos2> {
-    let response = dft(hann_window(signal));
-    dft::make_log_buckets(response, bin_count)
-        .iter()
-        .enumerate()
-        .map(|(index, bucket)| pos2(index as f32, *bucket))
-        .collect()
+fn resopnse_points(signal: Vec<f32>) -> Vec<f32> {
+    dft(hann_window(signal))
 }
 
 #[derive(Default)]
@@ -40,41 +36,13 @@ struct FrequencyDisplayComputer;
 #[derive(Hash, Copy, Clone, Debug)]
 struct FrequencyDisplayKey {
     audio: [OrderedFloat<f32>; 1024],
-    bin_count: usize,
-    y_max: OrderedFloat<f32>,
 }
 
-type FrequencyDisplayCache<'a> = FrameCache<Shape, FrequencyDisplayComputer>;
+type FrequencyDisplayCache<'a> = FrameCache<Vec<f32>, FrequencyDisplayComputer>;
 
-impl ComputerMut<FrequencyDisplayKey, Shape> for FrequencyDisplayComputer {
-    fn compute(&mut self, key: FrequencyDisplayKey) -> Shape {
-        let y_max = *key.y_max;
-        let points = resopnse_points(map_vec(key.audio.to_vec()), key.bin_count);
-        Shape::Vec(
-            points
-                .iter()
-                .map(|pos| {
-                    // Show frequencies whose response is clipped.
-                    let colour = if pos.y > y_max {
-                        Color32::LIGHT_RED
-                    } else {
-                        Color32::WHITE
-                    };
-                    // Clip response.
-                    let clamped_pos = pos.clamp(pos2(0.0, 0.0), pos2(key.bin_count as f32, y_max));
-                    Shape::rect_filled(
-                        Rect::from_min_size(
-                            // Pos y value is top == 0.0
-                            // Therefore subtract y value form max y value to render correctly
-                            pos2(pos.x, y_max - clamped_pos.y),
-                            vec2(1.0, clamped_pos.y),
-                        ),
-                        CornerRadius::same(0),
-                        colour,
-                    )
-                })
-                .collect(),
-        )
+impl ComputerMut<FrequencyDisplayKey, Vec<f32>> for FrequencyDisplayComputer {
+    fn compute(&mut self, key: FrequencyDisplayKey) -> Vec<f32> {
+        resopnse_points(map_vec(key.audio.to_vec()))
     }
 }
 
@@ -82,7 +50,6 @@ impl View for FrequencyDisplay {
     fn ui(&mut self, ui: &mut Ui) {
         let bin_count = self.bin_count;
         let audio = &self.audio;
-        let canvas_size = vec2(500.0, 100.0);
         if audio.is_empty() {
             return;
         }
@@ -94,25 +61,20 @@ impl View for FrequencyDisplay {
             .try_into()
             .unwrap_or([OrderedFloat(0.0); 1024]);
 
-        Frame::canvas(ui.style()).show(ui, |ui| {
-            ui.ctx().request_repaint();
-            let (_id, rect) = ui.allocate_space(canvas_size);
-            // Set a maximum response value.
-            let y_max = 1.0;
-            let to_screen = RectTransform::from_to(
-                Rect::from_min_max(pos2(0.0, 0.0), pos2(bin_count as f32, y_max)),
-                rect,
-            );
-
-            let shapes = ui.memory_mut(|memory| {
-                let cache = memory.caches.cache::<FrequencyDisplayCache<'_>>();
-                cache.get(FrequencyDisplayKey {
-                    audio: slice,
-                    bin_count,
-                    y_max: y_max.into(),
-                })
-            });
-            ui.painter().add(shapes.transform(to_screen))
+        let response = ui.memory_mut(|memory| {
+            let cache = memory.caches.cache::<FrequencyDisplayCache<'_>>();
+            cache.get(FrequencyDisplayKey { audio: slice })
         });
+        let freq_window = SAMPLE_RATE as f64 / 1024 as f64;
+        let points: PlotPoints = response
+            .iter()
+            .enumerate()
+            .filter(|(index, _)| *index < response.len() / 2)
+            .map(|(index, value)| [freq_window * index as f64, value.log10() as f64])
+            .collect();
+        let line = Line::new("Response", points);
+        Plot::new("Frequency Response")
+            .view_aspect(2.0)
+            .show(ui, |plot_ui| plot_ui.line(line));
     }
 }
