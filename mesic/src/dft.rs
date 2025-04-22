@@ -9,7 +9,7 @@ const TWO_PI: f32 = 2.0 * PI;
 /// Where `n` is the index of the value and N is `SAMPLE_RATE / signal.len()`.
 /// E.g. the 3rd value of a response where the sample rate is `44_100` hz and the signal is
 /// 1024 samples long would be the window of 86.1-129.1 Hz.
-/// See Ch. 20 of Designing Audio Effect Plugins in C++. 
+/// See Ch. 20 of Designing Audio Effect Plugins in C++.
 pub fn dft(signal: Vec<f32>) -> Vec<f32> {
     let length = signal.len();
     let inv_length = 1.0 / length as f32;
@@ -19,13 +19,9 @@ pub fn dft(signal: Vec<f32>) -> Vec<f32> {
     for bin in 0..length {
         for (frame, value) in signal.iter().enumerate().take(length) {
             // Calculate real (cosine phase) resopnse
-            re[bin] += value
-                * (TWO_PI * frame as f32 * bin as f32 * inv_length).cos()
-                * inv_length;
+            re[bin] += value * (TWO_PI * frame as f32 * bin as f32 * inv_length).cos() * inv_length;
             // Calculate imaginary (sine phase) response
-            im[bin] += value
-                * (TWO_PI * frame as f32 * bin as f32 * inv_length).sin()
-                * inv_length;
+            im[bin] += value * (TWO_PI * frame as f32 * bin as f32 * inv_length).sin() * inv_length;
         }
         // Calculate magnitude of response
         output[bin] = (re[bin].powi(2) + im[bin].powi(2)).sqrt()
@@ -34,10 +30,11 @@ pub fn dft(signal: Vec<f32>) -> Vec<f32> {
 }
 
 /// Group DFT results into bins based on frequency log2 value.
-// TODO improve this implementation so that it calculates the log exponent needed to create bin 
+/// This makes responses more readable with higher resolution on lower frequencies.
+// TODO improve this implementation so that it calculates the log exponent needed to create bin
 // sizes that perfect fill up the response space.
 pub fn make_log_buckets(response: Vec<f32>, bins: usize) -> Vec<f32> {
-    // Halve response as DFT can only discern signal responses for `signal.len()/2` windows. 
+    // Halve response as DFT can only discern signal responses for `signal.len()/2` windows.
     let positive_response = response[0..response.len() / 2].to_vec();
     let mut output = vec![0f32; bins];
     for (index, value) in positive_response.iter().enumerate() {

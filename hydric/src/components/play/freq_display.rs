@@ -88,7 +88,7 @@ impl View for FrequencyDisplay {
         }
         let ordered_audio: Vec<OrderedFloat<f32>> = map_vec(audio.to_vec());
         // Create hashable slice for Cache
-        // TODO either improve this so it can take windows of any size 
+        // TODO either improve this so it can take windows of any size
         // Or render as audio is played to avoid any caching.
         let slice: [OrderedFloat<f32>; 1024] = ordered_audio[0..1024]
             .try_into()
