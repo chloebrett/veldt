@@ -7,7 +7,7 @@ const TWO_PI: f32 = 2.0 * PI;
 /// Easch value of the vector corresponds to the signal response for the frequency window:
 ///      `n * N`
 /// Where `n` is the index of the value and N is `SAMPLE_RATE / signal.len()`.
-/// Example: the 3rd value of a response where the sample rate is `44_100` hz and the signal is
+/// E.g. the 3rd value of a response where the sample rate is `44_100` hz and the signal is
 /// 1024 samples long would be the window of 86.1-129.1 Hz.
 /// See Ch. 20 of Designing Audio Effect Plugins in C++. 
 pub fn dft(signal: Vec<f32>) -> Vec<f32> {
@@ -33,12 +33,11 @@ pub fn dft(signal: Vec<f32>) -> Vec<f32> {
     output
 }
 
-// Group DFT results into bins based on frequency log2 value.
+/// Group DFT results into bins based on frequency log2 value.
 // TODO improve this implementation so that it calculates the log exponent needed to create bin 
 // sizes that perfect fill up the response space.
 pub fn make_log_buckets(response: Vec<f32>, bins: usize) -> Vec<f32> {
-    // Halve response as DFT creates a symetrical output where second half is the reverse of the first
-    // half of a reponse and not useful information.
+    // Halve response as DFT can only discern signal responses for `signal.len()/2` windows. 
     let positive_response = response[0..response.len() / 2].to_vec();
     let mut output = vec![0f32; bins];
     for (index, value) in positive_response.iter().enumerate() {
@@ -68,7 +67,7 @@ mod tests {
     fn full_cosine_is_decomposed() {
         // ARRANGE
         let sample_size = 128;
-        let harmonic = 3.0;
+        let harmonic = 3;
         let signal = (0..sample_size)
             .map(|index| (TWO_PI * (index as f32) * harmonic as f32 / sample_size as f32).cos())
             .collect();
@@ -77,8 +76,8 @@ mod tests {
         // ASSERT
         let epsilon = 1e-5;
         let mut expected = vec![0f32; sample_size];
-        expected[harmonic as usize] = 0.5;
-        expected[sample_size - harmonic as usize] = 0.5;
+        expected[harmonic] = 0.5;
+        expected[sample_size - harmonic] = 0.5;
         let approx_diff: bool = output
             .iter()
             .enumerate()
@@ -90,17 +89,17 @@ mod tests {
     fn full_sine_is_decomposed() {
         // ARRANGE
         let sample_size = 128;
-        let harmonic = 3.0;
+        let harmonic = 3;
         let signal = (0..sample_size)
-            .map(|index| (TWO_PI * (index as f32) * harmonic as f32 / sample_size as f32).cos())
+            .map(|index| (TWO_PI * (index as f32) * harmonic as f32 / sample_size as f32).sin())
             .collect();
         // ACT
         let output = dft(signal);
         // ASSERT
         let epsilon = 1e-5;
         let mut expected = vec![0f32; sample_size];
-        expected[harmonic as usize] = 0.5;
-        expected[sample_size - harmonic as usize] = 0.5;
+        expected[harmonic] = 0.5;
+        expected[sample_size - harmonic] = 0.5;
         let approx_diff: bool = output
             .iter()
             .enumerate()
@@ -109,21 +108,21 @@ mod tests {
     }
 
     #[test]
-    fn note_response_max_bucket_is_correct() {
+    fn note_response_max_bucket_is_correct_frequency() {
         let pitch = PitchName {
             scale_value: ScaleValue::A,
             octave: 4,
         };
         let samples = 1024;
         // The frequency window of each values returned in the DFT response vector.
-        let freq_window = samples as f32 / SAMPLE_RATE as f32;
+        let freq_window = SAMPLE_RATE as f32 / samples as f32;
         let input: Vec<f32> = (0..samples as usize)
             .map(|it| (TWO_PI * it as f32 / SAMPLE_RATE as f32 * freq(pitch)).sin())
             .collect();
         // Act
         let response = dft(input);
         let bins = make_log_buckets(response, 10);
-        let expected_max_bin = (freq_window * freq(pitch) + 2.0).log2() as usize - 1;
+        let expected_max_bin = (freq(pitch) / freq_window + 2.0).log2() as usize - 1;
         let (max_bin, _) = bins
             .into_iter()
             .enumerate()
