@@ -19,7 +19,7 @@ where
     const CHART_FILL_ALPHA: u8 = opacity_percentage_to_alpha(44.0);
 
     const fn opacity_percentage_to_alpha(opacity_percentage: f32) -> u8 {
-        ((opacity_percentage/100.0) * 255.0) as u8
+        ((opacity_percentage / 100.0) * 255.0) as u8
     }
 
     // colour related 'constants' - from_rgba_unmultiplied is not a const function so for consistency these are all defined with 'let' and lower snake case
@@ -44,7 +44,7 @@ where
                 fill_colours[oscillator_id],
             );
         });
-        ui.add_space(4.0);    
+        ui.add_space(4.0);
     }
 
     let min_note: PitchValue = PitchName {

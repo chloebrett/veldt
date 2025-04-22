@@ -36,19 +36,21 @@ where
                     ui.vertical(|ui| {
                         ui.horizontal(|ui| {
                             egui::ComboBox::from_label("")
-                            .selected_text(config.wave.to_string())
-                            .show_ui(ui, |ui| {
-                                for wave in WaveType::iter() {
-                                    selectable_value(
-                                        ui,
-                                        get_set(config.wave, |wave_type| {
-                                            dispatch(Action::SetChild(TypeField::Wave(wave_type)))
-                                        }),
-                                        wave,
-                                        wave.to_string(),
-                                    );
-                                }
-                            });
+                                .selected_text(config.wave.to_string())
+                                .show_ui(ui, |ui| {
+                                    for wave in WaveType::iter() {
+                                        selectable_value(
+                                            ui,
+                                            get_set(config.wave, |wave_type| {
+                                                dispatch(Action::SetChild(TypeField::Wave(
+                                                    wave_type,
+                                                )))
+                                            }),
+                                            wave,
+                                            wave.to_string(),
+                                        );
+                                    }
+                                });
                         });
                         ui.add_space(10.0);
                         let visualiser =
@@ -132,7 +134,7 @@ where
                             ui,
                             "Unison Detune",
                             config.unison_detune,
-                            |it| dispatch(Action::SetFloat(FloatField::Detune, it)), 
+                            |it| dispatch(Action::SetFloat(FloatField::Detune, it)),
                             0.0..=100.0,
                             0.0,
                             &on_release,

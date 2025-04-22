@@ -1,6 +1,6 @@
 use egui::{Color32, Pos2, Rect, Response, Sense, Shape, Stroke, Ui, Vec2};
-use shared::model::{WaveType, AntiAliasingMode};
 use mesic::wave::make_wave;
+use shared::model::{AntiAliasingMode, WaveType};
 
 // (potential) TODO: further generalise this to just WaveVisualiser so the painting logic can be resued in other components like ENV and LFO visualisers in the subsynth (might require calculating wave points outside of this component)
 // ideas for things to make adjustable:
@@ -41,7 +41,7 @@ impl SimpleWaveVisualiser {
         // Calculate wave points
         let num_points = 80;
         let mut points = Vec::with_capacity(num_points);
-        for i in 0..80{
+        for i in 0..80 {
             let mapped_x_rect = rect.left() + (i as f32 / (num_points - 1) as f32) * rect.width();
 
             // this value should go from 0.0 to < 1.0 across the points because make_wave will then use (wave_input_x % 1.0) * TAU which means any int passed to it becomes 0
@@ -51,9 +51,8 @@ impl SimpleWaveVisualiser {
             // Map the wave's y output (-1.0 to 1.0) to the rectangle's y-range
             let mapped_y_rect = axis_y - y * (rect.height() / 2.0);
             points.push(Pos2::new(mapped_x_rect, mapped_y_rect));
-            
         }
-        
+
         // vector for each segment which will be used for painting in the area between the plotted line and the x-axis
         let mut current_segment_points: Vec<Pos2> = vec![];
 
@@ -87,7 +86,7 @@ impl SimpleWaveVisualiser {
 
             if current_segment_points.is_empty() {
                 current_segment_points.push(Pos2::new(rect.left(), axis_y)); // always add this base point
-                 current_segment_points.push(p_current); // adding first point
+                current_segment_points.push(p_current); // adding first point
             } else {
                 let p_last_in_segment = *current_segment_points.last().unwrap();
                 let last_is_above = p_last_in_segment.y <= axis_y;
@@ -97,32 +96,33 @@ impl SimpleWaveVisualiser {
                 } else {
                     // line corrsed x-axis so calculate the intersection point on the axis
                     let y_diff = p_current.y - p_last_in_segment.y;
-                    if y_diff.abs() > 1e-6 { // only create a new segment if y-diff interval is meaninfgully large
-                       // Calculate the x-coordinate of the intersection point
-                       let t = (axis_y - p_last_in_segment.y) / y_diff;
-                       let t = t.clamp(0.0, 1.0);
-                       let intersect_x = p_last_in_segment.x + (p_current.x - p_last_in_segment.x) * t;
-                       let p_int = Pos2::new(intersect_x, axis_y);
+                    if y_diff.abs() > 1e-6 {
+                        // only create a new segment if y-diff interval is meaninfgully large
+                        // Calculate the x-coordinate of the intersection point
+                        let t = (axis_y - p_last_in_segment.y) / y_diff;
+                        let t = t.clamp(0.0, 1.0);
+                        let intersect_x =
+                            p_last_in_segment.x + (p_current.x - p_last_in_segment.x) * t;
+                        let p_int = Pos2::new(intersect_x, axis_y);
 
-                       // add the intersection point to the current segment - this is the point that lies on the axis and marks the end of the current segment along the wave curve
-                       current_segment_points.push(p_int);
+                        // add the intersection point to the current segment - this is the point that lies on the axis and marks the end of the current segment along the wave curve
+                        current_segment_points.push(p_int);
 
-                       // Paint the completed segment's polygon
-                       paint_segment(&current_segment_points, self.fill_color, axis_y);
+                        // Paint the completed segment's polygon
+                        paint_segment(&current_segment_points, self.fill_color, axis_y);
 
-                       // Start a new segment with the intersection point and the current point (p_current)
-                       current_segment_points.clear(); // Clear points from the just-painted segment
-                       current_segment_points.push(p_int); // Intersection point is the start of the new segment
+                        // Start a new segment with the intersection point and the current point (p_current)
+                        current_segment_points.clear(); // Clear points from the just-painted segment
+                        current_segment_points.push(p_int); // Intersection point is the start of the new segment
 
-                       // add p_current to the new segment but only if it's different from the intersection point to avoid double ups incase p_current is already exactly on the x-axis
-                       if p_current != p_int {
-                          current_segment_points.push(p_current);
-                       }
-
+                        // add p_current to the new segment but only if it's different from the intersection point to avoid double ups incase p_current is already exactly on the x-axis
+                        if p_current != p_int {
+                            current_segment_points.push(p_current);
+                        }
                     } else {
-                         // if the y_diff.abs() is small then there is no point making a new segment yet because that means the interval is nearly horizontal
-                         // i.e. crossing won't be visible anyway
-                         current_segment_points.push(p_current);
+                        // if the y_diff.abs() is small then there is no point making a new segment yet because that means the interval is nearly horizontal
+                        // i.e. crossing won't be visible anyway
+                        current_segment_points.push(p_current);
                     }
                 }
             }
@@ -131,11 +131,10 @@ impl SimpleWaveVisualiser {
         // Paint the last segment if it exists
         if !current_segment_points.is_empty() {
             current_segment_points.push(Pos2::new(rect.right(), axis_y)); // always add this base point (it's the end of the graph)
-             paint_segment(&current_segment_points, self.fill_color, axis_y);
+            paint_segment(&current_segment_points, self.fill_color, axis_y);
         }
 
-         // Draw the line of the actual wave after filling so it appears on top
-         painter.add(Shape::line(points, Stroke::new(3.0, self.line_color)));
+        // Draw the line of the actual wave after filling so it appears on top
+        painter.add(Shape::line(points, Stroke::new(3.0, self.line_color)));
     }
-
 }

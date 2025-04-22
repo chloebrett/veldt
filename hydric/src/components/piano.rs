@@ -173,15 +173,18 @@ impl Piano {
 
 impl View for Piano {
     fn ui(&mut self, ui: &mut Ui) {
-
         // Define range based on orientation
         let range = match self.orientation {
-            PianoOrientation::Vertical => {
-                Rect::from_min_max(pos2(0.0, self.min_note as f32), pos2(1.0, self.max_note as f32))
-            }
+            PianoOrientation::Vertical => Rect::from_min_max(
+                pos2(0.0, self.min_note as f32),
+                pos2(1.0, self.max_note as f32),
+            ),
             PianoOrientation::Horizontal => {
                 // min is top left corner which is 0,0 and max is bottom right which is 76,1
-                Rect::from_min_max(pos2(0.0, 0.0), pos2((self.max_note - self.min_note) as f32, 1.0))
+                Rect::from_min_max(
+                    pos2(0.0, 0.0),
+                    pos2((self.max_note - self.min_note) as f32, 1.0),
+                )
             }
         };
 
