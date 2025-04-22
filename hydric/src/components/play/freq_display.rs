@@ -98,7 +98,7 @@ impl View for FrequencyDisplay {
             ui.ctx().request_repaint();
             let (_id, rect) = ui.allocate_space(canvas_size);
             // Set a maximum response value.
-            let y_max = 2.0;
+            let y_max = 1.0;
             let to_screen = RectTransform::from_to(
                 Rect::from_min_max(pos2(0.0, 0.0), pos2(bin_count as f32, y_max)),
                 rect,
