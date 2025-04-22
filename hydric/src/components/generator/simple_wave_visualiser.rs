@@ -1,7 +1,11 @@
 use egui::{Color32, Pos2, Rect, Response, Sense, Shape, Stroke, Ui, Vec2};
-use shared::model::WaveType;
-use std::f32::consts::PI;
+use shared::model::{WaveType, AntiAliasingMode};
+use mesic::wave::make_wave;
 
+// (potential) TODO: further generalise this to just WaveVisualiser so the painting logic can be resued in other components like ENV and LFO visualisers in the subsynth (might require calculating wave points outside of this component)
+// ideas for things to make adjustable:
+// make the 'x-axis' positioning flexible so the semi transparent painting of the area under the plotted line can change where it starts
+// num points for larger visualisation components
 pub struct SimpleWaveVisualiser {
     wave_type: WaveType,
     line_color: Color32,
@@ -19,7 +23,7 @@ impl SimpleWaveVisualiser {
         }
     }
 
-    // Show the wave visualizer in the UI
+    // Show the wave visualiser in the UI
     pub fn show(&self, ui: &mut Ui) -> Response {
         let (rect, response) = ui.allocate_exact_size(self.size, Sense::hover());
 
@@ -32,160 +36,104 @@ impl SimpleWaveVisualiser {
 
     fn paint(&self, ui: &mut Ui, rect: Rect) {
         let painter = ui.painter();
-        let center_y = rect.center().y;
-        let center_x = rect.center().x;
+        let axis_y = rect.center().y;
 
         // Calculate wave points
-        let points = self.calculate_wave_points(rect);
+        let num_points = 80;
+        let mut points = Vec::with_capacity(num_points);
+        for i in 0..80{
+            let mapped_x_rect = rect.left() + (i as f32 / (num_points - 1) as f32) * rect.width();
 
-        match self.wave_type {
-            WaveType::Sine => {
-                let half_length = points.len() / 2;
-                let fill_points_above = points[0..half_length].to_vec();
-                let fill_points_below = points[half_length..].to_vec();
-                painter.add(Shape::convex_polygon(
-                    fill_points_above,
-                    self.fill_color,
-                    Stroke::NONE,
-                ));
-                painter.add(Shape::convex_polygon(
-                    fill_points_below,
-                    self.fill_color,
-                    Stroke::NONE,
-                ));
+            // this value should go from 0.0 to < 1.0 across the points because make_wave will then use (wave_input_x % 1.0) * TAU which means any int passed to it becomes 0
+            let wave_input_x = i as f32 / num_points as f32;
+            let y = make_wave(wave_input_x, self.wave_type, 1.0, AntiAliasingMode::Off); // using arbitrary wave_freq since anti aliasing is off
+
+            // Map the wave's y output (-1.0 to 1.0) to the rectangle's y-range
+            let mapped_y_rect = axis_y - y * (rect.height() / 2.0);
+            points.push(Pos2::new(mapped_x_rect, mapped_y_rect));
+            
+        }
+        
+        // vector for each segment which will be used for painting in the area between the plotted line and the x-axis
+        let mut current_segment_points: Vec<Pos2> = vec![];
+
+        // paint_segment will paint in each segment
+        let paint_segment = |segment_wave_points: &[Pos2], fill_color: Color32, axis_y: f32| {
+            if segment_wave_points.len() < 2 {
+                // Need at least two points on the wave curve to form a segment worth painting
+                return;
             }
+            let mut polygon_points: Vec<Pos2> = segment_wave_points.to_vec();
 
-            WaveType::Square => {
-                let half_length = points.len() / 2;
-                // area in the high
-                let mut fill_points_above = points[0..half_length].to_vec();
-                fill_points_above.push(Pos2::new(center_x, center_y));
-                // area in the low
-                let mut fill_points_below = Vec::with_capacity(half_length + 1);
-                fill_points_below.push(Pos2::new(center_x, center_y));
-                fill_points_below.extend(points[half_length..].iter());
-                painter.add(Shape::convex_polygon(
-                    fill_points_above,
-                    self.fill_color,
-                    Stroke::NONE,
-                ));
-                painter.add(Shape::convex_polygon(
-                    fill_points_below,
-                    self.fill_color,
-                    Stroke::NONE,
-                ));
-            }
+            // Get the x-coordinates for the base of the polygon on the axis
+            let start_x = segment_wave_points[0].x;
+            let end_x = segment_wave_points.last().unwrap().x;
 
-            WaveType::Saw => {
-                let half_length = points.len() / 2;
-                let fill_points_above = points[0..half_length].to_vec();
-                let fill_points_below = points[half_length..].to_vec();
-                painter.add(Shape::convex_polygon(
-                    fill_points_above,
-                    self.fill_color,
-                    Stroke::NONE,
-                ));
-                painter.add(Shape::convex_polygon(
-                    fill_points_below,
-                    self.fill_color,
-                    Stroke::NONE,
-                ));
-            }
+            // add the points on the axis to close the polygon
+            polygon_points.push(Pos2::new(end_x, axis_y));
+            polygon_points.push(Pos2::new(start_x, axis_y));
 
-            WaveType::Triangle => {
-                let half_length = points.len() / 2;
-                // area in the high
-                let mut fill_points_above = points[0..half_length].to_vec();
-                fill_points_above.push(Pos2::new(center_x, center_y));
-                // area in the low
-                let mut fill_points_below = Vec::with_capacity(half_length + 1);
-                fill_points_below.push(Pos2::new(center_x, center_y));
-                fill_points_below.extend(points[half_length..].iter());
-                painter.add(Shape::convex_polygon(
-                    fill_points_above,
-                    self.fill_color,
-                    Stroke::NONE,
-                ));
-                painter.add(Shape::convex_polygon(
-                    fill_points_below,
-                    self.fill_color,
-                    Stroke::NONE,
-                ));
+            painter.add(Shape::convex_polygon(
+                polygon_points,
+                fill_color,
+                Stroke::NONE,
+            ));
+        };
+        // iterate through generated points to build each polygon segment and find when the plotted point crosses the x-axis
+        for i in 0..num_points {
+            let p_current = points[i];
+            // Determine if the current point is above or below the axis
+            let current_is_above = p_current.y <= axis_y; // y increases downwards!!
+
+            if current_segment_points.is_empty() {
+                 current_segment_points.push(p_current); // adding first point
+            } else {
+                let p_last_in_segment = *current_segment_points.last().unwrap();
+                let last_is_above = p_last_in_segment.y <= axis_y;
+
+                if current_is_above == last_is_above {
+                    current_segment_points.push(p_current); // push point as usual if line hasn't crossed x-axis
+                } else {
+                    // line corrsed x-axis so calculate the intersection point on the axis
+                    let y_diff = p_current.y - p_last_in_segment.y;
+                    if y_diff.abs() > 1e-6 { // only create a new segment if y-diff interval is meaninfgully large
+                       // Calculate the x-coordinate of the intersection point
+                       let t = (axis_y - p_last_in_segment.y) / y_diff;
+                       let t = t.clamp(0.0, 1.0);
+                       let intersect_x = p_last_in_segment.x + (p_current.x - p_last_in_segment.x) * t;
+                       let p_int = Pos2::new(intersect_x, axis_y);
+
+                       // add the intersection point to the current segment - this is the point that lies on the axis and marks the end of the current segment along the wave curve
+                       current_segment_points.push(p_int);
+
+                       // Paint the completed segment's polygon
+                       paint_segment(&current_segment_points, self.fill_color, axis_y);
+
+                       // Start a new segment with the intersection point and the current point (p_current)
+                       current_segment_points.clear(); // Clear points from the just-painted segment
+                       current_segment_points.push(p_int); // Intersection point is the start of the new segment
+
+                       // add p_current to the new segment but only if it's different from the intersection point to avoid double ups incase p_current is already exactly on the x-axis
+                       if p_current != p_int {
+                          current_segment_points.push(p_current);
+                       }
+
+                    } else {
+                         // if the y_diff.abs() is small then there is no point making a new segment yet because that means the interval is nearly horizontal
+                         // i.e. crossing won't be visible anyway
+                         current_segment_points.push(p_current);
+                    }
+                }
             }
         }
 
-        // Draw line of the actual wave
-        painter.add(Shape::line(points, Stroke::new(3.0, self.line_color)));
-    }
-
-    fn calculate_wave_points(&self, rect: Rect) -> Vec<Pos2> {
-        let width = rect.width();
-        let height = rect.height();
-        let center_y = rect.center().y;
-        let amplitude = height * 0.4; // Use 40% of height as amplitude
-        let mut points = Vec::with_capacity(1);
-
-        match self.wave_type {
-            WaveType::Sine => {
-                let num_points = 200;
-                points = Vec::with_capacity(num_points);
-                for i in 0..num_points {
-                    let x = rect.left() + (i as f32 / (num_points - 1) as f32) * width;
-                    let phase = (i as f32 / (num_points - 1) as f32) * 2.0 * PI;
-                    let y = center_y - amplitude * phase.sin();
-                    points.push(Pos2::new(x, y));
-                }
-            }
-
-            WaveType::Square => {
-                let num_points = 6;
-                points = Vec::with_capacity(num_points);
-
-                points.push(Pos2::new(rect.left(), center_y)); // let middle
-                points.push(Pos2::new(rect.left(), center_y - amplitude)); // left top
-
-                let mid_x = rect.left() + width * 0.5;
-                points.push(Pos2::new(mid_x, center_y - amplitude)); // Last point at high
-                points.push(Pos2::new(mid_x, center_y + amplitude)); // First point at low
-
-                points.push(Pos2::new(rect.right(), center_y + amplitude)); // right bottom
-                points.push(Pos2::new(rect.right(), center_y)); // right middle
-            }
-
-            WaveType::Saw => {
-                let num_points = 200;
-                points = Vec::with_capacity(num_points);
-
-                points.push(Pos2::new(rect.left(), center_y)); // left middle
-
-                // Sloping down to the bottom right
-                for i in 1..(num_points - 2) {
-                    let x = rect.left() + (i as f32 / (num_points - 1) as f32) * width;
-                    let normalized = i as f32 / (num_points - 1) as f32;
-                    let y = center_y - amplitude + (2.0 * amplitude * normalized);
-                    points.push(Pos2::new(x, y));
-                }
-                points.push(Pos2::new(rect.right(), center_y)); // right middle
-            }
-
-            WaveType::Triangle => {
-                let num_points = 4;
-                points = Vec::with_capacity(num_points);
-                points.push(Pos2::new(rect.left(), center_y)); // left middle
-
-                // Linear up to the peak at 1/4 of the wave
-                let quarter_x = rect.left() + width * 0.25;
-                points.push(Pos2::new(quarter_x, center_y - amplitude));
-
-                // Linear down to the low point at 3/4 of the wave
-                let three_quarter_x = rect.left() + width * 0.75;
-                points.push(Pos2::new(three_quarter_x, center_y + amplitude));
-
-                // Linear up to the end point at the center again
-                points.push(Pos2::new(rect.right(), center_y));
-            }
+        // Paint the last segment if it exists
+        if !current_segment_points.is_empty() {
+             paint_segment(&current_segment_points, self.fill_color, axis_y);
         }
 
-        points
+         // Draw the line of the actual wave after filling so it appears on top
+         painter.add(Shape::line(points, Stroke::new(3.0, self.line_color)));
     }
+
 }
