@@ -35,7 +35,7 @@ fn add_node(
     match node {
         FilenameTree::File(name) => {
             builder.leaf(start_id, name);
-            return start_id + 1;
+            start_id + 1
         }
         FilenameTree::Directory(name, contents) => {
             if !ignore_top {
@@ -48,7 +48,7 @@ fn add_node(
             if !ignore_top {
                 builder.close_dir();
             }
-            return next_id;
+            next_id
         }
     }
 }
@@ -66,7 +66,7 @@ impl View for SampleTreeWindow<'_> {
                 let mut search_observer = string_observer(
                     get_set(search.clone(), |it| {
                         // TODO: just special-case the empty string on the back end and pass a string around.
-                        let search = if it.len() > 0 { Some(it) } else { None };
+                        let search = if it.is_empty() { None } else { Some(it) };
 
                         self.store
                             .dispatchr(Action::SetChild(TypeField::SampleTreeConfig(
@@ -140,7 +140,7 @@ impl View for SampleTreeWindow<'_> {
                             let id = ui.make_persistent_id("sample_tree");
                             TreeView::new(id).show(ui, |builder| {
                                 add_node(
-                                    builder, &tree, /* start_id= */ 0,
+                                    builder, tree, /* start_id= */ 0,
                                     /* ignore_top= */ true,
                                 );
                             });

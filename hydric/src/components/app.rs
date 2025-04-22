@@ -3,7 +3,7 @@ use super::{
     effect::{EffectWindow, MixerWindow},
     generator::{generator_control, generators_control},
     menu::Menu,
-    play::{SampleTreeWindow, ToolBarView},
+    play::{SampleTreeWindow, ToolbarView},
 };
 use crate::components::FrameHistory;
 use crate::promise::spawn;
@@ -111,8 +111,7 @@ impl eframe::App for App {
                         MixerWindow::new(&mut self.window_state, &self.store).ui(ctx);
                     }
 
-                    ToolBarView::new(
-                        &mut self.window_state,
+                    ToolbarView::new(
                         &mut self.store,
                         &mut self.async_state,
                         &mut self.audio_state,

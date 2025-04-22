@@ -50,7 +50,7 @@ impl<F: Fn(Action), G: Fn()> WindowView for EffectWindow<'_, F, G> {
         let dispatch = &self.dispatch;
         let on_release = &self.on_release;
 
-        let title = effect_name(&effect);
+        let title = effect_name(effect);
 
         default_window(title)
             .id(format!("effects_{}_{}", mixer_index, effect_index).into())
