@@ -83,20 +83,20 @@ impl DataState {
         })
     }
 
-    pub fn get_value<T: 'static + Clone + Send + Sync>(self, ui: &mut Ui) -> Option<T> {
+    pub fn get_value<T: 'static + Clone + Send + Sync>(&self, ui: &mut Ui) -> Option<T> {
         ui.data_mut(|data| {
             data.get_temp_mut_or_insert_with::<Option<T>>(self.get_id(), move || None)
                 .clone()
         })
     }
 
-    pub fn set_value<T: 'static + Clone + Send + Sync>(self, ui: &mut Ui, value: T) {
+    pub fn set_value<T: 'static + Clone + Send + Sync>(&self, ui: &mut Ui, value: T) {
         ui.data_mut(|data| {
             data.insert_temp(self.get_id(), Some(value));
         })
     }
 
-    pub fn remove_value(self, ui: &mut Ui) {
+    pub fn remove_value(&self, ui: &mut Ui) {
         ui.data_mut(|data| {
             // Value are stores by (Id, type) and so type of the value when not `None` must be
             // known.
