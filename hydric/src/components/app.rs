@@ -1,11 +1,11 @@
 use super::{
-    freq_display::FrequencyDisplay,
-    KeyView, NoteControl, NoteRoll, SaveLoadView, TrackPlacementView, TrackRoll,
+    KeyView, NoteRoll, NoteView, SaveLoadView, TrackPlacementView, TrackRoll,
     effect::{EffectWindow, MixerWindow},
     generator::{generator_control, generators_control},
     menu::Menu,
     play::{SampleTreeWindow, ToolBarView},
 };
+use crate::components::FrameHistory;
 use crate::promise::spawn;
 use crate::rpc::broadcast_actions;
 use crate::rpc::load_project_list;
@@ -13,8 +13,7 @@ use crate::view::View;
 use crate::view::WindowView;
 use crate::widget::{default_window, get_set, string_observer};
 use crate::{AsyncState, AudioState, WindowState};
-use crate::{app_state::DataState, components::FrameHistory};
-use egui::{Id, Pos2, pos2};
+use egui::Pos2;
 use egui::{ScrollArea, scroll_area::ScrollBarVisibility};
 use poll_promise::Promise;
 use shared::model::GeneratorType;
@@ -157,26 +156,7 @@ impl eframe::App for App {
                             });
                     }
 
-                    if DataState::NoteWindow.get_value(ui).unwrap_or(false) {
-                        let mut open = true;
-                        let track_index = DataState::ActiveTrackIndex.get_value(ui);
-                        let note_index = DataState::ActiveNoteIndex.get_value(ui);
-                        if track_index.is_some() && note_index.is_some() {
-                            default_window("Notes")
-                                .open(&mut open)
-                                .default_pos(Pos2 { x: 600.0, y: 20.0 })
-                                .show(ctx, |ui| {
-                                    NoteControl::new(
-                                        &self.store,
-                                        track_index.unwrap(),
-                                        note_index.unwrap(),
-                                    )
-                                    .ui(ui);
-                                });
-                        }
-                        DataState::NoteWindow.set_value(ui, open);
-                    };
-
+                    NoteView::new(&self.store).ui(ui);
                     NoteRoll::new(&self.store).ui(ui);
                     TrackPlacementView::new(&self.store).ui(ui);
 

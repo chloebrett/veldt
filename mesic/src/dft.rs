@@ -1,24 +1,29 @@
 use std::f32::consts::PI;
 
-use ordered_float::Float;
-
-use crate::SAMPLE_RATE;
-
 const TWO_PI: f32 = 2.0 * PI;
 
-pub fn dft(length: usize, signal: Vec<f32>) -> Vec<f32> {
+/// Apply Discrete Fourier Transform to Singal
+/// Creates a vector the length of signal.
+/// Easch value of the vector corresponds to the signal response for the frequency window:
+///      `n * N`
+/// Where `n` is the index of the value and N is `SAMPLE_RATE / signal.len()`.
+/// Example: the 3rd value of a response where the sample rate is `44_100` hz and the signal is
+/// 1024 samples long would be the window of 86.1-129.1 Hz.
+/// See Ch. 20 of Designing Audio Effect Plugins in C++. 
+pub fn dft(signal: Vec<f32>) -> Vec<f32> {
+    let length = signal.len();
     let inv_length = 1.0 / length as f32;
     let mut im = vec![0f32; length];
     let mut re = vec![0f32; length];
     let mut output = vec![0f32; length];
     for bin in 0..length {
-        for frame in 0..length {
-            // Calculate real resopnse
-            re[bin] += signal[frame]
+        for (frame, value) in signal.iter().enumerate().take(length) {
+            // Calculate real (cosine phase) resopnse
+            re[bin] += value
                 * (TWO_PI * frame as f32 * bin as f32 * inv_length).cos()
                 * inv_length;
-            // Calculatte imaginary response
-            im[bin] += signal[frame]
+            // Calculate imaginary (sine phase) response
+            im[bin] += value
                 * (TWO_PI * frame as f32 * bin as f32 * inv_length).sin()
                 * inv_length;
         }
@@ -28,61 +33,53 @@ pub fn dft(length: usize, signal: Vec<f32>) -> Vec<f32> {
     output
 }
 
-pub fn make_log_buckets(response: Vec<f32>, buckets: usize) -> Vec<f32> {
+// Group DFT results into bins based on frequency log2 value.
+// TODO improve this implementation so that it calculates the log exponent needed to create bin 
+// sizes that perfect fill up the response space.
+pub fn make_log_buckets(response: Vec<f32>, bins: usize) -> Vec<f32> {
+    // Halve response as DFT creates a symetrical output where second half is the reverse of the first
+    // half of a reponse and not useful information.
     let positive_response = response[0..response.len() / 2].to_vec();
-    println!("{:?}", positive_response.clone());
-    let mut output = vec![0f32; buckets];
+    let mut output = vec![0f32; bins];
     for (index, value) in positive_response.iter().enumerate() {
-        let bucket = (index as f32 + 2.0).log2() as usize -1 ;
-        if bucket < buckets {
-            output[bucket] += value
+        // Add 2 to index so that 0th and 1st response are grouped together.
+        // Subtract 1 from bin to start at bin index == 0.
+        let bin = (index as f32 + 2.0).log2() as usize - 1;
+        if bin < bins {
+            output[bin] += value
         } else {
-            break
+            break;
         }
     }
     output
-}
-
-pub fn get_freq_response(signal: Vec<f32>, frequency: f32) -> f32 {
-    let period = (SAMPLE_RATE as f32 / frequency) as usize;
-    let inv_period = 1.0 / period as f32;
-    let re = signal.iter().enumerate().map(|(index, it)| {
-        it * (TWO_PI * index as f32 * inv_period).cos() *inv_period 
-    }).sum::<f32>().powf(2.0);
-    let im = signal.iter().enumerate().map(|(index, it)| {
-        it * (TWO_PI * index as f32 * inv_period).sin() * inv_period 
-    }).sum::<f32>().powf(2.0);
-    (re + im).sqrt()
-}
-
-pub fn hann_window(signal: Vec<f32>) -> Vec<f32> {
-    let inv_length = 1.0 / signal.len() as f32;
-    signal.iter().enumerate().map(|(index, it)| {
-        it * (PI * index as f32 * inv_length).sin().powf(2.0)
-    }).collect()
 }
 
 #[cfg(test)]
 mod tests {
     use shared::model::{PitchName, ScaleValue};
 
-    use crate::{graph::RenderGraph, wave::freq};
+    use crate::wave::freq;
 
     use super::*;
 
+    use crate::SAMPLE_RATE;
+
     #[test]
     fn full_cosine_is_decomposed() {
-        let n = 128;
-        let b = 3.0;
-        let signal = (0..n)
-            .map(|index| (TWO_PI * (index as f32) * b as f32 / n as f32).cos())
+        // ARRANGE
+        let sample_size = 128;
+        let harmonic = 3.0;
+        let signal = (0..sample_size)
+            .map(|index| (TWO_PI * (index as f32) * harmonic as f32 / sample_size as f32).cos())
             .collect();
-        let output = dft(n, signal);
+        // ACT
+        let output = dft(signal);
+        // ASSERT
         let epsilon = 1e-5;
-        let mut expected = vec![0f32; n];
-        expected[b as usize] = 0.5;
-        expected[n - b as usize] = 0.5;
-        let approx_diff: bool = output 
+        let mut expected = vec![0f32; sample_size];
+        expected[harmonic as usize] = 0.5;
+        expected[sample_size - harmonic as usize] = 0.5;
+        let approx_diff: bool = output
             .iter()
             .enumerate()
             .all(|(index, value)| (value - expected[index]).abs() < epsilon);
@@ -90,27 +87,48 @@ mod tests {
     }
 
     #[test]
-    fn a_note_is_detected() {
+    fn full_sine_is_decomposed() {
+        // ARRANGE
+        let sample_size = 128;
+        let harmonic = 3.0;
+        let signal = (0..sample_size)
+            .map(|index| (TWO_PI * (index as f32) * harmonic as f32 / sample_size as f32).cos())
+            .collect();
+        // ACT
+        let output = dft(signal);
+        // ASSERT
+        let epsilon = 1e-5;
+        let mut expected = vec![0f32; sample_size];
+        expected[harmonic as usize] = 0.5;
+        expected[sample_size - harmonic as usize] = 0.5;
+        let approx_diff: bool = output
+            .iter()
+            .enumerate()
+            .all(|(index, value)| (value - expected[index]).abs() < epsilon);
+        assert!(approx_diff);
+    }
+
+    #[test]
+    fn note_response_max_bucket_is_correct() {
         let pitch = PitchName {
             scale_value: ScaleValue::A,
             octave: 4,
         };
-        let samples = SAMPLE_RATE;
+        let samples = 1024;
+        // The frequency window of each values returned in the DFT response vector.
+        let freq_window = samples as f32 / SAMPLE_RATE as f32;
         let input: Vec<f32> = (0..samples as usize)
-            .map(|it| (it as f32 / SAMPLE_RATE as f32 * freq(pitch)).sin())
+            .map(|it| (TWO_PI * it as f32 / SAMPLE_RATE as f32 * freq(pitch)).sin())
             .collect();
         // Act
-        let graph = RenderGraph::from_vec(input.clone());
-        let output: Vec<[f32; 2]> = graph.collect();
-        let output_mono: Vec<f32> = output
-            .iter()
-            .map(|[left, right]| (left + right) * 0.5)
-            .collect();
-        let res: Vec<f32> = (1..11).map(|it| get_freq_response(output_mono[0..1024].to_vec(), 2f32.powf(it as f32) * 10.0)).collect();
-        let response = dft(2048, output_mono);
+        let response = dft(input);
         let bins = make_log_buckets(response, 10);
-        println!("{:?}", bins);
-        assert!(1==2);
-
+        let expected_max_bin = (freq_window * freq(pitch) + 2.0).log2() as usize - 1;
+        let (max_bin, _) = bins
+            .into_iter()
+            .enumerate()
+            .max_by_key(|(_index, it)| ordered_float::OrderedFloat(*it))
+            .unwrap();
+        assert_eq!(max_bin, expected_max_bin);
     }
 }
