@@ -4,6 +4,7 @@ use eframe::egui;
 use egui::{Color32, ComboBox};
 use shared::model::{OscillatorConfig, WaveType};
 use state::{Action, FloatField, TypeField, UintField};
+use strum::IntoEnumIterator;
 
 pub fn subsynth_oscillator<F, G>(
     config: &OscillatorConfig,
@@ -34,57 +35,20 @@ where
                 osc_selection_frame.show(ui, |ui| {
                     ui.vertical(|ui| {
                         ui.horizontal(|ui| {
-                            let wave_type_str = match config.wave {
-                                WaveType::Sine => "Sine",
-                                WaveType::Square => "Square",
-                                WaveType::Saw => "Saw",
-                                WaveType::Triangle => "Triangle",
-                            };
-
-                            ComboBox::from_label("")
-                                .selected_text(wave_type_str)
-                                .show_ui(ui, |ui| {
+                            egui::ComboBox::from_label("")
+                            .selected_text(config.wave.to_string())
+                            .show_ui(ui, |ui| {
+                                for wave in WaveType::iter() {
                                     selectable_value(
                                         ui,
-                                        get_set(config.wave, |_wave_type| {
-                                            dispatch(Action::SetChild(TypeField::Wave(
-                                                WaveType::Sine,
-                                            )))
+                                        get_set(config.wave, |wave_type| {
+                                            dispatch(Action::SetChild(TypeField::Wave(wave_type)))
                                         }),
-                                        WaveType::Sine,
-                                        WaveType::Sine.to_string(),
+                                        wave,
+                                        wave.to_string(),
                                     );
-                                    selectable_value(
-                                        ui,
-                                        get_set(config.wave, |_wave_type| {
-                                            dispatch(Action::SetChild(TypeField::Wave(
-                                                WaveType::Square,
-                                            )))
-                                        }),
-                                        WaveType::Square,
-                                        WaveType::Square.to_string(),
-                                    );
-                                    selectable_value(
-                                        ui,
-                                        get_set(config.wave, |_wave_type| {
-                                            dispatch(Action::SetChild(TypeField::Wave(
-                                                WaveType::Saw,
-                                            )))
-                                        }),
-                                        WaveType::Saw,
-                                        WaveType::Saw.to_string(),
-                                    );
-                                    selectable_value(
-                                        ui,
-                                        get_set(config.wave, |_wave_type| {
-                                            dispatch(Action::SetChild(TypeField::Wave(
-                                                WaveType::Triangle,
-                                            )))
-                                        }),
-                                        WaveType::Triangle,
-                                        WaveType::Triangle.to_string(),
-                                    );
-                                });
+                                }
+                            });
                         });
                         ui.add_space(10.0);
                         let visualiser =
@@ -105,7 +69,7 @@ where
                             ui,
                             "Volume",
                             config.volume,
-                            |it| dispatch(Action::SetFloat(FloatField::Volume, it)), // this action is prob not the right action idk
+                            |it| dispatch(Action::SetFloat(FloatField::Volume, it)),
                             0.0..=1.0,
                             0.0,
                             &on_release,
@@ -117,7 +81,7 @@ where
                             "Pan",
                             config.pan,
                             |it| dispatch(Action::SetFloat(FloatField::Pan, it)), // TODO fix action its a placeholder rn
-                            0.0..=1.0,
+                            -1.0..=1.0,
                             0.0,
                             &on_release,
                         );
@@ -126,9 +90,9 @@ where
                         knob(
                             ui,
                             "Coarse",
-                            config.coarse_detune,
+                            config.osc_detune.floor(),
                             |it| dispatch(Action::SetFloat(FloatField::Detune, it)), // TODO fix action its a placeholder rn
-                            0.0..=1.0,
+                            -24.0..=24.0,
                             0.0,
                             &on_release,
                         );
@@ -137,9 +101,9 @@ where
                         knob(
                             ui,
                             "Fine",
-                            config.fine_detune,
+                            config.osc_detune % 1.0,
                             |it| dispatch(Action::SetFloat(FloatField::Detune, it)), // TODO fix action its a placeholder rn
-                            0.0..=1.0,
+                            -100.0..=100.0,
                             0.0,
                             &on_release,
                         );
@@ -158,17 +122,17 @@ where
                         int_slider(
                             ui,
                             "Unison",
-                            1.0 as f64, // TODO placeholder value remember to hook it up to config instead
-                            |it| dispatch(Action::SetUint(UintField::OscCount, it as u32)), // need diff action probably
+                            config.osc_count as f64,
+                            |it| dispatch(Action::SetUint(UintField::OscCount, it as u32)),
                             1..=24,
                             &on_release,
                         );
                         ui.add_space(6.0);
                         knob(
                             ui,
-                            "Osc detune",
-                            0.0, // TODO placeholder value remember to hook it up to config instead
-                            |it| dispatch(Action::SetFloat(FloatField::Detune, it)), // need diff action probably
+                            "Unison Detune",
+                            config.unison_detune,
+                            |it| dispatch(Action::SetFloat(FloatField::Detune, it)), 
                             0.0..=100.0,
                             0.0,
                             &on_release,
