@@ -1,5 +1,5 @@
 use egui::{cache::{ComputerMut, FrameCache}, emath::RectTransform, epaint::PathStroke, pos2, vec2, Color32, CornerRadius, Frame, Pos2, Rect, Shape, Ui};
-use mesic::{dft::{dft, get_freq_response}, render};
+use mesic::{dft::{self, dft, get_freq_response, make_log_buckets}, render};
 use ordered_float::OrderedFloat;
 use shared::serialize::map_vec;
 use state::Store;
@@ -22,12 +22,10 @@ impl FrequencyDisplay {
 }
 
 fn response_line(signal: Vec<f32>, bin_count: usize) -> Vec<Pos2> {
-    let interval = 1.0;
-    (1..bin_count+1).map(|bin| {
-        let freq = 2f32.powf(bin as f32) * 10.0;
-        let response = get_freq_response(signal.clone(), freq);
-        pos2(bin as f32 -1.0, response)
-    }).collect() 
+    let response = dft(signal.len(), signal);
+    make_log_buckets(reponse, bin_count).iter().enumerate().map(|(index, bucket)| {
+        pos2(index as f32, bucket)
+    }).collect()
 }
 
 #[derive(Default)]

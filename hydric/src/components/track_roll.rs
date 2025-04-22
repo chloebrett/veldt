@@ -59,6 +59,7 @@ impl View for TrackRoll<'_> {
                 data.insert_temp::<Option<usize>>(track_id, Some(placed_track_ids[index] as usize))
             });
         };
+<<<<<<< Updated upstream
         default_window("Track Roll")
             .default_pos(pos2(30.0, 200.0))
             .resizable(true)
@@ -82,6 +83,32 @@ impl View for TrackRoll<'_> {
                                 ),
                         );
                     });
+=======
+        ui.horizontal(|ui| {
+            if ui.button("New track").clicked() {
+                store.dispatchr(Action::AddChild(TypeField::Track(default_track)));
+            }
+            if ui.button("New track placement").clicked() {
+                store.dispatchr(Action::AddChild(TypeField::TrackPlacement(
+                    default_track_placement,
+                )));
+            }
+        });
+        ScrollArea::vertical()
+            .min_scrolled_height(400.0)
+            .show(ui, |ui| {
+                ui.add(
+                    Sequencer::new(range, dispatch, on_release, on_click)
+                        .objects(placed_tracks)
+                        .size(vec2(
+                            ui.available_size_before_wrap().x,
+                            100.0 * track_count as f32,
+                        ))
+                        .vertical_bars(4.0, Color32::from_white_alpha(6))
+                        .vertical_bars(1.0, Color32::from_white_alpha(3))
+                        .horizontal_rects(|index| index % 2 == 1, Color32::from_white_alpha(1)),
+                );
+>>>>>>> Stashed changes
             });
     }
 }

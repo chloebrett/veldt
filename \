@@ -30,7 +30,6 @@ pub fn dft(length: usize, signal: Vec<f32>) -> Vec<f32> {
 
 pub fn make_log_buckets(response: Vec<f32>, buckets: usize) -> Vec<f32> {
     let positive_response = response[0..response.len() / 2].to_vec();
-    println!("{:?}", positive_response.clone());
     let mut output = vec![0f32; buckets];
     for (index, value) in positive_response.iter().enumerate() {
         let bucket = (index as f32 + 2.0).log2() as usize -1 ;
@@ -107,7 +106,7 @@ mod tests {
             .map(|[left, right]| (left + right) * 0.5)
             .collect();
         let res: Vec<f32> = (1..11).map(|it| get_freq_response(output_mono[0..1024].to_vec(), 2f32.powf(it as f32) * 10.0)).collect();
-        let response = dft(2048, output_mono);
+        let response = dft(2044, output_mono);
         let bins = make_log_buckets(response, 10);
         println!("{:?}", bins);
         assert!(1==2);
