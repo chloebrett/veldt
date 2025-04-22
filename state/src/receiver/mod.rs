@@ -4,7 +4,6 @@ mod effect;
 mod generator;
 mod mixer_channel;
 mod note;
-mod oscillator;
 mod project;
 mod store_data;
 mod track;
