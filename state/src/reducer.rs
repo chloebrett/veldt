@@ -1,4 +1,5 @@
 use crate::{Action, Selector, StoreData, receiver::ActionReceiver};
+use shared::model::GeneratorType;
 
 pub fn reducer(data: &mut StoreData, selector: &Selector, action: &Action) -> Option<Action> {
     match selector {
@@ -25,6 +26,13 @@ pub fn reducer(data: &mut StoreData, selector: &Selector, action: &Action) -> Op
         Selector::TrackPlacement(track_placement_index) => {
             let track_placement = &mut data.project.track_placements[*track_placement_index];
             track_placement.apply(action)
+        }
+        Selector::Oscillator(generator_index, _oscillator_index) => {
+            let generator = &mut data.project.generators[*generator_index];
+            match &mut generator.kind {
+                GeneratorType::SubSynth { config } => config.apply(action),
+                _ => None,
+            }
         }
         Selector::Root => data.apply(action),
     }

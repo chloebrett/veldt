@@ -34,6 +34,8 @@ pub fn broadcast_type(action: &Action) -> BroadcastType {
         Action::DeleteChild(..) => BroadcastType::Immediate,
         Action::MoveEffectUp(..) => BroadcastType::Immediate,
         Action::MoveEffectDown(..) => BroadcastType::Immediate,
+        Action::SetChildIndexed(..) => BroadcastType::Immediate,
+        Action::SetFloatIndexed(..) => BroadcastType::OnRelease,
         Action::Release => BroadcastType::Never,
         Action::NonReversible => BroadcastType::Never,
     }

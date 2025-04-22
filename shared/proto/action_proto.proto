@@ -13,6 +13,8 @@ message ActionProto {
     TypeFieldProto set_child = 5;
     TypeFieldProto add_child = 6;
     IndexFieldProto delete_child = 7;
+    SetChildIndexedProto set_child_indexed = 8;
+    SetFloatIndexedProto set_float_indexed = 9;
   }
 }
 
@@ -59,6 +61,17 @@ message SetUintProto {
   uint32 value = 2;
 }
 
+message SetChildIndexedProto {
+  SelectorProto selector = 1;
+  TypeFieldProto child = 2;
+}
+
+message SetFloatIndexedProto {
+  SelectorProto selector = 1;
+  string key = 2;
+  float value = 3;
+}
+
 message ReversibleActionProto {
   ActionProto forward = 1;
   ActionProto reverse = 2;
@@ -75,6 +88,7 @@ message SelectorProto {
     IndexPair effect = 5;
     uint32 generator = 6;
     uint32 track_placement = 7;
+    IndexPair oscillator = 8;
   }
 
   message IndexPair {

@@ -21,4 +21,6 @@ pub enum FloatField {
     Ratio,
     LfoFreq,
     Feedback,
+    CoarseDetune,
+    FineDetune,
 }
