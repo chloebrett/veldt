@@ -13,6 +13,7 @@ use crate::view::View;
 use crate::{AsyncState, AudioState, WindowState};
 use egui::{ScrollArea, Ui, scroll_area::ScrollBarVisibility};
 use poll_promise::Promise;
+use shared::serialize::map_vec;
 use state::{Action, Selector, Store};
 
 pub struct App {
@@ -53,33 +54,30 @@ impl App {
         app
     }
 
-    fn visible_generators(&self) -> Vec<Selector> {
-        // TODO: .map()
-        let mut result = vec![];
+    fn visible_generators(&self) -> Vec<usize> {
         let generators = &self.store.get().project.generators;
-        for (generator_index, generator) in generators.iter().enumerate() {
-            if self.window_state.generators[generator_index] {
-                result.push(Selector::Generator(generator_index));
-            }
-        }
-        result
+        map_vec(
+            (0..generators.len())
+                .filter(|it| self.window_state.generators[*it])
+                .collect(),
+        )
     }
 
     fn visible_effects(&self) -> Vec<Selector> {
         let mixer = &self.store.get().project.mixer;
-        // TODO: .map()
-        let mut result = vec![];
-        for (mixer_index, channel) in mixer.iter().enumerate() {
-            for effect_index in 0..channel.effects.len() {
-                if *self.window_state.effects[mixer_index]
-                    .get(effect_index)
-                    .unwrap_or(&false)
-                {
-                    result.push(Selector::Effect(mixer_index, effect_index));
-                }
-            }
-        }
-        result
+        mixer
+            .iter()
+            .enumerate()
+            .flat_map(|(mi, channel)| {
+                (0..channel.effects.len())
+                    .filter(move |ei| {
+                        *self.window_state.effects[mi]
+                            .get(*ei)
+                            .unwrap_or(&false)
+                    })
+                    .map(move |ei| Selector::Effect(mi, ei))
+            })
+            .collect()
     }
 
     fn windows(&mut self, ui: &mut Ui) {
@@ -87,10 +85,7 @@ impl App {
             generators_control(ui.ctx(), &mut self.window_state, &self.store);
         }
 
-        for sel in self.visible_generators() {
-            let Selector::Generator(generator_index) = sel else {
-                panic!()
-            };
+        for generator_index in self.visible_generators() {
             // TODO: make a GeneratorView.
             generator_control(
                 &self.store,
