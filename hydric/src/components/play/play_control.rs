@@ -1,5 +1,6 @@
 use super::audio_vis::audio_vis;
 use crate::audio_player::play;
+use crate::components::freq_display::FrequencyDisplay;
 use crate::promise::{poll, spawn};
 use crate::rpc::render as server_render;
 use crate::{AsyncState, AudioState};
@@ -7,6 +8,7 @@ use egui::Ui;
 use mesic::graph::{AmpNode, RenderGraph};
 use mesic::render as local_render;
 use state::Store;
+use crate::view::View;
 
 pub fn play_control(
     store: &Store,
@@ -42,4 +44,5 @@ pub fn play_control(
     }
     ui.checkbox(&mut audio_state.pre_render, "Pre-render audio");
     audio_vis(audio_state, ui);
+    FrequencyDisplay::new(audio_state.audio.clone()).ui(ui)
 }

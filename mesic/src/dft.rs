@@ -24,18 +24,13 @@ pub fn dft(length: usize, signal: Vec<f32>) -> (Vec<f32>, Vec<f32>) {
 }
 
 pub fn get_freq_response(signal: Vec<f32>, frequency: f32) -> f32 {
-    let required_length = (SAMPLE_RATE as f32 / frequency) as usize;
-    println!("{:?}", required_length);
-    let inv_length = 1.0 / required_length as f32;
-    if signal.len() < required_length {
-       return 0.0 
-    }
-    let slice = hann_window(signal[0..required_length].to_vec());
-    let re = slice.iter().enumerate().map(|(index, it)| {
-        it * (TWO_PI * index as f32 * inv_length).cos() * inv_length
+    let period = (SAMPLE_RATE as f32 / frequency) as usize;
+    let inv_period = 1.0 / period as f32;
+    let re = signal.iter().enumerate().map(|(index, it)| {
+        it * (TWO_PI * index as f32 * inv_period).cos() *inv_period 
     }).sum::<f32>().powf(2.0);
-    let im = slice.iter().enumerate().map(|(index, it)| {
-        it * (TWO_PI * index as f32 * inv_length).sin() * inv_length
+    let im = signal.iter().enumerate().map(|(index, it)| {
+        it * (TWO_PI * index as f32 * inv_period).sin() * inv_period 
     }).sum::<f32>().powf(2.0);
     (re + im).sqrt()
 }
@@ -51,7 +46,7 @@ pub fn hann_window(signal: Vec<f32>) -> Vec<f32> {
 mod tests {
     use shared::model::{PitchName, ScaleValue};
 
-    use crate::wave::freq;
+    use crate::{graph::RenderGraph, wave::freq};
 
     use super::*;
 
@@ -76,16 +71,22 @@ mod tests {
 
     #[test]
     fn a_note_is_detected() {
-        // Arrange
         let pitch = PitchName {
             scale_value: ScaleValue::A,
             octave: 4,
         };
-        let samples = 630;
+        let samples = SAMPLE_RATE;
         let input: Vec<f32> = (0..samples as usize)
-            .map(|it| (it as f32 / SAMPLE_RATE as f32 * freq(pitch)).cos())
+            .map(|it| (it as f32 / SAMPLE_RATE as f32 * freq(pitch)).sin())
             .collect();
-        let res: Vec<f32> = (0..30).map(|it| get_freq_response(input.clone(), it as f32 * 10.0)).collect();
+        // Act
+        let graph = RenderGraph::from_vec(input.clone());
+        let output: Vec<[f32; 2]> = graph.collect();
+        let output_mono: Vec<f32> = output
+            .iter()
+            .map(|[left, right]| (left + right) * 0.5)
+            .collect();
+        let res: Vec<f32> = (1..10).map(|it| get_freq_response(output_mono.clone(), 2f32.powf(it as f32) * 10.0)).collect();
         println!("{:?}", res);
         assert!(1==2);
 

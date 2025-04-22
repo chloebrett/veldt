@@ -221,7 +221,6 @@ impl eframe::App for App {
                     ui.separator();
                     track_placement_control(&self.store, ui);
                     ui.separator();
-                    FrequencyDisplay::new(&mut self.audio_state).ui(ui);
 
                     ui.with_layout(egui::Layout::bottom_up(egui::Align::LEFT), |ui| {
                         self.frame_history.ui(ui);
