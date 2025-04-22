@@ -10,6 +10,8 @@ use shared::serialize::map_vec;
 
 use crate::{transform::Transform, view::View};
 
+const FRAME_SIZE: usize = 1024;
+
 pub struct FrequencyDisplay {
     audio: Vec<f32>,
     bin_count: usize,
@@ -25,12 +27,12 @@ impl FrequencyDisplay {
     }
 }
 
-fn resopnse_points(signal: Vec<f32>, bin_count: usize) -> Vec<Pos2> {
+fn response_points(signal: Vec<f32>, bin_count: usize) -> Vec<Pos2> {
     let response = dft(signal);
     dft::make_log_buckets(response, bin_count)
-        .iter()
+        .into_iter()
         .enumerate()
-        .map(|(index, bucket)| pos2(index as f32, *bucket))
+        .map(|(index, bucket)| pos2(index as f32, bucket))
         .collect()
 }
 
@@ -39,7 +41,7 @@ struct FrequencyDisplayComputer;
 
 #[derive(Hash, Copy, Clone, Debug)]
 struct FrequencyDisplayKey {
-    audio: [OrderedFloat<f32>; 1024],
+    audio: [OrderedFloat<f32>; FRAME_SIZE],
     bin_count: usize,
     y_max: OrderedFloat<f32>,
 }
@@ -49,7 +51,7 @@ type FrequencyDisplayCache<'a> = FrameCache<Shape, FrequencyDisplayComputer>;
 impl ComputerMut<FrequencyDisplayKey, Shape> for FrequencyDisplayComputer {
     fn compute(&mut self, key: FrequencyDisplayKey) -> Shape {
         let y_max = *key.y_max;
-        let points = resopnse_points(map_vec(key.audio.to_vec()), key.bin_count);
+        let points = response_points(map_vec(key.audio.to_vec()), key.bin_count);
         Shape::Vec(
             points
                 .iter()
@@ -65,7 +67,7 @@ impl ComputerMut<FrequencyDisplayKey, Shape> for FrequencyDisplayComputer {
                     Shape::rect_filled(
                         Rect::from_min_size(
                             // Pos y value is top == 0.0
-                            // Therefore subtract y value form max y value to render correctly
+                            // Therefore subtract y value from max y value to render correctly
                             pos2(pos.x, y_max - clamped_pos.y),
                             vec2(1.0, clamped_pos.y),
                         ),
@@ -90,9 +92,9 @@ impl View for FrequencyDisplay {
         // Create hashable slice for Cache
         // TODO either improve this so it can take windows of any size
         // Or render as audio is played to avoid any caching.
-        let slice: [OrderedFloat<f32>; 1024] = ordered_audio[0..1024]
+        let slice: [OrderedFloat<f32>; FRAME_SIZE] = ordered_audio[0..FRAME_SIZE]
             .try_into()
-            .unwrap_or([OrderedFloat(0.0); 1024]);
+            .unwrap_or([OrderedFloat(0.0); FRAME_SIZE]);
 
         Frame::canvas(ui.style()).show(ui, |ui| {
             ui.ctx().request_repaint();
