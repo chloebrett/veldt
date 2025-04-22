@@ -65,13 +65,13 @@ impl SimpleWaveVisualiser {
             }
             let mut polygon_points: Vec<Pos2> = segment_wave_points.to_vec();
 
-            // Get the x-coordinates for the base of the polygon on the axis
-            let start_x = segment_wave_points[0].x;
+            // // Get the x-coordinates for the base of the polygon on the axis
+            // let start_x = segment_wave_points[0].x;
             let end_x = segment_wave_points.last().unwrap().x;
 
-            // add the points on the axis to close the polygon
+            // // add the points on the axis to close the polygon
             polygon_points.push(Pos2::new(end_x, axis_y));
-            polygon_points.push(Pos2::new(start_x, axis_y));
+            // polygon_points.push(Pos2::new(start_x, axis_y));
 
             painter.add(Shape::convex_polygon(
                 polygon_points,
@@ -86,6 +86,7 @@ impl SimpleWaveVisualiser {
             let current_is_above = p_current.y <= axis_y; // y increases downwards!!
 
             if current_segment_points.is_empty() {
+                current_segment_points.push(Pos2::new(rect.left(), axis_y)); // always add this base point
                  current_segment_points.push(p_current); // adding first point
             } else {
                 let p_last_in_segment = *current_segment_points.last().unwrap();
@@ -129,6 +130,7 @@ impl SimpleWaveVisualiser {
 
         // Paint the last segment if it exists
         if !current_segment_points.is_empty() {
+            current_segment_points.push(Pos2::new(rect.right(), axis_y)); // always add this base point (it's the end of the graph)
              paint_segment(&current_segment_points, self.fill_color, axis_y);
         }
 
