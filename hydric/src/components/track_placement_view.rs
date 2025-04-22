@@ -29,14 +29,13 @@ impl View for TrackPlacementView<'_> {
         let tracks_length = store.get().project.tracks.len();
         let sel = Selector::TrackPlacement(placement_index);
         let title = format!("Track Placement {placement_index}");
-        let ctx = &ui.ctx().clone();
 
         let window = StateWindow(
             default_window(&title)
                 .default_pos(pos2(100.0, 20.0))
                 .resizable(true),
         );
-        window.show(ui, DataState::TrackPlacementViewWindow, ctx, |ui| {
+        window.show(ui, DataState::TrackPlacementViewWindow, |ui| {
             egui::ComboBox::from_id_salt(format!("track_placement_{placement_index}"))
                 .selected_text(format!("Track {}", placement.track_id))
                 .show_ui(ui, |ui| {

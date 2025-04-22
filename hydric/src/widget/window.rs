@@ -1,4 +1,4 @@
-use egui::{Context, InnerResponse, Ui, Window};
+use egui::{InnerResponse, Ui, Window};
 
 use crate::app_state::DataState;
 
@@ -18,11 +18,11 @@ impl StateWindow<'_> {
         self,
         ui: &mut Ui,
         window_state: DataState,
-        ctx: &Context,
         add_contents: impl FnOnce(&mut Ui) -> R,
     ) -> Option<InnerResponse<Option<R>>> {
+        let StateWindow(window) = self;
         let mut open = window_state.get_value::<bool>(ui).unwrap_or(false);
-        let response = self.0.open(&mut open).show(ctx, add_contents);
+        let response = window.open(&mut open).show(ui.ctx(), add_contents);
         if !open {
             window_state.set_value(ui, false);
         }

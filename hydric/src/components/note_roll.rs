@@ -106,14 +106,13 @@ impl View for NoteRoll<'_> {
             DataState::NoteWindow.set_value(ui, true);
             DataState::ActiveNoteIndex.set_value(ui, index);
         };
-        let ctx = &ui.ctx().clone();
         let title = format!("Track {track_index}");
         let window = StateWindow(
             default_window(&title)
                 .default_pos(Pos2 { x: 600.0, y: 20.0 })
                 .resizable(true),
         );
-        window.show(ui, DataState::NoteRollWindow, ctx, |ui| {
+        window.show(ui, DataState::NoteRollWindow, |ui| {
             if ui.button("New note").clicked() {
                 store.dispatch(
                     &Selector::Track(track_index),

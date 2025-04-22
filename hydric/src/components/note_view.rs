@@ -29,9 +29,8 @@ impl View for NoteView<'_> {
         let note = &store.get().project.tracks[track_index].notes[note_index];
         let on_release = || store.dispatchr(Action::Release);
         let sel = Selector::Note(track_index, note_index);
-        let ctx = &ui.ctx().clone();
         let window = StateWindow(default_window("Notes").default_pos(pos2(600.0, 20.0)));
-        window.show(ui, DataState::NoteWindow, ctx, |ui| {
+        window.show(ui, DataState::NoteWindow, |ui| {
             egui::ComboBox::from_id_salt(format!("note_{note_index}"))
                 .selected_text(note.note.pitch_name.scale_value.to_string())
                 .show_ui(ui, |ui| {
