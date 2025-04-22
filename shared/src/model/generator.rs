@@ -131,13 +131,11 @@ pub struct OscillatorConfig {
 
     pub pan: KnobPosition,
 
-    pub coarse_detune: f32,
-
-    pub fine_detune: f32,
+    pub osc_detune: f32,
 
     pub osc_count: f32,
 
-    pub osc_detune: f32,
+    pub unison_detune: f32,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, EnumString, Display, EnumIter, IntoProto, FromProto)]
