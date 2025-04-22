@@ -4,7 +4,7 @@ use egui::{
     emath::RectTransform,
     pos2, vec2,
 };
-use mesic::dft::{self, dft};
+use mesic::dft::{self, dft, hann_window};
 use ordered_float::OrderedFloat;
 use shared::serialize::map_vec;
 
@@ -26,7 +26,7 @@ impl FrequencyDisplay {
 }
 
 fn resopnse_points(signal: Vec<f32>, bin_count: usize) -> Vec<Pos2> {
-    let response = dft(signal);
+    let response = dft(hann_window(signal));
     dft::make_log_buckets(response, bin_count)
         .iter()
         .enumerate()
@@ -98,7 +98,7 @@ impl View for FrequencyDisplay {
             ui.ctx().request_repaint();
             let (_id, rect) = ui.allocate_space(canvas_size);
             // Set a maximum response value.
-            let y_max = 0.5;
+            let y_max = 2.0;
             let to_screen = RectTransform::from_to(
                 Rect::from_min_max(pos2(0.0, 0.0), pos2(bin_count as f32, y_max)),
                 rect,

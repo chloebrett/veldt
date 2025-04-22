@@ -50,6 +50,15 @@ pub fn make_log_buckets(response: Vec<f32>, bins: usize) -> Vec<f32> {
     output
 }
 
+pub fn hann_window(signal: Vec<f32>) -> Vec<f32> {
+    let inv_length = 1.0 / signal.len() as f32;
+    signal
+        .iter()
+        .enumerate()
+        .map(|(index, value)| value * (PI * index as f32 * inv_length).sin().powi(2))
+        .collect()
+}
+
 #[cfg(test)]
 mod tests {
     use shared::model::{PitchName, ScaleValue};
