@@ -4,7 +4,7 @@ use crate::view::View;
 use crate::widget::default_window;
 use egui::{Pos2, Ui};
 use shared::model::Effect;
-use state::{Action, Store};
+use state::{Action, Selector, Store};
 
 pub struct EffectView<'a, F: Fn(Action), G: Fn()> {
     visible: &'a mut bool,
@@ -18,12 +18,14 @@ pub struct EffectView<'a, F: Fn(Action), G: Fn()> {
 impl<'a, F: Fn(Action), G: Fn()> EffectView<'a, F, G> {
     pub fn new(
         store: &'a Store,
-        mixer_index: usize,
-        effect_index: usize,
+        selector: &Selector,
         window_state: &'a mut WindowState,
         dispatch: F,
         on_release: G,
     ) -> Self {
+        let Selector::Effect(mixer_index, effect_index) = *selector else {
+            panic!()
+        };
         let effect = &store.get().project.mixer[mixer_index].effects[effect_index].effect;
         let visible = &mut window_state.effects[mixer_index][effect_index];
 

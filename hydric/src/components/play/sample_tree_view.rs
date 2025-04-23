@@ -8,15 +8,15 @@ use egui_ltreeview::{TreeView, TreeViewBuilder};
 use shared::model::{FileTreeConfig, FilenameTree};
 use state::{Action, Store, TypeField};
 
-pub struct SampleTreeWindow<'a> {
+pub struct SampleTreeView<'a> {
     store: &'a Store,
     async_state: &'a mut AsyncState,
     visible: &'a mut bool,
 }
 
-impl<'a> SampleTreeWindow<'a> {
+impl<'a> SampleTreeView<'a> {
     pub fn new(store: &'a Store, async_state: &'a mut AsyncState, visible: &'a mut bool) -> Self {
-        SampleTreeWindow {
+        SampleTreeView {
             store,
             async_state,
             visible,
@@ -55,7 +55,7 @@ fn add_node(
     }
 }
 
-impl View for SampleTreeWindow<'_> {
+impl View for SampleTreeView<'_> {
     fn ui(&mut self, ui: &mut Ui) {
         default_window("Samples")
             .resizable(true)
