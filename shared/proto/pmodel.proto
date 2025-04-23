@@ -137,8 +137,9 @@ message OscillatorConfigProto {
   WaveTypeProto wave = 1;
   float volume = 2;
   float pan = 3;
-  float coarse_detune = 4;
-  float fine_detune = 5;
+  float osc_detune = 4;
+  float osc_count = 5;
+  float unison_detune = 6;
 }
 
 message GeneratorMetaProto {
