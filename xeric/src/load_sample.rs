@@ -49,7 +49,7 @@ fn get_extension_from_filename(filename: &str) -> Option<&str> {
 
 fn dir_is_empty(dir: &FilenameTree) -> bool {
     match dir {
-        FilenameTree::Directory(_, children) => children.len() == 0,
+        FilenameTree::Directory(_, children) => children.is_empty(),
         FilenameTree::File(_) => true,
     }
 }

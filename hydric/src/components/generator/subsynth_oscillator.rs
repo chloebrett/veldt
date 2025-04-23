@@ -1,7 +1,7 @@
 use super::SimpleWaveVisualiser;
 use crate::widget::{get_set, int_slider, knob, selectable_value};
 use eframe::egui;
-use egui::{Color32, ComboBox, Ui};
+use egui::{Color32, Ui};
 use shared::model::{OscillatorConfig, WaveType};
 use state::{Action, FloatField, TypeField, UintField};
 use strum::IntoEnumIterator;

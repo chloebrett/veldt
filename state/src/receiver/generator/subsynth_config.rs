@@ -1,5 +1,5 @@
 use crate::receiver::ActionReceiver;
-use crate::{Action, FloatField, TypeField, UintField};
+use crate::Action;
 use log::info;
 use shared::model::SubSynthConfig;
 
