@@ -87,13 +87,12 @@ fn read_dir_as_tree(path: PathBuf, config: &FileTreeConfig) -> Result<FilenameTr
             }
         } else {
             let ext = get_extension_from_filename(&filename);
-            if config.search != "" {
-                if !filename
+            if !config.search.is_empty()
+                && !filename
                     .to_lowercase()
                     .contains(&config.search.to_lowercase())
-                {
-                    continue;
-                }
+            {
+                continue;
             }
             if !config.show_non_audio && (ext.is_none() || !audio_ext.contains(ext.unwrap())) {
                 continue;

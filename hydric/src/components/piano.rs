@@ -105,24 +105,20 @@ impl Piano {
             PianoOrientation::Vertical => {
                 let note_pos = note.to_pos(range) + vec2(0.0, offset);
                 let size = vec2(1.0, note_size);
-                let rect = Rect::from_min_size(note_pos, size);
-                rect
+                Rect::from_min_size(note_pos, size)
             }
             PianoOrientation::Horizontal => {
                 let note_pos = note.to_pos_horizontal(range) + vec2(offset, 0.0);
                 let size = vec2(note_size, 1.0);
-                let rect = Rect::from_min_size(note_pos, size);
-                rect
+                Rect::from_min_size(note_pos, size)
             }
         };
-        let white_key = Shape::rect_stroke(
+        Shape::rect_stroke(
             rect,
             CornerRadius::ZERO,
             Stroke::new(1.0, Color32::from_black_alpha(64)),
             StrokeKind::Inside,
-        );
-
-        white_key
+        )
     }
 
     fn make_black_key(&self, note: PlacedNote, range: Rect) -> Shape {
