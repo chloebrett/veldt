@@ -70,17 +70,45 @@ impl App {
             .enumerate()
             .flat_map(|(mi, channel)| {
                 (0..channel.effects.len())
-                    .filter(move |ei| {
-                        *self.window_state.effects[mi]
-                            .get(*ei)
-                            .unwrap_or(&false)
-                    })
+                    .filter(move |ei| *self.window_state.effects[mi].get(*ei).unwrap_or(&false))
                     .map(move |ei| Selector::Effect(mi, ei))
             })
             .collect()
     }
+}
 
-    fn windows(&mut self, ui: &mut Ui) {
+impl eframe::App for App {
+    fn update(&mut self, ctx: &egui::Context, frame: &mut eframe::Frame) {
+        // Snapshot the state at the start of each frame.
+        // This applies all of the pending actions. It avoids cloning the state.
+        self.store.snapshot();
+
+        self.frame_history
+            .on_new_frame(ctx.input(|i| i.time), frame.info().cpu_usage);
+
+        egui::CentralPanel::default().show(ctx, |ui| {
+            Menu::new(&mut self.store, &mut self.window_state).ui(ui);
+            ScrollArea::vertical()
+                .auto_shrink(false)
+                .scroll_bar_visibility(ScrollBarVisibility::VisibleWhenNeeded)
+                .show(ui, |ui| {
+                    self.ui(ui);
+
+                    // TODO: put this behind a window.
+                    ui.horizontal(|ui| {
+                        SaveLoadView::new(&self.store, &mut self.async_state).ui(ui);
+                    });
+
+                    ui.with_layout(egui::Layout::bottom_up(egui::Align::LEFT), |ui| {
+                        self.frame_history.ui(ui);
+                    });
+                });
+        });
+    }
+}
+
+impl View for App {
+    fn ui(&mut self, ui: &mut Ui) {
         if self.window_state.generator_list {
             generators_control(ui.ctx(), &mut self.window_state, &self.store);
         }
@@ -135,35 +163,5 @@ impl App {
         )
         .ui(ui);
         TrackRoll::new(&self.store, &mut self.window_state).ui(ui);
-    }
-}
-
-impl eframe::App for App {
-    fn update(&mut self, ctx: &egui::Context, frame: &mut eframe::Frame) {
-        // Snapshot the state at the start of each frame.
-        // This applies all of the pending actions. It avoids cloning the state.
-        self.store.snapshot();
-
-        self.frame_history
-            .on_new_frame(ctx.input(|i| i.time), frame.info().cpu_usage);
-
-        egui::CentralPanel::default().show(ctx, |ui| {
-            Menu::new(&mut self.store, &mut self.window_state).ui(ui);
-            ScrollArea::vertical()
-                .auto_shrink(false)
-                .scroll_bar_visibility(ScrollBarVisibility::VisibleWhenNeeded)
-                .show(ui, |ui| {
-                    self.windows(ui);
-
-                    // TODO: put this behind a window.
-                    ui.horizontal(|ui| {
-                        SaveLoadView::new(&self.store, &mut self.async_state).ui(ui);
-                    });
-
-                    ui.with_layout(egui::Layout::bottom_up(egui::Align::LEFT), |ui| {
-                        self.frame_history.ui(ui);
-                    });
-                });
-        });
     }
 }
