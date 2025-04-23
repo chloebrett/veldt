@@ -79,7 +79,7 @@ impl Default for StoreData {
                                         volume: 1.0,
                                         pan: 0.0,
                                         osc_detune: 0.0,
-                                        osc_count: 1.0,
+                                        osc_count: 1,
                                         unison_detune: 0.0,
                                     },
                                     OscillatorConfig {
@@ -87,7 +87,7 @@ impl Default for StoreData {
                                         volume: 1.0,
                                         pan: 0.0,
                                         osc_detune: 0.0,
-                                        osc_count: 1.0,
+                                        osc_count: 1,
                                         unison_detune: 0.0,
                                     },
                                     OscillatorConfig {
@@ -95,7 +95,7 @@ impl Default for StoreData {
                                         volume: 1.0,
                                         pan: 0.0,
                                         osc_detune: 0.0,
-                                        osc_count: 1.0,
+                                        osc_count: 1,
                                         unison_detune: 0.0,
                                     },
                                 ],
