@@ -147,6 +147,14 @@ impl SequencerObject<PlacedNote> for PlacedNote {
         pos2(x, y as f32)
     }
 
+    fn to_pos_horizontal(&self, range: Rect) -> Pos2 {
+        let offset: f32 = self.offset.into();
+        let y = offset - range.top();
+        let pitch_value: PitchValue = self.note.pitch_name.into();
+        let x = range.right() as i32 - pitch_value;
+        pos2(x as f32, y)
+    }
+
     fn to_rect(&self, range: Rect) -> Rect {
         let pos = self.to_pos(range);
         let note_size = vec2(self.note.beats, 1.0);
