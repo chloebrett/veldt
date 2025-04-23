@@ -4,9 +4,6 @@ use shared::model::OscillatorConfig;
 
 impl ActionReceiver for OscillatorConfig {
     fn apply(&mut self, action: &Action) -> Option<Action> {
-        if let Some(undo) = self.apply(action) {
-            return Some(undo);
-        }
         Some(match action {
             Action::SetChild(TypeField::Wave(wave)) => {
                 let prev = self.wave;
