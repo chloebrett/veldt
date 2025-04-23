@@ -1,16 +1,15 @@
 use super::{
     KeyView, NoteRoll, NoteView, SaveLoadView, TrackPlacementView, TrackRoll,
-    effect::{EffectWindow, MixerWindow},
+    effect::{EffectView, MixerView},
     generator::{generator_control, generators_control},
     menu::Menu,
-    play::{SampleTreeWindow, ToolBarView},
+    play::{SampleTreeWindow, ToolbarView},
 };
 use crate::components::FrameHistory;
 use crate::promise::spawn;
 use crate::rpc::broadcast_actions;
 use crate::rpc::load_project_list;
 use crate::view::View;
-use crate::view::WindowView;
 use crate::widget::{default_window, get_set, string_observer};
 use crate::{AsyncState, AudioState, WindowState};
 use egui::Pos2;
@@ -100,7 +99,7 @@ impl eframe::App for App {
                                 GeneratorType::SubSynth { .. } => "Subtractive Synth",
                             };
                             default_window(title)
-                                .open(&mut self.window_state.generators[0])
+                                .open(&mut self.window_state.generators[generator_index])
                                 .default_pos(Pos2 { x: 1100.0, y: 20.0 })
                                 .show(ctx, |ui| {
                                     generator_control(&self.store, ui, generator_index);
@@ -108,11 +107,10 @@ impl eframe::App for App {
                         }
                     }
                     if self.window_state.mixer.visible {
-                        MixerWindow::new(&mut self.window_state, &self.store).ui(ctx);
+                        MixerView::new(&mut self.window_state, &self.store).ui(ui);
                     }
 
-                    ToolBarView::new(
-                        &mut self.window_state,
+                    ToolbarView::new(
                         &mut self.store,
                         &mut self.async_state,
                         &mut self.audio_state,
@@ -129,7 +127,7 @@ impl eframe::App for App {
                                 let sel = Selector::Effect(mixer_index, effect_index);
                                 let dispatch = |action| self.store.dispatch(&sel, action);
                                 let on_release = || self.store.dispatchr(Action::Release);
-                                EffectWindow::new(
+                                EffectView::new(
                                     &self.store,
                                     mixer_index,
                                     effect_index,
@@ -137,7 +135,7 @@ impl eframe::App for App {
                                     dispatch,
                                     on_release,
                                 )
-                                .ui(ctx);
+                                .ui(ui);
                             }
                         }
                     }

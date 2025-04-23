@@ -1,12 +1,12 @@
 use super::{CompressorView, DelayView, EqView, ModDelayView};
 use crate::WindowState;
-use crate::view::{View, WindowView};
+use crate::view::View;
 use crate::widget::default_window;
-use egui::{Context, Pos2};
+use egui::{Pos2, Ui};
 use shared::model::Effect;
 use state::{Action, Store};
 
-pub struct EffectWindow<'a, F: Fn(Action), G: Fn()> {
+pub struct EffectView<'a, F: Fn(Action), G: Fn()> {
     visible: &'a mut bool,
     effect: &'a Effect,
     mixer_index: usize,
@@ -15,7 +15,7 @@ pub struct EffectWindow<'a, F: Fn(Action), G: Fn()> {
     on_release: G,
 }
 
-impl<'a, F: Fn(Action), G: Fn()> EffectWindow<'a, F, G> {
+impl<'a, F: Fn(Action), G: Fn()> EffectView<'a, F, G> {
     pub fn new(
         store: &'a Store,
         mixer_index: usize,
@@ -27,7 +27,7 @@ impl<'a, F: Fn(Action), G: Fn()> EffectWindow<'a, F, G> {
         let effect = &store.get().project.mixer[mixer_index].effects[effect_index].effect;
         let visible = &mut window_state.effects[mixer_index][effect_index];
 
-        EffectWindow {
+        EffectView {
             visible,
             effect,
             mixer_index,
@@ -38,9 +38,9 @@ impl<'a, F: Fn(Action), G: Fn()> EffectWindow<'a, F, G> {
     }
 }
 
-impl<F: Fn(Action), G: Fn()> WindowView for EffectWindow<'_, F, G> {
-    fn ui(&mut self, ctx: &Context) {
-        let EffectWindow {
+impl<F: Fn(Action), G: Fn()> View for EffectView<'_, F, G> {
+    fn ui(&mut self, ui: &mut Ui) {
+        let EffectView {
             visible,
             effect,
             mixer_index,
@@ -50,7 +50,7 @@ impl<F: Fn(Action), G: Fn()> WindowView for EffectWindow<'_, F, G> {
         let dispatch = &self.dispatch;
         let on_release = &self.on_release;
 
-        let title = effect_name(&effect);
+        let title = effect_name(effect);
 
         default_window(title)
             .id(format!("effects_{}_{}", mixer_index, effect_index).into())
@@ -59,7 +59,7 @@ impl<F: Fn(Action), G: Fn()> WindowView for EffectWindow<'_, F, G> {
                 y: 150.0 + 50.0 * *effect_index as f32,
             })
             .open(visible)
-            .show(ctx, |ui| {
+            .show(ui.ctx(), |ui| {
                 match effect {
                     Effect::SimpleEq { config } => EqView::new(config, dispatch, on_release).ui(ui),
                     Effect::SimpleDelay { config } => {

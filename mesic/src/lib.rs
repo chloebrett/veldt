@@ -1,10 +1,11 @@
 mod consts;
+pub mod dft;
 mod effect;
 mod envelope;
 pub mod graph;
 mod render;
 mod scale;
-mod wave;
+pub mod wave;
 
 pub use consts::SAMPLE_RATE;
 pub use render::render;
