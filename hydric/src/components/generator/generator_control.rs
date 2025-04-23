@@ -1,4 +1,4 @@
-use super::simple_wave_control;
+use super::{simple_wave_control, subsynth_control};
 use crate::widget::default_window;
 use egui::{Pos2, Ui};
 use shared::model::GeneratorType;
@@ -13,6 +13,7 @@ pub fn generator_control(store: &Store, ui: &mut Ui, generator_index: usize, vis
         GeneratorType::Noise { .. } => "Noise Generator",
         GeneratorType::SubSynth { .. } => "Subtractive Synth",
     };
+
     default_window(title)
         .open(visible)
         .default_pos(Pos2 { x: 1100.0, y: 20.0 })
@@ -26,7 +27,9 @@ pub fn generator_control(store: &Store, ui: &mut Ui, generator_index: usize, vis
                     simple_wave_control(&config, dispatch, on_release, ui)
                 }
                 GeneratorType::Noise { .. } => todo!(),
-                GeneratorType::SubSynth { .. } => todo!(),
+                GeneratorType::SubSynth { config } => {
+                    subsynth_control(&config, dispatch, on_release, ui)
+                }
             };
         });
 }
