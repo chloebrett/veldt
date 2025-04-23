@@ -1,4 +1,4 @@
-use crate::wave::{beats_to_samples, unison_wave};
+use crate::wave::{beats_to_samples, sub_synth_wave, unison_wave};
 use dasp_graph::{Buffer, Input, Node};
 use shared::model::{GeneratorInstance, GeneratorType, Track, TrackPlacement};
 use shared::types::{Beats, KnobPosition, Volume};
@@ -53,12 +53,6 @@ impl Node for GeneratorNode {
             return;
         }
 
-        let config = match &self.instance.kind {
-            GeneratorType::SimpleWave { config } => config,
-            GeneratorType::Noise { .. } => todo!(),
-            GeneratorType::SubSynth { .. } => todo!(),
-        };
-
         let mut buffer = Buffer::SILENT;
         for note in &self.track.notes {
             // TODO: use a segment tree to determine which notes are in range of the current
@@ -86,16 +80,26 @@ impl Node for GeneratorNode {
                 continue;
             }
 
-            dasp_slice::add_in_place(
-                &mut buffer,
-                &unison_wave(
+            let wave_buffer = match &self.instance.kind {
+                GeneratorType::SimpleWave { config } => unison_wave(
                     &note.note.pitch_name,
                     note.note.beats,
                     self.bpm,
                     config,
                     self.sample_index as i32 - note_start_sample as i32,
                 ),
-            );
+                GeneratorType::SubSynth { config } => sub_synth_wave(
+                    &note.note.pitch_name,
+                    note.note.beats,
+                    self.bpm,
+                    config,
+                    self.sample_index as i32 - note_start_sample as i32,
+                ),
+                GeneratorType::Noise { .. } => todo!(),
+                _ => Buffer::SILENT,
+            };
+
+            dasp_slice::add_in_place(&mut buffer, &wave_buffer);
         }
 
         for (channel_index, out_buf) in output.iter_mut().enumerate() {
