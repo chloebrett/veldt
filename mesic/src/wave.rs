@@ -96,6 +96,38 @@ fn wave(
     buffer
 }
 
+pub fn sub_synth_wave(
+    pitch_name: &PitchName,
+    beats: Beats,
+    bpm: Beats,
+    config: &SubSynthConfig,
+    start_index: i32,
+) -> Buffer {
+    let buffers: Vec<Buffer> = config
+        .oscillators
+        .iter()
+        .map(|osc| {
+            let mut buf = wave(
+                pitch_name,
+                beats,
+                bpm,
+                envelope,
+                osc.wave,
+                AntiAliasingMode::Additive, 
+                osc.osc_detune,
+                start_index,
+            );
+            for x in buf.iter_mut() {
+                *x *= osc.volume;
+            };
+            // TODO: handle pan and unison
+            buf 
+        })
+        .collect();
+
+    multi_sum(&buffers)
+}
+
 pub fn beats_to_samples(beats: Beats, bpm: Beats) -> u32 {
     let seconds = beats / bpm * SECONDS_PER_MINUTE;
     (SAMPLE_RATE as f32 * seconds) as u32
