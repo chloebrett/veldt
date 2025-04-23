@@ -133,7 +133,7 @@ pub struct OscillatorConfig {
 
     pub osc_detune: f32,
 
-    pub osc_count: f32,
+    pub osc_count: u32,
 
     pub unison_detune: f32,
 }
