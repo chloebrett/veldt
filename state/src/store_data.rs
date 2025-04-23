@@ -179,9 +179,9 @@ impl Default for StoreData {
             scale: Scale::Chromatic,
             sample_tree: None,
             sample_tree_config: FileTreeConfig {
-                search: None,
-                skip_non_audio: true,
-                skip_hidden: true,
+                search: "".to_string(),
+                show_non_audio: false,
+                show_hidden: false,
             },
             project_list: vec![],
             load_project_name: None,

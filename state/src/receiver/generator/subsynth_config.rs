@@ -1,5 +1,5 @@
-use crate::receiver::ActionReceiver;
 use crate::Action;
+use crate::receiver::ActionReceiver;
 use log::info;
 use shared::model::SubSynthConfig;
 

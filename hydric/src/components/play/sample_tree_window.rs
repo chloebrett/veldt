@@ -26,6 +26,8 @@ impl<'a> SampleTreeWindow<'a> {
 
 /// Adds a FilenameTree to a TreeViewBuilder. Returns the next unused ID.
 /// If ignore_top = true, does not push the top-level directory.
+/// This is useful for samples, as we don't care about rendering the top-level
+/// "samples" directory name.
 fn add_node(
     builder: &mut TreeViewBuilder<usize>,
     node: &FilenameTree,
@@ -61,13 +63,10 @@ impl View for SampleTreeWindow<'_> {
             .default_pos(Pos2 { x: 600.0, y: 20.0 })
             .show(ui.ctx(), |ui| {
                 let config = &self.store.get().sample_tree_config;
-                let search = config.search.clone().unwrap_or("".to_string());
+                let search = config.search.clone();
 
                 let mut search_observer = string_observer(
-                    get_set(search.clone(), |it| {
-                        // TODO: just special-case the empty string on the back end and pass a string around.
-                        let search = if it.is_empty() { None } else { Some(it) };
-
+                    get_set(search.clone(), |search| {
                         self.store
                             .dispatchr(Action::SetChild(TypeField::SampleTreeConfig(
                                 FileTreeConfig {
@@ -87,40 +86,38 @@ impl View for SampleTreeWindow<'_> {
 
                 checkbox(
                     ui,
-                    config.skip_non_audio,
-                    |skip_non_audio| {
+                    config.show_non_audio,
+                    |show_non_audio| {
                         self.store
                             .dispatchr(Action::SetChild(TypeField::SampleTreeConfig(
                                 FileTreeConfig {
-                                    skip_non_audio,
+                                    show_non_audio,
                                     ..config.clone()
                                 },
                             )));
                         reload = true;
                     },
-                    "Audio files only",
+                    "Show non-audio files",
                 );
 
                 checkbox(
                     ui,
-                    config.skip_hidden,
-                    |skip_hidden| {
+                    config.show_hidden,
+                    |show_hidden| {
                         self.store
                             .dispatchr(Action::SetChild(TypeField::SampleTreeConfig(
                                 FileTreeConfig {
-                                    skip_hidden,
+                                    show_hidden,
                                     ..config.clone()
                                 },
                             )));
                         reload = true;
                     },
-                    "Ignore hidden files",
+                    "Show hidden files",
                 );
 
-                // TODO: the config check boxes don't seem to be working properly - sometimes
-                // they do the opposite of what they are meant to.
-                // * Look into showing a loading spinner while data is loading
-                // * Investigate if there's a race condition happening
+                // TODO: show a loading spinner.
+                // TODO: investigate and resolve possible race conditions.
                 if reload {
                     let config = config.clone();
                     spawn(&mut self.async_state.load_sample_tree, async move {

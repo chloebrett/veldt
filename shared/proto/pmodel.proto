@@ -306,7 +306,7 @@ message DirectoryProto {
 }
 
 message FileTreeConfigProto {
-  optional string search = 1;
-  bool skip_non_audio = 2;
-  bool skip_hidden = 3;
+  string search = 1;
+  bool show_non_audio = 2;
+  bool show_hidden = 3;
 }

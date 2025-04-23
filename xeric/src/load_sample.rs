@@ -76,7 +76,8 @@ fn read_dir_as_tree(path: PathBuf, config: &FileTreeConfig) -> Result<FilenameTr
         let file = file?;
         let filename: String = file.file_name().to_str().unwrap().to_string();
         if file.metadata()?.is_dir() {
-            if config.skip_hidden && (filename.starts_with(".") || filename.starts_with("__MACOSX"))
+            if !config.show_hidden
+                && (filename.starts_with(".") || filename.starts_with("__MACOSX"))
             {
                 continue;
             }
@@ -86,15 +87,17 @@ fn read_dir_as_tree(path: PathBuf, config: &FileTreeConfig) -> Result<FilenameTr
             }
         } else {
             let ext = get_extension_from_filename(&filename);
-            if let Some(search) = &config.search {
-                if !filename.to_lowercase().contains(&search.to_lowercase()) {
-                    continue;
-                }
-            }
-            if config.skip_non_audio && (ext.is_none() || !audio_ext.contains(ext.unwrap())) {
+            if !config.search.is_empty()
+                && !filename
+                    .to_lowercase()
+                    .contains(&config.search.to_lowercase())
+            {
                 continue;
             }
-            if config.skip_hidden && filename.starts_with(".") {
+            if !config.show_non_audio && (ext.is_none() || !audio_ext.contains(ext.unwrap())) {
+                continue;
+            }
+            if !config.show_hidden && filename.starts_with(".") {
                 continue;
             }
             children.push(FilenameTree::File(filename));
