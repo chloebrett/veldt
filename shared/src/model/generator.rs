@@ -136,6 +136,9 @@ pub struct OscillatorConfig {
     pub osc_count: u32,
 
     pub unison_detune: f32,
+
+    #[proto_optional]
+    pub envelope: AdsrEnvelope, // TODO: support for multiple envelopes?
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, EnumString, Display, EnumIter, IntoProto, FromProto)]

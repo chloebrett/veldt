@@ -2,7 +2,9 @@ use crate::consts::{NYQUIST, REFERENCE_PITCH, SAMPLE_RATE, SECONDS_PER_MINUTE};
 use crate::envelope::apply_envelope;
 use dasp_graph::Buffer;
 use lazy_static::lazy_static;
-use shared::model::{AdsrEnvelope, AntiAliasingMode, PitchName, SimpleWaveConfig, WaveType};
+use shared::model::{
+    AdsrEnvelope, AntiAliasingMode, PitchName, SimpleWaveConfig, SubSynthConfig, WaveType,
+};
 use shared::types::Beats;
 use shared::types::{Freq, PitchValue};
 use std::cmp::min;
@@ -111,17 +113,17 @@ pub fn sub_synth_wave(
                 pitch_name,
                 beats,
                 bpm,
-                envelope,
+                &osc.envelope,
                 osc.wave,
-                AntiAliasingMode::Additive, 
+                AntiAliasingMode::Off, // placeholder
                 osc.osc_detune,
                 start_index,
             );
             for x in buf.iter_mut() {
                 *x *= osc.volume;
-            };
+            }
             // TODO: handle pan and unison
-            buf 
+            buf
         })
         .collect();
 

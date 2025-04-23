@@ -140,6 +140,7 @@ message OscillatorConfigProto {
   float osc_detune = 4;
   uint32 osc_count = 5;
   float unison_detune = 6;
+  AdsrEnvelopeProto envelope = 7;  
 }
 
 message GeneratorMetaProto {
