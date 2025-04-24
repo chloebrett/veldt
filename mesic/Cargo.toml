@@ -17,4 +17,5 @@ lazy_static = "1.5.0"
 ordered-float = "5.0.0"
 petgraph = "0.5" # Needs to match version used by dasp_graph.
 ringbuffer = "0.15.0"
+rustfft = { version = "6.3.0", features = ["wasm_simd"] }
 shared = { path = "../shared" }

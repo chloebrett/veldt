@@ -1,12 +1,10 @@
 use chrono::TimeDelta;
 use egui::{
-    Ui,
-    cache::{ComputerMut, FrameCache},
+    cache::{ComputerMut, FrameCache}, Color32, Ui
 };
 use egui_plot::{Line, Plot, PlotPoints};
 use mesic::{
-    SAMPLE_RATE,
-    dft::{dft, hann_window},
+    dft::{self, dft, hann_window}, fft::fft, SAMPLE_RATE
 };
 use ordered_float::OrderedFloat;
 use shared::serialize::map_vec;
@@ -26,13 +24,13 @@ impl<'a> FrequencyDisplay<'a> {
         FrequencyDisplay {
             audio_state,
             // Currently hard-coded to fit window length of DFT.
-            frame_rate: 10,
+            frame_rate: 30,
         }
     }
 }
 
 fn resopnse_points(signal: Vec<f32>) -> Vec<f32> {
-    dft(hann_window(signal))
+    fft(hann_window(signal))
 }
 
 #[derive(Default)]
@@ -90,7 +88,7 @@ impl View for FrequencyDisplay<'_> {
                     .filter(|(index, _)| *index < response.len() / 2)
                     .map(|(index, value)| [freq_window * index as f64, value.log10() as f64])
                     .collect();
-                let line = Line::new("Response", points);
+                let line = Line::new("Response", points).color(Color32::WHITE);
                 Plot::new("Frequency Response")
                     .view_aspect(2.0)
                     .default_y_bounds(-10.0, 5.0)
