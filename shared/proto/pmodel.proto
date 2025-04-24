@@ -309,3 +309,9 @@ message FileTreeConfigProto {
   bool skip_non_audio = 2;
   bool skip_hidden = 3;
 }
+
+message UploadSampleProto {
+  string name = 1;
+
+  byes data = 2;
+}

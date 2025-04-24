@@ -1,0 +1,17 @@
+syntax = "proto3";
+
+package upload_sample;
+
+import "pmodel.proto";
+
+service Upload {
+    rpc UploadSample (UploadSampleRequest) returns (UploadSampleReply){}
+}
+
+message UploadSampleRequest {
+    pmodel.UploadSampleProto = 1;
+}
+
+message UploadSampleReply {
+    bool success 1;
+}
