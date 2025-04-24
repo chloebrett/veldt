@@ -13,7 +13,7 @@ use ordered_float::OrderedFloat;
 use shared::serialize::map_vec;
 use std::ops::Sub;
 
-use crate::{app_state::AudioState, transform::Transform, view::View};
+use crate::{app_state::AudioState, audio_player::Handle, transform::Transform, view::View};
 
 const SLICE_LENGTH: usize = 512;
 
@@ -32,6 +32,41 @@ impl<'a> FrequencyDisplay<'a> {
             bin_count: 8,
             frame_rate: 10,
             y_max: 0.5,
+        }
+    }
+
+    /// Create frequency display shapes synced with playing audio.
+    fn render_display(
+        &self,
+        ui: &mut Ui,
+        handle: &Handle,
+        audio: Vec<OrderedFloat<f32>>,
+    ) -> Option<Shape> {
+        let current_timestamp = chrono::offset::Utc::now();
+        let time_delta: TimeDelta = current_timestamp.sub(handle.start_timestamp);
+        let time_delta_ms: i64 = time_delta.num_milliseconds();
+        let current_sample: usize = (time_delta_ms * (SAMPLE_RATE as i64) / 1000) as usize;
+        let frame_size = (SAMPLE_RATE / self.frame_rate) as usize;
+        // Round `current_sample` so that the audio will be broken up into chunks based on
+        // the visualisation frame rate.
+        let chunk_head = current_sample / frame_size * frame_size;
+        if chunk_head + SLICE_LENGTH < audio.len() {
+            // Cast as `OrderedFloat` set-length array so that the value can be cached.
+            let slice: [OrderedFloat<f32>; SLICE_LENGTH] = audio
+                [chunk_head..(chunk_head + SLICE_LENGTH)]
+                .try_into()
+                .unwrap_or([OrderedFloat(0.0); SLICE_LENGTH]);
+
+            Some(ui.memory_mut(|memory| {
+                let cache = memory.caches.cache::<FrequencyDisplayCache<'_>>();
+                cache.get(FrequencyDisplayKey {
+                    audio: slice,
+                    bin_count: self.bin_count,
+                    y_max: self.y_max.into(),
+                })
+            }))
+        } else {
+            None
         }
     }
 }
@@ -100,7 +135,7 @@ impl View for FrequencyDisplay<'_> {
         let FrequencyDisplay {
             audio_state,
             bin_count,
-            frame_rate,
+            frame_rate: _frame_rate,
             y_max,
         } = *self;
         let audio = &self.audio_state.audio;
@@ -118,30 +153,8 @@ impl View for FrequencyDisplay<'_> {
                 rect,
             );
             if let Some(handle) = &audio_state.handle {
-                let current_timestamp = chrono::offset::Utc::now();
-                let time_delta: TimeDelta = current_timestamp.sub(handle.start_timestamp);
-                let time_delta_ms: i64 = time_delta.num_milliseconds();
-                let current_sample: usize = (time_delta_ms * (SAMPLE_RATE as i64) / 1000) as usize;
-                let frame_size = (SAMPLE_RATE / frame_rate) as usize;
-                // Round `current_sample` so that the audio will be broken up into chunks based on
-                // the visualisation frame rate.
-                let chunk_head = current_sample / frame_size * frame_size;
-                if chunk_head + SLICE_LENGTH < ordered_audio.len() {
-                    // Cast as `OrderedFloat` set-length array so that the value can be cached.
-                    let slice: [OrderedFloat<f32>; SLICE_LENGTH] = ordered_audio
-                        [chunk_head..(chunk_head + SLICE_LENGTH)]
-                        .try_into()
-                        .unwrap_or([OrderedFloat(0.0); SLICE_LENGTH]);
-
-                    let shapes = ui.memory_mut(|memory| {
-                        let cache = memory.caches.cache::<FrequencyDisplayCache<'_>>();
-                        cache.get(FrequencyDisplayKey {
-                            audio: slice,
-                            bin_count,
-                            y_max: y_max.into(),
-                        })
-                    });
-                    ui.painter().add(shapes.transform(to_screen));
+                if let Some(shape) = self.render_display(ui, handle, ordered_audio) {
+                    ui.painter().add(shape.transform(to_screen));
                 }
             }
         });
