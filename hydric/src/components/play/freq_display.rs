@@ -93,6 +93,9 @@ impl View for FrequencyDisplay<'_> {
                 let line = Line::new("Response", points);
                 Plot::new("Frequency Response")
                     .view_aspect(2.0)
+                    .default_y_bounds(-10.0, 5.0)
+                    .x_axis_label("Frequency (Hz)")
+                    .y_axis_label("Response (dB)")
                     .show(ui, |plot_ui| plot_ui.line(line));
             }
         }
