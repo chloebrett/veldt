@@ -1,16 +1,55 @@
-use rustfft::{num_complex::{Complex, ComplexFloat}, FftPlanner};
+use rustfft::{
+    FftPlanner,
+    num_complex::{Complex, ComplexFloat},
+};
 use shared::serialize::map_vec;
+use std::f32::consts::PI;
 
+/// Perform Fast Fourier Transform on Signal to find component frequencies.
 pub fn fft(signal: Vec<f32>) -> Vec<f32> {
     let signal_length = signal.len();
-    let mut complex_signal: Vec<Complex<f32>> = map_vec(signal); 
-    let complex_array = &mut complex_signal[0..signal_length];
     let mut planner = FftPlanner::new();
     let fft = planner.plan_fft_forward(signal_length);
+    let mut complex_signal: Vec<Complex<f32>> = map_vec(signal);
+    let complex_array = &mut complex_signal[0..signal_length];
     fft.process((complex_array).into());
-    complex_signal.iter().map(|value| {
-        value.abs()
-    }).collect()
+    // Find magnitude of complex output and normalise by array length.
+    complex_signal
+        .iter()
+        .map(|value| value.abs() / signal_length as f32)
+        .collect()
+}
+
+/// Group FFT results into bins based on frequency log2 value.
+/// This makes responses more readable with higher resolution on lower frequencies.
+// TODO improve this implementation so that it calculates the log exponent needed to create bin
+// sizes that perfect fill up the response space.
+pub fn make_log_buckets(response: Vec<f32>, bins: usize) -> Vec<f32> {
+    // Halve response as FFT can only discern signal responses for `signal.len()/2` windows.
+    let positive_response = response[0..response.len() / 2].to_vec();
+    let mut output = vec![0f32; bins];
+    for (index, value) in positive_response.iter().enumerate() {
+        // Add 2 to index so that 0th and 1st response are grouped together.
+        // Subtract 1 from bin to start at bin index == 0.
+        let bin = ((index + 2).ilog2() - 1) as usize;
+        if bin < bins {
+            output[bin] += value
+        } else {
+            break;
+        }
+    }
+    output
+}
+
+/// A filter to improve the results of FFT when applied before transformation.
+// TODO try the Hann Window in DASP to see if it is more efficient.
+pub fn hann_window(signal: Vec<f32>) -> Vec<f32> {
+    let inv_length = 1.0 / signal.len() as f32;
+    signal
+        .iter()
+        .enumerate()
+        .map(|(index, value)| value * (PI * index as f32 * inv_length).sin().powi(2))
+        .collect()
 }
 
 #[cfg(test)]
@@ -23,11 +62,9 @@ mod tests {
         serialize::map_vec,
     };
 
-    use crate::{dft::make_log_buckets, wave::freq};
-
     use super::*;
 
-    use crate::SAMPLE_RATE;
+    use crate::{wave::freq, SAMPLE_RATE};
 
     const EPSILON: f32 = 1e-5;
 
@@ -58,7 +95,6 @@ mod tests {
             .iter()
             .enumerate()
             .all(|(index, value)| (value - expected[index]).abs() < EPSILON);
-        println!("{:?}", output.len());
         assert!(approx_diff);
     }
 
