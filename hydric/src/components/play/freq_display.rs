@@ -107,9 +107,8 @@ impl View for FrequencyDisplay<'_> {
         if audio.is_empty() {
             return;
         }
-        // Cast as orderd float so that values have PartialEq trait required for hashing.
+        // Cast as `OrderedFloat` so that values implement `Eq` required for hashing in cache.
         let ordered_audio: Vec<OrderedFloat<f32>> = map_vec(audio.to_vec());
-        // Set the maximum response value that can be displayed.
         let canvas_size = vec2(500.0, 100.0);
         Frame::canvas(ui.style()).show(ui, |ui| {
             ui.ctx().request_repaint();
@@ -128,7 +127,7 @@ impl View for FrequencyDisplay<'_> {
                 // the visualisation frame rate.
                 let chunk_head = current_sample / frame_size * frame_size;
                 if chunk_head + SLICE_LENGTH < ordered_audio.len() {
-                    // Cast as Ordered float set length array so that the value can be cached.
+                    // Cast as `OrderedFloat` set-length array so that the value can be cached.
                     let slice: [OrderedFloat<f32>; SLICE_LENGTH] = ordered_audio
                         [chunk_head..(chunk_head + SLICE_LENGTH)]
                         .try_into()
