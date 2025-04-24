@@ -11,10 +11,10 @@ use crate::rpc::broadcast_actions;
 use crate::rpc::load_project_list;
 use crate::view::View;
 use crate::{AsyncState, AudioState, WindowState};
+use crate::{EffectSelector, GeneratorSelector};
 use egui::{ScrollArea, Ui, scroll_area::ScrollBarVisibility};
 use poll_promise::Promise;
 use state::{Action, Selector, Store};
-use crate::{EffectSelector, GeneratorSelector};
 
 pub struct App {
     pub store: Store,
