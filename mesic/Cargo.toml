@@ -19,3 +19,4 @@ petgraph = "0.5" # Needs to match version used by dasp_graph.
 ringbuffer = "0.15.0"
 rustfft = { version = "6.3.0", features = ["wasm_simd"] }
 shared = { path = "../shared" }
+state = { version = "0.1.0", path = "../state" }

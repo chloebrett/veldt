@@ -1,3 +1,5 @@
+use crate::reducer;
+use crate::{Action, Selector};
 use ordered_float::OrderedFloat;
 use shared::model::{
     AdsrEnvelope, AntiAliasingMode, CompressorConfig, DelayConfig, Effect, EffectInstance,
@@ -18,6 +20,12 @@ pub struct StoreData {
     pub sample_tree_config: FileTreeConfig,
     pub project_list: Vec<String>,
     pub load_project_name: Option<String>,
+}
+
+impl StoreData {
+    pub fn update(&mut self, selector: &Selector, action: &Action) -> Option<Action> {
+        reducer(self, selector, action)
+    }
 }
 
 impl Default for StoreData {

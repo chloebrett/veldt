@@ -1,6 +1,7 @@
 use crate::{Action, ReversibleAction, Selector, StoreData, UndoStack};
 use log::info;
 use std::cell::RefCell;
+use std::sync::mpsc::Sender;
 
 enum UndoRedoType {
     Undo,
@@ -32,11 +33,14 @@ pub struct Store {
 }
 
 impl Store {
-    pub fn new(broadcast: impl Fn(Vec<ReversibleAction>) + Send + 'static) -> Self {
+    pub fn new(
+        broadcast: impl Fn(Vec<ReversibleAction>) + Send + 'static,
+        tx: Sender<(Selector, Action)>,
+    ) -> Self {
         Store {
             data: StoreData::default(),
             pending_actions: RefCell::new(vec![]),
-            undo_stack: UndoStack::new(broadcast),
+            undo_stack: UndoStack::new(broadcast, tx),
             pending_undo_redo: None,
         }
     }

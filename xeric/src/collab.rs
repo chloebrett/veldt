@@ -5,7 +5,7 @@ use shared::broadcast_actions::{
 use shared::serialize::map_vec;
 use state::{ReversibleAction, Store};
 use std::marker::Send;
-use std::sync::{Arc, Mutex};
+use std::sync::{Arc, Mutex, mpsc::channel};
 use tonic::async_trait;
 
 /// Context for collaborative editing.
@@ -22,8 +22,12 @@ pub struct CollabContext {
 
 impl CollabContext {
     pub fn new(broadcast: impl Fn(Vec<ReversibleAction>) + Send + 'static) -> Self {
+        // TODO: this is an example of why we don't need a whole Store here.
+        // Maybe just a StoreData?
+        let (tx, _rx) = channel();
+
         CollabContext {
-            store: Arc::new(Mutex::new(Store::new(broadcast))),
+            store: Arc::new(Mutex::new(Store::new(broadcast, tx))),
         }
     }
 }

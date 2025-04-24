@@ -1804,6 +1804,7 @@ dependencies = [
  "ringbuffer",
  "rustfft",
  "shared",
+ "state",
 ]
 
 [[package]]

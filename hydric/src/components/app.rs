@@ -13,11 +13,14 @@ use crate::view::View;
 use crate::{AsyncState, AudioState, WindowState};
 use crate::{EffectSelector, GeneratorSelector};
 use egui::{ScrollArea, Ui, scroll_area::ScrollBarVisibility};
+use mesic::graph::RenderGraph;
 use poll_promise::Promise;
 use state::{Action, Selector, Store};
+use std::sync::mpsc::channel;
 
 pub struct App {
     pub store: Store,
+    graph: RenderGraph,
     pub frame_history: FrameHistory,
     pub async_state: AsyncState,
     pub audio_state: AudioState,
@@ -29,8 +32,12 @@ impl Default for App {
         let broadcast = |actions| {
             let _ = Promise::spawn_local(broadcast_actions(actions));
         };
+        let mut graph = RenderGraph::default();
+        let (tx, rx) = channel();
+        graph.set_receiver(rx);
         App {
-            store: Store::new(broadcast),
+            store: Store::new(broadcast, tx),
+            graph,
             frame_history: FrameHistory::default(),
             async_state: AsyncState::default(),
             audio_state: AudioState::default(),
