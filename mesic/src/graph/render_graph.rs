@@ -8,8 +8,8 @@ use dasp_frame::Stereo;
 use dasp_graph::{BoxedNodeSend, Buffer, Node, NodeData, node::Sum};
 use petgraph::stable_graph::NodeIndex;
 use shared::model::{Effect, EffectInstance};
-use std::sync::mpsc::Receiver;
 use state::{Action, Selector, StoreData};
+use std::sync::mpsc::Receiver;
 
 /// A Graph with the required metadata to facilitate immediate processing into a Vec.
 pub struct RenderGraph {
@@ -48,8 +48,7 @@ impl Default for RenderGraph {
 }
 
 impl RenderGraph {
-    pub fn set_receiver(&mut self, initial_store: StoreData, receiver: Receiver<(Selector, Action)>) {
-        self.store = initial_store;
+    pub fn set_receiver(&mut self, receiver: Receiver<(Selector, Action)>) {
         self.receiver = Some(receiver);
     }
 
