@@ -1,3 +1,4 @@
+use std::f32::consts::PI;
 use std::f32::consts::TAU;
 
 /// Apply Discrete Fourier Transform to Singal
@@ -46,6 +47,17 @@ pub fn make_log_buckets(response: Vec<f32>, bins: usize) -> Vec<f32> {
         }
     }
     output
+}
+
+/// A filter to improve the results of DFT when applied before transformation.
+// TODO try the Hann Window in DASP to see if it is more efficient.
+pub fn hann_window(signal: Vec<f32>) -> Vec<f32> {
+    let inv_length = 1.0 / signal.len() as f32;
+    signal
+        .iter()
+        .enumerate()
+        .map(|(index, value)| value * (PI * index as f32 * inv_length).sin().powi(2))
+        .collect()
 }
 
 #[cfg(test)]

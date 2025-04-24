@@ -20,11 +20,27 @@ impl StateWindow<'_> {
         window_state: DataState,
         add_contents: impl FnOnce(&mut Ui) -> R,
     ) -> Option<InnerResponse<Option<R>>> {
+        self.show_with_closure(
+            ui,
+            window_state.get_value::<bool>(ui).unwrap_or(false),
+            move |ui| window_state.set_value(ui, false),
+            add_contents,
+        )
+    }
+
+    /// Shows a window that calls a closure when it is closed.
+    pub fn show_with_closure<R>(
+        self,
+        ui: &mut Ui,
+        show: bool,
+        on_close: impl Fn(&Ui),
+        add_contents: impl FnOnce(&mut Ui) -> R,
+    ) -> Option<InnerResponse<Option<R>>> {
         let StateWindow(window) = self;
-        let mut open = window_state.get_value::<bool>(ui).unwrap_or(false);
+        let mut open = show;
         let response = window.open(&mut open).show(ui.ctx(), add_contents);
-        if !open {
-            window_state.set_value(ui, false);
+        if open != show {
+            on_close(ui);
         }
         response
     }

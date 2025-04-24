@@ -1315,6 +1315,7 @@ dependencies = [
  "eframe",
  "egui",
  "egui_ltreeview",
+ "lazy_static",
  "log",
  "mesic",
  "ordered-float",

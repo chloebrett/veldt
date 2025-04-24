@@ -47,7 +47,7 @@ impl Default for WindowState {
             },
             effects: vec![vec![false, false, false, false]],
             generator_list: false,
-            generators: vec![false],
+            generators: vec![true, true],
             scale: false,
             sample_tree: false,
             track_roll: false,
@@ -83,14 +83,14 @@ impl DataState {
         })
     }
 
-    pub fn get_value<T: 'static + Clone + Send + Sync>(&self, ui: &mut Ui) -> Option<T> {
+    pub fn get_value<T: 'static + Clone + Send + Sync>(&self, ui: &Ui) -> Option<T> {
         ui.data_mut(|data| {
             data.get_temp_mut_or_insert_with::<Option<T>>(self.get_id(), move || None)
                 .clone()
         })
     }
 
-    pub fn set_value<T: 'static + Clone + Send + Sync>(&self, ui: &mut Ui, value: T) {
+    pub fn set_value<T: 'static + Clone + Send + Sync>(&self, ui: &Ui, value: T) {
         ui.data_mut(|data| {
             data.insert_temp(self.get_id(), Some(value));
         })

@@ -7,7 +7,7 @@ use egui::{
 };
 use mesic::{
     SAMPLE_RATE,
-    dft::{self, dft},
+    dft::{self, dft, hann_window},
 };
 use ordered_float::OrderedFloat;
 use shared::serialize::map_vec;
@@ -37,7 +37,7 @@ impl<'a> FrequencyDisplay<'a> {
 }
 
 fn response_points(signal: Vec<f32>, bin_count: usize) -> Vec<Pos2> {
-    let response = dft(signal);
+    let response = dft(hann_window(signal));
     dft::make_log_buckets(response, bin_count)
         .into_iter()
         .enumerate()
@@ -103,7 +103,7 @@ impl View for FrequencyDisplay<'_> {
             frame_rate,
             y_max,
         } = *self;
-        let mut audio = &self.audio_state.audio.to_vec();
+        let audio = &self.audio_state.audio;
         if audio.is_empty() {
             return;
         }
@@ -114,7 +114,6 @@ impl View for FrequencyDisplay<'_> {
         Frame::canvas(ui.style()).show(ui, |ui| {
             ui.ctx().request_repaint();
             let (_id, rect) = ui.allocate_space(canvas_size);
-            // Set a maximum response value.
             let to_screen = RectTransform::from_to(
                 Rect::from_min_max(pos2(0.0, 0.0), pos2(bin_count as f32, y_max)),
                 rect,
