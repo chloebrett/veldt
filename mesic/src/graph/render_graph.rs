@@ -1,3 +1,4 @@
+use super::ProcessContext;
 use super::{
     BufferNode, CompressorNode, DelayNode, EqNode, GeneratorNode, Graph, MixerNode, ModDelayNode,
     Processor, make_graph, make_processor,
@@ -8,9 +9,8 @@ use dasp_frame::Stereo;
 use dasp_graph::{BoxedNodeSend, Buffer, Node, NodeData, node::Sum};
 use petgraph::stable_graph::NodeIndex;
 use shared::model::{Effect, EffectInstance};
-use state::{Action, Selector, StoreData};
+use state::{Action, Selector};
 use std::sync::mpsc::Receiver;
-use std::sync::{Arc, Mutex};
 
 /// A Graph with the required metadata to facilitate immediate processing into a Vec.
 pub struct RenderGraph {
@@ -22,7 +22,7 @@ pub struct RenderGraph {
 
     // Contains a copy of the project.
     // Updated based on actions from the main store at each buffer cycle.
-    store: Arc<Mutex<StoreData>>,
+    process_context: ProcessContext,
     // Receives actions from the main store and applies to mesic store.
     rx: Option<Receiver<(Selector, Action)>>,
 
@@ -41,7 +41,7 @@ impl Default for RenderGraph {
             output_node_index,
             generator_indexes: vec![],
             processor: make_processor(),
-            store: Arc::new(Mutex::new(StoreData::default())),
+            process_context: ProcessContext::default(),
             rx: None,
             processed_samples_count: 0,
         }
@@ -54,7 +54,7 @@ impl RenderGraph {
     }
 
     // Add node with edge directed to graph output.
-    pub fn add_node(&mut self, node: impl Node + 'static + Send) {
+    pub fn add_node(&mut self, node: impl Node<ProcessContext> + 'static + Send) {
         let node_index = self
             .graph
             .add_node(NodeData::new2(BoxedNodeSend::new(node)));
@@ -62,7 +62,7 @@ impl RenderGraph {
     }
 
     // Add node and set as graph output.
-    pub fn add_output_node(&mut self, node: impl Node + 'static + Send) {
+    pub fn add_output_node(&mut self, node: impl Node<ProcessContext> + 'static + Send) {
         let node_index = self
             .graph
             .add_node(NodeData::new2(BoxedNodeSend::new(node)));
@@ -174,17 +174,21 @@ impl Iterator for RenderGraph {
 
     fn next(&mut self) -> Option<Self::Item> {
         // Update the store if there are actions to process.
-        // TODO: pass an unlocked StoreData down to nodes for processing,
-        // so that they don't have to individually unlock the mutex.
+        let store = &mut self.process_context.store;
         if let Some(rx) = &self.rx {
             while let Ok((selector, action)) = rx.recv() {
-                self.store.lock().unwrap().update(&selector, &action);
+                // TODO: also update graph topology by listening for the appropriate actions.
+                // E.g. add/remove effect or generator.
+                store.update(&selector, &action);
             }
         }
 
         if self.processed_samples_count % Buffer::LEN == 0 {
-            self.processor
-                .process(&mut self.graph, self.output_node_index);
+            self.processor.process(
+                &mut self.graph,
+                &self.process_context,
+                self.output_node_index,
+            );
         }
 
         if self.processed_samples_count >= self.sample_count {
