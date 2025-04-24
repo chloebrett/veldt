@@ -310,3 +310,8 @@ message FileTreeConfigProto {
   bool show_non_audio = 2;
   bool show_hidden = 3;
 }
+
+message LowFrequencyOscillatorProto {
+  WaveTypeProto wave = 1;
+  float frequency = 2;
+}

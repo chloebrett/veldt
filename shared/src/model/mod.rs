@@ -11,6 +11,7 @@ mod scale;
 mod scale_value;
 mod track;
 mod wave_type;
+mod low_frequency_oscillator;
 
 pub use adsr_envelope::*;
 pub use effect::*;
@@ -25,3 +26,4 @@ pub use scale::*;
 pub use scale_value::*;
 pub use track::*;
 pub use wave_type::*;
+pub use low_frequency_oscillator::*;
