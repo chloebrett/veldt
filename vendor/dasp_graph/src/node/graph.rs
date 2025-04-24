@@ -18,13 +18,13 @@ where
     pub node_type: PhantomData<T>,
 }
 
-impl<G, T> Node for GraphNode<G, T>
+impl<G, T, P> Node<P> for GraphNode<G, T>
 where
     G: Data<NodeWeight = NodeData<T>> + DataMapMut + Visitable,
     for<'a> &'a G: GraphBase<NodeId = G::NodeId> + IntoNeighborsDirected,
-    T: Node,
+    T: Node<P>,
 {
-    fn process(&mut self, inputs: &[Input], output: &mut [Buffer]) {
+    fn process(&mut self, inputs: &[Input], output: &mut [Buffer], payload: &P) {
         let GraphNode {
             ref mut processor,
             ref mut graph,
@@ -45,7 +45,7 @@ where
         }
 
         // Process the graph.
-        processor.process(graph, output_node);
+        processor.process(graph, payload, output_node);
 
         // Write the output node buffers to the output buffers.
         let out_node_bufs = &mut graph
