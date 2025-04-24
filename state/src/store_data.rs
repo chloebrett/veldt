@@ -1,6 +1,10 @@
 use ordered_float::OrderedFloat;
 use shared::model::{
-    AdsrEnvelope, AntiAliasingMode, CompressorConfig, DelayConfig, Effect, EffectInstance, EffectMeta, EqConfig, EqType, FileTreeConfig, FilenameTree, GeneratorInstance, GeneratorMeta, GeneratorType, LowFrequencyOscillatorConfig, MixerChannel, ModDelayConfig, ModMatrix, Note, OscillatorConfig, PitchName, PlacedNote, Project, Scale, ScaleValue, SimpleWaveConfig, SubSynthConfig, Track, TrackPlacement, WaveType
+    AdsrEnvelope, AntiAliasingMode, CompressorConfig, DelayConfig, Effect, EffectInstance,
+    EffectMeta, EqConfig, EqType, FileTreeConfig, FilenameTree, GeneratorInstance, GeneratorMeta,
+    GeneratorType, LowFrequencyOscillatorConfig, MixerChannel, ModDelayConfig, ModMatrix, Note,
+    OscillatorConfig, PitchName, PlacedNote, Project, Scale, ScaleValue, SimpleWaveConfig,
+    SubSynthConfig, Track, TrackPlacement, WaveType,
 };
 use shared::types::Volume;
 
@@ -98,17 +102,17 @@ impl Default for StoreData {
                                 lfos: [
                                     LowFrequencyOscillatorConfig {
                                         wave: WaveType::Sine,
-                                        frequency: 1.0, 
+                                        frequency: 1.0,
                                     },
                                     LowFrequencyOscillatorConfig {
                                         wave: WaveType::Sine,
-                                        frequency: 1.0, 
+                                        frequency: 1.0,
                                     },
                                     LowFrequencyOscillatorConfig {
                                         wave: WaveType::Sine,
-                                        frequency: 1.0, 
-                                    }
-                                ]
+                                        frequency: 1.0,
+                                    },
+                                ],
                             },
                         },
                         meta: GeneratorMeta {

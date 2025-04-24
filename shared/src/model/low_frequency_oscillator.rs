@@ -1,6 +1,6 @@
-use local_macro::{FromProto, IntoProto};
 use crate::model::WaveType;
 use crate::pmodel::LowFrequencyOscillatorConfigProto;
+use local_macro::{FromProto, IntoProto};
 
 #[derive(Clone, Debug, PartialEq, FromProto, IntoProto)]
 pub struct LowFrequencyOscillatorConfig {

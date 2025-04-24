@@ -1,8 +1,8 @@
-use crate::model::{AdsrEnvelope, WaveType, LowFrequencyOscillatorConfig};
+use crate::model::{AdsrEnvelope, LowFrequencyOscillatorConfig, WaveType};
 use crate::pmodel::{
     AntiAliasingModeProto, GeneratorInstanceProto, GeneratorMetaProto, NoiseConfigProto,
     NoiseProto, NoiseTypeProto, OscillatorConfigProto, SimpleWaveConfigProto, SimpleWaveProto,
-    SubSynthConfigProto, SubSynthProto, generator_instance_proto::Kind as GeneratorTypeProto
+    SubSynthConfigProto, SubSynthProto, generator_instance_proto::Kind as GeneratorTypeProto,
 };
 use crate::serialize::map_vec;
 use crate::types::{KnobPosition, Volume};
@@ -98,7 +98,7 @@ pub enum NoiseType {
 #[derive(Clone, Debug, PartialEq)]
 pub struct SubSynthConfig {
     pub oscillators: [OscillatorConfig; 3],
-    pub lfos: [LowFrequencyOscillatorConfig; 3]
+    pub lfos: [LowFrequencyOscillatorConfig; 3],
 }
 
 impl From<SubSynthConfigProto> for SubSynthConfig {
@@ -110,13 +110,13 @@ impl From<SubSynthConfigProto> for SubSynthConfig {
             "SubSynthConfig must have exactly 3 oscillators"
         );
         let lfo_vec = proto.lfos;
-        assert_eq!(
-            lfo_vec.len(),
-            3,
-            "SubSynthConfig must have exactly 3 lfos"
-        );
+        assert_eq!(lfo_vec.len(), 3, "SubSynthConfig must have exactly 3 lfos");
         SubSynthConfig {
-            oscillators: [oscillator_vec[0].into(), oscillator_vec[1].into(), oscillator_vec[2].into()],
+            oscillators: [
+                oscillator_vec[0].into(),
+                oscillator_vec[1].into(),
+                oscillator_vec[2].into(),
+            ],
             lfos: [lfo_vec[0].into(), lfo_vec[1].into(), lfo_vec[2].into()],
         }
     }
@@ -126,7 +126,7 @@ impl From<SubSynthConfig> for SubSynthConfigProto {
     fn from(config: SubSynthConfig) -> Self {
         SubSynthConfigProto {
             oscillators: map_vec(config.oscillators.to_vec()),
-            lfos: map_vec(config.lfos.to_vec())
+            lfos: map_vec(config.lfos.to_vec()),
         }
     }
 }
