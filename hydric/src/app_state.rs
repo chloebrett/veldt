@@ -29,14 +29,15 @@ pub struct MixerWindowState {
     pub channel: usize,
 }
 
+pub type EffectSelector = (usize, usize);
+pub type GeneratorSelector = usize;
+
 /// Which windows are currently shown.
 pub struct WindowState {
     pub mixer: MixerWindowState,
-    // TODO: consider Selector types that correspond specifically to particular selectors.
-    // E.g. EffectSelector, not just Selector::Effect.
-    pub effects: WindowStateField<(usize, usize)>, // IDs/indexes of shown (mixer, effect) pairs.
+    pub effects: WindowStateField<EffectSelector>,
     pub generator_list: bool,
-    pub generators: WindowStateField<usize>, // IDs/indexes of shown generators.
+    pub generators: WindowStateField<GeneratorSelector>,
     pub scale: bool,
     pub sample_tree: bool,
     pub track_roll: bool,

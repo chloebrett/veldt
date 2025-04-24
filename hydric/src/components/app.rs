@@ -14,6 +14,7 @@ use crate::{AsyncState, AudioState, WindowState};
 use egui::{ScrollArea, Ui, scroll_area::ScrollBarVisibility};
 use poll_promise::Promise;
 use state::{Action, Selector, Store};
+use crate::{EffectSelector, GeneratorSelector};
 
 pub struct App {
     pub store: Store,
@@ -53,11 +54,11 @@ impl App {
         app
     }
 
-    fn visible_generators(&self) -> Vec<usize> {
+    fn visible_generators(&self) -> Vec<GeneratorSelector> {
         self.window_state.generators.clone().as_vec()
     }
 
-    fn visible_effects(&self) -> Vec<(usize, usize)> {
+    fn visible_effects(&self) -> Vec<EffectSelector> {
         self.window_state.effects.clone().as_vec()
     }
 }
