@@ -8,6 +8,8 @@ use dasp_frame::Stereo;
 use dasp_graph::{BoxedNodeSend, Buffer, Node, NodeData, node::Sum};
 use petgraph::stable_graph::NodeIndex;
 use shared::model::{Effect, EffectInstance};
+use std::sync::mpsc::Receiver;
+use state::{Action, Selector, StoreData};
 
 /// A Graph with the required metadata to facilitate immediate processing into a Vec.
 pub struct RenderGraph {
@@ -16,6 +18,12 @@ pub struct RenderGraph {
     output_node_index: NodeIndex,
     processor: Processor,
     generator_indexes: Vec<NodeIndex>,
+
+    // Contains a copy of the project.
+    // Updated based on actions from the main store at each buffer cycle.
+    store: StoreData,
+    // Receives actions from the main store and applies to mesic store.
+    receiver: Option<Receiver<(Selector, Action)>>,
 
     // For iteration.
     processed_samples_count: usize,
@@ -32,12 +40,19 @@ impl Default for RenderGraph {
             output_node_index,
             generator_indexes: vec![],
             processor: make_processor(),
+            store: StoreData::default(),
+            receiver: None,
             processed_samples_count: 0,
         }
     }
 }
 
 impl RenderGraph {
+    pub fn set_receiver(&mut self, initial_store: StoreData, receiver: Receiver<(Selector, Action)>) {
+        self.store = initial_store;
+        self.receiver = Some(receiver);
+    }
+
     // Add node with edge directed to graph output.
     pub fn add_node(&mut self, node: impl Node + 'static + Send) {
         let node_index = self

@@ -1803,6 +1803,7 @@ dependencies = [
  "petgraph 0.5.1",
  "ringbuffer",
  "shared",
+ "state",
 ]
 
 [[package]]

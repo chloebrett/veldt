@@ -57,7 +57,7 @@ impl UndoStack {
         }
 
         // Run the action, and remember how to reverse it.
-        let reverse = expect_action(reducer(store, selector, action));
+        let reverse = expect_action(store.update(selector, action));
 
         // Discard any available redos in the stack.
         if self.index < self.actions.len() {
@@ -159,7 +159,7 @@ impl UndoStack {
             .actions
             .get(self.index - 1)
             .expect("UndoStack index was invalid!");
-        expect_action(reducer(store, &action.selector, &action.reverse));
+        expect_action(store.update(&action.selector, &action.reverse));
         self.index -= 1;
     }
 
@@ -182,7 +182,7 @@ impl UndoStack {
             .actions
             .get(self.index)
             .expect("UndoStack index was invalid!");
-        expect_action(reducer(store, &action.selector, &action.forward));
+        expect_action(store.update(&action.selector, &action.forward));
         self.index += 1;
     }
 }
