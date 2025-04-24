@@ -11,6 +11,10 @@ pub enum Selector {
     Effect(/* mixer_index */ usize, /* effect_index */ usize),
     Generator(/* generator_index */ usize),
     TrackPlacement(/* track_placement_index */ usize),
+    Oscillator(
+        /* generator_index */ usize,
+        /* oscillator_index */ usize,
+    ),
 }
 
 impl From<Selector> for SelectorProto {
@@ -24,6 +28,9 @@ impl From<Selector> for SelectorProto {
                 Selector::Effect(first, second) => SelectorKind::Effect(pair(first, second)),
                 Selector::Generator(it) => SelectorKind::Generator(it as u32),
                 Selector::TrackPlacement(it) => SelectorKind::TrackPlacement(it as u32),
+                Selector::Oscillator(first, second) => {
+                    SelectorKind::Oscillator(pair(first, second))
+                }
             }),
         }
     }
@@ -43,6 +50,9 @@ impl From<SelectorProto> for Selector {
             }
             SelectorKind::Generator(it) => Selector::Generator(it as usize),
             SelectorKind::TrackPlacement(it) => Selector::TrackPlacement(it as usize),
+            SelectorKind::Oscillator(IndexPair { first, second }) => {
+                Selector::Oscillator(first as usize, second as usize)
+            }
         }
     }
 }

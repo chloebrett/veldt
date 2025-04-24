@@ -1,29 +1,29 @@
 use super::effect_name;
 use crate::WindowState;
-use crate::view::WindowView;
+use crate::view::View;
 use crate::widget::{checkbox, default_window, knob};
-use egui::{Context, Pos2};
+use egui::{Pos2, Ui};
 use shared::model::{Effect, EffectInstance, EffectMeta};
 use state::{Action, FloatField, IndexField, Selector, Store, TypeField};
 use strum::IntoEnumIterator;
 
-pub struct MixerWindow<'a> {
+pub struct MixerView<'a> {
     window_state: &'a mut WindowState,
     store: &'a Store,
 }
 
-impl<'a> MixerWindow<'a> {
+impl<'a> MixerView<'a> {
     pub fn new(window_state: &'a mut WindowState, store: &'a Store) -> Self {
-        MixerWindow {
+        MixerView {
             window_state,
             store,
         }
     }
 }
 
-impl WindowView for MixerWindow<'_> {
-    fn ui(&mut self, ctx: &Context) {
-        let MixerWindow {
+impl View for MixerView<'_> {
+    fn ui(&mut self, ui: &mut Ui) {
+        let MixerView {
             window_state,
             store,
             ..
@@ -40,7 +40,7 @@ impl WindowView for MixerWindow<'_> {
                 y: 150.0,
             })
             .open(&mut window_state.mixer.visible)
-            .show(ctx, |ui| {
+            .show(ui.ctx(), |ui| {
                 for effect_index in 0..mixer.effects.len() {
                     let dispatch_effect = |action| {
                         store.dispatch(&Selector::Effect(mixer_index, effect_index), action)

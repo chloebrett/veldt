@@ -137,8 +137,9 @@ message OscillatorConfigProto {
   WaveTypeProto wave = 1;
   float volume = 2;
   float pan = 3;
-  float coarse_detune = 4;
-  float fine_detune = 5;
+  float osc_detune = 4;
+  uint32 osc_count = 5;
+  float unison_detune = 6;
 }
 
 message GeneratorMetaProto {
@@ -305,9 +306,9 @@ message DirectoryProto {
 }
 
 message FileTreeConfigProto {
-  optional string search = 1;
-  bool skip_non_audio = 2;
-  bool skip_hidden = 3;
+  string search = 1;
+  bool show_non_audio = 2;
+  bool show_hidden = 3;
 }
 
 message UploadSampleProto {

@@ -15,10 +15,9 @@ pub enum FileTree</* FileData= */ T, /* DirectoryData= */ U> {
 
 #[derive(Debug, PartialEq, Clone, FromProto, IntoProto)]
 pub struct FileTreeConfig {
-    // TODO: consider just making this a regular String and special-casing the empty string.
-    pub search: Option<String>,
-    pub skip_non_audio: bool,
-    pub skip_hidden: bool,
+    pub search: String,
+    pub show_non_audio: bool,
+    pub show_hidden: bool,
 }
 
 impl From<FilenameTreeProto> for FilenameTree {

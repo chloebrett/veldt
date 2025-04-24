@@ -2,7 +2,7 @@ use crate::AsyncState;
 use crate::promise::{poll, spawn};
 use crate::rpc::{load_project, load_project_list, save_project};
 use crate::view::View;
-use crate::widget::{get_set, selectable_value};
+use crate::widget::{get_set, selectable_value, string_observer};
 use egui::Ui;
 use state::{Action, Store, TypeField};
 
@@ -19,6 +19,16 @@ impl<'a> SaveLoadView<'a> {
 
 impl View for SaveLoadView<'_> {
     fn ui(&mut self, ui: &mut Ui) {
+        let project_name = self.store.get().project.name.clone();
+        let mut name_observer = string_observer(
+            get_set(project_name.clone(), |it| {
+                self.store
+                    .dispatchr(Action::SetChild(TypeField::ProjectName(it)))
+            }),
+            project_name.clone(),
+        );
+        ui.text_edit_singleline(&mut name_observer);
+
         if ui.button("Save").clicked() {
             let project = self.store.get().project.clone();
             spawn(&mut self.async_state.save_project, async move {

@@ -5,7 +5,7 @@ use std::ops::RangeInclusive;
 
 /// Forked from egui_knob: https://github.com/obsqrbtz/egui_knob
 /// egui_knob Copyright (c) 2025 Daniel Dada.
-
+/// Code is modified significantly.
 pub fn knob<F>(
     ui: &mut Ui,
     label: &str,
