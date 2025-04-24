@@ -47,7 +47,7 @@ impl Default for WindowState {
             },
             effects: vec![vec![false, false, false, false]],
             generator_list: false,
-            generators: vec![true, true],
+            generators: vec![false, false],
             scale: false,
             sample_tree: false,
             track_roll: false,
