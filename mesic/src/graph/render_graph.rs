@@ -10,6 +10,8 @@ use petgraph::stable_graph::NodeIndex;
 use shared::model::{Effect, EffectInstance};
 use state::{Action, Selector, StoreData};
 use std::sync::mpsc::Receiver;
+use std::sync::{Arc, Mutex};
+use std::borrow::BorrowMut;
 
 /// A Graph with the required metadata to facilitate immediate processing into a Vec.
 pub struct RenderGraph {
@@ -21,9 +23,9 @@ pub struct RenderGraph {
 
     // Contains a copy of the project.
     // Updated based on actions from the main store at each buffer cycle.
-    store: StoreData,
+    store: Arc<Mutex<StoreData>>,
     // Receives actions from the main store and applies to mesic store.
-    receiver: Option<Receiver<(Selector, Action)>>,
+    rx: Option<Receiver<(Selector, Action)>>,
 
     // For iteration.
     processed_samples_count: usize,
@@ -40,8 +42,8 @@ impl Default for RenderGraph {
             output_node_index,
             generator_indexes: vec![],
             processor: make_processor(),
-            store: StoreData::default(),
-            receiver: None,
+            store: Arc::new(Mutex::new(StoreData::default())),
+            rx: None,
             processed_samples_count: 0,
         }
     }
@@ -49,7 +51,7 @@ impl Default for RenderGraph {
 
 impl RenderGraph {
     pub fn set_receiver(&mut self, receiver: Receiver<(Selector, Action)>) {
-        self.receiver = Some(receiver);
+        self.rx = Some(receiver);
     }
 
     // Add node with edge directed to graph output.
@@ -172,6 +174,15 @@ impl Iterator for RenderGraph {
     type Item = Stereo<f32>;
 
     fn next(&mut self) -> Option<Self::Item> {
+        // Update the store if there are actions to process.
+        // TODO: pass an unlocked StoreData down to nodes for processing,
+        // so that they don't have to individually unlock the mutex.
+        if let Some(rx) = &self.rx {
+            while let Ok((selector, action)) = rx.recv() {
+                self.store.lock().unwrap().update(&selector, &action);
+            }
+        }
+
         if self.processed_samples_count % Buffer::LEN == 0 {
             self.processor
                 .process(&mut self.graph, self.output_node_index);
