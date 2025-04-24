@@ -159,7 +159,6 @@ impl eframe::App for App {
                     NoteView::new(&self.store).ui(ui);
                     NoteRoll::new(&self.store).ui(ui);
                     TrackPlacementView::new(&self.store).ui(ui);
-
                     SampleTreeWindow::new(
                         &self.store,
                         &mut self.async_state,
