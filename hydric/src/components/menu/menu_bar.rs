@@ -1,4 +1,9 @@
-use crate::{app_state::{AsyncState, WindowState}, promise::spawn, rpc::save_project, view::View};
+use crate::{
+    app_state::{AsyncState, WindowState},
+    promise::spawn,
+    rpc::save_project,
+    view::View,
+};
 use egui::{Button, Ui, menu::bar};
 use state::{Action, Store};
 
@@ -11,18 +16,26 @@ pub struct MenuBar<'a> {
 }
 
 impl<'a> MenuBar<'a> {
-    pub fn new(store: &'a mut Store, window_state: &'a mut WindowState, async_state: &'a mut AsyncState) -> Self {
+    pub fn new(
+        store: &'a mut Store,
+        window_state: &'a mut WindowState,
+        async_state: &'a mut AsyncState,
+    ) -> Self {
         MenuBar {
             store,
             window_state,
-            async_state
+            async_state,
         }
     }
 }
 
 impl View for MenuBar<'_> {
     fn ui(&mut self, ui: &mut Ui) {
-        let MenuBar { store, window_state, async_state } = self;
+        let MenuBar {
+            store,
+            window_state,
+            async_state,
+        } = self;
         let dispatch = |action: Action| store.dispatchr(action);
         let save_click = || {
             let project = store.get().project.clone();
@@ -35,7 +48,6 @@ impl View for MenuBar<'_> {
         bar(ui, |ui| {
             ui.label("Veldt");
             ui.menu_button("File", |ui| {
-                #[expect(clippy::needless_if)] // remove once no longer needed
                 if ui.button("Save").clicked() {
                     let project = store.get().project.clone();
                     spawn(&mut async_state.save_project, async move {
