@@ -1,15 +1,17 @@
 syntax = "proto3";
 
-package upload_sample;
+package upload;
 
-import "pmodel.proto";
+
 
 service Upload {
     rpc UploadSample (UploadSampleRequest) returns (UploadSampleReply){}
 }
 
 message UploadSampleRequest {
-    pmodel.UploadSampleProto = 1;
+    string name = 1;
+
+    bytes uploaded_sample = 2;
 }
 
 message UploadSampleReply {

@@ -310,9 +310,3 @@ message FileTreeConfigProto {
   bool show_non_audio = 2;
   bool show_hidden = 3;
 }
-
-message UploadSampleProto {
-  string name = 1;
-
-  bytes data = 2;
-}
