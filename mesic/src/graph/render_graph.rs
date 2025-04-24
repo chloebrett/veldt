@@ -11,7 +11,6 @@ use shared::model::{Effect, EffectInstance};
 use state::{Action, Selector, StoreData};
 use std::sync::mpsc::Receiver;
 use std::sync::{Arc, Mutex};
-use std::borrow::BorrowMut;
 
 /// A Graph with the required metadata to facilitate immediate processing into a Vec.
 pub struct RenderGraph {
