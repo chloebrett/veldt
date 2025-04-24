@@ -2,11 +2,9 @@ mod audio_vis;
 mod freq_display;
 mod play_control;
 mod sample_control;
-mod sample_tree_window;
+mod sample_tree_view;
 mod toolbar_view;
 
 use freq_display::*;
-pub use play_control::*;
-pub use sample_control::*;
-pub use sample_tree_window::*;
+pub use sample_tree_view::*;
 pub use toolbar_view::*;

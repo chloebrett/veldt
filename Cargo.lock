@@ -1327,6 +1327,7 @@ dependencies = [
  "egui",
  "egui_ltreeview",
  "egui_plot",
+ "lazy_static",
  "log",
  "mesic",
  "ordered-float",

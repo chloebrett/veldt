@@ -23,7 +23,9 @@ impl View for Menu<'_> {
         bar(ui, |ui| {
             ui.label("Veldt");
             ui.menu_button("File", |ui| {
+                #[expect(clippy::needless_if)] // remove once no longer needed
                 if ui.button("Save").clicked() {}
+                #[expect(clippy::needless_if)] // remove once no longer needed
                 if ui.button("Load").clicked() {}
                 if ui.button("Export").clicked() {}
             });
