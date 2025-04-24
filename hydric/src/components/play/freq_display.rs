@@ -6,8 +6,7 @@ use egui::{
     pos2, vec2,
 };
 use mesic::{
-    SAMPLE_RATE,
-    dft::{self, dft, hann_window},
+    dft::{self, dft, hann_window}, fft::fft, SAMPLE_RATE
 };
 use ordered_float::OrderedFloat;
 use shared::serialize::map_vec;
@@ -37,7 +36,7 @@ impl<'a> FrequencyDisplay<'a> {
 }
 
 fn response_points(signal: Vec<f32>, bin_count: usize) -> Vec<Pos2> {
-    let response = dft(hann_window(signal));
+    let response = fft(hann_window(signal));
     dft::make_log_buckets(response, bin_count)
         .into_iter()
         .enumerate()
