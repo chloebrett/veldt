@@ -6,16 +6,14 @@ use egui::{
     pos2, vec2,
 };
 use mesic::{
-    SAMPLE_RATE,
-    dft::{self, dft, hann_window},
+    FFT_SAMPLE_SIZE, SAMPLE_RATE,
+    fft::{self, fft, hann_window},
 };
 use ordered_float::OrderedFloat;
 use shared::serialize::map_vec;
 use std::ops::Sub;
 
 use crate::{app_state::AudioState, audio_player::Handle, transform::Transform, view::View};
-
-const SLICE_LENGTH: usize = 512;
 
 pub struct FrequencyDisplay<'a> {
     audio_state: &'a AudioState,
@@ -28,9 +26,9 @@ impl<'a> FrequencyDisplay<'a> {
     pub fn new(audio_state: &'a AudioState) -> Self {
         FrequencyDisplay {
             audio_state,
-            // Currently hard-coded to fit window length of DFT.
+            // Currently hard-coded to fit window length of FFT.
             bin_count: 8,
-            frame_rate: 10,
+            frame_rate: 60,
             y_max: 0.5,
         }
     }
@@ -50,12 +48,12 @@ impl<'a> FrequencyDisplay<'a> {
         // Round `current_sample` so that the audio will be broken up into chunks based on
         // the visualisation frame rate.
         let chunk_head = current_sample / frame_size * frame_size;
-        if chunk_head + SLICE_LENGTH < audio.len() {
+        if chunk_head + FFT_SAMPLE_SIZE < audio.len() {
             // Cast as `OrderedFloat` set-length array so that the value can be cached.
-            let slice: [OrderedFloat<f32>; SLICE_LENGTH] = audio
-                [chunk_head..(chunk_head + SLICE_LENGTH)]
+            let slice: [OrderedFloat<f32>; FFT_SAMPLE_SIZE] = audio
+                [chunk_head..(chunk_head + FFT_SAMPLE_SIZE)]
                 .try_into()
-                .unwrap_or([OrderedFloat(0.0); SLICE_LENGTH]);
+                .unwrap_or([OrderedFloat(0.0); FFT_SAMPLE_SIZE]);
 
             Some(ui.memory_mut(|memory| {
                 let cache = memory.caches.cache::<FrequencyDisplayCache<'_>>();
@@ -72,8 +70,8 @@ impl<'a> FrequencyDisplay<'a> {
 }
 
 fn response_points(signal: Vec<f32>, bin_count: usize) -> Vec<Pos2> {
-    let response = dft(hann_window(signal));
-    dft::make_log_buckets(response, bin_count)
+    let response = fft(hann_window(signal));
+    fft::make_log_buckets(response, bin_count)
         .into_iter()
         .enumerate()
         .map(|(index, bucket)| pos2(index as f32, bucket))
@@ -113,7 +111,7 @@ struct FrequencyDisplayComputer;
 
 #[derive(Hash, Copy, Clone, Debug)]
 struct FrequencyDisplayKey {
-    audio: [OrderedFloat<f32>; SLICE_LENGTH],
+    audio: [OrderedFloat<f32>; FFT_SAMPLE_SIZE],
     bin_count: usize,
     y_max: OrderedFloat<f32>,
 }
