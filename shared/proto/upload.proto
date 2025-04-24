@@ -13,5 +13,4 @@ message UploadSampleRequest {
 }
 
 message UploadSampleReply {
-    bool success 1;
 }
