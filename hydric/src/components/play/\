@@ -19,9 +19,8 @@ const SLICE_LENGTH: usize = 512;
 
 pub struct FrequencyDisplay<'a> {
     audio_state: &'a AudioState,
-    bin_count: usize, // The number of bins the response will be grouped into.
-    frame_rate: i32,  // The number of times per second the visualisation will be rendered.
-    y_max: f32,       // The maximum response value that will be displayed.
+    bin_count: usize,
+    frame_rate: i32,
 }
 
 impl<'a> FrequencyDisplay<'a> {
@@ -30,8 +29,7 @@ impl<'a> FrequencyDisplay<'a> {
             audio_state,
             // Currently hard-coded to fit window length of DFT.
             bin_count: 8,
-            frame_rate: 10,
-            y_max: 0.5,
+            frame_rate: 15,
         }
     }
 }
@@ -97,19 +95,13 @@ impl ComputerMut<FrequencyDisplayKey, Shape> for FrequencyDisplayComputer {
 
 impl View for FrequencyDisplay<'_> {
     fn ui(&mut self, ui: &mut Ui) {
-        let FrequencyDisplay {
-            audio_state,
-            bin_count,
-            frame_rate,
-            y_max,
-        } = *self;
+        let FrequencyDisplay { audio_state, bin_count, frame_rate } = *self;
         let mut audio = &self.audio_state.audio.to_vec();
         if audio.is_empty() {
             return;
         }
-        // Cast as orderd float so that values have PartialEq trait required for hashing.
         let ordered_audio: Vec<OrderedFloat<f32>> = map_vec(audio.to_vec());
-        // Set the maximum response value that can be displayed.
+        let y_max = 0.5;
         let canvas_size = vec2(500.0, 100.0);
         Frame::canvas(ui.style()).show(ui, |ui| {
             ui.ctx().request_repaint();
@@ -124,12 +116,9 @@ impl View for FrequencyDisplay<'_> {
                 let time_delta: TimeDelta = current_timestamp.sub(handle.start_timestamp);
                 let time_delta_ms: i64 = time_delta.num_milliseconds();
                 let current_sample: usize = (time_delta_ms * (SAMPLE_RATE as i64) / 1000) as usize;
-                let frame_size = (SAMPLE_RATE / frame_rate) as usize;
-                // Round `current_sample` so that the audio will be broken up into chunks based on
-                // the visualisation frame rate.
-                let chunk_head = current_sample / frame_size * frame_size;
+                let chunk_head = current_sample / SLICE_LENGTH * SLICE_LENGTH;
+
                 if chunk_head + SLICE_LENGTH < ordered_audio.len() {
-                    // Cast as Ordered float set length array so that the value can be cached.
                     let slice: [OrderedFloat<f32>; SLICE_LENGTH] = ordered_audio
                         [chunk_head..(chunk_head + SLICE_LENGTH)]
                         .try_into()
