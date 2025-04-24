@@ -58,6 +58,7 @@ mod tests {
             .iter()
             .enumerate()
             .all(|(index, value)| (value - expected[index]).abs() < EPSILON);
+        println!("{:?}", output.len());
         assert!(approx_diff);
     }
 
