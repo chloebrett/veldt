@@ -1,5 +1,6 @@
 use rustfft::{
-    FftPlanner,
+    Fft, FftDirection,
+    algorithm::Radix4,
     num_complex::{Complex, ComplexFloat},
 };
 use shared::serialize::map_vec;
@@ -8,8 +9,9 @@ use std::f32::consts::PI;
 /// Perform Fast Fourier Transform on Signal to find component frequencies.
 pub fn fft(signal: Vec<f32>) -> Vec<f32> {
     let signal_length = signal.len();
-    let mut planner = FftPlanner::new();
-    let fft = planner.plan_fft_forward(signal_length);
+    // Initialise a best algorithm for FFT.
+    // Signal length must be a power of 2
+    let fft = Radix4::new(signal_length, FftDirection::Forward);
     let mut complex_signal: Vec<Complex<f32>> = map_vec(signal);
     let complex_array = &mut complex_signal[0..signal_length];
     fft.process((complex_array).into());
@@ -64,7 +66,7 @@ mod tests {
 
     use super::*;
 
-    use crate::{wave::freq, SAMPLE_RATE};
+    use crate::{SAMPLE_RATE, wave::freq};
 
     const EPSILON: f32 = 1e-5;
 
