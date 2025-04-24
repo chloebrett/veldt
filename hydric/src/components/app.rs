@@ -13,7 +13,6 @@ use crate::view::View;
 use crate::{AsyncState, AudioState, WindowState};
 use egui::{ScrollArea, Ui, scroll_area::ScrollBarVisibility};
 use poll_promise::Promise;
-use shared::serialize::map_vec;
 use state::{Action, Selector, Store};
 
 pub struct App {
@@ -55,25 +54,11 @@ impl App {
     }
 
     fn visible_generators(&self) -> Vec<usize> {
-        let generators = &self.store.get().project.generators;
-        map_vec(
-            (0..generators.len())
-                .filter(|it| self.window_state.generators[*it])
-                .collect(),
-        )
+        self.window_state.generators.clone().as_vec()
     }
 
-    fn visible_effects(&self) -> Vec<Selector> {
-        let mixer = &self.store.get().project.mixer;
-        mixer
-            .iter()
-            .enumerate()
-            .flat_map(|(mi, channel)| {
-                (0..channel.effects.len())
-                    .filter(move |ei| *self.window_state.effects[mi].get(*ei).unwrap_or(&false))
-                    .map(move |ei| Selector::Effect(mi, ei))
-            })
-            .collect()
+    fn visible_effects(&self) -> Vec<(usize, usize)> {
+        self.window_state.effects.clone().as_vec()
     }
 }
 
@@ -115,12 +100,10 @@ impl View for App {
 
         for generator_index in self.visible_generators() {
             // TODO: make a GeneratorView.
-            generator_control(
-                &self.store,
-                ui,
-                generator_index,
-                &mut self.window_state.generators[generator_index],
-            );
+            let visible = self.window_state.generators.get(generator_index);
+            generator_control(&self.store, ui, generator_index, visible, || {
+                self.window_state.generators.set(generator_index, false)
+            });
         }
         if self.window_state.mixer.visible {
             MixerView::new(&mut self.window_state, &self.store).ui(ui);
@@ -133,17 +116,21 @@ impl View for App {
         )
         .ui(ui);
 
-        for sel in self.visible_effects() {
-            let dispatch = |action| self.store.dispatch(&sel, action);
+        for (mixer_index, effect_index) in self.visible_effects() {
+            let dispatch = |action| {
+                self.store
+                    .dispatch(&Selector::Effect(mixer_index, effect_index), action)
+            };
             let on_release = || self.store.dispatchr(Action::Release);
             EffectView::new(
                 &self.store,
-                &sel,
+                mixer_index,
+                effect_index,
                 &mut self.window_state,
                 dispatch,
                 on_release,
             )
-            .ui(ui);
+            .map(|mut it| it.ui(ui));
         }
         if self.window_state.scale {
             let dispatch = |action| self.store.dispatchr(action);

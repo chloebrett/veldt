@@ -1,6 +1,9 @@
 use crate::{audio_player::Handle, promise::AsyncResult};
 use egui::{Id, Ui};
 use shared::model::{FilenameTree, Project, Sample};
+use std::cmp::{Eq, Ord};
+use std::collections::HashSet;
+use std::hash::Hash;
 
 /// Container for the various promises launchable by the app.
 #[derive(Default)]
@@ -29,9 +32,11 @@ pub struct MixerWindowState {
 /// Which windows are currently shown.
 pub struct WindowState {
     pub mixer: MixerWindowState,
-    pub effects: Vec<Vec<bool>>, // by ID (within each mixer)
+    // TODO: consider Selector types that correspond specifically to particular selectors.
+    // E.g. EffectSelector, not just Selector::Effect.
+    pub effects: WindowStateField<(usize, usize)>, // IDs/indexes of shown (mixer, effect) pairs.
     pub generator_list: bool,
-    pub generators: Vec<bool>, // by ID
+    pub generators: WindowStateField<usize>, // IDs/indexes of shown generators.
     pub scale: bool,
     pub sample_tree: bool,
     pub track_roll: bool,
@@ -39,19 +44,44 @@ pub struct WindowState {
 
 impl Default for WindowState {
     fn default() -> WindowState {
-        // TODO: generate this automatically from the project state.
         WindowState {
             mixer: MixerWindowState {
                 visible: false,
                 channel: 0,
             },
-            effects: vec![vec![false, false, false, false]],
+            effects: WindowStateField(HashSet::new()),
             generator_list: false,
-            generators: vec![true, true],
+            generators: WindowStateField(HashSet::new()),
             scale: false,
             sample_tree: false,
             track_roll: false,
         }
+    }
+}
+
+#[derive(Clone)]
+pub struct WindowStateField<T: Hash + Eq + Copy>(HashSet<T>);
+
+impl<T: Hash + Ord + Copy> WindowStateField<T> {
+    pub fn get(&self, index: T) -> bool {
+        self.0.contains(&index)
+    }
+
+    pub fn set(&mut self, index: T, visible: bool) {
+        let was_visible = self.get(index);
+        if visible == was_visible {
+            return;
+        }
+        if visible {
+            self.0.insert(index);
+        } else {
+            self.0.retain(|it| *it != index);
+        }
+    }
+
+    // Note: not necessarily sorted.
+    pub fn as_vec(self) -> Vec<T> {
+        self.0.into_iter().collect()
     }
 }
 
