@@ -96,7 +96,6 @@ impl Node for GeneratorNode {
                     self.sample_index as i32 - note_start_sample as i32,
                 ),
                 GeneratorType::Noise { .. } => todo!(),
-                _ => Buffer::SILENT,
             };
 
             dasp_slice::add_in_place(&mut buffer, &wave_buffer);
