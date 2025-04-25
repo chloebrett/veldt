@@ -1,3 +1,4 @@
+mod load;
 mod menu_bar;
 mod save_as;
 
