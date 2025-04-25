@@ -89,12 +89,6 @@ impl Default for StoreData {
                                         osc_detune: 0.0,
                                         osc_count: 1,
                                         unison_detune: 0.0,
-                                        envelope: AdsrEnvelope {
-                                            attack: 0.1,
-                                            decay: 0.1,
-                                            sustain: 0.8,
-                                            release: 0.1,
-                                        },
                                     },
                                     OscillatorConfig {
                                         wave: WaveType::Triangle,
@@ -103,12 +97,6 @@ impl Default for StoreData {
                                         osc_detune: 0.0,
                                         osc_count: 1,
                                         unison_detune: 0.0,
-                                        envelope: AdsrEnvelope {
-                                            attack: 0.1,
-                                            decay: 0.1,
-                                            sustain: 0.8,
-                                            release: 0.1,
-                                        },
                                     },
                                     OscillatorConfig {
                                         wave: WaveType::Square,
@@ -117,12 +105,6 @@ impl Default for StoreData {
                                         osc_detune: 0.0,
                                         osc_count: 1,
                                         unison_detune: 0.0,
-                                        envelope: AdsrEnvelope {
-                                            attack: 0.1,
-                                            decay: 0.1,
-                                            sustain: 0.8,
-                                            release: 0.1,
-                                        },
                                     },
                                 ],
                                 lfos: [
@@ -137,6 +119,26 @@ impl Default for StoreData {
                                     LfoConfig {
                                         wave: WaveType::Sine,
                                         frequency: 1.0,
+                                    },
+                                ],
+                                envelopes: [
+                                    AdsrEnvelope {
+                                        attack: 0.1,
+                                        decay: 0.1,
+                                        sustain: 0.8,
+                                        release: 0.1,
+                                    },
+                                    AdsrEnvelope {
+                                        attack: 0.1,
+                                        decay: 0.1,
+                                        sustain: 0.8,
+                                        release: 0.1,
+                                    },
+                                    AdsrEnvelope {
+                                        attack: 0.1,
+                                        decay: 0.1,
+                                        sustain: 0.8,
+                                        release: 0.1,
                                     },
                                 ],
                             },

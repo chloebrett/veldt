@@ -108,12 +108,13 @@ pub fn sub_synth_wave(
     let buffers: Vec<Buffer> = config
         .oscillators
         .iter()
-        .map(|osc| {
+        .zip(config.envelopes.iter())
+        .map(|(osc, envelope)| {
             let mut buf = wave(
                 pitch_name,
                 beats,
                 bpm,
-                &osc.envelope,
+                envelope, // map osc 1 -> envelope 1, etc
                 osc.wave,
                 AntiAliasingMode::Off, // placeholder
                 osc.osc_detune,
