@@ -116,69 +116,7 @@ impl Default for StoreData {
                         },
                     },
                 ],
-                mixer: vec![MixerChannel {
-                    effects: vec![
-                        EffectInstance {
-                            effect: Effect::SimpleEq {
-                                config: EqConfig {
-                                    kind: EqType::SimpleResonator,
-                                    fc: 1000.0,
-                                    q: 1.0,
-                                    gain: 0.0,
-                                },
-                            },
-                            meta: EffectMeta {
-                                id: 0,
-                                wet: 1.0,
-                                mute: false,
-                            },
-                        },
-                        EffectInstance {
-                            effect: Effect::SimpleDelay {
-                                config: DelayConfig {
-                                    delay_ms: 250.0,
-                                    feedback: 0.5,
-                                },
-                            },
-                            meta: EffectMeta {
-                                id: 1,
-                                wet: 0.5,
-                                mute: false,
-                            },
-                        },
-                        EffectInstance {
-                            effect: Effect::SimpleCompressor {
-                                config: CompressorConfig {
-                                    threshold: 0.3,
-                                    attack_ms: 0.1,
-                                    release_ms: 0.8,
-                                    ratio: 1.5,
-                                    gain: 1.0,
-                                },
-                            },
-                            meta: EffectMeta {
-                                id: 2,
-                                wet: 1.0,
-                                mute: false,
-                            },
-                        },
-                        EffectInstance {
-                            effect: Effect::ModDelay {
-                                config: ModDelayConfig {
-                                    min_depth: 100,
-                                    max_depth: 200,
-                                    freq: 10.0,
-                                    lfo_type: WaveType::Triangle,
-                                },
-                            },
-                            meta: EffectMeta {
-                                id: 1,
-                                wet: 0.5,
-                                mute: false,
-                            },
-                        },
-                    ],
-                }],
+                mixer: vec![MixerChannel { effects: vec![] }],
                 bpm: 120.0,
                 mod_matrix: ModMatrix::default(),
             },
