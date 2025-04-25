@@ -76,11 +76,14 @@ impl View for ToolbarView<'_> {
                     current upload progress or errors.
                     */
                     spawn(&mut self.async_state.upload_sample, async move {
-                        let file = rfd::AsyncFileDialog::new()
+                        let Some(file) = rfd::AsyncFileDialog::new()
                             .add_filter("Sound Sample", &["wav"])
                             .pick_file()
                             .await
-                            .unwrap();
+                        else {
+                            // No proper error handling as a user canceling the action is typical.
+                            return Ok(()); 
+                        };
 
                         let file_name = file.file_name();
                         let file_data = file.read().await;
