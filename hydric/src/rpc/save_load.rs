@@ -24,7 +24,6 @@ pub async fn load_project_list() -> Result<Vec<String>, ()> {
     let mut grpc = SaveLoadClient::new(client);
 
     let result = grpc.load_project_list(LoadProjectListRequest {}).await;
-    log::info!("{:?}", result);
 
     result
         .map(|it| it.into_inner().project_names)
