@@ -131,7 +131,7 @@ message SubSynthProto {
 
 message SubSynthConfigProto {
   repeated OscillatorConfigProto oscillators = 1; 
-  repeated LowFrequencyOscillatorConfigProto lfos = 2;
+  repeated LfoConfigProto lfos = 2;
 }
 
 message OscillatorConfigProto {
@@ -312,7 +312,7 @@ message FileTreeConfigProto {
   bool show_hidden = 3;
 }
 
-message LowFrequencyOscillatorConfigProto {
+message LfoConfigProto {
   WaveTypeProto wave = 1;
   float frequency = 2;
 }

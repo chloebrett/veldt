@@ -1,4 +1,4 @@
-use crate::model::{AdsrEnvelope, LowFrequencyOscillatorConfig, WaveType};
+use crate::model::{AdsrEnvelope, LfoConfig, WaveType};
 use crate::pmodel::{
     AntiAliasingModeProto, GeneratorInstanceProto, GeneratorMetaProto, NoiseConfigProto,
     NoiseProto, NoiseTypeProto, OscillatorConfigProto, SimpleWaveConfigProto, SimpleWaveProto,
@@ -98,7 +98,7 @@ pub enum NoiseType {
 #[derive(Clone, Debug, PartialEq)]
 pub struct SubSynthConfig {
     pub oscillators: [OscillatorConfig; 3],
-    pub lfos: [LowFrequencyOscillatorConfig; 3],
+    pub lfos: [LfoConfig; 3],
 }
 
 impl From<SubSynthConfigProto> for SubSynthConfig {
