@@ -1,7 +1,9 @@
+use super::EnvelopeView;
+use crate::view::View;
 use crate::widget::{get_set, int_slider, knob, selectable_value};
 use egui::Ui;
 use shared::model::{AntiAliasingMode, SimpleWaveConfig, WaveType};
-use state::{Action, FloatField};
+use state::{Action, FloatField, TypeField, UintField};
 use strum::IntoEnumIterator;
 
 pub fn simple_wave_control<F, G>(config: &SimpleWaveConfig, dispatch: F, on_release: G, ui: &mut Ui)
@@ -15,7 +17,9 @@ where
             for wave in WaveType::iter() {
                 selectable_value(
                     ui,
-                    get_set(config.wave, |it| dispatch(Action::SetWave(it))),
+                    get_set(config.wave, |it| {
+                        dispatch(Action::SetChild(TypeField::Wave(it)))
+                    }),
                     wave,
                     wave.to_string(),
                 );
@@ -26,16 +30,17 @@ where
         ui,
         "Unison",
         config.osc_count as f64,
-        |it| dispatch(Action::SetOscCount(it as u32)),
+        |it| dispatch(Action::SetUint(UintField::OscCount, it as u32)),
         1..=24,
         &on_release,
     );
     knob(
         ui,
-        "Osc detune",
+        "Osc detune (cents)",
         config.detune_cents,
         |it| dispatch(Action::SetFloat(FloatField::Detune, it)),
         0.0..=100.0,
+        /* neutral= */ 10.0,
         &on_release,
     );
 
@@ -46,7 +51,7 @@ where
                 selectable_value(
                     ui,
                     get_set(config.anti_aliasing_mode, |it| {
-                        dispatch(Action::SetAntiAliasingMode(it))
+                        dispatch(Action::SetChild(TypeField::AntiAliasingMode(it)))
                     }),
                     mode,
                     mode.to_string(),
@@ -60,9 +65,14 @@ where
             ui,
             "Oversample factor",
             config.oversample_factor as f64,
-            |it| dispatch(Action::SetOversampleFactor(it as u32)),
+            |it| dispatch(Action::SetUint(UintField::OversampleFactor, it as u32)),
             2..=10,
             &on_release,
         );
     }
+
+    // TODO: move this to the individual generator UI.
+    ui.separator();
+    ui.label("Envelope");
+    EnvelopeView::new(&config.envelope, dispatch, on_release).ui(ui);
 }

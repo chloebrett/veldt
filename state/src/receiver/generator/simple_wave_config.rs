@@ -1,26 +1,26 @@
 use crate::receiver::ActionReceiver;
-use crate::{Action, FloatField};
+use crate::{Action, FloatField, TypeField, UintField};
 use shared::model::SimpleWaveConfig;
 
 impl ActionReceiver for SimpleWaveConfig {
     fn apply(&mut self, action: &Action) -> Option<Action> {
         Some(match action {
-            Action::SetWave(wave) => {
+            Action::SetChild(TypeField::Wave(wave)) => {
                 let prev = self.wave;
                 self.wave = *wave;
-                Action::SetWave(prev)
+                Action::SetChild(TypeField::Wave(prev))
             }
-            Action::SetOscCount(osc_count) => {
+            Action::SetUint(UintField::OscCount, osc_count) => {
                 let prev = self.osc_count;
                 self.osc_count = *osc_count;
-                Action::SetOscCount(prev)
+                Action::SetUint(UintField::OscCount, prev)
             }
             Action::SetFloat(FloatField::Detune, detune_cents) => {
                 let prev = self.detune_cents;
                 self.detune_cents = *detune_cents;
                 Action::SetFloat(FloatField::Detune, prev)
             }
-            Action::SetEnvelope(envelope) => {
+            Action::SetChild(TypeField::Envelope(envelope)) => {
                 let mut envelope = envelope.clone();
                 let headroom = 1.0 - envelope.attack - envelope.decay - envelope.release;
                 let max_attack = headroom + envelope.attack;
@@ -39,17 +39,17 @@ impl ActionReceiver for SimpleWaveConfig {
 
                 let prev = self.envelope.clone();
                 self.envelope = envelope;
-                Action::SetEnvelope(prev)
+                Action::SetChild(TypeField::Envelope(prev))
             }
-            Action::SetAntiAliasingMode(mode) => {
+            Action::SetChild(TypeField::AntiAliasingMode(mode)) => {
                 let prev = self.anti_aliasing_mode;
                 self.anti_aliasing_mode = *mode;
-                Action::SetAntiAliasingMode(prev)
+                Action::SetChild(TypeField::AntiAliasingMode(prev))
             }
-            Action::SetOversampleFactor(factor) => {
+            Action::SetUint(UintField::OversampleFactor, factor) => {
                 let prev = self.oversample_factor;
                 self.oversample_factor = *factor;
-                Action::SetOversampleFactor(prev)
+                Action::SetUint(UintField::OversampleFactor, prev)
             }
             _ => return None,
         })

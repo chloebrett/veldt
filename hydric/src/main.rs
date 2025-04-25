@@ -1,3 +1,4 @@
+mod app_state;
 mod audio_player;
 mod components;
 mod promise;
@@ -7,6 +8,7 @@ mod view;
 mod widget;
 
 use crate::components::App;
+use app_state::*;
 use eframe::web_sys;
 
 fn main() {

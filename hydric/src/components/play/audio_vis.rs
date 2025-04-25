@@ -1,4 +1,5 @@
-use crate::components::AudioState;
+use crate::AudioState;
+use crate::audio_player::AudioPlayer;
 use chrono::TimeDelta;
 use egui::{Color32, Rect, Ui, containers::Frame, emath, epaint, epaint::PathStroke, pos2, vec2};
 use mesic::SAMPLE_RATE;
@@ -49,9 +50,13 @@ pub fn audio_vis(audio_state: &AudioState, ui: &mut Ui) {
             })
             .collect();
 
-        if let Some(handle) = &audio_state.handle {
+        if let Some(AudioPlayer {
+            start_timestamp: Some(start_timestamp),
+            ..
+        }) = &audio_state.player
+        {
             let current_timestamp = chrono::offset::Utc::now();
-            let time_delta: TimeDelta = current_timestamp.sub(handle.start_timestamp);
+            let time_delta: TimeDelta = current_timestamp.sub(start_timestamp);
             let time_delta_ms: i64 = time_delta.num_milliseconds();
             let audio_duration_ms: f32 = audio_len / (SAMPLE_RATE as f32) * 1000.0;
             let playthrough_ratio: f32 = (time_delta_ms as f32) / audio_duration_ms;

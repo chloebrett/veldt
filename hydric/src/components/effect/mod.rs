@@ -1,12 +1,13 @@
-mod compressor_control;
-mod delay_control;
-mod effect_control;
-mod eq_control;
-mod mixer_control;
-mod mod_delay_control;
+mod compressor_view;
+mod delay_view;
+mod effect_view;
+mod eq_view;
+mod mixer_view;
+mod mod_delay_view;
 
-use delay_control::*;
-pub use effect_control::*;
-use eq_control::*;
-pub use mixer_control::*;
-use mod_delay_control::*;
+use compressor_view::*;
+use delay_view::*;
+pub use effect_view::*;
+use eq_view::*;
+pub use mixer_view::*;
+use mod_delay_view::*;

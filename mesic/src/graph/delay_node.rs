@@ -1,3 +1,4 @@
+use super::ProcessContext;
 use super::{extract_inputs, extract_outputs};
 use dasp_graph::{Buffer, Input, Node};
 use ringbuffer::{AllocRingBuffer, RingBuffer};
@@ -28,8 +29,8 @@ impl DelayNode {
     }
 }
 
-impl Node for DelayNode {
-    fn process(&mut self, inputs: &[Input], output: &mut [Buffer]) {
+impl Node<ProcessContext> for DelayNode {
+    fn process(&mut self, inputs: &[Input], output: &mut [Buffer], _payload: &ProcessContext) {
         let (left_out, right_out) = extract_outputs(output);
         let (left_in, right_in) = extract_inputs(inputs)[0];
 

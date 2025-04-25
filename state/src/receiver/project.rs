@@ -1,51 +1,51 @@
 use crate::receiver::ActionReceiver;
-use crate::{Action, FloatField};
+use crate::{Action, FloatField, IndexField, TypeField};
 use shared::model::Project;
 
 impl ActionReceiver for Project {
     fn apply(&mut self, action: &Action) -> Option<Action> {
         Some(match action {
-            Action::AddTrackPlacement(track_placement) => {
+            Action::AddChild(TypeField::TrackPlacement(track_placement)) => {
                 let index = self.track_placements.len();
                 self.track_placements.push(track_placement.clone());
-                Action::DeleteTrackPlacement(index)
+                Action::DeleteChild(IndexField::TrackPlacement(index))
             }
-            Action::DeleteTrackPlacement(track_placement_index) => {
+            Action::DeleteChild(IndexField::TrackPlacement(index)) => {
                 let prev = self
                     .track_placements
-                    .get(*track_placement_index)
+                    .get(*index)
                     .expect("Can't delete non-existent track placement!")
                     .clone();
-                self.track_placements.remove(*track_placement_index);
-                Action::AddTrackPlacement(prev)
+                self.track_placements.remove(*index);
+                Action::AddChild(TypeField::TrackPlacement(prev))
             }
-            Action::SetProjectName(name) => {
+            Action::SetChild(TypeField::ProjectName(name)) => {
                 let prev = self.name.clone();
                 self.name = name.to_string();
-                Action::SetProjectName(prev)
+                Action::SetChild(TypeField::ProjectName(prev))
             }
             Action::SetFloat(FloatField::Bpm, bpm) => {
                 let prev = self.bpm;
                 self.bpm = *bpm;
                 Action::SetFloat(FloatField::Bpm, prev)
             }
-            Action::AddSample(sample) => {
+            Action::AddChild(TypeField::Sample(sample)) => {
                 self.samples.push(sample.clone());
                 Action::NonReversible
             }
-            Action::AddTrack(track) => {
+            Action::AddChild(TypeField::Track(track)) => {
                 let prev = self.tracks.len();
                 self.tracks.push(track.clone());
-                Action::DeleteTrack(prev)
+                Action::DeleteChild(IndexField::Track(prev))
             }
-            Action::DeleteTrack(track_index) => {
+            Action::DeleteChild(IndexField::Track(index)) => {
                 let prev = self
                     .tracks
-                    .get(*track_index)
+                    .get(*index)
                     .expect("Can't delete non-existent track")
                     .clone();
-                self.tracks.remove(*track_index);
-                Action::AddTrack(prev)
+                self.tracks.remove(*index);
+                Action::AddChild(TypeField::Track(prev))
             }
             _ => return None,
         })

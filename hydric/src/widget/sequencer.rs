@@ -3,6 +3,7 @@ use egui::{
     Color32, CornerRadius, CursorIcon, Frame, Pos2, Rect, Response, Sense, Shape, Stroke, Ui, Vec2,
     Widget, emath::RectTransform, pos2, vec2,
 };
+use shared::types::Beats;
 use state::Action;
 
 pub struct Sequencer<T: SequencerObject<T>, F: Fn(usize, Action), G: Fn(), H: Fn(&mut Ui, usize)> {
@@ -10,7 +11,9 @@ pub struct Sequencer<T: SequencerObject<T>, F: Fn(usize, Action), G: Fn(), H: Fn
     size: Vec2,
     objects: Vec<T>,
     sense: Sense,
-    dispatch: F, // A closure to modify object in Store. Takes object index and `Action` to dispatch chage.
+    quantise_level: Beats,
+    // A closure to modify object in Store. Takes object index and `Action` to dispatch change.
+    dispatch: F,
     on_release: G,
     on_click: H,
     background_shapes: Vec<Shape>,
@@ -25,6 +28,7 @@ impl<T: SequencerObject<T>, F: Fn(usize, Action), G: Fn(), H: Fn(&mut Ui, usize)
             size: vec2(400.0, 600.0),
             objects: vec![],
             sense: Sense::drag(),
+            quantise_level: 0.25,
             dispatch,
             on_release,
             on_click,
@@ -81,92 +85,110 @@ impl<T: SequencerObject<T>, F: Fn(usize, Action), G: Fn(), H: Fn(&mut Ui, usize)
         self
     }
 
-    fn resize_object(
-        &self,
-        object: &T,
-        object_index: usize,
-        ui: &mut Ui,
-        response: &Response,
-        sequencer_transform: &RectTransform,
-    ) {
-        // TODO Handle this ID making better.
-        // IDs must be different between resize and move fuctions.
-        let id = response.id.with(format!("resize_{}", object_index));
-        let rect = object.to_rect(self.range);
-        let x_size = 0.3;
-        let resize_rect = Rect::from_min_size(
-            rect.right_top() - vec2(x_size / 2.0, 0.0),
-            vec2(x_size / 2.0, rect.size().y),
+    fn interact(&self, ui: &mut Ui, response: &Response) {
+        let make_movable_rect = |object: &T| object.to_rect(self.range);
+        let make_resize_rect = |object: &T| {
+            let rect = object.to_rect(self.range);
+            // Width of window where shape can be grabbed to resize.
+            let x_size = 0.3;
+            Rect::from_min_size(
+                rect.right_top() - vec2(x_size * 0.5, 0.0),
+                vec2(x_size * 0.5, rect.size().y),
+            )
+        };
+        let to_sequencer = RectTransform::from_to(
+            Rect::from_min_size(Pos2::ZERO, self.range.size()),
+            response.rect,
         );
-        let rect_response =
-            ui.interact(resize_rect.transform(*sequencer_transform), id, self.sense);
-        if rect_response.hovered() {
-            ui.ctx().set_cursor_icon(CursorIcon::ResizeColumn);
-        }
-        let drag_pos = rect_response.interact_pointer_pos();
-        if let Some(drag_pos) = drag_pos {
-            let scaled_pos = drag_pos.transform(sequencer_transform.inverse()).clamp(
-                pos2(rect.left(), 0.0),
-                // Ensure entire rect stays on sequencer.
-                self.range.size().to_pos2(),
+        for (index, object) in self.objects.iter().enumerate() {
+            let movable_id = response.id.with(format!("movable_{}", index));
+            let movable_resp = ui.interact(
+                make_movable_rect(object).transform(to_sequencer),
+                movable_id,
+                Sense::drag(),
             );
-            if let Some(action) = object.resize_action(scaled_pos.x, self.range) {
-                // Only dispatch on_click if object can be resized. Otherwise on_release will be
-                // called with no actions in the stack.
-                // TODO improve this implementation.
-                if rect_response.drag_stopped() || rect_response.lost_focus() {
-                    (self.on_release)();
-                } else {
-                    (self.dispatch)(object_index, action)
-                }
-            };
+            let resize_id = response.id.with(format!("resize_{}", index));
+            let resize_resp = ui.interact(
+                make_resize_rect(object).transform(to_sequencer),
+                resize_id,
+                Sense::drag(),
+            );
+            if movable_resp.interact(Sense::click()).double_clicked() {
+                (self.on_click)(ui, index)
+            }
+            if resize_resp.hovered() {
+                ui.ctx().set_cursor_icon(CursorIcon::ResizeColumn);
+            }
+            let release = self.move_object(index, movable_resp, to_sequencer)
+                || self.resize_object(index, resize_resp, to_sequencer);
+            if release {
+                (self.on_release)()
+            }
         }
     }
 
-    fn interact_object(
-        &self,
-        object: &T,
-        object_index: usize,
-        ui: &mut Ui,
-        response: &Response,
-        sequencer_transform: &RectTransform,
-    ) {
-        let id = response.id.with(format!("update_{}", object_index));
-        let rect = object.to_rect(self.range);
-        let rect_response = ui.interact(rect.transform(*sequencer_transform), id, self.sense);
-        if rect_response.interact(Sense::click()).double_clicked() {
-            (self.on_click)(ui, object_index)
-        }
-        let drag_pos = rect_response.interact_pointer_pos();
-        let drag_delta = rect_response.drag_delta();
-        let next_rect_pos = object.to_pos(self.range).transform(*sequencer_transform) + drag_delta;
+    fn quantise(&self, value: Beats) -> Beats {
+        (value / self.quantise_level).round() * self.quantise_level
+    }
+
+    fn move_object(&self, index: usize, response: Response, to_sequencer: RectTransform) -> bool {
+        let object = self.objects.get(index).expect("Should have gotten object.");
+        let drag_pos = response.interact_pointer_pos();
+        let drag_delta = response.drag_delta();
+        let next_pos = response.rect.left_top() + drag_delta;
         let mut action_dispatched = false;
         if let Some(drag_pos) = drag_pos {
             // 'y' moves in increments and should update to to wherever the mouse is while dragging.
-            // 'x' moves continiously and so move based on the drag detla.
-            let scaled_pos = pos2(next_rect_pos.x, drag_pos.y)
-                .transform(sequencer_transform.inverse())
+            // 'x' moves continiously and so move based on the drag delta.
+            let scaled_pos = pos2(next_pos.x, drag_pos.y)
+                .transform(to_sequencer.inverse())
                 .clamp(
                     pos2(0.0, 0.0),
-                    // Ensure entire rect stays on sequencer.
-                    vec2(f32::INFINITY, self.range.size().y).to_pos2(),
+                    // Clamp to `y` range - 1 so that object cannot be dragged beyond bottom of sequencer.
+                    vec2(f32::INFINITY, self.range.size().y - 1.0).to_pos2(),
                 );
             if drag_delta.y != 0.0 {
                 if let Some(action) = object.y_action(scaled_pos.y, self.range) {
-                    (self.dispatch)(object_index, action);
+                    (self.dispatch)(index, action);
                     action_dispatched = true;
                 };
             }
             if drag_delta.x != 0.0 {
                 if let Some(action) = object.x_action(scaled_pos.x, self.range) {
-                    (self.dispatch)(object_index, action);
+                    (self.dispatch)(index, action);
                     action_dispatched = true;
                 };
             }
         }
-        if action_dispatched && (rect_response.drag_stopped() || rect_response.lost_focus()) {
-            (self.on_release)();
+        // Return true when interaction completed.
+        action_dispatched && (response.lost_focus() || response.drag_stopped())
+    }
+
+    fn resize_object(&self, index: usize, response: Response, to_sequencer: RectTransform) -> bool {
+        let object = self.objects.get(index).expect("Should have gotten object.");
+        let drag_pos = response.interact_pointer_pos();
+        let mut action_dispatched = false;
+        if let Some(drag_pos) = drag_pos {
+            let scaled_pos = drag_pos.transform(to_sequencer.inverse()).clamp(
+                pos2(response.rect.transform(to_sequencer.inverse()).left(), 0.0),
+                self.range.size().to_pos2(),
+            );
+            if let Some(action) = object.resize_action(self.quantise(scaled_pos.x), self.range) {
+                (self.dispatch)(index, action);
+                action_dispatched = true;
+            };
         }
+        // Return true when interaction completed.
+        action_dispatched && (response.lost_focus() || response.drag_stopped())
+    }
+
+    fn object_shapes(&self) -> Shape {
+        Shape::Vec(
+            self.objects
+                .iter()
+                .map(|object| object.shape(self.range))
+                .collect(),
+        )
     }
 }
 
@@ -174,33 +196,20 @@ impl<T: SequencerObject<T>, F: Fn(usize, Action), G: Fn(), H: Fn(&mut Ui, usize)
     for Sequencer<T, F, G, H>
 {
     fn ui(self, ui: &mut Ui) -> Response {
-        let Sequencer {
-            range,
-            size,
-            ref objects,
-            sense,
-            dispatch: _,
-            on_release: _,
-            on_click: _,
-            ref background_shapes,
-        } = self;
+        let range = self.range;
+        let size = self.size;
+        let sense = self.sense;
+        let background_shapes = &self.background_shapes;
+
         Frame::canvas(ui.style()).show(ui, |ui| {
             let (response, painter) = ui.allocate_painter(size, sense);
             let sequencer_transform = RectTransform::from_to(
                 Rect::from_min_size(Pos2::ZERO, range.size()),
                 response.rect,
             );
-            let shapes: Vec<Shape> = objects
-                .iter()
-                .enumerate()
-                .map(|(index, object)| {
-                    self.interact_object(object, index, ui, &response, &sequencer_transform);
-                    self.resize_object(object, index, ui, &response, &sequencer_transform);
-                    object.shape(self.range)
-                })
-                .collect();
+            self.interact(ui, &response);
             painter.extend(background_shapes.clone().transform(sequencer_transform));
-            painter.extend(shapes.transform(sequencer_transform))
+            painter.add(self.object_shapes().transform(sequencer_transform))
         });
         let (_rect, response) = ui.allocate_at_least(Vec2::ZERO, sense);
         response
@@ -209,6 +218,8 @@ impl<T: SequencerObject<T>, F: Fn(usize, Action), G: Fn(), H: Fn(&mut Ui, usize)
 
 pub trait SequencerObject<T> {
     fn to_pos(&self, range: Rect) -> Pos2;
+
+    fn to_pos_horizontal(&self, range: Rect) -> Pos2;
 
     fn to_rect(&self, range: Rect) -> Rect;
 

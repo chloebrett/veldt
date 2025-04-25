@@ -1,3 +1,4 @@
+use super::ProcessContext;
 use super::{extract_inputs_2, extract_outputs};
 use dasp_graph::{Buffer, Input, Node};
 use shared::types::KnobPosition;
@@ -29,8 +30,8 @@ impl MixerNode {
     }
 }
 
-impl Node for MixerNode {
-    fn process(&mut self, inputs: &[Input], output: &mut [Buffer]) {
+impl Node<ProcessContext> for MixerNode {
+    fn process(&mut self, inputs: &[Input], output: &mut [Buffer], _payload: &ProcessContext) {
         debug_assert!(self.wet >= 0.0 && self.wet <= 1.0);
 
         let (out_left, out_right) = extract_outputs(output);

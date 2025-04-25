@@ -1,5 +1,5 @@
 use crate::receiver::ActionReceiver;
-use crate::{Action, FloatField};
+use crate::{Action, FloatField, TypeField};
 use shared::model::GeneratorMeta;
 
 impl ActionReceiver for GeneratorMeta {
@@ -10,10 +10,10 @@ impl ActionReceiver for GeneratorMeta {
                 self.volume = *volume;
                 Action::SetFloat(FloatField::Volume, prev)
             }
-            Action::SetMute(mute) => {
+            Action::SetChild(TypeField::Mute(mute)) => {
                 let prev = self.mute;
                 self.mute = *mute;
-                Action::SetMute(prev)
+                Action::SetChild(TypeField::Mute(prev))
             }
             Action::SetFloat(FloatField::Pan, pan) => {
                 let prev = self.pan;

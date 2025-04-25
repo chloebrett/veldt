@@ -1,14 +1,14 @@
 use crate::receiver::ActionReceiver;
-use crate::{Action, FloatField};
+use crate::{Action, FloatField, TypeField};
 use shared::model::EqConfig;
 
 impl ActionReceiver for EqConfig {
     fn apply(&mut self, action: &Action) -> Option<Action> {
         Some(match action {
-            Action::SetEqKind(kind) => {
+            Action::SetChild(TypeField::EqType(kind)) => {
                 let prev = self.kind.clone();
                 self.kind = kind.clone();
-                Action::SetEqKind(prev)
+                Action::SetChild(TypeField::EqType(prev))
             }
             Action::SetFloat(FloatField::Fc, fc) => {
                 let prev = self.fc;

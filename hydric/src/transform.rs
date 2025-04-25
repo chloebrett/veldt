@@ -1,4 +1,4 @@
-use egui::{Pos2, Rect, Shape, emath::RectTransform, epaint::RectShape};
+use egui::{Pos2, Rect, Shape, emath::RectTransform, epaint::PathShape, epaint::RectShape};
 
 pub trait Transform<T> {
     fn transform(self, rect: RectTransform) -> T;
@@ -7,6 +7,10 @@ pub trait Transform<T> {
 impl Transform<Shape> for Shape {
     fn transform(self, rect: RectTransform) -> Shape {
         match self {
+            // TODO: handle `closed` and `fill`
+            Shape::Path(PathShape { points, stroke, .. }) => {
+                Shape::line(points.into_iter().map(|it| rect * it).collect(), stroke)
+            }
             Shape::LineSegment { points, stroke } => Shape::LineSegment {
                 points: [rect * points[0], rect * points[1]],
                 stroke,
@@ -15,6 +19,12 @@ impl Transform<Shape> for Shape {
                 rect: rect.transform_rect(rect_shape.rect),
                 ..rect_shape
             }),
+            Shape::Vec(shapes) => Shape::Vec(
+                shapes
+                    .into_iter()
+                    .map(|shape| shape.transform(rect))
+                    .collect(),
+            ),
             _ => panic!("Shape not implemented."),
         }
     }

@@ -1,5 +1,5 @@
-use crate::Action;
 use crate::receiver::ActionReceiver;
+use crate::{Action, IndexField, TypeField};
 use shared::model::MixerChannel;
 
 impl ActionReceiver for MixerChannel {
@@ -13,14 +13,14 @@ impl ActionReceiver for MixerChannel {
                 self.effects.swap(*effect_index, effect_index - 1);
                 Action::MoveEffectDown(*effect_index)
             }
-            Action::DeleteEffect(effect_index) => {
+            Action::DeleteChild(IndexField::Effect(effect_index)) => {
                 let prev = self.effects[*effect_index].clone();
                 self.effects.remove(*effect_index);
-                Action::AddEffect(prev)
+                Action::AddChild(TypeField::Effect(prev))
             }
-            Action::AddEffect(effect) => {
+            Action::AddChild(TypeField::Effect(effect)) => {
                 self.effects.push(effect.clone());
-                Action::DeleteEffect(self.effects.len() - 1)
+                Action::DeleteChild(IndexField::Effect(self.effects.len() - 1))
             }
             _ => return None,
         })

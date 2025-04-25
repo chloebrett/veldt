@@ -1,4 +1,4 @@
-use crate::model::{AdsrEnvelope, WaveType};
+use crate::model::{AdsrEnvelope, LfoConfig, WaveType};
 use crate::pmodel::{
     AntiAliasingModeProto, GeneratorInstanceProto, GeneratorMetaProto, NoiseConfigProto,
     NoiseProto, NoiseTypeProto, OscillatorConfigProto, SimpleWaveConfigProto, SimpleWaveProto,
@@ -98,11 +98,16 @@ pub enum NoiseType {
 #[derive(Clone, Debug, PartialEq)]
 pub struct SubSynthConfig {
     pub oscillators: [OscillatorConfig; 3],
+<<<<<<< HEAD
     pub envelopes: [AdsrEnvelope; 3],
+=======
+    pub lfos: [LfoConfig; 3],
+>>>>>>> main
 }
 
 impl From<SubSynthConfigProto> for SubSynthConfig {
     fn from(proto: SubSynthConfigProto) -> Self {
+<<<<<<< HEAD
         let osc_vec = proto.oscillators;
         assert_eq!(
             osc_vec.len(),
@@ -120,6 +125,23 @@ impl From<SubSynthConfigProto> for SubSynthConfig {
         SubSynthConfig {
             oscillators: [osc_vec[0].into(), osc_vec[1].into(), osc_vec[2].into()],
             envelopes: [env_vec[0].into(), env_vec[1].into(), env_vec[2].into()],
+=======
+        let oscillator_vec = proto.oscillators;
+        assert_eq!(
+            oscillator_vec.len(),
+            3,
+            "SubSynthConfig must have exactly 3 oscillators"
+        );
+        let lfo_vec = proto.lfos;
+        assert_eq!(lfo_vec.len(), 3, "SubSynthConfig must have exactly 3 lfos");
+        SubSynthConfig {
+            oscillators: [
+                oscillator_vec[0].into(),
+                oscillator_vec[1].into(),
+                oscillator_vec[2].into(),
+            ],
+            lfos: [lfo_vec[0].into(), lfo_vec[1].into(), lfo_vec[2].into()],
+>>>>>>> main
         }
     }
 }
@@ -128,7 +150,11 @@ impl From<SubSynthConfig> for SubSynthConfigProto {
     fn from(config: SubSynthConfig) -> Self {
         SubSynthConfigProto {
             oscillators: map_vec(config.oscillators.to_vec()),
+<<<<<<< HEAD
             envelopes: map_vec(config.envelopes.to_vec()),
+=======
+            lfos: map_vec(config.lfos.to_vec()),
+>>>>>>> main
         }
     }
 }
@@ -142,9 +168,11 @@ pub struct OscillatorConfig {
 
     pub pan: KnobPosition,
 
-    pub coarse_detune: f32,
+    pub osc_detune: f32,
 
-    pub fine_detune: f32,
+    pub osc_count: u32,
+
+    pub unison_detune: f32,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, EnumString, Display, EnumIter, IntoProto, FromProto)]

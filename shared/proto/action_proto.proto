@@ -6,44 +6,57 @@ import "pmodel.proto";
 
 message ActionProto {
   oneof kind {
-    pmodel.ScaleValueProto set_key = 1;
-    pmodel.ScaleProto set_scale = 2;
-    string set_project_name = 3;
-    bool set_mute = 4;
-    uint32 delete_note = 5;
-    pmodel.PlacedNoteProto add_note = 6;
-    pmodel.ScaleValueProto set_note_scale_value = 7;
-    pmodel.WaveTypeProto set_wave = 8;
-    uint32 set_osc_count = 9;
-    pmodel.AdsrEnvelopeProto set_envelope = 10;
-    pmodel.AntiAliasingModeProto set_anti_aliasing_mode = 11;
-    int32 set_note_octave = 12;
-    pmodel.PitchNameProto set_note_pitch_name = 13;
-    uint32 set_oversample_factor = 14;
-    uint32 move_effect_up = 15;
-    uint32 move_effect_down = 16;
-    uint32 delete_effect = 17;
-    // Note: this (EffectInstanceProto) might be the largest variant here.
-    // Check if this means that every action sent over the wire is this large.
-    // If so, maybe consider storing an optional field for large payloads instead (assuming that even helps).
-    pmodel.EffectInstanceProto add_effect = 18;
-    uint32 set_mod_delay_min_depth = 19;
-    uint32 set_mod_delay_max_depth = 20;
-    pmodel.WaveTypeProto set_mod_delay_lfo_type = 21;
-    uint32 set_track_placement_track_id = 22;
-    pmodel.TrackPlacementProto add_track_placement = 23;
-    uint32 delete_track_placement = 24;
-    pmodel.EqTypeProto set_eq_kind = 25;
-    pmodel.FloatOptionProto set_track_placement_clipped_duration = 26;
-    pmodel.TrackProto add_track = 27;
-    uint32 delete_track = 28;
-    SetFloatProto set_float = 29;
+    uint32 move_effect_up = 1;
+    uint32 move_effect_down = 2;
+    SetFloatProto set_float = 3;
+    SetUintProto set_uint = 4;
+    TypeFieldProto set_child = 5;
+    TypeFieldProto add_child = 6;
+    IndexFieldProto delete_child = 7;
+  }
+}
+
+message IndexFieldProto {
+  oneof kind {
+    uint32 track = 1;
+    uint32 placed_note = 2;
+    uint32 track_placement = 3;
+    uint32 effect = 4;
+    uint32 generator = 5;
+  }
+}
+
+message TypeFieldProto {
+  oneof kind {
+    pmodel.ScaleValueProto key = 1;
+    pmodel.ScaleProto scale = 2;
+    pmodel.TrackPlacementProto track_placement = 3;
+    pmodel.PitchNameProto pitch_name = 4;
+    string project_name = 5;
+    pmodel.ScaleValueProto scale_value = 6;
+    pmodel.TrackProto track = 7;
+    pmodel.PlacedNoteProto placed_note = 8;
+    pmodel.WaveTypeProto wave = 9;
+    pmodel.AdsrEnvelopeProto envelope = 10;
+    pmodel.AntiAliasingModeProto anti_aliasing_mode = 11;
+    pmodel.EqTypeProto eq_type = 12;
+    pmodel.EffectInstanceProto effect = 13;
+    pmodel.FloatOptionProto clipped_duration = 14;
+    bool mute = 15;
+    int32 octave = 16;
+    pmodel.FilenameTreeProto sample_tree = 17;
+    pmodel.FileTreeConfigProto sample_tree_config = 18;
   }
 }
 
 message SetFloatProto {
   string key = 1;
   float value = 2;
+}
+
+message SetUintProto {
+  string key = 1;
+  uint32 value = 2;
 }
 
 message ReversibleActionProto {
@@ -62,6 +75,7 @@ message SelectorProto {
     IndexPair effect = 5;
     uint32 generator = 6;
     uint32 track_placement = 7;
+    IndexPair oscillator = 8;
   }
 
   message IndexPair {

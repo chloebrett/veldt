@@ -1,36 +1,32 @@
-use crate::SAMPLE_RATE;
-use crate::graph::{GeneratorNode, RenderGraph, make_graph};
-use dasp_graph::{BoxedNodeSend, NodeData};
+use crate::graph::{GeneratorNode, RenderGraph};
 use shared::model::Project;
 
 pub fn render(project: &Project) -> RenderGraph {
-    // TODO account for multiple tracks and placements.
-    // This will break with multiple tracks
-    let track_index = 0;
-    let placement_index = 0;
-    let mut track = project.tracks[track_index].clone();
-    for note in track.notes.iter_mut() {
-        note.offset += project.track_placements[placement_index].offset
-    }
-
+    let mut render_graph = RenderGraph::default();
     let bpm = project.bpm;
+    // Add tracks with a placement to graph.
+    // TODO: each generator should play all tracks it's linked to - we don't need a different
+    // generator for every track!
+    for (index, placement) in project.track_placements.iter().enumerate() {
+        let track = project.tracks[placement.track_id as usize].clone();
 
-    // Work out how many samples the graph needs to render.
-    let track_length = project.track_placements[placement_index]
-        .clipped_duration
-        .unwrap_or(track.unclipped_duration());
-    let track_samples = (*track_length / bpm * 60.0 * SAMPLE_RATE as f32) as usize;
+        // Create a generator node.
+        // TODO use multiple generators.
+        let generator_index = 0;
+        let generator_node = GeneratorNode::new(
+            project.generators[generator_index].clone(),
+            track,
+            placement.clone(),
+            bpm,
+        );
+        render_graph.add_generator(generator_node);
 
-    // Create a generator node, and create a render graph that uses it as the starting point.
-    let mut graph = make_graph();
-    let generator_node = GeneratorNode::new(project.generators[0].clone(), track, bpm);
-    let generator_node_index = graph.add_node(NodeData::new2(BoxedNodeSend::new(generator_node)));
-    let mut render_graph = RenderGraph::new(graph, track_samples, generator_node_index);
-
-    // Apply effects.
-    let mixer_channel = &project.mixer[0];
-    for effect in &mixer_channel.effects {
-        render_graph.add_effect_with_mixer(effect.clone());
+        // Apply effects.
+        // TODO allow multiple effects
+        let mixer_channel = &project.mixer[0];
+        for effect in &mixer_channel.effects {
+            render_graph.add_generator_effect_with_mixer(effect.clone(), index);
+        }
     }
 
     render_graph

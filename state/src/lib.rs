@@ -1,5 +1,6 @@
 mod action;
 mod broadcast;
+mod field;
 mod receiver;
 mod reducer;
 mod selector;
@@ -9,6 +10,7 @@ mod undo;
 
 pub use action::*;
 use broadcast::*;
+pub use field::*;
 use reducer::*;
 pub use selector::*;
 pub use store::*;

@@ -1,19 +1,19 @@
 use super::Piano;
 use crate::{
+    app_state::DataState,
     view::View,
-    widget::{Sequencer, SequencerObject},
+    widget::{Sequencer, SequencerObject, StateWindow, default_window},
 };
-use egui::{Color32, CornerRadius, Id, Pos2, Rect, ScrollArea, Shape, Ui, pos2, vec2};
+use egui::{Color32, CornerRadius, Pos2, Rect, ScrollArea, Shape, Ui, pos2, vec2};
 use mesic::create_scale_values;
 use shared::{
     model::{Note, PitchName, PlacedNote, Scale, ScaleValue},
     types::PitchValue,
 };
-use state::{Action, FloatField, Selector, Store};
+use state::{Action, FloatField, Selector, Store, TypeField};
 
 pub struct NoteRoll<'a> {
     store: &'a Store,
-    track_index: usize,
     min_note: PitchValue,
     max_note: PitchValue,
     offset: f32,
@@ -21,10 +21,9 @@ pub struct NoteRoll<'a> {
 }
 
 impl<'a> NoteRoll<'a> {
-    pub fn new(store: &'a Store, track_index: usize) -> Self {
+    pub fn new(store: &'a Store) -> Self {
         NoteRoll {
             store,
-            track_index,
             min_note: PitchName {
                 scale_value: ScaleValue::A,
                 octave: 1,
@@ -68,12 +67,14 @@ impl View for NoteRoll<'_> {
     fn ui(&mut self, ui: &mut Ui) {
         let NoteRoll {
             store,
-            track_index,
             min_note,
             max_note,
             offset,
             bar_length,
         } = *self;
+        let Some(track_index): Option<usize> = DataState::ActiveTrackIndex.get_value(ui) else {
+            return;
+        };
         let default_note = PlacedNote {
             note: Note {
                 pitch_name: PitchName {
@@ -86,45 +87,54 @@ impl View for NoteRoll<'_> {
         };
         let notes = store.get().project.tracks[track_index].notes.clone();
         let white_note_pattern = self.make_white_note_pattern(max_note);
-        if ui.button("New note").clicked() {
-            store.dispatch(&Selector::Track(track_index), Action::AddNote(default_note));
-        }
         let unclipped_duration = store.get().project.tracks[track_index].unclipped_duration();
-        ScrollArea::vertical()
-            .min_scrolled_height(200.0)
-            .show(ui, |ui| {
-                let range = Rect::from_min_max(
-                    pos2(offset, min_note as f32 - 1.0),
-                    // NoteRoll is at least 1 bar long
-                    // Extends when notes are dragged or set beyond 1 bar.
-                    // Add 0.5 to X as a small buffer after max note.
-                    pos2(
-                        f32::max(bar_length, *unclipped_duration) + 0.5,
-                        max_note as f32,
-                    ),
+        let range = Rect::from_min_max(
+            pos2(offset, min_note as f32 - 1.0),
+            // NoteRoll is at least 1 bar long
+            // Extends when notes are dragged or set beyond 1 bar.
+            // Add 0.5 to X as a small buffer after max note.
+            pos2(
+                f32::max(bar_length, *unclipped_duration) + 0.5,
+                max_note as f32,
+            ),
+        );
+        let dispatch = move |note_index: usize, action: Action| {
+            store.dispatch(&Selector::Note(track_index, note_index), action)
+        };
+        let on_release = || store.dispatchr(Action::Release);
+        let on_click = |ui: &mut Ui, index: usize| {
+            DataState::NoteWindow.set_value(ui, true);
+            DataState::ActiveNoteIndex.set_value(ui, index);
+        };
+        let title = format!("Track {track_index}");
+        let window = StateWindow(
+            default_window(&title)
+                .default_pos(Pos2 { x: 600.0, y: 20.0 })
+                .resizable(true),
+        );
+        window.show(ui, DataState::NoteRollWindow, |ui| {
+            if ui.button("New note").clicked() {
+                store.dispatch(
+                    &Selector::Track(track_index),
+                    Action::AddChild(TypeField::PlacedNote(default_note)),
                 );
-                let dispatch = move |note_index: usize, action: Action| {
-                    store.dispatch(&Selector::Note(track_index, note_index), action)
-                };
-                let on_release = || store.dispatchr(Action::Release);
-                let on_click = |ui: &mut Ui, index: usize| {
-                    let note_id = Id::new("note_window");
-                    let note_index_id = Id::new("active_note_index");
-                    ui.data_mut(|data| data.insert_temp(note_id, true));
-                    ui.data_mut(|data| data.insert_temp(note_index_id, Some(index)));
-                };
-                ui.horizontal(|ui| {
-                    Piano::new(max_note, min_note - 1).ui(ui);
-                    ui.add(
-                        Sequencer::new(range, dispatch, on_release, on_click)
-                            .objects(notes)
-                            .horizontal_rects(white_note_pattern, Color32::from_white_alpha(4))
-                            .vertical_bars(bar_length, Color32::from_white_alpha(6))
-                            .vertical_bars(1.0, Color32::from_white_alpha(3))
-                            .vertical_bars(1.0 / bar_length, Color32::from_white_alpha(1)),
-                    );
+            }
+            ScrollArea::vertical()
+                .min_scrolled_height(200.0)
+                .show(ui, |ui| {
+                    ui.horizontal(|ui| {
+                        Piano::new(max_note, min_note - 1).ui(ui);
+                        ui.add(
+                            Sequencer::new(range, dispatch, on_release, on_click)
+                                .objects(notes)
+                                .horizontal_rects(white_note_pattern, Color32::from_white_alpha(4))
+                                .vertical_bars(bar_length, Color32::from_white_alpha(6))
+                                .vertical_bars(1.0, Color32::from_white_alpha(3))
+                                .vertical_bars(1.0 / bar_length, Color32::from_white_alpha(1)),
+                        );
+                    });
                 });
-            });
+        });
     }
 }
 
@@ -135,6 +145,14 @@ impl SequencerObject<PlacedNote> for PlacedNote {
         let pitch_value: PitchValue = self.note.pitch_name.into();
         let y = range.bottom() as i32 - pitch_value;
         pos2(x, y as f32)
+    }
+
+    fn to_pos_horizontal(&self, range: Rect) -> Pos2 {
+        let offset: f32 = self.offset.into();
+        let y = offset - range.top();
+        let pitch_value: PitchValue = self.note.pitch_name.into();
+        let x = range.right() as i32 - pitch_value;
+        pos2(x as f32, y)
     }
 
     fn to_rect(&self, range: Rect) -> Rect {
@@ -148,9 +166,9 @@ impl SequencerObject<PlacedNote> for PlacedNote {
     }
 
     fn y_action(&self, y: f32, range: Rect) -> Option<Action> {
-        Some(Action::SetNotePitchName(PitchName::from(
+        Some(Action::SetChild(TypeField::PitchName(PitchName::from(
             (range.bottom() - y) as i32,
-        )))
+        ))))
     }
 
     fn resize_action(&self, x: f32, _range: Rect) -> Option<Action> {

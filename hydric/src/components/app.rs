@@ -1,78 +1,26 @@
 use super::{
-    SaveLoadView,
-    effect::{effect_control, mixer_control},
+    KeyView, NoteRoll, NoteView, TrackPlacementView, TrackRoll,
+    effect::{EffectView, MixerView},
     generator::{generator_control, generators_control},
-    key_control::KeyControl,
-    note_control::NoteControl,
-    note_roll::NoteRoll,
-    play::{play_control, sample_control},
-    toggle_window_panel, track_placement_control,
-    track_roll::TrackRoll,
-    undo_redo_control,
+    menu::MenuBar,
+    play::{SampleTreeView, ToolbarView},
 };
 use crate::components::FrameHistory;
 use crate::promise::spawn;
 use crate::rpc::broadcast_actions;
 use crate::rpc::load_project_list;
-use crate::widget::{default_window, get_set, knob, slider, string_observer};
-use crate::{audio_player::Handle, promise::AsyncResult, view::View};
-use egui::{Id, Pos2};
-use egui::{ScrollArea, scroll_area::ScrollBarVisibility};
+use crate::view::View;
+use crate::{AsyncState, AudioState, WindowState};
+use crate::{EffectSelector, GeneratorSelector};
+use egui::{ScrollArea, Ui, scroll_area::ScrollBarVisibility};
+use mesic::graph::RenderGraph;
 use poll_promise::Promise;
-use shared::model::{GeneratorType, Project, Sample};
-use shared::types::Beats;
-use state::{Action, FloatField, Store};
-
-/// Container for the various promises launchable by the app.
-#[derive(Default)]
-pub struct AsyncState {
-    pub server_render: AsyncResult<Vec<f32>, ()>,
-    pub save_project: AsyncResult<(), ()>,
-    pub project_list: AsyncResult<Vec<String>, ()>,
-    pub load_project: AsyncResult<Project, ()>,
-    pub load_sample: AsyncResult<Sample, ()>,
-}
-
-#[derive(Default)]
-pub struct AudioState {
-    pub audio: Vec<f32>,
-    pub handle: Option<Handle>,
-    pub pre_render: bool,
-}
-
-pub struct MixerWindowState {
-    pub visible: bool,
-    // Currently active / shown channel.
-    pub channel: usize,
-}
-
-/// Which windows are currently shown.
-pub struct WindowState {
-    pub mixer: MixerWindowState,
-    pub effects: Vec<Vec<bool>>, // by ID (within each mixer)
-    pub generator_list: bool,
-    pub generators: Vec<bool>, // by ID
-    pub scale: bool,
-}
-
-impl Default for WindowState {
-    fn default() -> WindowState {
-        // TODO: generate this automatically from the project state.
-        WindowState {
-            mixer: MixerWindowState {
-                visible: false,
-                channel: 0,
-            },
-            effects: vec![vec![false, false, false, false]],
-            generator_list: false,
-            generators: vec![false],
-            scale: false,
-        }
-    }
-}
+use state::{Action, Selector, Store};
+use std::sync::mpsc::channel;
 
 pub struct App {
     pub store: Store,
+    graph: RenderGraph,
     pub frame_history: FrameHistory,
     pub async_state: AsyncState,
     pub audio_state: AudioState,
@@ -84,8 +32,12 @@ impl Default for App {
         let broadcast = |actions| {
             let _ = Promise::spawn_local(broadcast_actions(actions));
         };
+        let mut graph = RenderGraph::default();
+        let (tx, rx) = channel();
+        graph.set_receiver(rx);
         App {
-            store: Store::new(broadcast),
+            store: Store::new(broadcast, tx),
+            graph,
             frame_history: FrameHistory::default(),
             async_state: AsyncState::default(),
             audio_state: AudioState::default(),
@@ -108,6 +60,14 @@ impl App {
 
         app
     }
+
+    fn visible_generators(&self) -> Vec<GeneratorSelector> {
+        self.window_state.generators.clone().as_vec()
+    }
+
+    fn visible_effects(&self) -> Vec<EffectSelector> {
+        self.window_state.effects.clone().as_vec()
+    }
 }
 
 impl eframe::App for App {
@@ -120,186 +80,83 @@ impl eframe::App for App {
             .on_new_frame(ctx.input(|i| i.time), frame.info().cpu_usage);
 
         egui::CentralPanel::default().show(ctx, |ui| {
+            MenuBar::new(
+                &mut self.store,
+                &mut self.window_state,
+                &mut self.async_state,
+            )
+            .ui(ui);
             ScrollArea::vertical()
                 .auto_shrink(false)
                 .scroll_bar_visibility(ScrollBarVisibility::VisibleWhenNeeded)
                 .show(ui, |ui| {
-                    ui.heading("Veldt");
-                    ui.horizontal(|ui| {
-                        let project_name = self.store.get().project.name.clone();
-                        let mut name_observer = string_observer(
-                            get_set(project_name.clone(), |it| {
-                                self.store.dispatchr(Action::SetProjectName(it))
-                            }),
-                            project_name.clone(),
-                        );
-                        ui.text_edit_singleline(&mut name_observer);
-                        SaveLoadView::new(&self.store, &mut self.async_state).ui(ui);
-                    });
-                    toggle_window_panel(&mut self.window_state, ui);
-
-                    if self.window_state.generator_list {
-                        generators_control(ctx, &mut self.window_state, &self.store);
-                    }
-
-                    let generators = &self.store.get().project.generators;
-                    for (generator_index, generator) in generators.iter().enumerate() {
-                        if self.window_state.generators[generator_index] {
-                            // TODO: move this to generator_control.rs.
-                            let title = match &generator.kind {
-                                GeneratorType::SimpleWave { .. } => "Simple Wave Generator",
-                                GeneratorType::Noise { .. } => "Noise Generator",
-                                GeneratorType::SubSynth { .. } => "Subtractive Synth",
-                            };
-                            default_window(title)
-                                .open(&mut self.window_state.generators[0])
-                                .default_pos(Pos2 { x: 1100.0, y: 20.0 })
-                                .show(ctx, |ui| {
-                                    generator_control(&self.store, ui, generator_index);
-                                });
-                        }
-                    }
-                    if self.window_state.mixer.visible {
-                        mixer_control(ctx, &mut self.window_state, &self.store);
-                    }
-                    let mixer = &self.store.get().project.mixer;
-                    for (mixer_index, channel) in mixer.iter().enumerate() {
-                        for effect_index in 0..channel.effects.len() {
-                            if *self.window_state.effects[mixer_index]
-                                .get(effect_index)
-                                .unwrap_or(&false)
-                            {
-                                effect_control(
-                                    ctx,
-                                    &mut self.window_state,
-                                    &self.store,
-                                    mixer_index,
-                                    effect_index,
-                                );
-                            }
-                        }
-                    }
-                    if self.window_state.scale {
-                        default_window("Scale")
-                            .open(&mut self.window_state.scale)
-                            .default_pos(Pos2 { x: 600.0, y: 20.0 })
-                            .show(ctx, |ui| {
-                                let dispatch = |action| self.store.dispatchr(action);
-                                KeyControl::new(
-                                    &dispatch,
-                                    self.store.get().key,
-                                    self.store.get().scale,
-                                )
-                                .ui(ui);
-                            });
-                    }
-
-                    let note_id = Id::new("note_window");
-                    if ui.data_mut(|data| *data.get_temp_mut_or(note_id, false)) {
-                        let mut open = true;
-                        let track_index = ui.data_mut(|data| {
-                            let id = Id::new("active_track_index");
-                            *data.get_temp_mut_or(id, 0)
-                        });
-                        let active_note = ui.data_mut(|data| {
-                            let id = Id::new("active_note_index");
-                            *data.get_temp_mut_or(id, None)
-                        });
-                        if let Some(note_index) = active_note {
-                            default_window("Notes")
-                                .open(&mut open)
-                                .default_pos(Pos2 { x: 600.0, y: 20.0 })
-                                .show(ctx, |ui| {
-                                    NoteControl::new(&self.store, track_index, note_index).ui(ui);
-                                });
-                        }
-                        ui.data_mut(|data| {
-                            // Check if state has been changed within component as well as with
-                            // x'ing out of window.
-                            data.insert_temp(
-                                note_id,
-                                data.get_temp(note_id).unwrap_or(false) && open,
-                            );
-                        })
-                    };
-
-                    let note_roll_id = Id::new("note_roll_window");
-                    if ui.data_mut(|data| {
-                        *data.get_temp_mut_or_insert_with(note_roll_id, move || false)
-                    }) {
-                        let track_index = ui.data_mut(|data| {
-                            let id = Id::new("active_track_index");
-                            *data.get_temp_mut_or(id, 0)
-                        });
-                        let mut open = true;
-                        default_window(&format!("Track: {}", track_index))
-                            .open(&mut open)
-                            .default_pos(Pos2 { x: 600.0, y: 20.0 })
-                            .resizable(true)
-                            .show(ctx, |ui| {
-                                NoteRoll::new(&self.store, track_index).ui(ui);
-                            });
-                        ui.data_mut(|data| {
-                            data.insert_temp(note_roll_id, open);
-                        })
-                    }
-
-                    default_window("Toolbar")
-                        .default_pos(Pos2 { x: 600.0, y: 20.0 })
-                        .show(ctx, |ui| {
-                            let on_release = || self.store.dispatchr(Action::Release);
-
-                            let volume = self.store.get().volume;
-                            knob(
-                                ui,
-                                "Volume",
-                                volume,
-                                |it| {
-                                    self.store
-                                        .dispatchr(Action::SetFloat(FloatField::Volume, it))
-                                },
-                                0.0..=1.0,
-                                on_release,
-                            );
-
-                            let bpm = self.store.get().project.bpm as f64;
-                            slider(
-                                ui,
-                                "BPM",
-                                bpm,
-                                |it| {
-                                    self.store
-                                        .dispatchr(Action::SetFloat(FloatField::Bpm, it as Beats))
-                                },
-                                20.0..=200.0,
-                                on_release,
-                            );
-                            undo_redo_control(&mut self.store, ui);
-                            ui.separator();
-                            play_control(
-                                &self.store,
-                                &mut self.async_state,
-                                &mut self.audio_state,
-                                ui,
-                            );
-                            ui.separator();
-                            sample_control(
-                                &self.store,
-                                &mut self.audio_state,
-                                &mut self.async_state,
-                                ui,
-                            );
-                        });
-
-                    ui.separator();
-                    track_placement_control(&self.store, ui);
-                    ui.separator();
-                    TrackRoll::new(&self.store).ui(ui);
+                    self.ui(ui);
 
                     ui.with_layout(egui::Layout::bottom_up(egui::Align::LEFT), |ui| {
                         self.frame_history.ui(ui);
                     });
                 });
         });
+    }
+}
+
+impl View for App {
+    fn ui(&mut self, ui: &mut Ui) {
+        if self.window_state.generator_list {
+            generators_control(ui.ctx(), &mut self.window_state, &self.store);
+        }
+
+        for generator_index in self.visible_generators() {
+            // TODO: make a GeneratorView.
+            let visible = self.window_state.generators.get(generator_index);
+            generator_control(&self.store, ui, generator_index, visible, || {
+                self.window_state.generators.set(generator_index, false)
+            });
+        }
+        if self.window_state.mixer.visible {
+            MixerView::new(&mut self.window_state, &self.store).ui(ui);
+        }
+
+        ToolbarView::new(
+            &mut self.store,
+            &mut self.async_state,
+            &mut self.audio_state,
+        )
+        .ui(ui);
+
+        for (mixer_index, effect_index) in self.visible_effects() {
+            let dispatch = |action| {
+                self.store
+                    .dispatch(&Selector::Effect(mixer_index, effect_index), action)
+            };
+            let on_release = || self.store.dispatchr(Action::Release);
+            EffectView::new(
+                &self.store,
+                mixer_index,
+                effect_index,
+                &mut self.window_state,
+                dispatch,
+                on_release,
+            )
+            .map(|mut it| it.ui(ui));
+        }
+        if self.window_state.scale {
+            let dispatch = |action| self.store.dispatchr(action);
+            let key = self.store.get().key;
+            let scale = self.store.get().scale;
+            KeyView::new(dispatch, &mut self.window_state.scale, key, scale).ui(ui);
+        }
+
+        NoteView::new(&self.store).ui(ui);
+        NoteRoll::new(&self.store).ui(ui);
+        TrackPlacementView::new(&self.store).ui(ui);
+
+        SampleTreeView::new(
+            &self.store,
+            &mut self.async_state,
+            &mut self.window_state.sample_tree,
+        )
+        .ui(ui);
+        TrackRoll::new(&self.store, &mut self.window_state).ui(ui);
     }
 }
