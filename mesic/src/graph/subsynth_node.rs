@@ -1,4 +1,4 @@
-use crate::wave::{beats_to_samples, sub_synth_wave, unison_wave};
+use crate::wave::{beats_to_samples, sub_synth_wave};
 use dasp_graph::{Buffer, Input, Node};
 use shared::model::{GeneratorInstance, GeneratorType, Track, TrackPlacement};
 use shared::types::{Beats, KnobPosition, Volume};
