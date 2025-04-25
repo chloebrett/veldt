@@ -14,6 +14,7 @@ pub struct AsyncState {
     pub load_project: AsyncResult<Project, ()>,
     pub load_sample: AsyncResult<Sample, ()>,
     pub load_sample_tree: AsyncResult<FilenameTree, ()>,
+    pub export: AsyncResult<(), ()>,
 }
 
 #[derive(Default)]
@@ -43,6 +44,7 @@ pub struct WindowState {
     pub track_roll: bool,
     pub save: bool,
     pub load: bool,
+    pub export: bool,
 }
 
 impl Default for WindowState {
@@ -60,6 +62,7 @@ impl Default for WindowState {
             track_roll: false,
             save: false,
             load: false,
+            export: false,
         }
     }
 }
