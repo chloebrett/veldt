@@ -240,13 +240,13 @@ where
     /// type `NodeData<T>` where `T` implements the `Node` trait.
     ///
     /// **Panics** if there is no node for the given index.
-    pub fn process<T>(&mut self, graph: &mut G, node: G::NodeId)
+    pub fn process<T, P>(&mut self, graph: &mut G, payload: &P, node: G::NodeId)
     where
         G: Data<NodeWeight = NodeData<T>> + DataMapMut,
         for<'a> &'a G: GraphBase<NodeId = G::NodeId> + IntoNeighborsDirected,
-        T: Node,
+        T: Node<P>,
     {
-        process(self, graph, node)
+        process(self, graph, payload, node)
     }
 }
 
@@ -268,11 +268,11 @@ impl<T> NodeData<T> {
 }
 
 #[cfg(feature = "node-boxed")]
-impl NodeData<BoxedNode> {
+impl<P> NodeData<BoxedNode<P>> {
     /// The same as **new**, but boxes the given node data before storing it.
     pub fn boxed<T>(node: T, buffers: Vec<Buffer>) -> Self
     where
-        T: 'static + Node,
+        T: 'static + Node<P>,
     {
         NodeData::new(BoxedNode(Box::new(node)), buffers)
     }
@@ -280,7 +280,7 @@ impl NodeData<BoxedNode> {
     /// The same as **new1**, but boxes the given node data before storing it.
     pub fn boxed1<T>(node: T) -> Self
     where
-        T: 'static + Node,
+        T: 'static + Node<P>,
     {
         Self::boxed(node, vec![Buffer::SILENT])
     }
@@ -288,7 +288,7 @@ impl NodeData<BoxedNode> {
     /// The same as **new2**, but boxes the given node data before storing it.
     pub fn boxed2<T>(node: T) -> Self
     where
-        T: 'static + Node,
+        T: 'static + Node<P>,
     {
         Self::boxed(node, vec![Buffer::SILENT, Buffer::SILENT])
     }
@@ -310,11 +310,11 @@ impl NodeData<BoxedNode> {
 /// type `NodeData<T>` where `T` implements the `Node` trait.
 ///
 /// **Panics** if there is no node for the given index.
-pub fn process<G, T>(processor: &mut Processor<G>, graph: &mut G, node: G::NodeId)
+pub fn process<G, T, P>(processor: &mut Processor<G>, graph: &mut G, payload: &P, node: G::NodeId)
 where
     G: Data<NodeWeight = NodeData<T>> + DataMapMut + Visitable,
     for<'a> &'a G: GraphBase<NodeId = G::NodeId> + IntoNeighborsDirected,
-    T: Node,
+    T: Node<P>,
 {
     const NO_NODE: &str = "no node exists for the given index";
     processor.dfs_post_order.reset(Reversed(&*graph));
@@ -338,7 +338,7 @@ where
         unsafe {
             (*data)
                 .node
-                .process(&processor.inputs, &mut (*data).buffers);
+                .process(&processor.inputs, &mut (*data).buffers, &payload);
         }
     }
 }

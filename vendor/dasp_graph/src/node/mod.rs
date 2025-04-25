@@ -68,7 +68,7 @@ mod sum;
 ///     }
 /// }
 /// ```
-pub trait Node {
+pub trait Node<P> {
     /// Process some audio given a list of the node's `inputs` and write the result to the `output`
     /// buffers.
     ///
@@ -82,7 +82,7 @@ pub trait Node {
     ///
     /// This `process` method is called by the [`Processor`](../struct.Processor.html) as it
     /// traverses the graph during audio rendering.
-    fn process(&mut self, inputs: &[Input], output: &mut [Buffer]);
+    fn process(&mut self, inputs: &[Input], output: &mut [Buffer], payload: &P);
 }
 
 /// A reference to another node that is an input to the current node.
@@ -126,38 +126,38 @@ impl fmt::Debug for Input {
     }
 }
 
-impl<'a, T> Node for &'a mut T
+impl<'a, T, P> Node<P> for &'a mut T
 where
-    T: Node + ?Sized,
+    T: Node<P> + ?Sized,
 {
-    fn process(&mut self, inputs: &[Input], output: &mut [Buffer]) {
-        (**self).process(inputs, output)
+    fn process(&mut self, inputs: &[Input], output: &mut [Buffer], payload: &P) {
+        (**self).process(inputs, output, payload)
     }
 }
 
-impl<T> Node for Box<T>
+impl<T, P> Node<P> for Box<T>
 where
-    T: Node + ?Sized,
+    T: Node<P> + ?Sized,
 {
-    fn process(&mut self, inputs: &[Input], output: &mut [Buffer]) {
-        (**self).process(inputs, output)
+    fn process(&mut self, inputs: &[Input], output: &mut [Buffer], payload: &P) {
+        (**self).process(inputs, output, payload)
     }
 }
 
-impl Node for dyn Fn(&[Input], &mut [Buffer]) {
-    fn process(&mut self, inputs: &[Input], output: &mut [Buffer]) {
-        (*self)(inputs, output)
+impl<P> Node<P> for dyn Fn(&[Input], &mut [Buffer], &P) {
+    fn process(&mut self, inputs: &[Input], output: &mut [Buffer], payload: &P) {
+        (*self)(inputs, output, payload)
     }
 }
 
-impl Node for dyn FnMut(&[Input], &mut [Buffer]) {
-    fn process(&mut self, inputs: &[Input], output: &mut [Buffer]) {
-        (*self)(inputs, output)
+impl<P> Node<P> for dyn FnMut(&[Input], &mut [Buffer], &P) {
+    fn process(&mut self, inputs: &[Input], output: &mut [Buffer], payload: &P) {
+        (*self)(inputs, output, payload)
     }
 }
 
-impl Node for fn(&[Input], &mut [Buffer]) {
-    fn process(&mut self, inputs: &[Input], output: &mut [Buffer]) {
-        (*self)(inputs, output)
+impl<P> Node<P> for fn(&[Input], &mut [Buffer], &P) {
+    fn process(&mut self, inputs: &[Input], output: &mut [Buffer], payload: &P) {
+        (*self)(inputs, output, payload)
     }
 }

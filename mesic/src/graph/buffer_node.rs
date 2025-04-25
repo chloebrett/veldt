@@ -1,3 +1,4 @@
+use super::ProcessContext;
 use super::extract_outputs;
 use dasp_graph::{Buffer, Input, Node};
 use std::cmp::min;
@@ -38,8 +39,8 @@ impl From<Vec<f32>> for BufferNode {
     }
 }
 
-impl Node for BufferNode {
-    fn process(&mut self, _inputs: &[Input], output: &mut [Buffer]) {
+impl Node<ProcessContext> for BufferNode {
+    fn process(&mut self, _inputs: &[Input], output: &mut [Buffer], _payload: &ProcessContext) {
         let (out_left, out_right) = extract_outputs(output);
 
         self.process_channel(out_left);
