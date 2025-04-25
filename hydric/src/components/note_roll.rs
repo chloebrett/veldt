@@ -4,7 +4,9 @@ use crate::{
     view::View,
     widget::{Sequencer, SequencerObject, StateWindow, default_window},
 };
-use egui::{Color32, CornerRadius, Pos2, Rect, ScrollArea, Shape, Ui, pos2, vec2};
+use egui::{
+    Color32, CornerRadius, Pos2, Rect, ScrollArea, Shape, Stroke, StrokeKind, Ui, pos2, vec2,
+};
 use mesic::create_scale_values;
 use shared::{
     model::{Note, PitchName, PlacedNote, Scale, ScaleValue},
@@ -125,7 +127,7 @@ impl View for NoteRoll<'_> {
                     ui.horizontal(|ui| {
                         Piano::new(max_note, min_note - 1).ui(ui);
                         ui.add(
-                            Sequencer::new(range, dispatch, on_release, on_click)
+                            Sequencer::new(store, range, dispatch, on_release, on_click)
                                 .objects(notes)
                                 .horizontal_rects(white_note_pattern, Color32::from_white_alpha(4))
                                 .vertical_bars(bar_length, Color32::from_white_alpha(6))
@@ -178,5 +180,38 @@ impl SequencerObject<PlacedNote> for PlacedNote {
 
     fn shape(&self, range: Rect) -> egui::Shape {
         Shape::rect_filled(self.to_rect(range), CornerRadius::same(1), Color32::WHITE)
+    }
+
+    fn get_active(ui: &Ui, store: &Store) -> Option<PlacedNote> {
+        let track_index = DataState::ActiveTrackIndex.get_value::<usize>(ui)?;
+        DataState::ActiveNoteIndex
+            .get_value::<usize>(ui)
+            .map(|note_index| {
+                store
+                    .get()
+                    .project
+                    .tracks
+                    .get(track_index)
+                    .expect("Should have been track at index.")
+                    .notes
+                    .get(note_index)
+                    .expect("Should have been note at index")
+                    .clone()
+            })
+    }
+
+    fn active_shape(&self, range: Rect) -> Shape {
+        Shape::Vec(vec![
+            self.shape(range),
+            Shape::rect_stroke(
+                self.to_rect(range),
+                CornerRadius::same(0),
+                Stroke {
+                    width: 1.0,
+                    color: Color32::BLUE,
+                },
+                StrokeKind::Inside,
+            ),
+        ])
     }
 }
