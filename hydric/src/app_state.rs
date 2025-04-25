@@ -1,4 +1,4 @@
-use crate::{audio_player::Handle, promise::AsyncResult};
+use crate::{audio_player::AudioPlayer, promise::AsyncResult};
 use egui::{Id, Ui};
 use shared::model::{FilenameTree, Project, Sample};
 use std::cmp::{Eq, Ord};
@@ -13,13 +13,14 @@ pub struct AsyncState {
     pub project_list: AsyncResult<Vec<String>, ()>,
     pub load_project: AsyncResult<Project, ()>,
     pub load_sample: AsyncResult<Sample, ()>,
+    pub upload_sample: AsyncResult<(), ()>,
     pub load_sample_tree: AsyncResult<FilenameTree, ()>,
 }
 
 #[derive(Default)]
 pub struct AudioState {
     pub audio: Vec<f32>,
-    pub handle: Option<Handle>,
+    pub player: Option<AudioPlayer>,
     pub pre_render: bool,
 }
 
@@ -41,6 +42,8 @@ pub struct WindowState {
     pub scale: bool,
     pub sample_tree: bool,
     pub track_roll: bool,
+    pub save: bool,
+    pub load: bool,
 }
 
 impl Default for WindowState {
@@ -56,6 +59,8 @@ impl Default for WindowState {
             scale: false,
             sample_tree: false,
             track_roll: false,
+            save: false,
+            load: false,
         }
     }
 }

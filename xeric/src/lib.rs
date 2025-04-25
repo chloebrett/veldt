@@ -2,12 +2,14 @@ use crate::collab::CollabContext;
 use crate::load_sample::LoadSampleContext;
 use crate::render::RenderContext;
 use crate::save_load::SaveLoadContext;
+use crate::upload::UploadContext;
 use http::{HeaderValue, Method};
 use shared::broadcast_actions::broadcast_actions_server::BroadcastActionsServer;
 use shared::consts::{HYDRIC_URL, XERIC_SOCKET_ADDR};
 use shared::load_sample::load_sample_server::LoadSampleServer;
 use shared::render::render_server::RenderServer;
 use shared::save_load::save_load_server::SaveLoadServer;
+use shared::upload::upload_server::UploadServer;
 use tonic_web::GrpcWebLayer;
 use tower_http::cors::AllowHeaders;
 
@@ -15,12 +17,14 @@ mod collab;
 mod load_sample;
 mod render;
 mod save_load;
+mod upload;
 
 pub async fn start_server() -> anyhow::Result<()> {
     let render = RenderServer::new(RenderContext);
     let load_sample = LoadSampleServer::new(LoadSampleContext);
 
     let save_load = SaveLoadServer::new(SaveLoadContext);
+    let upload = UploadServer::new(UploadContext);
 
     // Broadcasting on the server version of the stack shouldn't do anything.
     // TODO: handle this better.
@@ -44,6 +48,7 @@ pub async fn start_server() -> anyhow::Result<()> {
         .add_service(load_sample)
         .add_service(save_load)
         .add_service(broadcast_actions)
+        .add_service(upload)
         .serve(*XERIC_SOCKET_ADDR)
         .await?;
 

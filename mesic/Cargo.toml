@@ -9,7 +9,7 @@ assert_float_eq = "1.1.4"
 [dependencies]
 dasp_envelope = { version = "0.11.0", features = ["rms"] }
 dasp_frame = "0.11.0"
-dasp_graph = { version = "0.11.0", features = ["node-boxed"] }
+dasp_graph = { path = "../vendor/dasp_graph", features = ["node-boxed"] }
 dasp_ring_buffer = "0.11.0"
 dasp_rms = "0.11.0"
 dasp_slice = "0.11.0"

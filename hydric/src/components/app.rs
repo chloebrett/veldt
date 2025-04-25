@@ -1,8 +1,8 @@
 use super::{
-    KeyView, NoteRoll, NoteView, SaveLoadView, TrackPlacementView, TrackRoll,
+    KeyView, NoteRoll, NoteView, TrackPlacementView, TrackRoll,
     effect::{EffectView, MixerView},
     generator::{generator_control, generators_control},
-    menu::Menu,
+    menu::MenuBar,
     play::{SampleTreeView, ToolbarView},
 };
 use crate::components::FrameHistory;
@@ -80,17 +80,17 @@ impl eframe::App for App {
             .on_new_frame(ctx.input(|i| i.time), frame.info().cpu_usage);
 
         egui::CentralPanel::default().show(ctx, |ui| {
-            Menu::new(&mut self.store, &mut self.window_state).ui(ui);
+            MenuBar::new(
+                &mut self.store,
+                &mut self.window_state,
+                &mut self.async_state,
+            )
+            .ui(ui);
             ScrollArea::vertical()
                 .auto_shrink(false)
                 .scroll_bar_visibility(ScrollBarVisibility::VisibleWhenNeeded)
                 .show(ui, |ui| {
                     self.ui(ui);
-
-                    // TODO: put this behind a window.
-                    ui.horizontal(|ui| {
-                        SaveLoadView::new(&self.store, &mut self.async_state).ui(ui);
-                    });
 
                     ui.with_layout(egui::Layout::bottom_up(egui::Align::LEFT), |ui| {
                         self.frame_history.ui(ui);
