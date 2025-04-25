@@ -82,7 +82,7 @@ impl View for ToolbarView<'_> {
                             .await
                         else {
                             // No proper error handling as a user canceling the action is typical.
-                            return Ok(()); 
+                            return Ok(());
                         };
 
                         let file_name = file.file_name();
