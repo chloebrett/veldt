@@ -102,7 +102,7 @@ pub fn sub_synth_wave(
     pitch_name: &PitchName,
     beats: Beats,
     bpm: Beats,
-    config: &SubSynthConfig,  // TODO: change to OscConfig later when matrix is made
+    config: &SubSynthConfig, // TODO: change to OscConfig later when matrix is made
     start_index: i32,
 ) -> Buffer {
     let buffers: Vec<Buffer> = config
