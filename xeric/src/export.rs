@@ -47,7 +47,7 @@ impl Export for ExportContext {
         let mut buffer = Cursor::new(Vec::new());
         {
             let mut writer = WavWriter::new(&mut buffer, spec)
-                .map_err(|e| tonic::Status::internal(format!("{}", e)))?;
+                .map_err(|e| tonic::Status::invalid_argument(format!("{}", e)))?;
 
             for frame in graph {
                 let sample = *frame.channel(0).unwrap(); // mono
@@ -56,12 +56,12 @@ impl Export for ExportContext {
 
                 writer
                     .write_sample(sample_i16)
-                    .map_err(|e| tonic::Status::internal(format!("{}", e)))?;
+                    .map_err(|e| tonic::Status::invalid_argument(format!("{}", e)))?;
             }
 
             writer
                 .finalize()
-                .map_err(|e| tonic::Status::internal(format!("{}", e)))?;
+                .map_err(|e| tonic::Status::invalid_argument(format!("{}", e)))?;
         }
 
         let wav_bytes = buffer.into_inner();
@@ -72,7 +72,7 @@ impl Export for ExportContext {
             File::create(&file_path).map_err(|e| tonic::Status::internal(format!("{}", e)))?;
         out_file
             .write_all(&wav_bytes)
-            .map_err(|e| tonic::Status::internal(format!("{}", e)))?;
+            .map_err(|e| tonic::Status::invalid_argument(format!("{}", e)))?;
 
         Ok(tonic::Response::new(ExportReply { audio: wav_bytes }))
     }
