@@ -124,8 +124,8 @@ impl From<SubSynthConfigProto> for SubSynthConfig {
                 oscillator_vec[1].into(),
                 oscillator_vec[2].into(),
             ],
-            lfos: [lfo_vec[0].into(), lfo_vec[1].into(), lfo_vec[2].into()],
             envelopes: [env_vec[0].into(), env_vec[1].into(), env_vec[2].into()],
+            lfos: [lfo_vec[0].into(), lfo_vec[1].into(), lfo_vec[2].into()],
         }
     }
 }

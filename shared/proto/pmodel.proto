@@ -131,11 +131,8 @@ message SubSynthProto {
 
 message SubSynthConfigProto {
   repeated OscillatorConfigProto oscillators = 1; 
-<<<<<<< HEAD
   repeated AdsrEnvelopeProto envelopes = 2;
-=======
-  repeated LfoConfigProto lfos = 2;
->>>>>>> main
+  repeated LfoConfigProto lfos = 3;
 }
 
 message OscillatorConfigProto {
