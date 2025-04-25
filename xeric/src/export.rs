@@ -43,7 +43,7 @@ impl Export for ExportContext {
             bits_per_sample: 16,
             sample_format: SampleFormat::Int,
         };
-        
+
         let mut buffer = Cursor::new(Vec::new());
         {
             let mut writer = WavWriter::new(&mut buffer, spec)
