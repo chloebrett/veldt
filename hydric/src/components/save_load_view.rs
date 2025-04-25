@@ -54,7 +54,6 @@ impl View for SaveLoadView<'_> {
 
         let load_project_name = self.store.get().load_project_name.clone();
         let project_list = &self.store.get().project_list;
-        log::info!("{:?}", project_list);
         ui.horizontal(|ui| {
             egui::ComboBox::from_id_salt(1) // TODO Correct Id Salt
                 .selected_text(
