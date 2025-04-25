@@ -2,10 +2,10 @@
 
 use dasp_graph::{node, Buffer, Input, Node, NodeData};
 
-type BoxedNode = dasp_graph::BoxedNode;
+type BoxedNode = dasp_graph::BoxedNode<()>;
 
 // A simple source node that just writes `0.1` to the output. We'll use this to test the sum node.
-fn src_node(_inputs: &[Input], output: &mut [Buffer]) {
+fn src_node(_inputs: &[Input], output: &mut [Buffer], _payload: &()) {
     for o in output {
         o.iter_mut().for_each(|s| *s = 0.1);
     }
@@ -24,7 +24,7 @@ fn test_sum() {
     let mut p = Processor::with_capacity(max_nodes);
 
     // Create and add the nodes to the graph.
-    let src_node_ptr = src_node as fn(&[Input], &mut [Buffer]);
+    let src_node_ptr = src_node as fn(&[Input], &mut [Buffer], &());
     let src_a = g.add_node(NodeData::new1(BoxedNode::new(src_node_ptr)));
     let src_b = g.add_node(NodeData::new1(BoxedNode::new(src_node_ptr)));
     let sum = g.add_node(NodeData::new1(BoxedNode::new(node::Sum)));
@@ -34,7 +34,7 @@ fn test_sum() {
     g.add_edge(src_b, sum, ());
 
     // Process the graph from the sum node.
-    p.process(&mut g, sum);
+    p.process(&mut g, &(), sum);
 
     // Check that `sum` actually contains the sum.
     let expected = Buffer::from([0.2; Buffer::LEN]);
@@ -49,7 +49,7 @@ fn test_sum() {
     g.add_edge(src_e, sum, ());
 
     // Check that the result is consistent.
-    p.process(&mut g, sum);
+    p.process(&mut g, &(), sum);
     let expected = Buffer::from([0.5; Buffer::LEN]);
     assert_eq!(&g[sum].buffers[..], &[expected][..]);
 }
@@ -66,7 +66,7 @@ fn test_sum2() {
 
     // Create a small tree where we first sum a and b, then sum the result with c.
     // This time, using two buffers (channels) per node.
-    let src_node_ptr = src_node as fn(&[Input], &mut [Buffer]);
+    let src_node_ptr = src_node as fn(&[Input], &mut [Buffer], &());
     let src_a = g.add_node(NodeData::new2(BoxedNode::new(src_node_ptr)));
     let src_b = g.add_node(NodeData::new2(BoxedNode::new(src_node_ptr)));
     let src_c = g.add_node(NodeData::new2(BoxedNode::new(src_node_ptr)));
@@ -78,7 +78,7 @@ fn test_sum2() {
     g.add_edge(src_c, sum_ab_c, ());
 
     // Process the graph.
-    p.process(&mut g, sum_ab_c);
+    p.process(&mut g, &(), sum_ab_c);
 
     // sum_a_b should be 0.2.
     let expected = vec![Buffer::from([0.2; Buffer::LEN]); 2];
@@ -92,15 +92,15 @@ fn test_sum2() {
 fn test_sum_unboxed() {
     // Prove to ourselves we also support unboxed node types with a custom node type.
     enum TestNode {
-        SourceFnPtr(fn(&[Input], &mut [Buffer])),
+        SourceFnPtr(fn(&[Input], &mut [Buffer], &())),
         Sum(node::Sum),
     }
 
-    impl Node for TestNode {
-        fn process(&mut self, inputs: &[Input], output: &mut [Buffer]) {
+    impl Node<()> for TestNode {
+        fn process(&mut self, inputs: &[Input], output: &mut [Buffer], payload: &()) {
             match *self {
-                TestNode::SourceFnPtr(ref mut f) => (*f)(inputs, output),
-                TestNode::Sum(ref mut sum) => sum.process(inputs, output),
+                TestNode::SourceFnPtr(ref mut f) => (*f)(inputs, output, payload),
+                TestNode::Sum(ref mut sum) => sum.process(inputs, output, payload),
             }
         }
     }
@@ -124,7 +124,7 @@ fn test_sum_unboxed() {
     g.add_edge(src_b, sum, ());
 
     // Process the graph from the sum node.
-    p.process(&mut g, sum);
+    p.process(&mut g, &(), sum);
 
     // Check that `sum` actually contains the sum.
     let expected = Buffer::from([0.2; Buffer::LEN]);

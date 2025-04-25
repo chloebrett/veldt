@@ -72,15 +72,15 @@ where
     }
 }
 
-impl<P> Into<Box<dyn Node<P>>> for BoxedNode<P> {
-    fn into(self) -> Box<dyn Node<P>> {
-        self.0
+impl<P> From<BoxedNode<P>> for Box<dyn Node<P>> {
+    fn from(val: BoxedNode<P>) -> Self {
+        val.0
     }
 }
 
-impl<P> Into<Box<dyn Node<P> + Send>> for BoxedNodeSend<P> {
-    fn into(self) -> Box<dyn Node<P> + Send> {
-        self.0
+impl<P> From<BoxedNodeSend<P>> for Box<dyn Node<P> + Send> {
+    fn from(val: BoxedNodeSend<P>) -> Self {
+        val.0
     }
 }
 
