@@ -44,7 +44,6 @@ pub struct WindowState {
     pub track_roll: bool,
     pub save: bool,
     pub load: bool,
-    pub export: bool,
 }
 
 impl Default for WindowState {
@@ -62,7 +61,6 @@ impl Default for WindowState {
             track_roll: false,
             save: false,
             load: false,
-            export: false,
         }
     }
 }
