@@ -11,6 +11,7 @@ fn main() {
                 "proto/save_load.proto",
                 "proto/action_proto.proto",
                 "proto/broadcast_actions.proto",
+                "proto/export.proto",
             ],
             &["proto"],
         )
