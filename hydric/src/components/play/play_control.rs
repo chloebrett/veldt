@@ -1,5 +1,5 @@
 use super::{FrequencyDisplay, audio_vis::audio_vis};
-use crate::audio_player::play;
+use crate::audio_player::AudioPlayer;
 use crate::promise::{poll, spawn};
 use crate::rpc::render as server_render;
 use crate::view::View;
@@ -22,7 +22,9 @@ pub fn play_control(
             volume,
             should_clip: true,
         });
-        audio_state.handle = Some(play(graph, audio_state.pre_render));
+        let player = AudioPlayer::new(graph, audio_state.pre_render);
+        audio_state.player = Some(player);
+        audio_state.player.as_mut().unwrap().play();
     }
     poll(&mut async_state.server_render, |audio: &Vec<f32>| {
         let volume = store.get().volume;
@@ -33,7 +35,9 @@ pub fn play_control(
             volume,
             should_clip: true,
         });
-        audio_state.handle = Some(play(graph, audio_state.pre_render));
+        let player = AudioPlayer::new(graph, audio_state.pre_render);
+        audio_state.player = Some(player);
+        audio_state.player.as_mut().unwrap().play();
     });
     if ui.button("Load audio (server)").clicked() {
         let project = store.get().project.clone();
