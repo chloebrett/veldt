@@ -140,7 +140,7 @@ impl Default for StoreData {
                                         decay: 0.9,
                                         release: 0.5,
                                     },
-                                ]
+                                ],
                             },
                         },
                         meta: GeneratorMeta {
