@@ -28,7 +28,7 @@ pub fn to_f32(sample: i32) -> f32 {
 // depend on filesystem state). Therefore the context can be empty.
 pub struct LoadSampleContext;
 
-fn sample_dir_path() -> PathBuf {
+pub fn sample_dir_path() -> PathBuf {
     let mut file_path = current_dir().unwrap();
     file_path.pop(); // pop '/xeric'
     file_path.push("assets");

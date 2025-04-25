@@ -1,11 +1,10 @@
+use crate::load_sample::sample_dir_path;
 use log::info;
-use tonic::async_trait;
-
 use shared::upload::{UploadSampleReply, UploadSampleRequest, upload_server::Upload};
-
 use std::env::current_dir;
 use std::fs::File;
 use std::io::Write;
+use tonic::async_trait;
 
 pub struct UploadContext;
 
@@ -22,13 +21,10 @@ impl Upload for UploadContext {
         } = request.into_inner();
 
         //format file path for where to save sample
-        let mut file_path = current_dir().unwrap();
-        file_path.pop();
-        file_path.push("assets");
-        file_path.push("samples");
+        let mut file_path = sample_dir_path();
         file_path.push(name.clone());
 
-        //creat and write data
+        //create and write data
         let mut file = File::create(file_path)?;
         file.write_all(&uploaded_sample)?;
 

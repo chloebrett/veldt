@@ -312,7 +312,6 @@ message FileTreeConfigProto {
   bool show_hidden = 3;
 }
 
-
 message LfoConfigProto {
   WaveTypeProto wave = 1;
   float frequency = 2;

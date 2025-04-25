@@ -1,8 +1,5 @@
 syntax = "proto3";
-
 package upload;
-
-
 
 service Upload {
     rpc UploadSample (UploadSampleRequest) returns (UploadSampleReply){}

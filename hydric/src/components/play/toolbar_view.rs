@@ -71,8 +71,10 @@ impl View for ToolbarView<'_> {
                 sample_control(self.store, self.audio_state, self.async_state, ui);
 
                 if ui.button("Upload Sample").clicked() {
-                    // in future it is worth considering extending the async_state expected result to handle
-                    // current upload progress or errors
+                    /*
+                    In future it is worth considering extending the async_state expected result to handle
+                    current upload progress or errors.
+                    */
                     spawn(&mut self.async_state.upload_sample, async move {
                         let file = rfd::AsyncFileDialog::new()
                             .add_filter("Sound Sample", &["wav"])
