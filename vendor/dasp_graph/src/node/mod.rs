@@ -50,8 +50,8 @@ mod sum;
 ///
 /// // Implement the `Node` trait for our new type.
 /// # #[cfg(feature = "dasp_slice")]
-/// impl Node for Sum {
-///     fn process(&mut self, inputs: &[Input], output: &mut [Buffer]) {
+/// impl<P> Node<P> for Sum {
+///     fn process(&mut self, inputs: &[Input], output: &mut [Buffer], _payload: &P) {
 ///         // Fill the output with silence.
 ///         for out_buffer in output.iter_mut() {
 ///             out_buffer.silence();
@@ -126,7 +126,7 @@ impl fmt::Debug for Input {
     }
 }
 
-impl<'a, T, P> Node<P> for &'a mut T
+impl<T, P> Node<P> for &mut T
 where
     T: Node<P> + ?Sized,
 {
