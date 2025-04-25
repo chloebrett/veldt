@@ -1,3 +1,4 @@
+use super::ProcessContext;
 use super::{extract_inputs, extract_outputs};
 use crate::consts::SAMPLE_RATE;
 use dasp_graph::{Buffer, Input, Node};
@@ -74,8 +75,8 @@ fn compress(input: f32, detector: f32, threshold: f32, ratio_recip: f32) -> f32 
     }
 }
 
-impl Node for CompressorNode {
-    fn process(&mut self, inputs: &[Input], output: &mut [Buffer]) {
+impl Node<ProcessContext> for CompressorNode {
+    fn process(&mut self, inputs: &[Input], output: &mut [Buffer], _payload: &ProcessContext) {
         let (left_out, right_out) = extract_outputs(output);
         let (left_in, right_in) = extract_inputs(inputs)[0];
 

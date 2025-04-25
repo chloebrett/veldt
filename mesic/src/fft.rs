@@ -1,39 +1,33 @@
+use rustfft::{
+    Fft, FftDirection,
+    algorithm::Radix4,
+    num_complex::{Complex, ComplexFloat},
+};
+use shared::serialize::map_vec;
 use std::f32::consts::PI;
-use std::f32::consts::TAU;
 
-/// Apply Discrete Fourier Transform to Singal
-/// Creates a vector the length of signal.
-/// Each value of the vector corresponds to the signal response for the frequency window:
-///      `n * N`
-/// Where `n` is the index of the value and N is `SAMPLE_RATE / signal.len()`.
-/// E.g. the 3rd value of a response where the sample rate is `44_100` hz and the signal is
-/// 1024 samples long would be the window of 86.1-129.1 Hz.
-/// See Ch. 20 of Designing Audio Effect Plugins in C++.
-pub fn dft(signal: Vec<f32>) -> Vec<f32> {
-    let length = signal.len();
-    let inv_length = 1.0 / length as f32;
-    let mut im = vec![0f32; length];
-    let mut re = vec![0f32; length];
-    let mut output = vec![0f32; length];
-    for bin in 0..length {
-        for (i, value) in signal.iter().enumerate() {
-            // Calculate real (cosine phase) response
-            re[bin] += value * (TAU * i as f32 * bin as f32 * inv_length).cos() * inv_length;
-            // Calculate imaginary (sine phase) response
-            im[bin] += value * (TAU * i as f32 * bin as f32 * inv_length).sin() * inv_length;
-        }
-        // Calculate magnitude of response
-        output[bin] = (re[bin].powi(2) + im[bin].powi(2)).sqrt()
-    }
-    output
+/// Perform Fast Fourier Transform on Signal to find component frequencies.
+pub fn fft(signal: Vec<f32>) -> Vec<f32> {
+    let signal_length = signal.len();
+    // Initialise a best algorithm for FFT.
+    // Signal length must be a power of 2
+    let fft = Radix4::new(signal_length, FftDirection::Forward);
+    let mut complex_signal: Vec<Complex<f32>> = map_vec(signal);
+    let complex_array = &mut complex_signal[0..signal_length];
+    fft.process((complex_array).into());
+    // Find magnitude of complex output and normalise by array length.
+    complex_signal
+        .iter()
+        .map(|value| value.abs() / signal_length as f32)
+        .collect()
 }
 
-/// Group DFT results into bins based on frequency log2 value.
+/// Group FFT results into bins based on frequency log2 value.
 /// This makes responses more readable with higher resolution on lower frequencies.
 // TODO improve this implementation so that it calculates the log exponent needed to create bin
 // sizes that perfect fill up the response space.
 pub fn make_log_buckets(response: Vec<f32>, bins: usize) -> Vec<f32> {
-    // Halve response as DFT can only discern signal responses for `signal.len()/2` windows.
+    // Halve response as FFT can only discern signal responses for `signal.len()/2` windows.
     let positive_response = response[0..response.len() / 2].to_vec();
     let mut output = vec![0f32; bins];
     for (index, value) in positive_response.iter().enumerate() {
@@ -49,7 +43,7 @@ pub fn make_log_buckets(response: Vec<f32>, bins: usize) -> Vec<f32> {
     output
 }
 
-/// A filter to improve the results of DFT when applied before transformation.
+/// A filter to improve the results of FFT when applied before transformation.
 // TODO try the Hann Window in DASP to see if it is more efficient.
 pub fn hann_window(signal: Vec<f32>) -> Vec<f32> {
     let inv_length = 1.0 / signal.len() as f32;
@@ -62,17 +56,17 @@ pub fn hann_window(signal: Vec<f32>) -> Vec<f32> {
 
 #[cfg(test)]
 mod tests {
+    use std::f32::consts::TAU;
+
     use ordered_float::OrderedFloat;
     use shared::{
         model::{PitchName, ScaleValue},
         serialize::map_vec,
     };
 
-    use crate::wave::freq;
-
     use super::*;
 
-    use crate::SAMPLE_RATE;
+    use crate::{SAMPLE_RATE, wave::freq};
 
     const EPSILON: f32 = 1e-5;
 
@@ -94,7 +88,7 @@ mod tests {
             .map(|index| (TAU * (index as f32) * harmonic as f32 / sample_size as f32).cos())
             .collect();
         // ACT
-        let output = dft(signal);
+        let output = fft(signal);
         // ASSERT
         let mut expected = vec![0f32; sample_size];
         expected[harmonic] = 0.5;
@@ -115,7 +109,7 @@ mod tests {
             .map(|index| (TAU * (index as f32) * harmonic as f32 / sample_size as f32).sin())
             .collect();
         // ACT
-        let output = dft(signal);
+        let output = fft(signal);
         // ASSERT
         let mut expected = vec![0f32; sample_size];
         expected[harmonic] = 0.5;
@@ -134,13 +128,13 @@ mod tests {
             octave: 4,
         };
         let samples = 1024;
-        // The frequency window of each values returned in the DFT response vector.
+        // The frequency window of each values returned in the fft response vector.
         let freq_window = SAMPLE_RATE as f32 / samples as f32;
         let input: Vec<f32> = (0..samples as usize)
             .map(|it| (TAU * it as f32 / SAMPLE_RATE as f32 * freq(pitch)).sin())
             .collect();
         // Act
-        let response = dft(input);
+        let response = fft(input);
         let bins = make_log_buckets(response, 10);
         let expected_max_bin = (freq(pitch) / freq_window + 2.0).log2() as usize - 1;
         let max_bin = index_of_max(&map_vec::<f32, OrderedFloat<f32>>(bins));

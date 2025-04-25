@@ -5,6 +5,8 @@ pub fn render(project: &Project) -> RenderGraph {
     let mut render_graph = RenderGraph::default();
     let bpm = project.bpm;
     // Add tracks with a placement to graph.
+    // TODO: each generator should play all tracks it's linked to - we don't need a different
+    // generator for every track!
     for (index, placement) in project.track_placements.iter().enumerate() {
         let track = project.tracks[placement.track_id as usize].clone();
 

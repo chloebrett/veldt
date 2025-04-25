@@ -48,10 +48,10 @@ impl View for MixerView<'_> {
                     let effect = &mixer.effects[effect_index];
                     ui.label(effect_name(&effect.effect));
 
-                    let show = &mut window_state.effects[mixer_index][effect_index];
-                    let text = if *show { "Hide" } else { "Show" };
+                    let show = window_state.effects.get((mixer_index, effect_index));
+                    let text = if show { "Hide" } else { "Show" };
                     if ui.button(text).clicked() {
-                        *show = !*show;
+                        window_state.effects.set((mixer_index, effect_index), !show);
                     }
 
                     let meta = &effect.meta;
@@ -73,13 +73,6 @@ impl View for MixerView<'_> {
                     if ui.button("Delete").clicked() {
                         dispatch_mixer(Action::DeleteChild(IndexField::Effect(effect_index)));
 
-                        // TODO: window state is not synced up with undo/redo, which causes a crash
-                        // when undoing deletion of effects. Fix this. Perhaps fill in the window
-                        // state with 'false' values for anything missing at the start of each
-                        // frame? This would scale fine once we move towards ID based (instead of
-                        // index based) window state.
-                        window_state.effects[mixer_index].remove(effect_index);
-
                         // Skip iterating for this frame.
                         break;
                     }
@@ -88,13 +81,12 @@ impl View for MixerView<'_> {
                         // windows to reset position - because the IDs change. Should we have stable
                         // IDs instead / as well?
                         dispatch_mixer(Action::MoveEffectUp(effect_index));
-                        // TODO: notice how the store state and the window state depend on each other.
-                        // How can we sync these up automatically?
-                        window_state.effects[mixer_index].swap(effect_index, effect_index - 1);
+
+                        // TODO: use IDs instead of indexes to refer to effects - otherwise their
+                        // visibility is order-dependent.
                     }
                     if effect_index < mixer.effects.len() - 1 && ui.button("🔽").clicked() {
                         dispatch_mixer(Action::MoveEffectDown(effect_index));
-                        window_state.effects[mixer_index].swap(effect_index, effect_index + 1);
                     }
                     ui.separator();
                 }
@@ -107,7 +99,6 @@ impl View for MixerView<'_> {
                             meta: EffectMeta::default(),
                         };
                         dispatch_mixer(Action::AddChild(TypeField::Effect(instance)));
-                        window_state.effects[mixer_index].push(false);
                     }
                 }
 

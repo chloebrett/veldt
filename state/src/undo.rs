@@ -1,8 +1,9 @@
-use crate::{Action, BroadcastType, Selector, StoreData, broadcast_type, reducer};
+use crate::{Action, BroadcastType, Selector, StoreData, broadcast_type};
 use local_macro::{FromProto, IntoProto};
 use log::info;
 use shared::action_proto::ReversibleActionProto;
 use std::mem::discriminant;
+use std::sync::mpsc::Sender;
 
 fn expect_action(action: Option<Action>) -> Action {
     action.expect("Action was a no-op!")
@@ -28,6 +29,10 @@ pub struct UndoStack {
     // TODO: should probably be an async type.
     broadcast: Box<dyn Fn(Vec<ReversibleAction>) + Send>,
 
+    // Channel transmitter that passes on any actions that are processed, for reprocessing by
+    // listeners. Currently MPSC but can be made MPMC when needed.
+    tx: Sender<(Selector, Action)>,
+
     // Actions that have been applied at least once. Includes actions that have been undone.
     // If a new action is applied while there are undone actions, the undone actions are discarded.
     actions: Vec<ReversibleAction>,
@@ -38,9 +43,13 @@ pub struct UndoStack {
 }
 
 impl UndoStack {
-    pub fn new(broadcast: impl Fn(Vec<ReversibleAction>) + Send + 'static) -> Self {
+    pub fn new(
+        broadcast: impl Fn(Vec<ReversibleAction>) + Send + 'static,
+        tx: Sender<(Selector, Action)>,
+    ) -> Self {
         UndoStack {
             broadcast: Box::new(broadcast),
+            tx,
             actions: vec![],
             index: 0,
         }
@@ -57,7 +66,8 @@ impl UndoStack {
         }
 
         // Run the action, and remember how to reverse it.
-        let reverse = expect_action(reducer(store, selector, action));
+        let reverse = expect_action(store.update(selector, action));
+        let _ = self.tx.send((selector.clone(), action.clone()));
 
         // Discard any available redos in the stack.
         if self.index < self.actions.len() {
@@ -159,7 +169,10 @@ impl UndoStack {
             .actions
             .get(self.index - 1)
             .expect("UndoStack index was invalid!");
-        expect_action(reducer(store, &action.selector, &action.reverse));
+        expect_action(store.update(&action.selector, &action.reverse));
+        let _ = self
+            .tx
+            .send((action.selector.clone(), action.reverse.clone()));
         self.index -= 1;
     }
 
@@ -182,7 +195,10 @@ impl UndoStack {
             .actions
             .get(self.index)
             .expect("UndoStack index was invalid!");
-        expect_action(reducer(store, &action.selector, &action.forward));
+        expect_action(store.update(&action.selector, &action.forward));
+        let _ = self
+            .tx
+            .send((action.selector.clone(), action.forward.clone()));
         self.index += 1;
     }
 }
