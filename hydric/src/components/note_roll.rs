@@ -214,4 +214,41 @@ impl SequencerObject<PlacedNote> for PlacedNote {
             ),
         ])
     }
+
+    fn get_selected(ui: &Ui, store: &Store) -> Option<Vec<PlacedNote>> {
+        let track_index = DataState::ActiveTrackIndex.get_value::<usize>(ui)?;
+        let note_indexes = DataState::SelectedNoteIndexes.get_value::<Vec<usize>>(ui)?;
+        Some(
+            note_indexes
+                .into_iter()
+                .map(|note_index| {
+                    store
+                        .get()
+                        .project
+                        .tracks
+                        .get(track_index)
+                        .expect("Should have been track at index.")
+                        .notes
+                        .get(note_index)
+                        .expect("Should have been note at index")
+                        .clone()
+                })
+                .collect(),
+        )
+    }
+
+    fn selected_shape(&self, range: Rect) -> Shape {
+        Shape::Vec(vec![
+            self.shape(range),
+            Shape::rect_stroke(
+                self.to_rect(range),
+                CornerRadius::same(0),
+                Stroke {
+                    width: 1.0,
+                    color: Color32::RED,
+                },
+                StrokeKind::Inside,
+            ),
+        ])
+    }
 }

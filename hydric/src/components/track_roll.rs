@@ -201,4 +201,46 @@ impl SequencerObject<PlacedTrack> for PlacedTrack {
             ),
         ])
     }
+
+    fn get_selected(ui: &Ui, store: &Store) -> Option<Vec<PlacedTrack>> {
+        let index_list: Vec<usize> = DataState::SelectedTrackPlacementIndexes.get_value(ui)?;
+        Some(
+            index_list
+                .into_iter()
+                .map(|index| {
+                    let track_placement = store
+                        .get()
+                        .project
+                        .track_placements
+                        .get(index)
+                        .expect("Should have been track placement at index");
+                    PlacedTrack {
+                        track: store
+                            .get()
+                            .project
+                            .tracks
+                            .get(track_placement.track_id as usize)
+                            .expect("Should have been track at index.")
+                            .clone(),
+                        placement: track_placement.clone(),
+                    }
+                })
+                .collect(),
+        )
+    }
+
+    fn selected_shape(&self, range: Rect) -> Shape {
+        Shape::Vec(vec![
+            self.shape(range),
+            Shape::rect_stroke(
+                self.to_rect(range),
+                CornerRadius::same(0),
+                Stroke {
+                    width: 1.0,
+                    color: Color32::RED,
+                },
+                StrokeKind::Inside,
+            ),
+        ])
+    }
 }
