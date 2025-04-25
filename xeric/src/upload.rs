@@ -1,11 +1,7 @@
 use log::info;
 use tonic::async_trait;
 
-use shared::upload::{
-    UploadSampleRequest,
-    UploadSampleReply,
-    upload_server::Upload
-};
+use shared::upload::{UploadSampleReply, UploadSampleRequest, upload_server::Upload};
 
 use std::env::current_dir;
 use std::fs::File;
@@ -18,10 +14,12 @@ impl Upload for UploadContext {
     async fn upload_sample(
         self: &Self,
         request: tonic::Request<UploadSampleRequest>,
-    ) -> Result<tonic::Response<UploadSampleReply>, tonic::Status>{
-
+    ) -> Result<tonic::Response<UploadSampleReply>, tonic::Status> {
         //extract data
-        let UploadSampleRequest {name, uploaded_sample} = request.into_inner();
+        let UploadSampleRequest {
+            name,
+            uploaded_sample,
+        } = request.into_inner();
 
         //format file path for where to save sample
         let mut file_path = current_dir().unwrap();

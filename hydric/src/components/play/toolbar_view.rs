@@ -1,9 +1,9 @@
 use crate::app_state::{AsyncState, AudioState};
 use crate::components::undo_redo_control;
+use crate::promise::spawn;
 use crate::rpc::upload_sample;
 use crate::view::View;
 use crate::widget::{default_window, knob, slider};
-use crate::promise::spawn;
 use egui::{Pos2, Ui};
 use shared::types::Beats;
 use state::{Action, FloatField, Store};
@@ -64,17 +64,22 @@ impl View for ToolbarView<'_> {
                     on_release,
                 );
 
-                if ui.button("Upload WAV").clicked(){
+                undo_redo_control(self.store, ui);
+                ui.separator();
+                play_control(self.store, self.async_state, self.audio_state, ui);
+                ui.separator();
+                sample_control(self.store, self.audio_state, self.async_state, ui);
 
-
+                if ui.button("Upload Sample").clicked() {
                     // in future it is worth considering extending the async_state expected result to handle
                     // current upload progress or errors
-                    spawn(&mut self.async_state.upload_sample, async move{
+                    spawn(&mut self.async_state.upload_sample, async move {
                         let file = rfd::AsyncFileDialog::new()
                             .add_filter("Sound Sample", &["wav"])
                             .pick_file()
-                            .await.unwrap();
-                        
+                            .await
+                            .unwrap();
+
                         let file_name = file.file_name();
                         let file_data = file.read().await;
                         upload_sample(file_name, file_data).await
@@ -82,13 +87,6 @@ impl View for ToolbarView<'_> {
 
                     ui.close_menu();
                 }
-
-                undo_redo_control(self.store, ui);
-                ui.separator();
-                play_control(self.store, self.async_state, self.audio_state, ui);
-                ui.separator();
-                sample_control(self.store, self.audio_state, self.async_state, ui);
             });
     }
 }
-
