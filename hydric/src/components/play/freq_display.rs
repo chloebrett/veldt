@@ -13,7 +13,7 @@ use ordered_float::OrderedFloat;
 use shared::serialize::map_vec;
 use std::ops::Sub;
 
-use crate::{app_state::AudioState, audio_player::Handle, transform::Transform, view::View};
+use crate::{app_state::AudioState, audio_player::AudioPlayer, transform::Transform, view::View};
 
 pub struct FrequencyDisplay<'a> {
     audio_state: &'a AudioState,
@@ -37,11 +37,15 @@ impl<'a> FrequencyDisplay<'a> {
     fn render_display(
         &self,
         ui: &mut Ui,
-        handle: &Handle,
+        player: &AudioPlayer,
         audio: Vec<OrderedFloat<f32>>,
     ) -> Option<Shape> {
+        let Some(start_timestamp) = player.start_timestamp else {
+            return None;
+        };
+
         let current_timestamp = chrono::offset::Utc::now();
-        let time_delta: TimeDelta = current_timestamp.sub(handle.start_timestamp);
+        let time_delta: TimeDelta = current_timestamp.sub(start_timestamp);
         let time_delta_ms: i64 = time_delta.num_milliseconds();
         let current_sample: usize = (time_delta_ms * (SAMPLE_RATE as i64) / 1000) as usize;
         let frame_size = (SAMPLE_RATE / self.frame_rate) as usize;
@@ -150,8 +154,8 @@ impl View for FrequencyDisplay<'_> {
                 Rect::from_min_max(pos2(0.0, 0.0), pos2(bin_count as f32, y_max)),
                 rect,
             );
-            if let Some(handle) = &audio_state.handle {
-                if let Some(shape) = self.render_display(ui, handle, ordered_audio) {
+            if let Some(player) = &audio_state.player {
+                if let Some(shape) = self.render_display(ui, player, ordered_audio) {
                     ui.painter().add(shape.transform(to_screen));
                 }
             }
