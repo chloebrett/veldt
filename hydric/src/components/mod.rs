@@ -11,6 +11,7 @@ mod play;
 mod track_placement_view;
 mod track_roll;
 mod undo_redo_view;
+mod mod_matrix
 
 pub use app::*;
 use frame_history::*;
