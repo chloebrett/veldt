@@ -1,5 +1,5 @@
 use super::{
-    KeyView, NoteRoll, NoteView, SaveLoadView, TrackPlacementView, TrackRoll,
+    KeyView, NoteRoll, NoteView, TrackPlacementView, TrackRoll,
     effect::{EffectView, MixerView},
     generator::{generator_control, generators_control},
     menu::MenuBar,
@@ -91,11 +91,6 @@ impl eframe::App for App {
                 .scroll_bar_visibility(ScrollBarVisibility::VisibleWhenNeeded)
                 .show(ui, |ui| {
                     self.ui(ui);
-
-                    // TODO: put this behind a window.
-                    ui.horizontal(|ui| {
-                        SaveLoadView::new(&self.store, &mut self.async_state).ui(ui);
-                    });
 
                     ui.with_layout(egui::Layout::bottom_up(egui::Align::LEFT), |ui| {
                         self.frame_history.ui(ui);
