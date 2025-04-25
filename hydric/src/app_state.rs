@@ -41,6 +41,7 @@ pub struct WindowState {
     pub scale: bool,
     pub sample_tree: bool,
     pub track_roll: bool,
+    pub save: bool,
 }
 
 impl Default for WindowState {
@@ -56,6 +57,7 @@ impl Default for WindowState {
             scale: false,
             sample_tree: false,
             track_roll: false,
+            save: false,
         }
     }
 }

@@ -1,30 +1,62 @@
-use crate::{app_state::WindowState, view::View};
+use crate::{
+    app_state::{AsyncState, WindowState},
+    promise::spawn,
+    rpc::save_project,
+    view::View,
+};
 use egui::{Button, Ui, menu::bar};
-use state::Store;
+use state::{Action, Store};
 
-pub struct Menu<'a> {
+use super::save_as::SaveAs;
+
+pub struct MenuBar<'a> {
     store: &'a mut Store,
     window_state: &'a mut WindowState,
+    async_state: &'a mut AsyncState,
 }
 
-impl<'a> Menu<'a> {
-    pub fn new(store: &'a mut Store, window_state: &'a mut WindowState) -> Self {
-        Menu {
+impl<'a> MenuBar<'a> {
+    pub fn new(
+        store: &'a mut Store,
+        window_state: &'a mut WindowState,
+        async_state: &'a mut AsyncState,
+    ) -> Self {
+        MenuBar {
             store,
             window_state,
+            async_state,
         }
     }
 }
 
-impl View for Menu<'_> {
+impl View for MenuBar<'_> {
     fn ui(&mut self, ui: &mut Ui) {
-        let store = &mut self.store;
-        let window_state = &mut self.window_state;
+        let MenuBar {
+            store,
+            window_state,
+            async_state,
+        } = self;
+        let dispatch = |action: Action| store.dispatchr(action);
+        let save_click = || {
+            let project = store.get().project.clone();
+            spawn(&mut async_state.save_project, async move {
+                save_project(project).await
+            });
+        };
+        let name = &store.get().project.name;
+        SaveAs::new(window_state, name, dispatch, save_click).ui(ui);
         bar(ui, |ui| {
             ui.label("Veldt");
             ui.menu_button("File", |ui| {
-                #[expect(clippy::needless_if)] // remove once no longer needed
-                if ui.button("Save").clicked() {}
+                if ui.button("Save").clicked() {
+                    let project = store.get().project.clone();
+                    spawn(&mut async_state.save_project, async move {
+                        save_project(project).await
+                    });
+                }
+                if ui.button("Save As").clicked() {
+                    window_state.save = true;
+                }
                 #[expect(clippy::needless_if)] // remove once no longer needed
                 if ui.button("Load").clicked() {}
                 if ui.button("Export").clicked() {}
