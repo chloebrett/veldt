@@ -102,7 +102,7 @@ pub fn sub_synth_wave(
     pitch_name: &PitchName,
     beats: Beats,
     bpm: Beats,
-    config: &SubSynthConfig,
+    config: &SubSynthConfig,  // TODO: change to OscConfig later when matrix is made
     start_index: i32,
 ) -> Buffer {
     let buffers: Vec<Buffer> = config
@@ -114,7 +114,7 @@ pub fn sub_synth_wave(
                 pitch_name,
                 beats,
                 bpm,
-                envelope, // map osc 1 -> envelope 1, etc
+                envelope, // map osc 1 -> envelope 1, etc for now
                 osc.wave,
                 AntiAliasingMode::Off, // placeholder
                 osc.osc_detune,
