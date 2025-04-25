@@ -1,6 +1,6 @@
 use egui::Ui;
 
+// Note: use an egui::widgets::Widget instead if you want to return a Response.
 pub trait View {
-    // TODO consider returning a Response to handle other interactions.
     fn ui(&mut self, ui: &mut Ui);
 }

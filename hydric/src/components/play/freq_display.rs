@@ -1,39 +1,113 @@
+use chrono::TimeDelta;
 use egui::{
     Color32, CornerRadius, Frame, Pos2, Rect, Shape, Ui,
     cache::{ComputerMut, FrameCache},
     emath::RectTransform,
     pos2, vec2,
 };
-use mesic::dft::{self, dft, hann_window};
+use mesic::{
+    FFT_SAMPLE_SIZE, SAMPLE_RATE,
+    fft::{self, fft, hann_window},
+};
 use ordered_float::OrderedFloat;
 use shared::serialize::map_vec;
+use std::ops::Sub;
 
-use crate::{transform::Transform, view::View};
+use crate::{app_state::AudioState, audio_player::AudioPlayer, transform::Transform, view::View};
 
-const FRAME_SIZE: usize = 1024;
-
-pub struct FrequencyDisplay {
-    audio: Vec<f32>,
-    bin_count: usize,
+pub struct FrequencyDisplay<'a> {
+    audio_state: &'a AudioState,
+    bin_count: usize, // The number of bins the response will be grouped into.
+    frame_rate: i32,  // The number of times per second the visualisation will be rendered.
+    y_max: f32,       // The maximum response value that will be displayed.
 }
 
-impl FrequencyDisplay {
-    pub fn new(audio: Vec<f32>) -> Self {
+impl<'a> FrequencyDisplay<'a> {
+    pub fn new(audio_state: &'a AudioState) -> Self {
         FrequencyDisplay {
-            audio,
-            // Currently hard-coded to fit window length of DFT.
+            audio_state,
+            // Currently hard-coded to fit window length of FFT.
             bin_count: 8,
+            frame_rate: 60,
+            y_max: 0.5,
+        }
+    }
+
+    /// Create frequency display shapes synced with playing audio.
+    fn render_display(
+        &self,
+        ui: &mut Ui,
+        player: &AudioPlayer,
+        audio: Vec<OrderedFloat<f32>>,
+    ) -> Option<Shape> {
+        let Some(start_timestamp) = player.start_timestamp else {
+            return None;
+        };
+
+        let current_timestamp = chrono::offset::Utc::now();
+        let time_delta: TimeDelta = current_timestamp.sub(start_timestamp);
+        let time_delta_ms: i64 = time_delta.num_milliseconds();
+        let current_sample: usize = (time_delta_ms * (SAMPLE_RATE as i64) / 1000) as usize;
+        let frame_size = (SAMPLE_RATE / self.frame_rate) as usize;
+        // Round `current_sample` so that the audio will be broken up into chunks based on
+        // the visualisation frame rate.
+        let chunk_head = current_sample / frame_size * frame_size;
+        if chunk_head + FFT_SAMPLE_SIZE < audio.len() {
+            // Cast as `OrderedFloat` set-length array so that the value can be cached.
+            let slice: [OrderedFloat<f32>; FFT_SAMPLE_SIZE] = audio
+                [chunk_head..(chunk_head + FFT_SAMPLE_SIZE)]
+                .try_into()
+                .unwrap_or([OrderedFloat(0.0); FFT_SAMPLE_SIZE]);
+
+            Some(ui.memory_mut(|memory| {
+                let cache = memory.caches.cache::<FrequencyDisplayCache<'_>>();
+                cache.get(FrequencyDisplayKey {
+                    audio: slice,
+                    bin_count: self.bin_count,
+                    y_max: self.y_max.into(),
+                })
+            }))
+        } else {
+            None
         }
     }
 }
 
 fn response_points(signal: Vec<f32>, bin_count: usize) -> Vec<Pos2> {
-    let response = dft(hann_window(signal));
-    dft::make_log_buckets(response, bin_count)
+    let response = fft(hann_window(signal));
+    fft::make_log_buckets(response, bin_count)
         .into_iter()
         .enumerate()
         .map(|(index, bucket)| pos2(index as f32, bucket))
         .collect()
+}
+
+fn make_frequency_shape(points: Vec<Pos2>, y_max: f32, bin_count: usize) -> Shape {
+    Shape::Vec(
+        points
+            .iter()
+            .map(|pos| {
+                // Show frequencies whose response is clipped.
+                let colour = if pos.y > y_max {
+                    Color32::LIGHT_RED
+                } else {
+                    Color32::WHITE
+                };
+                // Clip response.
+                let clamped_pos = pos.clamp(pos2(0.0, 0.0), pos2(bin_count as f32, y_max));
+                Shape::rect_filled(
+                    Rect::from_min_size(
+                        // Pos y value is top == 0.0
+                        // Therefore subtract y value from max y value to render correctly
+                        pos2(pos.x, y_max - clamped_pos.y),
+                        vec2(1.0, clamped_pos.y),
+                    ),
+                    CornerRadius::same(0),
+                    colour,
+                )
+            })
+            .collect(),
+    )
 }
 
 #[derive(Default)]
@@ -41,7 +115,7 @@ struct FrequencyDisplayComputer;
 
 #[derive(Hash, Copy, Clone, Debug)]
 struct FrequencyDisplayKey {
-    audio: [OrderedFloat<f32>; FRAME_SIZE],
+    audio: [OrderedFloat<f32>; FFT_SAMPLE_SIZE],
     bin_count: usize,
     y_max: OrderedFloat<f32>,
 }
@@ -50,71 +124,41 @@ type FrequencyDisplayCache<'a> = FrameCache<Shape, FrequencyDisplayComputer>;
 
 impl ComputerMut<FrequencyDisplayKey, Shape> for FrequencyDisplayComputer {
     fn compute(&mut self, key: FrequencyDisplayKey) -> Shape {
-        let y_max = *key.y_max;
-        let points = response_points(map_vec(key.audio.to_vec()), key.bin_count);
-        Shape::Vec(
-            points
-                .iter()
-                .map(|pos| {
-                    // Show frequencies whose response is clipped.
-                    let colour = if pos.y > y_max {
-                        Color32::LIGHT_RED
-                    } else {
-                        Color32::WHITE
-                    };
-                    // Clip response.
-                    let clamped_pos = pos.clamp(pos2(0.0, 0.0), pos2(key.bin_count as f32, y_max));
-                    Shape::rect_filled(
-                        Rect::from_min_size(
-                            // Pos y value is top == 0.0
-                            // Therefore subtract y value from max y value to render correctly
-                            pos2(pos.x, y_max - clamped_pos.y),
-                            vec2(1.0, clamped_pos.y),
-                        ),
-                        CornerRadius::same(0),
-                        colour,
-                    )
-                })
-                .collect(),
+        make_frequency_shape(
+            response_points(map_vec(key.audio.to_vec()), key.bin_count),
+            *key.y_max,
+            key.bin_count,
         )
     }
 }
 
-impl View for FrequencyDisplay {
+impl View for FrequencyDisplay<'_> {
     fn ui(&mut self, ui: &mut Ui) {
-        let bin_count = self.bin_count;
-        let audio = &self.audio;
-        let canvas_size = vec2(500.0, 100.0);
+        let FrequencyDisplay {
+            audio_state,
+            bin_count,
+            frame_rate: _frame_rate,
+            y_max,
+        } = *self;
+        let audio = &self.audio_state.audio;
         if audio.is_empty() {
             return;
         }
+        // Cast as `OrderedFloat` so that values implement `Eq` required for hashing in cache.
         let ordered_audio: Vec<OrderedFloat<f32>> = map_vec(audio.to_vec());
-        // Create hashable slice for Cache
-        // TODO either improve this so it can take windows of any size
-        // Or render as audio is played to avoid any caching.
-        let slice: [OrderedFloat<f32>; FRAME_SIZE] = ordered_audio[0..FRAME_SIZE]
-            .try_into()
-            .unwrap_or([OrderedFloat(0.0); FRAME_SIZE]);
-
+        let canvas_size = vec2(500.0, 100.0);
         Frame::canvas(ui.style()).show(ui, |ui| {
             ui.ctx().request_repaint();
             let (_id, rect) = ui.allocate_space(canvas_size);
-            // Set a maximum response value.
-            let y_max = 1.0;
             let to_screen = RectTransform::from_to(
                 Rect::from_min_max(pos2(0.0, 0.0), pos2(bin_count as f32, y_max)),
                 rect,
             );
-
-            let shapes = ui.memory_mut(|memory| {
-                let cache = memory.caches.cache::<FrequencyDisplayCache<'_>>();
-                cache.get(FrequencyDisplayKey {
-                    audio: slice,
-                    bin_count,
-                    y_max: y_max.into(),
-                })
-            });
-            ui.painter().add(shapes.transform(to_screen))
+            if let Some(player) = &audio_state.player {
+                if let Some(shape) = self.render_display(ui, player, ordered_audio) {
+                    ui.painter().add(shape.transform(to_screen));
+                }
+            }
         });
     }
 }
