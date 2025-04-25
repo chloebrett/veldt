@@ -6,7 +6,7 @@ use shared::save_load::{
     SaveProjectReply, SaveProjectRequest, save_load_server::SaveLoad,
 };
 use std::env::current_dir;
-use std::fs::File;
+use std::fs::{File, create_dir};
 use std::fs::{ReadDir, read_dir};
 use std::io::{Read, Write};
 use std::path::PathBuf;
@@ -15,11 +15,18 @@ use tonic::async_trait;
 // Stateless: we just save projects to files and don't keep anything in memory.
 pub struct SaveLoadContext;
 
-fn project_dir_path() -> PathBuf {
+static PROJECT_DIR_NAME: &str = "projects";
+
+fn assets_dir_path() -> PathBuf {
     let mut file_path = current_dir().unwrap();
     file_path.pop(); // pop '/xeric'
     file_path.push("assets");
-    file_path.push("projects");
+    file_path
+}
+
+fn project_dir_path() -> PathBuf {
+    let mut file_path = assets_dir_path();
+    file_path.push(PROJECT_DIR_NAME);
     file_path
 }
 
@@ -28,6 +35,23 @@ fn project_file_path(filename: String) -> PathBuf {
     // TODO: add a file extension.
     file_path.push(filename.clone());
     file_path
+}
+
+fn create_project_directory() -> std::io::Result<()> {
+    let mut dir_path = assets_dir_path();
+    let mut assets_dir = read_dir(&dir_path)?;
+    if !assets_dir.any(|file| {
+        file.expect("assets directory should exist.")
+            .file_name()
+            .to_str()
+            .unwrap()
+            == PROJECT_DIR_NAME
+    }) {
+        dir_path.push(PROJECT_DIR_NAME);
+        create_dir(dir_path)
+    } else {
+        Ok(())
+    }
 }
 
 #[async_trait]
@@ -42,6 +66,9 @@ impl SaveLoad for SaveLoadContext {
 
         // TODO: handle error.
         let _ = project.clone().unwrap().encode(&mut project_bytes);
+
+        // Create a dir for projects if it does not exist
+        create_project_directory()?;
 
         let file_path = project_file_path(name.clone());
         info!("Saving project to path: {}", file_path.clone().display());
