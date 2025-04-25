@@ -131,14 +131,16 @@ message SubSynthProto {
 
 message SubSynthConfigProto {
   repeated OscillatorConfigProto oscillators = 1; 
+  repeated LfoConfigProto lfos = 2;
 }
 
 message OscillatorConfigProto {
   WaveTypeProto wave = 1;
   float volume = 2;
   float pan = 3;
-  float coarse_detune = 4;
-  float fine_detune = 5;
+  float osc_detune = 4;
+  uint32 osc_count = 5;
+  float unison_detune = 6;
 }
 
 message GeneratorMetaProto {
@@ -290,4 +292,27 @@ enum EqTypeProto {
 // Wrapper to allow passing Option<f32> as arguments for enums in protos.
 message FloatOptionProto {
   optional float value = 1;
+}
+
+message FilenameTreeProto {
+  oneof kind {
+    string filename = 1;
+    DirectoryProto directory = 2;
+  }
+}
+
+message DirectoryProto {
+  string name = 1;
+  repeated FilenameTreeProto contents = 2;
+}
+
+message FileTreeConfigProto {
+  string search = 1;
+  bool show_non_audio = 2;
+  bool show_hidden = 3;
+}
+
+message LfoConfigProto {
+  WaveTypeProto wave = 1;
+  float frequency = 2;
 }

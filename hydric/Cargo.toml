@@ -18,10 +18,11 @@ log = "0.4.27"
 wasm-bindgen-futures = "0.4.50"
 strum = "0.27.1"
 chrono = "0.4.40"
-cpal = { version = "0.15.3", features = ["wasm-bindgen"] }
+cpal = { path = "../vendor/cpal", features = ["wasm-bindgen"] }
 poll-promise = { version = "0.3.0", features = ["web"] }
 ordered-float = "5.0.0"
 dasp_signal = "0.11.0"
 dasp_frame = "0.11.0"
-egui_knob = { git = "https://github.com/chloebrett/egui_knob" }
 ecolor = "0.31.0"
+egui_ltreeview = "0.2.0"
+lazy_static = "1.5.0"

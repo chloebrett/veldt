@@ -44,6 +44,8 @@ message TypeFieldProto {
     pmodel.FloatOptionProto clipped_duration = 14;
     bool mute = 15;
     int32 octave = 16;
+    pmodel.FilenameTreeProto sample_tree = 17;
+    pmodel.FileTreeConfigProto sample_tree_config = 18;
   }
 }
 
@@ -73,6 +75,7 @@ message SelectorProto {
     IndexPair effect = 5;
     uint32 generator = 6;
     uint32 track_placement = 7;
+    IndexPair oscillator = 8;
   }
 
   message IndexPair {

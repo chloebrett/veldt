@@ -1,13 +1,16 @@
+use super::ProcessContext;
 use super::{
-    BufferNode, CompressorNode, DelayNode, EqNode, Graph, MixerNode, ModDelayNode, Processor,
-    make_graph, make_processor,
+    BufferNode, CompressorNode, DelayNode, EqNode, GeneratorNode, Graph, MixerNode, ModDelayNode,
+    Processor, make_graph, make_processor,
 };
 use crate::consts::SAMPLE_RATE;
 use crate::effect::eq_filter;
 use dasp_frame::Stereo;
-use dasp_graph::{BoxedNodeSend, Buffer, Node, NodeData};
+use dasp_graph::{BoxedNodeSend, Buffer, Node, NodeData, node::Sum};
 use petgraph::stable_graph::NodeIndex;
 use shared::model::{Effect, EffectInstance};
+use state::{Action, Selector};
+use std::sync::mpsc::Receiver;
 
 /// A Graph with the required metadata to facilitate immediate processing into a Vec.
 pub struct RenderGraph {
@@ -15,31 +18,93 @@ pub struct RenderGraph {
     sample_count: usize,
     output_node_index: NodeIndex,
     processor: Processor,
+    generator_indexes: Vec<NodeIndex>,
+
+    // Contains a copy of the project.
+    // Updated based on actions from the main store at each buffer cycle.
+    process_context: ProcessContext,
+    // Receives actions from the main store and applies to mesic store.
+    rx: Option<Receiver<(Selector, Action)>>,
 
     // For iteration.
     processed_samples_count: usize,
 }
 
-impl RenderGraph {
-    pub fn new(graph: Graph, sample_count: usize, output_node_index: NodeIndex) -> Self {
+impl Default for RenderGraph {
+    fn default() -> Self {
+        let mut graph = make_graph();
+        // Set a Sum node as output to add inputs on the graph.
+        let output_node_index = graph.add_node(NodeData::new2(BoxedNodeSend::new(Sum)));
         RenderGraph {
             graph,
-            sample_count,
+            sample_count: 0,
             output_node_index,
+            generator_indexes: vec![],
             processor: make_processor(),
+            process_context: ProcessContext::default(),
+            rx: None,
             processed_samples_count: 0,
         }
     }
+}
 
-    pub fn add_node(&mut self, node: impl Node + 'static + Send) {
+impl RenderGraph {
+    pub fn set_receiver(&mut self, receiver: Receiver<(Selector, Action)>) {
+        self.rx = Some(receiver);
+    }
+
+    // Add node with edge directed to graph output.
+    pub fn add_node(&mut self, node: impl Node<ProcessContext> + 'static + Send) {
+        let node_index = self
+            .graph
+            .add_node(NodeData::new2(BoxedNodeSend::new(node)));
+        self.graph.add_edge(node_index, self.output_node_index, ());
+    }
+
+    // Add node and set as graph output.
+    pub fn add_output_node(&mut self, node: impl Node<ProcessContext> + 'static + Send) {
         let node_index = self
             .graph
             .add_node(NodeData::new2(BoxedNodeSend::new(node)));
         self.graph.add_edge(self.output_node_index, node_index, ());
+        // Set node as new output
         self.output_node_index = node_index;
     }
 
-    pub fn add_effect_with_mixer(&mut self, effect: EffectInstance) {
+    pub fn add_generator(&mut self, node: GeneratorNode) {
+        self.sample_count = usize::max(self.sample_count, node.sample_count);
+        let node_index = self
+            .graph
+            .add_node(NodeData::new2(BoxedNodeSend::new(node)));
+        // Keep track of node index to easily connect to Effects and Mixers
+        self.generator_indexes.push(node_index);
+        self.graph.add_edge(node_index, self.output_node_index, ());
+    }
+
+    pub fn add_generator_effect_with_mixer(
+        &mut self,
+        effect: EffectInstance,
+        generator_index: usize,
+    ) {
+        let dry = *self
+            .generator_indexes
+            .get(generator_index)
+            .expect("Should be a generator node at this index.");
+        let mixer = self.add_effect_with_mixer(effect, dry);
+        // Disconnected direct edge from generator to output.
+        if let Some(edge) = self.graph.find_edge(dry, self.output_node_index) {
+            self.graph.remove_edge(edge);
+        };
+        self.graph.add_edge(mixer, self.output_node_index, ());
+    }
+
+    pub fn add_main_effect_with_mixer(&mut self, effect: EffectInstance) {
+        let dry = self.output_node_index;
+        let mixer = self.add_effect_with_mixer(effect, dry);
+        self.output_node_index = mixer;
+    }
+
+    fn add_effect_with_mixer(&mut self, effect: EffectInstance, dry: NodeIndex) -> NodeIndex {
         let effect_node = match effect.effect {
             Effect::SimpleEq { config } => BoxedNodeSend::new(EqNode {
                 filter_left: eq_filter(&config),
@@ -62,7 +127,6 @@ impl RenderGraph {
             mute: effect.meta.mute,
         };
 
-        let dry = self.output_node_index;
         let effect = self.graph.add_node(NodeData::new2(effect_node));
         let mixer = self
             .graph
@@ -83,18 +147,20 @@ impl RenderGraph {
         // inverted!
         self.graph.add_edge(effect, mixer, ());
         self.graph.add_edge(dry, mixer, ());
-
-        self.output_node_index = mixer;
+        mixer
     }
 
     /// Creates a graph that plays the buffer contained in a Vec.
     /// Chain with .add_amp_node to control volume and/or clip.
     pub fn from_vec(vec: Vec<f32>) -> Self {
-        let mut graph = make_graph();
         let sample_count = vec.len();
         let buffer_node: BufferNode = vec.into();
-        let buffer_node_index = graph.add_node(NodeData::new2(BoxedNodeSend::new(buffer_node)));
-        RenderGraph::new(graph, sample_count, buffer_node_index)
+        let mut graph = RenderGraph {
+            sample_count,
+            ..Default::default()
+        };
+        graph.add_node(buffer_node);
+        graph
     }
 
     pub fn reset(&mut self) {
@@ -107,9 +173,22 @@ impl Iterator for RenderGraph {
     type Item = Stereo<f32>;
 
     fn next(&mut self) -> Option<Self::Item> {
+        // Update the store if there are actions to process.
+        let store = &mut self.process_context.store;
+        if let Some(rx) = &self.rx {
+            while let Ok((selector, action)) = rx.recv() {
+                // TODO: also update graph topology by listening for the appropriate actions.
+                // E.g. add/remove effect or generator.
+                store.update(&selector, &action);
+            }
+        }
+
         if self.processed_samples_count % Buffer::LEN == 0 {
-            self.processor
-                .process(&mut self.graph, self.output_node_index);
+            self.processor.process(
+                &mut self.graph,
+                &self.process_context,
+                self.output_node_index,
+            );
         }
 
         if self.processed_samples_count >= self.sample_count {
@@ -131,4 +210,276 @@ impl Iterator for RenderGraph {
     }
 
     // TODO: implement size_hint or SizedIterator to make collection more efficient.
+}
+
+#[cfg(test)]
+mod tests {
+    use shared::model::{
+        AdsrEnvelope, AntiAliasingMode, DelayConfig, EffectMeta, EqConfig, EqType,
+        GeneratorInstance, GeneratorMeta, GeneratorType, MixerChannel, ModDelayConfig, Note,
+        PitchName, PlacedNote, ScaleValue, SimpleWaveConfig, Track, TrackPlacement, WaveType,
+    };
+
+    use crate::{
+        graph::{AmpNode, GeneratorNode},
+        wave::{beats_to_samples, freq},
+    };
+
+    use super::*;
+
+    fn make_track() -> Track {
+        Track {
+            notes: vec![PlacedNote {
+                note: Note {
+                    pitch_name: PitchName {
+                        scale_value: ScaleValue::C,
+                        octave: 4,
+                    },
+                    beats: 1.0,
+                },
+                offset: 0.0.into(),
+            }],
+            offset: 0.0.into(),
+        }
+    }
+
+    fn make_track_placement() -> TrackPlacement {
+        TrackPlacement {
+            track_id: 0,
+            offset: 0.0.into(),
+            clipped_duration: None,
+            visual_placement: 0,
+        }
+    }
+
+    fn make_generator() -> GeneratorInstance {
+        GeneratorInstance {
+            id: 0,
+            kind: GeneratorType::SimpleWave {
+                config: SimpleWaveConfig {
+                    wave: WaveType::Sine,
+                    envelope: AdsrEnvelope {
+                        attack: 0.1,
+                        decay: 0.1,
+                        sustain: 0.8,
+                        release: 0.1,
+                    },
+                    osc_count: 4,
+                    detune_cents: 5.0,
+                    anti_aliasing_mode: AntiAliasingMode::Off,
+                    oversample_factor: 2,
+                },
+            },
+            meta: GeneratorMeta {
+                volume: 1.0,
+                mute: false,
+                pan: 0.0,
+            },
+        }
+    }
+
+    fn make_generator_node() -> GeneratorNode {
+        let track = make_track();
+        let track_placement = make_track_placement();
+        let generator = make_generator();
+        let bpm = 120.0;
+        let generator_node = GeneratorNode::new(generator, track, track_placement, bpm);
+        generator_node
+    }
+
+    fn make_mixer_channel() -> MixerChannel {
+        MixerChannel {
+            effects: vec![
+                EffectInstance {
+                    effect: Effect::SimpleEq {
+                        config: EqConfig {
+                            kind: EqType::SimpleResonator,
+                            fc: 1000.0,
+                            q: 1.0,
+                            gain: 0.0,
+                        },
+                    },
+                    meta: EffectMeta {
+                        id: 0,
+                        wet: 1.0,
+                        mute: false,
+                    },
+                },
+                EffectInstance {
+                    effect: Effect::SimpleDelay {
+                        config: DelayConfig {
+                            delay_ms: 250.0,
+                            feedback: 0.5,
+                        },
+                    },
+                    meta: EffectMeta {
+                        id: 1,
+                        wet: 0.5,
+                        mute: false,
+                    },
+                },
+                EffectInstance {
+                    effect: Effect::ModDelay {
+                        config: ModDelayConfig {
+                            min_depth: 100,
+                            max_depth: 200,
+                            freq: 10.0,
+                            lfo_type: WaveType::Triangle,
+                        },
+                    },
+                    meta: EffectMeta {
+                        id: 1,
+                        wet: 0.5,
+                        mute: false,
+                    },
+                },
+            ],
+        }
+    }
+
+    #[test]
+    fn empty_render_graph_renders_nothing() {
+        let graph = RenderGraph::default();
+        // Iterator should be empty.
+        let output: Vec<[f32; 2]> = graph.collect();
+        assert!(output.is_empty())
+    }
+
+    #[test]
+    fn basic_render_graph_renders_something() {
+        // Arrange
+        let generator_node = make_generator_node();
+        let mixer_channel = make_mixer_channel();
+        let amp_node = AmpNode {
+            volume: 2.3,
+            should_clip: false,
+        };
+        let mut graph = RenderGraph::default();
+        // Act
+        graph.add_generator(generator_node);
+        for effect in mixer_channel.effects {
+            graph.add_generator_effect_with_mixer(effect, 0);
+        }
+        graph.add_output_node(amp_node);
+        // Assert
+        assert!(graph.peekable().peek().is_some())
+    }
+
+    #[test]
+    fn graph_with_only_generator_renders_something() {
+        // Arrange
+        let generator_node = make_generator_node();
+        let mut graph = RenderGraph::default();
+        // Act
+        graph.add_generator(generator_node);
+        // Assert
+        assert!(graph.peekable().peek().is_some())
+    }
+
+    #[test]
+    fn graph_built_from_sample_renders_something() {
+        // Arrange
+        let pitch = PitchName {
+            scale_value: ScaleValue::A,
+            octave: 4,
+        };
+        let samples = 120;
+        let input: Vec<f32> = (0..samples as usize)
+            .map(|it| (it as f32 / SAMPLE_RATE as f32 * freq(pitch)).sin())
+            .collect();
+        // Act
+        let graph = RenderGraph::from_vec(input.clone());
+        let output: Vec<[f32; 2]> = graph.collect();
+        let output_mono: Vec<f32> = output
+            .iter()
+            .map(|[left, right]| (left + right) * 0.5)
+            .collect();
+        // Assert
+        assert_eq!(output_mono, input)
+    }
+
+    #[test]
+    fn graph_with_clipped_duration_clips() {
+        // ARRANGE
+        let track = make_track();
+        let mut track_placement = make_track_placement();
+        let generator = make_generator();
+        let bpm = 120.0;
+        // Set up graph with no clipping.
+        let mut unclipped_graph = RenderGraph::default();
+        let unclipped_generator_node = GeneratorNode::new(
+            generator.clone(),
+            track.clone(),
+            track_placement.clone(),
+            bpm,
+        );
+        // Set up identical graph but with a clipped duration
+        let clipped_duration = 0.5;
+        track_placement.clipped_duration = Some(clipped_duration.into());
+        let mut clipped_graph = RenderGraph::default();
+        let clipped_generator_node = GeneratorNode::new(
+            generator.clone(),
+            track.clone(),
+            track_placement.clone(),
+            bpm,
+        );
+        // Find what should be length of the clipped track.
+        let clipped_sample_length =
+            beats_to_samples(*track_placement.offset + clipped_duration, bpm) as usize;
+        // ACT
+        unclipped_graph.add_generator(unclipped_generator_node);
+        clipped_graph.add_generator(clipped_generator_node);
+        let unclipped_output: Vec<[f32; 2]> = unclipped_graph.collect();
+        let clipped_output: Vec<[f32; 2]> = clipped_graph.collect();
+        // ASSERT
+        let expected_output: Vec<[f32; 2]> = unclipped_output[0..clipped_sample_length].to_vec();
+        assert_eq!(clipped_output, expected_output)
+    }
+
+    #[test]
+    fn clipped_second_track_duration_doesnt_clip_first() {
+        // ARRANGE
+        let track = make_track();
+        let track_placement = make_track_placement();
+        let generator = make_generator();
+        let bpm = 120.0;
+        // Set two tracks' offsets so they do not overlap.
+        let mut placement_1 = track_placement.clone();
+        placement_1.offset = 0.0.into();
+        let mut placement_2 = track_placement.clone();
+        placement_2.offset = 5.0.into();
+        // Create a graph with both tracks and no clipped audio
+        let mut unclipped_graph = RenderGraph::default();
+        let generator_node_1 =
+            GeneratorNode::new(generator.clone(), track.clone(), placement_1.clone(), bpm);
+        let generator_node_2 =
+            GeneratorNode::new(generator.clone(), track.clone(), placement_2.clone(), bpm);
+        unclipped_graph.add_generator(generator_node_1);
+        unclipped_graph.add_generator(generator_node_2);
+        // Set up identical graph but with a clipped duration on the second track
+        let mut placement_2_clipped = placement_2.clone();
+        let clipped_duration = 0.5;
+        placement_2_clipped.clipped_duration = Some(clipped_duration.into());
+        let mut clipped_graph = RenderGraph::default();
+        let clip_generator_node_1 =
+            GeneratorNode::new(generator.clone(), track.clone(), placement_1.clone(), bpm);
+        let clip_generator_node_2 = GeneratorNode::new(
+            generator.clone(),
+            track.clone(),
+            placement_2_clipped.clone(),
+            bpm,
+        );
+        clipped_graph.add_generator(clip_generator_node_1);
+        clipped_graph.add_generator(clip_generator_node_2);
+        // Find what should be length of the clipped track graph output.
+        let clipped_sample_length =
+            beats_to_samples(*placement_2_clipped.offset + clipped_duration, bpm) as usize;
+        // ACT
+        // Get output of graphs
+        let unclipped_output: Vec<[f32; 2]> = unclipped_graph.collect();
+        let clipped_output: Vec<[f32; 2]> = clipped_graph.collect();
+        // ASSERT
+        let expected_output: Vec<[f32; 2]> = unclipped_output[0..clipped_sample_length].to_vec();
+        assert_eq!(clipped_output, expected_output)
+    }
 }

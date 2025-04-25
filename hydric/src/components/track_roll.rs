@@ -1,21 +1,26 @@
 use crate::{
+    app_state::{DataState, WindowState},
     view::View,
-    widget::{Sequencer, SequencerObject},
+    widget::{Sequencer, SequencerObject, default_window},
 };
-use egui::{Color32, CornerRadius, Id, Pos2, Rect, Shape, Ui, pos2, vec2};
+use egui::{Color32, CornerRadius, Pos2, Rect, ScrollArea, Shape, Ui, pos2, vec2};
 use shared::{
-    model::{Track, TrackPlacement},
+    model::{Track, TrackId, TrackPlacement},
     types::Beats,
 };
 use state::{Action, FloatField, Selector, Store, TypeField, UintField};
 
 pub struct TrackRoll<'a> {
     store: &'a Store,
+    window_state: &'a mut WindowState,
 }
 
 impl<'a> TrackRoll<'a> {
-    pub fn new(store: &'a Store) -> Self {
-        TrackRoll { store }
+    pub fn new(store: &'a Store, window_state: &'a mut WindowState) -> Self {
+        TrackRoll {
+            store,
+            window_state,
+        }
     }
 }
 
@@ -25,6 +30,12 @@ impl View for TrackRoll<'_> {
         let default_track = Track {
             notes: vec![],
             offset: 0.0.into(),
+        };
+        let default_track_placement = TrackPlacement {
+            track_id: 0 as TrackId,
+            offset: (0.0 as Beats).into(),
+            clipped_duration: None,
+            visual_placement: 0,
         };
         let placed_tracks: Vec<PlacedTrack> = store
             .get()
@@ -47,22 +58,42 @@ impl View for TrackRoll<'_> {
         };
         let on_release = || store.dispatchr(Action::Release);
         let on_click = |ui: &mut Ui, index: usize| {
-            let window_id = Id::new("note_roll_window");
-            let track_id = Id::new("active_track_index");
-            ui.data_mut(|data| data.insert_temp(window_id, true));
-            ui.data_mut(|data| data.insert_temp(track_id, placed_track_ids[index]));
+            DataState::NoteRollWindow.set_value(ui, true);
+            DataState::TrackPlacementViewWindow.set_value(ui, true);
+            DataState::ActiveTrackIndex.set_value(ui, placed_track_ids[index] as usize);
+            DataState::ActiveTrackPlacementIndex.set_value(ui, index);
         };
-        if ui.button("New track").clicked() {
-            store.dispatchr(Action::AddChild(TypeField::Track(default_track)));
-        }
-        ui.add(
-            Sequencer::new(range, dispatch, on_release, on_click)
-                .objects(placed_tracks)
-                .size(vec2(ui.available_width(), 100.0 * track_count as f32))
-                .vertical_bars(4.0, Color32::from_white_alpha(6))
-                .vertical_bars(1.0, Color32::from_white_alpha(3))
-                .horizontal_rects(|index| index % 2 == 1, Color32::from_white_alpha(1)),
-        );
+        default_window("Track Roll")
+            .default_pos(pos2(30.0, 200.0))
+            .resizable(true)
+            .open(&mut self.window_state.track_roll)
+            .show(ui.ctx(), |ui| {
+                ui.horizontal(|ui| {
+                    if ui.button("New track").clicked() {
+                        store.dispatchr(Action::AddChild(TypeField::Track(default_track)));
+                    }
+                    if ui.button("New track placement").clicked() {
+                        store.dispatchr(Action::AddChild(TypeField::TrackPlacement(
+                            default_track_placement,
+                        )));
+                    }
+                });
+                ScrollArea::vertical()
+                    .min_scrolled_height(400.0)
+                    .show(ui, |ui| {
+                        ui.add(
+                            Sequencer::new(range, dispatch, on_release, on_click)
+                                .objects(placed_tracks)
+                                .size(vec2(600.0, 100.0 * track_count as f32))
+                                .vertical_bars(4.0, Color32::from_white_alpha(6))
+                                .vertical_bars(1.0, Color32::from_white_alpha(3))
+                                .horizontal_rects(
+                                    |index| index % 2 == 1,
+                                    Color32::from_white_alpha(1),
+                                ),
+                        );
+                    });
+            });
     }
 }
 
@@ -74,6 +105,12 @@ struct PlacedTrack {
 impl SequencerObject<PlacedTrack> for PlacedTrack {
     fn to_pos(&self, range: Rect) -> Pos2 {
         // TODO handling multiple channels. Currently all are at `y=0`.
+        let y = self.placement.track_id as f32;
+        let x = *self.placement.offset - range.left();
+        pos2(x, y)
+    }
+
+    fn to_pos_horizontal(&self, range: Rect) -> Pos2 {
         let y = self.placement.track_id as f32;
         let x = *self.placement.offset - range.left();
         pos2(x, y)

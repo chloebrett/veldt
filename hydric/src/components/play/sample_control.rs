@@ -1,4 +1,4 @@
-use crate::audio_player::play;
+use crate::audio_player::AudioPlayer;
 use crate::promise::{poll, spawn};
 use crate::rpc::load_sample;
 use crate::{AsyncState, AudioState};
@@ -23,11 +23,13 @@ pub fn sample_control(
         audio_state.audio = sample.data.clone();
         let volume = store.get().volume;
         let mut graph = RenderGraph::from_vec(sample.data);
-        graph.add_node(AmpNode {
+        graph.add_output_node(AmpNode {
             volume,
             should_clip: true,
         });
-        audio_state.handle = Some(play(graph, audio_state.pre_render));
+        let player = AudioPlayer::new(graph, audio_state.pre_render);
+        audio_state.player = Some(player);
+        audio_state.player.as_mut().unwrap().play();
     }
 
     if ui.button("Load sample").clicked() {

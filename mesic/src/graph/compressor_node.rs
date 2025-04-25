@@ -1,3 +1,4 @@
+use super::ProcessContext;
 use super::{extract_inputs, extract_outputs};
 use crate::consts::SAMPLE_RATE;
 use dasp_graph::{Buffer, Input, Node};
@@ -74,8 +75,8 @@ fn compress(input: f32, detector: f32, threshold: f32, ratio_recip: f32) -> f32 
     }
 }
 
-impl Node for CompressorNode {
-    fn process(&mut self, inputs: &[Input], output: &mut [Buffer]) {
+impl Node<ProcessContext> for CompressorNode {
+    fn process(&mut self, inputs: &[Input], output: &mut [Buffer], _payload: &ProcessContext) {
         let (left_out, right_out) = extract_outputs(output);
         let (left_in, right_in) = extract_inputs(inputs)[0];
 
@@ -274,7 +275,7 @@ mod tests {
 
     fn make_graph(input: Vec<f32>, config: CompressorConfig) -> RenderGraph {
         let mut graph = RenderGraph::from_vec(input.clone());
-        graph.add_effect_with_mixer(EffectInstance {
+        graph.add_main_effect_with_mixer(EffectInstance {
             effect: Effect::SimpleCompressor { config },
             meta: EffectMeta {
                 id: 0,

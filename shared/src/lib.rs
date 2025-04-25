@@ -33,6 +33,7 @@ pub mod save_load {
     tonic::include_proto!("save_load");
 }
 
+#[expect(clippy::module_inception)]
 pub mod action_proto {
     tonic::include_proto!("action_proto");
 }

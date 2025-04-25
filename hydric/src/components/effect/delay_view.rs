@@ -32,6 +32,7 @@ impl<F: Fn(Action), G: Fn()> View for DelayView<'_, F, G> {
             config.delay_ms,
             |it| dispatch(Action::SetFloat(FloatField::DelayMs, it)),
             1.0..=1000.0,
+            /* neutral= */ 100.0,
             &self.on_release,
         );
         knob(
@@ -40,6 +41,7 @@ impl<F: Fn(Action), G: Fn()> View for DelayView<'_, F, G> {
             config.feedback,
             |it| dispatch(Action::SetFloat(FloatField::Feedback, it)),
             0.0..=0.99,
+            /* neutral= */ 0.5,
             &self.on_release,
         );
     }
