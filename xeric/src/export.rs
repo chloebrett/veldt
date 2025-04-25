@@ -17,6 +17,7 @@ fn wav_file_path(name: &str) -> PathBuf {
     let mut file_path = current_dir().unwrap();
     file_path.pop(); // pop '/xeric'
     file_path.push("wav");
+    let _ = create_dir_all(&file_path); // need to move this
     file_path.push(format!("{name}.wav"));
     file_path
 }
@@ -67,7 +68,6 @@ impl Export for ExportContext {
 
         // write to output file
         let file_path = wav_file_path(&name);
-        let _ = create_dir_all(&file_path);
         let mut out_file =
             File::create(&file_path).map_err(|e| tonic::Status::internal(format!("{}", e)))?;
         out_file
