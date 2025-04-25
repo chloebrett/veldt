@@ -11,13 +11,13 @@ use petgraph::visit::GraphBase;
 #[test]
 #[should_panic]
 fn test_graph_send() {
-    type Graph = petgraph::Graph<NodeData<BoxedNodeSend>, (), petgraph::Directed, u32>;
+    type Graph = petgraph::Graph<NodeData<BoxedNodeSend<()>>, (), petgraph::Directed, u32>;
     type Processor = dasp_graph::Processor<Graph>;
     let mut g: Graph = unimplemented!();
     let mut p: Processor = unimplemented!();
     let n: <Graph as GraphBase>::NodeId = unimplemented!();
 
     std::thread::spawn(move || {
-        p.process(&mut g, n);
+        p.process(&mut g, &(), n);
     });
 }
