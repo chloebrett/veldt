@@ -1,4 +1,5 @@
-use crate::wave::{beats_to_samples, sub_synth_wave, unison_wave};
+use super::ProcessContext;
+use crate::wave::{beats_to_samples, unison_wave};
 use dasp_graph::{Buffer, Input, Node};
 use shared::model::{GeneratorInstance, GeneratorType, Track, TrackPlacement};
 use shared::types::{Beats, KnobPosition, Volume};
@@ -44,8 +45,8 @@ impl GeneratorNode {
     }
 }
 
-impl Node for GeneratorNode {
-    fn process(&mut self, _inputs: &[Input], output: &mut [Buffer]) {
+impl Node<ProcessContext> for GeneratorNode {
+    fn process(&mut self, _inputs: &[Input], output: &mut [Buffer], _payload: &ProcessContext) {
         // Skip generating if muted!
         // TODO: disconnect muted generators from the graph.
         let track_placement = &self.track_placement;

@@ -1,32 +1,106 @@
-use crate::{app_state::WindowState, view::View};
+use crate::{
+    app_state::{AsyncState, WindowState},
+    promise::{poll, spawn},
+    rpc::{load_project, load_project_list, save_project},
+    view::View,
+};
 use egui::{Button, Ui, menu::bar};
-use state::Store;
+use state::{Action, Store, TypeField};
 
-pub struct Menu<'a> {
+use super::{load::LoadView, save_as::SaveAs};
+
+pub struct MenuBar<'a> {
     store: &'a mut Store,
     window_state: &'a mut WindowState,
+    async_state: &'a mut AsyncState,
 }
 
-impl<'a> Menu<'a> {
-    pub fn new(store: &'a mut Store, window_state: &'a mut WindowState) -> Self {
-        Menu {
+impl<'a> MenuBar<'a> {
+    pub fn new(
+        store: &'a mut Store,
+        window_state: &'a mut WindowState,
+        async_state: &'a mut AsyncState,
+    ) -> Self {
+        MenuBar {
             store,
             window_state,
+            async_state,
         }
     }
 }
 
-impl View for Menu<'_> {
+fn save_load(
+    ui: &mut Ui,
+    store: &mut Store,
+    window_state: &mut WindowState,
+    async_state: &mut AsyncState,
+) {
+    let dispatch = |action: Action| store.dispatchr(action);
+
+    poll(&mut async_state.save_project, |_| {
+        spawn(&mut async_state.project_list, async move {
+            load_project_list().await
+        });
+    });
+
+    poll(&mut async_state.project_list, |list| {
+        store.dispatchr(Action::SetChild(TypeField::ProjectList(list.clone())));
+    });
+
+    poll(&mut async_state.load_project, |project| {
+        store.dispatchr(Action::SetChild(TypeField::Project(project.clone())));
+    });
+
+    let save_click = || {
+        let project = store.get().project.clone();
+        spawn(&mut async_state.save_project, async move {
+            save_project(project).await
+        });
+    };
+
+    let load_click = |name: String| {
+        spawn(&mut async_state.load_project, async move {
+            load_project(name).await
+        })
+    };
+
+    let name = &store.get().project.name;
+    SaveAs::new(window_state, name, dispatch, save_click).ui(ui);
+    let current_name = &store.get().load_project_name;
+    let project_names = &store.get().project_list;
+    LoadView::new(
+        window_state,
+        current_name,
+        project_names,
+        dispatch,
+        load_click,
+    )
+    .ui(ui);
+}
+
+impl View for MenuBar<'_> {
     fn ui(&mut self, ui: &mut Ui) {
-        let store = &mut self.store;
-        let window_state = &mut self.window_state;
+        let MenuBar {
+            store,
+            window_state,
+            async_state,
+        } = self;
+        save_load(ui, store, window_state, async_state);
         bar(ui, |ui| {
             ui.label("Veldt");
             ui.menu_button("File", |ui| {
-                #[expect(clippy::needless_if)] // remove once no longer needed
-                if ui.button("Save").clicked() {}
-                #[expect(clippy::needless_if)] // remove once no longer needed
-                if ui.button("Load").clicked() {}
+                if ui.button("Save").clicked() {
+                    let project = store.get().project.clone();
+                    spawn(&mut async_state.save_project, async move {
+                        save_project(project).await
+                    });
+                }
+                if ui.button("Save As").clicked() {
+                    window_state.save = true;
+                }
+                if ui.button("Load").clicked() {
+                    window_state.load = true;
+                }
                 if ui.button("Export").clicked() {}
             });
             ui.menu_button("Edit", |ui| {
