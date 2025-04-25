@@ -1,10 +1,10 @@
-use super::super::{Piano, PianoOrientation};
+use super::super::{Piano, PianoOrientation, mod_matrix};
 use super::subsynth_oscillator;
 use crate::view::View;
 use eframe::egui;
 use egui::{Color32, Ui};
 use lazy_static::lazy_static;
-use shared::model::SubSynthConfig;
+use shared::model::{SubSynthConfig, ModMatrix};
 use shared::{
     model::{PitchName, ScaleValue},
     types::PitchValue,
@@ -38,20 +38,44 @@ where
         pub static ref FILL_COLOURS: [Color32; 3] = [*GREEN_FILL, *PINK_FILL, *ORANGE_FILL,];
     }
 
-    for oscillator_id in 0..3 {
-        ui.push_id(oscillator_id, |ui| {
-            subsynth_oscillator(
-                &config.oscillators[oscillator_id],
-                ui,
-                &dispatch,
-                &on_release,
-                LINE_COLOURS[oscillator_id],
-                FILL_COLOURS[oscillator_id],
-            );
-        });
-        ui.add_space(4.0);
+    fn draw_mod_matrix<F, G>(
+        ui: &mut Ui,
+        dispatch: &F,
+        on_release: &G,
+    ) where
+        F: Fn(Action),
+        G: Fn(),
+    {
+        let mod_matrix_config = ModMatrix{
+            rows: 6,
+            cols: 3,
+            matrix: vec![1.0, 2.0, 3.0]
+        };
+        mod_matrix(&mod_matrix_config, ui, dispatch, on_release);
     }
 
+    ui.horizontal(|ui| {
+        ui.vertical(|ui| {
+            for oscillator_id in 0..3 {
+                ui.push_id(oscillator_id, |ui| {
+                    subsynth_oscillator(
+                        &config.oscillators[oscillator_id],
+                        ui,
+                        &dispatch,
+                        &on_release,
+                        LINE_COLOURS[oscillator_id],
+                        FILL_COLOURS[oscillator_id],
+                    );
+                ui.add_space(4.0);
+            });
+        }
+        });
+        ui.add_space(10.0);
+
+        draw_mod_matrix(ui, &dispatch, &on_release);
+    });
+
+    
     fn draw_piano(ui: &mut Ui) {
         let min_note: PitchValue = PitchName {
             scale_value: ScaleValue::A,
@@ -69,4 +93,5 @@ where
     }
 
     draw_piano(ui);
+
 }

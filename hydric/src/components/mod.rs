@@ -11,6 +11,7 @@ mod play;
 mod track_placement_view;
 mod track_roll;
 mod undo_redo;
+mod mod_matrix;
 
 pub use app::*;
 use frame_history::*;
@@ -21,3 +22,4 @@ use piano::*;
 use track_placement_view::*;
 use track_roll::*;
 use undo_redo::*;
+use mod_matrix::*;
