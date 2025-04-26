@@ -31,8 +31,16 @@ pub fn play_control(
     if ui.button("Seek to 0").clicked() {
         audio_state.player.seek(0);
     }
-    if ui.button("Seek to 1 sec").clicked() {
-        audio_state.player.seek(SAMPLE_RATE as usize);
+    let half_second = SAMPLE_RATE as usize / 2;
+    if ui.button("-0.5 sec").clicked() {
+        audio_state
+            .player
+            .seek(audio_state.player.position.samples - half_second);
+    }
+    if ui.button("+0.5 sec").clicked() {
+        audio_state
+            .player
+            .seek(audio_state.player.position.samples + half_second);
     }
     poll(
         &mut async_state.server_render,

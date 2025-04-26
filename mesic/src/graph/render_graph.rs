@@ -80,6 +80,10 @@ impl RenderGraph {
         }
     }
 
+    pub fn pos(&self) -> usize {
+        self.processed_samples_count
+    }
+
     pub fn seek(&mut self, samples: usize) {
         self.processed_samples_count = samples;
         self.process_context.seek_pos = Some(samples);

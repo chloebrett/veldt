@@ -43,6 +43,7 @@ impl Node<ProcessContext> for BufferNode {
     fn process(&mut self, _inputs: &[Input], output: &mut [Buffer], payload: &ProcessContext) {
         if let Some(seek_pos) = payload.seek_pos {
             self.index = seek_pos;
+            log::info!("Updated from seek_pos: {}", seek_pos);
         }
 
         let (out_left, out_right) = extract_outputs(output);
