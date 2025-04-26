@@ -81,7 +81,7 @@ where
                     0.0,
                     on_release,
                 );
-                ui.add_space(6.0);
+                ui.add_space(2.0);
 
                 knob(
                     ui,
@@ -92,7 +92,7 @@ where
                     0.0,
                     on_release,
                 );
-                ui.add_space(6.0);
+                ui.add_space(2.0);
 
                 knob(
                     ui,
@@ -103,7 +103,7 @@ where
                     0.0,
                     on_release,
                 );
-                ui.add_space(6.0);
+                ui.add_space(2.0);
 
                 knob(
                     ui,
