@@ -1,4 +1,5 @@
 use crate::{audio_player::AudioPlayer, promise::AsyncResult};
+use dasp_frame::Stereo;
 use egui::{Id, Ui};
 use shared::model::{FilenameTree, Project, Sample};
 use std::cmp::{Eq, Ord};
@@ -8,7 +9,7 @@ use std::hash::Hash;
 /// Container for the various promises launchable by the app.
 #[derive(Default)]
 pub struct AsyncState {
-    pub server_render: AsyncResult<Vec<f32>, ()>,
+    pub server_render: AsyncResult<Vec<Stereo<f32>>, ()>,
     pub save_project: AsyncResult<(), ()>,
     pub project_list: AsyncResult<Vec<String>, ()>,
     pub load_project: AsyncResult<Project, ()>,
@@ -19,7 +20,7 @@ pub struct AsyncState {
 
 #[derive(Default)]
 pub struct AudioState {
-    pub audio: Vec<f32>,
+    pub audio: Vec<Stereo<f32>>,
     pub player: AudioPlayer,
 }
 

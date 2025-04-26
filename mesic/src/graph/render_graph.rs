@@ -152,7 +152,7 @@ impl RenderGraph {
 
     /// Creates a graph that plays the buffer contained in a Vec.
     /// Chain with .add_amp_node to control volume and/or clip.
-    pub fn from_vec(vec: Vec<f32>) -> Self {
+    pub fn from_vec(vec: Vec<Stereo<f32>>) -> Self {
         let sample_count = vec.len();
         let buffer_node: BufferNode = vec.into();
         let mut graph = RenderGraph {
@@ -384,18 +384,19 @@ mod tests {
             octave: 4,
         };
         let samples = 120;
-        let input: Vec<f32> = (0..samples as usize)
-            .map(|it| (it as f32 / SAMPLE_RATE as f32 * freq(pitch)).sin())
+        let input: Vec<Stereo<f32>> = (0..samples as usize)
+            .map(|it| {
+                let value = (it as f32 / SAMPLE_RATE as f32 * freq(pitch)).sin();
+                [value, value]
+            })
             .collect();
+
         // Act
         let graph = RenderGraph::from_vec(input.clone());
         let output: Vec<[f32; 2]> = graph.collect();
-        let output_mono: Vec<f32> = output
-            .iter()
-            .map(|[left, right]| (left + right) * 0.5)
-            .collect();
+
         // Assert
-        assert_eq!(output_mono, input)
+        assert_eq!(output, input)
     }
 
     #[test]

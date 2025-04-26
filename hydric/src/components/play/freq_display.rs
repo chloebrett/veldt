@@ -88,8 +88,12 @@ impl View for FrequencyDisplay<'_> {
         } = *self;
         let audio = &self.audio_state.audio;
 
+        // Note: only visualising the left channel.
+        // TODO: decide how to visualise both left and right.
+        let audio = audio.iter().map(|it| it[0]).collect();
+
         // Cast as `OrderedFloat` so that values implement `Eq` required for hashing in cache.
-        let ordered_audio: Vec<OrderedFloat<f32>> = map_vec(audio.to_vec());
+        let ordered_audio: Vec<OrderedFloat<f32>> = map_vec(audio);
         if let Some(response) = self.render_display(ui, &audio_state.player, ordered_audio) {
             let freq_window = SAMPLE_RATE as f64 / FFT_SAMPLE_SIZE as f64;
             let points: PlotPoints = response

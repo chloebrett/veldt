@@ -23,8 +23,11 @@ pub fn audio_vis(audio_state: &AudioState, ui: &mut Ui) {
         let chunking = (audio_len / canvas_size.x) as i32;
         // TODO: put this into a generic util.
         for (i, sample) in audio_state.audio.iter().enumerate() {
+            // For now, only visualise the left.
+            let [left, _right] = sample;
+
             let index = i / (chunking as usize);
-            let value = sample.abs() / (chunking as f32);
+            let value = left.abs() / (chunking as f32);
             if index >= averages.len() {
                 // sometimes happens due to rounding of floats,
                 // okay to just ignore.

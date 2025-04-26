@@ -1,10 +1,8 @@
 use chrono::{DateTime, Utc};
 use cpal::Stream;
 use cpal::traits::{DeviceTrait, HostTrait, StreamTrait};
-use dasp_frame::Stereo;
 use log::error;
 use mesic::graph::RenderGraph;
-use std::sync::mpsc;
 use wasm_thread::JoinHandle;
 
 #[derive(Default)]
