@@ -77,14 +77,13 @@ impl SimpleWaveVisualiser {
             ));
         };
         // Iterate through generated points to build each polygon segment and find when the plotted point crosses the x-axis.
-        for i in 0..num_points {
-            let p_current = points[i];
+        for point in &points {
             // Determine if the current point is above or below the axis.
-            let current_is_above = p_current.y <= axis_y; // y increases downwards!!
+            let current_is_above = point.y <= axis_y; // y increases downwards!!
 
             if current_segment_points.is_empty() {
                 current_segment_points.push(Pos2::new(rect.left(), axis_y)); // always add this base point
-                current_segment_points.push(p_current); // adding first point
+                current_segment_points.push(*point); // adding first point
                 continue;
             }
 
@@ -92,18 +91,18 @@ impl SimpleWaveVisualiser {
             let last_is_above = p_last_in_segment.y <= axis_y;
 
             if current_is_above == last_is_above {
-                current_segment_points.push(p_current); // push point as usual if line hasn't crossed x-axis
+                current_segment_points.push(*point); // push point as usual if line hasn't crossed x-axis
                 continue;
             }
 
             // Line crossed x-axis so calculate the intersection point on the axis.
-            let y_diff = p_current.y - p_last_in_segment.y;
+            let y_diff = point.y - p_last_in_segment.y;
             if y_diff.abs() > 1e-6 {
                 // Only create a new segment if y-diff interval is meaninfgully large.
                 // Calculate the x-coordinate of the intersection point
                 let t = (axis_y - p_last_in_segment.y) / y_diff;
                 let t = t.clamp(0.0, 1.0);
-                let intersect_x = p_last_in_segment.x + (p_current.x - p_last_in_segment.x) * t;
+                let intersect_x = p_last_in_segment.x + (point.x - p_last_in_segment.x) * t;
                 let p_int = Pos2::new(intersect_x, axis_y);
 
                 // Add the intersection point to the current segment - this is the point that lies on the axis and marks the end of the current segment along the wave curve.
@@ -112,18 +111,18 @@ impl SimpleWaveVisualiser {
                 // Paint the completed segment's polygon.
                 paint_segment(&current_segment_points, self.fill_color, axis_y);
 
-                // Start a new segment with the intersection point and the current point (p_current).
+                // Start a new segment with the intersection point and the current point (point).
                 current_segment_points.clear(); // Clear points from the just-painted segment
                 current_segment_points.push(p_int); // Intersection point is the start of the new segment
 
-                // Add p_current to the new segment but only if it's different from the intersection point to avoid double ups incase p_current is already exactly on the x-axis
-                if p_current != p_int {
-                    current_segment_points.push(p_current);
+                // Add point to the new segment but only if it's different from the intersection point to avoid double ups incase p_current is already exactly on the x-axis
+                if *point != p_int {
+                    current_segment_points.push(*point);
                 }
             } else {
                 // If the y_diff.abs() is small then there is no point making a new segment yet because that means the interval is nearly horizontal.
                 // i.e. crossing won't be visible anyway
-                current_segment_points.push(p_current);
+                current_segment_points.push(*point);
             }
         }
 
