@@ -4,16 +4,9 @@ use egui::{
     Widget, emath::RectTransform, pos2, vec2,
 };
 use shared::types::Beats;
-use state::{Action, Store};
+use state::{Action, Selector, Store};
 
-pub struct Sequencer<
-    'a,
-    T: SequencerObject<T>,
-    F: Fn(usize, Action),
-    G: Fn(),
-    H: Fn(&mut Ui, usize),
-    I: Fn(&mut Ui, Option<usize>),
-> {
+pub struct Sequencer<'a, T: SequencerObject<T>> {
     store: &'a Store,
     range: Rect,
     size: Vec2,
@@ -21,30 +14,11 @@ pub struct Sequencer<
     sense: Sense,
     quantise_level: Beats,
     // A closure to modify object in Store. Takes object index and `Action` to dispatch change.
-    dispatch: F,
-    on_release: G,
-    on_double_click: H,
-    on_click: I,
     background_shapes: Vec<Shape>,
 }
 
-impl<
-    'a,
-    T: SequencerObject<T>,
-    F: Fn(usize, Action),
-    G: Fn(),
-    H: Fn(&mut Ui, usize),
-    I: Fn(&mut Ui, Option<usize>),
-> Sequencer<'a, T, F, G, H, I>
-{
-    pub fn new(
-        store: &'a Store,
-        range: Rect,
-        dispatch: F,
-        on_release: G,
-        on_double_click: H,
-        on_click: I,
-    ) -> Self {
+impl<'a, T: SequencerObject<T>> Sequencer<'a, T> {
+    pub fn new(store: &'a Store, range: Rect) -> Self {
         Sequencer {
             store,
             range,
@@ -52,10 +26,6 @@ impl<
             objects: vec![],
             sense: Sense::drag(),
             quantise_level: 0.25,
-            dispatch,
-            on_release,
-            on_double_click,
-            on_click,
             background_shapes: vec![],
         }
     }
@@ -88,7 +58,7 @@ impl<
     }
 
     #[inline]
-    pub fn horizontal_rects<J: Fn(i32) -> bool>(mut self, pattern: J, colour: Color32) -> Self {
+    pub fn horizontal_rects<F: Fn(i32) -> bool>(mut self, pattern: F, colour: Color32) -> Self {
         // Add horizontal rectangles across background of Sequencer.
         // Indicate where to paint rectangles with `pattern` a closure that takes `i32` the y coordinate as the
         // input and returns `true` if a rectangle should be rendered there.
@@ -109,7 +79,13 @@ impl<
         self
     }
 
-    fn interact(&self, ui: &mut Ui, response: &Response) {
+    fn interact(
+        &self,
+        ui: &mut Ui,
+        response: &Response,
+        edit_object: &impl Fn(usize, Action),
+        on_release: &impl Fn(),
+    ) {
         let make_movable_rect = |object: &T| object.to_rect(self.range);
         let make_resize_rect = |object: &T| {
             let rect = object.to_rect(self.range);
@@ -138,18 +114,18 @@ impl<
                 Sense::drag(),
             );
             if movable_resp.interact(Sense::click()).double_clicked() {
-                (self.on_click)(ui, None);
-                (self.on_double_click)(ui, index);
+                T::set_selected(ui, None);
+                object.set_active(ui, index);
             } else if movable_resp.interact(Sense::click()).clicked() {
-                (self.on_click)(ui, Some(index))
+                T::set_selected(ui, None);
             }
             if resize_resp.hovered() {
                 ui.ctx().set_cursor_icon(CursorIcon::ResizeColumn);
             }
-            let release = self.move_object(index, movable_resp, to_sequencer)
-                || self.resize_object(index, resize_resp, to_sequencer);
+            let release = self.move_object(index, movable_resp, to_sequencer, edit_object)
+                || self.resize_object(index, resize_resp, to_sequencer, edit_object);
             if release {
-                (self.on_release)()
+                on_release()
             }
         }
     }
@@ -158,7 +134,13 @@ impl<
         (value / self.quantise_level).round() * self.quantise_level
     }
 
-    fn move_object(&self, index: usize, response: Response, to_sequencer: RectTransform) -> bool {
+    fn move_object(
+        &self,
+        index: usize,
+        response: Response,
+        to_sequencer: RectTransform,
+        edit_object: &impl Fn(usize, Action),
+    ) -> bool {
         let object = self.objects.get(index).expect("Should have gotten object.");
         let drag_pos = response.interact_pointer_pos();
         let drag_delta = response.drag_delta();
@@ -176,13 +158,13 @@ impl<
                 );
             if drag_delta.y != 0.0 {
                 if let Some(action) = object.y_action(scaled_pos.y, self.range) {
-                    (self.dispatch)(index, action);
+                    edit_object(index, action);
                     action_dispatched = true;
                 };
             }
             if drag_delta.x != 0.0 {
                 if let Some(action) = object.x_action(scaled_pos.x, self.range) {
-                    (self.dispatch)(index, action);
+                    edit_object(index, action);
                     action_dispatched = true;
                 };
             }
@@ -191,7 +173,13 @@ impl<
         action_dispatched && (response.lost_focus() || response.drag_stopped())
     }
 
-    fn resize_object(&self, index: usize, response: Response, to_sequencer: RectTransform) -> bool {
+    fn resize_object(
+        &self,
+        index: usize,
+        response: Response,
+        to_sequencer: RectTransform,
+        edit_object: &impl Fn(usize, Action),
+    ) -> bool {
         let object = self.objects.get(index).expect("Should have gotten object.");
         let drag_pos = response.interact_pointer_pos();
         let mut action_dispatched = false;
@@ -201,7 +189,7 @@ impl<
                 self.range.size().to_pos2(),
             );
             if let Some(action) = object.resize_action(self.quantise(scaled_pos.x), self.range) {
-                (self.dispatch)(index, action);
+                edit_object(index, action);
                 action_dispatched = true;
             };
         }
@@ -219,20 +207,17 @@ impl<
     }
 }
 
-impl<
-    T: SequencerObject<T>,
-    F: Fn(usize, Action),
-    G: Fn(),
-    H: Fn(&mut Ui, usize),
-    I: Fn(&mut Ui, Option<usize>),
-> Widget for Sequencer<'_, T, F, G, H, I>
-{
+impl<T: SequencerObject<T>> Widget for Sequencer<'_, T> {
     fn ui(self, ui: &mut Ui) -> Response {
+        let store = self.store;
         let range = self.range;
         let size = self.size;
         let sense = self.sense;
         let background_shapes = &self.background_shapes;
-
+        let edit_object = |index: usize, action: Action| {
+            store.dispatch(&<T as SequencerObject<T>>::selector(index), action)
+        };
+        let on_release = || store.dispatchr(Action::Release);
         Frame::canvas(ui.style()).show(ui, |ui| {
             let (response, painter) = ui.allocate_painter(size, sense);
             let sequencer_transform = RectTransform::from_to(
@@ -241,9 +226,9 @@ impl<
             );
             // If user double clicks outside of an object remove all objects from selection.
             if response.interact(Sense::click()).double_clicked() {
-                (self.on_click)(ui, None)
+                T::set_selected(ui, None)
             }
-            self.interact(ui, &response);
+            self.interact(ui, &response, &edit_object, &on_release);
             let active_object = <T as SequencerObject<T>>::get_active(ui, self.store);
             let selected_objects = <T as SequencerObject<T>>::get_selected(ui, self.store);
             painter.extend(background_shapes.clone().transform(sequencer_transform));
@@ -286,4 +271,10 @@ pub trait SequencerObject<T> {
     fn get_selected(ui: &Ui, store: &Store) -> Option<Vec<T>>;
 
     fn selected_shape(&self, range: Rect) -> Shape;
+
+    fn selector(index: usize) -> Selector;
+
+    fn set_active(&self, ui: &mut Ui, index: usize);
+
+    fn set_selected(ui: &mut Ui, index: Option<usize>);
 }

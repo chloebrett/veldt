@@ -57,19 +57,6 @@ impl View for TrackRoll<'_> {
             .collect();
         let track_count = store.get().project.tracks.len();
         let range = Rect::from_min_max(pos2(0.0, 0.0), pos2(16.0, track_count as f32));
-        let dispatch = |index: usize, action: Action| {
-            store.dispatch(&Selector::TrackPlacement(index), action);
-        };
-        let on_release = || store.dispatchr(Action::Release);
-        let on_double_click = |ui: &mut Ui, index: usize| {
-            DataState::NoteRollWindow.set_value(ui, true);
-            DataState::TrackPlacementViewWindow.set_value(ui, true);
-            DataState::ActiveTrackIndex.set_value(ui, placed_track_ids[index] as usize);
-            DataState::ActiveTrackPlacementIndex.set_value(ui, index);
-        };
-        let on_click = |ui: &mut Ui, index: Option<usize>| {
-            update_select_data_state(ui, DataState::SelectedTrackPlacementIndexes, index);
-        };
         default_window("Track Roll")
             .default_pos(pos2(30.0, 200.0))
             .resizable(true)
@@ -89,19 +76,15 @@ impl View for TrackRoll<'_> {
                     .min_scrolled_height(400.0)
                     .show(ui, |ui| {
                         ui.add(
-                            Sequencer::new(
-                                store,
-                                range,
-                                dispatch,
-                                on_release,
-                                on_double_click,
-                                on_click,
-                            )
-                            .objects(placed_tracks)
-                            .size(vec2(600.0, 100.0 * track_count as f32))
-                            .vertical_bars(4.0, Color32::from_white_alpha(6))
-                            .vertical_bars(1.0, Color32::from_white_alpha(3))
-                            .horizontal_rects(|index| index % 2 == 1, Color32::from_white_alpha(1)),
+                            Sequencer::new(store, range)
+                                .objects(placed_tracks)
+                                .size(vec2(600.0, 100.0 * track_count as f32))
+                                .vertical_bars(4.0, Color32::from_white_alpha(6))
+                                .vertical_bars(1.0, Color32::from_white_alpha(3))
+                                .horizontal_rects(
+                                    |index| index % 2 == 1,
+                                    Color32::from_white_alpha(1),
+                                ),
                         );
                     });
             });
@@ -251,5 +234,20 @@ impl SequencerObject<PlacedTrack> for PlacedTrack {
                 StrokeKind::Inside,
             ),
         ])
+    }
+
+    fn selector(index: usize) -> Selector {
+        Selector::TrackPlacement(index)
+    }
+
+    fn set_active(&self, ui: &mut Ui, index: usize) {
+        DataState::NoteRollWindow.set_value(ui, true);
+        DataState::TrackPlacementViewWindow.set_value(ui, true);
+        DataState::ActiveTrackIndex.set_value(ui, self.placement.track_id as usize);
+        DataState::ActiveTrackPlacementIndex.set_value(ui, index);
+    }
+
+    fn set_selected(ui: &mut Ui, index: Option<usize>) {
+        update_select_data_state(ui, DataState::SelectedTrackPlacementIndexes, index);
     }
 }
