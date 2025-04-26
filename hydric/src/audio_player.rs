@@ -1,13 +1,22 @@
 use chrono::{DateTime, Utc};
 use cpal::Stream;
 use cpal::traits::{DeviceTrait, HostTrait, StreamTrait};
-use crossbeam_channel::Sender;
+use crossbeam_channel::{Receiver, Sender};
 use dasp_frame::Stereo;
 use log::error;
 use mesic::graph::{AmpNode, RenderGraph};
 use shared::model::Project;
 use shared::types::Volume;
 use wasm_thread::JoinHandle;
+
+// Total size of the audio buffer.
+const BUFFER_SIZE: usize = 5000;
+
+// Number of samples to render at a time.
+const CHUNK_SIZE: usize = 1000;
+
+// Don't start playing until this many samples have been produced.
+const BUFFER_THRESHOLD: usize = 1000;
 
 // For now, just samples. In future, consider supporting bars:beats, mins:secs, etc.
 struct PlaybackPosition {
@@ -30,7 +39,11 @@ enum PlaybackState {
 
 #[derive(Default)]
 pub struct AudioPlayer {
+    audio_tx: Option<Sender<Stereo<f32>>>,
+    audio_rx: Option<Receiver<Stereo<f32>>>,
     playback_tx: Option<Sender<PlaybackMessage>>,
+    playback_rx: Option<Receiver<PlaybackMessage>>,
+
     stream: Option<Stream>,
     producer_thread: Option<JoinHandle<()>>,
     pub start_timestamp: Option<DateTime<Utc>>,
@@ -44,9 +57,10 @@ impl AudioPlayer {
         self.start_timestamp = None;
 
         // TODO: make sure the producer thread is shut down.
+        // Is losing the reference to it enough?
     }
 
-    pub fn send(&self, message: PlaybackMessage) {
+    pub fn send(&mut self, message: PlaybackMessage) {
         self.playback_tx
             .as_ref()
             .expect("Call .init() first!")
@@ -55,6 +69,23 @@ impl AudioPlayer {
     }
 
     pub fn init(&mut self) {
+        self.init_channels();
+        self.init_producer();
+        self.init_stream();
+    }
+
+    pub fn init_channels(&mut self) {
+        let (audio_tx, audio_rx) = crossbeam_channel::bounded(BUFFER_SIZE);
+        let (playback_tx, playback_rx) = crossbeam_channel::unbounded();
+
+        self.audio_tx = Some(audio_tx);
+        self.audio_rx = Some(audio_rx);
+        self.playback_tx = Some(playback_tx);
+        self.playback_rx = Some(playback_rx);
+    }
+
+    pub fn init_producer(&mut self) {
+        // TODO: pull this logic to get the config into a function.
         let host = cpal::default_host();
         let device = host
             .default_output_device()
@@ -62,29 +93,15 @@ impl AudioPlayer {
         let config = device.default_output_config().unwrap();
         let config: &cpal::StreamConfig = &config.into();
 
-        let err_fn = |err| error!("an error occurred on stream: {}", err);
-        let channels = config.channels as usize;
-
-        // Total size of the audio buffer.
-        let buffer_size = 5000;
-
-        // Number of samples to render at a time.
-        let chunk_size = 1000;
-
-        // Don't start playing until this many samples have been produced.
-        let buffer_threshold = 1000;
-
-        let (audio_tx, audio_rx) = crossbeam_channel::bounded(buffer_size);
-        let (playback_tx, playback_rx) = crossbeam_channel::unbounded();
-
-        self.playback_tx = Some(playback_tx);
-
         log::info!(
             "Available parallelism: {:?}",
             wasm_thread::available_parallelism()
         );
 
-        let producer_thread = wasm_thread::spawn(move || {
+        let playback_rx = self.playback_rx.as_ref().unwrap().clone();
+        let audio_tx = self.audio_tx.as_ref().unwrap().clone();
+
+        self.producer_thread = Some(wasm_thread::spawn(move || {
             let mut graph = RenderGraph::default();
             log::info!("Started producer_thread {:?}", wasm_thread::current().id());
             let mut state = PlaybackState::Pause;
@@ -95,6 +112,10 @@ impl AudioPlayer {
                         PlaybackMessage::SetProject(project, volume) => {
                             graph = RenderGraph::default();
                             graph.set_from_project(&project);
+                            graph.add_output_node(AmpNode {
+                                volume,
+                                should_clip: true,
+                            });
                         }
                         PlaybackMessage::SetAudio(audio, volume) => {
                             graph = RenderGraph::from_vec(*audio);
@@ -110,8 +131,8 @@ impl AudioPlayer {
                     }
                 }
 
-                if state == PlaybackState::Play && audio_tx.len() < buffer_size - chunk_size {
-                    for _ in 0..chunk_size {
+                if state == PlaybackState::Play && audio_tx.len() < BUFFER_SIZE - CHUNK_SIZE {
+                    for _ in 0..CHUNK_SIZE {
                         if let Some(next) = graph.next() {
                             let _ = audio_tx.try_send(next).unwrap();
                             log::info!("Sent 1000 samples. Len: {}", audio_tx.len());
@@ -130,38 +151,51 @@ impl AudioPlayer {
                     sleep_ms(10);
                 }
             }
-        });
+        }));
+    }
 
-        // Tracks whether buffer_threshold has been reached.
+    pub fn init_stream(&mut self) {
+        // Tracks whether BUFFER_THRESHOLD has been reached.
         // Once this is true, it stays true.
         let mut latch = false;
 
-        let stream = device
-            .build_output_stream(
-                config,
-                move |data: &mut [f32], _| {
-                    for frame in data.chunks_mut(channels) {
-                        if !latch && audio_rx.len() > buffer_threshold {
-                            latch = true;
+        let audio_rx = self.audio_rx.as_ref().unwrap().clone();
+
+        let host = cpal::default_host();
+        let device = host
+            .default_output_device()
+            .expect("failed to find a default output device");
+        let config = device.default_output_config().unwrap();
+        let config: &cpal::StreamConfig = &config.into();
+
+        let err_fn = |err| error!("an error occurred on stream: {}", err);
+        let channels = config.channels as usize;
+
+        self.stream = Some(
+            device
+                .build_output_stream(
+                    config,
+                    move |data: &mut [f32], _| {
+                        for frame in data.chunks_mut(channels) {
+                            if !latch && audio_rx.len() > BUFFER_THRESHOLD {
+                                latch = true;
+                            }
+
+                            let value = if latch {
+                                audio_rx.try_recv().unwrap_or([0.0; 2])
+                            } else {
+                                [0.0; 2]
+                            };
+
+                            frame[0] = value[0]; // left
+                            frame[1] = value[1]; // right
                         }
-
-                        let value = if latch {
-                            audio_rx.try_recv().unwrap_or([0.0; 2])
-                        } else {
-                            [0.0; 2]
-                        };
-
-                        frame[0] = value[0]; // left
-                        frame[1] = value[1]; // right
-                    }
-                },
-                err_fn,
-                None,
-            )
-            .unwrap();
-
-        self.stream = Some(stream);
-        self.producer_thread = Some(producer_thread);
+                    },
+                    err_fn,
+                    None,
+                )
+                .unwrap(),
+        );
     }
 
     pub fn play(&mut self) {

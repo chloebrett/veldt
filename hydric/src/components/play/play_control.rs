@@ -16,7 +16,6 @@ pub fn play_control(
 ) {
     if ui.button("Play (local)").clicked() {
         let volume = store.get().volume;
-        audio_state.player.reset();
         audio_state.player.init();
         audio_state.player.send(PlaybackMessage::SetProject(
             Box::new(store.get().project.clone()),
@@ -29,7 +28,6 @@ pub fn play_control(
         |audio: &Vec<Stereo<f32>>| {
             let volume = store.get().volume;
             audio_state.audio = audio.to_vec();
-            audio_state.player.reset();
             audio_state.player.init();
             audio_state.player.send(PlaybackMessage::SetAudio(
                 Box::new(audio_state.audio.clone()),

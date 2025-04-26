@@ -23,7 +23,6 @@ pub fn sample_control(
         let sample = interleave_stereo(sample.left, sample.right);
         audio_state.audio = sample.clone();
         let volume = store.get().volume;
-        audio_state.player.reset();
         audio_state.player.init();
         audio_state
             .player
