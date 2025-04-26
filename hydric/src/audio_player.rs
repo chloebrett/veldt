@@ -19,25 +19,24 @@ const CHUNK_SIZE: usize = 1000;
 const BUFFER_THRESHOLD: usize = 1000;
 
 // For now, just samples. In future, consider supporting bars:beats, mins:secs, etc.
-pub struct _PlaybackPosition {
-    _samples: usize,
+pub struct PlaybackPosition {
+    samples: usize,
 }
 
 pub enum PlaybackMessage {
     SetProject(Box<Project>, Volume), // uses Box to keep enum size sane.
     SetAudio(Vec<Stereo<f32>>, Volume),
-    _Seek(_PlaybackPosition),
+    Seek(PlaybackPosition),
     State(PlaybackState),
 }
 
-#[derive(PartialEq)]
+#[derive(PartialEq, Clone)]
 pub enum PlaybackState {
     Play,
     Pause,
     Stop,
 }
 
-#[derive(Default)]
 pub struct AudioPlayer {
     audio_tx: Option<Sender<Stereo<f32>>>,
     audio_rx: Option<Receiver<Stereo<f32>>>,
@@ -49,15 +48,39 @@ pub struct AudioPlayer {
     stream: Option<Stream>,
     producer_thread: Option<JoinHandle<()>>,
     pub start_timestamp: Option<DateTime<Utc>>,
+    state: PlaybackState,
+}
+
+impl Default for AudioPlayer {
+    fn default() -> Self {
+        AudioPlayer {
+            audio_tx: None,
+            audio_rx: None,
+            playback_tx: None,
+            playback_rx: None,
+            stream: None,
+            producer_thread: None,
+            start_timestamp: None,
+            state: PlaybackState::Stop,
+        }
+    }
 }
 
 impl AudioPlayer {
-    pub fn send(&mut self, message: PlaybackMessage) {
+    fn send(&self, message: PlaybackMessage) {
         self.playback_tx
             .as_ref()
             .expect("Call .init() first!")
             .try_send(message)
             .unwrap();
+    }
+
+    pub fn set_project(&self, project: Box<Project>, volume: Volume) {
+        self.send(PlaybackMessage::SetProject(project, volume));
+    }
+
+    pub fn set_audio(&self, audio: Vec<Stereo<f32>>, volume: Volume) {
+        self.send(PlaybackMessage::SetAudio(audio, volume));
     }
 
     pub fn init(&mut self) {
@@ -109,7 +132,10 @@ impl AudioPlayer {
                                 should_clip: true,
                             });
                         }
-                        PlaybackMessage::_Seek(_position) => todo!(),
+                        PlaybackMessage::Seek(PlaybackPosition { samples }) => {
+                            log::info!("Seeking to {}", samples);
+                            graph.seek(samples);
+                        }
                         PlaybackMessage::State(new_state) => {
                             state = new_state;
                         }
@@ -190,13 +216,29 @@ impl AudioPlayer {
     }
 
     pub fn play(&mut self) {
-        self.send(PlaybackMessage::State(PlaybackState::Play));
+        self.state = PlaybackState::Play;
+        self.send(PlaybackMessage::State(self.state.clone()));
         self.stream
             .as_mut()
             .expect("Call .init() first!")
             .play()
             .unwrap();
         self.start_timestamp = Some(chrono::offset::Utc::now());
+    }
+
+    pub fn pause(&mut self) {
+        self.state = PlaybackState::Pause;
+        self.send(PlaybackMessage::State(self.state.clone()));
+        self.stream
+            .as_mut()
+            .expect("Call .init() first!")
+            .pause()
+            .unwrap();
+        self.start_timestamp = None;
+    }
+
+    pub fn seek(&mut self, samples: usize) {
+        self.send(PlaybackMessage::Seek(PlaybackPosition { samples }));
     }
 }
 

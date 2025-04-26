@@ -25,6 +25,7 @@ pub use render_graph::*;
 #[derive(Default)]
 pub struct ProcessContext {
     store: StoreData,
+    seek_pos: Option<usize>,
 }
 
 pub type Graph = StableGraph<NodeData<BoxedNodeSend<ProcessContext>>, ()>;

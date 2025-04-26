@@ -40,7 +40,11 @@ impl From<Vec<Stereo<f32>>> for BufferNode {
 }
 
 impl Node<ProcessContext> for BufferNode {
-    fn process(&mut self, _inputs: &[Input], output: &mut [Buffer], _payload: &ProcessContext) {
+    fn process(&mut self, _inputs: &[Input], output: &mut [Buffer], payload: &ProcessContext) {
+        if let Some(seek_pos) = payload.seek_pos {
+            self.index = seek_pos;
+        }
+
         let (out_left, out_right) = extract_outputs(output);
 
         self.process_channel(out_left, 0);
