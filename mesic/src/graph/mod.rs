@@ -11,6 +11,7 @@ mod generator_node;
 mod mixer_node;
 mod mod_delay_node;
 mod render_graph;
+mod subsynth_node;
 
 pub use amp_node::*;
 pub use buffer_node::*;

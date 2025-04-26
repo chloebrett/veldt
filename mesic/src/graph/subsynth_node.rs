@@ -1,7 +1,8 @@
+use crate::graph::ProcessContext;
 use crate::wave::{beats_to_samples, sub_synth_wave};
 use dasp_graph::{Buffer, Input, Node};
-use shared::model::{GeneratorInstance, GeneratorType, Track, TrackPlacement};
-use shared::types::{Beats, KnobPosition, Volume};
+use shared::model::{GeneratorMeta, SubSynthConfig, Track, TrackPlacement};
+use shared::types::Beats;
 
 pub struct SubSynthNode {
     meta: GeneratorMeta,
@@ -40,8 +41,8 @@ impl SubSynthNode {
     }
 }
 
-impl Node for SubSynthNode {
-    fn process(&mut self, _inputs: &[Input], output: &mut [Buffer]) {
+impl Node<ProcessContext> for SubSynthNode {
+    fn process(&mut self, _inputs: &[Input], output: &mut [Buffer], _payload: &ProcessContext) {
         // Skip generating if muted!
         // TODO: disconnect muted generators from the graph.
         let track_placement = &self.track_placement;
@@ -82,7 +83,7 @@ impl Node for SubSynthNode {
                     &note.note.pitch_name,
                     note.note.beats,
                     self.bpm,
-                    self.config,
+                    &self.config,
                     self.sample_index as i32 - note_start_sample as i32,
                 ),
             );

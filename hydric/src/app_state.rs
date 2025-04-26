@@ -85,8 +85,8 @@ impl<T: Hash + Ord + Copy> WindowStateField<T> {
     }
 
     // Note: not necessarily sorted.
-    pub fn as_vec(self) -> Vec<T> {
-        self.0.into_iter().collect()
+    pub fn as_vec(&self) -> Vec<T> {
+        self.0.clone().into_iter().collect()
     }
 }
 
