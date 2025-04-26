@@ -156,9 +156,7 @@ impl<
     }
 
     fn quantise(&self, value: Beats) -> Beats {
-        let out = (value / self.quantise_level).round() * self.quantise_level;
-        log::info!("{:?} out {:?}", value, out);
-        out
+        (value / self.quantise_level).round() * self.quantise_level
     }
 
     fn move_object(
