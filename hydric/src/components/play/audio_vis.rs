@@ -50,11 +50,7 @@ pub fn audio_vis(audio_state: &AudioState, ui: &mut Ui) {
             })
             .collect();
 
-        if let Some(AudioPlayer {
-            start_timestamp: Some(start_timestamp),
-            ..
-        }) = &audio_state.player
-        {
+        if let Some(start_timestamp) = &audio_state.player.start_timestamp {
             let current_timestamp = chrono::offset::Utc::now();
             let time_delta: TimeDelta = current_timestamp.sub(start_timestamp);
             let time_delta_ms: i64 = time_delta.num_milliseconds();

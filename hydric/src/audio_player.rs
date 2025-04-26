@@ -15,6 +15,14 @@ pub struct AudioPlayer {
 }
 
 impl AudioPlayer {
+    pub fn reset(&mut self) {
+        self.stream = None;
+        self.producer_thread = None;
+        self.start_timestamp = None;
+
+        // TODO: make sure the producer thread is shut down.
+    }
+
     pub fn init(&mut self, mut graph: RenderGraph) {
         let host = cpal::default_host();
         let device = host
@@ -91,7 +99,11 @@ impl AudioPlayer {
     }
 
     pub fn play(&mut self) {
-        self.stream.as_mut().expect("Call .init() first!").play().unwrap();
+        self.stream
+            .as_mut()
+            .expect("Call .init() first!")
+            .play()
+            .unwrap();
         self.start_timestamp = Some(chrono::offset::Utc::now());
     }
 }

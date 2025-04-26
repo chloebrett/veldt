@@ -27,10 +27,9 @@ pub fn sample_control(
             volume,
             should_clip: true,
         });
-        let mut player = AudioPlayer::default();
-        player.init(graph);
-        audio_state.player = Some(player);
-        audio_state.player.as_mut().unwrap().play();
+        audio_state.player.reset();
+        audio_state.player.init(graph);
+        audio_state.player.play();
     }
 
     if ui.button("Load sample").clicked() {

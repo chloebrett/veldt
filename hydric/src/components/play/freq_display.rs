@@ -151,10 +151,8 @@ impl View for FrequencyDisplay<'_> {
                 Rect::from_min_max(pos2(0.0, 0.0), pos2(bin_count as f32, y_max)),
                 rect,
             );
-            if let Some(player) = &audio_state.player {
-                if let Some(shape) = self.render_display(ui, player, ordered_audio) {
-                    ui.painter().add(shape.transform(to_screen));
-                }
+            if let Some(shape) = self.render_display(ui, &audio_state.player, ordered_audio) {
+                ui.painter().add(shape.transform(to_screen));
             }
         });
     }
