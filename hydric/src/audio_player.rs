@@ -19,19 +19,19 @@ const CHUNK_SIZE: usize = 1000;
 const BUFFER_THRESHOLD: usize = 1000;
 
 // For now, just samples. In future, consider supporting bars:beats, mins:secs, etc.
-struct PlaybackPosition {
-    samples: usize,
+pub struct _PlaybackPosition {
+    _samples: usize,
 }
 
 pub enum PlaybackMessage {
     SetProject(Box<Project>, Volume), // uses Box to keep enum size sane.
     SetAudio(Box<Vec<Stereo<f32>>>, Volume), // uses Box to keep enum size sane.
-    Seek(PlaybackPosition),
+    _Seek(_PlaybackPosition),
     State(PlaybackState),
 }
 
 #[derive(PartialEq)]
-enum PlaybackState {
+pub enum PlaybackState {
     Play,
     Pause,
     Stop,
@@ -44,22 +44,14 @@ pub struct AudioPlayer {
     playback_tx: Option<Sender<PlaybackMessage>>,
     playback_rx: Option<Receiver<PlaybackMessage>>,
 
+    // TODO: make sure the producer thread is shut down when a new one starts.
+    // Is losing the reference to it enough?
     stream: Option<Stream>,
     producer_thread: Option<JoinHandle<()>>,
     pub start_timestamp: Option<DateTime<Utc>>,
 }
 
 impl AudioPlayer {
-    pub fn reset(&mut self) {
-        self.playback_tx = None;
-        self.stream = None;
-        self.producer_thread = None;
-        self.start_timestamp = None;
-
-        // TODO: make sure the producer thread is shut down.
-        // Is losing the reference to it enough?
-    }
-
     pub fn send(&mut self, message: PlaybackMessage) {
         self.playback_tx
             .as_ref()
@@ -85,14 +77,6 @@ impl AudioPlayer {
     }
 
     pub fn init_producer(&mut self) {
-        // TODO: pull this logic to get the config into a function.
-        let host = cpal::default_host();
-        let device = host
-            .default_output_device()
-            .expect("failed to find a default output device");
-        let config = device.default_output_config().unwrap();
-        let config: &cpal::StreamConfig = &config.into();
-
         log::info!(
             "Available parallelism: {:?}",
             wasm_thread::available_parallelism()
@@ -106,6 +90,7 @@ impl AudioPlayer {
             log::info!("Started producer_thread {:?}", wasm_thread::current().id());
             let mut state = PlaybackState::Pause;
 
+            // TODO: create a struct that stores the state and an impl for it.
             while state != PlaybackState::Stop {
                 if let Ok(message) = playback_rx.try_recv() {
                     match message {
@@ -124,7 +109,7 @@ impl AudioPlayer {
                                 should_clip: true,
                             });
                         }
-                        PlaybackMessage::Seek(position) => todo!(),
+                        PlaybackMessage::_Seek(_position) => todo!(),
                         PlaybackMessage::State(new_state) => {
                             state = new_state;
                         }
@@ -134,7 +119,7 @@ impl AudioPlayer {
                 if state == PlaybackState::Play && audio_tx.len() < BUFFER_SIZE - CHUNK_SIZE {
                     for _ in 0..CHUNK_SIZE {
                         if let Some(next) = graph.next() {
-                            let _ = audio_tx.try_send(next).unwrap();
+                            audio_tx.try_send(next).unwrap();
                             log::info!("Sent 1000 samples. Len: {}", audio_tx.len());
                         } else {
                             // No more audio, so pause.
