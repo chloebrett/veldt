@@ -27,7 +27,13 @@ jobs:
 
     - name: Install WASM target (if cache miss)
       if: steps.cache-wasm.outputs.cache-hit != 'true'  # Only run if cache missed
-      run: rustup target add wasm32-unknown-unknown
+      run: |
+        rustup target add wasm32-unknown-unknown
+
+    - name: Install other rust/cargo deps
+      run: |
+        rustup component add --toolchain nightly-x86_64-unknown-linux-gnu rustfmt
+        cargo install wasm-bindgen-cli
 
     - name: Install protobuf-compiler (if cache miss)
       run: |
@@ -43,9 +49,7 @@ jobs:
     - name: Build-mesic
       run: cd mesic && cargo build --verbose && cargo fmt --check
     - name: Build-hydric
-      run: cd hydric && cargo build --verbose --target=wasm32-unknown-unknown && cargo fmt --check
-    - name: Leptosfmt
-      run: cd hydric
+      run: cd hydric && ./build.py && cargo fmt --check
     - name: Test-shared
       run: cd shared && cargo test
     - name: Test-state
@@ -54,5 +58,3 @@ jobs:
       run: cd xeric && cargo test
     - name: Test-mesic
       run: cd mesic && cargo test
-    
-    
