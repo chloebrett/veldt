@@ -5,14 +5,23 @@ use log::error;
 use mesic::graph::RenderGraph;
 use wasm_thread::JoinHandle;
 
+#[derive(Default)]
 pub struct AudioPlayer {
-    stream: Stream,
-    producer_thread: JoinHandle<()>,
+    stream: Option<Stream>,
+    producer_thread: Option<JoinHandle<()>>,
     pub start_timestamp: Option<DateTime<Utc>>,
 }
 
 impl AudioPlayer {
-    pub fn new(mut graph: RenderGraph, pre_render: bool) -> Self {
+    pub fn reset(&mut self) {
+        self.stream = None;
+        self.producer_thread = None;
+        self.start_timestamp = None;
+
+        // TODO: make sure the producer thread is shut down.
+    }
+
+    pub fn init(&mut self, mut graph: RenderGraph) {
         let host = cpal::default_host();
         let device = host
             .default_output_device()
@@ -23,8 +32,15 @@ impl AudioPlayer {
         let err_fn = |err| error!("an error occurred on stream: {}", err);
         let channels = config.channels as usize;
 
+        // Total size of the audio buffer.
         let buffer_size = 5000;
+
+        // Number of samples to render at a time.
         let chunk_size = 1000;
+
+        // Don't start playing until this many samples have been produced.
+        let buffer_threshold = 1000;
+
         let (tx, rx) = crossbeam_channel::bounded(buffer_size);
 
         log::info!(
@@ -48,12 +64,25 @@ impl AudioPlayer {
             }
         });
 
+        // Tracks whether buffer_threshold has been reached.
+        // Once this is true, it stays true.
+        let mut latch = false;
+
         let stream = device
             .build_output_stream(
                 config,
                 move |data: &mut [f32], _| {
                     for frame in data.chunks_mut(channels) {
-                        let value = rx.try_recv().unwrap_or([0.0; 2]);
+                        if !latch && rx.len() > buffer_threshold {
+                            latch = true;
+                        }
+
+                        let value = if latch {
+                            rx.try_recv().unwrap_or([0.0; 2])
+                        } else {
+                            [0.0; 2]
+                        };
+
                         frame[0] = value[0]; // left
                         frame[1] = value[1]; // right
                     }
@@ -62,15 +91,17 @@ impl AudioPlayer {
                 None,
             )
             .unwrap();
-        AudioPlayer {
-            stream,
-            producer_thread,
-            start_timestamp: None,
-        }
+
+        self.stream = Some(stream);
+        self.producer_thread = Some(producer_thread);
     }
 
     pub fn play(&mut self) {
-        self.stream.play().unwrap();
+        self.stream
+            .as_mut()
+            .expect("Call .init() first!")
+            .play()
+            .unwrap();
         self.start_timestamp = Some(chrono::offset::Utc::now());
     }
 }

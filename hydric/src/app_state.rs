@@ -21,8 +21,7 @@ pub struct AsyncState {
 #[derive(Default)]
 pub struct AudioState {
     pub audio: Vec<Stereo<f32>>,
-    pub player: Option<AudioPlayer>,
-    pub pre_render: bool,
+    pub player: AudioPlayer,
 }
 
 pub struct MixerWindowState {

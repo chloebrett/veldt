@@ -23,9 +23,9 @@ pub fn play_control(
             volume,
             should_clip: true,
         });
-        let player = AudioPlayer::new(graph, audio_state.pre_render);
-        audio_state.player = Some(player);
-        audio_state.player.as_mut().unwrap().play();
+        audio_state.player.reset();
+        audio_state.player.init(graph);
+        audio_state.player.play();
     }
     poll(
         &mut async_state.server_render,
@@ -37,9 +37,9 @@ pub fn play_control(
                 volume,
                 should_clip: true,
             });
-            let player = AudioPlayer::new(graph, audio_state.pre_render);
-            audio_state.player = Some(player);
-            audio_state.player.as_mut().unwrap().play();
+        audio_state.player.reset();
+        audio_state.player.init(graph);
+        audio_state.player.play();
         },
     );
     if ui.button("Load audio (server)").clicked() {
@@ -48,7 +48,6 @@ pub fn play_control(
             server_render(project).await
         })
     }
-    ui.checkbox(&mut audio_state.pre_render, "Pre-render audio");
     audio_vis(audio_state, ui);
     FrequencyDisplay::new(audio_state).ui(ui)
 }
