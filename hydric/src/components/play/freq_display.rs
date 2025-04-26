@@ -40,10 +40,7 @@ impl<'a> FrequencyDisplay<'a> {
         player: &AudioPlayer,
         audio: Vec<OrderedFloat<f32>>,
     ) -> Option<Shape> {
-        let Some(start_timestamp) = player.start_timestamp else {
-            return None;
-        };
-
+        let start_timestamp = player.start_timestamp?;
         let current_timestamp = chrono::offset::Utc::now();
         let time_delta: TimeDelta = current_timestamp.sub(start_timestamp);
         let time_delta_ms: i64 = time_delta.num_milliseconds();

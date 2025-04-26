@@ -20,7 +20,7 @@ use std::sync::mpsc::channel;
 
 pub struct App {
     pub store: Store,
-    graph: RenderGraph,
+    _graph: RenderGraph,
     pub frame_history: FrameHistory,
     pub async_state: AsyncState,
     pub audio_state: AudioState,
@@ -37,7 +37,7 @@ impl Default for App {
         graph.set_receiver(rx);
         App {
             store: Store::new(broadcast, tx),
-            graph,
+            _graph: graph,
             frame_history: FrameHistory::default(),
             async_state: AsyncState::default(),
             audio_state: AudioState::default(),
@@ -130,15 +130,14 @@ impl View for App {
                     .dispatch(&Selector::Effect(mixer_index, effect_index), action)
             };
             let on_release = || self.store.dispatchr(Action::Release);
-            EffectView::new(
+            if let Some(mut it) = EffectView::new(
                 &self.store,
                 mixer_index,
                 effect_index,
                 &mut self.window_state,
                 dispatch,
                 on_release,
-            )
-            .map(|mut it| it.ui(ui));
+            ) {it.ui(ui)}
         }
         if self.window_state.scale {
             let dispatch = |action| self.store.dispatchr(action);

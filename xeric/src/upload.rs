@@ -1,7 +1,6 @@
 use crate::load_sample::sample_dir_path;
 use log::info;
 use shared::upload::{UploadSampleReply, UploadSampleRequest, upload_server::Upload};
-use std::env::current_dir;
 use std::fs::File;
 use std::io::Write;
 use tonic::async_trait;
