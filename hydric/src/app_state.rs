@@ -16,6 +16,7 @@ pub struct AsyncState {
     pub load_sample: AsyncResult<Sample, ()>,
     pub upload_sample: AsyncResult<(), ()>,
     pub load_sample_tree: AsyncResult<FilenameTree, ()>,
+    pub export: AsyncResult<(), ()>,
 }
 
 #[derive(Default)]

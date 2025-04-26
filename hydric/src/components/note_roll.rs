@@ -102,17 +102,6 @@ impl View for NoteRoll<'_> {
                 max_note as f32,
             ),
         );
-        let dispatch = move |note_index: usize, action: Action| {
-            store.dispatch(&Selector::Note(track_index, note_index), action)
-        };
-        let on_release = || store.dispatchr(Action::Release);
-        let on_double_click = |ui: &mut Ui, index: usize| {
-            DataState::NoteWindow.set_value(ui, true);
-            DataState::ActiveNoteIndex.set_value(ui, index);
-        };
-        let on_click = |ui: &mut Ui, index: Option<usize>| {
-            update_select_data_state(ui, DataState::SelectedNoteIndexes, index);
-        };
         let title = format!("Track {track_index}");
         let window = StateWindow(
             default_window(&title)
@@ -132,19 +121,13 @@ impl View for NoteRoll<'_> {
                     ui.horizontal(|ui| {
                         Piano::new(max_note, min_note - 1).ui(ui);
                         ui.add(
-                            Sequencer::new(
-                                store,
-                                range,
-                                dispatch,
-                                on_release,
-                                on_double_click,
-                                on_click,
-                            )
-                            .objects(notes)
-                            .horizontal_rects(white_note_pattern, Color32::from_white_alpha(4))
-                            .vertical_bars(bar_length, Color32::from_white_alpha(6))
-                            .vertical_bars(1.0, Color32::from_white_alpha(3))
-                            .vertical_bars(1.0 / bar_length, Color32::from_white_alpha(1)),
+                            Sequencer::new(store, range)
+                                .objects(notes)
+                                .parent_index(track_index)
+                                .horizontal_rects(white_note_pattern, Color32::from_white_alpha(4))
+                                .vertical_bars(bar_length, Color32::from_white_alpha(6))
+                                .vertical_bars(1.0, Color32::from_white_alpha(3))
+                                .vertical_bars(1.0 / bar_length, Color32::from_white_alpha(1)),
                         );
                     });
                 });
@@ -262,5 +245,21 @@ impl SequencerObject<PlacedNote> for PlacedNote {
                 StrokeKind::Inside,
             ),
         ])
+    }
+
+    fn selector(index: usize, parent_index: Option<usize>) -> Selector {
+        Selector::Note(
+            parent_index.expect("Track index should have been set as parent index"),
+            index,
+        )
+    }
+
+    fn set_active(&self, ui: &mut Ui, index: usize) {
+        DataState::NoteWindow.set_value(ui, true);
+        DataState::ActiveNoteIndex.set_value(ui, index);
+    }
+
+    fn set_selected(ui: &mut Ui, index: Option<usize>) {
+        update_select_data_state(ui, DataState::SelectedNoteIndexes, index);
     }
 }
