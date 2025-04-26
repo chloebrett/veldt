@@ -2201,6 +2201,7 @@ dependencies = [
  "async-std",
  "chrono",
  "cpal 0.15.3",
+ "crossbeam-channel",
  "dasp_frame",
  "dasp_signal",
  "ecolor",
@@ -2219,6 +2220,7 @@ dependencies = [
  "tonic-web-wasm-client",
  "wasm-bindgen",
  "wasm-bindgen-futures",
+ "wasm_thread",
 ]
 
 [[package]]

@@ -5,9 +5,11 @@ use dasp_frame::Stereo;
 use log::error;
 use mesic::graph::RenderGraph;
 use std::sync::mpsc;
+use wasm_thread::JoinHandle;
 
 pub struct AudioPlayer {
     stream: Stream,
+    producer_thread: JoinHandle<()>,
     pub start_timestamp: Option<DateTime<Utc>>,
 }
 
@@ -23,25 +25,37 @@ impl AudioPlayer {
         let err_fn = |err| error!("an error occurred on stream: {}", err);
         let channels = config.channels as usize;
 
-        let (tx, rx) = mpsc::channel();
+        let buffer_size = 5000;
+        let chunk_size = 1000;
+        let (tx, rx) = crossbeam_channel::bounded(buffer_size);
 
-        // TODO: maybe this could avoid an allocation.
-        let mut next_sample: Box<dyn FnMut() -> Stereo<f32> + Send> = if pre_render {
-            for frame in graph {
-                let _ = tx.send(frame);
+        log::info!(
+            "Available parallelism: {:?}",
+            wasm_thread::available_parallelism()
+        );
+
+        let producer_thread = wasm_thread::spawn(move || {
+            log::info!("In producer_thread");
+
+            loop {
+                if tx.len() < buffer_size - chunk_size {
+                    log::info!("Sent 1000 samples. Len: {}", tx.len());
+
+                    for _ in 0..chunk_size {
+                        let _ = tx.try_send(graph.next().unwrap_or([0.0; 2])).unwrap();
+                    }
+                } else {
+                    sleep_ms(10);
+                }
             }
-
-            Box::new(move || rx.recv().unwrap_or([0.0; 2]))
-        } else {
-            Box::new(move || graph.next().unwrap_or([0.0; 2]))
-        };
+        });
 
         let stream = device
             .build_output_stream(
                 config,
                 move |data: &mut [f32], _| {
                     for frame in data.chunks_mut(channels) {
-                        let value = next_sample();
+                        let value = rx.try_recv().unwrap_or([0.0; 2]);
                         frame[0] = value[0]; // left
                         frame[1] = value[1]; // right
                     }
@@ -52,6 +66,7 @@ impl AudioPlayer {
             .unwrap();
         AudioPlayer {
             stream,
+            producer_thread,
             start_timestamp: None,
         }
     }
@@ -60,4 +75,11 @@ impl AudioPlayer {
         self.stream.play().unwrap();
         self.start_timestamp = Some(chrono::offset::Utc::now());
     }
+}
+
+fn sleep_ms(ms: u32) {
+    log::info!("Sleeping {} ms", ms);
+    let secs = 0;
+    let nanos = ms * 1000 * 1000;
+    wasm_thread::sleep(std::time::Duration::new(secs, nanos));
 }
