@@ -1,3 +1,5 @@
+use std::collections::HashSet;
+
 use super::Piano;
 use crate::{
     app_state::DataState,
@@ -104,9 +106,28 @@ impl View for NoteRoll<'_> {
             store.dispatch(&Selector::Note(track_index, note_index), action)
         };
         let on_release = || store.dispatchr(Action::Release);
-        let on_click = |ui: &mut Ui, index: usize| {
+        let on_double_click = |ui: &mut Ui, index: usize| {
             DataState::NoteWindow.set_value(ui, true);
             DataState::ActiveNoteIndex.set_value(ui, index);
+        };
+        let on_click = |ui: &mut Ui, index: Option<usize>| {
+            if let Some(it) = index {
+                if let Some(mut selected) =
+                    DataState::SelectedNoteIndexes.get_value::<HashSet<usize>>(ui)
+                {
+                    if selected.contains(&it) {
+                        selected.remove(&it);
+                    } else {
+                        selected.insert(it);
+                    }
+                    DataState::SelectedNoteIndexes.set_value(ui, selected)
+                } else {
+                    DataState::SelectedNoteIndexes
+                        .set_value::<HashSet<usize>>(ui, HashSet::from_iter(vec![it]))
+                }
+            } else {
+                DataState::SelectedNoteIndexes.remove_value(ui);
+            }
         };
         let title = format!("Track {track_index}");
         let window = StateWindow(
@@ -127,12 +148,19 @@ impl View for NoteRoll<'_> {
                     ui.horizontal(|ui| {
                         Piano::new(max_note, min_note - 1).ui(ui);
                         ui.add(
-                            Sequencer::new(store, range, dispatch, on_release, on_click)
-                                .objects(notes)
-                                .horizontal_rects(white_note_pattern, Color32::from_white_alpha(4))
-                                .vertical_bars(bar_length, Color32::from_white_alpha(6))
-                                .vertical_bars(1.0, Color32::from_white_alpha(3))
-                                .vertical_bars(1.0 / bar_length, Color32::from_white_alpha(1)),
+                            Sequencer::new(
+                                store,
+                                range,
+                                dispatch,
+                                on_release,
+                                on_double_click,
+                                on_click,
+                            )
+                            .objects(notes)
+                            .horizontal_rects(white_note_pattern, Color32::from_white_alpha(4))
+                            .vertical_bars(bar_length, Color32::from_white_alpha(6))
+                            .vertical_bars(1.0, Color32::from_white_alpha(3))
+                            .vertical_bars(1.0 / bar_length, Color32::from_white_alpha(1)),
                         );
                     });
                 });
@@ -217,7 +245,8 @@ impl SequencerObject<PlacedNote> for PlacedNote {
 
     fn get_selected(ui: &Ui, store: &Store) -> Option<Vec<PlacedNote>> {
         let track_index = DataState::ActiveTrackIndex.get_value::<usize>(ui)?;
-        let note_indexes = DataState::SelectedNoteIndexes.get_value::<Vec<usize>>(ui)?;
+        let note_indexes = DataState::SelectedNoteIndexes.get_value::<HashSet<usize>>(ui)?;
+        log::info!("{:?}", note_indexes);
         Some(
             note_indexes
                 .into_iter()

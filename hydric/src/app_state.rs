@@ -150,7 +150,7 @@ impl DataState {
                     data.insert_temp::<Option<usize>>(self.get_id(), None)
                 }
                 Self::SelectedNoteIndexes | Self::SelectedTrackPlacementIndexes => {
-                    data.insert_temp::<Option<Vec<usize>>>(self.get_id(), None);
+                    data.insert_temp::<Option<HashSet<usize>>>(self.get_id(), None);
                 }
             };
         })
