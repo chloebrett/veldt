@@ -14,7 +14,7 @@
     "f": "yarn hf; yarn mf; yarn sf; yarn stf; yarn xf",
     "fix": "cd hydric; cargo fix --target=wasm32-unknown-unknown; cd ../mesic; cargo fix; cd ../shared; cargo fix; cd ../state; cargo fix; cd ../xeric; cargo fix",
     "l": "yarn hl; yarn ml; yarn sl; yarn stl; yarn xl",
-    "p": "./.husky/pre-commit",
+    "p": "sh ./.husky/pre-commit",
     "r": "yarn concurrently 'yarn xr' 'yarn hr'",
     "t": "yarn mt; yarn st; yarn stt; yarn xt",
     "hb": "cd hydric; ./build.sh",
