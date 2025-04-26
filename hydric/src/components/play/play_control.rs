@@ -1,5 +1,4 @@
 use super::{FrequencyDisplay, audio_vis::audio_vis};
-use crate::audio_player::AudioPlayer;
 use crate::promise::{poll, spawn};
 use crate::rpc::render as server_render;
 use crate::view::View;

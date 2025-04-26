@@ -1,4 +1,3 @@
-use crate::audio_player::AudioPlayer;
 use crate::promise::{poll, spawn};
 use crate::rpc::interleave_stereo;
 use crate::rpc::load_sample;
