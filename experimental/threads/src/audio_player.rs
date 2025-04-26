@@ -1,8 +1,6 @@
 use cpal::Stream;
 use cpal::traits::{DeviceTrait, HostTrait, StreamTrait};
 use log::error;
-use std::sync::{Arc, Mutex};
-use std::time::Duration;
 use wasm_thread;
 use wasm_thread::JoinHandle;
 

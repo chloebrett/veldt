@@ -1,5 +1,5 @@
 use crate::{AudioPlayer, FrameHistory};
-use egui::{Ui, lerp, Color32, remap, Shape, pos2, Pos2, Rect, vec2, Frame};
+use egui::{Ui, Color32, pos2, Pos2, Rect, vec2, Frame};
 use epaint::PathStroke;
 use crate::frame_history::View;
 

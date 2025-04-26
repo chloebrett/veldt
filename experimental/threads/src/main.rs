@@ -5,10 +5,6 @@ mod frame_history;
 use crate::app::*;
 use crate::audio_player::*;
 use crate::frame_history::*;
-use std::time::Duration;
-use wasm_bindgen::prelude::*;
-
-use wasm_thread as thread;
 
 use eframe::web_sys;
 
