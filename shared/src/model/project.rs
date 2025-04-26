@@ -155,7 +155,8 @@ mod tests {
                 visual_placement: 6,
             }],
             samples: vec![Sample {
-                data: vec![0.0, 1.0, 3.0],
+                left: vec![0.0, 1.0, 3.0],
+                right: vec![0.0, 1.0, 3.0],
                 sample_rate: 1.0,
             }],
             generators: vec![GeneratorInstance {

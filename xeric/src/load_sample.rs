@@ -128,9 +128,7 @@ impl LoadSample for LoadSampleContext {
         let mut reader = hound::WavReader::open(file_path).map_err(|_| {
             tonic::Status::invalid_argument(format!("File {} could not be read.", filename))
         })?;
-        let chunks = reader
-            .samples::<i32>()
-            .chunks(2);
+        let chunks = reader.samples::<i32>().chunks(2);
         let (left, right) = chunks
             .into_iter()
             .map(|mut data| {
