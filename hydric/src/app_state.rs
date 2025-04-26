@@ -157,7 +157,7 @@ impl DataState {
     }
 }
 
-/// Update the state of selected Sequencer Objects bases on Ui interaction.
+/// Update the state of selected Sequencer Objects based on Ui interaction.
 pub fn update_select_data_state(ui: &mut Ui, data_state: DataState, index: Option<usize>) {
     if let Some(it) = index {
         if let Some(mut selected) = data_state.get_value::<HashSet<usize>>(ui) {
