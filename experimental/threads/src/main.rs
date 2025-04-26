@@ -1,8 +1,10 @@
 mod app;
 mod audio_player;
+mod frame_history;
 
 use crate::app::*;
 use crate::audio_player::*;
+use crate::frame_history::*;
 use std::time::Duration;
 use wasm_bindgen::prelude::*;
 

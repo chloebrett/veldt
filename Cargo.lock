@@ -4312,6 +4312,8 @@ dependencies = [
  "crossbeam-channel",
  "eframe",
  "egui",
+ "emath",
+ "epaint",
  "log",
  "wasm-bindgen",
  "wasm-bindgen-futures",
