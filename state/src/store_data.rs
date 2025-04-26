@@ -36,6 +36,18 @@ const BASE_OSC: OscillatorConfig = OscillatorConfig {
     unison_detune: 0.0,
 };
 
+const BASE_LFO: LfoConfig = LfoConfig {
+    wave: WaveType::Sine,
+    frequency: 1.0,
+};
+
+const BASE_ENV: AdsrEnvelope = AdsrEnvelope {
+    attack: 0.1,
+    decay: 0.1,
+    sustain: 0.8,
+    release: 0.1,
+};
+
 impl Default for StoreData {
     fn default() -> Self {
         StoreData {
@@ -103,16 +115,16 @@ impl Default for StoreData {
                                         ..BASE_OSC
                                     },
                                 ],
-                                lfos: [LfoConfig {
-                                    wave: WaveType::Sine,
-                                    frequency: 1.0,
-                                }; 3],
-                                envelopes: [AdsrEnvelope {
-                                    attack: 0.1,
-                                    decay: 0.1,
-                                    sustain: 0.8,
-                                    release: 0.1,
-                                }; 3],
+                                lfos: [
+                                    LfoConfig { ..BASE_LFO },
+                                    LfoConfig { ..BASE_LFO },
+                                    LfoConfig { ..BASE_LFO },
+                                ],
+                                envelopes: [
+                                    AdsrEnvelope { ..BASE_ENV },
+                                    AdsrEnvelope { ..BASE_ENV },
+                                    AdsrEnvelope { ..BASE_ENV },
+                                ],
                             },
                         },
                         meta: GeneratorMeta {
