@@ -30,7 +30,7 @@ pub fn play_control(
             audio_state.audio = audio.to_vec();
             audio_state.player.init();
             audio_state.player.send(PlaybackMessage::SetAudio(
-                Box::new(audio_state.audio.clone()),
+                audio_state.audio.clone(),
                 volume,
             ));
             audio_state.player.play();

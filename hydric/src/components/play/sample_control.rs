@@ -26,7 +26,7 @@ pub fn sample_control(
         audio_state.player.init();
         audio_state
             .player
-            .send(PlaybackMessage::SetAudio(Box::new(sample), volume));
+            .send(PlaybackMessage::SetAudio(sample, volume));
         audio_state.player.play();
     }
 

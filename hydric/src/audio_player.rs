@@ -25,7 +25,7 @@ pub struct _PlaybackPosition {
 
 pub enum PlaybackMessage {
     SetProject(Box<Project>, Volume), // uses Box to keep enum size sane.
-    SetAudio(Box<Vec<Stereo<f32>>>, Volume), // uses Box to keep enum size sane.
+    SetAudio(Vec<Stereo<f32>>, Volume),
     _Seek(_PlaybackPosition),
     State(PlaybackState),
 }
@@ -103,7 +103,7 @@ impl AudioPlayer {
                             });
                         }
                         PlaybackMessage::SetAudio(audio, volume) => {
-                            graph = RenderGraph::from_vec(*audio);
+                            graph = RenderGraph::from_vec(audio);
                             graph.add_output_node(AmpNode {
                                 volume,
                                 should_clip: true,
