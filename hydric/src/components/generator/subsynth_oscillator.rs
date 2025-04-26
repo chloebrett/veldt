@@ -79,7 +79,7 @@ where
                     |it| dispatch(Action::SetFloat(FloatField::Volume, it)),
                     0.0..=1.0,
                     0.0,
-                    &on_release,
+                    on_release,
                 );
                 ui.add_space(6.0);
 
@@ -90,7 +90,7 @@ where
                     |it| dispatch(Action::SetFloat(FloatField::Pan, it)),
                     -1.0..=1.0,
                     0.0,
-                    &on_release,
+                    on_release,
                 );
                 ui.add_space(6.0);
 
@@ -101,7 +101,7 @@ where
                     |it| dispatch(Action::SetFloat(FloatField::Detune, it)),
                     -24.0..=24.0,
                     0.0,
-                    &on_release,
+                    on_release,
                 );
                 ui.add_space(6.0);
 
@@ -112,7 +112,7 @@ where
                     |it| dispatch(Action::SetFloat(FloatField::Detune, it)),
                     -100.0..=100.0,
                     0.0,
-                    &on_release,
+                    on_release,
                 );
             });
         });
@@ -141,7 +141,7 @@ where
                     config.osc_count as f64,
                     |it| dispatch(Action::SetUint(UintField::OscCount, it as u32)),
                     1..=24,
-                    &on_release,
+                    on_release,
                 );
                 ui.add_space(6.0);
                 knob(
@@ -151,7 +151,7 @@ where
                     |it| dispatch(Action::SetFloat(FloatField::Detune, it)),
                     0.0..=100.0,
                     0.0,
-                    &on_release,
+                    on_release,
                 );
             });
         });
