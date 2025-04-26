@@ -105,10 +105,10 @@ impl View for MenuBar<'_> {
 
                 if ui.button("Export").clicked() {
                     let project = store.get().project.clone();
-                    let project_name = store.get().project.name.clone();
-                    spawn(&mut async_state.export, async move {
-                        export(project, project_name).await
-                    });
+                    spawn(
+                        &mut async_state.export,
+                        async move { export(project).await },
+                    );
                 }
             });
             ui.menu_button("Edit", |ui| {

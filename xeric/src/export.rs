@@ -33,7 +33,6 @@ impl Export for ExportContext {
         request: tonic::Request<ExportRequest>,
     ) -> Result<tonic::Response<ExportReply>, tonic::Status> {
         let req = request.into_inner();
-        let name = req.name.clone();
         let project = req
             .project
             .ok_or_else(|| tonic::Status::invalid_argument("Project must be supplied"))?
@@ -73,7 +72,7 @@ impl Export for ExportContext {
         // write to output file
         let dir_path = wav_dir_path();
         let _ = create_dir_all(&dir_path);
-        let file_path = wav_file_path(&name);
+        let file_path = wav_file_path(&project.name);
 
         // NOTE: will overwrite if the file already exists
         let mut out_file =

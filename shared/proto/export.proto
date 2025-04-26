@@ -9,8 +9,7 @@ service Export {
 }
 
 message ExportRequest {
-  string name = 1;
-  pmodel.ProjectProto project = 2;
+  pmodel.ProjectProto project = 1;
 }
 
 message ExportReply {
