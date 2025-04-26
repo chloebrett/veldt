@@ -36,7 +36,12 @@ impl SimpleWaveVisualiser {
         response
     }
 
-    fn paint_segment(ui: &mut Ui, segment_wave_points: &[Pos2], fill_color: Color32, axis_y: f32) {
+    fn paint_segment(
+        ui: &mut Ui,
+        segment_wave_points: &[Pos2],
+        fill_color: Color32,
+        transform: RectTransform,
+    ) {
         let painter = ui.painter();
 
         if segment_wave_points.len() < 2 {
@@ -49,18 +54,16 @@ impl SimpleWaveVisualiser {
         let end_x = segment_wave_points.last().unwrap().x;
 
         // Add the points on the axis to close the polygon.
-        polygon_points.push(pos2(end_x, axis_y));
+        polygon_points.push(pos2(end_x, 0.0));
 
         painter.add(Shape::convex_polygon(
-            polygon_points,
+            polygon_points.transform(transform),
             fill_color,
             Stroke::NONE,
         ));
     }
 
     fn paint(&self, ui: &mut Ui, rect: Rect) {
-        let axis_y = rect.center().y;
-
         let num_points = rect.width() as usize;
 
         // Map from wave space where x is in [0.0, 1.0] and y is in [-1.0, 1.0]
@@ -68,76 +71,74 @@ impl SimpleWaveVisualiser {
         let transform =
             RectTransform::from_to(Rect::from_min_max(pos2(0.0, 1.0), pos2(1.0, -1.0)), rect);
 
-        let points: Vec<Pos2> = (0..num_points)
+        let points: Vec<_> = (0..num_points)
             .map(|i| {
                 // This value should go from 0.0 to < 1.0 across the points because make_wave will then use (wave_input_x % 1.0) * TAU which means any int passed to it becomes 0.
                 let x = i as f32 / num_points as f32;
                 let y = make_wave(x, self.wave_type, 1.0, AntiAliasingMode::Off); // using arbitrary wave_freq since anti aliasing is off
-                pos2(x, y).transform(transform)
+                pos2(x, y)
             })
             .collect();
 
         // vector for each segment which will be used for painting in the area between the plotted line and the x-axis.
-        let mut current_segment_points: Vec<Pos2> = vec![];
+        let mut curr_points: Vec<Pos2> = vec![];
 
         // Iterate through generated points to build each polygon segment and find when the plotted point crosses the x-axis.
         for point in &points {
-            // Determine if the current point is above or below the axis.
-            let current_is_above = point.y <= axis_y; // y increases downwards!!
-
-            if current_segment_points.is_empty() {
-                current_segment_points.push(pos2(rect.left(), axis_y)); // always add this base point
-                current_segment_points.push(*point); // adding first point
+            if curr_points.is_empty() {
+                curr_points.push(Pos2::ZERO); // always add this base point
+                curr_points.push(*point); // adding first point
                 continue;
             }
 
-            let p_last_in_segment = *current_segment_points.last().unwrap();
-            let last_is_above = p_last_in_segment.y <= axis_y;
+            let prev = *curr_points.last().unwrap();
 
-            if current_is_above == last_is_above {
-                current_segment_points.push(*point); // push point as usual if line hasn't crossed x-axis
+            // If the current point and last in segment are on the same side of the axis
+            if prev.y.signum() == point.y.signum() {
+                curr_points.push(*point); // push point as usual if line hasn't crossed x-axis
                 continue;
             }
 
             // Line crossed x-axis so calculate the intersection point on the axis.
-            let y_diff = point.y - p_last_in_segment.y;
-            if y_diff.abs() > 1e-6 {
-                // Only create a new segment if y-diff interval is meaninfgully large.
-                // Calculate the x-coordinate of the intersection point
-                let t = (axis_y - p_last_in_segment.y) / y_diff;
-                let t = t.clamp(0.0, 1.0);
-                let intersect_x = p_last_in_segment.x + (point.x - p_last_in_segment.x) * t;
-                let p_int = Pos2::new(intersect_x, axis_y);
-
-                // Add the intersection point to the current segment - this is the point that lies on the axis and marks the end of the current segment along the wave curve.
-                current_segment_points.push(p_int);
-
-                // Paint the completed segment's polygon.
-                Self::paint_segment(ui, &current_segment_points, self.fill_color, axis_y);
-
-                // Start a new segment with the intersection point and the current point (point).
-                current_segment_points.clear(); // Clear points from the just-painted segment
-                current_segment_points.push(p_int); // Intersection point is the start of the new segment
-
-                // Add point to the new segment but only if it's different from the intersection point to avoid double ups incase p_current is already exactly on the x-axis
-                if *point != p_int {
-                    current_segment_points.push(*point);
-                }
-            } else {
+            let diff = *point - prev;
+            if diff.y.abs() <= 1e-6 {
                 // If the y_diff.abs() is small then there is no point making a new segment yet because that means the interval is nearly horizontal.
                 // i.e. crossing won't be visible anyway
-                current_segment_points.push(*point);
+                curr_points.push(*point);
+                continue;
+            }
+
+            // Calculate the x-coordinate of the intersection point
+            let t = prev.y / diff.y;
+            let t = t.clamp(0.0, 1.0);
+            let intersect = pos2(prev.x + diff.x * t, 0.0);
+
+            // Add the intersection point to the current segment - this is the point that lies on the axis and marks the end of the current segment along the wave curve.
+            curr_points.push(intersect);
+
+            // Paint the completed segment's polygon.
+            Self::paint_segment(ui, &curr_points, self.fill_color, transform);
+
+            // Start a new segment with the intersection point and the current point (point).
+            // Intersection point is the start of the new segment.
+            curr_points = vec![intersect];
+
+            // Add point to the new segment but only if it's different from the intersection point to avoid double ups incase p_current is already exactly on the x-axis
+            if *point != intersect {
+                curr_points.push(*point);
             }
         }
 
         // Paint the last segment if it exists
-        if !current_segment_points.is_empty() {
-            current_segment_points.push(Pos2::new(rect.right(), axis_y)); // always add this base point (it's the end of the graph)
-            Self::paint_segment(ui, &current_segment_points, self.fill_color, axis_y);
+        if !curr_points.is_empty() {
+            curr_points.push(pos2(1.0, 0.0)); // always add this base point (it's the end of the graph)
+            Self::paint_segment(ui, &curr_points, self.fill_color, transform);
         }
 
         // Draw the line of the actual wave after filling so it appears on top
-        ui.painter()
-            .add(Shape::line(points, Stroke::new(3.0, self.line_color)));
+        ui.painter().add(Shape::line(
+            points.transform(transform),
+            Stroke::new(3.0, self.line_color),
+        ));
     }
 }
