@@ -79,13 +79,15 @@ impl eframe::App for App {
         self.frame_history
             .on_new_frame(ctx.input(|i| i.time), frame.info().cpu_usage);
 
-        egui::CentralPanel::default().show(ctx, |ui| {
+        egui::TopBottomPanel::top("veldt_menu").show(ctx, |ui| {
             MenuBar::new(
                 &mut self.store,
                 &mut self.window_state,
                 &mut self.async_state,
             )
             .ui(ui);
+        });
+        egui::CentralPanel::default().show(ctx, |ui| {
             ScrollArea::vertical()
                 .auto_shrink(false)
                 .scroll_bar_visibility(ScrollBarVisibility::VisibleWhenNeeded)
