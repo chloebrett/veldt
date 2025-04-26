@@ -4,9 +4,16 @@ use egui::{
     Widget, emath::RectTransform, pos2, vec2,
 };
 use shared::types::Beats;
-use state::Action;
+use state::{Action, Store};
 
-pub struct Sequencer<T: SequencerObject<T>, F: Fn(usize, Action), G: Fn(), H: Fn(&mut Ui, usize)> {
+pub struct Sequencer<
+    'a,
+    T: SequencerObject<T>,
+    F: Fn(usize, Action),
+    G: Fn(),
+    H: Fn(&mut Ui, usize),
+> {
+    store: &'a Store,
     range: Rect,
     size: Vec2,
     objects: Vec<T>,
@@ -19,11 +26,12 @@ pub struct Sequencer<T: SequencerObject<T>, F: Fn(usize, Action), G: Fn(), H: Fn
     background_shapes: Vec<Shape>,
 }
 
-impl<T: SequencerObject<T>, F: Fn(usize, Action), G: Fn(), H: Fn(&mut Ui, usize)>
-    Sequencer<T, F, G, H>
+impl<'a, T: SequencerObject<T>, F: Fn(usize, Action), G: Fn(), H: Fn(&mut Ui, usize)>
+    Sequencer<'a, T, F, G, H>
 {
-    pub fn new(range: Rect, dispatch: F, on_release: G, on_click: H) -> Self {
+    pub fn new(store: &'a Store, range: Rect, dispatch: F, on_release: G, on_click: H) -> Self {
         Sequencer {
+            store,
             range,
             size: vec2(400.0, 600.0),
             objects: vec![],
@@ -193,7 +201,7 @@ impl<T: SequencerObject<T>, F: Fn(usize, Action), G: Fn(), H: Fn(&mut Ui, usize)
 }
 
 impl<T: SequencerObject<T>, F: Fn(usize, Action), G: Fn(), H: Fn(&mut Ui, usize)> Widget
-    for Sequencer<T, F, G, H>
+    for Sequencer<'_, T, F, G, H>
 {
     fn ui(self, ui: &mut Ui) -> Response {
         let range = self.range;
@@ -208,8 +216,12 @@ impl<T: SequencerObject<T>, F: Fn(usize, Action), G: Fn(), H: Fn(&mut Ui, usize)
                 response.rect,
             );
             self.interact(ui, &response);
+            let active_object = <T as SequencerObject<T>>::get_active(ui, self.store);
             painter.extend(background_shapes.clone().transform(sequencer_transform));
-            painter.add(self.object_shapes().transform(sequencer_transform))
+            painter.add(self.object_shapes().transform(sequencer_transform));
+            if let Some(object) = active_object {
+                painter.add(object.active_shape(range).transform(sequencer_transform));
+            }
         });
         let (_rect, response) = ui.allocate_at_least(Vec2::ZERO, sense);
         response
@@ -230,4 +242,8 @@ pub trait SequencerObject<T> {
     fn resize_action(&self, x: f32, range: Rect) -> Option<Action>;
 
     fn shape(&self, range: Rect) -> Shape;
+
+    fn get_active(ui: &Ui, store: &Store) -> Option<T>;
+
+    fn active_shape(&self, range: Rect) -> Shape;
 }

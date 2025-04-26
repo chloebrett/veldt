@@ -3,7 +3,9 @@ use crate::{
     view::View,
     widget::{Sequencer, SequencerObject, default_window},
 };
-use egui::{Color32, CornerRadius, Pos2, Rect, ScrollArea, Shape, Ui, pos2, vec2};
+use egui::{
+    Color32, CornerRadius, Pos2, Rect, ScrollArea, Shape, Stroke, StrokeKind, Ui, pos2, vec2,
+};
 use shared::{
     model::{Track, TrackId, TrackPlacement},
     types::Beats,
@@ -82,7 +84,7 @@ impl View for TrackRoll<'_> {
                     .min_scrolled_height(400.0)
                     .show(ui, |ui| {
                         ui.add(
-                            Sequencer::new(range, dispatch, on_release, on_click)
+                            Sequencer::new(store, range, dispatch, on_release, on_click)
                                 .objects(placed_tracks)
                                 .size(vec2(600.0, 100.0 * track_count as f32))
                                 .vertical_bars(4.0, Color32::from_white_alpha(6))
@@ -160,5 +162,43 @@ impl SequencerObject<PlacedTrack> for PlacedTrack {
         } else {
             Shape::rect_filled(self.to_rect(range), CornerRadius::same(1), Color32::WHITE)
         }
+    }
+
+    fn get_active(ui: &Ui, store: &Store) -> Option<PlacedTrack> {
+        if let Some(index) = DataState::ActiveTrackPlacementIndex.get_value::<usize>(ui) {
+            let track_placement = store
+                .get()
+                .project
+                .track_placements
+                .get(index)
+                .expect("Should have been track placement at index");
+            Some(PlacedTrack {
+                track: store
+                    .get()
+                    .project
+                    .tracks
+                    .get(track_placement.track_id as usize)
+                    .expect("Should have been track at index.")
+                    .clone(),
+                placement: track_placement.clone(),
+            })
+        } else {
+            None
+        }
+    }
+
+    fn active_shape(&self, range: Rect) -> Shape {
+        Shape::Vec(vec![
+            self.shape(range),
+            Shape::rect_stroke(
+                self.to_rect(range),
+                CornerRadius::same(0),
+                Stroke {
+                    width: 1.0,
+                    color: Color32::BLUE,
+                },
+                StrokeKind::Inside,
+            ),
+        ])
     }
 }
