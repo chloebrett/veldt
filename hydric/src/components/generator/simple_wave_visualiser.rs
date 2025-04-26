@@ -1,6 +1,6 @@
 use crate::transform::Transform;
 use egui::emath::RectTransform;
-use egui::{Color32, Pos2, Rect, Response, Sense, Shape, Stroke, Ui, Vec2, pos2};
+use egui::{Color32, Pos2, Rect, Response, Sense, Shape, Stroke, Ui, Vec2, lerp, pos2};
 use mesic::wave::make_wave;
 use shared::model::{AntiAliasingMode, WaveType};
 
@@ -86,8 +86,9 @@ impl SimpleWaveVisualiser {
         // Iterate through generated points to build each polygon segment and find when the plotted point crosses the x-axis.
         for point in &points {
             if curr_points.is_empty() {
-                curr_points.push(Pos2::ZERO); // always add this base point
-                curr_points.push(*point); // adding first point
+                // Always add the zero point as a base.
+                // Also add the current point.
+                curr_points.extend([Pos2::ZERO, *point]);
                 continue;
             }
 
@@ -109,9 +110,8 @@ impl SimpleWaveVisualiser {
             }
 
             // Calculate the x-coordinate of the intersection point
-            let t = prev.y / diff.y;
-            let t = t.clamp(0.0, 1.0);
-            let intersect = pos2(prev.x + diff.x * t, 0.0);
+            let t = (prev.y / diff.y).clamp(0.0, 1.0);
+            let intersect = pos2(lerp(prev.x..=point.x, t), 0.0);
 
             // Add the intersection point to the current segment - this is the point that lies on the axis and marks the end of the current segment along the wave curve.
             curr_points.push(intersect);
