@@ -105,6 +105,8 @@ pub enum DataState {
     TrackPlacementViewWindow,
     NoteRollWindow,
     NoteWindow,
+    SelectedNoteIndexes,
+    SelectedTrackPlacementIndexes,
 }
 
 impl DataState {
@@ -116,6 +118,8 @@ impl DataState {
             Self::TrackPlacementViewWindow => "track_placement_window",
             Self::NoteRollWindow => "note_roll_window",
             Self::NoteWindow => "note_window",
+            Self::SelectedNoteIndexes => "selected_note_indexes",
+            Self::SelectedTrackPlacementIndexes => "selected_track_placement_indexes",
         })
     }
 
@@ -144,6 +148,9 @@ impl DataState {
                 | Self::ActiveTrackIndex
                 | Self::ActiveTrackPlacementIndex => {
                     data.insert_temp::<Option<usize>>(self.get_id(), None)
+                }
+                Self::SelectedNoteIndexes | Self::SelectedTrackPlacementIndexes => {
+                    data.insert_temp::<Option<Vec<usize>>>(self.get_id(), None);
                 }
             };
         })

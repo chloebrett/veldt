@@ -217,10 +217,18 @@ impl<T: SequencerObject<T>, F: Fn(usize, Action), G: Fn(), H: Fn(&mut Ui, usize)
             );
             self.interact(ui, &response);
             let active_object = <T as SequencerObject<T>>::get_active(ui, self.store);
+            let selected_objects = <T as SequencerObject<T>>::get_selected(ui, self.store);
             painter.extend(background_shapes.clone().transform(sequencer_transform));
             painter.add(self.object_shapes().transform(sequencer_transform));
             if let Some(object) = active_object {
                 painter.add(object.active_shape(range).transform(sequencer_transform));
+            }
+            if let Some(objects) = selected_objects {
+                painter.extend(
+                    objects
+                        .into_iter()
+                        .map(|object| object.selected_shape(range)),
+                )
             }
         });
         let (_rect, response) = ui.allocate_at_least(Vec2::ZERO, sense);
@@ -246,4 +254,8 @@ pub trait SequencerObject<T> {
     fn get_active(ui: &Ui, store: &Store) -> Option<T>;
 
     fn active_shape(&self, range: Rect) -> Shape;
+
+    fn get_selected(ui: &Ui, store: &Store) -> Option<Vec<T>>;
+
+    fn selected_shape(&self, range: Rect) -> Shape;
 }
