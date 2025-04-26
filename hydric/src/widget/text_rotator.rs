@@ -6,7 +6,7 @@ pub enum TextRotation {
     Anticlockwise,
 }
 
-pub fn rotate_text(ui: &mut Ui, text: &str, font_size: f32, rotation: TextRotation) {
+pub fn text_rotator(ui: &mut Ui, text: &str, font_size: f32, rotation: TextRotation) {
     let font_id = FontId::proportional(font_size);
 
     // Galley is essentially the layout/container of the text
