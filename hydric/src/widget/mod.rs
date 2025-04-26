@@ -16,3 +16,4 @@ pub use sequencer::*;
 pub use slider::*;
 pub use string_observer::*;
 pub use window::*;
+pub use text_rotator::*;
