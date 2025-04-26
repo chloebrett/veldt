@@ -63,7 +63,7 @@ fn load_options(ui: &mut Ui, store: &Store, async_state: &mut AsyncState) {
         store.dispatchr(Action::SetChild(TypeField::Project(project.clone())));
     });
 
-    let dispatch = |action: Action| store.dispatchr(action);
+    let dispatch = |action| store.dispatchr(action);
     let mut load_click = |name: String| {
         spawn(&mut async_state.load_project, async move {
             load_project(name).await
