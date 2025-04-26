@@ -4,9 +4,32 @@ use cpal::traits::{DeviceTrait, HostTrait, StreamTrait};
 use log::error;
 use mesic::graph::RenderGraph;
 use wasm_thread::JoinHandle;
+use crossbeam_channel::Sender;
+use shared::model::{Project, Sample};
+use crate::rpc::interleave_stereo;
+
+// For now, just samples. In future, consider supporting bars:beats, mins:secs, etc.
+struct PlaybackPosition {
+    samples: usize,
+}
+
+pub enum PlaybackMessage {
+    SetProject(Box<Project>), // uses Box to keep enum size sane.
+    SetSample(Box<Sample>),   // uses Box to keep enum size sane.
+    Seek(PlaybackPosition),
+    State(PlaybackState)
+}
+
+#[derive(PartialEq)]
+enum PlaybackState {
+    Play,
+    Pause,
+    Stop
+}
 
 #[derive(Default)]
 pub struct AudioPlayer {
+    playback_tx: Option<Sender<PlaybackMessage>>,
     stream: Option<Stream>,
     producer_thread: Option<JoinHandle<()>>,
     pub start_timestamp: Option<DateTime<Utc>>,
@@ -14,11 +37,20 @@ pub struct AudioPlayer {
 
 impl AudioPlayer {
     pub fn reset(&mut self) {
+        self.playback_tx = None;
         self.stream = None;
         self.producer_thread = None;
         self.start_timestamp = None;
 
         // TODO: make sure the producer thread is shut down.
+    }
+
+    pub fn send(&self, message: PlaybackMessage) {
+        self.playback_tx
+            .as_ref()
+            .expect("Call .init() first!")
+            .try_send(message)
+            .unwrap();
     }
 
     pub fn init(&mut self, mut graph: RenderGraph) {
@@ -41,7 +73,10 @@ impl AudioPlayer {
         // Don't start playing until this many samples have been produced.
         let buffer_threshold = 1000;
 
-        let (tx, rx) = crossbeam_channel::bounded(buffer_size);
+        let (audio_tx, audio_rx) = crossbeam_channel::bounded(buffer_size);
+        let (playback_tx, playback_rx) = crossbeam_channel::unbounded();
+
+        self.playback_tx = Some(playback_tx);
 
         log::info!(
             "Available parallelism: {:?}",
@@ -49,14 +84,39 @@ impl AudioPlayer {
         );
 
         let producer_thread = wasm_thread::spawn(move || {
-            log::info!("In producer_thread");
+            log::info!("Started producer_thread");
+            let mut state = PlaybackState::Pause;
 
-            loop {
-                if tx.len() < buffer_size - chunk_size {
-                    log::info!("Sent 1000 samples. Len: {}", tx.len());
+            while state != PlaybackState::Stop {
+                if let Ok(message) = playback_rx.try_recv() {
+                    match message {
+                        PlaybackMessage::SetProject(project) => {
+                            graph = RenderGraph::default();
+                            graph.set_from_project(&project);
+                        }
+                        PlaybackMessage::SetSample(sample) => {
+                            let sample = interleave_stereo(sample.left, sample.right);
+                            graph = RenderGraph::from_vec(sample);
+                        }
+                        PlaybackMessage::Seek(position) => todo!(),
+                        PlaybackMessage::State(new_state) => {
+                            state = new_state;
+                        }
+                    }
+                }
 
+                if state == PlaybackState::Play && audio_tx.len() < buffer_size - chunk_size {
                     for _ in 0..chunk_size {
-                        let _ = tx.try_send(graph.next().unwrap_or([0.0; 2])).unwrap();
+                        if let Some(next) = graph.next() {
+                            let _ = audio_tx.try_send(next).unwrap();
+                            log::info!("Sent 1000 samples. Len: {}", audio_tx.len());
+                        } else {
+                            // No more audio, so pause.
+                            // Consider stopping as well, but we'll need to re-create the thread if
+                            // we do this.
+                            state = PlaybackState::Pause;
+                            log::info!("Ran out of audio, so paused.");
+                        }
                     }
                 } else {
                     sleep_ms(10);
@@ -73,12 +133,12 @@ impl AudioPlayer {
                 config,
                 move |data: &mut [f32], _| {
                     for frame in data.chunks_mut(channels) {
-                        if !latch && rx.len() > buffer_threshold {
+                        if !latch && audio_rx.len() > buffer_threshold {
                             latch = true;
                         }
 
                         let value = if latch {
-                            rx.try_recv().unwrap_or([0.0; 2])
+                            audio_rx.try_recv().unwrap_or([0.0; 2])
                         } else {
                             [0.0; 2]
                         };
@@ -97,6 +157,7 @@ impl AudioPlayer {
     }
 
     pub fn play(&mut self) {
+        self.send(PlaybackMessage::State(PlaybackState::Play));
         self.stream
             .as_mut()
             .expect("Call .init() first!")
