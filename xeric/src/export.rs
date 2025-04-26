@@ -9,17 +9,21 @@ use std::io::{Cursor, Write};
 use std::path::PathBuf;
 use tonic::async_trait;
 
-// export project to .wav
+// Exports project to .wav
 pub struct ExportContext;
 
-//create output .wav file path
+// Create output .wav file path
 fn wav_file_path(name: &str) -> PathBuf {
-    let mut file_path = current_dir().unwrap();
-    file_path.pop(); // pop '/xeric'
-    file_path.push("wav");
-    let _ = create_dir_all(&file_path); // need to move this
+    let mut file_path = wav_dir_path();
     file_path.push(format!("{name}.wav"));
     file_path
+}
+
+fn wav_dir_path() -> PathBuf {
+    let mut dir_path = current_dir().unwrap();
+    dir_path.pop(); // pop '/xeric'
+    dir_path.push("wav");
+    dir_path
 }
 
 #[async_trait]
@@ -67,7 +71,11 @@ impl Export for ExportContext {
         let wav_bytes = buffer.into_inner();
 
         // write to output file
+        let dir_path = wav_dir_path();
+        let _ = create_dir_all(&dir_path);
         let file_path = wav_file_path(&name);
+
+        // NOTE: will overwrite if the file already exists
         let mut out_file =
             File::create(&file_path).map_err(|e| tonic::Status::internal(format!("{}", e)))?;
         out_file
