@@ -45,6 +45,9 @@ impl AudioPlayer {
             "Available parallelism: {:?}",
             wasm_thread::available_parallelism()
         );
+
+        // Clone the frequency receiver so that the producer thread can take ownership.
+        // Thread closures require a static lifetime.
         let freq_rx = self.freq_rx.clone();
 
         // Producer thread.
@@ -52,13 +55,15 @@ impl AudioPlayer {
             log::info!("In producer_thread");
 
             // Produce a sinusoid of maximum amplitude.
-            let mut sample_clock = 0f32;
+            let mut phase = 0f32;
+            let phase_inc = 1.0 / sample_rate;
             let mut next_sample = |freq: f32| {
-                sample_clock = (sample_clock + 1.0) % sample_rate;
-                (sample_clock * freq * std::f32::consts::TAU / sample_rate).sin()
+                phase += phase_inc * freq;
+                phase = phase % 1.0;
+                (phase * std::f32::consts::TAU).sin()
             };
 
-            let mut freq = 440.0;
+            let mut freq = 0.0;
 
             loop {
                 if tx.len() < buffer_size - chunk_size {
