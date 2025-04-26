@@ -1,6 +1,6 @@
 use crate::{audio_player::AudioPlayer, promise::AsyncResult};
 use dasp_frame::Stereo;
-use egui::{Id, Ui};
+use egui::{Id, Pos2, Ui};
 use shared::model::{FilenameTree, Project, Sample};
 use std::cmp::{Eq, Ord};
 use std::collections::HashSet;
@@ -16,13 +16,13 @@ pub struct AsyncState {
     pub load_sample: AsyncResult<Sample, ()>,
     pub upload_sample: AsyncResult<(), ()>,
     pub load_sample_tree: AsyncResult<FilenameTree, ()>,
+    pub export: AsyncResult<(), ()>,
 }
 
 #[derive(Default)]
 pub struct AudioState {
     pub audio: Vec<Stereo<f32>>,
-    pub player: Option<AudioPlayer>,
-    pub pre_render: bool,
+    pub player: AudioPlayer,
 }
 
 pub struct MixerWindowState {
@@ -106,6 +106,7 @@ pub enum DataState {
     NoteWindow,
     SelectedNoteIndexes,
     SelectedTrackPlacementIndexes,
+    DragCursorDelta,
 }
 
 impl DataState {
@@ -119,6 +120,7 @@ impl DataState {
             Self::NoteWindow => "note_window",
             Self::SelectedNoteIndexes => "selected_note_indexes",
             Self::SelectedTrackPlacementIndexes => "selected_track_placement_indexes",
+            Self::DragCursorDelta => "drag_start_from",
         })
     }
 
@@ -151,6 +153,7 @@ impl DataState {
                 Self::SelectedNoteIndexes | Self::SelectedTrackPlacementIndexes => {
                     data.insert_temp::<Option<HashSet<usize>>>(self.get_id(), None);
                 }
+                Self::DragCursorDelta => data.insert_temp::<Option<Pos2>>(self.get_id(), None),
             };
         })
     }
