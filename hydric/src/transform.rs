@@ -20,12 +20,9 @@ impl Transform<Shape> for Shape {
                 rect: rect.transform_rect(rect_shape.rect),
                 ..rect_shape.clone()
             }),
-            Shape::Vec(shapes) => Shape::Vec(
-                shapes
-                    .iter()
-                    .map(|shape| shape.transform(rect))
-                    .collect(),
-            ),
+            Shape::Vec(shapes) => {
+                Shape::Vec(shapes.iter().map(|shape| shape.transform(rect)).collect())
+            }
             _ => panic!("Shape not implemented."),
         }
     }

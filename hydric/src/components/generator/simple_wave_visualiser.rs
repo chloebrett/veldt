@@ -45,21 +45,22 @@ impl SimpleWaveVisualiser {
         let wave_rect = Rect::from_min_max(pos2(0.0, 1.0), pos2(1.0, -1.0));
         let transform = RectTransform::from_to(wave_rect, screen_rect);
 
-        let painter = ui.painter();
+        let fill: Vec<_> = self
+            .wave_fill_segments(&points)
+            .into_iter()
+            .map(|segment| {
+                Shape::convex_polygon(segment.transform(transform), self.fill_color, Stroke::NONE)
+            })
+            .collect();
 
-        for segment in self.wave_fill_segments(&points) {
-            painter.add(Shape::convex_polygon(
-                points.transform(transform),
-                self.fill_color,
-                Stroke::NONE,
-            ));
-        }
-
-        // Draw the line of the actual wave after filling so it appears on top
-        painter.add(Shape::line(
+        let stroke = Shape::line(
             points.transform(transform),
             Stroke::new(3.0, self.line_color),
-        ));
+        );
+
+        let painter = ui.painter();
+        painter.extend(fill);
+        painter.add(stroke);
     }
 
     fn wave_points(&self, num_points: usize) -> Vec<Pos2> {
