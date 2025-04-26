@@ -29,7 +29,11 @@ jobs:
       if: steps.cache-wasm.outputs.cache-hit != 'true'  # Only run if cache missed
       run: |
         rustup target add wasm32-unknown-unknown
+
+    - name: Install other rust/cargo deps
+      run: |
         rustup component add --toolchain nightly-x86_64-unknown-linux-gnu rustfmt
+        cargo install wasm-bindgen
 
     - name: Install protobuf-compiler (if cache miss)
       run: |
