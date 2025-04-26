@@ -5687,6 +5687,7 @@ dependencies = [
  "dasp_frame",
  "hound",
  "http",
+ "itertools 0.14.0",
  "log",
  "mesic",
  "pretty_env_logger",

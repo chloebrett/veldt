@@ -1,3 +1,4 @@
+use itertools::Itertools;
 use log::info;
 use shared::load_sample::load_sample_server::LoadSample;
 use shared::load_sample::{
@@ -12,16 +13,18 @@ use std::io::Error;
 use std::path::{Path, PathBuf};
 use tonic::async_trait;
 
-const PCM_MAX_I16: i16 = 0x7FFF; // 2^15 - 1
+const _PCM_MAX_I16: i16 = 0x7FFF; // 2^15 - 1
+const PCM_MAX_I24: i32 = 0x7FFFFF; // 2^23 - 1
 const _PCM_MAX_I32: i32 = 0x7FFFFFFF; // 2^31 - 1
-const PCM_DIV_I16: f32 = 1.0 / PCM_MAX_I16 as f32;
+const _PCM_DIV_I16: f32 = 1.0 / _PCM_MAX_I16 as f32;
+const PCM_DIV_I24: f32 = 1.0 / PCM_MAX_I24 as f32;
 const _PCM_DIV_I32: f32 = 1.0 / _PCM_MAX_I32 as f32;
 
 #[inline(always)]
 pub fn to_f32(sample: i32) -> f32 {
     // I don't know where 128.0 comes from (other than that it's 2^7).
     // Perhaps the sample I was testing with (89 BPM F# Minor.wav) is actually 24 bit audio?
-    PCM_DIV_I16 * sample as f32 / 128.0
+    PCM_DIV_I24 * sample as f32
 }
 
 // This is a stateless RPC, at least as far as in-memory state is concerned (it does
@@ -128,12 +131,21 @@ impl LoadSample for LoadSampleContext {
         let mut reader = hound::WavReader::open(file_path).map_err(|_| {
             tonic::Status::invalid_argument(format!("File {} could not be read.", filename))
         })?;
-        let data: Vec<f32> = reader
+        let chunks = reader
+            // TODO: try f32
             .samples::<i32>()
-            .map(|it| to_f32(it.unwrap()))
-            .collect();
+            .chunks(2);
+        let (left, right) = chunks
+            .into_iter()
+            .map(|mut data| {
+                let left = to_f32(data.next().unwrap().unwrap());
+                let right = to_f32(data.next().unwrap().unwrap());
+                (left, right)
+            })
+            .unzip();
         let sample = Sample {
-            data,
+            left,
+            right,
             sample_rate: reader.spec().sample_rate as f32,
         };
         Ok(tonic::Response::new(LoadSampleReply {

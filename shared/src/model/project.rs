@@ -86,14 +86,16 @@ impl From<TrackPlacement> for TrackPlacementProto {
 
 #[derive(Clone, Debug, PartialEq)]
 pub struct Sample {
-    pub data: Vec<f32>,
+    pub left: Vec<f32>,
+    pub right: Vec<f32>,
     pub sample_rate: f32,
 }
 
 impl From<SampleProto> for Sample {
     fn from(item: SampleProto) -> Self {
         Sample {
-            data: as_floats(&item.data),
+            left: as_floats(&item.left),
+            right: as_floats(&item.right),
             sample_rate: item.sample_rate,
         }
     }
@@ -102,7 +104,8 @@ impl From<SampleProto> for Sample {
 impl From<Sample> for SampleProto {
     fn from(item: Sample) -> Self {
         SampleProto {
-            data: as_bytes(&item.data),
+            left: as_bytes(&item.left),
+            right: as_bytes(&item.right),
             sample_rate: item.sample_rate,
         }
     }

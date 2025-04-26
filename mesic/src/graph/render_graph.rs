@@ -152,7 +152,7 @@ impl RenderGraph {
 
     /// Creates a graph that plays the buffer contained in a Vec.
     /// Chain with .add_amp_node to control volume and/or clip.
-    pub fn from_vec(vec: Vec<f32>) -> Self {
+    pub fn from_vec(vec: Vec<Stereo<f32>>) -> Self {
         let sample_count = vec.len();
         let buffer_node: BufferNode = vec.into();
         let mut graph = RenderGraph {
