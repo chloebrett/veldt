@@ -109,37 +109,15 @@ impl Default for StoreData {
                                 lfos: [
                                     LfoConfig {
                                         wave: WaveType::Sine,
-                                        frequency: 1.0,
-                                    },
-                                    LfoConfig {
-                                        wave: WaveType::Sine,
-                                        frequency: 1.0,
-                                    },
-                                    LfoConfig {
-                                        wave: WaveType::Sine,
-                                        frequency: 1.0,
-                                    },
-                                ],
+                                        frequency: 1.0}; 3
+                                        ],
                                 envelopes: [
                                     AdsrEnvelope {
-                                        attack: 0.05,
-                                        sustain: 0.3,
-                                        decay: 0.9,
-                                        release: 0.5,
-                                    },
-                                    AdsrEnvelope {
-                                        attack: 0.05,
-                                        sustain: 0.3,
-                                        decay: 0.9,
-                                        release: 0.5,
-                                    },
-                                    AdsrEnvelope {
-                                        attack: 0.05,
-                                        sustain: 0.3,
-                                        decay: 0.9,
-                                        release: 0.5,
-                                    },
-                                ],
+                                        attack: 0.1,
+                                        decay: 0.1,
+                                        sustain: 0.8,
+                                        release: 0.1,
+                                    }; 3],
                             },
                         },
                         meta: GeneratorMeta {

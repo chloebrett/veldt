@@ -2,7 +2,7 @@ use crate::pmodel::*;
 use crate::types::*;
 use local_macro::{FromProto, IntoProto};
 
-#[derive(Clone, Debug, PartialEq, FromProto, IntoProto)]
+#[derive(Clone, Debug, PartialEq, FromProto, IntoProto, Copy)]
 pub struct AdsrEnvelope {
     pub attack: Beats,
 
