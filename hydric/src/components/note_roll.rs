@@ -2,7 +2,7 @@ use std::collections::HashSet;
 
 use super::Piano;
 use crate::{
-    app_state::DataState,
+    app_state::{DataState, update_select_data_state},
     view::View,
     widget::{Sequencer, SequencerObject, StateWindow, default_window},
 };
@@ -111,23 +111,7 @@ impl View for NoteRoll<'_> {
             DataState::ActiveNoteIndex.set_value(ui, index);
         };
         let on_click = |ui: &mut Ui, index: Option<usize>| {
-            if let Some(it) = index {
-                if let Some(mut selected) =
-                    DataState::SelectedNoteIndexes.get_value::<HashSet<usize>>(ui)
-                {
-                    if selected.contains(&it) {
-                        selected.remove(&it);
-                    } else {
-                        selected.insert(it);
-                    }
-                    DataState::SelectedNoteIndexes.set_value(ui, selected)
-                } else {
-                    DataState::SelectedNoteIndexes
-                        .set_value::<HashSet<usize>>(ui, HashSet::from_iter(vec![it]))
-                }
-            } else {
-                DataState::SelectedNoteIndexes.remove_value(ui);
-            }
+            update_select_data_state(ui, DataState::SelectedNoteIndexes, index);
         };
         let title = format!("Track {track_index}");
         let window = StateWindow(

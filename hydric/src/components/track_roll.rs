@@ -1,7 +1,7 @@
 use std::collections::HashSet;
 
 use crate::{
-    app_state::{DataState, WindowState},
+    app_state::{DataState, WindowState, update_select_data_state},
     view::View,
     widget::{Sequencer, SequencerObject, default_window},
 };
@@ -68,23 +68,7 @@ impl View for TrackRoll<'_> {
             DataState::ActiveTrackPlacementIndex.set_value(ui, index);
         };
         let on_click = |ui: &mut Ui, index: Option<usize>| {
-            if let Some(it) = index {
-                if let Some(mut selected) =
-                    DataState::SelectedTrackPlacementIndexes.get_value::<HashSet<usize>>(ui)
-                {
-                    if selected.contains(&it) {
-                        selected.remove(&it);
-                    } else {
-                        selected.insert(it);
-                    }
-                    DataState::SelectedTrackPlacementIndexes.set_value(ui, selected)
-                } else {
-                    DataState::SelectedTrackPlacementIndexes
-                        .set_value::<HashSet<usize>>(ui, HashSet::from_iter(vec![it]))
-                }
-            } else {
-                DataState::SelectedTrackPlacementIndexes.remove_value(ui);
-            }
+            update_select_data_state(ui, DataState::SelectedTrackPlacementIndexes, index);
         };
         default_window("Track Roll")
             .default_pos(pos2(30.0, 200.0))
