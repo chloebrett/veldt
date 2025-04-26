@@ -36,11 +36,10 @@ subprocess.run(
         os.path.join(
             root_dir,
             "..",
-            "..",
             "target",
             "wasm32-unknown-unknown",
             "release",
-            "threads.wasm",
+            "hydric.wasm",
         ),
         "--out-dir",
         os.path.join(root_dir, "pkg"),
