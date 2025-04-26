@@ -230,7 +230,6 @@ impl SequencerObject<PlacedNote> for PlacedNote {
     fn get_selected(ui: &Ui, store: &Store) -> Option<Vec<PlacedNote>> {
         let track_index = DataState::ActiveTrackIndex.get_value::<usize>(ui)?;
         let note_indexes = DataState::SelectedNoteIndexes.get_value::<HashSet<usize>>(ui)?;
-        log::info!("{:?}", note_indexes);
         Some(
             note_indexes
                 .into_iter()
