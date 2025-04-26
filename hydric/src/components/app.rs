@@ -137,7 +137,9 @@ impl View for App {
                 &mut self.window_state,
                 dispatch,
                 on_release,
-            ) {it.ui(ui)}
+            ) {
+                it.ui(ui)
+            }
         }
         if self.window_state.scale {
             let dispatch = |action| self.store.dispatchr(action);
