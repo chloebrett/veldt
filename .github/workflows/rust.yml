@@ -33,7 +33,7 @@ jobs:
     - name: Install other rust/cargo deps
       run: |
         rustup component add --toolchain nightly-x86_64-unknown-linux-gnu rustfmt
-        cargo install wasm-bindgen
+        cargo install wasm-bindgen-cli
 
     - name: Install protobuf-compiler (if cache miss)
       run: |
