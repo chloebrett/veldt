@@ -8,7 +8,7 @@ use crate::effect::eq_filter;
 use dasp_frame::Stereo;
 use dasp_graph::{BoxedNodeSend, Buffer, Node, NodeData, node::Sum};
 use petgraph::stable_graph::NodeIndex;
-use shared::model::{Effect, EffectInstance};
+use shared::model::{Effect, EffectInstance, Project};
 use state::{Action, Selector};
 use std::sync::mpsc::Receiver;
 
@@ -49,6 +49,37 @@ impl Default for RenderGraph {
 }
 
 impl RenderGraph {
+    /// Initializes the graph from a project instance.
+    /// Not idempotent! Only call this on a fresh RenderGraph.
+    /// This is mostly an interim method until we get action receiving working properly.
+    pub fn set_from_project(&mut self, project: &Project) {
+        let bpm = project.bpm;
+        // Add tracks with a placement to graph.
+        // TODO: each generator should play all tracks it's linked to - we don't need a different
+        // generator for every track!
+        for (index, placement) in project.track_placements.iter().enumerate() {
+            let track = project.tracks[placement.track_id as usize].clone();
+
+            // Create a generator node.
+            // TODO use multiple generators.
+            let generator_index = 0;
+            let generator_node = GeneratorNode::new(
+                project.generators[generator_index].clone(),
+                track,
+                placement.clone(),
+                bpm,
+            );
+            self.add_generator(generator_node);
+
+            // Apply effects.
+            // TODO allow multiple effects
+            let mixer_channel = &project.mixer[0];
+            for effect in &mixer_channel.effects {
+                self.add_generator_effect_with_mixer(effect.clone(), index);
+            }
+        }
+    }
+
     pub fn set_receiver(&mut self, receiver: Receiver<(Selector, Action)>) {
         self.rx = Some(receiver);
     }

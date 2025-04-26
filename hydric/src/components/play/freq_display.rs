@@ -83,7 +83,7 @@ impl ComputerMut<FrequencyDisplayKey, Vec<f32>> for FrequencyDisplayComputer {
 impl View for FrequencyDisplay<'_> {
     fn ui(&mut self, ui: &mut Ui) {
         let FrequencyDisplay { audio_state, .. } = *self;
-        let audio: &Vec<[f32; 2]> = &self.audio_state.audio;
+        let audio = &self.audio_state.audio;
 
         // Note: only visualising the left channel.
         // TODO: decide how to visualise both left and right.
