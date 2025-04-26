@@ -1,6 +1,6 @@
 use crate::{audio_player::AudioPlayer, promise::AsyncResult};
+use egui::{Id, Pos2, Ui};
 use dasp_frame::Stereo;
-use egui::{Id, Ui};
 use shared::model::{FilenameTree, Project, Sample};
 use std::cmp::{Eq, Ord};
 use std::collections::HashSet;
@@ -105,6 +105,7 @@ pub enum DataState {
     NoteWindow,
     SelectedNoteIndexes,
     SelectedTrackPlacementIndexes,
+    DragCursorDelta,
 }
 
 impl DataState {
@@ -118,6 +119,7 @@ impl DataState {
             Self::NoteWindow => "note_window",
             Self::SelectedNoteIndexes => "selected_note_indexes",
             Self::SelectedTrackPlacementIndexes => "selected_track_placement_indexes",
+            Self::DragCursorDelta => "drag_start_from",
         })
     }
 
@@ -150,6 +152,7 @@ impl DataState {
                 Self::SelectedNoteIndexes | Self::SelectedTrackPlacementIndexes => {
                     data.insert_temp::<Option<HashSet<usize>>>(self.get_id(), None);
                 }
+                Self::DragCursorDelta => data.insert_temp::<Option<Pos2>>(self.get_id(), None),
             };
         })
     }
