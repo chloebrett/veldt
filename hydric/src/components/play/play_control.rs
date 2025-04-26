@@ -22,7 +22,8 @@ pub fn play_control(
             volume,
             should_clip: true,
         });
-        let player = AudioPlayer::new(graph, audio_state.pre_render);
+        let mut player = AudioPlayer::default();
+        player.init(graph);
         audio_state.player = Some(player);
         audio_state.player.as_mut().unwrap().play();
     }
@@ -35,7 +36,8 @@ pub fn play_control(
             volume,
             should_clip: true,
         });
-        let player = AudioPlayer::new(graph, audio_state.pre_render);
+        let mut player = AudioPlayer::default();
+        player.init(graph);
         audio_state.player = Some(player);
         audio_state.player.as_mut().unwrap().play();
     });
