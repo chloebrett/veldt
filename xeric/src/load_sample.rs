@@ -125,9 +125,6 @@ impl LoadSample for LoadSampleContext {
         file_path.push(filename.clone());
         info!("Loading sample from path: {}", file_path.clone().display());
 
-        // TODO: reading this seems to load at half the speed.
-        // Perhaps the sample rate needs to be adjusted?
-        // Either way, a bit weird and should be fixed.
         let mut reader = hound::WavReader::open(file_path).map_err(|_| {
             tonic::Status::invalid_argument(format!("File {} could not be read.", filename))
         })?;
