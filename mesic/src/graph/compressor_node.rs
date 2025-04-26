@@ -126,7 +126,7 @@ mod tests {
         let output: Vec<_> = graph.collect();
 
         // ASSERT
-        assert_signals_approx_eq(output, input.into_iter().map(|it| [it; 2]).collect());
+        assert_signals_approx_eq(output, input);
     }
 
     #[test]
@@ -157,7 +157,7 @@ mod tests {
             .map(|it| {
                 // Note using 'it' as both input and detector.
                 // (with .abs() for detector).
-                [compress(*it, it.abs(), threshold, 1.0 / ratio); 2]
+                [compress(it[0], it[0].abs(), threshold, 1.0 / ratio); 2]
             })
             .collect();
 
@@ -186,7 +186,9 @@ mod tests {
 
         // ASSERT
         for (y, x) in output.into_iter().zip(input.into_iter()) {
+            // Only assert the left channel
             let y = y[0];
+            let x = x[0];
 
             // Absolute output should always be less than absolute input.
             // Polarity should be the same.
@@ -217,7 +219,9 @@ mod tests {
 
         // ASSERT
         for (y, x) in output.into_iter().zip(input.into_iter()) {
+            // Only assert the left channel
             let y = y[0];
+            let x = x[0];
 
             assert!(
                 y.abs() <= (x.abs() * makeup_gain) + FLOAT_THRES,
@@ -253,7 +257,9 @@ mod tests {
 
         // ASSERT
         for ((i, y), x) in output.into_iter().enumerate().zip(input.into_iter()) {
+            // Only assert the left channel
             let y = y[0];
+            let x = x[0];
 
             if i < attack_samples {
                 // While the limiter is kicking in, just assert that the output is less than or
@@ -273,7 +279,7 @@ mod tests {
     // * Test release.
     // * Test more complex input signals.
 
-    fn make_graph(input: Vec<f32>, config: CompressorConfig) -> RenderGraph {
+    fn make_graph(input: Vec<Stereo<f32>>, config: CompressorConfig) -> RenderGraph {
         let mut graph = RenderGraph::from_vec(input.clone());
         graph.add_main_effect_with_mixer(EffectInstance {
             effect: Effect::SimpleCompressor { config },
@@ -294,19 +300,22 @@ mod tests {
         }
     }
 
-    fn generate_signal_seconds(seconds: f32) -> Vec<f32> {
+    fn generate_signal_seconds(seconds: f32) -> Vec<Stereo<f32>> {
         let samples = (SAMPLE_RATE as f32 * seconds) as usize;
         generate_signal(samples)
     }
 
     /// Generates an A4 sine wave that lasts for the given number of samples.
-    fn generate_signal(samples: usize) -> Vec<f32> {
+    fn generate_signal(samples: usize) -> Vec<Stereo<f32>> {
         let pitch = PitchName {
             scale_value: ScaleValue::A,
             octave: 4,
         };
         (0..samples as usize)
-            .map(|it| (it as f32 / SAMPLE_RATE as f32 * freq(pitch)).sin())
+            .map(|it| {
+                let value = (it as f32 / SAMPLE_RATE as f32 * freq(pitch)).sin();
+                [value, value]
+            })
             .collect()
     }
 }

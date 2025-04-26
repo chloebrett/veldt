@@ -1,5 +1,6 @@
 use crate::{audio_player::AudioPlayer, promise::AsyncResult};
-use egui::{Id, Ui};
+use dasp_frame::Stereo;
+use egui::{Id, Pos2, Ui};
 use shared::model::{FilenameTree, Project, Sample};
 use std::cmp::{Eq, Ord};
 use std::collections::HashSet;
@@ -8,19 +9,20 @@ use std::hash::Hash;
 /// Container for the various promises launchable by the app.
 #[derive(Default)]
 pub struct AsyncState {
-    pub server_render: AsyncResult<Vec<f32>, ()>,
+    pub server_render: AsyncResult<Vec<Stereo<f32>>, ()>,
     pub save_project: AsyncResult<(), ()>,
     pub project_list: AsyncResult<Vec<String>, ()>,
     pub load_project: AsyncResult<Project, ()>,
     pub load_sample: AsyncResult<Sample, ()>,
+    pub upload_sample: AsyncResult<(), ()>,
     pub load_sample_tree: AsyncResult<FilenameTree, ()>,
+    pub export: AsyncResult<(), ()>,
 }
 
 #[derive(Default)]
 pub struct AudioState {
-    pub audio: Vec<f32>,
-    pub player: Option<AudioPlayer>,
-    pub pre_render: bool,
+    pub audio: Vec<Stereo<f32>>,
+    pub player: AudioPlayer,
 }
 
 pub struct MixerWindowState {
@@ -42,7 +44,6 @@ pub struct WindowState {
     pub sample_tree: bool,
     pub track_roll: bool,
     pub save: bool,
-    pub load: bool,
 }
 
 impl Default for WindowState {
@@ -59,7 +60,6 @@ impl Default for WindowState {
             sample_tree: false,
             track_roll: false,
             save: false,
-            load: false,
         }
     }
 }
@@ -104,6 +104,9 @@ pub enum DataState {
     TrackPlacementViewWindow,
     NoteRollWindow,
     NoteWindow,
+    SelectedNoteIndexes,
+    SelectedTrackPlacementIndexes,
+    DragCursorDelta,
 }
 
 impl DataState {
@@ -115,6 +118,9 @@ impl DataState {
             Self::TrackPlacementViewWindow => "track_placement_window",
             Self::NoteRollWindow => "note_roll_window",
             Self::NoteWindow => "note_window",
+            Self::SelectedNoteIndexes => "selected_note_indexes",
+            Self::SelectedTrackPlacementIndexes => "selected_track_placement_indexes",
+            Self::DragCursorDelta => "drag_start_from",
         })
     }
 
@@ -144,7 +150,31 @@ impl DataState {
                 | Self::ActiveTrackPlacementIndex => {
                     data.insert_temp::<Option<usize>>(self.get_id(), None)
                 }
+                Self::SelectedNoteIndexes | Self::SelectedTrackPlacementIndexes => {
+                    data.insert_temp::<Option<HashSet<usize>>>(self.get_id(), None);
+                }
+                Self::DragCursorDelta => data.insert_temp::<Option<Pos2>>(self.get_id(), None),
             };
         })
+    }
+}
+
+/// Update the state of selected Sequencer Objects based on Ui interaction.
+pub fn update_select_data_state(ui: &mut Ui, data_state: DataState, index: Option<usize>) {
+    if let Some(it) = index {
+        if let Some(mut selected) = data_state.get_value::<HashSet<usize>>(ui) {
+            // If index is already in the set remove it.
+            if selected.contains(&it) {
+                selected.remove(&it);
+            } else {
+                selected.insert(it);
+            }
+            data_state.set_value(ui, selected)
+        } else {
+            data_state.set_value::<HashSet<usize>>(ui, HashSet::from_iter(vec![it]))
+        }
+    } else {
+        // If there was no index supplied, remove value.
+        data_state.remove_value(ui);
     }
 }

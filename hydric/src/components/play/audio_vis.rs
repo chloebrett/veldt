@@ -23,8 +23,11 @@ pub fn audio_vis(audio_state: &AudioState, ui: &mut Ui) {
         let chunking = (audio_len / canvas_size.x) as i32;
         // TODO: put this into a generic util.
         for (i, sample) in audio_state.audio.iter().enumerate() {
+            // For now, only visualise the left.
+            let [left, _right] = sample;
+
             let index = i / (chunking as usize);
-            let value = sample.abs() / (chunking as f32);
+            let value = left.abs() / (chunking as f32);
             if index >= averages.len() {
                 // sometimes happens due to rounding of floats,
                 // okay to just ignore.
@@ -50,11 +53,7 @@ pub fn audio_vis(audio_state: &AudioState, ui: &mut Ui) {
             })
             .collect();
 
-        if let Some(AudioPlayer {
-            start_timestamp: Some(start_timestamp),
-            ..
-        }) = &audio_state.player
-        {
+        if let Some(start_timestamp) = &audio_state.player.start_timestamp {
             let current_timestamp = chrono::offset::Utc::now();
             let time_delta: TimeDelta = current_timestamp.sub(start_timestamp);
             let time_delta_ms: i64 = time_delta.num_milliseconds();

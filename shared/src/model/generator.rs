@@ -100,6 +100,7 @@ pub struct SubSynthConfig {
     pub oscillators: [OscillatorConfig; 3],
     pub envelopes: [AdsrEnvelope; 3],
     pub lfos: [LfoConfig; 3],
+    pub envelopes: [AdsrEnvelope; 3],
 }
 
 impl From<SubSynthConfigProto> for SubSynthConfig {
@@ -117,6 +118,7 @@ impl From<SubSynthConfigProto> for SubSynthConfig {
             "SubSynthConfig must have exactly 3 envelopes"
         );
         let lfo_vec = proto.lfos;
+        let envelopes_vec = proto.envelopes;
         assert_eq!(lfo_vec.len(), 3, "SubSynthConfig must have exactly 3 lfos");
         SubSynthConfig {
             oscillators: [
@@ -126,6 +128,11 @@ impl From<SubSynthConfigProto> for SubSynthConfig {
             ],
             envelopes: [env_vec[0].into(), env_vec[1].into(), env_vec[2].into()],
             lfos: [lfo_vec[0].into(), lfo_vec[1].into(), lfo_vec[2].into()],
+            envelopes: [
+                envelopes_vec[0].into(),
+                envelopes_vec[1].into(),
+                envelopes_vec[2].into(),
+            ],
         }
     }
 }
@@ -136,6 +143,7 @@ impl From<SubSynthConfig> for SubSynthConfigProto {
             oscillators: map_vec(config.oscillators.to_vec()),
             envelopes: map_vec(config.envelopes.to_vec()),
             lfos: map_vec(config.lfos.to_vec()),
+            envelopes: map_vec(config.envelopes.to_vec()),
         }
     }
 }

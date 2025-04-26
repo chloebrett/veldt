@@ -20,7 +20,7 @@ use std::sync::mpsc::channel;
 
 pub struct App {
     pub store: Store,
-    graph: RenderGraph,
+    _graph: RenderGraph,
     pub frame_history: FrameHistory,
     pub async_state: AsyncState,
     pub audio_state: AudioState,
@@ -37,7 +37,7 @@ impl Default for App {
         graph.set_receiver(rx);
         App {
             store: Store::new(broadcast, tx),
-            graph,
+            _graph: graph,
             frame_history: FrameHistory::default(),
             async_state: AsyncState::default(),
             audio_state: AudioState::default(),
@@ -79,13 +79,15 @@ impl eframe::App for App {
         self.frame_history
             .on_new_frame(ctx.input(|i| i.time), frame.info().cpu_usage);
 
-        egui::CentralPanel::default().show(ctx, |ui| {
+        egui::TopBottomPanel::top("veldt_menu").show(ctx, |ui| {
             MenuBar::new(
                 &mut self.store,
                 &mut self.window_state,
                 &mut self.async_state,
             )
             .ui(ui);
+        });
+        egui::CentralPanel::default().show(ctx, |ui| {
             ScrollArea::vertical()
                 .auto_shrink(false)
                 .scroll_bar_visibility(ScrollBarVisibility::VisibleWhenNeeded)
@@ -130,15 +132,16 @@ impl View for App {
                     .dispatch(&Selector::Effect(mixer_index, effect_index), action)
             };
             let on_release = || self.store.dispatchr(Action::Release);
-            EffectView::new(
+            if let Some(mut it) = EffectView::new(
                 &self.store,
                 mixer_index,
                 effect_index,
                 &mut self.window_state,
                 dispatch,
                 on_release,
-            )
-            .map(|mut it| it.ui(ui));
+            ) {
+                it.ui(ui)
+            }
         }
         if self.window_state.scale {
             let dispatch = |action| self.store.dispatchr(action);

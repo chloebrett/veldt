@@ -11,7 +11,7 @@ impl ActionReceiver for GeneratorInstance {
         match &mut self.kind {
             GeneratorType::SimpleWave { config } => config.apply(action),
             GeneratorType::Noise { .. } => todo!(),
-            GeneratorType::SubSynth { config } => config.apply(action),
+            GeneratorType::SubSynth { .. } => todo!(),
         }
     }
 }
