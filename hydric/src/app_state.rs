@@ -150,9 +150,29 @@ impl DataState {
                     data.insert_temp::<Option<usize>>(self.get_id(), None)
                 }
                 Self::SelectedNoteIndexes | Self::SelectedTrackPlacementIndexes => {
-                    data.insert_temp::<Option<Vec<usize>>>(self.get_id(), None);
+                    data.insert_temp::<Option<HashSet<usize>>>(self.get_id(), None);
                 }
             };
         })
+    }
+}
+
+/// Update the state of selected Sequencer Objects based on Ui interaction.
+pub fn update_select_data_state(ui: &mut Ui, data_state: DataState, index: Option<usize>) {
+    if let Some(it) = index {
+        if let Some(mut selected) = data_state.get_value::<HashSet<usize>>(ui) {
+            // If index is already in the set remove it.
+            if selected.contains(&it) {
+                selected.remove(&it);
+            } else {
+                selected.insert(it);
+            }
+            data_state.set_value(ui, selected)
+        } else {
+            data_state.set_value::<HashSet<usize>>(ui, HashSet::from_iter(vec![it]))
+        }
+    } else {
+        // If there was no index supplied, remove value.
+        data_state.remove_value(ui);
     }
 }
