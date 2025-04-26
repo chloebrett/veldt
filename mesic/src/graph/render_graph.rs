@@ -50,7 +50,7 @@ impl Default for RenderGraph {
 
 impl RenderGraph {
     /// Initializes the graph from a project instance.
-    /// Not idempotent! Only call this on a fresh project.
+    /// Not idempotent! Only call this on a fresh RenderGraph.
     /// This is mostly an interim method until we get action receiving working properly.
     pub fn set_from_project(&mut self, project: &Project) {
         let bpm = project.bpm;
