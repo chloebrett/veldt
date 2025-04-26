@@ -1,5 +1,5 @@
 use dasp_frame::Frame;
-use mesic::render;
+use mesic::graph::RenderGraph;
 use shared::bytes::as_bytes;
 use shared::render::render_server::Render;
 use shared::render::{RenderReply, RenderRequest};
@@ -20,7 +20,9 @@ impl Render for RenderContext {
             .project
             .ok_or(tonic::Status::invalid_argument("Project must be supplied"))?
             .into();
-        let audio: Vec<_> = render(&project).collect();
+        let mut graph = RenderGraph::default();
+        graph.set_from_project(&project);
+        let audio: Vec<_> = graph.collect();
         let left = as_bytes(&audio.iter().map(|it| *it.channel(0).unwrap()).collect());
         let right = as_bytes(&audio.iter().map(|it| *it.channel(1).unwrap()).collect());
 

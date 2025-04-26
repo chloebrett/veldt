@@ -7,7 +7,6 @@ use crate::{AsyncState, AudioState};
 use dasp_frame::Stereo;
 use egui::Ui;
 use mesic::graph::{AmpNode, RenderGraph};
-use mesic::render as local_render;
 use state::Store;
 
 pub fn play_control(
@@ -18,7 +17,8 @@ pub fn play_control(
 ) {
     if ui.button("Play (local)").clicked() {
         let volume = store.get().volume;
-        let mut graph = local_render(&store.get().project);
+        let mut graph = RenderGraph::default();
+        graph.set_from_project(&store.get().project);
         graph.add_output_node(AmpNode {
             volume,
             should_clip: true,
@@ -37,9 +37,9 @@ pub fn play_control(
                 volume,
                 should_clip: true,
             });
-        audio_state.player.reset();
-        audio_state.player.init(graph);
-        audio_state.player.play();
+            audio_state.player.reset();
+            audio_state.player.init(graph);
+            audio_state.player.play();
         },
     );
     if ui.button("Load audio (server)").clicked() {
