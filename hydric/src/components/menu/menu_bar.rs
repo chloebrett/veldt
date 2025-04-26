@@ -7,7 +7,7 @@ use crate::{
 use egui::{Button, Ui, menu::bar};
 use state::{Action, Store, TypeField};
 
-use super::{load::LoadView, save_as::SaveAs};
+use super::save_as::SaveAs;
 
 pub struct MenuBar<'a> {
     store: &'a mut Store,
@@ -29,7 +29,7 @@ impl<'a> MenuBar<'a> {
     }
 }
 
-fn save_load(
+fn save(
     ui: &mut Ui,
     store: &mut Store,
     window_state: &mut WindowState,
@@ -43,6 +43,18 @@ fn save_load(
         });
     });
 
+    let save_click = || {
+        let project = store.get().project.clone();
+        spawn(&mut async_state.save_project, async move {
+            save_project(project).await
+        });
+    };
+
+    let name = &store.get().project.name;
+    SaveAs::new(window_state, name, dispatch, save_click).ui(ui);
+}
+
+fn load_options(ui: &mut Ui, store: &Store, async_state: &mut AsyncState) {
     poll(&mut async_state.project_list, |list| {
         store.dispatchr(Action::SetChild(TypeField::ProjectList(list.clone())));
     });
@@ -51,31 +63,20 @@ fn save_load(
         store.dispatchr(Action::SetChild(TypeField::Project(project.clone())));
     });
 
-    let save_click = || {
-        let project = store.get().project.clone();
-        spawn(&mut async_state.save_project, async move {
-            save_project(project).await
-        });
-    };
-
-    let load_click = |name: String| {
+    let dispatch = |action: Action| store.dispatchr(action);
+    let mut load_click = |name: String| {
         spawn(&mut async_state.load_project, async move {
             load_project(name).await
         })
     };
-
-    let name = &store.get().project.name;
-    SaveAs::new(window_state, name, dispatch, save_click).ui(ui);
-    let current_name = &store.get().load_project_name;
     let project_names = &store.get().project_list;
-    LoadView::new(
-        window_state,
-        current_name,
-        project_names,
-        dispatch,
-        load_click,
-    )
-    .ui(ui);
+    for name in project_names {
+        let button_response = ui.add(Button::new(name).wrap_mode(egui::TextWrapMode::Extend));
+        if button_response.clicked() {
+            dispatch(Action::SetChild(TypeField::LoadProjectName(name.clone())));
+            load_click(name.clone());
+        }
+    }
 }
 
 impl View for MenuBar<'_> {
@@ -85,7 +86,7 @@ impl View for MenuBar<'_> {
             window_state,
             async_state,
         } = self;
-        save_load(ui, store, window_state, async_state);
+        save(ui, store, window_state, async_state);
         bar(ui, |ui| {
             ui.label("Veldt");
             ui.menu_button("File", |ui| {
@@ -98,9 +99,9 @@ impl View for MenuBar<'_> {
                 if ui.button("Save As").clicked() {
                     window_state.save = true;
                 }
-                if ui.button("Load").clicked() {
-                    window_state.load = true;
-                }
+                ui.menu_button("Load", |ui| {
+                    load_options(ui, store, async_state);
+                });
                 if ui.button("Export").clicked() {}
             });
             ui.menu_button("Edit", |ui| {
