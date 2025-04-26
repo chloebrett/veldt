@@ -1,6 +1,6 @@
 use crate::{audio_player::AudioPlayer, promise::AsyncResult};
-use egui::{Id, Pos2, Ui};
 use dasp_frame::Stereo;
+use egui::{Id, Pos2, Ui};
 use shared::model::{FilenameTree, Project, Sample};
 use std::cmp::{Eq, Ord};
 use std::collections::HashSet;
@@ -16,6 +16,7 @@ pub struct AsyncState {
     pub load_sample: AsyncResult<Sample, ()>,
     pub upload_sample: AsyncResult<(), ()>,
     pub load_sample_tree: AsyncResult<FilenameTree, ()>,
+    pub export: AsyncResult<(), ()>,
 }
 
 #[derive(Default)]
