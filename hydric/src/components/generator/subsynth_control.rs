@@ -71,8 +71,9 @@ where
         }
         });
         ui.add_space(10.0);
-
-        draw_mod_matrix(ui, &dispatch, &on_release);
+        ui.vertical(|ui| {
+            draw_mod_matrix(ui, &dispatch, &on_release); // must wrap in ui.vertical to stop the matrix from unnecessarily stretching vertically
+        });
     });
 
     
