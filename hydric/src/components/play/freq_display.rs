@@ -1,35 +1,29 @@
 use chrono::TimeDelta;
 use egui::{
-    Color32, CornerRadius, Frame, Pos2, Rect, Shape, Ui,
+    Color32, Ui,
     cache::{ComputerMut, FrameCache},
-    emath::RectTransform,
-    pos2, vec2,
 };
+use egui_plot::{Line, Plot, PlotPoints};
 use mesic::{
     FFT_SAMPLE_SIZE, SAMPLE_RATE,
-    fft::{self, fft, hann_window},
+    fft::{fft, hann_window},
 };
 use ordered_float::OrderedFloat;
 use shared::serialize::map_vec;
 use std::ops::Sub;
 
-use crate::{app_state::AudioState, audio_player::AudioPlayer, transform::Transform, view::View};
+use crate::{app_state::AudioState, audio_player::AudioPlayer, view::View};
 
 pub struct FrequencyDisplay<'a> {
     audio_state: &'a AudioState,
-    bin_count: usize, // The number of bins the response will be grouped into.
-    frame_rate: i32,  // The number of times per second the visualisation will be rendered.
-    y_max: f32,       // The maximum response value that will be displayed.
+    frame_rate: i32, // The number of times per second the visualisation will be rendered.
 }
 
 impl<'a> FrequencyDisplay<'a> {
     pub fn new(audio_state: &'a AudioState) -> Self {
         FrequencyDisplay {
             audio_state,
-            // Currently hard-coded to fit window length of FFT.
-            bin_count: 8,
             frame_rate: 60,
-            y_max: 0.5,
         }
     }
 
@@ -39,7 +33,7 @@ impl<'a> FrequencyDisplay<'a> {
         ui: &mut Ui,
         player: &AudioPlayer,
         audio: Vec<OrderedFloat<f32>>,
-    ) -> Option<Shape> {
+    ) -> Option<Vec<f32>> {
         let start_timestamp = player.start_timestamp?;
         let current_timestamp = chrono::offset::Utc::now();
         let time_delta: TimeDelta = current_timestamp.sub(start_timestamp);
@@ -58,11 +52,7 @@ impl<'a> FrequencyDisplay<'a> {
 
             Some(ui.memory_mut(|memory| {
                 let cache = memory.caches.cache::<FrequencyDisplayCache<'_>>();
-                cache.get(FrequencyDisplayKey {
-                    audio: slice,
-                    bin_count: self.bin_count,
-                    y_max: self.y_max.into(),
-                })
+                cache.get(FrequencyDisplayKey { audio: slice })
             }))
         } else {
             None
@@ -70,41 +60,8 @@ impl<'a> FrequencyDisplay<'a> {
     }
 }
 
-fn response_points(signal: Vec<f32>, bin_count: usize) -> Vec<Pos2> {
-    let response = fft(hann_window(signal));
-    fft::make_log_buckets(response, bin_count)
-        .into_iter()
-        .enumerate()
-        .map(|(index, bucket)| pos2(index as f32, bucket))
-        .collect()
-}
-
-fn make_frequency_shape(points: Vec<Pos2>, y_max: f32, bin_count: usize) -> Shape {
-    Shape::Vec(
-        points
-            .iter()
-            .map(|pos| {
-                // Show frequencies whose response is clipped.
-                let colour = if pos.y > y_max {
-                    Color32::LIGHT_RED
-                } else {
-                    Color32::WHITE
-                };
-                // Clip response.
-                let clamped_pos = pos.clamp(pos2(0.0, 0.0), pos2(bin_count as f32, y_max));
-                Shape::rect_filled(
-                    Rect::from_min_size(
-                        // Pos y value is top == 0.0
-                        // Therefore subtract y value from max y value to render correctly
-                        pos2(pos.x, y_max - clamped_pos.y),
-                        vec2(1.0, clamped_pos.y),
-                    ),
-                    CornerRadius::same(0),
-                    colour,
-                )
-            })
-            .collect(),
-    )
+fn response_points(signal: Vec<f32>) -> Vec<f32> {
+    fft(hann_window(signal))
 }
 
 #[derive(Default)]
@@ -113,19 +70,13 @@ struct FrequencyDisplayComputer;
 #[derive(Hash, Copy, Clone, Debug)]
 struct FrequencyDisplayKey {
     audio: [OrderedFloat<f32>; FFT_SAMPLE_SIZE],
-    bin_count: usize,
-    y_max: OrderedFloat<f32>,
 }
 
-type FrequencyDisplayCache<'a> = FrameCache<Shape, FrequencyDisplayComputer>;
+type FrequencyDisplayCache<'a> = FrameCache<Vec<f32>, FrequencyDisplayComputer>;
 
-impl ComputerMut<FrequencyDisplayKey, Shape> for FrequencyDisplayComputer {
-    fn compute(&mut self, key: FrequencyDisplayKey) -> Shape {
-        make_frequency_shape(
-            response_points(map_vec(key.audio.to_vec()), key.bin_count),
-            *key.y_max,
-            key.bin_count,
-        )
+impl ComputerMut<FrequencyDisplayKey, Vec<f32>> for FrequencyDisplayComputer {
+    fn compute(&mut self, key: FrequencyDisplayKey) -> Vec<f32> {
+        response_points(map_vec(key.audio.to_vec()))
     }
 }
 
@@ -133,27 +84,29 @@ impl View for FrequencyDisplay<'_> {
     fn ui(&mut self, ui: &mut Ui) {
         let FrequencyDisplay {
             audio_state,
-            bin_count,
-            frame_rate: _frame_rate,
-            y_max,
+            ..
         } = *self;
         let audio = &self.audio_state.audio;
-        if audio.is_empty() {
-            return;
-        }
+
         // Cast as `OrderedFloat` so that values implement `Eq` required for hashing in cache.
         let ordered_audio: Vec<OrderedFloat<f32>> = map_vec(audio.to_vec());
-        let canvas_size = vec2(500.0, 100.0);
-        Frame::canvas(ui.style()).show(ui, |ui| {
-            ui.ctx().request_repaint();
-            let (_id, rect) = ui.allocate_space(canvas_size);
-            let to_screen = RectTransform::from_to(
-                Rect::from_min_max(pos2(0.0, 0.0), pos2(bin_count as f32, y_max)),
-                rect,
-            );
-            if let Some(shape) = self.render_display(ui, &audio_state.player, ordered_audio) {
-                ui.painter().add(shape.transform(to_screen));
-            }
-        });
+        if let Some(response) = self.render_display(ui, &audio_state.player, ordered_audio) {
+            let freq_window = SAMPLE_RATE as f64 / FFT_SAMPLE_SIZE as f64;
+            let points: PlotPoints = response
+                .into_iter()
+                .enumerate()
+                // Only keep first half of results.
+                .filter(|(index, _it)| *index < FFT_SAMPLE_SIZE / 2)
+                // Take log of values to make dB.
+                .map(|(index, it)| [freq_window * index as f64, it.log10() as f64])
+                .collect();
+            let line = Line::new("Response", points).color(Color32::WHITE);
+            Plot::new("Frequency Response")
+                .view_aspect(2.0)
+                .default_y_bounds(-10.0, 5.0)
+                .x_axis_label("Frequency (Hz)")
+                .y_axis_label("Response (dB)")
+                .show(ui, |plot_ui| plot_ui.line(line));
+        }
     }
 }
