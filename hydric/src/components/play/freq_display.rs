@@ -83,14 +83,15 @@ impl ComputerMut<FrequencyDisplayKey, Vec<f32>> for FrequencyDisplayComputer {
 impl View for FrequencyDisplay<'_> {
     fn ui(&mut self, ui: &mut Ui) {
         let FrequencyDisplay { audio_state, .. } = *self;
-        let audio = &self.audio_state.audio;
+        let audio: &Vec<[f32; 2]> = &self.audio_state.audio;
 
         // Note: only visualising the left channel.
         // TODO: decide how to visualise both left and right.
-        let audio = audio.iter().map(|it| it[0]).collect();
+        let audio: Vec<f32> = audio.iter().map(|it| it[0]).collect();
 
         // Cast as `OrderedFloat` so that values implement `Eq` required for hashing in cache.
-        let ordered_audio: Vec<OrderedFloat<f32>> = map_vec(audio);
+        let ordered_audio: Vec<OrderedFloat<f32>> = map_vec(audio.to_vec());
+        let mut plot_shapes = vec![];
         if let Some(response) = self.render_display(ui, &audio_state.player, ordered_audio) {
             let freq_window = SAMPLE_RATE as f64 / FFT_SAMPLE_SIZE as f64;
             let points: PlotPoints = response
@@ -101,13 +102,19 @@ impl View for FrequencyDisplay<'_> {
                 // Take log of values to make dB.
                 .map(|(index, it)| [freq_window * index as f64, it.log10() as f64])
                 .collect();
-            let line = Line::new("Response", points).color(Color32::WHITE);
-            Plot::new("Frequency Response")
-                .view_aspect(2.0)
-                .default_y_bounds(-10.0, 5.0)
-                .x_axis_label("Frequency (Hz)")
-                .y_axis_label("Response (dB)")
-                .show(ui, |plot_ui| plot_ui.line(line));
-        }
+            plot_shapes.push(Line::new("Response", points).color(Color32::WHITE))
+        };
+        Plot::new("Frequency Response")
+            .view_aspect(2.0)
+            .default_x_bounds(0.0, SAMPLE_RATE as f64 / 2.0)
+            .default_y_bounds(-10.0, 5.0)
+            .allow_drag(false)
+            .x_axis_label("Frequency (Hz)")
+            .y_axis_label("Response (dB)")
+            .show(ui, |plot_ui| {
+                for shape in plot_shapes {
+                    plot_ui.line(shape)
+                }
+            });
     }
 }
