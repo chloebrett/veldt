@@ -29,10 +29,9 @@ pub fn play_control(
             let volume = store.get().volume;
             audio_state.audio = audio.to_vec();
             audio_state.player.init();
-            audio_state.player.send(PlaybackMessage::SetAudio(
-                audio_state.audio.clone(),
-                volume,
-            ));
+            audio_state
+                .player
+                .send(PlaybackMessage::SetAudio(audio_state.audio.clone(), volume));
             audio_state.player.play();
         },
     );

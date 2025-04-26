@@ -117,20 +117,26 @@ impl AudioPlayer {
                 }
 
                 if state == PlaybackState::Play && audio_tx.len() < BUFFER_SIZE - CHUNK_SIZE {
-                    for _ in 0..CHUNK_SIZE {
+                    let mut did_send = false;
+                    for i in 0..CHUNK_SIZE {
                         if let Some(next) = graph.next() {
                             audio_tx.try_send(next).unwrap();
-                            log::info!("Sent 1000 samples. Len: {}", audio_tx.len());
+                            did_send = true;
                         } else {
                             // No more audio, so pause.
                             // Consider stopping as well, but we'll need to re-create the thread if
                             // we do this.
                             state = PlaybackState::Pause;
                             log::info!(
-                                "Ran out of audio, so paused. {:?}",
+                                "Ran out of audio, so paused after {} samples in chunk. {:?}",
+                                i,
                                 wasm_thread::current().id()
                             );
+                            break;
                         }
+                    }
+                    if did_send {
+                        log::info!("Sent 1000 samples. Len: {}", audio_tx.len());
                     }
                 } else {
                     sleep_ms(10);
