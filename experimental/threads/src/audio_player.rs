@@ -82,7 +82,6 @@ impl AudioPlayer {
         }));
 
         // Consumer / audio player.
-        // TODO: Test performance when egui is lagging.
         let config: &cpal::StreamConfig = &output_config.clone().into();
         let stream = device
             .build_output_stream(
