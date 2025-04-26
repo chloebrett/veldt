@@ -6,10 +6,6 @@ use std::time::Duration;
 use wasm_thread;
 use wasm_thread::JoinHandle;
 
-struct SendStream(Stream);
-
-unsafe impl Send for SendStream {}
-
 pub struct AudioPlayer {
     freq_rx: crossbeam_channel::Receiver<f64>,
     producer_thread: Option<JoinHandle<()>>,
@@ -77,6 +73,12 @@ impl AudioPlayer {
                     for _ in 0..chunk_size {
                         let _ = tx.try_send(next_sample(freq)).unwrap();
                     }
+                } else {
+                    let ms = 10;
+                    log::info!("Sleeping {} ms", ms);
+                    let secs = 0;
+                    let nanos = ms * 1000 * 1000;
+                    wasm_thread::sleep(std::time::Duration::new(secs, nanos));
                 }
             }
         }));
