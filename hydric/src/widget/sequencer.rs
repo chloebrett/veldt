@@ -1,4 +1,4 @@
-use crate::transform::Transform;
+use crate::{app_state::DataState, transform::Transform};
 use egui::{
     Color32, CornerRadius, CursorIcon, Frame, Pos2, Rect, Response, Sense, Shape, Stroke, Ui, Vec2,
     Widget, emath::RectTransform, pos2, vec2,
@@ -51,7 +51,7 @@ impl<
             size: vec2(400.0, 600.0),
             objects: vec![],
             sense: Sense::drag(),
-            quantise_level: 0.25,
+            quantise_level: 0.125,
             dispatch,
             on_release,
             on_double_click,
@@ -146,28 +146,43 @@ impl<
             if resize_resp.hovered() {
                 ui.ctx().set_cursor_icon(CursorIcon::ResizeColumn);
             }
-            let release = self.move_object(index, movable_resp, to_sequencer)
+            let release = self.move_object(ui, index, movable_resp, to_sequencer)
                 || self.resize_object(index, resize_resp, to_sequencer);
             if release {
-                (self.on_release)()
+                (self.on_release)();
+                DataState::DragCursorDelta.remove_value(ui);
             }
         }
     }
 
     fn quantise(&self, value: Beats) -> Beats {
-        (value / self.quantise_level).round() * self.quantise_level
+        let out = (value / self.quantise_level).round() * self.quantise_level;
+        log::info!("{:?} out {:?}", value, out);
+        out
     }
 
-    fn move_object(&self, index: usize, response: Response, to_sequencer: RectTransform) -> bool {
+    fn move_object(
+        &self,
+        ui: &mut Ui,
+        index: usize,
+        response: Response,
+        to_sequencer: RectTransform,
+    ) -> bool {
         let object = self.objects.get(index).expect("Should have gotten object.");
         let drag_pos = response.interact_pointer_pos();
         let drag_delta = response.drag_delta();
         let next_pos = response.rect.left_top() + drag_delta;
         let mut action_dispatched = false;
         if let Some(drag_pos) = drag_pos {
-            // 'y' moves in increments and should update to to wherever the mouse is while dragging.
-            // 'x' moves continiously and so move based on the drag delta.
-            let scaled_pos = pos2(next_pos.x, drag_pos.y)
+            // Keep track of the delta between object and cursor position at drag start.
+            if response.interact(Sense::drag()).drag_started() {
+                DataState::DragCursorDelta
+                    .set_value::<Pos2>(ui, drag_pos - response.rect.left_top().to_vec2());
+            }
+            let click_delta: Pos2 = DataState::DragCursorDelta
+                .get_value(ui)
+                .unwrap_or(Pos2::ZERO);
+            let scaled_pos = pos2(drag_pos.x - click_delta.x, drag_pos.y)
                 .transform(to_sequencer.inverse())
                 .clamp(
                     pos2(0.0, 0.0),
@@ -181,7 +196,7 @@ impl<
                 };
             }
             if drag_delta.x != 0.0 {
-                if let Some(action) = object.x_action(scaled_pos.x, self.range) {
+                if let Some(action) = object.x_action(self.quantise(scaled_pos.x), self.range) {
                     (self.dispatch)(index, action);
                     action_dispatched = true;
                 };
