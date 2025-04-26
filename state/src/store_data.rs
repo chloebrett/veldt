@@ -120,6 +120,26 @@ impl Default for StoreData {
                                         frequency: 1.0,
                                     },
                                 ],
+                                envelopes: [
+                                    AdsrEnvelope {
+                                        attack: 0.1,
+                                        decay: 0.1,
+                                        sustain: 0.8,
+                                        release: 0.1,
+                                    },
+                                    AdsrEnvelope {
+                                        attack: 0.1,
+                                        decay: 0.1,
+                                        sustain: 0.8,
+                                        release: 0.1,
+                                    },
+                                    AdsrEnvelope {
+                                        attack: 0.1,
+                                        decay: 0.1,
+                                        sustain: 0.8,
+                                        release: 0.1,
+                                    },
+                                ],
                             },
                         },
                         meta: GeneratorMeta {
