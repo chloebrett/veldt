@@ -50,7 +50,7 @@ pub fn audio_vis(audio_state: &AudioState, ui: &mut Ui) {
             .collect();
 
         let position = audio_state.player.position.samples;
-        let playthrough_ratio = position as f32 / audio_len as f32;
+        let playthrough_ratio = position as f32 / audio_len;
 
         if (0.0..=1.0).contains(&playthrough_ratio) {
             let red_line = epaint::Shape::line(

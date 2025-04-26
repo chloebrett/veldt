@@ -18,7 +18,7 @@ const CHUNK_SIZE: usize = 1000;
 const BUFFER_THRESHOLD: usize = 1000;
 
 // For now, just samples. In future, consider supporting bars:beats, mins:secs, etc.
-#[derive(Clone)]
+#[derive(Clone, Copy)]
 pub struct PlaybackPosition {
     pub samples: usize,
 }
@@ -40,7 +40,7 @@ pub enum PlaybackUpdate {
     State(PlaybackState),
 }
 
-#[derive(PartialEq, Clone)]
+#[derive(PartialEq, Clone, Copy)]
 pub enum PlaybackState {
     Play,
     Pause,
@@ -205,9 +205,7 @@ impl AudioPlayer {
                                     samples: graph.pos(),
                                 }))
                                 .unwrap();
-                            update_tx
-                                .try_send(PlaybackUpdate::State(state.clone()))
-                                .unwrap();
+                            update_tx.try_send(PlaybackUpdate::State(state)).unwrap();
                             log::info!(
                                 "Ran out of audio, so paused after {} samples in chunk. {:?}",
                                 i,
@@ -277,7 +275,7 @@ impl AudioPlayer {
 
     pub fn play(&mut self) {
         self.state = PlaybackState::Play;
-        self.send(PlaybackMessage::State(self.state.clone()));
+        self.send(PlaybackMessage::State(self.state));
         self.stream
             .as_mut()
             .expect("Call .init() first!")
@@ -287,7 +285,7 @@ impl AudioPlayer {
 
     pub fn pause(&mut self) {
         self.state = PlaybackState::Pause;
-        self.send(PlaybackMessage::State(self.state.clone()));
+        self.send(PlaybackMessage::State(self.state));
         self.stream
             .as_mut()
             .expect("Call .init() first!")
@@ -297,7 +295,7 @@ impl AudioPlayer {
 
     pub fn seek(&mut self, samples: usize) {
         self.position = PlaybackPosition { samples };
-        self.send(PlaybackMessage::Seek(self.position.clone()));
+        self.send(PlaybackMessage::Seek(self.position));
     }
 }
 
