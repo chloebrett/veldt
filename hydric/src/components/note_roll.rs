@@ -123,6 +123,7 @@ impl View for NoteRoll<'_> {
                         ui.add(
                             Sequencer::new(store, range)
                                 .objects(notes)
+                                .parent_index(track_index)
                                 .horizontal_rects(white_note_pattern, Color32::from_white_alpha(4))
                                 .vertical_bars(bar_length, Color32::from_white_alpha(6))
                                 .vertical_bars(1.0, Color32::from_white_alpha(3))
@@ -246,8 +247,11 @@ impl SequencerObject<PlacedNote> for PlacedNote {
         ])
     }
 
-    fn selector(index: usize) -> Selector {
-        Selector::Note(0, index)
+    fn selector(index: usize, parent_index: Option<usize>) -> Selector {
+        Selector::Note(
+            parent_index.expect("Track index should have been set as parent index"),
+            index,
+        )
     }
 
     fn set_active(&self, ui: &mut Ui, index: usize) {

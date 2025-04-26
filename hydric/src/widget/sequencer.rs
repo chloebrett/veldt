@@ -15,6 +15,7 @@ pub struct Sequencer<'a, T: SequencerObject<T>> {
     quantise_level: Beats,
     // A closure to modify object in Store. Takes object index and `Action` to dispatch change.
     background_shapes: Vec<Shape>,
+    parent_index: Option<usize>,
 }
 
 impl<'a, T: SequencerObject<T>> Sequencer<'a, T> {
@@ -27,6 +28,7 @@ impl<'a, T: SequencerObject<T>> Sequencer<'a, T> {
             sense: Sense::drag(),
             quantise_level: 0.25,
             background_shapes: vec![],
+            parent_index: None,
         }
     }
 
@@ -38,6 +40,11 @@ impl<'a, T: SequencerObject<T>> Sequencer<'a, T> {
 
     pub fn size(mut self, size: Vec2) -> Self {
         self.size = size;
+        self
+    }
+
+    pub fn parent_index(mut self, index: usize) -> Self {
+        self.parent_index = Some(index);
         self
     }
 
@@ -215,7 +222,7 @@ impl<T: SequencerObject<T>> Widget for Sequencer<'_, T> {
         let sense = self.sense;
         let background_shapes = &self.background_shapes;
         let edit_object = |index: usize, action: Action| {
-            store.dispatch(&<T as SequencerObject<T>>::selector(index), action)
+            store.dispatch(&T::selector(index, self.parent_index), action)
         };
         let on_release = || store.dispatchr(Action::Release);
         Frame::canvas(ui.style()).show(ui, |ui| {
@@ -229,8 +236,8 @@ impl<T: SequencerObject<T>> Widget for Sequencer<'_, T> {
                 T::set_selected(ui, None)
             }
             self.interact(ui, &response, &edit_object, &on_release);
-            let active_object = <T as SequencerObject<T>>::get_active(ui, self.store);
-            let selected_objects = <T as SequencerObject<T>>::get_selected(ui, self.store);
+            let active_object = T::get_active(ui, self.store);
+            let selected_objects = T::get_selected(ui, self.store);
             painter.extend(background_shapes.clone().transform(sequencer_transform));
             painter.add(self.object_shapes().transform(sequencer_transform));
             if let Some(object) = active_object {
@@ -272,7 +279,7 @@ pub trait SequencerObject<T> {
 
     fn selected_shape(&self, range: Rect) -> Shape;
 
-    fn selector(index: usize) -> Selector;
+    fn selector(index: usize, parent_index: Option<usize>) -> Selector;
 
     fn set_active(&self, ui: &mut Ui, index: usize);
 

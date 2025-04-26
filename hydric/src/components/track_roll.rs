@@ -51,10 +51,6 @@ impl View for TrackRoll<'_> {
                 placement: placement.clone(),
             })
             .collect();
-        let placed_track_ids: Vec<u32> = placed_tracks
-            .iter()
-            .map(|placed_track| placed_track.placement.track_id)
-            .collect();
         let track_count = store.get().project.tracks.len();
         let range = Rect::from_min_max(pos2(0.0, 0.0), pos2(16.0, track_count as f32));
         default_window("Track Roll")
@@ -236,7 +232,7 @@ impl SequencerObject<PlacedTrack> for PlacedTrack {
         ])
     }
 
-    fn selector(index: usize) -> Selector {
+    fn selector(index: usize, _parent_index: Option<usize>) -> Selector {
         Selector::TrackPlacement(index)
     }
 
