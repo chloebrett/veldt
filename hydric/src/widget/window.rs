@@ -3,8 +3,8 @@ use egui::{InnerResponse, Ui, Window};
 use crate::app_state::DataState;
 
 /// Creates a default window which is non-resizable, non-collapsible, and disables drag-to-scroll.
-pub fn default_window(title: &str) -> egui::Window {
-    egui::Window::new(title)
+pub fn default_window(title: &str) -> Window {
+    Window::new(title)
         .collapsible(false)
         .resizable(false)
         .drag_to_scroll(false)
@@ -33,7 +33,7 @@ impl StateWindow<'_> {
         self,
         ui: &mut Ui,
         show: bool,
-        on_close: impl Fn(&Ui),
+        on_close: impl FnOnce(&Ui),
         add_contents: impl FnOnce(&mut Ui) -> R,
     ) -> Option<InnerResponse<Option<R>>> {
         let StateWindow(window) = self;

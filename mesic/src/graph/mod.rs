@@ -1,5 +1,6 @@
 use dasp_graph::{BoxedNodeSend, Buffer, Input, NodeData};
 use petgraph::stable_graph::StableGraph;
+use state::StoreData;
 
 mod amp_node;
 mod buffer_node;
@@ -21,7 +22,12 @@ pub use mixer_node::*;
 use mod_delay_node::*;
 pub use render_graph::*;
 
-pub type Graph = StableGraph<NodeData<BoxedNodeSend>, ()>;
+#[derive(Default)]
+pub struct ProcessContext {
+    store: StoreData,
+}
+
+pub type Graph = StableGraph<NodeData<BoxedNodeSend<ProcessContext>>, ()>;
 
 pub type Processor = dasp_graph::Processor<Graph>;
 

@@ -1,3 +1,4 @@
+use super::ProcessContext;
 use super::{extract_inputs, extract_outputs};
 use dasp_graph::{Buffer, Input, Node};
 use shared::types::Volume;
@@ -25,8 +26,8 @@ impl AmpNode {
     }
 }
 
-impl Node for AmpNode {
-    fn process(&mut self, inputs: &[Input], output: &mut [Buffer]) {
+impl Node<ProcessContext> for AmpNode {
+    fn process(&mut self, inputs: &[Input], output: &mut [Buffer], _payload: &ProcessContext) {
         let (out_left, out_right) = extract_outputs(output);
         let (in_left, in_right) = extract_inputs(inputs)[0];
 

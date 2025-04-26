@@ -1,18 +1,18 @@
 use chrono::TimeDelta;
 use egui::{
-    cache::{ComputerMut, FrameCache}, Color32, Ui
+    Color32, Ui,
+    cache::{ComputerMut, FrameCache},
 };
 use egui_plot::{Line, Plot, PlotPoints};
 use mesic::{
-    dft::{self, dft, hann_window}, fft::fft, SAMPLE_RATE
+    FFT_SAMPLE_SIZE, SAMPLE_RATE,
+    fft::{fft, hann_window},
 };
 use ordered_float::OrderedFloat;
 use shared::serialize::map_vec;
 use std::ops::Sub;
 
-use crate::{app_state::AudioState, view::View};
-
-const SLICE_LENGTH: usize = 512;
+use crate::{app_state::AudioState, audio_player::AudioPlayer, view::View};
 
 pub struct FrequencyDisplay<'a> {
     audio_state: &'a AudioState,
@@ -23,8 +23,39 @@ impl<'a> FrequencyDisplay<'a> {
     pub fn new(audio_state: &'a AudioState) -> Self {
         FrequencyDisplay {
             audio_state,
-            // Currently hard-coded to fit window length of DFT.
-            frame_rate: 30,
+            frame_rate: 60,
+        }
+    }
+
+    /// Create frequency display shapes synced with playing audio.
+    fn render_display(
+        &self,
+        ui: &mut Ui,
+        player: &AudioPlayer,
+        audio: Vec<OrderedFloat<f32>>,
+    ) -> Option<Vec<f32>> {
+        let start_timestamp = player.start_timestamp?;
+        let current_timestamp = chrono::offset::Utc::now();
+        let time_delta: TimeDelta = current_timestamp.sub(start_timestamp);
+        let time_delta_ms: i64 = time_delta.num_milliseconds();
+        let current_sample: usize = (time_delta_ms * (SAMPLE_RATE as i64) / 1000) as usize;
+        let frame_size = (SAMPLE_RATE / self.frame_rate) as usize;
+        // Round `current_sample` so that the audio will be broken up into chunks based on
+        // the visualisation frame rate.
+        let chunk_head = current_sample / frame_size * frame_size;
+        if chunk_head + FFT_SAMPLE_SIZE < audio.len() {
+            // Cast as `OrderedFloat` set-length array so that the value can be cached.
+            let slice: [OrderedFloat<f32>; FFT_SAMPLE_SIZE] = audio
+                [chunk_head..(chunk_head + FFT_SAMPLE_SIZE)]
+                .try_into()
+                .unwrap_or([OrderedFloat(0.0); FFT_SAMPLE_SIZE]);
+
+            Some(ui.memory_mut(|memory| {
+                let cache = memory.caches.cache::<FrequencyDisplayCache<'_>>();
+                cache.get(FrequencyDisplayKey { audio: slice })
+            }))
+        } else {
+            None
         }
     }
 }
@@ -38,7 +69,7 @@ struct FrequencyDisplayComputer;
 
 #[derive(Hash, Copy, Clone, Debug)]
 struct FrequencyDisplayKey {
-    audio: [OrderedFloat<f32>; SLICE_LENGTH],
+    audio: [OrderedFloat<f32>; FFT_SAMPLE_SIZE],
 }
 
 type FrequencyDisplayCache<'a> = FrameCache<Vec<f32>, FrequencyDisplayComputer>;
@@ -53,7 +84,7 @@ impl View for FrequencyDisplay<'_> {
     fn ui(&mut self, ui: &mut Ui) {
         let FrequencyDisplay {
             audio_state,
-            frame_rate,
+            frame_rate: _frame_rate,
         } = *self;
         let audio = &self.audio_state.audio;
         if audio.is_empty() {
@@ -61,32 +92,16 @@ impl View for FrequencyDisplay<'_> {
         }
         // Cast as `OrderedFloat` so that values implement `Eq` required for hashing in cache.
         let ordered_audio: Vec<OrderedFloat<f32>> = map_vec(audio.to_vec());
-        if let Some(handle) = &audio_state.handle {
-            let current_timestamp = chrono::offset::Utc::now();
-            let time_delta: TimeDelta = current_timestamp.sub(handle.start_timestamp);
-            let time_delta_ms: i64 = time_delta.num_milliseconds();
-            let current_sample: usize = (time_delta_ms * (SAMPLE_RATE as i64) / 1000) as usize;
-            let frame_size = (SAMPLE_RATE / frame_rate) as usize;
-            // Round `current_sample` so that the audio will be broken up into chunks based on
-            // the visualisation frame rate.
-            let chunk_head = current_sample / frame_size * frame_size;
-            if chunk_head + SLICE_LENGTH < ordered_audio.len() {
-                // Cast as `OrderedFloat` set-length array so that the value can be cached.
-                let slice: [OrderedFloat<f32>; SLICE_LENGTH] = ordered_audio
-                    [chunk_head..(chunk_head + SLICE_LENGTH)]
-                    .try_into()
-                    .unwrap_or([OrderedFloat(0.0); SLICE_LENGTH]);
-
-                let response = ui.memory_mut(|memory| {
-                    let cache = memory.caches.cache::<FrequencyDisplayCache<'_>>();
-                    cache.get(FrequencyDisplayKey { audio: slice })
-                });
-                let freq_window = SAMPLE_RATE as f64 / SLICE_LENGTH as f64;
+        if let Some(player) = &audio_state.player {
+            if let Some(response) = self.render_display(ui, player, ordered_audio) {
+                let freq_window = SAMPLE_RATE as f64 / FFT_SAMPLE_SIZE as f64;
                 let points: PlotPoints = response
-                    .iter()
+                    .into_iter()
                     .enumerate()
-                    .filter(|(index, _)| *index < response.len() / 2)
-                    .map(|(index, value)| [freq_window * index as f64, value.log10() as f64])
+                    // Only keep first half of results.
+                    .filter(|(index, _it)| *index < FFT_SAMPLE_SIZE / 2)
+                    // Take log of values to make dB.
+                    .map(|(index, it)| [freq_window * index as f64, it.log10() as f64])
                     .collect();
                 let line = Line::new("Response", points).color(Color32::WHITE);
                 Plot::new("Frequency Response")
