@@ -1,11 +1,11 @@
 use super::{FrequencyDisplay, audio_vis::audio_vis};
+use crate::audio_player::PlaybackMessage;
 use crate::promise::{poll, spawn};
 use crate::rpc::render as server_render;
 use crate::view::View;
 use crate::{AsyncState, AudioState};
 use dasp_frame::Stereo;
 use egui::Ui;
-use mesic::graph::{AmpNode, RenderGraph};
 use state::Store;
 
 pub fn play_control(
@@ -16,14 +16,12 @@ pub fn play_control(
 ) {
     if ui.button("Play (local)").clicked() {
         let volume = store.get().volume;
-        let mut graph = RenderGraph::default();
-        graph.set_from_project(&store.get().project);
-        graph.add_output_node(AmpNode {
-            volume,
-            should_clip: true,
-        });
         audio_state.player.reset();
-        audio_state.player.init(graph);
+        audio_state.player.init();
+        audio_state.player.send(PlaybackMessage::SetProject(
+            Box::new(store.get().project.clone()),
+            volume,
+        ));
         audio_state.player.play();
     }
     poll(
@@ -31,13 +29,12 @@ pub fn play_control(
         |audio: &Vec<Stereo<f32>>| {
             let volume = store.get().volume;
             audio_state.audio = audio.to_vec();
-            let mut graph = RenderGraph::from_vec(audio_state.audio.clone());
-            graph.add_output_node(AmpNode {
-                volume,
-                should_clip: true,
-            });
             audio_state.player.reset();
-            audio_state.player.init(graph);
+            audio_state.player.init();
+            audio_state.player.send(PlaybackMessage::SetAudio(
+                Box::new(audio_state.audio.clone()),
+                volume,
+            ));
             audio_state.player.play();
         },
     );

@@ -1,12 +1,13 @@
 use chrono::{DateTime, Utc};
 use cpal::Stream;
 use cpal::traits::{DeviceTrait, HostTrait, StreamTrait};
-use log::error;
-use mesic::graph::RenderGraph;
-use wasm_thread::JoinHandle;
 use crossbeam_channel::Sender;
-use shared::model::{Project, Sample};
-use crate::rpc::interleave_stereo;
+use dasp_frame::Stereo;
+use log::error;
+use mesic::graph::{AmpNode, RenderGraph};
+use shared::model::Project;
+use shared::types::Volume;
+use wasm_thread::JoinHandle;
 
 // For now, just samples. In future, consider supporting bars:beats, mins:secs, etc.
 struct PlaybackPosition {
@@ -14,17 +15,17 @@ struct PlaybackPosition {
 }
 
 pub enum PlaybackMessage {
-    SetProject(Box<Project>), // uses Box to keep enum size sane.
-    SetSample(Box<Sample>),   // uses Box to keep enum size sane.
+    SetProject(Box<Project>, Volume), // uses Box to keep enum size sane.
+    SetAudio(Box<Vec<Stereo<f32>>>, Volume), // uses Box to keep enum size sane.
     Seek(PlaybackPosition),
-    State(PlaybackState)
+    State(PlaybackState),
 }
 
 #[derive(PartialEq)]
 enum PlaybackState {
     Play,
     Pause,
-    Stop
+    Stop,
 }
 
 #[derive(Default)]
@@ -53,7 +54,7 @@ impl AudioPlayer {
             .unwrap();
     }
 
-    pub fn init(&mut self, mut graph: RenderGraph) {
+    pub fn init(&mut self) {
         let host = cpal::default_host();
         let device = host
             .default_output_device()
@@ -84,19 +85,23 @@ impl AudioPlayer {
         );
 
         let producer_thread = wasm_thread::spawn(move || {
-            log::info!("Started producer_thread");
+            let mut graph = RenderGraph::default();
+            log::info!("Started producer_thread {:?}", wasm_thread::current().id());
             let mut state = PlaybackState::Pause;
 
             while state != PlaybackState::Stop {
                 if let Ok(message) = playback_rx.try_recv() {
                     match message {
-                        PlaybackMessage::SetProject(project) => {
+                        PlaybackMessage::SetProject(project, volume) => {
                             graph = RenderGraph::default();
                             graph.set_from_project(&project);
                         }
-                        PlaybackMessage::SetSample(sample) => {
-                            let sample = interleave_stereo(sample.left, sample.right);
-                            graph = RenderGraph::from_vec(sample);
+                        PlaybackMessage::SetAudio(audio, volume) => {
+                            graph = RenderGraph::from_vec(*audio);
+                            graph.add_output_node(AmpNode {
+                                volume,
+                                should_clip: true,
+                            });
                         }
                         PlaybackMessage::Seek(position) => todo!(),
                         PlaybackMessage::State(new_state) => {
@@ -115,7 +120,10 @@ impl AudioPlayer {
                             // Consider stopping as well, but we'll need to re-create the thread if
                             // we do this.
                             state = PlaybackState::Pause;
-                            log::info!("Ran out of audio, so paused.");
+                            log::info!(
+                                "Ran out of audio, so paused. {:?}",
+                                wasm_thread::current().id()
+                            );
                         }
                     }
                 } else {
