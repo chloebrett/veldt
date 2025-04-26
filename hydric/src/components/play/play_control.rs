@@ -37,9 +37,9 @@ pub fn play_control(
                 volume,
                 should_clip: true,
             });
-        audio_state.player.reset();
-        audio_state.player.init(graph);
-        audio_state.player.play();
+            audio_state.player.reset();
+            audio_state.player.init(graph);
+            audio_state.player.play();
         },
     );
     if ui.button("Load audio (server)").clicked() {
