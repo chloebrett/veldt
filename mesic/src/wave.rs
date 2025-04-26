@@ -2,7 +2,9 @@ use crate::consts::{NYQUIST, REFERENCE_PITCH, SAMPLE_RATE, SECONDS_PER_MINUTE};
 use crate::envelope::apply_envelope;
 use dasp_graph::Buffer;
 use lazy_static::lazy_static;
-use shared::model::{AdsrEnvelope, AntiAliasingMode, PitchName, SimpleWaveConfig, WaveType};
+use shared::model::{
+    AdsrEnvelope, AntiAliasingMode, PitchName, SimpleWaveConfig, SubSynthConfig, WaveType,
+};
 use shared::types::Beats;
 use shared::types::{Freq, PitchValue};
 use std::cmp::min;
@@ -94,6 +96,39 @@ fn wave(
     }
     buffer.copy_from_slice(&vec);
     buffer
+}
+
+pub fn sub_synth_wave(
+    pitch_name: &PitchName,
+    beats: Beats,
+    bpm: Beats,
+    config: &SubSynthConfig, // TODO: change to OscConfig later when matrix is made
+    start_index: i32,
+) -> Buffer {
+    let buffers: Vec<Buffer> = config
+        .oscillators
+        .iter()
+        .zip(config.envelopes.iter())
+        .map(|(osc, envelope)| {
+            let mut buf = wave(
+                pitch_name,
+                beats,
+                bpm,
+                envelope, // map osc 1 -> envelope 1, etc for now
+                osc.wave,
+                AntiAliasingMode::Off, // placeholder
+                osc.osc_detune,
+                start_index,
+            );
+            for x in buf.iter_mut() {
+                *x *= osc.volume;
+            }
+            // TODO: handle pan and unison
+            buf
+        })
+        .collect();
+
+    multi_sum(&buffers)
 }
 
 pub fn beats_to_samples(beats: Beats, bpm: Beats) -> u32 {

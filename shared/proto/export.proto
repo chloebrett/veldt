@@ -1,0 +1,17 @@
+syntax = "proto3";
+
+package export;
+
+import "pmodel.proto";
+
+service Export {
+  rpc Export (ExportRequest) returns (ExportReply) {}
+}
+
+message ExportRequest {
+  pmodel.ProjectProto project = 1;
+}
+
+message ExportReply {
+  bytes audio = 1;
+}

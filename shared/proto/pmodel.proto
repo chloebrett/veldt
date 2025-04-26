@@ -46,9 +46,11 @@ message TrackPlacementProto {
 }
 
 message SampleProto {
-  bytes data = 1;
+  bytes left = 1;
 
-  float sample_rate = 2;
+  bytes right = 2;
+
+  float sample_rate = 3;
 }
 
 message MixerChannelProto {
@@ -132,6 +134,7 @@ message SubSynthProto {
 message SubSynthConfigProto {
   repeated OscillatorConfigProto oscillators = 1; 
   repeated LfoConfigProto lfos = 2;
+  repeated AdsrEnvelopeProto envelopes = 3;  
 }
 
 message OscillatorConfigProto {

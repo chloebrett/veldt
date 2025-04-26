@@ -1,5 +1,6 @@
 use crate::audio_player::AudioPlayer;
 use crate::promise::{poll, spawn};
+use crate::rpc::interleave_stereo;
 use crate::rpc::load_sample;
 use crate::{AsyncState, AudioState};
 use egui::{Button, Ui};
@@ -20,16 +21,17 @@ pub fn sample_control(
         .clicked()
     {
         let sample = store.get().project.samples[0].clone();
-        audio_state.audio = sample.data.clone();
+        let sample = interleave_stereo(sample.left, sample.right);
+        audio_state.audio = sample.clone();
         let volume = store.get().volume;
-        let mut graph = RenderGraph::from_vec(sample.data);
+        let mut graph = RenderGraph::from_vec(sample);
         graph.add_output_node(AmpNode {
             volume,
             should_clip: true,
         });
-        let player = AudioPlayer::new(graph, audio_state.pre_render);
-        audio_state.player = Some(player);
-        audio_state.player.as_mut().unwrap().play();
+        audio_state.player.reset();
+        audio_state.player.init(graph);
+        audio_state.player.play();
     }
 
     if ui.button("Load sample").clicked() {

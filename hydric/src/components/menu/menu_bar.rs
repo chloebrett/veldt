@@ -1,7 +1,7 @@
 use crate::{
     app_state::{AsyncState, WindowState},
     promise::{poll, spawn},
-    rpc::{load_project, load_project_list, save_project},
+    rpc::{export, load_project, load_project_list, save_project},
     view::View,
 };
 use egui::{Button, Ui, menu::bar};
@@ -102,7 +102,14 @@ impl View for MenuBar<'_> {
                 ui.menu_button("Load", |ui| {
                     load_options(ui, store, async_state);
                 });
-                if ui.button("Export").clicked() {}
+
+                if ui.button("Export").clicked() {
+                    let project = store.get().project.clone();
+                    spawn(
+                        &mut async_state.export,
+                        async move { export(project).await },
+                    );
+                }
             });
             ui.menu_button("Edit", |ui| {
                 if ui
