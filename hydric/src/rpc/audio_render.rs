@@ -22,8 +22,7 @@ pub async fn render(project: Project) -> Result<Vec<Stereo<f32>>, ()> {
 
     // TODO: consider if we should just send the Vec<f32> directly over the wire
     // instead of serializing to bytes first?
-    let data = interleave_stereo(as_floats(&left), as_floats(&right));
-    Ok(data)
+    Ok(interleave_stereo(as_floats(&left), as_floats(&right)))
 }
 
 pub fn interleave_stereo(left: Vec<f32>, right: Vec<f32>) -> Vec<Stereo<f32>> {

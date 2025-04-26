@@ -132,7 +132,6 @@ impl LoadSample for LoadSampleContext {
             tonic::Status::invalid_argument(format!("File {} could not be read.", filename))
         })?;
         let chunks = reader
-            // TODO: try f32
             .samples::<i32>()
             .chunks(2);
         let (left, right) = chunks
