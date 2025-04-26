@@ -55,3 +55,9 @@ impl Transform<Pos2> for Pos2 {
         rect * self
     }
 }
+
+impl Transform<Vec<Pos2>> for Vec<Pos2> {
+    fn transform(self, rect: RectTransform) -> Vec<Pos2> {
+        self.into_iter().map(|it| it.transform(rect)).collect()
+    }
+}
