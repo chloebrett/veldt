@@ -10,6 +10,8 @@ cpal = { version = "0.15.3", features = ["wasm-bindgen"] }
 crossbeam-channel = "0.5.15"
 eframe = { version = "0.31.1" }
 egui = "0.31.1"
+emath = "0.31.1"
+epaint = "0.31.1"
 log = "0.4.27"
 wasm-bindgen = "0.2.100"
 wasm-bindgen-futures = "0.4.50"

@@ -1,14 +1,8 @@
 use cpal::Stream;
 use cpal::traits::{DeviceTrait, HostTrait, StreamTrait};
 use log::error;
-use std::sync::{Arc, Mutex};
-use std::time::Duration;
 use wasm_thread;
 use wasm_thread::JoinHandle;
-
-struct SendStream(Stream);
-
-unsafe impl Send for SendStream {}
 
 pub struct AudioPlayer {
     freq_rx: crossbeam_channel::Receiver<f64>,
@@ -45,6 +39,9 @@ impl AudioPlayer {
             "Available parallelism: {:?}",
             wasm_thread::available_parallelism()
         );
+
+        // Clone the frequency receiver so that the producer thread can take ownership.
+        // Thread closures require a static lifetime.
         let freq_rx = self.freq_rx.clone();
 
         // Producer thread.
@@ -52,13 +49,15 @@ impl AudioPlayer {
             log::info!("In producer_thread");
 
             // Produce a sinusoid of maximum amplitude.
-            let mut sample_clock = 0f32;
+            let mut phase = 0f32;
+            let phase_inc = 1.0 / sample_rate;
             let mut next_sample = |freq: f32| {
-                sample_clock = (sample_clock + 1.0) % sample_rate;
-                (sample_clock * freq * std::f32::consts::TAU / sample_rate).sin()
+                phase += phase_inc * freq;
+                phase = phase % 1.0;
+                (phase * std::f32::consts::TAU).sin()
             };
 
-            let mut freq = 440.0;
+            let mut freq = 0.0;
 
             loop {
                 if tx.len() < buffer_size - chunk_size {
@@ -72,13 +71,17 @@ impl AudioPlayer {
                     for _ in 0..chunk_size {
                         let _ = tx.try_send(next_sample(freq)).unwrap();
                     }
+                } else {
+                    let ms = 10;
+                    log::info!("Sleeping {} ms", ms);
+                    let secs = 0;
+                    let nanos = ms * 1000 * 1000;
+                    wasm_thread::sleep(std::time::Duration::new(secs, nanos));
                 }
             }
         }));
 
         // Consumer / audio player.
-        // TODO: try this as its own thread too.
-        // Test performance when egui is lagging.
         let config: &cpal::StreamConfig = &output_config.clone().into();
         let stream = device
             .build_output_stream(
