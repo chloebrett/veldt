@@ -2,10 +2,9 @@ use crate::reducer;
 use crate::{Action, Selector};
 use ordered_float::OrderedFloat;
 use shared::model::{
-    AdsrEnvelope, AntiAliasingMode, CompressorConfig, DelayConfig, Effect, EffectInstance,
-    EffectMeta, EqConfig, EqType, FileTreeConfig, FilenameTree, GeneratorInstance, GeneratorMeta,
-    GeneratorType, LfoConfig, MixerChannel, ModDelayConfig, ModMatrix, Note, OscillatorConfig,
-    PitchName, PlacedNote, Project, Scale, ScaleValue, SimpleWaveConfig, SubSynthConfig, Track,
+    AdsrEnvelope, AntiAliasingMode, FileTreeConfig, FilenameTree, GeneratorInstance, GeneratorMeta,
+    GeneratorType, LfoConfig, MixerChannel, ModMatrix, Note, OscillatorConfig, PitchName,
+    PlacedNote, Project, Scale, ScaleValue, SimpleWaveConfig, SubSynthConfig, Track,
     TrackPlacement, WaveType,
 };
 use shared::types::Volume;
@@ -119,6 +118,26 @@ impl Default for StoreData {
                                     LfoConfig {
                                         wave: WaveType::Sine,
                                         frequency: 1.0,
+                                    },
+                                ],
+                                envelopes: [
+                                    AdsrEnvelope {
+                                        attack: 0.1,
+                                        decay: 0.1,
+                                        sustain: 0.8,
+                                        release: 0.1,
+                                    },
+                                    AdsrEnvelope {
+                                        attack: 0.1,
+                                        decay: 0.1,
+                                        sustain: 0.8,
+                                        release: 0.1,
+                                    },
+                                    AdsrEnvelope {
+                                        attack: 0.1,
+                                        decay: 0.1,
+                                        sustain: 0.8,
+                                        release: 0.1,
                                     },
                                 ],
                             },

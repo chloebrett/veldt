@@ -1,9 +1,13 @@
+use std::collections::HashSet;
+
 use crate::{
-    app_state::{DataState, WindowState},
+    app_state::{DataState, WindowState, update_select_data_state},
     view::View,
     widget::{Sequencer, SequencerObject, default_window},
 };
-use egui::{Color32, CornerRadius, Pos2, Rect, ScrollArea, Shape, Ui, pos2, vec2};
+use egui::{
+    Color32, CornerRadius, Pos2, Rect, ScrollArea, Shape, Stroke, StrokeKind, Ui, pos2, vec2,
+};
 use shared::{
     model::{Track, TrackId, TrackPlacement},
     types::Beats,
@@ -57,11 +61,14 @@ impl View for TrackRoll<'_> {
             store.dispatch(&Selector::TrackPlacement(index), action);
         };
         let on_release = || store.dispatchr(Action::Release);
-        let on_click = |ui: &mut Ui, index: usize| {
+        let on_double_click = |ui: &mut Ui, index: usize| {
             DataState::NoteRollWindow.set_value(ui, true);
             DataState::TrackPlacementViewWindow.set_value(ui, true);
             DataState::ActiveTrackIndex.set_value(ui, placed_track_ids[index] as usize);
             DataState::ActiveTrackPlacementIndex.set_value(ui, index);
+        };
+        let on_click = |ui: &mut Ui, index: Option<usize>| {
+            update_select_data_state(ui, DataState::SelectedTrackPlacementIndexes, index);
         };
         default_window("Track Roll")
             .default_pos(pos2(30.0, 200.0))
@@ -82,15 +89,19 @@ impl View for TrackRoll<'_> {
                     .min_scrolled_height(400.0)
                     .show(ui, |ui| {
                         ui.add(
-                            Sequencer::new(range, dispatch, on_release, on_click)
-                                .objects(placed_tracks)
-                                .size(vec2(600.0, 100.0 * track_count as f32))
-                                .vertical_bars(4.0, Color32::from_white_alpha(6))
-                                .vertical_bars(1.0, Color32::from_white_alpha(3))
-                                .horizontal_rects(
-                                    |index| index % 2 == 1,
-                                    Color32::from_white_alpha(1),
-                                ),
+                            Sequencer::new(
+                                store,
+                                range,
+                                dispatch,
+                                on_release,
+                                on_double_click,
+                                on_click,
+                            )
+                            .objects(placed_tracks)
+                            .size(vec2(600.0, 100.0 * track_count as f32))
+                            .vertical_bars(4.0, Color32::from_white_alpha(6))
+                            .vertical_bars(1.0, Color32::from_white_alpha(3))
+                            .horizontal_rects(|index| index % 2 == 1, Color32::from_white_alpha(1)),
                         );
                     });
             });
@@ -160,5 +171,85 @@ impl SequencerObject<PlacedTrack> for PlacedTrack {
         } else {
             Shape::rect_filled(self.to_rect(range), CornerRadius::same(1), Color32::WHITE)
         }
+    }
+
+    fn get_active(ui: &Ui, store: &Store) -> Option<PlacedTrack> {
+        if let Some(index) = DataState::ActiveTrackPlacementIndex.get_value::<usize>(ui) {
+            let track_placement = store
+                .get()
+                .project
+                .track_placements
+                .get(index)
+                .expect("Should have been track placement at index");
+            Some(PlacedTrack {
+                track: store
+                    .get()
+                    .project
+                    .tracks
+                    .get(track_placement.track_id as usize)
+                    .expect("Should have been track at index.")
+                    .clone(),
+                placement: track_placement.clone(),
+            })
+        } else {
+            None
+        }
+    }
+
+    fn active_shape(&self, range: Rect) -> Shape {
+        Shape::Vec(vec![
+            self.shape(range),
+            Shape::rect_stroke(
+                self.to_rect(range),
+                CornerRadius::same(0),
+                Stroke {
+                    width: 1.0,
+                    color: Color32::BLUE,
+                },
+                StrokeKind::Inside,
+            ),
+        ])
+    }
+
+    fn get_selected(ui: &Ui, store: &Store) -> Option<Vec<PlacedTrack>> {
+        let index_list: HashSet<usize> = DataState::SelectedTrackPlacementIndexes.get_value(ui)?;
+        Some(
+            index_list
+                .into_iter()
+                .map(|index| {
+                    let track_placement = store
+                        .get()
+                        .project
+                        .track_placements
+                        .get(index)
+                        .expect("Should have been track placement at index");
+                    PlacedTrack {
+                        track: store
+                            .get()
+                            .project
+                            .tracks
+                            .get(track_placement.track_id as usize)
+                            .expect("Should have been track at index.")
+                            .clone(),
+                        placement: track_placement.clone(),
+                    }
+                })
+                .collect(),
+        )
+    }
+
+    fn selected_shape(&self, range: Rect) -> Shape {
+        Shape::Vec(vec![
+            self.shape(range),
+            Shape::rect_stroke(
+                self.to_rect(range),
+                CornerRadius::same(0),
+                Stroke {
+                    width: 1.0,
+                    color: Color32::RED,
+                },
+                StrokeKind::Inside,
+            ),
+        ])
     }
 }

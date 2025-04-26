@@ -57,9 +57,6 @@ rustup target add wasm32-unknown-unknown
 
 # Clippy
 rustup component add clippy
-
-# Trunk
-cargo install trunk
 ```
 
 ## Commands

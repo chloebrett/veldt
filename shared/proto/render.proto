@@ -13,5 +13,6 @@ message RenderRequest {
 }
 
 message RenderReply {
-  bytes audio = 1;
+  bytes left = 1;
+  bytes right = 2;
 }

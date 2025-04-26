@@ -1,5 +1,7 @@
 use crate::app_state::{AsyncState, AudioState};
 use crate::components::undo_redo_control;
+use crate::promise::spawn;
+use crate::rpc::upload_sample;
 use crate::view::View;
 use crate::widget::{default_window, knob, slider};
 use egui::{Pos2, Ui};
@@ -61,11 +63,35 @@ impl View for ToolbarView<'_> {
                     20.0..=200.0,
                     on_release,
                 );
+
                 undo_redo_control(self.store, ui);
                 ui.separator();
                 play_control(self.store, self.async_state, self.audio_state, ui);
                 ui.separator();
                 sample_control(self.store, self.audio_state, self.async_state, ui);
+
+                if ui.button("Upload Sample").clicked() {
+                    /*
+                    In future it is worth considering extending the async_state expected result to handle
+                    current upload progress or errors.
+                    */
+                    spawn(&mut self.async_state.upload_sample, async move {
+                        let Some(file) = rfd::AsyncFileDialog::new()
+                            .add_filter("Sound Sample", &["wav"])
+                            .pick_file()
+                            .await
+                        else {
+                            // No proper error handling as a user canceling the action is typical.
+                            return Ok(());
+                        };
+
+                        let file_name = file.file_name();
+                        let file_data = file.read().await;
+                        upload_sample(file_name, file_data).await
+                    });
+
+                    ui.close_menu();
+                }
             });
     }
 }

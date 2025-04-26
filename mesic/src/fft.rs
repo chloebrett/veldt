@@ -14,7 +14,7 @@ pub fn fft(signal: Vec<f32>) -> Vec<f32> {
     let fft = Radix4::new(signal_length, FftDirection::Forward);
     let mut complex_signal: Vec<Complex<f32>> = map_vec(signal);
     let complex_array = &mut complex_signal[0..signal_length];
-    fft.process((complex_array).into());
+    fft.process(complex_array);
     // Find magnitude of complex output and normalise by array length.
     complex_signal
         .iter()

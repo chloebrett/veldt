@@ -1,12 +1,20 @@
-use crate::transform::Transform;
+use crate::{app_state::DataState, transform::Transform};
 use egui::{
     Color32, CornerRadius, CursorIcon, Frame, Pos2, Rect, Response, Sense, Shape, Stroke, Ui, Vec2,
     Widget, emath::RectTransform, pos2, vec2,
 };
 use shared::types::Beats;
-use state::Action;
+use state::{Action, Store};
 
-pub struct Sequencer<T: SequencerObject<T>, F: Fn(usize, Action), G: Fn(), H: Fn(&mut Ui, usize)> {
+pub struct Sequencer<
+    'a,
+    T: SequencerObject<T>,
+    F: Fn(usize, Action),
+    G: Fn(),
+    H: Fn(&mut Ui, usize),
+    I: Fn(&mut Ui, Option<usize>),
+> {
+    store: &'a Store,
     range: Rect,
     size: Vec2,
     objects: Vec<T>,
@@ -15,22 +23,38 @@ pub struct Sequencer<T: SequencerObject<T>, F: Fn(usize, Action), G: Fn(), H: Fn
     // A closure to modify object in Store. Takes object index and `Action` to dispatch change.
     dispatch: F,
     on_release: G,
-    on_click: H,
+    on_double_click: H,
+    on_click: I,
     background_shapes: Vec<Shape>,
 }
 
-impl<T: SequencerObject<T>, F: Fn(usize, Action), G: Fn(), H: Fn(&mut Ui, usize)>
-    Sequencer<T, F, G, H>
+impl<
+    'a,
+    T: SequencerObject<T>,
+    F: Fn(usize, Action),
+    G: Fn(),
+    H: Fn(&mut Ui, usize),
+    I: Fn(&mut Ui, Option<usize>),
+> Sequencer<'a, T, F, G, H, I>
 {
-    pub fn new(range: Rect, dispatch: F, on_release: G, on_click: H) -> Self {
+    pub fn new(
+        store: &'a Store,
+        range: Rect,
+        dispatch: F,
+        on_release: G,
+        on_double_click: H,
+        on_click: I,
+    ) -> Self {
         Sequencer {
+            store,
             range,
             size: vec2(400.0, 600.0),
             objects: vec![],
             sense: Sense::drag(),
-            quantise_level: 0.25,
+            quantise_level: 0.125,
             dispatch,
             on_release,
+            on_double_click,
             on_click,
             background_shapes: vec![],
         }
@@ -114,15 +138,19 @@ impl<T: SequencerObject<T>, F: Fn(usize, Action), G: Fn(), H: Fn(&mut Ui, usize)
                 Sense::drag(),
             );
             if movable_resp.interact(Sense::click()).double_clicked() {
-                (self.on_click)(ui, index)
+                (self.on_click)(ui, None);
+                (self.on_double_click)(ui, index);
+            } else if movable_resp.interact(Sense::click()).clicked() {
+                (self.on_click)(ui, Some(index))
             }
             if resize_resp.hovered() {
                 ui.ctx().set_cursor_icon(CursorIcon::ResizeColumn);
             }
-            let release = self.move_object(index, movable_resp, to_sequencer)
+            let release = self.move_object(ui, index, movable_resp, to_sequencer)
                 || self.resize_object(index, resize_resp, to_sequencer);
             if release {
-                (self.on_release)()
+                (self.on_release)();
+                DataState::DragCursorDelta.remove_value(ui);
             }
         }
     }
@@ -131,16 +159,28 @@ impl<T: SequencerObject<T>, F: Fn(usize, Action), G: Fn(), H: Fn(&mut Ui, usize)
         (value / self.quantise_level).round() * self.quantise_level
     }
 
-    fn move_object(&self, index: usize, response: Response, to_sequencer: RectTransform) -> bool {
+    fn move_object(
+        &self,
+        ui: &mut Ui,
+        index: usize,
+        response: Response,
+        to_sequencer: RectTransform,
+    ) -> bool {
         let object = self.objects.get(index).expect("Should have gotten object.");
         let drag_pos = response.interact_pointer_pos();
         let drag_delta = response.drag_delta();
         let next_pos = response.rect.left_top() + drag_delta;
         let mut action_dispatched = false;
         if let Some(drag_pos) = drag_pos {
-            // 'y' moves in increments and should update to to wherever the mouse is while dragging.
-            // 'x' moves continiously and so move based on the drag delta.
-            let scaled_pos = pos2(next_pos.x, drag_pos.y)
+            // Keep track of the delta between object and cursor position at drag start.
+            if response.interact(Sense::drag()).drag_started() {
+                DataState::DragCursorDelta
+                    .set_value::<Pos2>(ui, drag_pos - response.rect.left_top().to_vec2());
+            }
+            let click_delta: Pos2 = DataState::DragCursorDelta
+                .get_value(ui)
+                .unwrap_or(Pos2::ZERO);
+            let scaled_pos = pos2(drag_pos.x - click_delta.x, drag_pos.y)
                 .transform(to_sequencer.inverse())
                 .clamp(
                     pos2(0.0, 0.0),
@@ -154,7 +194,7 @@ impl<T: SequencerObject<T>, F: Fn(usize, Action), G: Fn(), H: Fn(&mut Ui, usize)
                 };
             }
             if drag_delta.x != 0.0 {
-                if let Some(action) = object.x_action(scaled_pos.x, self.range) {
+                if let Some(action) = object.x_action(self.quantise(scaled_pos.x), self.range) {
                     (self.dispatch)(index, action);
                     action_dispatched = true;
                 };
@@ -192,8 +232,13 @@ impl<T: SequencerObject<T>, F: Fn(usize, Action), G: Fn(), H: Fn(&mut Ui, usize)
     }
 }
 
-impl<T: SequencerObject<T>, F: Fn(usize, Action), G: Fn(), H: Fn(&mut Ui, usize)> Widget
-    for Sequencer<T, F, G, H>
+impl<
+    T: SequencerObject<T>,
+    F: Fn(usize, Action),
+    G: Fn(),
+    H: Fn(&mut Ui, usize),
+    I: Fn(&mut Ui, Option<usize>),
+> Widget for Sequencer<'_, T, F, G, H, I>
 {
     fn ui(self, ui: &mut Ui) -> Response {
         let range = self.range;
@@ -207,9 +252,25 @@ impl<T: SequencerObject<T>, F: Fn(usize, Action), G: Fn(), H: Fn(&mut Ui, usize)
                 Rect::from_min_size(Pos2::ZERO, range.size()),
                 response.rect,
             );
+            // If user double clicks outside of an object remove all objects from selection.
+            if response.interact(Sense::click()).double_clicked() {
+                (self.on_click)(ui, None)
+            }
             self.interact(ui, &response);
+            let active_object = <T as SequencerObject<T>>::get_active(ui, self.store);
+            let selected_objects = <T as SequencerObject<T>>::get_selected(ui, self.store);
             painter.extend(background_shapes.clone().transform(sequencer_transform));
-            painter.add(self.object_shapes().transform(sequencer_transform))
+            painter.add(self.object_shapes().transform(sequencer_transform));
+            if let Some(object) = active_object {
+                painter.add(object.active_shape(range).transform(sequencer_transform));
+            }
+            if let Some(objects) = selected_objects {
+                painter.extend(
+                    objects
+                        .into_iter()
+                        .map(|object| object.selected_shape(range).transform(sequencer_transform)),
+                )
+            }
         });
         let (_rect, response) = ui.allocate_at_least(Vec2::ZERO, sense);
         response
@@ -230,4 +291,12 @@ pub trait SequencerObject<T> {
     fn resize_action(&self, x: f32, range: Rect) -> Option<Action>;
 
     fn shape(&self, range: Rect) -> Shape;
+
+    fn get_active(ui: &Ui, store: &Store) -> Option<T>;
+
+    fn active_shape(&self, range: Rect) -> Shape;
+
+    fn get_selected(ui: &Ui, store: &Store) -> Option<Vec<T>>;
+
+    fn selected_shape(&self, range: Rect) -> Shape;
 }
