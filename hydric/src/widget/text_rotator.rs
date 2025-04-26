@@ -4,6 +4,7 @@ use std::f32::consts::PI;
 pub enum TextRotation {
     Clockwise,
     Anticlockwise,
+    Neutral, // to draw text without rotating for style consistency (e.g. in the mod matrix rows and col titles must be styled in the same way. Allowing neutral rotation prevents having to restyle horizontal col titles)
 }
 
 pub fn text_rotator(ui: &mut Ui, text: &str, font_size: f32, rotation: TextRotation) {
@@ -31,11 +32,13 @@ pub fn text_rotator(ui: &mut Ui, text: &str, font_size: f32, rotation: TextRotat
             center.x + galley_size.y * 0.5,
             center.y - galley_size.x * 0.5,
         ),
+        TextRotation::Neutral => rect.left_bottom()
     };
 
     let text_angle = match rotation {
         TextRotation::Anticlockwise => PI * -0.5,
         TextRotation::Clockwise => PI * 0.5,
+        TextRotation::Neutral => 0.0,
     };
 
     let text_shape = epaint::TextShape {
