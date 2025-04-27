@@ -102,6 +102,10 @@ impl View for NoteRoll<'_> {
                 max_note as f32,
             ),
         );
+        let mut select = DataState::NoteRollSelectMode.get_value(ui).unwrap_or(false);
+        if !select {
+            DataState::SelectedNoteIndexes.remove_value(ui);
+        }
         let title = format!("Track {track_index}");
         let window = StateWindow(
             default_window(&title)
@@ -109,12 +113,15 @@ impl View for NoteRoll<'_> {
                 .resizable(true),
         );
         window.show(ui, DataState::NoteRollWindow, |ui| {
-            if ui.button("New note").clicked() {
-                store.dispatch(
-                    &Selector::Track(track_index),
-                    Action::AddChild(TypeField::PlacedNote(default_note)),
-                );
-            }
+            ui.horizontal(|ui| {
+                if ui.button("New note").clicked() {
+                    store.dispatch(
+                        &Selector::Track(track_index),
+                        Action::AddChild(TypeField::PlacedNote(default_note)),
+                    );
+                }
+                ui.checkbox(&mut select, "Select")
+            });
             ScrollArea::vertical()
                 .min_scrolled_height(200.0)
                 .show(ui, |ui| {
@@ -124,6 +131,7 @@ impl View for NoteRoll<'_> {
                             Sequencer::new(store, range)
                                 .objects(notes)
                                 .parent_index(track_index)
+                                .select(select)
                                 .horizontal_rects(white_note_pattern, Color32::from_white_alpha(4))
                                 .vertical_bars(bar_length, Color32::from_white_alpha(6))
                                 .vertical_bars(1.0, Color32::from_white_alpha(3))
@@ -132,6 +140,7 @@ impl View for NoteRoll<'_> {
                     });
                 });
         });
+        DataState::NoteRollSelectMode.set_value(ui, select);
     }
 }
 
@@ -261,5 +270,24 @@ impl SequencerObject<PlacedNote> for PlacedNote {
 
     fn set_selected(ui: &mut Ui, index: Option<usize>) {
         update_select_data_state(ui, DataState::SelectedNoteIndexes, index);
+    }
+
+    fn add_new(&self, store: &Store, parent_index: Option<usize>) {
+        store.dispatch(
+            &Selector::Track(parent_index.expect("Should have been track index.")),
+            Action::AddChild(TypeField::PlacedNote(self.clone())),
+        );
+    }
+
+    fn from_pos(pos: Pos2, range: Rect) -> PlacedNote {
+        let offset = pos.x + range.left();
+        let pitch_value: PitchValue = (range.bottom() - pos.y) as i32;
+        PlacedNote {
+            note: Note {
+                pitch_name: pitch_value.into(),
+                beats: 1.0,
+            },
+            offset: offset.into(),
+        }
     }
 }
