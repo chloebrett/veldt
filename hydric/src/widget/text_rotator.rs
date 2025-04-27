@@ -7,7 +7,7 @@ pub enum TextRotation {
     Neutral, // to draw text without rotating for style consistency (e.g. in the mod matrix rows and col titles must be styled in the same way. Allowing neutral rotation prevents having to restyle horizontal col titles)
 }
 
-pub fn text_rotator(ui: &mut Ui, text: &str, font_size: f32, rotation: TextRotation) {
+pub fn text_rotator(ui: &mut Ui, text: &str, font_size: f32, rotation: TextRotation, text_colour: Color32) {
     let font_id = FontId::proportional(font_size);
 
     // Galley is essentially the layout/container of the text
@@ -59,7 +59,7 @@ pub fn text_rotator(ui: &mut Ui, text: &str, font_size: f32, rotation: TextRotat
         pos: draw_pos,
         galley,
         underline: Stroke::NONE,
-        override_text_color: Some(Color32::WHITE),
+        override_text_color: Some(text_colour),
         angle: text_angle,
         fallback_color: Color32::WHITE,
         opacity_factor: 1.0,
