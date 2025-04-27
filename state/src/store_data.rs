@@ -115,16 +115,8 @@ impl Default for StoreData {
                                         ..BASE_OSC
                                     },
                                 ],
-                                lfos: [
-                                    LfoConfig { ..BASE_LFO },
-                                    LfoConfig { ..BASE_LFO },
-                                    LfoConfig { ..BASE_LFO },
-                                ],
-                                envelopes: [
-                                    AdsrEnvelope { ..BASE_ENV },
-                                    AdsrEnvelope { ..BASE_ENV },
-                                    AdsrEnvelope { ..BASE_ENV },
-                                ],
+                                lfos: [BASE_LFO; 3],
+                                envelopes: [BASE_ENV; 3],
                             },
                         },
                         meta: GeneratorMeta {
