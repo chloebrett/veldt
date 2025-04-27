@@ -13,16 +13,16 @@ use wasm_thread::JoinHandle;
 
 pub struct AudioPlayer {
     // Messages sent from processor -> player.
-    audio_tx: Option<Sender<Stereo<f32>>>,
-    audio_rx: Option<Receiver<Stereo<f32>>>,
+    audio_tx: Sender<Stereo<f32>>,
+    audio_rx: Receiver<Stereo<f32>>,
 
     // Messages sent from UI -> processor.
-    playback_tx: Option<Sender<PlaybackMessage>>,
-    playback_rx: Option<Receiver<PlaybackMessage>>,
+    playback_tx: Sender<PlaybackMessage>,
+    playback_rx: Receiver<PlaybackMessage>,
 
     // Messages sent from processor -> UI.
-    update_tx: Option<Sender<PlaybackUpdate>>,
-    update_rx: Option<Receiver<PlaybackUpdate>>,
+    update_tx: Sender<PlaybackUpdate>,
+    update_rx: Receiver<PlaybackUpdate>,
 
     // TODO: make sure the processor thread is shut down when a new one starts.
     // Is losing the reference to it enough?
@@ -34,13 +34,17 @@ pub struct AudioPlayer {
 
 impl Default for AudioPlayer {
     fn default() -> Self {
+        let (audio_tx, audio_rx) = crossbeam_channel::bounded(BUFFER_SIZE);
+        let (playback_tx, playback_rx) = crossbeam_channel::unbounded();
+        let (update_tx, update_rx) = crossbeam_channel::unbounded();
+
         AudioPlayer {
-            audio_tx: None,
-            audio_rx: None,
-            playback_tx: None,
-            playback_rx: None,
-            update_tx: None,
-            update_rx: None,
+            audio_tx,
+            audio_rx,
+            playback_tx,
+            playback_rx,
+            update_tx,
+            update_rx,
             stream: None,
             processor_thread: None,
             state: PlaybackState::Stop,
@@ -51,11 +55,7 @@ impl Default for AudioPlayer {
 
 impl AudioPlayer {
     fn send(&self, message: PlaybackMessage) {
-        self.playback_tx
-            .as_ref()
-            .expect("Call .init() first!")
-            .try_send(message)
-            .unwrap();
+        self.playback_tx.try_send(message).unwrap();
     }
 
     pub fn is_ready(&self) -> bool {
@@ -71,19 +71,13 @@ impl AudioPlayer {
     }
 
     pub fn init(&mut self) {
-        self.init_channels();
         self.init_processor();
         self.init_stream();
     }
 
     /// Checks for any pending updates from the processor thread and saves them locally.
     pub fn update(&mut self) {
-        while let Ok(update) = self
-            .update_rx
-            .as_ref()
-            .expect("Call .init() first!")
-            .try_recv()
-        {
+        while let Ok(update) = self.update_rx.try_recv() {
             match update {
                 PlaybackUpdate::Pos(pos) => {
                     self.position = pos;
@@ -95,19 +89,7 @@ impl AudioPlayer {
         }
     }
 
-    pub fn init_channels(&mut self) {
-        let (audio_tx, audio_rx) = crossbeam_channel::bounded(BUFFER_SIZE);
-        self.audio_tx = Some(audio_tx);
-        self.audio_rx = Some(audio_rx);
-
-        let (playback_tx, playback_rx) = crossbeam_channel::unbounded();
-        self.playback_tx = Some(playback_tx);
-        self.playback_rx = Some(playback_rx);
-
-        let (update_tx, update_rx) = crossbeam_channel::unbounded();
-        self.update_tx = Some(update_tx);
-        self.update_rx = Some(update_rx);
-    }
+    pub fn init_channels(&mut self) {}
 
     pub fn init_processor(&mut self) {
         log::info!(
@@ -115,11 +97,11 @@ impl AudioPlayer {
             wasm_thread::available_parallelism()
         );
 
-        let playback_rx = self.playback_rx.as_ref().unwrap().clone();
-        let update_tx = self.update_tx.as_ref().unwrap().clone();
-        let audio_tx = self.audio_tx.as_ref().unwrap().clone();
-
-        let mut processor = AudioProcessor::new(audio_tx, playback_rx, update_tx);
+        let mut processor = AudioProcessor::new(
+            self.audio_tx.clone(),
+            self.playback_rx.clone(),
+            self.update_tx.clone(),
+        );
 
         self.processor_thread = Some(wasm_thread::spawn(move || {
             processor.run();
@@ -131,7 +113,7 @@ impl AudioPlayer {
         // Once this is true, it stays true.
         let mut latch = false;
 
-        let audio_rx = self.audio_rx.as_ref().unwrap().clone();
+        let audio_rx = self.audio_rx.clone();
 
         let host = cpal::default_host();
         let device = host
