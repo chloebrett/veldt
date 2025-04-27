@@ -33,6 +33,9 @@ enum PlaybackUpdate {
     // Playback position changed.
     Pos(PlaybackPosition),
 
+    // Latest playback buffer delay amount, in samples.
+    Delay(usize),
+
     // Playback state changed.
     State(PlaybackState),
 }

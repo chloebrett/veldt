@@ -27,6 +27,9 @@ pub struct AudioPlayer {
     processor_thread: Option<JoinHandle<()>>,
     pub state: PlaybackState,
     pub position: PlaybackPosition,
+
+    // Delay caused by buffering.
+    delay: usize,
 }
 
 impl Default for AudioPlayer {
@@ -46,11 +49,17 @@ impl Default for AudioPlayer {
             processor_thread: None,
             state: PlaybackState::Stop,
             position: PlaybackPosition { samples: 0 },
+            delay: 0,
         }
     }
 }
 
 impl AudioPlayer {
+    /// Current position in playback, accounting for delay.
+    pub fn effective_pos(&self) -> usize {
+        self.position.samples - self.delay
+    }
+
     fn send(&self, message: PlaybackMessage) {
         self.playback_tx.try_send(message).unwrap();
     }
@@ -90,6 +99,9 @@ impl AudioPlayer {
             match update {
                 PlaybackUpdate::Pos(pos) => {
                     self.position = pos;
+                }
+                PlaybackUpdate::Delay(delay) => {
+                    self.delay = delay;
                 }
                 PlaybackUpdate::State(state) => {
                     self.state = state;

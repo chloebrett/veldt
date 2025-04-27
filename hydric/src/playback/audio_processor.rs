@@ -49,6 +49,9 @@ impl AudioProcessor {
             } else {
                 sleep_ms(10);
             }
+            self.update_tx
+                .try_send(PlaybackUpdate::Delay(self.audio_tx.len()))
+                .unwrap();
         }
     }
 
@@ -101,11 +104,6 @@ impl AudioProcessor {
                 // Consider stopping as well, but we'll need to re-create the thread if
                 // we do this.
                 self.state = PlaybackState::Pause;
-                self.update_tx
-                    .try_send(PlaybackUpdate::Pos(PlaybackPosition {
-                        samples: self.graph.pos(),
-                    }))
-                    .unwrap();
                 self.update_tx
                     .try_send(PlaybackUpdate::State(self.state))
                     .unwrap();
