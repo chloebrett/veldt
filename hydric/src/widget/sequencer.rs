@@ -232,6 +232,7 @@ impl<T: SequencerObject<T>> Widget for Sequencer<'_, T> {
             store.dispatch(&T::selector(index, self.parent_index), action)
         };
         let on_release = || store.dispatchr(Action::Release);
+        let add_object = |object: T| object.add_new(store, self.parent_index);
         Frame::canvas(ui.style()).show(ui, |ui| {
             let (response, painter) = ui.allocate_painter(size, sense);
             let sequencer_transform = RectTransform::from_to(
@@ -241,6 +242,11 @@ impl<T: SequencerObject<T>> Widget for Sequencer<'_, T> {
             // If user double clicks outside of an object remove all objects from selection.
             if response.interact(Sense::click()).double_clicked() {
                 T::set_selected(ui, None)
+            }
+            if response.interact(Sense::click()).clicked() {
+                let pos = response.interact_pointer_pos().unwrap();
+                // let object = T::from_pos(pos.transform(sequencer_transform.inverse()), range);
+                // add_object(object)
             }
             self.interact(ui, &response, &edit_object, &on_release);
             let active_object = T::get_active(ui, self.store);
@@ -291,4 +297,8 @@ pub trait SequencerObject<T> {
     fn set_active(&self, ui: &mut Ui, index: usize);
 
     fn set_selected(ui: &mut Ui, index: Option<usize>);
+
+    fn add_new(&self, store: &Store, parent_index: Option<usize>);
+
+    fn from_pos(pos: Pos2, rect: Rect) -> T;
 }

@@ -262,4 +262,23 @@ impl SequencerObject<PlacedNote> for PlacedNote {
     fn set_selected(ui: &mut Ui, index: Option<usize>) {
         update_select_data_state(ui, DataState::SelectedNoteIndexes, index);
     }
+
+    fn add_new(&self, store: &Store, parent_index: Option<usize>) {
+        store.dispatch(
+            &Selector::Track(parent_index.expect("Should have been track index.")),
+            Action::AddChild(TypeField::PlacedNote(self.clone())),
+        );
+    }
+
+    fn from_pos(pos: Pos2, range: Rect) -> PlacedNote {
+        let offset = pos.x + range.left();
+        let pitch_value: PitchValue = (range.bottom() - pos.y) as i32;
+        PlacedNote {
+            note: Note {
+                pitch_name: pitch_value.into(),
+                beats: 1.0,
+            },
+            offset: offset.into(),
+        }
+    }
 }
