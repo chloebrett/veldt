@@ -33,9 +33,14 @@ pub struct RenderGraph {
 impl Default for RenderGraph {
     fn default() -> Self {
         let mut graph = make_graph();
-        // Set a Sum node as output to add inputs on the graph.
-        // TODO: remove this?
+
+        // There is always an output node, and it's usually either a SumNode
+        // or an AmpNode. We start with a Sum node, then can later add an AmpNode after it.
+        // The SumNode is the destination for all the generator/effect instance chains -
+        // they all get summed together to produce the final audio.
+        // Note: consider adding the starter AmpNode here as well.
         let output_node_index = graph.add_node(NodeData::new2(BoxedNodeSend::new(Sum)));
+
         RenderGraph {
             graph,
             sample_count: 0,
@@ -50,8 +55,24 @@ impl Default for RenderGraph {
 }
 
 impl RenderGraph {
+    /// Deletes all nodes from the graph.
+    pub fn clear_nodes(&mut self) {
+        self.graph = make_graph();
+
+        // Add a Sum node for the same reason as in default().
+        self.output_node_index = self.graph.add_node(NodeData::new2(BoxedNodeSend::new(Sum)));
+
+        // Reset counters.
+        self.sample_count = 0;
+        self.generator_indexes = vec![];
+        self.processor = make_processor();
+        self.processed_samples_count = 0;
+
+        // Keep the process context and rx because they contain the store.
+    }
+
     /// Initializes the graph from a project instance.
-    /// Not idempotent! Only call this on a fresh RenderGraph.
+    /// Not idempotent! Only call this on a fresh RenderGraph. (either new or call clear_nodes).
     /// This is mostly an interim method until we get action receiving working properly.
     pub fn set_from_project(&mut self, project: &Project) {
         let bpm = project.bpm;
@@ -203,11 +224,6 @@ impl RenderGraph {
         };
         graph.add_pre_output_node(buffer_node);
         graph
-    }
-
-    pub fn reset(&mut self) {
-        self.processor = make_processor();
-        self.processed_samples_count = 0;
     }
 }
 

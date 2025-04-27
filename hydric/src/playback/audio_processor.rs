@@ -56,7 +56,7 @@ impl AudioProcessor {
         while let Ok(message) = self.playback_rx.try_recv() {
             match message {
                 PlaybackMessage::SetProject(project, volume) => {
-                    self.graph = RenderGraph::default();
+                    self.graph.clear_nodes();
                     self.graph.set_from_project(&project);
                     self.graph.add_output_amp_node(AmpNode {
                         volume,
@@ -64,7 +64,7 @@ impl AudioProcessor {
                     });
                 }
                 PlaybackMessage::SetAudio(audio, volume) => {
-                    self.graph = RenderGraph::from_vec(audio);
+                    self.graph.clear_nodes();
                     self.graph.add_output_amp_node(AmpNode {
                         volume,
                         should_clip: true,
