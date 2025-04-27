@@ -1,69 +1,33 @@
+use super::{
+    AudioProcessor, BUFFER_SIZE, BUFFER_THRESHOLD, PlaybackMessage, PlaybackPosition,
+    PlaybackState, PlaybackUpdate,
+};
 use cpal::Stream;
 use cpal::traits::{DeviceTrait, HostTrait, StreamTrait};
 use crossbeam_channel::{Receiver, Sender};
 use dasp_frame::Stereo;
 use log::error;
-use mesic::graph::{AmpNode, RenderGraph};
 use shared::model::Project;
 use shared::types::Volume;
 use wasm_thread::JoinHandle;
 
-// Total size of the audio buffer.
-const BUFFER_SIZE: usize = 5000;
-
-// Number of samples to render at a time.
-const CHUNK_SIZE: usize = 1000;
-
-// Don't start playing until this many samples have been produced.
-const BUFFER_THRESHOLD: usize = 1000;
-
-// For now, just samples. In future, consider supporting bars:beats, mins:secs, etc.
-#[derive(Clone, Copy)]
-pub struct PlaybackPosition {
-    pub samples: usize,
-}
-
-// Messages that can be sent to the producer thread.
-pub enum PlaybackMessage {
-    SetProject(Box<Project>, Volume), // uses Box to keep enum size sane.
-    SetAudio(Vec<Stereo<f32>>, Volume),
-    Seek(PlaybackPosition),
-    State(PlaybackState),
-}
-
-// Messages that can be received from the producer thread.
-pub enum PlaybackUpdate {
-    // Playback position changed.
-    Pos(PlaybackPosition),
-
-    // Playback state changed.
-    State(PlaybackState),
-}
-
-#[derive(PartialEq, Clone, Copy)]
-pub enum PlaybackState {
-    Play,
-    Pause,
-    Stop,
-}
-
 pub struct AudioPlayer {
-    // Messages sent from producer -> player.
+    // Messages sent from processor -> player.
     audio_tx: Option<Sender<Stereo<f32>>>,
     audio_rx: Option<Receiver<Stereo<f32>>>,
 
-    // Messages sent from UI -> producer.
+    // Messages sent from UI -> processor.
     playback_tx: Option<Sender<PlaybackMessage>>,
     playback_rx: Option<Receiver<PlaybackMessage>>,
 
-    // Messages sent from producer -> UI.
+    // Messages sent from processor -> UI.
     update_tx: Option<Sender<PlaybackUpdate>>,
     update_rx: Option<Receiver<PlaybackUpdate>>,
 
-    // TODO: make sure the producer thread is shut down when a new one starts.
+    // TODO: make sure the processor thread is shut down when a new one starts.
     // Is losing the reference to it enough?
     stream: Option<Stream>,
-    producer_thread: Option<JoinHandle<()>>,
+    processor_thread: Option<JoinHandle<()>>,
     pub state: PlaybackState,
     pub position: PlaybackPosition,
 }
@@ -78,7 +42,7 @@ impl Default for AudioPlayer {
             update_tx: None,
             update_rx: None,
             stream: None,
-            producer_thread: None,
+            processor_thread: None,
             state: PlaybackState::Stop,
             position: PlaybackPosition { samples: 0 },
         }
@@ -108,11 +72,11 @@ impl AudioPlayer {
 
     pub fn init(&mut self) {
         self.init_channels();
-        self.init_producer();
+        self.init_processor();
         self.init_stream();
     }
 
-    /// Checks for any pending updates from the producer thread and saves them locally.
+    /// Checks for any pending updates from the processor thread and saves them locally.
     pub fn update(&mut self) {
         while let Ok(update) = self
             .update_rx
@@ -145,7 +109,7 @@ impl AudioPlayer {
         self.update_rx = Some(update_rx);
     }
 
-    pub fn init_producer(&mut self) {
+    pub fn init_processor(&mut self) {
         log::info!(
             "Available parallelism: {:?}",
             wasm_thread::available_parallelism()
@@ -155,77 +119,10 @@ impl AudioPlayer {
         let update_tx = self.update_tx.as_ref().unwrap().clone();
         let audio_tx = self.audio_tx.as_ref().unwrap().clone();
 
-        self.producer_thread = Some(wasm_thread::spawn(move || {
-            let mut graph = RenderGraph::default();
-            log::info!("Started producer_thread {:?}", wasm_thread::current().id());
-            let mut state = PlaybackState::Pause;
+        let mut processor = AudioProcessor::new(audio_tx, playback_rx, update_tx);
 
-            // TODO: create a struct that stores the state and an impl for it.
-            while state != PlaybackState::Stop {
-                if let Ok(message) = playback_rx.try_recv() {
-                    match message {
-                        PlaybackMessage::SetProject(project, volume) => {
-                            graph = RenderGraph::default();
-                            graph.set_from_project(&project);
-                            graph.add_output_node(AmpNode {
-                                volume,
-                                should_clip: true,
-                            });
-                        }
-                        PlaybackMessage::SetAudio(audio, volume) => {
-                            graph = RenderGraph::from_vec(audio);
-                            graph.add_output_node(AmpNode {
-                                volume,
-                                should_clip: true,
-                            });
-                        }
-                        PlaybackMessage::Seek(PlaybackPosition { samples }) => {
-                            log::info!("Seeking to {}", samples);
-                            graph.seek(samples);
-                        }
-                        PlaybackMessage::State(new_state) => {
-                            state = new_state;
-                        }
-                    }
-                }
-
-                if state == PlaybackState::Play && audio_tx.len() < BUFFER_SIZE - CHUNK_SIZE {
-                    let mut did_send = false;
-                    for i in 0..CHUNK_SIZE {
-                        if let Some(next) = graph.next() {
-                            audio_tx.try_send(next).unwrap();
-                            did_send = true;
-                        } else {
-                            // No more audio, so pause.
-                            // Consider stopping as well, but we'll need to re-create the thread if
-                            // we do this.
-                            state = PlaybackState::Pause;
-                            update_tx
-                                .try_send(PlaybackUpdate::Pos(PlaybackPosition {
-                                    samples: graph.pos(),
-                                }))
-                                .unwrap();
-                            update_tx.try_send(PlaybackUpdate::State(state)).unwrap();
-                            log::info!(
-                                "Ran out of audio, so paused after {} samples in chunk. {:?}",
-                                i,
-                                wasm_thread::current().id()
-                            );
-                            break;
-                        }
-                    }
-                    if did_send {
-                        update_tx
-                            .try_send(PlaybackUpdate::Pos(PlaybackPosition {
-                                samples: graph.pos(),
-                            }))
-                            .unwrap();
-                        log::info!("Sent 1000 samples. Len: {}", audio_tx.len());
-                    }
-                } else {
-                    sleep_ms(10);
-                }
-            }
+        self.processor_thread = Some(wasm_thread::spawn(move || {
+            processor.run();
         }));
     }
 
@@ -297,11 +194,4 @@ impl AudioPlayer {
         self.position = PlaybackPosition { samples };
         self.send(PlaybackMessage::Seek(self.position));
     }
-}
-
-fn sleep_ms(ms: u32) {
-    log::info!("Sleeping {} ms", ms);
-    let secs = 0;
-    let nanos = ms * 1000 * 1000;
-    wasm_thread::sleep(std::time::Duration::new(secs, nanos));
 }

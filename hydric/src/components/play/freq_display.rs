@@ -1,3 +1,4 @@
+use crate::{app_state::AudioState, playback::AudioPlayer, view::View};
 use egui::{
     Color32, Ui,
     cache::{ComputerMut, FrameCache},
@@ -9,8 +10,6 @@ use mesic::{
 };
 use ordered_float::OrderedFloat;
 use shared::serialize::map_vec;
-
-use crate::{app_state::AudioState, audio_player::AudioPlayer, view::View};
 
 pub struct FrequencyDisplay<'a> {
     audio_state: &'a AudioState,
