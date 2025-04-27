@@ -7,21 +7,21 @@ use crate::{
 use egui::{Button, Ui, menu::bar};
 use state::{Action, Store, TypeField};
 
-use super::save_as_view::SaveAsView;
+use super::save_as::SaveAs;
 
-pub struct MenuBarView<'a> {
+pub struct MenuBar<'a> {
     store: &'a mut Store,
     window_state: &'a mut WindowState,
     async_state: &'a mut AsyncState,
 }
 
-impl<'a> MenuBarView<'a> {
+impl<'a> MenuBar<'a> {
     pub fn new(
         store: &'a mut Store,
         window_state: &'a mut WindowState,
         async_state: &'a mut AsyncState,
     ) -> Self {
-        MenuBarView {
+        MenuBar {
             store,
             window_state,
             async_state,
@@ -45,7 +45,7 @@ impl<'a> MenuBarView<'a> {
         };
 
         let name = &self.store.get().project.name;
-        SaveAsView::new(self.window_state, name, dispatch, save_click).ui(ui);
+        SaveAs::new(self.window_state, name, dispatch, save_click).ui(ui);
     }
 
     fn load_options(&mut self, ui: &mut Ui) {
@@ -76,7 +76,7 @@ impl<'a> MenuBarView<'a> {
     }
 }
 
-impl View for MenuBarView<'_> {
+impl View for MenuBar<'_> {
     fn ui(&mut self, ui: &mut Ui) {
         self.save(ui);
         bar(ui, |ui| {

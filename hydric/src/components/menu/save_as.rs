@@ -7,17 +7,17 @@ use crate::{
 };
 use egui::{Ui, pos2};
 
-pub struct SaveAsView<'a, F: Fn(Action), G: FnMut()> {
+pub struct SaveAs<'a, F: Fn(Action), G: FnMut()> {
     window_state: &'a mut WindowState,
-    name: String,
+    name: &'a String,
     dispatch: F,
     on_click: G,
 }
 
-impl<'a, F: Fn(Action), G: FnMut()> SaveAsView<'a, F, G> {
+impl<'a, F: Fn(Action), G: FnMut()> SaveAs<'a, F, G> {
     pub fn new(
         window_state: &'a mut WindowState,
-        name: String,
+        name: &'a String,
         dispatch: F,
         on_click: G,
     ) -> Self {
@@ -30,9 +30,9 @@ impl<'a, F: Fn(Action), G: FnMut()> SaveAsView<'a, F, G> {
     }
 }
 
-impl<F: Fn(Action), G: FnMut()> View for SaveAsView<'_, F, G> {
+impl<F: Fn(Action), G: FnMut()> View for SaveAs<'_, F, G> {
     fn ui(&mut self, ui: &mut Ui) {
-        let SaveAsView {
+        let SaveAs {
             window_state,
             name,
             dispatch,
