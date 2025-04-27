@@ -39,6 +39,7 @@ where
     }
 
     fn draw_mod_matrix<F, G>(
+        config: &SubSynthConfig,
         ui: &mut Ui,
         dispatch: &F,
         on_release: &G,
@@ -46,12 +47,7 @@ where
         F: Fn(Action),
         G: Fn(),
     {
-        let mod_matrix_config = ModMatrix{
-            rows: 6,
-            cols: 3,
-            matrix: vec![1.0, 2.0, 3.0]
-        };
-        mod_matrix(&mod_matrix_config, ui,vec!["ENV 1", "ENV 2", "ENV 3", "LFO 1", "LFO 2", "LFO 3"], vec!["OSC 1", "OSC 2", "OSC 3"], dispatch, on_release);
+        mod_matrix(&config.matrix_config, ui,vec!["ENV 1", "ENV 2", "ENV 3", "LFO 1", "LFO 2", "LFO 3"], vec!["OSC 1", "OSC 2", "OSC 3"], dispatch, on_release);
     }
 
     ui.horizontal(|ui| {
@@ -72,7 +68,7 @@ where
         });
         ui.add_space(5.0);
         ui.vertical(|ui| {
-            draw_mod_matrix(ui, &dispatch, &on_release); // must wrap in ui.vertical to stop the matrix from unnecessarily stretching vertically
+            draw_mod_matrix(config, ui, &dispatch, &on_release); // must wrap in ui.vertical to stop the matrix from unnecessarily stretching vertically
         });
     });
 
