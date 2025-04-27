@@ -4,7 +4,6 @@ use super::{
     ModDelayNode, Processor, make_graph, make_processor,
 };
 use crate::consts::SAMPLE_RATE;
-use crate::effect::eq_filter;
 use dasp_frame::Stereo;
 use dasp_graph::{BoxedNodeSend, Buffer, Node, NodeData, node::Sum};
 use petgraph::stable_graph::NodeIndex;
@@ -101,10 +100,16 @@ impl RenderGraph {
             self.add_generator(generator_node);
 
             // Apply effects.
-            // TODO allow multiple effects
-            let mixer_channel = &project.mixer[0];
-            for effect in &mixer_channel.effects {
-                self.add_effect_with_mixer_to_generator(effect.clone(), index);
+            // TODO add all channels.
+            let mixer_index = 0;
+            let mixer_channel = &project.mixer[mixer_index];
+            for (effect_index, effect) in mixer_channel.effects.iter().enumerate() {
+                self.add_effect_with_mixer_to_generator(
+                    mixer_index,
+                    effect_index,
+                    effect.clone(),
+                    effect_index,
+                );
             }
         }
 
@@ -155,6 +160,8 @@ impl RenderGraph {
 
     pub fn add_effect_with_mixer_to_generator(
         &mut self,
+        mixer_index: usize,
+        effect_index: usize,
         effect: EffectInstance,
         generator_index: usize,
     ) {
@@ -162,7 +169,7 @@ impl RenderGraph {
             .generator_indexes
             .get(generator_index)
             .expect("Should be a generator node at this index.");
-        let mixer = self.add_effect_with_mixer(effect, dry);
+        let mixer = self.add_effect_with_mixer(mixer_index, effect_index, effect, dry);
         // Disconnected direct edge from generator to output.
         if let Some(edge) = self.graph.find_edge(dry, self.output_node_index) {
             self.graph.remove_edge(edge);
@@ -170,18 +177,28 @@ impl RenderGraph {
         self.graph.add_edge(mixer, self.output_node_index, ());
     }
 
-    pub fn add_main_effect_with_mixer(&mut self, effect: EffectInstance) {
+    pub fn add_main_effect_with_mixer(
+        &mut self,
+        mixer_index: usize,
+        effect_index: usize,
+        effect: EffectInstance,
+    ) {
         let dry = self.output_node_index;
-        let mixer = self.add_effect_with_mixer(effect, dry);
+        let mixer = self.add_effect_with_mixer(mixer_index, effect_index, effect, dry);
         self.output_node_index = mixer;
     }
 
-    fn add_effect_with_mixer(&mut self, effect: EffectInstance, dry: NodeIndex) -> NodeIndex {
+    fn add_effect_with_mixer(
+        &mut self,
+        mixer_index: usize,
+        effect_index: usize,
+        effect: EffectInstance,
+        dry: NodeIndex,
+    ) -> NodeIndex {
         let effect_node = match effect.effect {
-            Effect::SimpleEq { config } => BoxedNodeSend::new(EqNode {
-                filter_left: eq_filter(&config),
-                filter_right: eq_filter(&config),
-            }),
+            Effect::SimpleEq { config } => {
+                BoxedNodeSend::new(EqNode::new(mixer_index, effect_index, config))
+            }
             Effect::SimpleDelay { config } => {
                 let delay_samples = config.delay_ms / 1000.0 * SAMPLE_RATE as f32;
                 let delay_samples = delay_samples as usize;
