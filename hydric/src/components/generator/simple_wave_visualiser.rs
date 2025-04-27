@@ -27,7 +27,7 @@ impl SimpleWaveVisualiser {
 
     // Show the wave visualiser in the UI.
     pub fn show(&self, ui: &mut Ui) -> Response {
-        let (rect, response) = ui.allocate_exact_size(self.size, Sense::hover());
+        let (rect, response) = ui.allocate_exact_size(self.size, Sense::empty());
 
         if ui.is_rect_visible(rect) {
             self.paint(ui, rect);
@@ -36,55 +36,52 @@ impl SimpleWaveVisualiser {
         response
     }
 
-    fn paint_segment(
-        ui: &mut Ui,
-        segment_wave_points: &[Pos2],
-        fill_color: Color32,
-        transform: RectTransform,
-    ) {
-        let painter = ui.painter();
-
-        if segment_wave_points.len() < 2 {
-            // Need at least two points on the wave curve to form a segment worth painting.
-            return;
-        }
-        let mut polygon_points: Vec<Pos2> = segment_wave_points.to_vec();
-
-        // Get the x-coordinates for the base of the polygon on the axis.
-        let end_x = segment_wave_points.last().unwrap().x;
-
-        // Add the points on the axis to close the polygon.
-        polygon_points.push(pos2(end_x, 0.0));
-
-        painter.add(Shape::convex_polygon(
-            polygon_points.transform(transform),
-            fill_color,
-            Stroke::NONE,
-        ));
-    }
-
-    fn paint(&self, ui: &mut Ui, rect: Rect) {
-        let num_points = rect.width() as usize;
+    fn paint(&self, ui: &mut Ui, screen_rect: Rect) {
+        let num_points = screen_rect.width() as usize;
+        let points = self.wave_points(num_points);
 
         // Map from wave space where x is in [0.0, 1.0] and y is in [-1.0, 1.0]
         // into screen space. Invert y axis (positive wave values should be above centre line).
-        let transform =
-            RectTransform::from_to(Rect::from_min_max(pos2(0.0, 1.0), pos2(1.0, -1.0)), rect);
+        let wave_rect = Rect::from_min_max(pos2(0.0, 1.0), pos2(1.0, -1.0));
+        let transform = RectTransform::from_to(wave_rect, screen_rect);
 
-        let points: Vec<_> = (0..num_points)
+        let fill: Vec<_> = self
+            .wave_fill_segments(&points)
+            .into_iter()
+            .map(|segment| {
+                Shape::convex_polygon(segment.transform(transform), self.fill_color, Stroke::NONE)
+            })
+            .collect();
+
+        let stroke = Shape::line(
+            points.transform(transform),
+            Stroke::new(3.0, self.line_color),
+        );
+
+        let painter = ui.painter();
+        painter.extend(fill);
+        painter.add(stroke);
+    }
+
+    fn wave_points(&self, num_points: usize) -> Vec<Pos2> {
+        (0..num_points)
             .map(|i| {
                 // This value should go from 0.0 to < 1.0 across the points because make_wave will then use (wave_input_x % 1.0) * TAU which means any int passed to it becomes 0.
                 let x = i as f32 / num_points as f32;
                 let y = make_wave(x, self.wave_type, 1.0, AntiAliasingMode::Off); // using arbitrary wave_freq since anti aliasing is off
                 pos2(x, y)
             })
-            .collect();
+            .collect()
+    }
+
+    fn wave_fill_segments(&self, points: &[Pos2]) -> Vec<Vec<Pos2>> {
+        let mut segments: Vec<Vec<Pos2>> = vec![];
 
         // vector for each segment which will be used for painting in the area between the plotted line and the x-axis.
         let mut curr_points: Vec<Pos2> = vec![];
 
         // Iterate through generated points to build each polygon segment and find when the plotted point crosses the x-axis.
-        for point in &points {
+        for point in points {
             if curr_points.is_empty() {
                 // Always add the zero point as a base.
                 // Also add the current point.
@@ -116,8 +113,8 @@ impl SimpleWaveVisualiser {
             // Add the intersection point to the current segment - this is the point that lies on the axis and marks the end of the current segment along the wave curve.
             curr_points.push(intersect);
 
-            // Paint the completed segment's polygon.
-            Self::paint_segment(ui, &curr_points, self.fill_color, transform);
+            // Save this segment.
+            segments.push(curr_points);
 
             // Start a new segment with the intersection point and the current point (point).
             // Intersection point is the start of the new segment.
@@ -129,16 +126,21 @@ impl SimpleWaveVisualiser {
             }
         }
 
-        // Paint the last segment if it exists
-        if !curr_points.is_empty() {
-            curr_points.push(pos2(1.0, 0.0)); // always add this base point (it's the end of the graph)
-            Self::paint_segment(ui, &curr_points, self.fill_color, transform);
-        }
+        // Save the last segment
+        segments.push(curr_points);
 
-        // Draw the line of the actual wave after filling so it appears on top
-        ui.painter().add(Shape::line(
-            points.transform(transform),
-            Stroke::new(3.0, self.line_color),
-        ));
+        segments
+            .into_iter()
+            .filter(|it| it.len() >= 2)
+            .map(|mut segment| {
+                // Get the x-coordinates for the base of the polygon on the axis.
+                let end_x = segment.last().unwrap().x;
+
+                // Add the points on the axis to close the polygon.
+                segment.push(pos2(end_x, 0.0));
+
+                segment
+            })
+            .collect()
     }
 }
