@@ -206,7 +206,7 @@ impl RenderGraph {
                 // Extend the graph duration by the delay amount.
                 self.sample_count += delay_samples;
 
-                BoxedNodeSend::new(DelayNode::new(delay_samples, config.feedback))
+                BoxedNodeSend::new(DelayNode::new(mixer_index, effect_index, config))
             }
             Effect::SimpleCompressor { config } => BoxedNodeSend::new(CompressorNode::new(config)),
             Effect::ModDelay { config } => BoxedNodeSend::new(ModDelayNode::new(config)),
@@ -301,7 +301,7 @@ mod tests {
     };
 
     use crate::{
-        graph::{AmpNode, GeneratorNode},
+        graph::GeneratorNode,
         wave::{beats_to_samples, freq},
     };
 
