@@ -1,8 +1,8 @@
 use super::{
     KeyView, NoteRoll, NoteView, TrackPlacementView, TrackRoll,
     effect::{EffectView, MixerView},
-    generator::{generator_control, generators_control},
-    menu::MenuBarView,
+    generator::{GeneratorView, generators_control},
+    menu::MenuBar,
     play::{SampleTreeView, ToolbarView},
 };
 use crate::components::FrameHistory;
@@ -80,7 +80,7 @@ impl eframe::App for App {
         self.audio_state.player.maybe_update();
 
         egui::TopBottomPanel::top("veldt_menu").show(ctx, |ui| {
-            MenuBarView::new(
+            MenuBar::new(
                 &mut self.store,
                 &mut self.window_state,
                 &mut self.async_state,
@@ -109,11 +109,12 @@ impl View for App {
         }
 
         for generator_index in self.visible_generators() {
-            // TODO: make a GeneratorView.
-            let visible = self.window_state.generators.get(generator_index);
-            generator_control(&self.store, ui, generator_index, visible, || {
-                self.window_state.generators.set(generator_index, false)
-            });
+            let generators = &mut self.window_state.generators;
+            let visible = generators.get(generator_index);
+            GeneratorView::new(&self.store, generator_index, visible, || {
+                generators.set(generator_index, false)
+            })
+            .ui(ui);
         }
         if self.window_state.mixer.visible {
             MixerView::new(&mut self.window_state, &self.store).ui(ui);
