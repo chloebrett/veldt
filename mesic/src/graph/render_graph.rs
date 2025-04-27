@@ -401,7 +401,7 @@ mod tests {
         // Act
         graph.add_generator(generator_node);
         for effect in mixer_channel.effects {
-            graph.add_generator_effect_with_mixer(effect, 0);
+            graph.add_effect_with_mixer_to_generator(effect, 0);
         }
         graph.add_output_amp_node(amp_node);
         // Assert

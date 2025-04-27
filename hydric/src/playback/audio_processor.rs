@@ -123,7 +123,7 @@ impl AudioProcessor {
                     samples: self.graph.pos(),
                 }))
                 .unwrap();
-            log::info!("Sent 1000 samples. Len: {}", self.audio_tx.len());
+            //log::info!("Sent 1000 samples. Len: {}", self.audio_tx.len());
         }
     }
 }

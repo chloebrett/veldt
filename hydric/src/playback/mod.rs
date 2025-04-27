@@ -14,9 +14,6 @@ const BUFFER_SIZE: usize = 5000;
 // Number of samples to render at a time.
 const CHUNK_SIZE: usize = 1000;
 
-// Don't start playing until this many samples have been produced.
-const BUFFER_THRESHOLD: usize = 1000;
-
 // For now, just samples. In future, consider supporting bars:beats, mins:secs, etc.
 #[derive(Clone, Copy)]
 pub struct PlaybackPosition {

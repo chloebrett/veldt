@@ -1,6 +1,5 @@
 use super::{
-    AudioProcessor, BUFFER_SIZE, BUFFER_THRESHOLD, PlaybackMessage, PlaybackPosition,
-    PlaybackState, PlaybackUpdate,
+    AudioProcessor, BUFFER_SIZE, PlaybackMessage, PlaybackPosition, PlaybackState, PlaybackUpdate,
 };
 use cpal::Stream;
 use cpal::traits::{DeviceTrait, HostTrait, StreamTrait};
@@ -117,10 +116,6 @@ impl AudioPlayer {
     }
 
     pub fn init_stream(&mut self) {
-        // Tracks whether BUFFER_THRESHOLD has been reached.
-        // Once this is true, it stays true.
-        let mut latch = false;
-
         let audio_rx = self.audio_rx.clone();
 
         let host = cpal::default_host();
@@ -139,15 +134,7 @@ impl AudioPlayer {
                     config,
                     move |data: &mut [f32], _| {
                         for frame in data.chunks_mut(channels) {
-                            if !latch && audio_rx.len() > BUFFER_THRESHOLD {
-                                latch = true;
-                            }
-
-                            let value = if latch {
-                                audio_rx.try_recv().unwrap_or([0.0; 2])
-                            } else {
-                                [0.0; 2]
-                            };
+                            let value = audio_rx.try_recv().unwrap_or([0.0; 2]);
 
                             frame[0] = value[0]; // left
                             frame[1] = value[1]; // right
@@ -168,11 +155,7 @@ impl AudioPlayer {
 
         self.state = PlaybackState::Play;
         self.send(PlaybackMessage::State(self.state));
-        self.stream
-            .as_mut()
-            .unwrap()
-            .play()
-            .unwrap();
+        self.stream.as_mut().unwrap().play().unwrap();
     }
 
     pub fn pause(&mut self) {
@@ -183,11 +166,7 @@ impl AudioPlayer {
 
         self.state = PlaybackState::Pause;
         self.send(PlaybackMessage::State(self.state));
-        self.stream
-            .as_mut()
-            .unwrap()
-            .pause()
-            .unwrap();
+        self.stream.as_mut().unwrap().pause().unwrap();
     }
 
     pub fn seek(&mut self, samples: usize) {
