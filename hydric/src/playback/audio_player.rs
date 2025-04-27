@@ -74,6 +74,11 @@ impl AudioPlayer {
             0
         };
 
+        // Don't overflow backwards.
+        if self.buffer_delay + output_delay > self.position.samples {
+            return 0;
+        }
+
         // Buffer delay still matters though, but if we're paused the buffer will rapidly become empty.
         self.position.samples - self.buffer_delay - output_delay
     }
