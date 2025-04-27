@@ -36,6 +36,7 @@ impl<'a> FrequencyDisplay<'a> {
         // Round `current_sample` so that the audio will be broken up into chunks based on
         // the visualisation frame rate.
         let chunk_head = current_sample / frame_size * frame_size;
+        log::info!("{}", chunk_head);
         if chunk_head + FFT_SAMPLE_SIZE < audio.len() {
             // Cast as `OrderedFloat` set-length array so that the value can be cached.
             let slice: [OrderedFloat<f32>; FFT_SAMPLE_SIZE] = audio

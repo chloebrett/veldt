@@ -28,6 +28,7 @@ pub struct AudioPlayer {
     stream: Option<Stream>,
     processor_thread: Option<JoinHandle<()>>,
     pub state: PlaybackState,
+    is_looping: bool,
     pub position: PlaybackPosition,
 
     // Delay from the processing end.
@@ -57,6 +58,7 @@ impl Default for AudioPlayer {
             stream: None,
             processor_thread: None,
             state: PlaybackState::Pause,
+            is_looping: false,
             position: PlaybackPosition { samples: 0 },
             buffer_delay: 0,
             output_delay: Arc::new(Mutex::new(0)),
@@ -73,6 +75,11 @@ impl AudioPlayer {
         } else {
             0
         };
+
+        // Don't overflow backwards.
+        if self.buffer_delay + output_delay > self.position.samples {
+            return 0;
+        }
 
         // Buffer delay still matters though, but if we're paused the buffer will rapidly become empty.
         self.position.samples - self.buffer_delay - output_delay
@@ -137,6 +144,7 @@ impl AudioPlayer {
             self.audio_tx.clone(),
             self.playback_rx.clone(),
             self.update_tx.clone(),
+            self.is_looping,
         );
 
         // Currently no way to stop a thread once it's started.
@@ -189,10 +197,24 @@ impl AudioPlayer {
         self.stream = Some(stream);
     }
 
+    pub fn is_looping(&self) -> bool {
+        self.is_looping
+    }
+
+    pub fn set_looping(&mut self, value: bool) {
+        self.is_looping = value;
+        self.send(PlaybackMessage::Loop(value));
+    }
+
     pub fn play(&mut self) {
         self.maybe_init();
         if self.state == PlaybackState::Play {
             return;
+        }
+
+        // If finished, restart.
+        if self.state == PlaybackState::Finished {
+            self.seek(0);
         }
 
         self.state = PlaybackState::Play;
