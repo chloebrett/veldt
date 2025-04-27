@@ -65,6 +65,7 @@ impl AudioProcessor {
                 }
                 PlaybackMessage::SetAudio(audio, volume) => {
                     self.graph.clear_nodes();
+                    self.graph.set_from_audio(audio);
                     self.graph.add_output_amp_node(AmpNode {
                         volume,
                         should_clip: true,

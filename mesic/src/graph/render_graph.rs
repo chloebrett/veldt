@@ -71,6 +71,12 @@ impl RenderGraph {
         // Keep the process context and rx because they contain the store.
     }
 
+    pub fn set_from_audio(&mut self, audio: Vec<Stereo<f32>>) {
+        self.sample_count = audio.len();
+        let buffer_node: BufferNode = audio.into();
+        self.add_pre_output_node(buffer_node);
+    }
+
     /// Initializes the graph from a project instance.
     /// Not idempotent! Only call this on a fresh RenderGraph. (either new or call clear_nodes).
     /// This is mostly an interim method until we get action receiving working properly.
@@ -216,13 +222,8 @@ impl RenderGraph {
     /// Creates a graph that plays the buffer contained in a Vec.
     /// Chain with .add_amp_node to control volume and/or clip.
     pub fn from_vec(vec: Vec<Stereo<f32>>) -> Self {
-        let sample_count = vec.len();
-        let buffer_node: BufferNode = vec.into();
-        let mut graph = RenderGraph {
-            sample_count,
-            ..Default::default()
-        };
-        graph.add_pre_output_node(buffer_node);
+        let mut graph = RenderGraph::default();
+        graph.set_from_audio(vec);
         graph
     }
 }
