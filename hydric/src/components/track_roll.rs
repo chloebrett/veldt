@@ -55,6 +55,12 @@ impl View for TrackRoll<'_> {
             .collect();
         let track_count = store.get().project.tracks.len();
         let range = Rect::from_min_max(pos2(0.0, 0.0), pos2(16.0, track_count as f32));
+        let mut select = DataState::TrackRollSelectMode
+            .get_value(ui)
+            .unwrap_or(false);
+        if !select {
+            DataState::SelectedTrackPlacementIndexes.remove_value(ui);
+        }
         default_window("Track Roll")
             .default_pos(pos2(30.0, 200.0))
             .resizable(true)
@@ -69,6 +75,7 @@ impl View for TrackRoll<'_> {
                             default_track_placement,
                         )));
                     }
+                    ui.checkbox(&mut select, "Select")
                 });
                 ScrollArea::vertical()
                     .min_scrolled_height(400.0)
@@ -77,6 +84,7 @@ impl View for TrackRoll<'_> {
                             Sequencer::new(store, range)
                                 .objects(placed_tracks)
                                 .size(vec2(600.0, 100.0 * track_count as f32))
+                                .select(select)
                                 .vertical_bars(4.0, Color32::from_white_alpha(6))
                                 .vertical_bars(1.0, Color32::from_white_alpha(3))
                                 .horizontal_rects(
@@ -86,6 +94,7 @@ impl View for TrackRoll<'_> {
                         );
                     });
             });
+        DataState::TrackRollSelectMode.set_value(ui, select);
     }
 }
 

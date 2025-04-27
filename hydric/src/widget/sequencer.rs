@@ -16,6 +16,7 @@ pub struct Sequencer<'a, T: SequencerObject<T>> {
     // A closure to modify object in Store. Takes object index and `Action` to dispatch change.
     background_shapes: Vec<Shape>,
     parent_index: Option<usize>,
+    select: bool,
 }
 
 impl<'a, T: SequencerObject<T>> Sequencer<'a, T> {
@@ -29,6 +30,7 @@ impl<'a, T: SequencerObject<T>> Sequencer<'a, T> {
             quantise_level: 0.125,
             background_shapes: vec![],
             parent_index: None,
+            select: false,
         }
     }
 
@@ -45,6 +47,11 @@ impl<'a, T: SequencerObject<T>> Sequencer<'a, T> {
 
     pub fn parent_index(mut self, index: usize) -> Self {
         self.parent_index = Some(index);
+        self
+    }
+
+    pub fn select(mut self, select: bool) -> Self {
+        self.select = select;
         self
     }
 
@@ -120,12 +127,12 @@ impl<'a, T: SequencerObject<T>> Sequencer<'a, T> {
                 resize_id,
                 Sense::drag(),
             );
-
-            if movable_resp.interact(Sense::click()).double_clicked() {
-                T::set_selected(ui, None);
+            if self.select {
+                if movable_resp.interact(Sense::click()).clicked() {
+                    T::set_selected(ui, Some(index));
+                }
+            } else if movable_resp.interact(Sense::click()).double_clicked() {
                 object.set_active(ui, index);
-            } else if movable_resp.interact(Sense::click()).clicked() {
-                T::set_selected(ui, Some(index));
             }
             if resize_resp.hovered() {
                 ui.ctx().set_cursor_icon(CursorIcon::ResizeColumn);
@@ -228,6 +235,7 @@ impl<T: SequencerObject<T>> Widget for Sequencer<'_, T> {
         let range = self.range;
         let size = self.size;
         let sense = self.sense;
+        let select = self.select;
         let background_shapes = &self.background_shapes;
         let edit_object = |index: usize, action: Action| {
             store.dispatch(&T::selector(index, self.parent_index), action)
@@ -241,8 +249,10 @@ impl<T: SequencerObject<T>> Widget for Sequencer<'_, T> {
                 response.rect,
             );
             // If user double clicks outside of an object remove all objects from selection.
-            if response.interact(Sense::click()).double_clicked() {
-                T::set_selected(ui, None)
+            if select {
+                if response.interact(Sense::click()).double_clicked() {
+                    T::set_selected(ui, None)
+                }
             } else if response.interact(Sense::click()).clicked() {
                 let pos = response.interact_pointer_pos().unwrap();
                 let object = T::from_pos(pos.transform(sequencer_transform.inverse()), range);
