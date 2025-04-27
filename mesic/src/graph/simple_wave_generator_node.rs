@@ -1,11 +1,15 @@
 use super::ProcessContext;
 use crate::wave::{beats_to_samples, unison_wave};
 use dasp_graph::{Buffer, Input, Node};
-use shared::model::{GeneratorInstance, GeneratorType, Track, TrackPlacement};
+use shared::model::{
+    GeneratorInstance, GeneratorMeta, GeneratorType, SimpleWaveConfig, Track, TrackPlacement,
+};
 use shared::types::{Beats, KnobPosition, Volume};
 
-pub struct GeneratorNode {
-    instance: GeneratorInstance,
+pub struct SimpleWaveGeneratorNode {
+    config: SimpleWaveConfig,
+    meta: GeneratorMeta,
+    generator_index: usize,
     sample_index: u32, // the sample that playback is currently up to.
     track: Track,
     track_placement: TrackPlacement,
@@ -13,9 +17,11 @@ pub struct GeneratorNode {
     pub sample_count: usize,
 }
 
-impl GeneratorNode {
+impl SimpleWaveGeneratorNode {
     pub fn new(
-        instance: GeneratorInstance,
+        config: SimpleWaveConfig,
+        meta: GeneratorMeta,
+        generator_index: usize,
         track: Track,
         track_placement: TrackPlacement,
         bpm: Beats,
@@ -27,8 +33,10 @@ impl GeneratorNode {
                     .unwrap_or(track.unclipped_duration()),
             bpm,
         ) as usize;
-        GeneratorNode {
-            instance,
+        SimpleWaveGeneratorNode {
+            config,
+            meta,
+            generator_index,
             track,
             track_placement,
             bpm,
@@ -38,31 +46,42 @@ impl GeneratorNode {
     }
 
     fn apply_volume_and_pan(&self, buffer: &mut Buffer, channel_index: usize) {
-        let pan_mult = pan_multipliers(self.instance.meta.pan)[channel_index];
+        let pan_mult = pan_multipliers(self.meta.pan)[channel_index];
         for x in buffer.iter_mut() {
-            *x *= pan_mult * self.instance.meta.volume;
+            *x *= pan_mult * self.meta.volume;
         }
     }
 }
 
-impl Node<ProcessContext> for GeneratorNode {
+impl Node<ProcessContext> for SimpleWaveGeneratorNode {
+    // TODO: a lot of this processing logic is generic and should be shared with
+    // other generator types. How?
     fn process(&mut self, _inputs: &[Input], output: &mut [Buffer], payload: &ProcessContext) {
         if let Some(seek_pos) = payload.seek_pos {
             self.sample_index = seek_pos as u32;
         }
 
+        // Apply any applicable changes from the store.
+        if let Some(GeneratorInstance {
+            kind: GeneratorType::SimpleWave { config },
+            meta,
+            ..
+        }) = &payload.store.project.generators.get(self.generator_index)
+        {
+            if *config != self.config {
+                self.config = config.clone();
+            }
+            if *meta != self.meta {
+                self.meta = meta.clone();
+            }
+        }
+
         // Skip generating if muted!
         // TODO: disconnect muted generators from the graph.
         let track_placement = &self.track_placement;
-        if self.instance.meta.mute {
+        if self.meta.mute {
             return;
         }
-
-        let config = match &self.instance.kind {
-            GeneratorType::SimpleWave { config } => config,
-            GeneratorType::Noise { .. } => todo!(),
-            GeneratorType::SubSynth { .. } => todo!(),
-        };
 
         let mut buffer = Buffer::SILENT;
         for note in &self.track.notes {
@@ -97,7 +116,7 @@ impl Node<ProcessContext> for GeneratorNode {
                     &note.note.pitch_name,
                     note.note.beats,
                     self.bpm,
-                    config,
+                    &self.config,
                     self.sample_index as i32 - note_start_sample as i32,
                 ),
             );
