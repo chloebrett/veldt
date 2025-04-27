@@ -1,4 +1,4 @@
-use crate::{audio_player::AudioPlayer, promise::AsyncResult};
+use crate::{playback::AudioPlayer, promise::AsyncResult};
 use dasp_frame::Stereo;
 use egui::{Id, Pos2, Ui};
 use shared::model::{FilenameTree, Project, Sample};
