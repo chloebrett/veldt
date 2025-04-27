@@ -92,6 +92,7 @@ impl RenderGraph {
             // TODO use multiple generators.
             let generator_index = 0;
             let generator_instance = &project.generators[generator_index];
+            // TODO: support adding other types of generators to the graph.
             if let GeneratorInstance {
                 kind: GeneratorType::SimpleWave { config },
                 id: _,
@@ -99,7 +100,8 @@ impl RenderGraph {
             } = generator_instance
             {
                 let generator_node = SimpleWaveGeneratorNode::new(
-                    generator_instance.clone(),
+                    config.clone(),
+                    meta.clone(),
                     track,
                     placement.clone(),
                     bpm,

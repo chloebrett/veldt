@@ -1,11 +1,12 @@
 use super::ProcessContext;
 use crate::wave::{beats_to_samples, unison_wave};
 use dasp_graph::{Buffer, Input, Node};
-use shared::model::{GeneratorInstance, GeneratorType, Track, TrackPlacement};
+use shared::model::{GeneratorInstance, GeneratorType, Track, TrackPlacement, GeneratorMeta, SimpleWaveConfig};
 use shared::types::{Beats, KnobPosition, Volume};
 
 pub struct SimpleWaveGeneratorNode {
-    instance: GeneratorInstance,
+    config: SimpleWaveConfig,
+    meta: GeneratorMeta,
     sample_index: u32, // the sample that playback is currently up to.
     track: Track,
     track_placement: TrackPlacement,
@@ -15,7 +16,8 @@ pub struct SimpleWaveGeneratorNode {
 
 impl SimpleWaveGeneratorNode {
     pub fn new(
-        instance: GeneratorInstance,
+        config: SimpleWaveConfig,
+        meta: GeneratorMeta,
         track: Track,
         track_placement: TrackPlacement,
         bpm: Beats,
@@ -28,7 +30,8 @@ impl SimpleWaveGeneratorNode {
             bpm,
         ) as usize;
         SimpleWaveGeneratorNode {
-            instance,
+            config,
+            meta,
             track,
             track_placement,
             bpm,
@@ -38,9 +41,9 @@ impl SimpleWaveGeneratorNode {
     }
 
     fn apply_volume_and_pan(&self, buffer: &mut Buffer, channel_index: usize) {
-        let pan_mult = pan_multipliers(self.instance.meta.pan)[channel_index];
+        let pan_mult = pan_multipliers(self.meta.pan)[channel_index];
         for x in buffer.iter_mut() {
-            *x *= pan_mult * self.instance.meta.volume;
+            *x *= pan_mult * self.meta.volume;
         }
     }
 }
@@ -54,15 +57,9 @@ impl Node<ProcessContext> for SimpleWaveGeneratorNode {
         // Skip generating if muted!
         // TODO: disconnect muted generators from the graph.
         let track_placement = &self.track_placement;
-        if self.instance.meta.mute {
+        if self.meta.mute {
             return;
         }
-
-        let config = match &self.instance.kind {
-            GeneratorType::SimpleWave { config } => config,
-            GeneratorType::Noise { .. } => todo!(),
-            GeneratorType::SubSynth { .. } => todo!(),
-        };
 
         let mut buffer = Buffer::SILENT;
         for note in &self.track.notes {
@@ -97,7 +94,7 @@ impl Node<ProcessContext> for SimpleWaveGeneratorNode {
                     &note.note.pitch_name,
                     note.note.beats,
                     self.bpm,
-                    config,
+                    &self.config,
                     self.sample_index as i32 - note_start_sample as i32,
                 ),
             );
