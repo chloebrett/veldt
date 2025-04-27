@@ -35,11 +35,6 @@ impl AudioProcessor {
             wasm_thread::current().id()
         );
 
-        // Ignore initial "Stop" message as this is intended for shutting down other (existing) processors.
-        if let Ok(PlaybackMessage::State(PlaybackState::Stop)) = self.playback_rx.try_recv() {
-            log::info!("Got an initial 'stop' message but ignored it.");
-        }
-
         loop {
             //log::info!("Hello from thread {:?}", wasm_thread::current().id());
             self.read_messages();

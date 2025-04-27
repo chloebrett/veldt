@@ -56,25 +56,37 @@ impl AudioPlayer {
         self.playback_tx.try_send(message).unwrap();
     }
 
-    pub fn is_ready(&self) -> bool {
-        self.stream.is_some()
-    }
-
-    pub fn set_project(&self, project: Box<Project>, volume: Volume) {
+    pub fn set_project(&mut self, project: Box<Project>, volume: Volume) {
+        self.maybe_init();
         self.send(PlaybackMessage::SetProject(project, volume));
     }
 
-    pub fn set_audio(&self, audio: Vec<Stereo<f32>>, volume: Volume) {
+    pub fn set_audio(&mut self, audio: Vec<Stereo<f32>>, volume: Volume) {
+        self.maybe_init();
         self.send(PlaybackMessage::SetAudio(audio, volume));
     }
 
-    pub fn init(&mut self) {
-        self.init_processor();
-        self.init_stream();
+    fn is_ready(&mut self) -> bool {
+        self.stream.is_some()
+    }
+
+    /// Browsers will only let us create an AudioContext after the user has interacted with the
+    /// page.
+    /// So do the initialization lazily.
+    fn maybe_init(&mut self) {
+        // We only need to initialize once.
+        if !self.is_ready() {
+            self.init_processor();
+            self.init_stream();
+        }
     }
 
     /// Checks for any pending updates from the processor thread and saves them locally.
-    pub fn update(&mut self) {
+    pub fn maybe_update(&mut self) {
+        if !self.is_ready() {
+            return;
+        }
+
         while let Ok(update) = self.update_rx.try_recv() {
             match update {
                 PlaybackUpdate::Pos(pos) => {
@@ -92,12 +104,6 @@ impl AudioPlayer {
             "Available parallelism: {:?}",
             wasm_thread::available_parallelism()
         );
-
-        // Stop any existing processors.
-        self.playback_tx
-            .try_send(PlaybackMessage::State(PlaybackState::Stop))
-            .unwrap();
-        self.state = PlaybackState::Stop;
 
         let mut processor = AudioProcessor::new(
             self.audio_tx.clone(),
@@ -155,6 +161,7 @@ impl AudioPlayer {
     }
 
     pub fn play(&mut self) {
+        self.maybe_init();
         if self.state == PlaybackState::Play {
             return;
         }
@@ -163,12 +170,13 @@ impl AudioPlayer {
         self.send(PlaybackMessage::State(self.state));
         self.stream
             .as_mut()
-            .expect("Call .init() first!")
+            .unwrap()
             .play()
             .unwrap();
     }
 
     pub fn pause(&mut self) {
+        self.maybe_init();
         if self.state == PlaybackState::Pause {
             return;
         }
@@ -177,7 +185,7 @@ impl AudioPlayer {
         self.send(PlaybackMessage::State(self.state));
         self.stream
             .as_mut()
-            .expect("Call .init() first!")
+            .unwrap()
             .pause()
             .unwrap();
     }
