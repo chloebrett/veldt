@@ -98,8 +98,8 @@ pub enum NoiseType {
 #[derive(Clone, Debug, PartialEq)]
 pub struct SubSynthConfig {
     pub oscillators: [OscillatorConfig; 3],
-    pub lfos: [LfoConfig; 3],
     pub envelopes: [AdsrEnvelope; 3],
+    pub lfos: [LfoConfig; 3],
 }
 
 impl From<SubSynthConfigProto> for SubSynthConfig {
@@ -110,21 +110,25 @@ impl From<SubSynthConfigProto> for SubSynthConfig {
             3,
             "SubSynthConfig must have exactly 3 oscillators"
         );
+
+        let env_vec = proto.envelopes;
+        assert_eq!(
+            env_vec.len(),
+            3,
+            "SubSynthConfig must have exactly 3 envelopes"
+        );
+
         let lfo_vec = proto.lfos;
-        let envelopes_vec = proto.envelopes;
         assert_eq!(lfo_vec.len(), 3, "SubSynthConfig must have exactly 3 lfos");
+
         SubSynthConfig {
             oscillators: [
                 oscillator_vec[0].into(),
                 oscillator_vec[1].into(),
                 oscillator_vec[2].into(),
             ],
+            envelopes: [env_vec[0].into(), env_vec[1].into(), env_vec[2].into()],
             lfos: [lfo_vec[0].into(), lfo_vec[1].into(), lfo_vec[2].into()],
-            envelopes: [
-                envelopes_vec[0].into(),
-                envelopes_vec[1].into(),
-                envelopes_vec[2].into(),
-            ],
         }
     }
 }
@@ -133,8 +137,8 @@ impl From<SubSynthConfig> for SubSynthConfigProto {
     fn from(config: SubSynthConfig) -> Self {
         SubSynthConfigProto {
             oscillators: map_vec(config.oscillators.to_vec()),
-            lfos: map_vec(config.lfos.to_vec()),
             envelopes: map_vec(config.envelopes.to_vec()),
+            lfos: map_vec(config.lfos.to_vec()),
         }
     }
 }
