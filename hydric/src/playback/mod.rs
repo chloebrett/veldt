@@ -44,5 +44,4 @@ enum PlaybackUpdate {
 pub enum PlaybackState {
     Play,
     Pause,
-    Stop,
 }

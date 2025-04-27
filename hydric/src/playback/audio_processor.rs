@@ -39,11 +39,6 @@ impl AudioProcessor {
             //log::info!("Hello from thread {:?}", wasm_thread::current().id());
             self.read_messages();
 
-            if self.state == PlaybackState::Stop {
-                // Shut down the thread.
-                return;
-            }
-
             if self.state == PlaybackState::Play && self.audio_tx.len() < BUFFER_SIZE - CHUNK_SIZE {
                 self.process_chunk();
             } else {
@@ -84,10 +79,6 @@ impl AudioProcessor {
                         wasm_thread::current().id()
                     );
                     self.state = state;
-                    if state == PlaybackState::Stop {
-                        // Don't process any more messages.
-                        return;
-                    }
                 }
             }
         }
@@ -101,8 +92,6 @@ impl AudioProcessor {
                 did_send = true;
             } else {
                 // No more audio, so pause.
-                // Consider stopping as well, but we'll need to re-create the thread if
-                // we do this.
                 self.state = PlaybackState::Pause;
                 self.update_tx
                     .try_send(PlaybackUpdate::State(self.state))
@@ -121,7 +110,7 @@ impl AudioProcessor {
                     samples: self.graph.pos(),
                 }))
                 .unwrap();
-            //log::info!("Sent 1000 samples. Len: {}", self.audio_tx.len());
+            log::info!("Sent 1000 samples. Len: {}", self.audio_tx.len());
         }
     }
 }

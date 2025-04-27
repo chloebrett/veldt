@@ -47,7 +47,7 @@ impl Default for AudioPlayer {
             update_rx,
             stream: None,
             processor_thread: None,
-            state: PlaybackState::Stop,
+            state: PlaybackState::Pause,
             position: PlaybackPosition { samples: 0 },
             delay: 0,
         }
@@ -122,6 +122,8 @@ impl AudioPlayer {
             self.update_tx.clone(),
         );
 
+        // Currently no way to stop a thread once it's started.
+        // Could add a "Stop"/"Terminate" state.
         self.processor_thread = Some(wasm_thread::spawn(move || {
             processor.run();
         }));
