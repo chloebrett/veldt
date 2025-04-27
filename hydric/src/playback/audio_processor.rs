@@ -40,13 +40,13 @@ impl AudioProcessor {
         );
 
         loop {
-            log::info!("Loop");
             self.read_messages();
 
             if self.state == PlaybackState::Play && self.audio_tx.len() < BUFFER_SIZE - CHUNK_SIZE {
-                log::info!("Process");
                 self.process_chunk();
             } else {
+                // TODO: consider replacing this with a blocking try_recv
+                // that waits for a new action if we'd otherwise be paused/finished.
                 sleep_ms(10);
             }
             self.update_tx

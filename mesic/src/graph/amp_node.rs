@@ -27,7 +27,14 @@ impl AmpNode {
 }
 
 impl Node<ProcessContext> for AmpNode {
-    fn process(&mut self, inputs: &[Input], output: &mut [Buffer], _payload: &ProcessContext) {
+    fn process(&mut self, inputs: &[Input], output: &mut [Buffer], payload: &ProcessContext) {
+        self.volume = payload.store.volume;
+
+        // Just set this always true for now.
+        // We don't currently store should_clip on the project.
+        // But all usages of the amp node set it true.
+        self.should_clip = true;
+
         let (out_left, out_right) = extract_outputs(output);
         let (in_left, in_right) = extract_inputs(inputs)[0];
 

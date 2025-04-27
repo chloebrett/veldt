@@ -1,11 +1,11 @@
 use crate::{playback::AudioPlayer, promise::AsyncResult};
 use dasp_frame::Stereo;
 use egui::{Id, Pos2, Ui};
+use mesic::graph::RenderGraph;
 use shared::model::{FilenameTree, Project, Sample};
 use std::cmp::{Eq, Ord};
 use std::collections::HashSet;
 use std::hash::Hash;
-use mesic::graph::RenderGraph;
 
 /// Container for the various promises launchable by the app.
 #[derive(Default)]

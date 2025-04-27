@@ -7,11 +7,11 @@ use crossbeam_channel::{Receiver, Sender};
 use dasp_frame::Stereo;
 use log::error;
 use mesic::SAMPLE_RATE;
+use mesic::graph::RenderGraph;
 use shared::model::Project;
 use shared::types::Volume;
 use std::sync::{Arc, Mutex};
 use wasm_thread::JoinHandle;
-use mesic::graph::RenderGraph;
 
 pub struct AudioPlayer {
     // The render graph, if we haven't given it to the processing thread yet.

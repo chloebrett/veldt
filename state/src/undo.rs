@@ -96,7 +96,7 @@ impl UndoStack {
         // This should only happen if there is nothing to redo, and at least one stored action.
         debug_assert!(!self.actions.is_empty());
         debug_assert!(self.index == self.actions.len());
-        info!("Compacting actions! {:?}", self.actions);
+        info!("Compacting actions! {}", self.actions.len());
 
         let last_action = &self.actions.last().unwrap();
         let last_action_type = discriminant(&last_action.forward);
@@ -140,8 +140,9 @@ impl UndoStack {
         }
 
         info!(
-            "Compacted actions! {:?}, {}",
-            self.actions, compact_from_index,
+            "Compacted actions! {}, {}",
+            self.actions.len(),
+            compact_from_index
         );
     }
 
