@@ -1,13 +1,15 @@
 use super::{
     AudioProcessor, BUFFER_SIZE, PlaybackMessage, PlaybackPosition, PlaybackState, PlaybackUpdate,
 };
-use cpal::Stream;
 use cpal::traits::{DeviceTrait, HostTrait, StreamTrait};
+use cpal::{OutputCallbackInfo, Stream};
 use crossbeam_channel::{Receiver, Sender};
 use dasp_frame::Stereo;
 use log::error;
+use mesic::SAMPLE_RATE;
 use shared::model::Project;
 use shared::types::Volume;
+use std::sync::{Arc, Mutex};
 use wasm_thread::JoinHandle;
 
 pub struct AudioPlayer {
@@ -28,8 +30,11 @@ pub struct AudioPlayer {
     pub state: PlaybackState,
     pub position: PlaybackPosition,
 
-    // Delay caused by buffering.
-    delay: usize,
+    // Delay from the processing end.
+    buffer_delay: usize,
+
+    // Delay from the audio playback end.
+    output_delay: Arc<Mutex<usize>>,
 }
 
 impl Default for AudioPlayer {
@@ -49,7 +54,8 @@ impl Default for AudioPlayer {
             processor_thread: None,
             state: PlaybackState::Pause,
             position: PlaybackPosition { samples: 0 },
-            delay: 0,
+            buffer_delay: 0,
+            output_delay: Arc::new(Mutex::new(0)),
         }
     }
 }
@@ -57,7 +63,15 @@ impl Default for AudioPlayer {
 impl AudioPlayer {
     /// Current position in playback, accounting for delay.
     pub fn effective_pos(&self) -> usize {
-        self.position.samples - self.delay
+        // Output delay is irrelevant if we're not currently playing audio.
+        let output_delay = if self.state == PlaybackState::Play {
+            *self.output_delay.lock().unwrap()
+        } else {
+            0
+        };
+
+        // Buffer delay still matters though, but if we're paused the buffer will rapidly become empty.
+        self.position.samples - self.buffer_delay - output_delay
     }
 
     fn send(&self, message: PlaybackMessage) {
@@ -101,7 +115,7 @@ impl AudioPlayer {
                     self.position = pos;
                 }
                 PlaybackUpdate::Delay(delay) => {
-                    self.delay = delay;
+                    self.buffer_delay = delay;
                 }
                 PlaybackUpdate::State(state) => {
                     self.state = state;
@@ -142,23 +156,30 @@ impl AudioPlayer {
         let err_fn = |err| error!("an error occurred on stream: {}", err);
         let channels = config.channels as usize;
 
-        self.stream = Some(
-            device
-                .build_output_stream(
-                    config,
-                    move |data: &mut [f32], _| {
-                        for frame in data.chunks_mut(channels) {
-                            let value = audio_rx.try_recv().unwrap_or([0.0; 2]);
+        let output_delay = self.output_delay.clone();
 
-                            frame[0] = value[0]; // left
-                            frame[1] = value[1]; // right
-                        }
-                    },
-                    err_fn,
-                    None,
-                )
-                .unwrap(),
-        );
+        let stream = device
+            .build_output_stream(
+                config,
+                move |data: &mut [f32], info: &OutputCallbackInfo| {
+                    let timestamp = info.timestamp();
+                    if let Some(delay) = timestamp.playback.duration_since(&timestamp.callback) {
+                        *output_delay.lock().unwrap() = to_samples(delay);
+                    }
+
+                    for frame in data.chunks_mut(channels) {
+                        let value = audio_rx.try_recv().unwrap_or([0.0; 2]);
+
+                        frame[0] = value[0]; // left
+                        frame[1] = value[1]; // right
+                    }
+                },
+                err_fn,
+                None,
+            )
+            .unwrap();
+        stream.play().unwrap();
+        self.stream = Some(stream);
     }
 
     pub fn play(&mut self) {
@@ -169,7 +190,14 @@ impl AudioPlayer {
 
         self.state = PlaybackState::Play;
         self.send(PlaybackMessage::State(self.state));
-        self.stream.as_mut().unwrap().play().unwrap();
+
+        // Note: we don't actually play/pause the stream in the AudioContext, other than the initial "play" call.
+        // Calling play/pause multiple times has weird behaviour which might be a CPAL bug: subsequent pause/play calls cause greater and greater delays
+        // between the audio callback being fired and actual playback.
+        // This can be verified by logging
+        // time_at_start_of_buffer - ctx_handle.current_time()
+        // just before source.start_with_when is called in cpal::src::host::webaudio (mod.rs).
+        // Subsequent play/pause runs cause a greater and greater delay (up to several seconds).
     }
 
     pub fn pause(&mut self) {
@@ -180,11 +208,17 @@ impl AudioPlayer {
 
         self.state = PlaybackState::Pause;
         self.send(PlaybackMessage::State(self.state));
-        self.stream.as_mut().unwrap().pause().unwrap();
+
+        // Note: we don't actually play/pause the stream in the AudioContext, other than the initial "play" call.
+        // See notes in the `play` method.
     }
 
     pub fn seek(&mut self, samples: usize) {
         self.position = PlaybackPosition { samples };
         self.send(PlaybackMessage::Seek(self.position));
     }
+}
+
+fn to_samples(duration: std::time::Duration) -> usize {
+    duration.mul_f32(SAMPLE_RATE as f32).as_secs() as usize
 }
