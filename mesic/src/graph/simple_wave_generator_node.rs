@@ -1,7 +1,9 @@
 use super::ProcessContext;
 use crate::wave::{beats_to_samples, unison_wave};
 use dasp_graph::{Buffer, Input, Node};
-use shared::model::{GeneratorInstance, GeneratorType, Track, TrackPlacement, GeneratorMeta, SimpleWaveConfig};
+use shared::model::{
+    GeneratorMeta, SimpleWaveConfig, Track, TrackPlacement,
+};
 use shared::types::{Beats, KnobPosition, Volume};
 
 pub struct SimpleWaveGeneratorNode {
