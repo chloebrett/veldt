@@ -24,8 +24,6 @@ pub struct AudioPlayer {
     update_tx: Sender<PlaybackUpdate>,
     update_rx: Receiver<PlaybackUpdate>,
 
-    // TODO: make sure the processor thread is shut down when a new one starts.
-    // Is losing the reference to it enough?
     stream: Option<Stream>,
     processor_thread: Option<JoinHandle<()>>,
     pub state: PlaybackState,
@@ -95,6 +93,12 @@ impl AudioPlayer {
             wasm_thread::available_parallelism()
         );
 
+        // Stop any existing processors.
+        self.playback_tx
+            .try_send(PlaybackMessage::State(PlaybackState::Stop))
+            .unwrap();
+        self.state = PlaybackState::Stop;
+
         let mut processor = AudioProcessor::new(
             self.audio_tx.clone(),
             self.playback_rx.clone(),
@@ -151,6 +155,10 @@ impl AudioPlayer {
     }
 
     pub fn play(&mut self) {
+        if self.state == PlaybackState::Play {
+            return;
+        }
+
         self.state = PlaybackState::Play;
         self.send(PlaybackMessage::State(self.state));
         self.stream
@@ -161,6 +169,10 @@ impl AudioPlayer {
     }
 
     pub fn pause(&mut self) {
+        if self.state == PlaybackState::Pause {
+            return;
+        }
+
         self.state = PlaybackState::Pause;
         self.send(PlaybackMessage::State(self.state));
         self.stream

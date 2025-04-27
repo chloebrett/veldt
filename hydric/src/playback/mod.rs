@@ -40,7 +40,7 @@ enum PlaybackUpdate {
     State(PlaybackState),
 }
 
-#[derive(PartialEq, Clone, Copy)]
+#[derive(PartialEq, Clone, Copy, Debug)]
 pub enum PlaybackState {
     Play,
     Pause,

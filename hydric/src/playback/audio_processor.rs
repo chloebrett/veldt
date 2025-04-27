@@ -35,8 +35,19 @@ impl AudioProcessor {
             wasm_thread::current().id()
         );
 
-        while self.state != PlaybackState::Stop {
+        // Ignore initial "Stop" message as this is intended for shutting down other (existing) processors.
+        if let Ok(PlaybackMessage::State(PlaybackState::Stop)) = self.playback_rx.try_recv() {
+            log::info!("Got an initial 'stop' message but ignored it.");
+        }
+
+        loop {
+            //log::info!("Hello from thread {:?}", wasm_thread::current().id());
             self.read_messages();
+
+            if self.state == PlaybackState::Stop {
+                // Shut down the thread.
+                return;
+            }
 
             if self.state == PlaybackState::Play && self.audio_tx.len() < BUFFER_SIZE - CHUNK_SIZE {
                 self.process_chunk();
@@ -69,7 +80,16 @@ impl AudioProcessor {
                     self.graph.seek(samples);
                 }
                 PlaybackMessage::State(state) => {
+                    log::info!(
+                        "Got playback state message {:?} on thread {:?}",
+                        state,
+                        wasm_thread::current().id()
+                    );
                     self.state = state;
+                    if state == PlaybackState::Stop {
+                        // Don't process any more messages.
+                        return;
+                    }
                 }
             }
         }

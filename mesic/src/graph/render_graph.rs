@@ -76,7 +76,7 @@ impl RenderGraph {
             // TODO allow multiple effects
             let mixer_channel = &project.mixer[0];
             for effect in &mixer_channel.effects {
-                self.add_generator_effect_with_mixer(effect.clone(), index);
+                self.add_effect_with_mixer_to_generator(effect.clone(), index);
             }
         }
     }
@@ -123,7 +123,7 @@ impl RenderGraph {
         self.graph.add_edge(node_index, self.output_node_index, ());
     }
 
-    pub fn add_generator_effect_with_mixer(
+    pub fn add_effect_with_mixer_to_generator(
         &mut self,
         effect: EffectInstance,
         generator_index: usize,
@@ -231,6 +231,7 @@ impl Iterator for RenderGraph {
                 &self.process_context,
                 self.output_node_index,
             );
+            self.process_context.seek_pos = None;
         }
 
         if self.processed_samples_count >= self.sample_count {
@@ -248,7 +249,6 @@ impl Iterator for RenderGraph {
         let output = Some([left, right]);
 
         self.processed_samples_count += 1;
-        self.process_context.seek_pos = None;
         output
     }
 
