@@ -102,6 +102,7 @@ impl RenderGraph {
                 let generator_node = SimpleWaveGeneratorNode::new(
                     config.clone(),
                     meta.clone(),
+                    generator_index,
                     track,
                     placement.clone(),
                     bpm,
@@ -305,8 +306,9 @@ impl Iterator for RenderGraph {
 #[cfg(test)]
 mod tests {
     use shared::model::{
-        AdsrEnvelope, AntiAliasingMode, DelayConfig, EffectMeta, EqConfig, EqType, GeneratorMeta, MixerChannel, ModDelayConfig, Note,
-        PitchName, PlacedNote, ScaleValue, SimpleWaveConfig, Track, TrackPlacement, WaveType,
+        AdsrEnvelope, AntiAliasingMode, DelayConfig, EffectMeta, EqConfig, EqType, GeneratorMeta,
+        MixerChannel, ModDelayConfig, Note, PitchName, PlacedNote, ScaleValue, SimpleWaveConfig,
+        Track, TrackPlacement, WaveType,
     };
 
     use crate::{
@@ -372,6 +374,7 @@ mod tests {
         let generator_node = SimpleWaveGeneratorNode::new(
             make_simple_wave_config(),
             make_generator_meta(),
+            0,
             track,
             track_placement,
             bpm,
@@ -501,6 +504,7 @@ mod tests {
         let unclipped_generator_node = SimpleWaveGeneratorNode::new(
             make_simple_wave_config(),
             make_generator_meta(),
+            0,
             track.clone(),
             track_placement.clone(),
             bpm,
@@ -513,6 +517,7 @@ mod tests {
         let clipped_generator_node = SimpleWaveGeneratorNode::new(
             make_simple_wave_config(),
             make_generator_meta(),
+            0,
             track.clone(),
             track_placement.clone(),
             bpm,
@@ -551,6 +556,7 @@ mod tests {
         let generator_node_1 = SimpleWaveGeneratorNode::new(
             make_simple_wave_config(),
             make_generator_meta(),
+            0,
             track.clone(),
             placement_1.clone(),
             bpm,
@@ -558,6 +564,7 @@ mod tests {
         let generator_node_2 = SimpleWaveGeneratorNode::new(
             make_simple_wave_config(),
             make_generator_meta(),
+            0,
             track.clone(),
             placement_2.clone(),
             bpm,
@@ -573,6 +580,7 @@ mod tests {
         let clip_generator_node_1 = SimpleWaveGeneratorNode::new(
             make_simple_wave_config(),
             make_generator_meta(),
+            0,
             track.clone(),
             placement_1.clone(),
             bpm,
@@ -580,6 +588,7 @@ mod tests {
         let clip_generator_node_2 = SimpleWaveGeneratorNode::new(
             make_simple_wave_config(),
             make_generator_meta(),
+            0,
             track.clone(),
             placement_2_clipped.clone(),
             bpm,

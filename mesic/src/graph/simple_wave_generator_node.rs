@@ -2,13 +2,14 @@ use super::ProcessContext;
 use crate::wave::{beats_to_samples, unison_wave};
 use dasp_graph::{Buffer, Input, Node};
 use shared::model::{
-    GeneratorMeta, SimpleWaveConfig, Track, TrackPlacement,
+    GeneratorInstance, GeneratorMeta, GeneratorType, SimpleWaveConfig, Track, TrackPlacement,
 };
 use shared::types::{Beats, KnobPosition, Volume};
 
 pub struct SimpleWaveGeneratorNode {
     config: SimpleWaveConfig,
     meta: GeneratorMeta,
+    generator_index: usize,
     sample_index: u32, // the sample that playback is currently up to.
     track: Track,
     track_placement: TrackPlacement,
@@ -20,6 +21,7 @@ impl SimpleWaveGeneratorNode {
     pub fn new(
         config: SimpleWaveConfig,
         meta: GeneratorMeta,
+        generator_index: usize,
         track: Track,
         track_placement: TrackPlacement,
         bpm: Beats,
@@ -34,6 +36,7 @@ impl SimpleWaveGeneratorNode {
         SimpleWaveGeneratorNode {
             config,
             meta,
+            generator_index,
             track,
             track_placement,
             bpm,
@@ -51,9 +54,26 @@ impl SimpleWaveGeneratorNode {
 }
 
 impl Node<ProcessContext> for SimpleWaveGeneratorNode {
+    // TODO: a lot of this processing logic is generic and should be shared with
+    // other generator types. How?
     fn process(&mut self, _inputs: &[Input], output: &mut [Buffer], payload: &ProcessContext) {
         if let Some(seek_pos) = payload.seek_pos {
             self.sample_index = seek_pos as u32;
+        }
+
+        // Apply any applicable changes from the store.
+        if let Some(GeneratorInstance {
+            kind: GeneratorType::SimpleWave { config },
+            meta,
+            ..
+        }) = &payload.store.project.generators.get(self.generator_index)
+        {
+            if *config != self.config {
+                self.config = config.clone();
+            }
+            if *meta != self.meta {
+                self.meta = meta.clone();
+            }
         }
 
         // Skip generating if muted!
