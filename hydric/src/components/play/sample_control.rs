@@ -1,4 +1,3 @@
-use crate::audio_player::PlaybackMessage;
 use crate::promise::{poll, spawn};
 use crate::rpc::interleave_stereo;
 use crate::rpc::load_sample;
@@ -24,9 +23,7 @@ pub fn sample_control(
         audio_state.audio = sample.clone();
         let volume = store.get().volume;
         audio_state.player.init();
-        audio_state
-            .player
-            .send(PlaybackMessage::SetAudio(sample, volume));
+        audio_state.player.set_audio(sample, volume);
         audio_state.player.play();
     }
 

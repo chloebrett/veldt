@@ -1,8 +1,5 @@
 use crate::AudioState;
-use chrono::TimeDelta;
 use egui::{Color32, Rect, Ui, containers::Frame, emath, epaint, epaint::PathStroke, pos2, vec2};
-use mesic::SAMPLE_RATE;
-use std::ops::Sub;
 
 pub fn audio_vis(audio_state: &AudioState, ui: &mut Ui) {
     let audio_len = audio_state.audio.len() as f32;
@@ -52,23 +49,18 @@ pub fn audio_vis(audio_state: &AudioState, ui: &mut Ui) {
             })
             .collect();
 
-        if let Some(start_timestamp) = &audio_state.player.start_timestamp {
-            let current_timestamp = chrono::offset::Utc::now();
-            let time_delta: TimeDelta = current_timestamp.sub(start_timestamp);
-            let time_delta_ms: i64 = time_delta.num_milliseconds();
-            let audio_duration_ms: f32 = audio_len / (SAMPLE_RATE as f32) * 1000.0;
-            let playthrough_ratio: f32 = (time_delta_ms as f32) / audio_duration_ms;
+        let position = audio_state.player.position.samples;
+        let playthrough_ratio = position as f32 / audio_len;
 
-            if (0.0..=1.0).contains(&playthrough_ratio) {
-                let red_line = epaint::Shape::line(
-                    vec![
-                        to_screen * pos2(playthrough_ratio, -1.0),
-                        to_screen * pos2(playthrough_ratio, 1.0),
-                    ],
-                    PathStroke::new(thickness, Color32::RED),
-                );
-                shapes.push(red_line);
-            }
+        if (0.0..=1.0).contains(&playthrough_ratio) {
+            let red_line = epaint::Shape::line(
+                vec![
+                    to_screen * pos2(playthrough_ratio, -1.0),
+                    to_screen * pos2(playthrough_ratio, 1.0),
+                ],
+                PathStroke::new(thickness, Color32::RED),
+            );
+            shapes.push(red_line);
         }
         ui.painter().extend(shapes);
     });

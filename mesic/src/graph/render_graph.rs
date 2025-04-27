@@ -80,6 +80,15 @@ impl RenderGraph {
         }
     }
 
+    pub fn pos(&self) -> usize {
+        self.processed_samples_count
+    }
+
+    pub fn seek(&mut self, samples: usize) {
+        self.processed_samples_count = samples;
+        self.process_context.seek_pos = Some(samples);
+    }
+
     pub fn set_receiver(&mut self, receiver: Receiver<(Selector, Action)>) {
         self.rx = Some(receiver);
     }
@@ -237,6 +246,7 @@ impl Iterator for RenderGraph {
         let output = Some([left, right]);
 
         self.processed_samples_count += 1;
+        self.process_context.seek_pos = None;
         output
     }
 

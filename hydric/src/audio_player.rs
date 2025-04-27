@@ -1,4 +1,3 @@
-use chrono::{DateTime, Utc};
 use cpal::Stream;
 use cpal::traits::{DeviceTrait, HostTrait, StreamTrait};
 use crossbeam_channel::{Receiver, Sender};
@@ -19,45 +18,92 @@ const CHUNK_SIZE: usize = 1000;
 const BUFFER_THRESHOLD: usize = 1000;
 
 // For now, just samples. In future, consider supporting bars:beats, mins:secs, etc.
-pub struct _PlaybackPosition {
-    _samples: usize,
+#[derive(Clone, Copy)]
+pub struct PlaybackPosition {
+    pub samples: usize,
 }
 
+// Messages that can be sent to the producer thread.
 pub enum PlaybackMessage {
     SetProject(Box<Project>, Volume), // uses Box to keep enum size sane.
     SetAudio(Vec<Stereo<f32>>, Volume),
-    _Seek(_PlaybackPosition),
+    Seek(PlaybackPosition),
     State(PlaybackState),
 }
 
-#[derive(PartialEq)]
+// Messages that can be received from the producer thread.
+pub enum PlaybackUpdate {
+    // Playback position changed.
+    Pos(PlaybackPosition),
+
+    // Playback state changed.
+    State(PlaybackState),
+}
+
+#[derive(PartialEq, Clone, Copy)]
 pub enum PlaybackState {
     Play,
     Pause,
     Stop,
 }
 
-#[derive(Default)]
 pub struct AudioPlayer {
+    // Messages sent from producer -> player.
     audio_tx: Option<Sender<Stereo<f32>>>,
     audio_rx: Option<Receiver<Stereo<f32>>>,
+
+    // Messages sent from UI -> producer.
     playback_tx: Option<Sender<PlaybackMessage>>,
     playback_rx: Option<Receiver<PlaybackMessage>>,
+
+    // Messages sent from producer -> UI.
+    update_tx: Option<Sender<PlaybackUpdate>>,
+    update_rx: Option<Receiver<PlaybackUpdate>>,
 
     // TODO: make sure the producer thread is shut down when a new one starts.
     // Is losing the reference to it enough?
     stream: Option<Stream>,
     producer_thread: Option<JoinHandle<()>>,
-    pub start_timestamp: Option<DateTime<Utc>>,
+    pub state: PlaybackState,
+    pub position: PlaybackPosition,
+}
+
+impl Default for AudioPlayer {
+    fn default() -> Self {
+        AudioPlayer {
+            audio_tx: None,
+            audio_rx: None,
+            playback_tx: None,
+            playback_rx: None,
+            update_tx: None,
+            update_rx: None,
+            stream: None,
+            producer_thread: None,
+            state: PlaybackState::Stop,
+            position: PlaybackPosition { samples: 0 },
+        }
+    }
 }
 
 impl AudioPlayer {
-    pub fn send(&mut self, message: PlaybackMessage) {
+    fn send(&self, message: PlaybackMessage) {
         self.playback_tx
             .as_ref()
             .expect("Call .init() first!")
             .try_send(message)
             .unwrap();
+    }
+
+    pub fn is_ready(&self) -> bool {
+        self.stream.is_some()
+    }
+
+    pub fn set_project(&self, project: Box<Project>, volume: Volume) {
+        self.send(PlaybackMessage::SetProject(project, volume));
+    }
+
+    pub fn set_audio(&self, audio: Vec<Stereo<f32>>, volume: Volume) {
+        self.send(PlaybackMessage::SetAudio(audio, volume));
     }
 
     pub fn init(&mut self) {
@@ -66,14 +112,37 @@ impl AudioPlayer {
         self.init_stream();
     }
 
+    /// Checks for any pending updates from the producer thread and saves them locally.
+    pub fn update(&mut self) {
+        while let Ok(update) = self
+            .update_rx
+            .as_ref()
+            .expect("Call .init() first!")
+            .try_recv()
+        {
+            match update {
+                PlaybackUpdate::Pos(pos) => {
+                    self.position = pos;
+                }
+                PlaybackUpdate::State(state) => {
+                    self.state = state;
+                }
+            }
+        }
+    }
+
     pub fn init_channels(&mut self) {
         let (audio_tx, audio_rx) = crossbeam_channel::bounded(BUFFER_SIZE);
-        let (playback_tx, playback_rx) = crossbeam_channel::unbounded();
-
         self.audio_tx = Some(audio_tx);
         self.audio_rx = Some(audio_rx);
+
+        let (playback_tx, playback_rx) = crossbeam_channel::unbounded();
         self.playback_tx = Some(playback_tx);
         self.playback_rx = Some(playback_rx);
+
+        let (update_tx, update_rx) = crossbeam_channel::unbounded();
+        self.update_tx = Some(update_tx);
+        self.update_rx = Some(update_rx);
     }
 
     pub fn init_producer(&mut self) {
@@ -83,6 +152,7 @@ impl AudioPlayer {
         );
 
         let playback_rx = self.playback_rx.as_ref().unwrap().clone();
+        let update_tx = self.update_tx.as_ref().unwrap().clone();
         let audio_tx = self.audio_tx.as_ref().unwrap().clone();
 
         self.producer_thread = Some(wasm_thread::spawn(move || {
@@ -109,7 +179,10 @@ impl AudioPlayer {
                                 should_clip: true,
                             });
                         }
-                        PlaybackMessage::_Seek(_position) => todo!(),
+                        PlaybackMessage::Seek(PlaybackPosition { samples }) => {
+                            log::info!("Seeking to {}", samples);
+                            graph.seek(samples);
+                        }
                         PlaybackMessage::State(new_state) => {
                             state = new_state;
                         }
@@ -127,6 +200,12 @@ impl AudioPlayer {
                             // Consider stopping as well, but we'll need to re-create the thread if
                             // we do this.
                             state = PlaybackState::Pause;
+                            update_tx
+                                .try_send(PlaybackUpdate::Pos(PlaybackPosition {
+                                    samples: graph.pos(),
+                                }))
+                                .unwrap();
+                            update_tx.try_send(PlaybackUpdate::State(state)).unwrap();
                             log::info!(
                                 "Ran out of audio, so paused after {} samples in chunk. {:?}",
                                 i,
@@ -136,6 +215,11 @@ impl AudioPlayer {
                         }
                     }
                     if did_send {
+                        update_tx
+                            .try_send(PlaybackUpdate::Pos(PlaybackPosition {
+                                samples: graph.pos(),
+                            }))
+                            .unwrap();
                         log::info!("Sent 1000 samples. Len: {}", audio_tx.len());
                     }
                 } else {
@@ -190,13 +274,28 @@ impl AudioPlayer {
     }
 
     pub fn play(&mut self) {
-        self.send(PlaybackMessage::State(PlaybackState::Play));
+        self.state = PlaybackState::Play;
+        self.send(PlaybackMessage::State(self.state));
         self.stream
             .as_mut()
             .expect("Call .init() first!")
             .play()
             .unwrap();
-        self.start_timestamp = Some(chrono::offset::Utc::now());
+    }
+
+    pub fn pause(&mut self) {
+        self.state = PlaybackState::Pause;
+        self.send(PlaybackMessage::State(self.state));
+        self.stream
+            .as_mut()
+            .expect("Call .init() first!")
+            .pause()
+            .unwrap();
+    }
+
+    pub fn seek(&mut self, samples: usize) {
+        self.position = PlaybackPosition { samples };
+        self.send(PlaybackMessage::Seek(self.position));
     }
 }
 

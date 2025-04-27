@@ -79,6 +79,10 @@ impl eframe::App for App {
         self.frame_history
             .on_new_frame(ctx.input(|i| i.time), frame.info().cpu_usage);
 
+        if self.audio_state.player.is_ready() {
+            self.audio_state.player.update();
+        }
+
         egui::TopBottomPanel::top("veldt_menu").show(ctx, |ui| {
             MenuBar::new(
                 &mut self.store,

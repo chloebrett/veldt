@@ -2805,6 +2805,7 @@ dependencies = [
  "dasp_rms",
  "dasp_slice",
  "lazy_static",
+ "log",
  "ordered-float 5.0.0",
  "petgraph 0.5.1",
  "ringbuffer",
