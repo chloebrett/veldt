@@ -36,7 +36,6 @@ impl AudioProcessor {
         );
 
         loop {
-            //log::info!("Hello from thread {:?}", wasm_thread::current().id());
             self.read_messages();
 
             if self.state == PlaybackState::Play && self.audio_tx.len() < BUFFER_SIZE - CHUNK_SIZE {
