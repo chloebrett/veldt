@@ -26,6 +26,7 @@ enum PlaybackMessage {
     SetAudio(Vec<Stereo<f32>>, Volume),
     Seek(PlaybackPosition),
     State(PlaybackState),
+    Loop(bool),
 }
 
 // Messages that can be received from the processor thread.
@@ -44,4 +45,5 @@ enum PlaybackUpdate {
 pub enum PlaybackState {
     Play,
     Pause,
+    Finished,
 }

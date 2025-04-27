@@ -12,6 +12,7 @@ pub struct AudioProcessor {
     update_tx: Sender<PlaybackUpdate>,
     state: PlaybackState,
     graph: RenderGraph,
+    is_looping: bool,
 }
 
 impl AudioProcessor {
@@ -19,11 +20,13 @@ impl AudioProcessor {
         audio_tx: Sender<Stereo<f32>>,
         playback_rx: Receiver<PlaybackMessage>,
         update_tx: Sender<PlaybackUpdate>,
+        is_looping: bool,
     ) -> Self {
         AudioProcessor {
             audio_tx,
             playback_rx,
             update_tx,
+            is_looping,
             state: PlaybackState::Pause,
             graph: RenderGraph::default(),
         }
@@ -79,6 +82,9 @@ impl AudioProcessor {
                     );
                     self.state = state;
                 }
+                PlaybackMessage::Loop(is_looping) => {
+                    self.is_looping = is_looping;
+                }
             }
         }
     }
@@ -89,14 +95,21 @@ impl AudioProcessor {
             if let Some(next) = self.graph.next() {
                 self.audio_tx.try_send(next).unwrap();
                 did_send = true;
+            } else if self.is_looping {
+                log::info!(
+                    "Ran out of audio after {} samples in chunk. Looping. {:?}",
+                    i,
+                    wasm_thread::current().id()
+                );
+                self.graph.seek(0);
             } else {
-                // No more audio, so pause.
-                self.state = PlaybackState::Pause;
+                // No more audio, so finish.
+                self.state = PlaybackState::Finished;
                 self.update_tx
                     .try_send(PlaybackUpdate::State(self.state))
                     .unwrap();
                 log::info!(
-                    "Ran out of audio, so paused after {} samples in chunk. {:?}",
+                    "Ran out of audio, so marked finished after {} samples in chunk. {:?}",
                     i,
                     wasm_thread::current().id()
                 );
