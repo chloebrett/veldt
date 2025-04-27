@@ -31,9 +31,13 @@ pub struct AudioPlayer {
     pub position: PlaybackPosition,
 
     // Delay from the processing end.
+    // Updated by listening for events from the processing thread.
+    // No mutex needed, because we're already using a channel.
     buffer_delay: usize,
 
     // Delay from the audio playback end.
+    // Needs to be a mutex because it's written from a static JS callback (the data callback
+    // for the AudioContext).
     output_delay: Arc<Mutex<usize>>,
 }
 
@@ -92,8 +96,7 @@ impl AudioPlayer {
         self.stream.is_some()
     }
 
-    /// Browsers will only let us create an AudioContext after the user has interacted with the
-    /// page.
+    /// Browsers will only let us create an AudioContext after the user has interacted with the page.
     /// So do the initialization lazily.
     fn maybe_init(&mut self) {
         // We only need to initialize once.
@@ -162,8 +165,12 @@ impl AudioPlayer {
             .build_output_stream(
                 config,
                 move |data: &mut [f32], info: &OutputCallbackInfo| {
+                    // Pass info about the output latency back to the audio player.
+                    // The latency info is used to accurately render the playback position.
                     let timestamp = info.timestamp();
                     if let Some(delay) = timestamp.playback.duration_since(&timestamp.callback) {
+                        // It's fine to unlock the mutex every time here,
+                        // because the data callback is only every N=1024 samples.
                         *output_delay.lock().unwrap() = to_samples(delay);
                     }
 
@@ -192,12 +199,13 @@ impl AudioPlayer {
         self.send(PlaybackMessage::State(self.state));
 
         // Note: we don't actually play/pause the stream in the AudioContext, other than the initial "play" call.
-        // Calling play/pause multiple times has weird behaviour which might be a CPAL bug: subsequent pause/play calls cause greater and greater delays
-        // between the audio callback being fired and actual playback.
+        // Calling play/pause multiple times has weird behaviour which might be a CPAL bug: subsequent pause/play
+        // calls cause greater and greater delays between the audio callback being fired and actual playback.
         // This can be verified by logging
         // time_at_start_of_buffer - ctx_handle.current_time()
         // just before source.start_with_when is called in cpal::src::host::webaudio (mod.rs).
-        // Subsequent play/pause runs cause a greater and greater delay (up to several seconds).
+        // If you add this log then call play/pause on the audio stream several times,
+        // each call causes a greater and greater delay (up to several seconds).
     }
 
     pub fn pause(&mut self) {
