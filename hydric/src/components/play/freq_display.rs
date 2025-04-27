@@ -1,4 +1,4 @@
-use chrono::TimeDelta;
+use crate::{app_state::AudioState, playback::AudioPlayer, view::View};
 use egui::{
     Color32, Ui,
     cache::{ComputerMut, FrameCache},
@@ -10,9 +10,6 @@ use mesic::{
 };
 use ordered_float::OrderedFloat;
 use shared::serialize::map_vec;
-use std::ops::Sub;
-
-use crate::{app_state::AudioState, audio_player::AudioPlayer, view::View};
 
 pub struct FrequencyDisplay<'a> {
     audio_state: &'a AudioState,
@@ -34,11 +31,7 @@ impl<'a> FrequencyDisplay<'a> {
         player: &AudioPlayer,
         audio: Vec<OrderedFloat<f32>>,
     ) -> Option<Vec<f32>> {
-        let start_timestamp = player.start_timestamp?;
-        let current_timestamp = chrono::offset::Utc::now();
-        let time_delta: TimeDelta = current_timestamp.sub(start_timestamp);
-        let time_delta_ms: i64 = time_delta.num_milliseconds();
-        let current_sample: usize = (time_delta_ms * (SAMPLE_RATE as i64) / 1000) as usize;
+        let current_sample = player.position.samples;
         let frame_size = (SAMPLE_RATE / self.frame_rate) as usize;
         // Round `current_sample` so that the audio will be broken up into chunks based on
         // the visualisation frame rate.
@@ -83,7 +76,7 @@ impl ComputerMut<FrequencyDisplayKey, Vec<f32>> for FrequencyDisplayComputer {
 impl View for FrequencyDisplay<'_> {
     fn ui(&mut self, ui: &mut Ui) {
         let FrequencyDisplay { audio_state, .. } = *self;
-        let audio: &Vec<[f32; 2]> = &self.audio_state.audio;
+        let audio = &self.audio_state.audio;
 
         // Note: only visualising the left channel.
         // TODO: decide how to visualise both left and right.

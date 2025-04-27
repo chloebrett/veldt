@@ -1,7 +1,7 @@
 use dasp_frame::Frame;
 use hound::{SampleFormat, WavSpec, WavWriter};
 use mesic::SAMPLE_RATE;
-use mesic::render;
+use mesic::graph::RenderGraph;
 use shared::export::{ExportReply, ExportRequest, export_server::Export};
 use std::env::current_dir;
 use std::fs::{File, create_dir_all};
@@ -38,7 +38,8 @@ impl Export for ExportContext {
             .ok_or_else(|| tonic::Status::invalid_argument("Project must be supplied"))?
             .into();
 
-        let graph = &mut render(&project);
+        let mut graph = RenderGraph::default();
+        graph.set_from_project(&project);
 
         let spec = WavSpec {
             channels: 1, // mono

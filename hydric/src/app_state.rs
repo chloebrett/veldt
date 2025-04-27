@@ -1,4 +1,4 @@
-use crate::{audio_player::AudioPlayer, promise::AsyncResult};
+use crate::{playback::AudioPlayer, promise::AsyncResult};
 use dasp_frame::Stereo;
 use egui::{Id, Pos2, Ui};
 use shared::model::{FilenameTree, Project, Sample};
@@ -85,8 +85,8 @@ impl<T: Hash + Ord + Copy> WindowStateField<T> {
     }
 
     // Note: not necessarily sorted.
-    pub fn as_vec(self) -> Vec<T> {
-        self.0.into_iter().collect()
+    pub fn as_vec(&self) -> Vec<T> {
+        self.0.clone().into_iter().collect()
     }
 }
 

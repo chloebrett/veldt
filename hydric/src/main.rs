@@ -1,6 +1,6 @@
 mod app_state;
-mod audio_player;
 mod components;
+mod playback;
 mod promise;
 mod rpc;
 mod transform;

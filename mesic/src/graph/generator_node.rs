@@ -46,7 +46,11 @@ impl GeneratorNode {
 }
 
 impl Node<ProcessContext> for GeneratorNode {
-    fn process(&mut self, _inputs: &[Input], output: &mut [Buffer], _payload: &ProcessContext) {
+    fn process(&mut self, _inputs: &[Input], output: &mut [Buffer], payload: &ProcessContext) {
+        if let Some(seek_pos) = payload.seek_pos {
+            self.sample_index = seek_pos as u32;
+        }
+
         // Skip generating if muted!
         // TODO: disconnect muted generators from the graph.
         let track_placement = &self.track_placement;
