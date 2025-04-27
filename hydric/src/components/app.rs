@@ -2,7 +2,7 @@ use super::{
     KeyView, NoteRoll, NoteView, TrackPlacementView, TrackRoll,
     effect::{EffectView, MixerView},
     generator::{generator_control, generators_control},
-    menu::MenuBar,
+    menu::MenuBarView,
     play::{SampleTreeView, ToolbarView},
 };
 use crate::components::FrameHistory;
@@ -80,7 +80,7 @@ impl eframe::App for App {
         self.audio_state.player.maybe_update();
 
         egui::TopBottomPanel::top("veldt_menu").show(ctx, |ui| {
-            MenuBar::new(
+            MenuBarView::new(
                 &mut self.store,
                 &mut self.window_state,
                 &mut self.async_state,

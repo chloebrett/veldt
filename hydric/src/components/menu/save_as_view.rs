@@ -9,7 +9,7 @@ use egui::{Ui, pos2};
 
 pub struct SaveAsView<'a, F: Fn(Action), G: FnMut()> {
     window_state: &'a mut WindowState,
-    name: String,
+    name: &'a String,
     dispatch: F,
     on_click: G,
 }
@@ -17,11 +17,11 @@ pub struct SaveAsView<'a, F: Fn(Action), G: FnMut()> {
 impl<'a, F: Fn(Action), G: FnMut()> SaveAsView<'a, F, G> {
     pub fn new(
         window_state: &'a mut WindowState,
-        name: String,
+        name: &'a String,
         dispatch: F,
         on_click: G,
     ) -> Self {
-        SaveAs {
+        SaveAsView {
             window_state,
             name,
             dispatch,
@@ -38,6 +38,7 @@ impl<F: Fn(Action), G: FnMut()> View for SaveAsView<'_, F, G> {
             dispatch,
             on_click,
         } = self;
+
         let screen_size = ui.ctx().used_size();
         default_window("Save Project As")
             .default_pos(pos2(screen_size.x / 2.0, screen_size.y / 2.0))

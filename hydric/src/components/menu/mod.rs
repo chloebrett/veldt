@@ -1,4 +1,4 @@
-mod menu_bar;
-mod save_as;
+mod menu_bar_view;
+mod save_as_view;
 
-pub use menu_bar::*;
+pub use menu_bar_view::*;
