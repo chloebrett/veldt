@@ -1,21 +1,23 @@
 use super::ProcessContext;
 use super::{extract_inputs, extract_outputs};
 use dasp_graph::{Buffer, Input, Node};
-use ringbuffer::{AllocRingBuffer, RingBuffer};
+use ringbuffer::{GrowableAllocRingBuffer, RingBuffer};
 use shared::types::Volume;
 
 /// Similar to dasp_graph::node::Delay, except delays per-channel.
 #[derive(Clone, Debug, PartialEq)]
 pub struct DelayNode {
-    buffers: [AllocRingBuffer<f32>; 2],
+    buffers: [GrowableAllocRingBuffer<f32>; 2],
+    delay_samples: usize,
     feedback: Volume,
 }
 
 impl DelayNode {
     pub fn new(delay_samples: usize, feedback: f32) -> DelayNode {
-        let buffer = AllocRingBuffer::from(vec![0.0; delay_samples]);
+        let buffer = GrowableAllocRingBuffer::with_capacity(delay_samples);
         DelayNode {
             buffers: [buffer.clone(), buffer.clone()],
+            delay_samples,
             feedback,
         }
     }
@@ -23,7 +25,11 @@ impl DelayNode {
     fn apply(&mut self, out_buf: &mut Buffer, in_buf: &Buffer, channel_index: usize) {
         for (i, out) in out_buf.iter_mut().enumerate() {
             let buffer = &mut self.buffers[channel_index];
-            *out = *buffer.front().unwrap();
+            *out = if buffer.len() >= self.delay_samples {
+                buffer.pop_front().unwrap()
+            } else {
+                0.0
+            };
             buffer.push(in_buf[i] + *out * self.feedback);
         }
     }
