@@ -107,6 +107,8 @@ pub enum DataState {
     SelectedNoteIndexes,
     SelectedTrackPlacementIndexes,
     DragCursorDelta,
+    TrackRollSelectMode,
+    NoteRollSelectMode,
 }
 
 impl DataState {
@@ -121,6 +123,8 @@ impl DataState {
             Self::SelectedNoteIndexes => "selected_note_indexes",
             Self::SelectedTrackPlacementIndexes => "selected_track_placement_indexes",
             Self::DragCursorDelta => "drag_start_from",
+            Self::TrackRollSelectMode => "track_roll_select_mode",
+            Self::NoteRollSelectMode => "note_roll_select_mode",
         })
     }
 
@@ -142,9 +146,11 @@ impl DataState {
             // Value are stores by (Id, type) and so type of the value when not `None` must be
             // known.
             match self {
-                Self::TrackPlacementViewWindow | Self::NoteWindow | Self::NoteRollWindow => {
-                    data.insert_temp::<Option<bool>>(self.get_id(), None)
-                }
+                Self::TrackPlacementViewWindow
+                | Self::NoteWindow
+                | Self::NoteRollWindow
+                | Self::TrackRollSelectMode
+                | Self::NoteRollSelectMode => data.insert_temp::<Option<bool>>(self.get_id(), None),
                 Self::ActiveNoteIndex
                 | Self::ActiveTrackIndex
                 | Self::ActiveTrackPlacementIndex => {
