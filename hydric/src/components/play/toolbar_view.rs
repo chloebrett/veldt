@@ -1,5 +1,5 @@
 use crate::app_state::{AsyncState, AudioState};
-use crate::components::undo_redo_control;
+use crate::components::UndoRedoView;
 use crate::promise::spawn;
 use crate::rpc::upload_sample;
 use crate::view::View;
@@ -64,7 +64,7 @@ impl View for ToolbarView<'_> {
                     on_release,
                 );
 
-                undo_redo_control(self.store, ui);
+                UndoRedoView::new(self.store).ui(ui);
                 ui.separator();
                 play_control(self.store, self.async_state, self.audio_state, ui);
                 ui.separator();
