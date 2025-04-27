@@ -10,7 +10,7 @@ mod piano;
 mod play;
 mod track_placement_view;
 mod track_roll;
-mod undo_redo;
+mod undo_redo_view;
 
 pub use app::*;
 use frame_history::*;
@@ -20,4 +20,4 @@ use note_view::*;
 use piano::*;
 use track_placement_view::*;
 use track_roll::*;
-use undo_redo::*;
+use undo_redo_view::*;
