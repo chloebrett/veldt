@@ -26,11 +26,12 @@ impl EqNode {
 
 impl Node<ProcessContext> for EqNode {
     fn process(&mut self, inputs: &[Input], output: &mut [Buffer], payload: &ProcessContext) {
+        // Apply any changes from the store if applicable.
         if let Some(mixer) = &payload.store.project.mixer.get(self.mixer_index) {
             if let Some(EffectInstance {
                 effect: Effect::SimpleEq { config, .. },
                 ..
-            }) = mixer.effects.get(self.effect_index)
+            }) = &mixer.effects.get(self.effect_index)
             {
                 if *config != self.config {
                     self.config = config.clone();

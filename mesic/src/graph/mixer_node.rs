@@ -1,7 +1,7 @@
 use super::ProcessContext;
 use super::{extract_inputs_2, extract_outputs};
 use dasp_graph::{Buffer, Input, Node};
-use shared::types::KnobPosition;
+use shared::model::{EffectInstance, EffectMeta};
 
 /// Mixes two inputs down to one in the given wet/dry ratio.
 /// The first input is the dry signal. The second is the wet signal.
@@ -10,29 +10,47 @@ use shared::types::KnobPosition;
 /// wet = 0.5 returns a 50/50 mix.
 /// And so on.
 pub struct MixerNode {
-    pub wet: KnobPosition,
-    pub mute: bool,
+    mixer_index: usize,
+    effect_index: usize,
+    meta: EffectMeta,
 }
 
 impl MixerNode {
-    fn process_channel(&self, out: &mut Buffer, dry: &Buffer, wet: &Buffer) {
-        let d = 1.0 - self.wet;
+    pub fn new(mixer_index: usize, effect_index: usize, meta: EffectMeta) -> Self {
+        MixerNode {
+            mixer_index,
+            effect_index,
+            meta: meta.clone(),
+        }
+    }
 
-        if self.mute {
+    fn process_channel(&self, out: &mut Buffer, dry: &Buffer, wet: &Buffer) {
+        let d = 1.0 - self.meta.wet;
+
+        if self.meta.mute {
             // TODO: make muting an effect temporarily short circuit it in the graph, so that
             // it doesn't run at all.
             out.copy_from_slice(dry);
         } else {
             for i in 0..Buffer::LEN {
-                out[i] = dry[i] * d + wet[i] * self.wet;
+                out[i] = dry[i] * d + wet[i] * self.meta.wet;
             }
         }
     }
 }
 
 impl Node<ProcessContext> for MixerNode {
-    fn process(&mut self, inputs: &[Input], output: &mut [Buffer], _payload: &ProcessContext) {
-        debug_assert!(self.wet >= 0.0 && self.wet <= 1.0);
+    fn process(&mut self, inputs: &[Input], output: &mut [Buffer], payload: &ProcessContext) {
+        // Apply any changes from the store if applicable.
+        if let Some(mixer) = &payload.store.project.mixer.get(self.mixer_index) {
+            if let Some(EffectInstance { meta, .. }) = &mixer.effects.get(self.effect_index) {
+                if *meta != self.meta {
+                    self.meta = meta.clone();
+                }
+            }
+        }
+
+        debug_assert!(self.meta.wet >= 0.0 && self.meta.wet <= 1.0);
 
         let (out_left, out_right) = extract_outputs(output);
         let [(dry_left, dry_right), (wet_left, wet_right)] = extract_inputs_2(inputs);

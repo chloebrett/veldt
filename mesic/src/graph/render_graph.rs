@@ -211,10 +211,7 @@ impl RenderGraph {
             Effect::SimpleCompressor { config } => BoxedNodeSend::new(CompressorNode::new(config)),
             Effect::ModDelay { config } => BoxedNodeSend::new(ModDelayNode::new(config)),
         };
-        let mixer_node = MixerNode {
-            wet: effect.meta.wet,
-            mute: effect.meta.mute,
-        };
+        let mixer_node = MixerNode::new(mixer_index, effect_index, effect.meta);
 
         let effect = self.graph.add_node(NodeData::new2(effect_node));
         let mixer = self
@@ -436,8 +433,8 @@ mod tests {
         let mut graph = RenderGraph::default();
         // Act
         graph.add_generator(generator_node);
-        for effect in mixer_channel.effects {
-            graph.add_effect_with_mixer_to_generator(effect, 0);
+        for (i, effect) in mixer_channel.effects.into_iter().enumerate() {
+            graph.add_effect_with_mixer_to_generator(0, i, effect, 0);
         }
         graph.add_output_amp_node();
         // Assert
