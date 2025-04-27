@@ -5,6 +5,7 @@ use shared::model::{FilenameTree, Project, Sample};
 use std::cmp::{Eq, Ord};
 use std::collections::HashSet;
 use std::hash::Hash;
+use mesic::graph::RenderGraph;
 
 /// Container for the various promises launchable by the app.
 #[derive(Default)]
@@ -19,10 +20,18 @@ pub struct AsyncState {
     pub export: AsyncResult<(), ()>,
 }
 
-#[derive(Default)]
 pub struct AudioState {
     pub audio: Vec<Stereo<f32>>,
     pub player: AudioPlayer,
+}
+
+impl AudioState {
+    pub fn new(graph: RenderGraph) -> Self {
+        AudioState {
+            audio: vec![],
+            player: AudioPlayer::new(graph),
+        }
+    }
 }
 
 pub struct MixerWindowState {

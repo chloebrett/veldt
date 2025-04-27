@@ -11,8 +11,18 @@ use shared::model::Project;
 use shared::types::Volume;
 use std::sync::{Arc, Mutex};
 use wasm_thread::JoinHandle;
+use mesic::graph::RenderGraph;
 
 pub struct AudioPlayer {
+    // The render graph, if we haven't given it to the processing thread yet.
+    // If this is 'None', this just means it lives in the processing thread now.
+    // It can't be communicated with directly if that's the case, so pass PlaybackMessages to
+    // indirectly manipulate it instead.
+    // This field will only be Some while we're waiting to init the processing thread.
+    // We need to pass this exact graph to the thread, instead of creating a new one,
+    // because it has a reference to a StoreData channel receiver.
+    graph: Option<RenderGraph>,
+
     // Messages sent from processor -> player.
     audio_tx: Sender<Stereo<f32>>,
     audio_rx: Receiver<Stereo<f32>>,
@@ -42,13 +52,14 @@ pub struct AudioPlayer {
     output_delay: Arc<Mutex<usize>>,
 }
 
-impl Default for AudioPlayer {
-    fn default() -> Self {
+impl AudioPlayer {
+    pub fn new(graph: RenderGraph) -> Self {
         let (audio_tx, audio_rx) = crossbeam_channel::bounded(BUFFER_SIZE);
         let (playback_tx, playback_rx) = crossbeam_channel::unbounded();
         let (update_tx, update_rx) = crossbeam_channel::unbounded();
 
         AudioPlayer {
+            graph: Some(graph),
             audio_tx,
             audio_rx,
             playback_tx,
@@ -64,9 +75,7 @@ impl Default for AudioPlayer {
             output_delay: Arc::new(Mutex::new(0)),
         }
     }
-}
 
-impl AudioPlayer {
     /// Current position in playback, accounting for delay.
     pub fn effective_pos(&self) -> usize {
         // Output delay is irrelevant if we're not currently playing audio.
@@ -145,6 +154,7 @@ impl AudioPlayer {
             self.playback_rx.clone(),
             self.update_tx.clone(),
             self.is_looping,
+            self.graph.take().expect("Expected a render graph!"),
         );
 
         // Currently no way to stop a thread once it's started.

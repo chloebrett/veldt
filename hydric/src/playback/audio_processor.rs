@@ -21,6 +21,7 @@ impl AudioProcessor {
         playback_rx: Receiver<PlaybackMessage>,
         update_tx: Sender<PlaybackUpdate>,
         is_looping: bool,
+        graph: RenderGraph,
     ) -> Self {
         AudioProcessor {
             audio_tx,
@@ -28,7 +29,7 @@ impl AudioProcessor {
             update_tx,
             is_looping,
             state: PlaybackState::Pause,
-            graph: RenderGraph::default(),
+            graph,
         }
     }
 
@@ -39,9 +40,11 @@ impl AudioProcessor {
         );
 
         loop {
+            log::info!("Loop");
             self.read_messages();
 
             if self.state == PlaybackState::Play && self.audio_tx.len() < BUFFER_SIZE - CHUNK_SIZE {
+                log::info!("Process");
                 self.process_chunk();
             } else {
                 sleep_ms(10);
@@ -92,9 +95,13 @@ impl AudioProcessor {
 
     fn process_chunk(&mut self) {
         let mut did_send = false;
+        log::info!("Will loop");
         for i in 0..CHUNK_SIZE {
+            log::info!("Looping {:?}", self.graph);
             if let Some(next) = self.graph.next() {
+                log::info!("Sending");
                 self.audio_tx.try_send(next).unwrap();
+                log::info!("Sent");
                 did_send = true;
             } else if self.is_looping {
                 log::info!(
@@ -104,6 +111,7 @@ impl AudioProcessor {
                 );
                 self.graph.seek(0);
             } else {
+                log::info!("Ran out");
                 // No more audio, so finish.
                 self.state = PlaybackState::Finished;
                 self.update_tx
@@ -116,8 +124,11 @@ impl AudioProcessor {
                 );
                 break;
             }
+            log::info!("End loop");
         }
+        log::info!("Looped");
         if did_send {
+            log::info!("Did send");
             self.update_tx
                 .try_send(PlaybackUpdate::Pos(PlaybackPosition {
                     samples: self.graph.pos(),
