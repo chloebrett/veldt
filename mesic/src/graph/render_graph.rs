@@ -226,21 +226,25 @@ impl RenderGraph {
         graph.set_from_audio(vec);
         graph
     }
+
+    fn update_store(&mut self) {
+        // Update the store if there are actions to process.
+        let store = &mut self.process_context.store;
+        if let Some(rx) = &self.rx {
+            while let Ok((selector, action)) = rx.try_recv() {
+                // TODO: also update graph topology by listening for the appropriate actions.
+                // E.g. add/remove effect or generator.
+                store.update(&selector, &action);
+            }
+        }
+    }
 }
 
 impl Iterator for RenderGraph {
     type Item = Stereo<f32>;
 
     fn next(&mut self) -> Option<Self::Item> {
-        // Update the store if there are actions to process.
-        let store = &mut self.process_context.store;
-        if let Some(rx) = &self.rx {
-            while let Ok((selector, action)) = rx.recv() {
-                // TODO: also update graph topology by listening for the appropriate actions.
-                // E.g. add/remove effect or generator.
-                store.update(&selector, &action);
-            }
-        }
+        self.update_store();
 
         if self.processed_samples_count % Buffer::LEN == 0 {
             self.processor.process(

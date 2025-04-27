@@ -95,13 +95,10 @@ impl AudioProcessor {
 
     fn process_chunk(&mut self) {
         let mut did_send = false;
-        log::info!("Will loop");
         for i in 0..CHUNK_SIZE {
-            log::info!("Looping {:?}", self.graph);
-            if let Some(next) = self.graph.next() {
-                log::info!("Sending");
+            let next = self.graph.next();
+            if let Some(next) = next {
                 self.audio_tx.try_send(next).unwrap();
-                log::info!("Sent");
                 did_send = true;
             } else if self.is_looping {
                 log::info!(
@@ -111,7 +108,6 @@ impl AudioProcessor {
                 );
                 self.graph.seek(0);
             } else {
-                log::info!("Ran out");
                 // No more audio, so finish.
                 self.state = PlaybackState::Finished;
                 self.update_tx
@@ -124,11 +120,8 @@ impl AudioProcessor {
                 );
                 break;
             }
-            log::info!("End loop");
         }
-        log::info!("Looped");
         if did_send {
-            log::info!("Did send");
             self.update_tx
                 .try_send(PlaybackUpdate::Pos(PlaybackPosition {
                     samples: self.graph.pos(),
