@@ -9,7 +9,7 @@ pub fn mod_matrix<F, G>(
     config: &ModMatrix,
     ui: &mut egui::Ui,
     row_titles: Vec<&str>,
-    col_title: Vec<&str>,
+    col_titles: Vec<&str>,
     dispatch: &F,
     on_release: &G,
 ) -> egui::Response
@@ -27,22 +27,23 @@ where
             .show(ui, |ui| {
                 ui.horizontal(|ui| {
                     for col in 0..config.cols {
-                        ui.label(col_title[col as usize]);
+                        ui.add_space(70.0);
+                        text_rotator(ui, col_titles[col as usize], 12.0, TextRotation::Neutral);
                         if col != config.cols - 1 {
-                            ui.add_space(10.0);
+                            ui.add_space(40.0);
                         }
                     }
                 });
                 ui.vertical(|ui| {
                     for row in 0..config.rows {
                         ui.horizontal(|ui| {
-                            text_rotator(ui, row_titles[row as usize], 14.0, TextRotation::Anticlockwise);
+                            text_rotator(ui, row_titles[row as usize], 12.0, TextRotation::Anticlockwise);
                             for col in 0..config.cols {
                                 let id = format!("{:?}", (row, col));
                                 ui.push_id(id, |ui| {
                                     knob(
                                         ui,
-                                        "Placeholder",
+                                        "",
                                         0.0,
                                         |it| dispatch(Action::SetFloat(FloatField::Volume, it)),
                                         -1.0..=1.0,
@@ -51,12 +52,12 @@ where
                                     );
                                 });
                                 if col != config.cols - 1 {
-                                    ui.add_space(10.0);
+                                    ui.add_space(5.0);
                                 }
                             }
                         });
                         if row != config.rows - 1 {
-                            ui.add_space(10.0)
+                            ui.add_space(5.0)
                         }
                     }
                 });
