@@ -89,8 +89,6 @@ impl AudioPlayer {
         }
     }
 
-    pub fn init_channels(&mut self) {}
-
     pub fn init_processor(&mut self) {
         log::info!(
             "Available parallelism: {:?}",

@@ -52,14 +52,14 @@ impl AudioProcessor {
                 PlaybackMessage::SetProject(project, volume) => {
                     self.graph = RenderGraph::default();
                     self.graph.set_from_project(&project);
-                    self.graph.add_output_node(AmpNode {
+                    self.graph.add_output_amp_node(AmpNode {
                         volume,
                         should_clip: true,
                     });
                 }
                 PlaybackMessage::SetAudio(audio, volume) => {
                     self.graph = RenderGraph::from_vec(audio);
-                    self.graph.add_output_node(AmpNode {
+                    self.graph.add_output_amp_node(AmpNode {
                         volume,
                         should_clip: true,
                     });
