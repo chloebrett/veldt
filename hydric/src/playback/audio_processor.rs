@@ -3,7 +3,7 @@ use super::{
 };
 use crossbeam_channel::{Receiver, Sender};
 use dasp_frame::Stereo;
-use mesic::graph::{AmpNode, RenderGraph};
+use mesic::graph::RenderGraph;
 
 /// Audio processor which runs in its own thread and communicates with the UI thread via crossbeam channels.
 pub struct AudioProcessor {
@@ -58,21 +58,13 @@ impl AudioProcessor {
     fn read_messages(&mut self) {
         while let Ok(message) = self.playback_rx.try_recv() {
             match message {
-                PlaybackMessage::SetProject(project, volume) => {
+                PlaybackMessage::SetProject(project) => {
                     self.graph.clear_nodes();
                     self.graph.set_from_project(&project);
-                    self.graph.add_output_amp_node(AmpNode {
-                        volume,
-                        should_clip: true,
-                    });
                 }
-                PlaybackMessage::SetAudio(audio, volume) => {
+                PlaybackMessage::SetAudio(audio) => {
                     self.graph.clear_nodes();
                     self.graph.set_from_audio(audio);
-                    self.graph.add_output_amp_node(AmpNode {
-                        volume,
-                        should_clip: true,
-                    });
                 }
                 PlaybackMessage::Seek(PlaybackPosition { samples }) => {
                     log::info!("Seeking to {}", samples);

@@ -6,7 +6,6 @@ use audio_processor::*;
 
 use dasp_frame::Stereo;
 use shared::model::Project;
-use shared::types::Volume;
 
 // Total size of the audio buffer.
 const BUFFER_SIZE: usize = 5000;
@@ -22,8 +21,8 @@ pub struct PlaybackPosition {
 
 // Messages that can be sent to the processor thread.
 enum PlaybackMessage {
-    SetProject(Box<Project>, Volume), // uses Box to keep enum size sane.
-    SetAudio(Vec<Stereo<f32>>, Volume),
+    SetProject(Box<Project>), // uses Box to keep enum size sane.
+    SetAudio(Vec<Stereo<f32>>),
     Seek(PlaybackPosition),
     State(PlaybackState),
     Loop(bool),

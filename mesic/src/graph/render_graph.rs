@@ -75,6 +75,7 @@ impl RenderGraph {
         self.sample_count = audio.len();
         let buffer_node: BufferNode = audio.into();
         self.add_pre_output_node(buffer_node);
+        self.add_output_amp_node();
     }
 
     /// Initializes the graph from a project instance.
@@ -106,6 +107,8 @@ impl RenderGraph {
                 self.add_effect_with_mixer_to_generator(effect.clone(), index);
             }
         }
+
+        self.add_output_amp_node();
     }
 
     pub fn pos(&self) -> usize {
@@ -133,8 +136,8 @@ impl RenderGraph {
     }
 
     // Add amp node and set as graph output.
-    pub fn add_output_amp_node(&mut self, node: AmpNode) {
-        let node_index = self.add_node(node);
+    pub fn add_output_amp_node(&mut self) {
+        let node_index = self.add_node(AmpNode::default());
         self.graph.add_edge(self.output_node_index, node_index, ());
         // Set node as new output
         self.output_node_index = node_index;
@@ -220,7 +223,6 @@ impl RenderGraph {
     }
 
     /// Creates a graph that plays the buffer contained in a Vec.
-    /// Chain with .add_amp_node to control volume and/or clip.
     pub fn from_vec(vec: Vec<Stereo<f32>>) -> Self {
         let mut graph = RenderGraph::default();
         graph.set_from_audio(vec);
@@ -414,17 +416,13 @@ mod tests {
         // Arrange
         let generator_node = make_generator_node();
         let mixer_channel = make_mixer_channel();
-        let amp_node = AmpNode {
-            volume: 2.3,
-            should_clip: false,
-        };
         let mut graph = RenderGraph::default();
         // Act
         graph.add_generator(generator_node);
         for effect in mixer_channel.effects {
             graph.add_effect_with_mixer_to_generator(effect, 0);
         }
-        graph.add_output_amp_node(amp_node);
+        graph.add_output_amp_node();
         // Assert
         assert!(graph.peekable().peek().is_some())
     }

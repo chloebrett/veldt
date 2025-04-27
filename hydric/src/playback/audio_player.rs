@@ -9,7 +9,6 @@ use log::error;
 use mesic::SAMPLE_RATE;
 use mesic::graph::RenderGraph;
 use shared::model::Project;
-use shared::types::Volume;
 use std::sync::{Arc, Mutex};
 use wasm_thread::JoinHandle;
 
@@ -98,14 +97,14 @@ impl AudioPlayer {
         self.playback_tx.try_send(message).unwrap();
     }
 
-    pub fn set_project(&mut self, project: Box<Project>, volume: Volume) {
+    pub fn set_project(&mut self, project: Box<Project>) {
         self.maybe_init();
-        self.send(PlaybackMessage::SetProject(project, volume));
+        self.send(PlaybackMessage::SetProject(project));
     }
 
-    pub fn set_audio(&mut self, audio: Vec<Stereo<f32>>, volume: Volume) {
+    pub fn set_audio(&mut self, audio: Vec<Stereo<f32>>) {
         self.maybe_init();
-        self.send(PlaybackMessage::SetAudio(audio, volume));
+        self.send(PlaybackMessage::SetAudio(audio));
     }
 
     fn is_ready(&mut self) -> bool {
