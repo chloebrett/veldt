@@ -45,7 +45,7 @@ impl AudioProcessor {
             if self.state == PlaybackState::Play && self.audio_tx.len() < BUFFER_SIZE - CHUNK_SIZE {
                 self.process_chunk();
             } else {
-                // TODO: consider replacing this with a blocking try_recv
+                // TODO: consider replacing this with a blocking .recv
                 // that waits for a new action if we'd otherwise be paused/finished.
                 sleep_ms(10);
             }
