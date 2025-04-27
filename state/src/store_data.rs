@@ -140,6 +140,11 @@ impl Default for StoreData {
                                         release: 0.1,
                                     },
                                 ],
+                                matrix_config: ModMatrix{
+                                    rows: 6,
+                                    cols: 3,
+                                    matrix: vec![0.0, 0.0, 0.0]
+                                },
                             },
                         },
                         meta: GeneratorMeta {
