@@ -1,7 +1,7 @@
 use crate::{app_state::DataState, transform::Transform};
 use egui::{
-    Color32, CornerRadius, CursorIcon, Frame, Pos2, Rect, Response, Sense, Shape, Stroke, Ui, Vec2,
-    Widget, emath::RectTransform, pos2, vec2,
+    Color32, CornerRadius, CursorIcon, Frame, Pos2, Rect, Response, Sense, Shape,
+    Stroke, Ui, Vec2, Widget, emath::RectTransform, pos2, vec2,
 };
 use shared::types::Beats;
 use state::{Action, Selector, Store};
@@ -120,11 +120,12 @@ impl<'a, T: SequencerObject<T>> Sequencer<'a, T> {
                 resize_id,
                 Sense::drag(),
             );
+
             if movable_resp.interact(Sense::click()).double_clicked() {
                 T::set_selected(ui, None);
                 object.set_active(ui, index);
             } else if movable_resp.interact(Sense::click()).clicked() {
-                T::set_selected(ui, None);
+                T::set_selected(ui, Some(index));
             }
             if resize_resp.hovered() {
                 ui.ctx().set_cursor_icon(CursorIcon::ResizeColumn);
@@ -242,11 +243,10 @@ impl<T: SequencerObject<T>> Widget for Sequencer<'_, T> {
             // If user double clicks outside of an object remove all objects from selection.
             if response.interact(Sense::click()).double_clicked() {
                 T::set_selected(ui, None)
-            }
-            if response.interact(Sense::click()).clicked() {
+            } else if response.interact(Sense::click()).clicked() {
                 let pos = response.interact_pointer_pos().unwrap();
-                // let object = T::from_pos(pos.transform(sequencer_transform.inverse()), range);
-                // add_object(object)
+                let object = T::from_pos(pos.transform(sequencer_transform.inverse()), range);
+                add_object(object)
             }
             self.interact(ui, &response, &edit_object, &on_release);
             let active_object = T::get_active(ui, self.store);
