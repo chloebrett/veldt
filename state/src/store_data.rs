@@ -27,6 +27,27 @@ impl StoreData {
     }
 }
 
+const BASE_OSC: OscillatorConfig = OscillatorConfig {
+    wave: WaveType::Sine,
+    volume: 1.0,
+    pan: 0.0,
+    osc_detune: 0.0,
+    osc_count: 1,
+    unison_detune: 0.0,
+};
+
+const BASE_LFO: LfoConfig = LfoConfig {
+    wave: WaveType::Sine,
+    frequency: 1.0,
+};
+
+const BASE_ENV: AdsrEnvelope = AdsrEnvelope {
+    attack: 0.1,
+    decay: 0.1,
+    sustain: 0.8,
+    release: 0.1,
+};
+
 impl Default for StoreData {
     fn default() -> Self {
         StoreData {
@@ -83,63 +104,19 @@ impl Default for StoreData {
                                 oscillators: [
                                     OscillatorConfig {
                                         wave: WaveType::Sine,
-                                        volume: 1.0,
-                                        pan: 0.0,
-                                        osc_detune: 0.0,
-                                        osc_count: 1,
-                                        unison_detune: 0.0,
+                                        ..BASE_OSC
                                     },
                                     OscillatorConfig {
                                         wave: WaveType::Triangle,
-                                        volume: 1.0,
-                                        pan: 0.0,
-                                        osc_detune: 0.0,
-                                        osc_count: 1,
-                                        unison_detune: 0.0,
+                                        ..BASE_OSC
                                     },
                                     OscillatorConfig {
                                         wave: WaveType::Square,
-                                        volume: 1.0,
-                                        pan: 0.0,
-                                        osc_detune: 0.0,
-                                        osc_count: 1,
-                                        unison_detune: 0.0,
+                                        ..BASE_OSC
                                     },
                                 ],
-                                lfos: [
-                                    LfoConfig {
-                                        wave: WaveType::Sine,
-                                        frequency: 1.0,
-                                    },
-                                    LfoConfig {
-                                        wave: WaveType::Sine,
-                                        frequency: 1.0,
-                                    },
-                                    LfoConfig {
-                                        wave: WaveType::Sine,
-                                        frequency: 1.0,
-                                    },
-                                ],
-                                envelopes: [
-                                    AdsrEnvelope {
-                                        attack: 0.1,
-                                        decay: 0.1,
-                                        sustain: 0.8,
-                                        release: 0.1,
-                                    },
-                                    AdsrEnvelope {
-                                        attack: 0.1,
-                                        decay: 0.1,
-                                        sustain: 0.8,
-                                        release: 0.1,
-                                    },
-                                    AdsrEnvelope {
-                                        attack: 0.1,
-                                        decay: 0.1,
-                                        sustain: 0.8,
-                                        release: 0.1,
-                                    },
-                                ],
+                                lfos: [BASE_LFO; 3],
+                                envelopes: [BASE_ENV; 3],
                             },
                         },
                         meta: GeneratorMeta {

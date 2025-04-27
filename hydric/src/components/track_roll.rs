@@ -8,6 +8,7 @@ use crate::{
 use egui::{
     Color32, CornerRadius, Pos2, Rect, ScrollArea, Shape, Stroke, StrokeKind, Ui, pos2, vec2,
 };
+use ordered_float::OrderedFloat;
 use shared::{
     model::{Track, TrackId, TrackPlacement},
     types::Beats,
@@ -47,12 +48,19 @@ impl View for TrackRoll<'_> {
             .track_placements
             .iter()
             .map(|placement| PlacedTrack {
-                track: store.get().project.tracks[placement.track_id as usize].clone(),
+                unclipped_duration: store.get().project.tracks[placement.track_id as usize]
+                    .unclipped_duration(),
                 placement: placement.clone(),
             })
             .collect();
         let track_count = store.get().project.tracks.len();
         let range = Rect::from_min_max(pos2(0.0, 0.0), pos2(16.0, track_count as f32));
+        let mut select = DataState::TrackRollSelectMode
+            .get_value(ui)
+            .unwrap_or(false);
+        if !select {
+            DataState::SelectedTrackPlacementIndexes.remove_value(ui);
+        }
         default_window("Track Roll")
             .default_pos(pos2(30.0, 200.0))
             .resizable(true)
@@ -67,6 +75,7 @@ impl View for TrackRoll<'_> {
                             default_track_placement,
                         )));
                     }
+                    ui.checkbox(&mut select, "Select")
                 });
                 ScrollArea::vertical()
                     .min_scrolled_height(400.0)
@@ -75,6 +84,7 @@ impl View for TrackRoll<'_> {
                             Sequencer::new(store, range)
                                 .objects(placed_tracks)
                                 .size(vec2(600.0, 100.0 * track_count as f32))
+                                .select(select)
                                 .vertical_bars(4.0, Color32::from_white_alpha(6))
                                 .vertical_bars(1.0, Color32::from_white_alpha(3))
                                 .horizontal_rects(
@@ -84,12 +94,13 @@ impl View for TrackRoll<'_> {
                         );
                     });
             });
+        DataState::TrackRollSelectMode.set_value(ui, select);
     }
 }
 
 struct PlacedTrack {
-    track: Track,
     placement: TrackPlacement,
+    unclipped_duration: OrderedFloat<f32>,
 }
 
 impl SequencerObject<PlacedTrack> for PlacedTrack {
@@ -112,7 +123,7 @@ impl SequencerObject<PlacedTrack> for PlacedTrack {
         let length: f32 = *self
             .placement
             .clipped_duration
-            .unwrap_or(self.track.unclipped_duration());
+            .unwrap_or(self.unclipped_duration);
         // Min `track_size.x` of 0.4 to ensure part of the object is still visible to interact with.
         let track_size = vec2(length.max(0.4), 1.0);
         Rect::from_min_size(track_pos, track_size)
@@ -129,7 +140,7 @@ impl SequencerObject<PlacedTrack> for PlacedTrack {
 
     fn resize_action(&self, x: f32, _range: Rect) -> Option<Action> {
         let clipped_duration = x - *self.placement.offset;
-        let max_note_length = *self.track.unclipped_duration();
+        let max_note_length = *self.unclipped_duration;
         let clipped_duration = if clipped_duration < max_note_length {
             Some(clipped_duration as Beats)
         } else {
@@ -141,7 +152,7 @@ impl SequencerObject<PlacedTrack> for PlacedTrack {
     }
 
     fn shape(&self, range: Rect) -> Shape {
-        if self.track.notes.is_empty() {
+        if *self.unclipped_duration == 0.0 {
             Shape::rect_filled(
                 self.to_rect(range),
                 CornerRadius::same(1),
@@ -161,13 +172,13 @@ impl SequencerObject<PlacedTrack> for PlacedTrack {
                 .get(index)
                 .expect("Should have been track placement at index");
             Some(PlacedTrack {
-                track: store
+                unclipped_duration: store
                     .get()
                     .project
                     .tracks
                     .get(track_placement.track_id as usize)
                     .expect("Should have been track at index.")
-                    .clone(),
+                    .unclipped_duration(),
                 placement: track_placement.clone(),
             })
         } else {
@@ -203,13 +214,13 @@ impl SequencerObject<PlacedTrack> for PlacedTrack {
                         .get(index)
                         .expect("Should have been track placement at index");
                     PlacedTrack {
-                        track: store
+                        unclipped_duration: store
                             .get()
                             .project
                             .tracks
                             .get(track_placement.track_id as usize)
                             .expect("Should have been track at index.")
-                            .clone(),
+                            .unclipped_duration(),
                         placement: track_placement.clone(),
                     }
                 })
@@ -245,5 +256,25 @@ impl SequencerObject<PlacedTrack> for PlacedTrack {
 
     fn set_selected(ui: &mut Ui, index: Option<usize>) {
         update_select_data_state(ui, DataState::SelectedTrackPlacementIndexes, index);
+    }
+
+    fn add_new(&self, store: &Store, _parent_index: Option<usize>) {
+        store.dispatchr(Action::AddChild(TypeField::TrackPlacement(
+            self.placement.clone(),
+        )));
+    }
+
+    fn from_pos(pos: Pos2, range: Rect) -> PlacedTrack {
+        let track_index = pos.y as u32;
+        let offset = range.left() + pos.x;
+        PlacedTrack {
+            placement: TrackPlacement {
+                track_id: track_index,
+                offset: offset.into(),
+                clipped_duration: None,
+                visual_placement: 0,
+            },
+            unclipped_duration: 0.0.into(),
+        }
     }
 }
