@@ -33,9 +33,14 @@ pub struct RenderGraph {
 impl Default for RenderGraph {
     fn default() -> Self {
         let mut graph = make_graph();
-        // Set a Sum node as output to add inputs on the graph.
-        // TODO: remove this?
+
+        // There is always an output node, and it's usually either a SumNode
+        // or an AmpNode. We start with a Sum node, then can later add an AmpNode after it.
+        // The SumNode is the destination for all the generator/effect instance chains -
+        // they all get summed together to produce the final audio.
+        // Note: consider adding the starter AmpNode here as well.
         let output_node_index = graph.add_node(NodeData::new2(BoxedNodeSend::new(Sum)));
+
         RenderGraph {
             graph,
             sample_count: 0,
@@ -50,8 +55,31 @@ impl Default for RenderGraph {
 }
 
 impl RenderGraph {
+    /// Deletes all nodes from the graph.
+    pub fn clear_nodes(&mut self) {
+        self.graph = make_graph();
+
+        // Add a Sum node for the same reason as in default().
+        self.output_node_index = self.graph.add_node(NodeData::new2(BoxedNodeSend::new(Sum)));
+
+        // Reset counters.
+        self.sample_count = 0;
+        self.generator_indexes = vec![];
+        self.processor = make_processor();
+        self.processed_samples_count = 0;
+
+        // Keep the process context and rx because they contain the store.
+    }
+
+    pub fn set_from_audio(&mut self, audio: Vec<Stereo<f32>>) {
+        self.sample_count = audio.len();
+        let buffer_node: BufferNode = audio.into();
+        self.add_pre_output_node(buffer_node);
+        self.add_output_amp_node();
+    }
+
     /// Initializes the graph from a project instance.
-    /// Not idempotent! Only call this on a fresh RenderGraph.
+    /// Not idempotent! Only call this on a fresh RenderGraph. (either new or call clear_nodes).
     /// This is mostly an interim method until we get action receiving working properly.
     pub fn set_from_project(&mut self, project: &Project) {
         let bpm = project.bpm;
@@ -79,6 +107,8 @@ impl RenderGraph {
                 self.add_effect_with_mixer_to_generator(effect.clone(), index);
             }
         }
+
+        self.add_output_amp_node();
     }
 
     pub fn pos(&self) -> usize {
@@ -106,8 +136,8 @@ impl RenderGraph {
     }
 
     // Add amp node and set as graph output.
-    pub fn add_output_amp_node(&mut self, node: AmpNode) {
-        let node_index = self.add_node(node);
+    pub fn add_output_amp_node(&mut self) {
+        let node_index = self.add_node(AmpNode::default());
         self.graph.add_edge(self.output_node_index, node_index, ());
         // Set node as new output
         self.output_node_index = node_index;
@@ -193,21 +223,22 @@ impl RenderGraph {
     }
 
     /// Creates a graph that plays the buffer contained in a Vec.
-    /// Chain with .add_amp_node to control volume and/or clip.
     pub fn from_vec(vec: Vec<Stereo<f32>>) -> Self {
-        let sample_count = vec.len();
-        let buffer_node: BufferNode = vec.into();
-        let mut graph = RenderGraph {
-            sample_count,
-            ..Default::default()
-        };
-        graph.add_pre_output_node(buffer_node);
+        let mut graph = RenderGraph::default();
+        graph.set_from_audio(vec);
         graph
     }
 
-    pub fn reset(&mut self) {
-        self.processor = make_processor();
-        self.processed_samples_count = 0;
+    fn update_store(&mut self) {
+        // Update the store if there are actions to process.
+        let store = &mut self.process_context.store;
+        if let Some(rx) = &self.rx {
+            while let Ok((selector, action)) = rx.try_recv() {
+                // TODO: also update graph topology by listening for the appropriate actions.
+                // E.g. add/remove effect or generator.
+                store.update(&selector, &action);
+            }
+        }
     }
 }
 
@@ -215,15 +246,7 @@ impl Iterator for RenderGraph {
     type Item = Stereo<f32>;
 
     fn next(&mut self) -> Option<Self::Item> {
-        // Update the store if there are actions to process.
-        let store = &mut self.process_context.store;
-        if let Some(rx) = &self.rx {
-            while let Ok((selector, action)) = rx.recv() {
-                // TODO: also update graph topology by listening for the appropriate actions.
-                // E.g. add/remove effect or generator.
-                store.update(&selector, &action);
-            }
-        }
+        self.update_store();
 
         if self.processed_samples_count % Buffer::LEN == 0 {
             self.processor.process(
@@ -393,17 +416,13 @@ mod tests {
         // Arrange
         let generator_node = make_generator_node();
         let mixer_channel = make_mixer_channel();
-        let amp_node = AmpNode {
-            volume: 2.3,
-            should_clip: false,
-        };
         let mut graph = RenderGraph::default();
         // Act
         graph.add_generator(generator_node);
         for effect in mixer_channel.effects {
             graph.add_effect_with_mixer_to_generator(effect, 0);
         }
-        graph.add_output_amp_node(amp_node);
+        graph.add_output_amp_node();
         // Assert
         assert!(graph.peekable().peek().is_some())
     }

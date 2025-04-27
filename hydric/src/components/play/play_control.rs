@@ -16,16 +16,14 @@ pub fn play_control(
 ) {
     let player = &mut audio_state.player;
     if ui.button("Set audio from local + play").clicked() {
-        let volume = store.get().volume;
-        player.set_project(Box::new(store.get().project.clone()), volume);
+        player.set_project(Box::new(store.get().project.clone()));
         player.play();
     }
 
     ui.separator();
 
     if ui.button("Set audio from local").clicked() {
-        let volume = store.get().volume;
-        player.set_project(Box::new(store.get().project.clone()), volume);
+        player.set_project(Box::new(store.get().project.clone()));
     }
 
     if ui.button("Set audio from server").clicked() {
@@ -37,9 +35,8 @@ pub fn play_control(
     poll(
         &mut async_state.server_render,
         |audio: &Vec<Stereo<f32>>| {
-            let volume = store.get().volume;
             audio_state.audio = audio.to_vec();
-            player.set_audio(audio_state.audio.clone(), volume);
+            player.set_audio(audio_state.audio.clone());
         },
     );
 

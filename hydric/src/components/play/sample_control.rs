@@ -21,8 +21,7 @@ pub fn sample_control(
         let sample = store.get().project.samples[0].clone();
         let sample = interleave_stereo(sample.left, sample.right);
         audio_state.audio = sample.clone();
-        let volume = store.get().volume;
-        audio_state.player.set_audio(sample, volume);
+        audio_state.player.set_audio(sample);
     }
 
     if ui.button("Load sample").clicked() {

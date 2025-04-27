@@ -3,7 +3,7 @@ use super::{
 };
 use crossbeam_channel::{Receiver, Sender};
 use dasp_frame::Stereo;
-use mesic::graph::{AmpNode, RenderGraph};
+use mesic::graph::RenderGraph;
 
 /// Audio processor which runs in its own thread and communicates with the UI thread via crossbeam channels.
 pub struct AudioProcessor {
@@ -21,6 +21,7 @@ impl AudioProcessor {
         playback_rx: Receiver<PlaybackMessage>,
         update_tx: Sender<PlaybackUpdate>,
         is_looping: bool,
+        graph: RenderGraph,
     ) -> Self {
         AudioProcessor {
             audio_tx,
@@ -28,7 +29,7 @@ impl AudioProcessor {
             update_tx,
             is_looping,
             state: PlaybackState::Pause,
-            graph: RenderGraph::default(),
+            graph,
         }
     }
 
@@ -44,6 +45,8 @@ impl AudioProcessor {
             if self.state == PlaybackState::Play && self.audio_tx.len() < BUFFER_SIZE - CHUNK_SIZE {
                 self.process_chunk();
             } else {
+                // TODO: consider replacing this with a blocking .recv
+                // that waits for a new action if we'd otherwise be paused/finished.
                 sleep_ms(10);
             }
             self.update_tx
@@ -55,20 +58,13 @@ impl AudioProcessor {
     fn read_messages(&mut self) {
         while let Ok(message) = self.playback_rx.try_recv() {
             match message {
-                PlaybackMessage::SetProject(project, volume) => {
-                    self.graph = RenderGraph::default();
+                PlaybackMessage::SetProject(project) => {
+                    self.graph.clear_nodes();
                     self.graph.set_from_project(&project);
-                    self.graph.add_output_amp_node(AmpNode {
-                        volume,
-                        should_clip: true,
-                    });
                 }
-                PlaybackMessage::SetAudio(audio, volume) => {
-                    self.graph = RenderGraph::from_vec(audio);
-                    self.graph.add_output_amp_node(AmpNode {
-                        volume,
-                        should_clip: true,
-                    });
+                PlaybackMessage::SetAudio(audio) => {
+                    self.graph.clear_nodes();
+                    self.graph.set_from_audio(audio);
                 }
                 PlaybackMessage::Seek(PlaybackPosition { samples }) => {
                     log::info!("Seeking to {}", samples);
@@ -92,7 +88,8 @@ impl AudioProcessor {
     fn process_chunk(&mut self) {
         let mut did_send = false;
         for i in 0..CHUNK_SIZE {
-            if let Some(next) = self.graph.next() {
+            let next = self.graph.next();
+            if let Some(next) = next {
                 self.audio_tx.try_send(next).unwrap();
                 did_send = true;
             } else if self.is_looping {

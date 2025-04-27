@@ -20,7 +20,6 @@ use std::sync::mpsc::channel;
 
 pub struct App {
     pub store: Store,
-    _graph: RenderGraph,
     pub frame_history: FrameHistory,
     pub async_state: AsyncState,
     pub audio_state: AudioState,
@@ -37,10 +36,9 @@ impl Default for App {
         graph.set_receiver(rx);
         App {
             store: Store::new(broadcast, tx),
-            _graph: graph,
             frame_history: FrameHistory::default(),
             async_state: AsyncState::default(),
-            audio_state: AudioState::default(),
+            audio_state: AudioState::new(graph),
             window_state: WindowState::default(),
         }
     }
