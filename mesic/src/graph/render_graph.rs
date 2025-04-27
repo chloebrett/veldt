@@ -1,13 +1,13 @@
 use super::ProcessContext;
 use super::{
-    AmpNode, BufferNode, CompressorNode, DelayNode, EqNode, GeneratorNode, Graph, MixerNode,
-    ModDelayNode, Processor, make_graph, make_processor,
+    AmpNode, BufferNode, CompressorNode, DelayNode, EqNode, Graph, MixerNode, ModDelayNode,
+    Processor, SimpleWaveGeneratorNode, make_graph, make_processor,
 };
 use crate::consts::SAMPLE_RATE;
 use dasp_frame::Stereo;
 use dasp_graph::{BoxedNodeSend, Buffer, Node, NodeData, node::Sum};
 use petgraph::stable_graph::NodeIndex;
-use shared::model::{Effect, EffectInstance, Project};
+use shared::model::{Effect, EffectInstance, GeneratorInstance, GeneratorType, Project};
 use state::{Action, Selector};
 use std::sync::mpsc::Receiver;
 
@@ -91,13 +91,21 @@ impl RenderGraph {
             // Create a generator node.
             // TODO use multiple generators.
             let generator_index = 0;
-            let generator_node = GeneratorNode::new(
-                project.generators[generator_index].clone(),
-                track,
-                placement.clone(),
-                bpm,
-            );
-            self.add_generator(generator_node);
+            let generator_instance = &project.generators[generator_index];
+            if let GeneratorInstance {
+                kind: GeneratorType::SimpleWave { config },
+                id: _,
+                meta,
+            } = generator_instance
+            {
+                let generator_node = SimpleWaveGeneratorNode::new(
+                    generator_instance.clone(),
+                    track,
+                    placement.clone(),
+                    bpm,
+                );
+                self.add_simple_wave_generator(generator_node);
+            }
 
             // Apply effects.
             // TODO add all channels.
@@ -148,7 +156,7 @@ impl RenderGraph {
         self.output_node_index = node_index;
     }
 
-    pub fn add_generator(&mut self, node: GeneratorNode) {
+    pub fn add_simple_wave_generator(&mut self, node: SimpleWaveGeneratorNode) {
         self.sample_count = usize::max(self.sample_count, node.sample_count);
         let node_index = self
             .graph

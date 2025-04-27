@@ -4,7 +4,7 @@ use dasp_graph::{Buffer, Input, Node};
 use shared::model::{GeneratorInstance, GeneratorType, Track, TrackPlacement};
 use shared::types::{Beats, KnobPosition, Volume};
 
-pub struct GeneratorNode {
+pub struct SimpleWaveGeneratorNode {
     instance: GeneratorInstance,
     sample_index: u32, // the sample that playback is currently up to.
     track: Track,
@@ -13,7 +13,7 @@ pub struct GeneratorNode {
     pub sample_count: usize,
 }
 
-impl GeneratorNode {
+impl SimpleWaveGeneratorNode {
     pub fn new(
         instance: GeneratorInstance,
         track: Track,
@@ -27,7 +27,7 @@ impl GeneratorNode {
                     .unwrap_or(track.unclipped_duration()),
             bpm,
         ) as usize;
-        GeneratorNode {
+        SimpleWaveGeneratorNode {
             instance,
             track,
             track_placement,
@@ -45,7 +45,7 @@ impl GeneratorNode {
     }
 }
 
-impl Node<ProcessContext> for GeneratorNode {
+impl Node<ProcessContext> for SimpleWaveGeneratorNode {
     fn process(&mut self, _inputs: &[Input], output: &mut [Buffer], payload: &ProcessContext) {
         if let Some(seek_pos) = payload.seek_pos {
             self.sample_index = seek_pos as u32;
