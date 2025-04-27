@@ -1,7 +1,7 @@
 use super::ProcessContext;
 use super::{
-    BufferNode, CompressorNode, DelayNode, EqNode, GeneratorNode, Graph, MixerNode, ModDelayNode,
-    Processor, make_graph, make_processor,
+    AmpNode, BufferNode, CompressorNode, DelayNode, EqNode, GeneratorNode, Graph, MixerNode,
+    ModDelayNode, Processor, make_graph, make_processor,
 };
 use crate::consts::SAMPLE_RATE;
 use crate::effect::eq_filter;
@@ -34,6 +34,7 @@ impl Default for RenderGraph {
     fn default() -> Self {
         let mut graph = make_graph();
         // Set a Sum node as output to add inputs on the graph.
+        // TODO: remove this?
         let output_node_index = graph.add_node(NodeData::new2(BoxedNodeSend::new(Sum)));
         RenderGraph {
             graph,
@@ -75,7 +76,7 @@ impl RenderGraph {
             // TODO allow multiple effects
             let mixer_channel = &project.mixer[0];
             for effect in &mixer_channel.effects {
-                self.add_generator_effect_with_mixer(effect.clone(), index);
+                self.add_effect_with_mixer_to_generator(effect.clone(), index);
             }
         }
     }
@@ -93,19 +94,20 @@ impl RenderGraph {
         self.rx = Some(receiver);
     }
 
-    // Add node with edge directed to graph output.
-    pub fn add_node(&mut self, node: impl Node<ProcessContext> + 'static + Send) {
-        let node_index = self
-            .graph
-            .add_node(NodeData::new2(BoxedNodeSend::new(node)));
+    fn add_node(&mut self, node: impl Node<ProcessContext> + 'static + Send) -> NodeIndex {
+        self.graph
+            .add_node(NodeData::new2(BoxedNodeSend::new(node)))
+    }
+
+    // Adds a node just before the current output.
+    pub fn add_pre_output_node(&mut self, node: impl Node<ProcessContext> + 'static + Send) {
+        let node_index = self.add_node(node);
         self.graph.add_edge(node_index, self.output_node_index, ());
     }
 
-    // Add node and set as graph output.
-    pub fn add_output_node(&mut self, node: impl Node<ProcessContext> + 'static + Send) {
-        let node_index = self
-            .graph
-            .add_node(NodeData::new2(BoxedNodeSend::new(node)));
+    // Add amp node and set as graph output.
+    pub fn add_output_amp_node(&mut self, node: AmpNode) {
+        let node_index = self.add_node(node);
         self.graph.add_edge(self.output_node_index, node_index, ());
         // Set node as new output
         self.output_node_index = node_index;
@@ -121,7 +123,7 @@ impl RenderGraph {
         self.graph.add_edge(node_index, self.output_node_index, ());
     }
 
-    pub fn add_generator_effect_with_mixer(
+    pub fn add_effect_with_mixer_to_generator(
         &mut self,
         effect: EffectInstance,
         generator_index: usize,
@@ -199,7 +201,7 @@ impl RenderGraph {
             sample_count,
             ..Default::default()
         };
-        graph.add_node(buffer_node);
+        graph.add_pre_output_node(buffer_node);
         graph
     }
 
@@ -229,6 +231,7 @@ impl Iterator for RenderGraph {
                 &self.process_context,
                 self.output_node_index,
             );
+            self.process_context.seek_pos = None;
         }
 
         if self.processed_samples_count >= self.sample_count {
@@ -246,7 +249,6 @@ impl Iterator for RenderGraph {
         let output = Some([left, right]);
 
         self.processed_samples_count += 1;
-        self.process_context.seek_pos = None;
         output
     }
 
@@ -399,9 +401,9 @@ mod tests {
         // Act
         graph.add_generator(generator_node);
         for effect in mixer_channel.effects {
-            graph.add_generator_effect_with_mixer(effect, 0);
+            graph.add_effect_with_mixer_to_generator(effect, 0);
         }
-        graph.add_output_node(amp_node);
+        graph.add_output_amp_node(amp_node);
         // Assert
         assert!(graph.peekable().peek().is_some())
     }

@@ -35,7 +35,7 @@ impl AudioProcessor {
             wasm_thread::current().id()
         );
 
-        while self.state != PlaybackState::Stop {
+        loop {
             self.read_messages();
 
             if self.state == PlaybackState::Play && self.audio_tx.len() < BUFFER_SIZE - CHUNK_SIZE {
@@ -43,6 +43,9 @@ impl AudioProcessor {
             } else {
                 sleep_ms(10);
             }
+            self.update_tx
+                .try_send(PlaybackUpdate::Delay(self.audio_tx.len()))
+                .unwrap();
         }
     }
 
@@ -52,14 +55,14 @@ impl AudioProcessor {
                 PlaybackMessage::SetProject(project, volume) => {
                     self.graph = RenderGraph::default();
                     self.graph.set_from_project(&project);
-                    self.graph.add_output_node(AmpNode {
+                    self.graph.add_output_amp_node(AmpNode {
                         volume,
                         should_clip: true,
                     });
                 }
                 PlaybackMessage::SetAudio(audio, volume) => {
                     self.graph = RenderGraph::from_vec(audio);
-                    self.graph.add_output_node(AmpNode {
+                    self.graph.add_output_amp_node(AmpNode {
                         volume,
                         should_clip: true,
                     });
@@ -69,6 +72,11 @@ impl AudioProcessor {
                     self.graph.seek(samples);
                 }
                 PlaybackMessage::State(state) => {
+                    log::info!(
+                        "Got playback state message {:?} on thread {:?}",
+                        state,
+                        wasm_thread::current().id()
+                    );
                     self.state = state;
                 }
             }
@@ -83,14 +91,7 @@ impl AudioProcessor {
                 did_send = true;
             } else {
                 // No more audio, so pause.
-                // Consider stopping as well, but we'll need to re-create the thread if
-                // we do this.
                 self.state = PlaybackState::Pause;
-                self.update_tx
-                    .try_send(PlaybackUpdate::Pos(PlaybackPosition {
-                        samples: self.graph.pos(),
-                    }))
-                    .unwrap();
                 self.update_tx
                     .try_send(PlaybackUpdate::State(self.state))
                     .unwrap();
