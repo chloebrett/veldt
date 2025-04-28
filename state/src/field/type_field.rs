@@ -1,9 +1,12 @@
-use shared::action_proto::{TypeFieldProto, type_field_proto::Kind as TypeFieldKind};
+use shared::action_proto::{
+    MultiTypeFieldProto, TypeFieldProto, type_field_proto::Kind as TypeFieldKind,
+};
 use shared::model::{
     AdsrEnvelope, AntiAliasingMode, EffectInstance, EqType, FileTreeConfig, FilenameTree,
     PitchName, PlacedNote, Project, Sample, Scale, ScaleValue, Track, TrackPlacement, WaveType,
 };
 use shared::pmodel::{AntiAliasingModeProto, EqTypeProto, ScaleProto, WaveTypeProto};
+use shared::serialize::map_vec;
 
 /// Fields of various types.
 /// Used to distinguish *which* field of this type is being referred to,
@@ -105,6 +108,27 @@ impl From<TypeField> for TypeFieldProto {
                 TypeField::Mute(it) => TypeFieldKind::Mute(it),
                 TypeField::Octave(it) => TypeFieldKind::Octave(it),
             }),
+        }
+    }
+}
+
+#[derive(PartialEq, Clone, Debug)]
+pub struct MultiTypeField {
+    pub values: Vec<TypeField>,
+}
+
+impl From<MultiTypeFieldProto> for MultiTypeField {
+    fn from(object: MultiTypeFieldProto) -> Self {
+        MultiTypeField {
+            values: map_vec(object.values),
+        }
+    }
+}
+
+impl From<MultiTypeField> for MultiTypeFieldProto {
+    fn from(object: MultiTypeField) -> Self {
+        MultiTypeFieldProto {
+            values: map_vec(object.values),
         }
     }
 }

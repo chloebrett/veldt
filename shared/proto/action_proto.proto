@@ -13,17 +13,28 @@ message ActionProto {
     TypeFieldProto set_child = 5;
     TypeFieldProto add_child = 6;
     IndexFieldProto delete_child = 7;
+    MultiIndexFieldProto delete_children = 8;
+    MultiTypeFieldProto set_children = 9;
   }
 }
 
 message IndexFieldProto {
-  oneof kind {
-    uint32 track = 1;
-    uint32 placed_note = 2;
-    uint32 track_placement = 3;
-    uint32 effect = 4;
-    uint32 generator = 5;
-  }
+  IndexFieldKindProto kind = 1;
+  uint32 index = 2;
+}
+
+enum IndexFieldKindProto {
+  UnknownIndexFieldKind = 0;
+  TrackIndexField = 1;
+  PlacedNoteIndexField = 2;
+  TrackPlacementIndexField = 3;
+  EffectIndexField = 4;
+  GeneratorIndexField = 5;
+}
+
+message MultiIndexFieldProto {
+  repeated IndexFieldProto values = 1;
+  IndexFieldKindProto kind = 2;
 }
 
 message TypeFieldProto {
@@ -47,6 +58,10 @@ message TypeFieldProto {
     pmodel.FilenameTreeProto sample_tree = 17;
     pmodel.FileTreeConfigProto sample_tree_config = 18;
   }
+}
+
+message MultiTypeFieldProto {
+    repeated TypeFieldProto values = 1;
 }
 
 message SetFloatProto {

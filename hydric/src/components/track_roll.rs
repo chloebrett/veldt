@@ -1,4 +1,4 @@
-use std::collections::HashSet;
+use std::collections::BTreeSet;
 
 use crate::{
     app_state::{DataState, WindowState, update_select_data_state},
@@ -202,7 +202,7 @@ impl SequencerObject<PlacedTrack> for PlacedTrack {
     }
 
     fn get_selected(ui: &Ui, store: &Store) -> Option<Vec<PlacedTrack>> {
-        let index_list: HashSet<usize> = DataState::SelectedTrackPlacementIndexes.get_value(ui)?;
+        let index_list: BTreeSet<usize> = DataState::SelectedTrackPlacementIndexes.get_value(ui)?;
         Some(
             index_list
                 .into_iter()
@@ -275,6 +275,23 @@ impl SequencerObject<PlacedTrack> for PlacedTrack {
                 visual_placement: 0,
             },
             unclipped_duration: 0.0.into(),
+        }
+    }
+
+    fn delete(store: &Store, index: usize, _parent_index: Option<usize>) {
+        store.dispatchr(Action::DeleteChild(state::IndexField::TrackPlacement(
+            index,
+        )));
+    }
+
+    fn delete_selected(ui: &mut Ui, store: &Store, parent_index: Option<usize>) {
+        for index in DataState::SelectedTrackPlacementIndexes
+            .get_value::<BTreeSet<usize>>(ui)
+            .unwrap_or_default()
+            .iter()
+            .rev()
+        {
+            PlacedTrack::delete(store, *index, parent_index);
         }
     }
 }

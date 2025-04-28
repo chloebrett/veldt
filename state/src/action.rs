@@ -1,4 +1,4 @@
-use crate::{FloatField, IndexField, TypeField, UintField};
+use crate::{FloatField, IndexField, MultiIndexField, MultiTypeField, TypeField, UintField};
 use shared::action_proto::{
     ActionProto, SetFloatProto, SetUintProto, action_proto::Kind as ActionKind,
 };
@@ -12,6 +12,8 @@ pub enum Action {
     DeleteChild(IndexField),
     SetChild(TypeField),
     AddChild(TypeField),
+    SetChildren(MultiTypeField),
+    DeleteChildren(MultiIndexField),
 
     // Note: avoid creating new ad hoc action types.
     // Try to encapsulate them within a generic action type like the ones above.
@@ -46,7 +48,11 @@ impl From<ActionProto> for Action {
             ),
             ActionKind::DeleteChild(index) => Action::DeleteChild(index.into()),
             ActionKind::AddChild(child) => Action::AddChild(child.into()),
+            ActionKind::SetChildren(children) => Action::SetChildren(children.into()),
             ActionKind::SetChild(child) => Action::SetChild(child.into()),
+            ActionKind::DeleteChildren(child_indexes) => {
+                Action::DeleteChildren(child_indexes.into())
+            }
         }
     }
 }
@@ -65,7 +71,11 @@ impl From<Action> for ActionProto {
                 }),
                 Action::SetChild(child) => ActionKind::SetChild(child.into()),
                 Action::AddChild(child) => ActionKind::AddChild(child.into()),
+                Action::SetChildren(children) => ActionKind::SetChildren(children.into()),
                 Action::DeleteChild(index) => ActionKind::DeleteChild(index.into()),
+                Action::DeleteChildren(child_indexes) => {
+                    ActionKind::DeleteChildren(child_indexes.into())
+                }
                 Action::MoveEffectUp(index) => ActionKind::MoveEffectUp(index as u32),
                 Action::MoveEffectDown(index) => ActionKind::MoveEffectDown(index as u32),
 

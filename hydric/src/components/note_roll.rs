@@ -1,4 +1,4 @@
-use std::collections::HashSet;
+use std::collections::BTreeSet;
 
 use super::Piano;
 use crate::{
@@ -14,7 +14,7 @@ use shared::{
     model::{Note, PitchName, PlacedNote, Scale, ScaleValue},
     types::PitchValue,
 };
-use state::{Action, FloatField, Selector, Store, TypeField};
+use state::{Action, FloatField, IndexField, MultiIndexField, Selector, Store, TypeField};
 
 pub struct NoteRoll<'a> {
     store: &'a Store,
@@ -221,7 +221,7 @@ impl SequencerObject<PlacedNote> for PlacedNote {
 
     fn get_selected(ui: &Ui, store: &Store) -> Option<Vec<PlacedNote>> {
         let track_index = DataState::ActiveTrackIndex.get_value::<usize>(ui)?;
-        let note_indexes = DataState::SelectedNoteIndexes.get_value::<HashSet<usize>>(ui)?;
+        let note_indexes = DataState::SelectedNoteIndexes.get_value::<BTreeSet<usize>>(ui)?;
         Some(
             note_indexes
                 .into_iter()
@@ -289,5 +289,23 @@ impl SequencerObject<PlacedNote> for PlacedNote {
             },
             offset: offset.into(),
         }
+    }
+
+    fn delete(store: &Store, index: usize, parent_index: Option<usize>) {
+        store.dispatch(
+            &Selector::Track(parent_index.expect("Should have been a parent index")),
+            Action::DeleteChild(IndexField::PlacedNote(index)),
+        );
+    }
+
+    fn delete_selected(ui: &mut Ui, store: &Store, parent_index: Option<usize>) {
+        let indexes = DataState::SelectedNoteIndexes
+            .get_value::<BTreeSet<usize>>(ui)
+            .unwrap_or_default();
+
+        store.dispatch(
+            &Selector::Track(parent_index.expect("Should have been parent index supplied.")),
+            Action::DeleteChildren(MultiIndexField::PlacedNote(indexes)),
+        )
     }
 }
