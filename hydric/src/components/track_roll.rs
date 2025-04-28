@@ -285,6 +285,11 @@ impl SequencerObject<PlacedTrack> for PlacedTrack {
     }
 
     fn delete_selected(ui: &mut Ui, store: &Store, parent_index: Option<usize>) {
+        // Track Placements must be deleted in reverse order so that indices for the rest of the selected
+        // placements do not change mid-process. E.g., if deleting `3` and `4`, if `3` is deleted first
+        // the placement that was at `4` will now be at `3` and the algorithm will either delete the wrong note or raise
+        // and error.
+        // BTreeSet provides an effecient way to keep and get from a sorted list.
         for index in DataState::SelectedTrackPlacementIndexes
             .get_value::<BTreeSet<usize>>(ui)
             .unwrap_or_default()
