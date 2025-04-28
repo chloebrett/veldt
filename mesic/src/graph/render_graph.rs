@@ -392,8 +392,8 @@ mod tests {
             make_simple_wave_config(),
             make_generator_meta(),
             0,
-            track,
-            track_placement,
+            vec![track_placement],
+            vec![track],
             bpm,
         );
         generator_node
@@ -522,8 +522,8 @@ mod tests {
             make_simple_wave_config(),
             make_generator_meta(),
             0,
-            track.clone(),
-            track_placement.clone(),
+            vec![track_placement.clone()],
+            vec![track.clone()],
             bpm,
         );
 
@@ -535,8 +535,8 @@ mod tests {
             make_simple_wave_config(),
             make_generator_meta(),
             0,
-            track.clone(),
-            track_placement.clone(),
+            vec![track_placement.clone()],
+            vec![track.clone()],
             bpm,
         );
 
@@ -574,16 +574,16 @@ mod tests {
             make_simple_wave_config(),
             make_generator_meta(),
             0,
-            track.clone(),
-            placement_1.clone(),
+            vec![placement_1.clone()],
+            vec![track.clone()],
             bpm,
         );
         let generator_node_2 = SimpleWaveGeneratorNode::new(
             make_simple_wave_config(),
             make_generator_meta(),
             0,
-            track.clone(),
-            placement_2.clone(),
+            vec![placement_2.clone()],
+            vec![track.clone()],
             bpm,
         );
         unclipped_graph.add_simple_wave_generator(generator_node_1);
@@ -598,16 +598,16 @@ mod tests {
             make_simple_wave_config(),
             make_generator_meta(),
             0,
-            track.clone(),
-            placement_1.clone(),
+            vec![placement_1.clone()],
+            vec![track.clone()],
             bpm,
         );
         let clip_generator_node_2 = SimpleWaveGeneratorNode::new(
             make_simple_wave_config(),
             make_generator_meta(),
             0,
-            track.clone(),
-            placement_2_clipped.clone(),
+            vec![placement_2_clipped.clone()],
+            vec![track.clone()],
             bpm,
         );
         clipped_graph.add_simple_wave_generator(clip_generator_node_1);
