@@ -11,6 +11,8 @@ use strum::{Display, EnumIter, EnumString};
 
 use super::ModMatrix;
 
+use super::ModMatrix;
+
 type GeneratorInstanceId = usize;
 
 #[derive(Clone, Debug, PartialEq, FromProto, IntoProto)]
