@@ -1,5 +1,6 @@
 use super::{
-    AudioProcessor, BUFFER_SIZE, PlaybackMessage, PlaybackPosition, PlaybackState, PlaybackUpdate,
+    AudioBuffer, AudioProcessor, BUFFER_SIZE, EMPTY_BUFFER, PlaybackMessage, PlaybackPosition,
+    PlaybackState, PlaybackUpdate,
 };
 use cpal::traits::{DeviceTrait, HostTrait, StreamTrait};
 use cpal::{OutputCallbackInfo, Stream};
@@ -23,8 +24,8 @@ pub struct AudioPlayer {
     graph: Option<RenderGraph>,
 
     // Messages sent from processor -> player.
-    audio_tx: Sender<Stereo<f32>>,
-    audio_rx: Receiver<Stereo<f32>>,
+    audio_tx: Sender<AudioBuffer>,
+    audio_rx: Receiver<AudioBuffer>,
 
     // Messages sent from UI -> processor.
     playback_tx: Sender<PlaybackMessage>,
@@ -174,7 +175,9 @@ impl AudioPlayer {
         let config: &cpal::StreamConfig = &config.into();
 
         let err_fn = |err| error!("an error occurred on stream: {}", err);
-        let channels = config.channels as usize;
+        if config.channels != 2 {
+            panic!("Expected 2 output channels!");
+        }
 
         let output_delay = self.output_delay.clone();
 
@@ -191,12 +194,8 @@ impl AudioPlayer {
                         *output_delay.lock().unwrap() = to_samples(delay);
                     }
 
-                    for frame in data.chunks_mut(channels) {
-                        let value = audio_rx.try_recv().unwrap_or([0.0; 2]);
-
-                        frame[0] = value[0]; // left
-                        frame[1] = value[1]; // right
-                    }
+                    let received = audio_rx.try_recv().unwrap_or(EMPTY_BUFFER);
+                    data.copy_from_slice(received.as_flattened());
                 },
                 err_fn,
                 None,
