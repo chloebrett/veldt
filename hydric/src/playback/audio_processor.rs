@@ -43,13 +43,14 @@ impl AudioProcessor {
         );
 
         loop {
-            self.read_messages();
+            // Process pending messages (non-blocking).
+            while let Ok(message) = self.playback_rx.try_recv() {
+                self.process_message(message);
+            }
 
             if self.state == PlaybackState::Play && self.audio_tx.is_empty() {
                 self.process_chunk();
             } else {
-                // TODO: consider replacing this with a blocking .recv
-                // that waits for a new action if we'd otherwise be paused/finished.
                 sleep_ms(10);
             }
             self.update_tx
@@ -58,32 +59,30 @@ impl AudioProcessor {
         }
     }
 
-    fn read_messages(&mut self) {
-        while let Ok(message) = self.playback_rx.try_recv() {
-            match message {
-                PlaybackMessage::SetProject(project) => {
-                    self.graph.clear_nodes();
-                    self.graph.set_from_project(&project);
-                }
-                PlaybackMessage::SetAudio(audio) => {
-                    self.graph.clear_nodes();
-                    self.graph.set_from_audio(audio);
-                }
-                PlaybackMessage::Seek(PlaybackPosition { samples }) => {
-                    log::info!("Seeking to {}", samples);
-                    self.graph.seek(samples);
-                }
-                PlaybackMessage::State(state) => {
-                    log::info!(
-                        "Got playback state message {:?} on thread {:?}",
-                        state,
-                        wasm_thread::current().id()
-                    );
-                    self.state = state;
-                }
-                PlaybackMessage::Loop(is_looping) => {
-                    self.is_looping = is_looping;
-                }
+    fn process_message(&mut self, message: PlaybackMessage) {
+        match message {
+            PlaybackMessage::SetProject(project) => {
+                self.graph.clear_nodes();
+                self.graph.set_from_project(&project);
+            }
+            PlaybackMessage::SetAudio(audio) => {
+                self.graph.clear_nodes();
+                self.graph.set_from_audio(audio);
+            }
+            PlaybackMessage::Seek(PlaybackPosition { samples }) => {
+                log::info!("Seeking to {}", samples);
+                self.graph.seek(samples);
+            }
+            PlaybackMessage::State(state) => {
+                log::info!(
+                    "Got playback state message {:?} on thread {:?}",
+                    state,
+                    wasm_thread::current().id()
+                );
+                self.state = state;
+            }
+            PlaybackMessage::Loop(is_looping) => {
+                self.is_looping = is_looping;
             }
         }
     }
