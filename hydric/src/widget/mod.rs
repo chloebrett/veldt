@@ -6,6 +6,7 @@ mod selectable_value;
 mod sequencer;
 mod slider;
 mod string_observer;
+mod tab_display;
 mod text_rotator;
 mod window;
 
@@ -19,3 +20,4 @@ pub use slider::*;
 pub use string_observer::*;
 pub use text_rotator::*;
 pub use window::*;
+pub use tab_display::*;
