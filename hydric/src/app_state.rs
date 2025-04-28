@@ -4,7 +4,7 @@ use egui::{Id, Pos2, Ui};
 use mesic::graph::RenderGraph;
 use shared::model::{FilenameTree, Project, Sample};
 use std::cmp::{Eq, Ord};
-use std::collections::HashSet;
+use std::collections::{BTreeSet, HashSet};
 use std::hash::Hash;
 
 /// Container for the various promises launchable by the app.
@@ -166,7 +166,7 @@ impl DataState {
                     data.insert_temp::<Option<usize>>(self.get_id(), None)
                 }
                 Self::SelectedNoteIndexes | Self::SelectedTrackPlacementIndexes => {
-                    data.insert_temp::<Option<HashSet<usize>>>(self.get_id(), None);
+                    data.insert_temp::<Option<BTreeSet<usize>>>(self.get_id(), None);
                 }
                 Self::DragCursorDelta => data.insert_temp::<Option<Pos2>>(self.get_id(), None),
             };
@@ -177,7 +177,7 @@ impl DataState {
 /// Update the state of selected Sequencer Objects based on Ui interaction.
 pub fn update_select_data_state(ui: &mut Ui, data_state: DataState, index: Option<usize>) {
     if let Some(it) = index {
-        if let Some(mut selected) = data_state.get_value::<HashSet<usize>>(ui) {
+        if let Some(mut selected) = data_state.get_value::<BTreeSet<usize>>(ui) {
             // If index is already in the set remove it.
             if selected.contains(&it) {
                 selected.remove(&it);
@@ -186,7 +186,7 @@ pub fn update_select_data_state(ui: &mut Ui, data_state: DataState, index: Optio
             }
             data_state.set_value(ui, selected)
         } else {
-            data_state.set_value::<HashSet<usize>>(ui, HashSet::from_iter(vec![it]))
+            data_state.set_value::<BTreeSet<usize>>(ui, BTreeSet::from_iter(vec![it]))
         }
     } else {
         // If there was no index supplied, remove value.
