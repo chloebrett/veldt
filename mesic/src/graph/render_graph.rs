@@ -4,6 +4,7 @@ use super::{
     Processor, SimpleWaveGeneratorNode, make_graph, make_processor,
 };
 use crate::consts::SAMPLE_RATE;
+use crate::wave::beats_to_samples;
 use dasp_frame::Stereo;
 use dasp_graph::{BoxedNodeSend, Buffer, Node, NodeData, node::Sum};
 use petgraph::stable_graph::NodeIndex;
@@ -82,34 +83,41 @@ impl RenderGraph {
     /// This is mostly an interim method until we get action receiving working properly.
     pub fn set_from_project(&mut self, project: &Project) {
         let bpm = project.bpm;
-        // Add tracks with a placement to graph.
-        // TODO: each generator should play all tracks it's linked to - we don't need a different
-        // generator for every track placement!
-        for (index, placement) in project.track_placements.iter().enumerate() {
-            let track = project.tracks[placement.track_id as usize].clone();
 
-            // Create generator nodes.
-            // Currently, one for each track placement.
-            // TODO: make a single generator node find the appropriate track placements
-            // and play them. I.e. generators keep references to multiple track placements.
-            let generator_index = placement.generator_index;
-            let generator_instance = &project.generators[generator_index];
-            // TODO: support adding other types of generators to the graph.
-            if let GeneratorInstance {
-                kind: GeneratorType::SimpleWave { config },
-                id: _,
-                meta,
-            } = generator_instance
-            {
-                let generator_node = SimpleWaveGeneratorNode::new(
-                    config.clone(),
-                    meta.clone(),
-                    generator_index,
-                    track,
-                    placement.clone(),
-                    bpm,
-                );
-                self.add_simple_wave_generator(generator_node);
+        for generator_index in 0..project.generators.len() {
+            // Placements that are linked to this generator.
+            let placements: Vec<_> = project
+                .track_placements
+                .clone()
+                .into_iter()
+                .filter(|it| it.generator_index == generator_index)
+                .collect();
+
+            // TODO: do better than just cloning all the tracks!
+            // Perhaps load the relevant track data from the store
+            // out of the payload in each processing cycle?
+            // Or even just get a &[Track] containing all the tracks in the store.
+            let tracks = project.tracks.clone();
+
+            match &project.generators[generator_index] {
+                GeneratorInstance {
+                    kind: GeneratorType::SimpleWave { config },
+                    id: _,
+                    meta,
+                } => {
+                    let generator_node = SimpleWaveGeneratorNode::new(
+                        config.clone(),
+                        meta.clone(),
+                        generator_index,
+                        placements,
+                        tracks,
+                        bpm,
+                    );
+                    self.add_simple_wave_generator(generator_node);
+                }
+                _ => {
+                    // TODO: support adding other types of generators to the graph.
+                }
             }
 
             // Apply effects.
@@ -129,6 +137,7 @@ impl RenderGraph {
         }
 
         self.add_output_amp_node();
+        self.sample_count = beats_to_samples(*project.duration(), bpm) as usize;
     }
 
     pub fn pos(&self) -> usize {
@@ -164,7 +173,6 @@ impl RenderGraph {
     }
 
     pub fn add_simple_wave_generator(&mut self, node: SimpleWaveGeneratorNode) {
-        self.sample_count = usize::max(self.sample_count, node.sample_count);
         let node_index = self
             .graph
             .add_node(NodeData::new2(BoxedNodeSend::new(node)));
