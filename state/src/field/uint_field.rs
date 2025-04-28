@@ -9,4 +9,5 @@ pub enum UintField {
     MinDepth,
     MaxDepth,
     TrackId,
+    GeneratorIndex,
 }

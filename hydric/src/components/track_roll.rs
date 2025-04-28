@@ -41,6 +41,7 @@ impl View for TrackRoll<'_> {
             offset: (0.0 as Beats).into(),
             clipped_duration: None,
             visual_placement: 0,
+            generator_index: 0,
         };
         let placed_tracks: Vec<PlacedTrack> = store
             .get()
@@ -273,6 +274,7 @@ impl SequencerObject<PlacedTrack> for PlacedTrack {
                 offset: offset.into(),
                 clipped_duration: None,
                 visual_placement: 0,
+                generator_index: 0,
             },
             unclipped_duration: 0.0.into(),
         }

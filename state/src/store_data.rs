@@ -71,6 +71,7 @@ impl Default for StoreData {
                     clipped_duration: None,
                     offset: OrderedFloat(0.0),
                     visual_placement: 0,
+                    generator_index: 0,
                 }],
                 samples: vec![],
                 generators: vec![
