@@ -84,13 +84,15 @@ impl RenderGraph {
         let bpm = project.bpm;
         // Add tracks with a placement to graph.
         // TODO: each generator should play all tracks it's linked to - we don't need a different
-        // generator for every track!
+        // generator for every track placement!
         for (index, placement) in project.track_placements.iter().enumerate() {
             let track = project.tracks[placement.track_id as usize].clone();
 
-            // Create a generator node.
-            // TODO use multiple generators.
-            let generator_index = 0;
+            // Create generator nodes.
+            // Currently, one for each track placement.
+            // TODO: make a single generator node find the appropriate track placements
+            // and play them. I.e. generators keep references to multiple track placements.
+            let generator_index = placement.generator_index;
             let generator_instance = &project.generators[generator_index];
             // TODO: support adding other types of generators to the graph.
             if let GeneratorInstance {
@@ -112,6 +114,8 @@ impl RenderGraph {
 
             // Apply effects.
             // TODO add all channels.
+            // TODO: this is buggy right now! IIUC we only actually link the final effect in
+            // the chain.
             let mixer_index = 0;
             let mixer_channel = &project.mixer[mixer_index];
             for (effect_index, effect) in mixer_channel.effects.iter().enumerate() {
@@ -119,7 +123,7 @@ impl RenderGraph {
                     mixer_index,
                     effect_index,
                     effect.clone(),
-                    effect_index,
+                    generator_index,
                 );
             }
         }
@@ -180,6 +184,10 @@ impl RenderGraph {
             .generator_indexes
             .get(generator_index)
             .expect("Should be a generator node at this index.");
+        // TODO: this isn't right. We need to add the effect to the end of the effect chain.
+        // We need to make support for effect chains + multiple effect channels better.
+        // Currently I think this creates a bug where only the last effect is audible.
+        // Verify that.
         let mixer = self.add_effect_with_mixer(mixer_index, effect_index, effect, dry);
         // Disconnected direct edge from generator to output.
         if let Some(edge) = self.graph.find_edge(dry, self.output_node_index) {
