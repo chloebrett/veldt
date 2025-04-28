@@ -340,6 +340,7 @@ mod tests {
             offset: 0.0.into(),
             clipped_duration: None,
             visual_placement: 0,
+            generator_index: 0,
         }
     }
 

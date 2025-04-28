@@ -103,6 +103,7 @@ mod tests {
                 offset: 2.5.into(),
                 clipped_duration: Some(5.2.into()),
                 visual_placement: 6,
+                generator_index: 3,
             }],
             samples: vec![Sample {
                 left: vec![0.0, 1.0, 3.0],

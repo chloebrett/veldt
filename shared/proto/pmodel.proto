@@ -43,6 +43,8 @@ message TrackPlacementProto {
   optional float clipped_duration = 3;
 
   uint32 visual_placement = 4;
+
+  uint32 generator_index = 5;
 }
 
 message SampleProto {

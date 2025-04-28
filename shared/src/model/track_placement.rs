@@ -17,6 +17,10 @@ pub struct TrackPlacement {
     /// Position that the track should be displayed visually, useful if there are overlapping tracks.
     /// Zero is the top.
     pub visual_placement: u32,
+
+    /// The generator this track placement is associated with.
+    /// TODO: use a more stable ID instead of the index.
+    pub generator_index: usize,
 }
 
 impl PartialOrd for TrackPlacement {
@@ -38,6 +42,7 @@ impl From<TrackPlacementProto> for TrackPlacement {
             offset: item.offset.into(),
             clipped_duration: item.clipped_duration.map(OrderedFloat),
             visual_placement: item.visual_placement,
+            generator_index: item.generator_index as usize,
         }
     }
 }
@@ -49,6 +54,7 @@ impl From<TrackPlacement> for TrackPlacementProto {
             offset: *item.offset,
             clipped_duration: item.clipped_duration.map(|it| *it),
             visual_placement: item.visual_placement,
+            generator_index: item.generator_index as u32,
         }
     }
 }
