@@ -1,6 +1,5 @@
 use egui::{Color32, FontId, Pos2, Shape, Stroke, Ui, epaint, Frame, Vec2};
 use crate::widget::text_rotator;
-use std::hash::Hash;
 use crate::view::View;
 use super::TextRotation;
 
@@ -91,7 +90,7 @@ impl View for TabDisplay<'_> {
                             ui,
                             heading,
                             TAB_FONT_SIZE,
-                            TextRotation::Anticlockwise,
+                            TextRotation::Anticlockwise90,
                             Color32::BLACK,
                         );
                     }
