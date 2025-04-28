@@ -4,7 +4,7 @@ use crate::view::View;
 use eframe::egui;
 use egui::{Color32, Ui};
 use lazy_static::lazy_static;
-use shared::model::{SubSynthConfig, ModMatrix};
+use shared::model::SubSynthConfig;
 use shared::{
     model::{PitchName, ScaleValue},
     types::PitchValue,
