@@ -38,16 +38,19 @@ where
         pub static ref FILL_COLOURS: [Color32; 3] = [*GREEN_FILL, *PINK_FILL, *ORANGE_FILL,];
     }
 
-    fn draw_mod_matrix<F, G>(
-        config: &SubSynthConfig,
-        ui: &mut Ui,
-        dispatch: &F,
-        on_release: &G,
-    ) where
+    fn draw_mod_matrix<F, G>(config: &SubSynthConfig, ui: &mut Ui, dispatch: &F, on_release: &G)
+    where
         F: Fn(Action),
         G: Fn(),
     {
-        mod_matrix(&config.matrix_config, ui,vec!["ENV 1", "ENV 2", "ENV 3", "LFO 1", "LFO 2", "LFO 3"], vec!["OSC 1", "OSC 2", "OSC 3"], dispatch, on_release);
+        mod_matrix(
+            &config.matrix_config,
+            ui,
+            vec!["ENV 1", "ENV 2", "ENV 3", "LFO 1", "LFO 2", "LFO 3"],
+            vec!["OSC 1", "OSC 2", "OSC 3"],
+            dispatch,
+            on_release,
+        );
     }
 
     ui.horizontal(|ui| {
@@ -62,9 +65,9 @@ where
                         LINE_COLOURS[oscillator_id],
                         FILL_COLOURS[oscillator_id],
                     );
-                ui.add_space(4.0);
-            });
-        }
+                    ui.add_space(4.0);
+                });
+            }
         });
         ui.add_space(5.0);
         ui.vertical(|ui| {
@@ -72,7 +75,6 @@ where
         });
     });
 
-    
     fn draw_piano(ui: &mut Ui) {
         let min_note: PitchValue = PitchName {
             scale_value: ScaleValue::A,
@@ -90,5 +92,4 @@ where
     }
 
     draw_piano(ui);
-
 }
