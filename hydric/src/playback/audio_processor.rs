@@ -14,12 +14,12 @@ pub struct AudioProcessor {
     state: PlaybackState,
     graph: RenderGraph,
     is_looping: bool,
-    buffer: [Stereo<f32>; BUFFER_SIZE],
+    buffer: AudioBuffer,
 }
 
 impl AudioProcessor {
     pub fn new(
-        audio_tx: Sender<[Stereo<f32>; BUFFER_SIZE]>,
+        audio_tx: Sender<AudioBuffer>,
         playback_rx: Receiver<PlaybackMessage>,
         update_tx: Sender<PlaybackUpdate>,
         is_looping: bool,
