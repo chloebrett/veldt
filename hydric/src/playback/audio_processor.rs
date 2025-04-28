@@ -1,5 +1,6 @@
 use super::{
-    BUFFER_SIZE, CHUNK_SIZE, PlaybackMessage, PlaybackPosition, PlaybackState, PlaybackUpdate,
+    AudioBuffer, BUFFER_SIZE, EMPTY_BUFFER, PlaybackMessage, PlaybackPosition, PlaybackState,
+    PlaybackUpdate,
 };
 use crossbeam_channel::{Receiver, Sender};
 use dasp_frame::Stereo;
@@ -7,17 +8,18 @@ use mesic::graph::RenderGraph;
 
 /// Audio processor which runs in its own thread and communicates with the UI thread via crossbeam channels.
 pub struct AudioProcessor {
-    audio_tx: Sender<Stereo<f32>>,
+    audio_tx: Sender<AudioBuffer>,
     playback_rx: Receiver<PlaybackMessage>,
     update_tx: Sender<PlaybackUpdate>,
     state: PlaybackState,
     graph: RenderGraph,
     is_looping: bool,
+    buffer: [Stereo<f32>; BUFFER_SIZE],
 }
 
 impl AudioProcessor {
     pub fn new(
-        audio_tx: Sender<Stereo<f32>>,
+        audio_tx: Sender<[Stereo<f32>; BUFFER_SIZE]>,
         playback_rx: Receiver<PlaybackMessage>,
         update_tx: Sender<PlaybackUpdate>,
         is_looping: bool,
@@ -30,6 +32,7 @@ impl AudioProcessor {
             is_looping,
             state: PlaybackState::Pause,
             graph,
+            buffer: EMPTY_BUFFER,
         }
     }
 
@@ -42,7 +45,7 @@ impl AudioProcessor {
         loop {
             self.read_messages();
 
-            if self.state == PlaybackState::Play && self.audio_tx.len() < BUFFER_SIZE - CHUNK_SIZE {
+            if self.state == PlaybackState::Play && self.audio_tx.is_empty() {
                 self.process_chunk();
             } else {
                 // TODO: consider replacing this with a blocking .recv
@@ -86,40 +89,41 @@ impl AudioProcessor {
     }
 
     fn process_chunk(&mut self) {
-        let mut did_send = false;
-        for i in 0..CHUNK_SIZE {
-            let next = self.graph.next();
-            if let Some(next) = next {
-                self.audio_tx.try_send(next).unwrap();
-                did_send = true;
-            } else if self.is_looping {
-                log::info!(
-                    "Ran out of audio after {} samples in chunk. Looping. {:?}",
-                    i,
-                    wasm_thread::current().id()
-                );
+        let mut got_samples = false;
+        self.buffer.copy_from_slice(&EMPTY_BUFFER);
+        for i in 0..BUFFER_SIZE {
+            let mut next = self.graph.next();
+            if next.is_none() && self.is_looping {
+                log::info!("Ran out of audio after {i} samples in buffer. Looping.");
                 self.graph.seek(0);
-            } else {
-                // No more audio, so finish.
-                self.state = PlaybackState::Finished;
-                self.update_tx
-                    .try_send(PlaybackUpdate::State(self.state))
-                    .unwrap();
-                log::info!(
-                    "Ran out of audio, so marked finished after {} samples in chunk. {:?}",
-                    i,
-                    wasm_thread::current().id()
-                );
-                break;
+                next = self.graph.next();
+            }
+
+            match next {
+                Some(value) => {
+                    self.buffer[i] = value;
+                    got_samples = true;
+                }
+                None => {
+                    // No more audio, so finish.
+                    self.state = PlaybackState::Finished;
+                    self.update_tx
+                        .try_send(PlaybackUpdate::State(self.state))
+                        .unwrap();
+                    log::info!("Ran out of audio, so marked finished after {i} samples in buffer.");
+                    break;
+                }
             }
         }
-        if did_send {
+
+        if got_samples {
+            self.audio_tx.try_send(self.buffer).unwrap();
             self.update_tx
                 .try_send(PlaybackUpdate::Pos(PlaybackPosition {
                     samples: self.graph.pos(),
                 }))
                 .unwrap();
-            log::info!("Sent 1000 samples. Len: {}", self.audio_tx.len());
+            log::info!("Sent a buffer of samples.");
         }
     }
 }
