@@ -11,6 +11,7 @@ mod project;
 mod scale;
 mod scale_value;
 mod track;
+mod track_placement;
 mod wave_type;
 
 pub use adsr_envelope::*;
@@ -26,4 +27,5 @@ pub use project::*;
 pub use scale::*;
 pub use scale_value::*;
 pub use track::*;
+pub use track_placement::*;
 pub use wave_type::*;
