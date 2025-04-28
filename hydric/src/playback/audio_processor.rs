@@ -3,7 +3,7 @@ use super::{
 };
 use crossbeam_channel::{Receiver, Sender};
 use dasp_frame::Stereo;
-use mesic::graph::{AmpNode, RenderGraph};
+use mesic::graph::RenderGraph;
 
 /// Audio processor which runs in its own thread and communicates with the UI thread via crossbeam channels.
 pub struct AudioProcessor {
@@ -12,6 +12,7 @@ pub struct AudioProcessor {
     update_tx: Sender<PlaybackUpdate>,
     state: PlaybackState,
     graph: RenderGraph,
+    is_looping: bool,
 }
 
 impl AudioProcessor {
@@ -19,13 +20,16 @@ impl AudioProcessor {
         audio_tx: Sender<Stereo<f32>>,
         playback_rx: Receiver<PlaybackMessage>,
         update_tx: Sender<PlaybackUpdate>,
+        is_looping: bool,
+        graph: RenderGraph,
     ) -> Self {
         AudioProcessor {
             audio_tx,
             playback_rx,
             update_tx,
+            is_looping,
             state: PlaybackState::Pause,
-            graph: RenderGraph::default(),
+            graph,
         }
     }
 
@@ -35,41 +39,47 @@ impl AudioProcessor {
             wasm_thread::current().id()
         );
 
-        while self.state != PlaybackState::Stop {
+        loop {
             self.read_messages();
 
             if self.state == PlaybackState::Play && self.audio_tx.len() < BUFFER_SIZE - CHUNK_SIZE {
                 self.process_chunk();
             } else {
+                // TODO: consider replacing this with a blocking .recv
+                // that waits for a new action if we'd otherwise be paused/finished.
                 sleep_ms(10);
             }
+            self.update_tx
+                .try_send(PlaybackUpdate::Delay(self.audio_tx.len()))
+                .unwrap();
         }
     }
 
     fn read_messages(&mut self) {
         while let Ok(message) = self.playback_rx.try_recv() {
             match message {
-                PlaybackMessage::SetProject(project, volume) => {
-                    self.graph = RenderGraph::default();
+                PlaybackMessage::SetProject(project) => {
+                    self.graph.clear_nodes();
                     self.graph.set_from_project(&project);
-                    self.graph.add_output_node(AmpNode {
-                        volume,
-                        should_clip: true,
-                    });
                 }
-                PlaybackMessage::SetAudio(audio, volume) => {
-                    self.graph = RenderGraph::from_vec(audio);
-                    self.graph.add_output_node(AmpNode {
-                        volume,
-                        should_clip: true,
-                    });
+                PlaybackMessage::SetAudio(audio) => {
+                    self.graph.clear_nodes();
+                    self.graph.set_from_audio(audio);
                 }
                 PlaybackMessage::Seek(PlaybackPosition { samples }) => {
                     log::info!("Seeking to {}", samples);
                     self.graph.seek(samples);
                 }
                 PlaybackMessage::State(state) => {
+                    log::info!(
+                        "Got playback state message {:?} on thread {:?}",
+                        state,
+                        wasm_thread::current().id()
+                    );
                     self.state = state;
+                }
+                PlaybackMessage::Loop(is_looping) => {
+                    self.is_looping = is_looping;
                 }
             }
         }
@@ -78,24 +88,25 @@ impl AudioProcessor {
     fn process_chunk(&mut self) {
         let mut did_send = false;
         for i in 0..CHUNK_SIZE {
-            if let Some(next) = self.graph.next() {
+            let next = self.graph.next();
+            if let Some(next) = next {
                 self.audio_tx.try_send(next).unwrap();
                 did_send = true;
+            } else if self.is_looping {
+                log::info!(
+                    "Ran out of audio after {} samples in chunk. Looping. {:?}",
+                    i,
+                    wasm_thread::current().id()
+                );
+                self.graph.seek(0);
             } else {
-                // No more audio, so pause.
-                // Consider stopping as well, but we'll need to re-create the thread if
-                // we do this.
-                self.state = PlaybackState::Pause;
-                self.update_tx
-                    .try_send(PlaybackUpdate::Pos(PlaybackPosition {
-                        samples: self.graph.pos(),
-                    }))
-                    .unwrap();
+                // No more audio, so finish.
+                self.state = PlaybackState::Finished;
                 self.update_tx
                     .try_send(PlaybackUpdate::State(self.state))
                     .unwrap();
                 log::info!(
-                    "Ran out of audio, so paused after {} samples in chunk. {:?}",
+                    "Ran out of audio, so marked finished after {} samples in chunk. {:?}",
                     i,
                     wasm_thread::current().id()
                 );

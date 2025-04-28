@@ -31,7 +31,7 @@ impl<'a> FrequencyDisplay<'a> {
         player: &AudioPlayer,
         audio: Vec<OrderedFloat<f32>>,
     ) -> Option<Vec<f32>> {
-        let current_sample = player.position.samples;
+        let current_sample = player.effective_pos();
         let frame_size = (SAMPLE_RATE / self.frame_rate) as usize;
         // Round `current_sample` so that the audio will be broken up into chunks based on
         // the visualisation frame rate.

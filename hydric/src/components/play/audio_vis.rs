@@ -1,7 +1,10 @@
 use crate::AudioState;
-use egui::{Color32, Rect, Ui, containers::Frame, emath, epaint, epaint::PathStroke, pos2, vec2};
+use crate::transform::Transform;
+use egui::{
+    Color32, Rect, Sense, Ui, containers::Frame, emath, epaint, epaint::PathStroke, pos2, vec2,
+};
 
-pub fn audio_vis(audio_state: &AudioState, ui: &mut Ui) {
+pub fn audio_vis(audio_state: &mut AudioState, ui: &mut Ui) {
     let audio_len = audio_state.audio.len() as f32;
     let canvas_size = vec2(500.0, 100.0);
 
@@ -11,7 +14,7 @@ pub fn audio_vis(audio_state: &AudioState, ui: &mut Ui) {
 
     Frame::canvas(ui.style()).show(ui, |ui| {
         ui.ctx().request_repaint();
-        let (_id, rect) = ui.allocate_space(canvas_size);
+        let (id, rect) = ui.allocate_space(canvas_size);
         let to_screen =
             emath::RectTransform::from_to(Rect::from_x_y_ranges(0.0..=1.0, 1.0..=-1.0), rect);
 
@@ -19,11 +22,11 @@ pub fn audio_vis(audio_state: &AudioState, ui: &mut Ui) {
         let chunking = (audio_len / canvas_size.x) as i32;
         // TODO: put this into a generic util.
         for (i, sample) in audio_state.audio.iter().enumerate() {
-            // For now, only visualise the left.
-            let [left, _right] = sample;
+            // We visualise the average of the left and right channels.
+            let [left, right] = sample;
 
             let index = i / (chunking as usize);
-            let value = left.abs() / (chunking as f32);
+            let value = (left.abs() + right.abs()) * 0.5 / (chunking as f32);
             if index >= averages.len() {
                 // sometimes happens due to rounding of floats,
                 // okay to just ignore.
@@ -49,15 +52,23 @@ pub fn audio_vis(audio_state: &AudioState, ui: &mut Ui) {
             })
             .collect();
 
-        let position = audio_state.player.position.samples;
+        // Seek on click.
+        let response = ui.interact(rect, id, Sense::click());
+        if response.clicked() {
+            if let Some(point) = response.interact_pointer_pos {
+                let point = point.transform(to_screen.inverse());
+                let sample = point.x * audio_len;
+                audio_state.player.seek(sample as usize);
+            }
+        }
+
+        let position = audio_state.player.effective_pos();
         let playthrough_ratio = position as f32 / audio_len;
 
         if (0.0..=1.0).contains(&playthrough_ratio) {
             let red_line = epaint::Shape::line(
-                vec![
-                    to_screen * pos2(playthrough_ratio, -1.0),
-                    to_screen * pos2(playthrough_ratio, 1.0),
-                ],
+                vec![pos2(playthrough_ratio, -1.0), pos2(playthrough_ratio, 1.0)]
+                    .transform(to_screen),
                 PathStroke::new(thickness, Color32::RED),
             );
             shapes.push(red_line);
