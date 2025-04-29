@@ -10,6 +10,7 @@ use shared::{
     types::PitchValue,
 };
 use state::Action;
+use crate::widget::{TabDisplay, TabOrientation};
 
 pub fn subsynth_control<F, G>(config: &SubSynthConfig, dispatch: F, on_release: G, ui: &mut Ui)
 where

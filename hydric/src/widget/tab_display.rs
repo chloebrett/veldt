@@ -40,7 +40,7 @@ impl<'a> TabDisplay<'a> {
         tab_contents: Vec<Box<dyn View>>, 
         orientation: TabOrientation
     ) -> Self {
-        TabDisplay {
+        Self {
             id,
             tab_headings,
             tab_contents,
