@@ -11,5 +11,3 @@ pub use generator_view::*;
 pub use generators_control::*;
 use simple_wave_control::*;
 pub use simple_wave_visualiser::*;
-use subsynth_control::*;
-pub use subsynth_oscillator::*;
