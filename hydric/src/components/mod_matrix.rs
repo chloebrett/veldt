@@ -87,7 +87,7 @@ impl<F: Fn(Action), G: Fn()> View for ModMatrixView<'_, F, G> {
                                         ui,
                                         "",
                                         0.0,
-                                        |it| dispatch(Action::SetFloat(FloatField::Volume, it)),
+                                        |it| dispatch(Action::SetFloat(FloatField::ModFactor, it)), // TODO need a selector for each knob
                                         -1.0..=1.0,
                                         0.0,
                                         &on_release,

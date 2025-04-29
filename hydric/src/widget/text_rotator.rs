@@ -4,7 +4,9 @@ use std::f32::consts::PI;
 pub enum TextRotation {
     Clockwise90,
     Anticlockwise90,
-    Neutral, // to draw text without rotating for style consistency (e.g. in the mod matrix rows and col titles must be styled in the same way. Allowing neutral rotation prevents having to restyle horizontal col titles)
+    // Neutral is for drawing text without rotating for style consistency.
+    // e.g. In the mod matrix rows and col titles must be styled in the same way. Allowing neutral rotation prevents having to restyle horizontal col titles.
+    Neutral,
 }
 
 pub fn text_rotator(
