@@ -62,7 +62,7 @@ pub struct Sample {
 
 impl From<SampleProto> for Sample {
     fn from(item: SampleProto) -> Self {
-        Sample {
+        Self {
             left: as_floats(&item.left),
             right: as_floats(&item.right),
             sample_rate: item.sample_rate,
@@ -72,7 +72,7 @@ impl From<SampleProto> for Sample {
 
 impl From<Sample> for SampleProto {
     fn from(item: Sample) -> Self {
-        SampleProto {
+        Self {
             left: as_bytes(&item.left),
             right: as_bytes(&item.right),
             sample_rate: item.sample_rate,

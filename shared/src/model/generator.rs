@@ -24,17 +24,17 @@ pub struct GeneratorInstance {
 }
 
 impl From<GeneratorType> for GeneratorTypeProto {
-    fn from(item: GeneratorType) -> GeneratorTypeProto {
+    fn from(item: GeneratorType) -> Self {
         match item {
             GeneratorType::SimpleWave { config } => {
-                GeneratorTypeProto::SimpleWave(SimpleWaveProto {
+                Self::SimpleWave(SimpleWaveProto {
                     config: Some(config.into()),
                 })
             }
-            GeneratorType::Noise { config } => GeneratorTypeProto::Noise(NoiseProto {
+            GeneratorType::Noise { config } => Self::Noise(NoiseProto {
                 config: Some(config.into()),
             }),
-            GeneratorType::SubSynth { config } => GeneratorTypeProto::SubSynth(SubSynthProto {
+            GeneratorType::SubSynth { config } => Self::SubSynth(SubSynthProto {
                 config: Some(config.into()),
             }),
         }
@@ -42,15 +42,15 @@ impl From<GeneratorType> for GeneratorTypeProto {
 }
 
 impl From<GeneratorTypeProto> for GeneratorType {
-    fn from(item: GeneratorTypeProto) -> GeneratorType {
+    fn from(item: GeneratorTypeProto) -> Self {
         match item {
-            GeneratorTypeProto::SimpleWave(config) => GeneratorType::SimpleWave {
+            GeneratorTypeProto::SimpleWave(config) => Self::SimpleWave {
                 config: config.config.unwrap().into(),
             },
-            GeneratorTypeProto::Noise(config) => GeneratorType::Noise {
+            GeneratorTypeProto::Noise(config) => Self::Noise {
                 config: config.config.unwrap().into(),
             },
-            GeneratorTypeProto::SubSynth(config) => GeneratorType::SubSynth {
+            GeneratorTypeProto::SubSynth(config) => Self::SubSynth {
                 config: config.config.unwrap().into(),
             },
         }

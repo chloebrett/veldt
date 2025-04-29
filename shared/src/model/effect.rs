@@ -25,16 +25,16 @@ pub struct EffectInstance {
 impl From<EffectProto> for Effect {
     fn from(item: EffectProto) -> Self {
         match item {
-            EffectProto::SimpleDelay(simple_delay) => Effect::SimpleDelay {
+            EffectProto::SimpleDelay(simple_delay) => Self::SimpleDelay {
                 config: simple_delay.config.unwrap().into(),
             },
-            EffectProto::SimpleEq(simple_eq) => Effect::SimpleEq {
+            EffectProto::SimpleEq(simple_eq) => Self::SimpleEq {
                 config: simple_eq.config.unwrap().into(),
             },
-            EffectProto::SimpleCompressor(simple_compressor) => Effect::SimpleCompressor {
+            EffectProto::SimpleCompressor(simple_compressor) => Self::SimpleCompressor {
                 config: simple_compressor.config.unwrap().into(),
             },
-            EffectProto::ModDelay(mod_delay) => Effect::ModDelay {
+            EffectProto::ModDelay(mod_delay) => Self::ModDelay {
                 config: mod_delay.config.unwrap().into(),
             },
         }
@@ -44,18 +44,18 @@ impl From<EffectProto> for Effect {
 impl From<Effect> for EffectProto {
     fn from(item: Effect) -> Self {
         match item {
-            Effect::SimpleDelay { config } => EffectProto::SimpleDelay(SimpleDelayProto {
+            Effect::SimpleDelay { config } => Self::SimpleDelay(SimpleDelayProto {
                 config: Some(config.into()),
             }),
-            Effect::SimpleEq { config } => EffectProto::SimpleEq(SimpleEqProto {
+            Effect::SimpleEq { config } => Self::SimpleEq(SimpleEqProto {
                 config: Some(config.into()),
             }),
             Effect::SimpleCompressor { config } => {
-                EffectProto::SimpleCompressor(SimpleCompressorProto {
+                Self::SimpleCompressor(SimpleCompressorProto {
                     config: Some(config.into()),
                 })
             }
-            Effect::ModDelay { config } => EffectProto::ModDelay(ModDelayProto {
+            Effect::ModDelay { config } => Self::ModDelay(ModDelayProto {
                 config: Some(config.into()),
             }),
         }
@@ -83,7 +83,7 @@ pub struct EffectMeta {
 
 impl Default for EffectMeta {
     fn default() -> Self {
-        EffectMeta {
+        Self {
             id: 0,
             wet: 1.0,
             mute: false,
@@ -99,7 +99,7 @@ pub struct DelayConfig {
 
 impl Default for DelayConfig {
     fn default() -> Self {
-        DelayConfig {
+        Self {
             delay_ms: 100.0,
             feedback: 0.5,
         }
@@ -119,7 +119,7 @@ pub struct ModDelayConfig {
 
 impl Default for ModDelayConfig {
     fn default() -> Self {
-        ModDelayConfig {
+        Self {
             min_depth: 100,
             max_depth: 300,
             freq: 10.0,
@@ -140,7 +140,7 @@ pub struct CompressorConfig {
 
 impl Default for CompressorConfig {
     fn default() -> Self {
-        CompressorConfig {
+        Self {
             threshold: 0.5,
             attack_ms: 30.0,
             release_ms: 30.0,

@@ -21,5 +21,5 @@ pub enum WaveType {
     Sine,
     Square,
     Saw,
-    Triangle, // TODO: also add a generator for white noise - but it's not constrained by freq.
+    Triangle,
 }
