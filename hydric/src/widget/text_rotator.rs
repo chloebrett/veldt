@@ -1,9 +1,9 @@
-use egui::{Color32, FontId, Pos2, Shape, Stroke, Ui, epaint};
+use egui::{epaint, Color32, FontId, Pos2, Shape, Stroke, Ui};
 use std::f32::consts::PI;
 
 pub enum TextRotation {
-    Clockwise,
-    Anticlockwise,
+    Clockwise90,
+    Anticlockwise90,
     Neutral, // to draw text without rotating for style consistency (e.g. in the mod matrix rows and col titles must be styled in the same way. Allowing neutral rotation prevents having to restyle horizontal col titles)
 }
 
@@ -22,11 +22,7 @@ pub fn text_rotator(
     let galley_size = galley.size();
 
     let padded_size = match rotation {
-        TextRotation::Anticlockwise => {
-            let rotated_size = galley_size.yx();
-            rotated_size + egui::Vec2::splat(4.0)
-        }
-        TextRotation::Clockwise => {
+        TextRotation::Anticlockwise90 | TextRotation::Clockwise90 => {
             let rotated_size = galley_size.yx();
             rotated_size + egui::Vec2::splat(4.0)
         }
@@ -40,11 +36,11 @@ pub fn text_rotator(
     // Determining where to draw the rotated text
     let center = rect.center();
     let draw_pos = match rotation {
-        TextRotation::Anticlockwise => Pos2::new(
+        TextRotation::Anticlockwise90 => Pos2::new(
             center.x - galley_size.y * 0.5,
             center.y + galley_size.x * 0.5,
         ),
-        TextRotation::Clockwise => Pos2::new(
+        TextRotation::Clockwise90 => Pos2::new(
             center.x + galley_size.y * 0.5,
             center.y - galley_size.x * 0.5,
         ),
@@ -52,8 +48,8 @@ pub fn text_rotator(
     };
 
     let text_angle = match rotation {
-        TextRotation::Anticlockwise => PI * -0.5,
-        TextRotation::Clockwise => PI * 0.5,
+        TextRotation::Anticlockwise90 => PI * -0.5,
+        TextRotation::Clockwise90 => PI * 0.5,
         TextRotation::Neutral => 0.0,
     };
 
