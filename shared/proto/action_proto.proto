@@ -20,7 +20,7 @@ message IndexFieldProto {
   oneof kind {
     uint32 track = 1;
     uint32 placed_note = 2;
-    uint32 track_placement = 3;
+    uint32 placement = 3;
     uint32 effect = 4;
     uint32 generator = 5;
   }
@@ -30,7 +30,7 @@ message TypeFieldProto {
   oneof kind {
     pmodel.ScaleValueProto key = 1;
     pmodel.ScaleProto scale = 2;
-    pmodel.TrackPlacementProto track_placement = 3;
+    pmodel.PlacementProto placement = 3;
     pmodel.PitchNameProto pitch_name = 4;
     string project_name = 5;
     pmodel.ScaleValueProto scale_value = 6;

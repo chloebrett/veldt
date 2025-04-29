@@ -1,5 +1,7 @@
 use crate::bytes::{as_bytes, as_floats};
-use crate::model::{EffectInstance, GeneratorInstance, ModMatrix, Track, TrackPlacement};
+use crate::model::{
+    EffectInstance, GeneratorInstance, ModMatrix, Placement, PlacementType, Track, TrackPlacement,
+};
 use crate::pmodel::*;
 use crate::types::Beats;
 use local_macro::{FromProto, IntoProto};
@@ -17,7 +19,7 @@ pub struct Project {
 
     /// Ordered based on start_position.
     #[proto_repeated]
-    pub track_placements: Vec<TrackPlacement>,
+    pub placements: Vec<Placement>,
 
     #[proto_repeated]
     pub samples: Vec<Sample>,
@@ -37,13 +39,15 @@ pub struct Project {
 impl Project {
     pub fn duration(&self) -> OrderedFloat<f32> {
         let mut max = OrderedFloat(0.0);
-        for placement in &self.track_placements {
-            let track = &self.tracks[placement.track_id as usize];
-            let offset = &placement.offset;
-            let duration = placement
-                .clipped_duration
-                .unwrap_or(track.unclipped_duration());
-            max = std::cmp::max(max, offset + duration);
+        for placement in &self.placements {
+            if let PlacementType::Track(TrackPlacement { track_index, .. }) = placement.kind {
+                let track = &self.tracks[track_index as usize];
+                let offset = &placement.offset;
+                let duration = placement
+                    .clipped_duration
+                    .unwrap_or(track.unclipped_duration());
+                max = std::cmp::max(max, offset + duration);
+            }
         }
         max
     }
@@ -114,12 +118,14 @@ mod tests {
                 }],
                 offset: OrderedFloat(0.0),
             }],
-            track_placements: vec![TrackPlacement {
-                track_id: 3,
+            placements: vec![Placement {
+                kind: PlacementType::Track(TrackPlacement {
+                    track_index: 3,
+                    generator_index: 3,
+                }),
                 offset: 2.5.into(),
                 clipped_duration: Some(5.2.into()),
                 visual_placement: 6,
-                generator_index: 3,
             }],
             samples: vec![Sample {
                 left: vec![0.0, 1.0, 3.0],
