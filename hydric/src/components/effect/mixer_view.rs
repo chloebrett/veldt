@@ -41,68 +41,77 @@ impl View for MixerView<'_> {
             })
             .open(&mut window_state.mixer.visible)
             .show(ui.ctx(), |ui| {
+                ui.label(format!("Mixer channel {}", mixer_index + 1));
                 for effect_index in 0..mixer.effects.len() {
-                    let dispatch_effect = |action| {
-                        store.dispatch(&Selector::Effect(mixer_index, effect_index), action)
-                    };
-                    let effect = &mixer.effects[effect_index];
-                    ui.label(effect_name(&effect.effect));
-
-                    let show = window_state.effects.get((mixer_index, effect_index));
-                    let text = if show { "Hide" } else { "Show" };
-                    if ui.button(text).clicked() {
-                        window_state.effects.set((mixer_index, effect_index), !show);
-                    }
-
-                    let meta = &effect.meta;
-                    knob(
-                        ui,
-                        "Wet",
-                        meta.wet,
-                        |it| dispatch_effect(Action::SetFloat(FloatField::Wet, it)),
-                        0.0..=1.0,
-                        /* neutral= */ 0.5,
-                        on_release,
-                    );
-                    checkbox(
-                        ui,
-                        meta.mute,
-                        |it| dispatch_effect(Action::SetChild(TypeField::Mute(it))),
-                        "Mute",
-                    );
-                    if ui.button("Delete").clicked() {
+                    if ui.button("❌").clicked() {
                         dispatch_mixer(Action::DeleteChild(IndexField::Effect(effect_index)));
 
                         // Skip iterating for this frame.
                         break;
                     }
-                    if effect_index > 0 && ui.button("🔼").clicked() {
-                        // TODO: rearranging effects like this while their windows are open causes the
-                        // windows to reset position - because the IDs change. Should we have stable
-                        // IDs instead / as well?
-                        dispatch_mixer(Action::MoveEffectUp(effect_index));
+                    ui.horizontal(|ui| {
+                        ui.vertical(|ui| {
+                            if effect_index > 0 && ui.button("🔼").clicked() {
+                                // TODO: rearranging effects like this while their windows are open causes the
+                                // windows to reset position - because the IDs change. Should we have stable
+                                // IDs instead / as well?
+                                dispatch_mixer(Action::MoveEffectUp(effect_index));
 
-                        // TODO: use IDs instead of indexes to refer to effects - otherwise their
-                        // visibility is order-dependent.
-                    }
-                    if effect_index < mixer.effects.len() - 1 && ui.button("🔽").clicked() {
-                        dispatch_mixer(Action::MoveEffectDown(effect_index));
-                    }
+                                // TODO: use IDs instead of indexes to refer to effects - otherwise their
+                                // visibility is order-dependent.
+                            }
+                            if effect_index < mixer.effects.len() - 1 && ui.button("🔽").clicked() {
+                                dispatch_mixer(Action::MoveEffectDown(effect_index));
+                            }
+                        });
+                        let dispatch_effect = |action| {
+                            store.dispatch(&Selector::Effect(mixer_index, effect_index), action)
+                        };
+                        let effect = &mixer.effects[effect_index];
+                        ui.label(effect_name(&effect.effect));
+
+                        let show = window_state.effects.get((mixer_index, effect_index));
+                        let text = if show { "Hide" } else { "Show" };
+                        if ui.button(text).clicked() {
+                            window_state.effects.set((mixer_index, effect_index), !show);
+                        }
+
+                        let meta = &effect.meta;
+                        knob(
+                            ui,
+                            "Wet",
+                            meta.wet,
+                            |it| dispatch_effect(Action::SetFloat(FloatField::Wet, it)),
+                            0.0..=1.0,
+                            /* neutral= */ 0.5,
+                            on_release,
+                        );
+                        checkbox(
+                            ui,
+                            meta.mute,
+                            |it| dispatch_effect(Action::SetChild(TypeField::Mute(it))),
+                            "Mute",
+                        );
+
+                    });
                     ui.separator();
                 }
 
-                for effect in Effect::iter() {
-                    let text = format!("New {}", effect_name(&effect));
-                    if ui.button(text).clicked() {
-                        let instance = EffectInstance {
-                            effect,
-                            meta: EffectMeta::default(),
-                        };
-                        dispatch_mixer(Action::AddChild(TypeField::Effect(instance)));
+                ui.menu_button("Add new effect", |ui| {
+                    for effect in Effect::iter() {
+                        let text = format!("{}", effect_name(&effect));
+                        if ui.button(text).clicked() {
+                            let instance = EffectInstance {
+                                effect,
+                                meta: EffectMeta::default(),
+                            };
+                            dispatch_mixer(Action::AddChild(TypeField::Effect(instance)));
+                        }
                     }
-                }
 
-                ui.label(format!("Mixer channel {}", mixer_index + 1));
+                });
+
+
             });
     }
 }
