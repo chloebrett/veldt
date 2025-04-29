@@ -1,5 +1,5 @@
 use super::simple_wave_control;
-use super::subsynth_control::SubSynthControlView;
+use super::subsynth::SubSynthView;
 use crate::view::View;
 use crate::widget::StateWindow;
 use crate::widget::default_window;
@@ -54,7 +54,7 @@ impl<F: FnMut()> View for GeneratorView<'_, F> {
                         }
                         GeneratorType::Noise { .. } => todo!(),
                         GeneratorType::SubSynth { config } => {
-                            SubSynthControlView::new(&config, dispatch, on_release).ui(ui);
+                            SubSynthView::new(&config, dispatch, on_release).ui(ui);
                         }
                     };
                 },

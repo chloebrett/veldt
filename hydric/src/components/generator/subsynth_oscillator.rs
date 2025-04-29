@@ -23,7 +23,7 @@ impl<'a, F: Fn(Action), G: Fn()> SubSynthOscillatorView<'a, F, G> {
         line_colour: Color32,
         fill_colour: Color32,
     ) -> Self {
-        SubSynthOscillatorView {
+        Self {
             config,
             dispatch,
             on_release,

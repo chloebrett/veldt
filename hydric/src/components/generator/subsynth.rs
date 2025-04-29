@@ -11,15 +11,15 @@ use shared::{
 };
 use state::Action;
 
-pub struct SubSynthControlView<'a, F: Fn(Action), G: Fn()> {
+pub struct SubSynthView<'a, F: Fn(Action), G: Fn()> {
     config: &'a SubSynthConfig,
     dispatch: F,
     on_release: G,
 }
 
-impl<'a, F: Fn(Action), G: Fn()> SubSynthControlView<'a, F, G> {
+impl<'a, F: Fn(Action), G: Fn()> SubSynthView<'a, F, G> {
     pub fn new(config: &'a SubSynthConfig, dispatch: F, on_release: G) -> Self {
-        SubSynthControlView {
+        Self {
             config,
             dispatch,
             on_release,
@@ -27,33 +27,33 @@ impl<'a, F: Fn(Action), G: Fn()> SubSynthControlView<'a, F, G> {
     }
 }
 
-impl<F: Fn(Action), G: Fn()> View for SubSynthControlView<'_, F, G> {
+// opacity initialisation
+const CHART_FILL_ALPHA: u8 = opacity_percentage_to_alpha(44.0);
+
+const fn opacity_percentage_to_alpha(opacity_percentage: f32) -> u8 {
+    ((opacity_percentage / 100.0) * 255.0) as u8
+}
+
+lazy_static! {
+    pub static ref GREEN_OUTLINE: Color32 = Color32::from_rgb(119, 167, 43);
+    pub static ref GREEN_FILL: Color32 =
+        Color32::from_rgba_unmultiplied(147, 175, 100, CHART_FILL_ALPHA);
+    pub static ref PINK_OUTLINE: Color32 = Color32::from_rgb(246, 83, 192);
+    pub static ref PINK_FILL: Color32 =
+        Color32::from_rgba_unmultiplied(212, 132, 170, CHART_FILL_ALPHA);
+    pub static ref ORANGE_OUTLINE: Color32 = Color32::from_rgb(227, 172, 84);
+    pub static ref ORANGE_FILL: Color32 =
+        Color32::from_rgba_unmultiplied(215, 171, 53, CHART_FILL_ALPHA);
+    pub static ref LINE_COLOURS: [Color32; 3] =
+        [*GREEN_OUTLINE, *PINK_OUTLINE, *ORANGE_OUTLINE,];
+    pub static ref FILL_COLOURS: [Color32; 3] = [*GREEN_FILL, *PINK_FILL, *ORANGE_FILL,];
+}
+
+impl<F: Fn(Action), G: Fn()> View for SubSynthView<'_, F, G> {
     fn ui(&mut self, ui: &mut Ui) {
         let config = self.config;
         let dispatch = &self.dispatch;
         let on_release = &self.on_release;
-
-        // opacity initialisation
-        const CHART_FILL_ALPHA: u8 = opacity_percentage_to_alpha(44.0);
-
-        const fn opacity_percentage_to_alpha(opacity_percentage: f32) -> u8 {
-            ((opacity_percentage / 100.0) * 255.0) as u8
-        }
-
-        lazy_static! {
-            pub static ref GREEN_OUTLINE: Color32 = Color32::from_rgb(119, 167, 43);
-            pub static ref GREEN_FILL: Color32 =
-                Color32::from_rgba_unmultiplied(147, 175, 100, CHART_FILL_ALPHA);
-            pub static ref PINK_OUTLINE: Color32 = Color32::from_rgb(246, 83, 192);
-            pub static ref PINK_FILL: Color32 =
-                Color32::from_rgba_unmultiplied(212, 132, 170, CHART_FILL_ALPHA);
-            pub static ref ORANGE_OUTLINE: Color32 = Color32::from_rgb(227, 172, 84);
-            pub static ref ORANGE_FILL: Color32 =
-                Color32::from_rgba_unmultiplied(215, 171, 53, CHART_FILL_ALPHA);
-            pub static ref LINE_COLOURS: [Color32; 3] =
-                [*GREEN_OUTLINE, *PINK_OUTLINE, *ORANGE_OUTLINE,];
-            pub static ref FILL_COLOURS: [Color32; 3] = [*GREEN_FILL, *PINK_FILL, *ORANGE_FILL,];
-        }
 
         ui.horizontal(|ui| {
             ui.vertical(|ui| {
