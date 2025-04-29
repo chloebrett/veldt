@@ -253,6 +253,12 @@ impl<T: SequencerObject<T>> Widget for Sequencer<'_, T> {
                 if response.interact(Sense::click()).double_clicked() {
                     T::set_selected(ui, None)
                 }
+                if ui.input(|input| {
+                    input.key_pressed(egui::Key::Delete) || input.key_pressed(egui::Key::Backspace)
+                }) {
+                    T::delete_selected(ui, store, self.parent_index);
+                    T::set_selected(ui, None);
+                }
             } else if response.interact(Sense::click()).clicked() {
                 let pos = response.interact_pointer_pos().unwrap();
                 let object = T::from_pos(pos.transform(sequencer_transform.inverse()), range);
@@ -311,4 +317,8 @@ pub trait SequencerObject<T> {
     fn add_new(&self, store: &Store, parent_index: Option<usize>);
 
     fn from_pos(pos: Pos2, rect: Rect) -> T;
+
+    fn delete(store: &Store, index: usize, parent_index: Option<usize>);
+
+    fn delete_selected(ui: &mut Ui, store: &Store, parent_index: Option<usize>);
 }

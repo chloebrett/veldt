@@ -7,11 +7,13 @@ use audio_processor::*;
 use dasp_frame::Stereo;
 use shared::model::Project;
 
-// Total size of the audio buffer.
-const BUFFER_SIZE: usize = 5000;
+// Number of samples to process and send to the audio player at a time.
+// This matches the value configured in CPAL.
+const BUFFER_SIZE: usize = 2048;
 
-// Number of samples to render at a time.
-const CHUNK_SIZE: usize = 1000;
+type AudioBuffer = [Stereo<f32>; BUFFER_SIZE];
+
+const EMPTY_BUFFER: AudioBuffer = [[0.0; 2]; BUFFER_SIZE];
 
 // For now, just samples. In future, consider supporting bars:beats, mins:secs, etc.
 #[derive(Clone, Copy)]
