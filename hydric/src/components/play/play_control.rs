@@ -15,23 +15,41 @@ pub fn play_control(
     ui: &mut Ui,
 ) {
     let player = &mut audio_state.player;
-    if ui.button("Set audio from local + play").clicked() {
-        player.set_project(Box::new(store.get().project.clone()));
-        player.play();
-    }
+    ui.horizontal(|ui| {
+        if ui.button("▶").clicked() {
+            player.play();
+        }
+        if ui.button("⏸").clicked() {
+            player.pause();
+        }
+        if ui.button("◼").clicked() {
+            player.pause();
+            player.seek(0);
+        }
+        checkbox(ui, player.is_looping(), |it| player.set_looping(it), "Loop");
+    });
 
     ui.separator();
 
-    if ui.button("Set audio from local").clicked() {
-        player.set_project(Box::new(store.get().project.clone()));
-    }
+    ui.horizontal(|ui| {
+        if ui.button("Set audio from local + play").clicked() {
+            player.set_project(Box::new(store.get().project.clone()));
+            player.play();
+        }
+        if ui.button("Set audio from local").clicked() {
+            player.set_project(Box::new(store.get().project.clone()));
+        }
 
-    if ui.button("Set audio from server").clicked() {
-        let project = store.get().project.clone();
-        spawn(&mut async_state.server_render, async move {
-            server_render(project).await
-        })
-    }
+        if ui.button("Set audio from server").clicked() {
+            let project = store.get().project.clone();
+            spawn(&mut async_state.server_render, async move {
+                server_render(project).await
+            })
+        }
+    });
+
+    ui.separator();
+
     poll(
         &mut async_state.server_render,
         |audio: &Vec<Stereo<f32>>| {
@@ -39,18 +57,6 @@ pub fn play_control(
             player.set_audio(audio_state.audio.clone());
         },
     );
-
-    if ui.button("Play").clicked() {
-        player.play();
-    }
-    if ui.button("Pause").clicked() {
-        player.pause();
-    }
-    if ui.button("Stop").clicked() {
-        player.pause();
-        player.seek(0);
-    }
-    checkbox(ui, player.is_looping(), |it| player.set_looping(it), "Loop");
 
     audio_vis(audio_state, ui);
     FrequencyDisplay::new(audio_state).ui(ui)
