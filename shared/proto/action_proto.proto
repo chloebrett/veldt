@@ -10,9 +10,10 @@ message ActionProto {
     uint32 move_effect_down = 2;
     SetFloatProto set_float = 3;
     SetUintProto set_uint = 4;
-    TypeFieldProto set_child = 5;
-    TypeFieldProto add_child = 6;
-    IndexFieldProto delete_child = 7;
+    IndexFieldProto set_index = 5;
+    TypeFieldProto set_child = 6;
+    TypeFieldProto add_child = 7;
+    IndexFieldProto delete_child = 8;
   }
 }
 
@@ -23,6 +24,7 @@ message IndexFieldProto {
     uint32 placement = 3;
     uint32 effect = 4;
     uint32 generator = 5;
+    uint32 sample = 6;
   }
 }
 
@@ -74,7 +76,7 @@ message SelectorProto {
     uint32 mixer = 4;
     IndexPair effect = 5;
     uint32 generator = 6;
-    uint32 track_placement = 7;
+    uint32 placement = 7;
     IndexPair oscillator = 8;
   }
 

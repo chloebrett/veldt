@@ -7,6 +7,7 @@ mod note;
 mod project;
 mod store_data;
 mod track;
+mod placement;
 
 /// A model object that can receive actions.
 pub trait ActionReceiver {

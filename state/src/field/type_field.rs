@@ -1,7 +1,7 @@
 use shared::action_proto::{TypeFieldProto, type_field_proto::Kind as TypeFieldKind};
 use shared::model::{
     AdsrEnvelope, AntiAliasingMode, EffectInstance, EqType, FileTreeConfig, FilenameTree,
-    PitchName, PlacedNote, Project, Sample, Scale, ScaleValue, Track, TrackPlacement, WaveType,
+    PitchName, PlacedNote, Project, Sample, Scale, ScaleValue, Track, WaveType, Placement,
 };
 use shared::pmodel::{AntiAliasingModeProto, EqTypeProto, ScaleProto, WaveTypeProto};
 
@@ -16,7 +16,7 @@ pub enum TypeField {
     Key(ScaleValue),
     ScaleValue(ScaleValue),
     Scale(Scale),
-    TrackPlacement(TrackPlacement),
+    Placement(Placement),
     Project(Project),
     ProjectName(String),
     ProjectList(Vec<String>),
@@ -47,7 +47,7 @@ impl From<TypeFieldProto> for TypeField {
             TypeFieldKind::Key(it) => TypeField::Key(it.into()),
             TypeFieldKind::ScaleValue(it) => TypeField::ScaleValue(it.into()),
             TypeFieldKind::Scale(it) => TypeField::Scale(ScaleProto::try_from(it).unwrap().into()),
-            TypeFieldKind::TrackPlacement(it) => TypeField::TrackPlacement(it.into()),
+            TypeFieldKind::Placement(it) => TypeField::Placement(it.into()),
             TypeFieldKind::ProjectName(it) => TypeField::ProjectName(it),
             TypeFieldKind::Track(it) => TypeField::Track(it.into()),
             TypeFieldKind::PlacedNote(it) => TypeField::PlacedNote(it.into()),
@@ -87,7 +87,7 @@ impl From<TypeField> for TypeFieldProto {
                 TypeField::Key(it) => TypeFieldKind::Key(it.into()),
                 TypeField::ScaleValue(it) => TypeFieldKind::ScaleValue(it.into()),
                 TypeField::Scale(it) => TypeFieldKind::Scale(ScaleProto::from(it).into()),
-                TypeField::TrackPlacement(it) => TypeFieldKind::TrackPlacement(it.into()),
+                TypeField::Placement(it) => TypeFieldKind::Placement(it.into()),
                 TypeField::ProjectName(it) => TypeFieldKind::ProjectName(it),
                 TypeField::Track(it) => TypeFieldKind::Track(it.into()),
                 TypeField::PlacedNote(it) => TypeFieldKind::PlacedNote(it.into()),
