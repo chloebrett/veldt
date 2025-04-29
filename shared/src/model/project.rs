@@ -3,6 +3,7 @@ use crate::model::{EffectInstance, GeneratorInstance, ModMatrix, Track, TrackPla
 use crate::pmodel::*;
 use crate::types::Beats;
 use local_macro::{FromProto, IntoProto};
+use ordered_float::OrderedFloat;
 
 pub type TrackId = u32;
 type _SampleId = usize;
@@ -31,6 +32,21 @@ pub struct Project {
 
     #[proto_optional]
     pub mod_matrix: ModMatrix,
+}
+
+impl Project {
+    pub fn duration(&self) -> OrderedFloat<f32> {
+        let mut max = OrderedFloat(0.0);
+        for placement in &self.track_placements {
+            let track = &self.tracks[placement.track_id as usize];
+            let offset = &placement.offset;
+            let duration = placement
+                .clipped_duration
+                .unwrap_or(track.unclipped_duration());
+            max = std::cmp::max(max, offset + duration);
+        }
+        max
+    }
 }
 
 #[derive(Clone, Debug, PartialEq)]

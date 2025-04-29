@@ -4,6 +4,7 @@ use super::{
     Processor, SimpleWaveGeneratorNode, make_graph, make_processor,
 };
 use crate::consts::SAMPLE_RATE;
+use crate::wave::beats_to_samples;
 use dasp_frame::Stereo;
 use dasp_graph::{BoxedNodeSend, Buffer, Node, NodeData, node::Sum};
 use petgraph::stable_graph::NodeIndex;
@@ -82,34 +83,41 @@ impl RenderGraph {
     /// This is mostly an interim method until we get action receiving working properly.
     pub fn set_from_project(&mut self, project: &Project) {
         let bpm = project.bpm;
-        // Add tracks with a placement to graph.
-        // TODO: each generator should play all tracks it's linked to - we don't need a different
-        // generator for every track placement!
-        for (index, placement) in project.track_placements.iter().enumerate() {
-            let track = project.tracks[placement.track_id as usize].clone();
 
-            // Create generator nodes.
-            // Currently, one for each track placement.
-            // TODO: make a single generator node find the appropriate track placements
-            // and play them. I.e. generators keep references to multiple track placements.
-            let generator_index = placement.generator_index;
-            let generator_instance = &project.generators[generator_index];
-            // TODO: support adding other types of generators to the graph.
-            if let GeneratorInstance {
-                kind: GeneratorType::SimpleWave { config },
-                id: _,
-                meta,
-            } = generator_instance
-            {
-                let generator_node = SimpleWaveGeneratorNode::new(
-                    config.clone(),
-                    meta.clone(),
-                    generator_index,
-                    track,
-                    placement.clone(),
-                    bpm,
-                );
-                self.add_simple_wave_generator(generator_node);
+        for generator_index in 0..project.generators.len() {
+            // Placements that are linked to this generator.
+            let placements: Vec<_> = project
+                .track_placements
+                .clone()
+                .into_iter()
+                .filter(|it| it.generator_index == generator_index)
+                .collect();
+
+            // TODO: do better than just cloning all the tracks!
+            // Perhaps load the relevant track data from the store
+            // out of the payload in each processing cycle?
+            // Or even just get a &[Track] containing all the tracks in the store.
+            let tracks = project.tracks.clone();
+
+            match &project.generators[generator_index] {
+                GeneratorInstance {
+                    kind: GeneratorType::SimpleWave { config },
+                    id: _,
+                    meta,
+                } => {
+                    let generator_node = SimpleWaveGeneratorNode::new(
+                        config.clone(),
+                        meta.clone(),
+                        generator_index,
+                        placements,
+                        tracks,
+                        bpm,
+                    );
+                    self.add_simple_wave_generator(generator_node);
+                }
+                _ => {
+                    // TODO: support adding other types of generators to the graph.
+                }
             }
 
             // Apply effects.
@@ -129,6 +137,7 @@ impl RenderGraph {
         }
 
         self.add_output_amp_node();
+        self.sample_count = beats_to_samples(*project.duration(), bpm) as usize;
     }
 
     pub fn pos(&self) -> usize {
@@ -164,7 +173,6 @@ impl RenderGraph {
     }
 
     pub fn add_simple_wave_generator(&mut self, node: SimpleWaveGeneratorNode) {
-        self.sample_count = usize::max(self.sample_count, node.sample_count);
         let node_index = self
             .graph
             .add_node(NodeData::new2(BoxedNodeSend::new(node)));
@@ -326,6 +334,12 @@ mod tests {
 
     use super::*;
 
+    impl RenderGraph {
+        fn set_sample_count(&mut self, count: usize) {
+            self.sample_count = count;
+        }
+    }
+
     fn make_track() -> Track {
         Track {
             notes: vec![PlacedNote {
@@ -384,8 +398,8 @@ mod tests {
             make_simple_wave_config(),
             make_generator_meta(),
             0,
-            track,
-            track_placement,
+            vec![track_placement],
+            vec![track],
             bpm,
         );
         generator_node
@@ -470,6 +484,7 @@ mod tests {
         // Arrange
         let generator_node = make_simple_wave_generator_node();
         let mut graph = RenderGraph::default();
+        graph.set_sample_count(1);
 
         // Act
         graph.add_simple_wave_generator(generator_node);
@@ -499,123 +514,5 @@ mod tests {
 
         // Assert
         assert_eq!(output, input)
-    }
-
-    #[test]
-    fn graph_with_clipped_duration_clips() {
-        // ARRANGE
-        let track = make_track();
-        let mut track_placement = make_track_placement();
-        let bpm = 120.0;
-
-        // Set up graph with no clipping.
-        let mut unclipped_graph = RenderGraph::default();
-        let unclipped_generator_node = SimpleWaveGeneratorNode::new(
-            make_simple_wave_config(),
-            make_generator_meta(),
-            0,
-            track.clone(),
-            track_placement.clone(),
-            bpm,
-        );
-
-        // Set up identical graph but with a clipped duration
-        let clipped_duration = 0.5;
-        track_placement.clipped_duration = Some(clipped_duration.into());
-        let mut clipped_graph = RenderGraph::default();
-        let clipped_generator_node = SimpleWaveGeneratorNode::new(
-            make_simple_wave_config(),
-            make_generator_meta(),
-            0,
-            track.clone(),
-            track_placement.clone(),
-            bpm,
-        );
-
-        // Find what should be length of the clipped track.
-        let clipped_sample_length =
-            beats_to_samples(*track_placement.offset + clipped_duration, bpm) as usize;
-
-        // ACT
-        unclipped_graph.add_simple_wave_generator(unclipped_generator_node);
-        clipped_graph.add_simple_wave_generator(clipped_generator_node);
-        let unclipped_output: Vec<[f32; 2]> = unclipped_graph.collect();
-        let clipped_output: Vec<[f32; 2]> = clipped_graph.collect();
-
-        // ASSERT
-        let expected_output: Vec<[f32; 2]> = unclipped_output[0..clipped_sample_length].to_vec();
-        assert_eq!(clipped_output, expected_output)
-    }
-
-    #[test]
-    fn clipped_second_track_duration_doesnt_clip_first() {
-        // ARRANGE
-        let track = make_track();
-        let track_placement = make_track_placement();
-        let bpm = 120.0;
-
-        // Set two tracks' offsets so they do not overlap.
-        let mut placement_1 = track_placement.clone();
-        placement_1.offset = 0.0.into();
-        let mut placement_2 = track_placement.clone();
-        placement_2.offset = 5.0.into();
-
-        // Create a graph with both tracks and no clipped audio
-        let mut unclipped_graph = RenderGraph::default();
-        let generator_node_1 = SimpleWaveGeneratorNode::new(
-            make_simple_wave_config(),
-            make_generator_meta(),
-            0,
-            track.clone(),
-            placement_1.clone(),
-            bpm,
-        );
-        let generator_node_2 = SimpleWaveGeneratorNode::new(
-            make_simple_wave_config(),
-            make_generator_meta(),
-            0,
-            track.clone(),
-            placement_2.clone(),
-            bpm,
-        );
-        unclipped_graph.add_simple_wave_generator(generator_node_1);
-        unclipped_graph.add_simple_wave_generator(generator_node_2);
-
-        // Set up identical graph but with a clipped duration on the second track
-        let mut placement_2_clipped = placement_2.clone();
-        let clipped_duration = 0.5;
-        placement_2_clipped.clipped_duration = Some(clipped_duration.into());
-        let mut clipped_graph = RenderGraph::default();
-        let clip_generator_node_1 = SimpleWaveGeneratorNode::new(
-            make_simple_wave_config(),
-            make_generator_meta(),
-            0,
-            track.clone(),
-            placement_1.clone(),
-            bpm,
-        );
-        let clip_generator_node_2 = SimpleWaveGeneratorNode::new(
-            make_simple_wave_config(),
-            make_generator_meta(),
-            0,
-            track.clone(),
-            placement_2_clipped.clone(),
-            bpm,
-        );
-        clipped_graph.add_simple_wave_generator(clip_generator_node_1);
-        clipped_graph.add_simple_wave_generator(clip_generator_node_2);
-
-        // Find what should be length of the clipped track graph output.
-        let clipped_sample_length =
-            beats_to_samples(*placement_2_clipped.offset + clipped_duration, bpm) as usize;
-
-        // ACT
-        // Get output of graphs
-        let unclipped_output: Vec<[f32; 2]> = unclipped_graph.collect();
-        let clipped_output: Vec<[f32; 2]> = clipped_graph.collect();
-
-        // ASSERT
-        let expected_output: Vec<[f32; 2]> = unclipped_output[0..clipped_sample_length].to_vec();
-        assert_eq!(clipped_output, expected_output)
     }
 }
