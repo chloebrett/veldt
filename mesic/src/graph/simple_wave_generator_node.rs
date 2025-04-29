@@ -27,7 +27,7 @@ impl SimpleWaveGeneratorNode {
         tracks: Vec<Track>,
         bpm: Beats,
     ) -> Self {
-        SimpleWaveGeneratorNode {
+        Self {
             config,
             meta,
             generator_index,

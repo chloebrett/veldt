@@ -49,7 +49,7 @@ impl FirstOrderFilter {
         let x_buffer = 0.0;
         let y_buffer = 0.0;
 
-        FirstOrderFilter {
+        Self {
             config,
             mix,
             x_buffer,
@@ -115,7 +115,7 @@ impl SecondOrderFilter {
         let x_buffer = AllocRingBuffer::from([0.0; 2]);
         let y_buffer = AllocRingBuffer::from([0.0; 2]);
 
-        SecondOrderFilter {
+        Self {
             config,
             mix,
             x_buffer,

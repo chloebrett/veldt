@@ -60,18 +60,18 @@ impl From<ScaleValue> for PitchValue {
 impl From<PitchValue> for ScaleValue {
     fn from(pitch_value: PitchValue) -> Self {
         match pitch_value % 12 {
-            0 => ScaleValue::C,
-            1 => ScaleValue::CSharp,
-            2 => ScaleValue::D,
-            3 => ScaleValue::DSharp,
-            4 => ScaleValue::E,
-            5 => ScaleValue::F,
-            6 => ScaleValue::FSharp,
-            7 => ScaleValue::G,
-            8 => ScaleValue::GSharp,
-            9 => ScaleValue::A,
-            10 => ScaleValue::ASharp,
-            11 => ScaleValue::B,
+            0 => Self::C,
+            1 => Self::CSharp,
+            2 => Self::D,
+            3 => Self::DSharp,
+            4 => Self::E,
+            5 => Self::F,
+            6 => Self::FSharp,
+            7 => Self::G,
+            8 => Self::GSharp,
+            9 => Self::A,
+            10 => Self::ASharp,
+            11 => Self::B,
             _ => panic!("{}", pitch_value), // This should never happen.
         }
     }

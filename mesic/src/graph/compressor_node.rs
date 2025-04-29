@@ -34,7 +34,7 @@ impl CompressorNode {
         let detector =
             dasp_envelope::Detector::new(rms, attack_frames as f32, release_frames as f32);
 
-        CompressorNode {
+        Self {
             config,
             // TODO: should we have two detectors, or just one that averages the inputs?
             detectors: [detector.clone(), detector.clone()],

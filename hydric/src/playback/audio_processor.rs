@@ -24,7 +24,7 @@ impl AudioProcessor {
         is_looping: bool,
         graph: RenderGraph,
     ) -> Self {
-        AudioProcessor {
+        Self {
             audio_tx,
             playback_rx,
             update_tx,

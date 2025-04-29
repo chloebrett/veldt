@@ -17,12 +17,12 @@ pub struct ModDelayNode {
 }
 
 impl ModDelayNode {
-    pub fn new(config: ModDelayConfig) -> ModDelayNode {
+    pub fn new(config: ModDelayConfig) -> Self {
         debug_assert!(config.min_depth <= config.max_depth);
         let mod_depth = config.max_depth - config.min_depth;
         let mid_depth = (config.max_depth + config.min_depth) / 2;
         let buffer = AllocRingBuffer::from(vec![0.0; config.max_depth as usize]);
-        ModDelayNode {
+        Self {
             config: config.clone(),
             lfo_phase: 0.0,
             mod_depth,

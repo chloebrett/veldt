@@ -58,7 +58,7 @@ impl AudioPlayer {
         let (playback_tx, playback_rx) = crossbeam_channel::unbounded();
         let (update_tx, update_rx) = crossbeam_channel::unbounded();
 
-        AudioPlayer {
+        Self {
             graph: Some(graph),
             audio_tx,
             audio_rx,

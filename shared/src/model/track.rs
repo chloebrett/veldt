@@ -46,7 +46,7 @@ impl Ord for PlacedNote {
 // TODO: consider including note identity in this definition.
 impl PartialEq for PlacedNote {
     fn eq(&self, other: &Self) -> bool {
-        (self.offset == other.offset) & (self.note == other.note)
+        (self.offset == other.offset) && (self.note == other.note)
     }
 }
 

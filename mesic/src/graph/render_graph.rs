@@ -43,7 +43,7 @@ impl Default for RenderGraph {
         // Note: consider adding the starter AmpNode here as well.
         let output_node_index = graph.add_node(NodeData::new2(BoxedNodeSend::new(Sum)));
 
-        RenderGraph {
+        Self {
             graph,
             sample_count: 0,
             output_node_index,
@@ -270,7 +270,7 @@ impl RenderGraph {
 
     /// Creates a graph that plays the buffer contained in a Vec.
     pub fn from_vec(vec: Vec<Stereo<f32>>) -> Self {
-        let mut graph = RenderGraph::default();
+        let mut graph = Self::default();
         graph.set_from_audio(vec);
         graph
     }

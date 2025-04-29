@@ -14,7 +14,7 @@ pub struct MixerView<'a> {
 
 impl<'a> MixerView<'a> {
     pub fn new(window_state: &'a mut WindowState, store: &'a Store) -> Self {
-        MixerView {
+        Self {
             window_state,
             store,
         }
@@ -23,7 +23,7 @@ impl<'a> MixerView<'a> {
 
 impl View for MixerView<'_> {
     fn ui(&mut self, ui: &mut Ui) {
-        let MixerView {
+        let Self {
             window_state,
             store,
             ..

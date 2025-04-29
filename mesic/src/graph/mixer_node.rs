@@ -17,7 +17,7 @@ pub struct MixerNode {
 
 impl MixerNode {
     pub fn new(mixer_index: usize, effect_index: usize, meta: EffectMeta) -> Self {
-        MixerNode {
+        Self {
             mixer_index,
             effect_index,
             meta: meta.clone(),

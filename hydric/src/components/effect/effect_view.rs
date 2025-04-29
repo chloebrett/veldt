@@ -37,7 +37,7 @@ impl<'a, F: Fn(Action), G: Fn()> EffectView<'a, F, G> {
         let on_close =
             Box::new(move || window_state.effects.set((mixer_index, effect_index), false));
 
-        Some(EffectView {
+        Some(Self {
             visible,
             on_close,
             effect,
@@ -51,7 +51,7 @@ impl<'a, F: Fn(Action), G: Fn()> EffectView<'a, F, G> {
 
 impl<F: Fn(Action), G: Fn()> View for EffectView<'_, F, G> {
     fn ui(&mut self, ui: &mut Ui) {
-        let EffectView {
+        let Self {
             visible,
             on_close,
             effect,

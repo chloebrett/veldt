@@ -14,7 +14,7 @@ pub struct KeyView<'a, F: Fn(Action)> {
 
 impl<'a, F: Fn(Action)> KeyView<'a, F> {
     pub fn new(dispatch: F, visible: &'a mut bool, key: ScaleValue, scale: Scale) -> Self {
-        KeyView {
+        Self {
             dispatch,
             visible,
             key,
@@ -25,7 +25,7 @@ impl<'a, F: Fn(Action)> KeyView<'a, F> {
 
 impl<F: Fn(Action)> View for KeyView<'_, F> {
     fn ui(&mut self, ui: &mut Ui) {
-        let KeyView {
+        let Self {
             ref dispatch,
             key,
             scale,

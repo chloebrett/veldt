@@ -29,7 +29,7 @@ impl SubSynthNode {
                     .unwrap_or(track.unclipped_duration()),
             bpm,
         ) as usize;
-        SubSynthNode {
+        Self {
             meta,
             config,
             track,

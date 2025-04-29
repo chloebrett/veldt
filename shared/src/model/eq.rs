@@ -40,7 +40,7 @@ pub struct EqConfig {
 
 impl Default for EqConfig {
     fn default() -> Self {
-        EqConfig {
+        Self {
             kind: EqType::ParametricSecondOrderNonConstantQ,
             fc: 1000.0,
             gain: 0.0,

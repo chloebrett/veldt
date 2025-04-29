@@ -16,7 +16,7 @@ pub struct GeneratorView<'a, F: FnMut()> {
 
 impl<'a, F: FnMut()> GeneratorView<'a, F> {
     pub fn new(store: &'a Store, generator_index: usize, visible: bool, on_close: F) -> Self {
-        GeneratorView {
+        Self {
             store,
             generator_index,
             visible,

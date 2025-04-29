@@ -37,7 +37,7 @@ impl fmt::Display for PitchName {
 
 impl Add<PitchValue> for PitchName {
     type Output = Self;
-    fn add(self: PitchName, other: PitchValue) -> PitchName {
+    fn add(self: PitchName, other: PitchValue) -> Self {
         let pitch_value: PitchValue = self.into();
         (pitch_value + other).into()
     }

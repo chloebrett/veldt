@@ -14,7 +14,7 @@ pub struct EqView<'a, F: Fn(Action), G: Fn()> {
 
 impl<'a, F: Fn(Action), G: Fn()> EqView<'a, F, G> {
     pub fn new(config: &'a EqConfig, dispatch: F, on_release: G) -> Self {
-        EqView {
+        Self {
             config,
             dispatch,
             on_release,
@@ -24,7 +24,7 @@ impl<'a, F: Fn(Action), G: Fn()> EqView<'a, F, G> {
 
 impl<F: Fn(Action), G: Fn()> View for EqView<'_, F, G> {
     fn ui(&mut self, ui: &mut Ui) {
-        let EqView {
+        let Self {
             config, dispatch, ..
         } = self;
 

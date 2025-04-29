@@ -22,7 +22,7 @@ pub struct Piano {
 
 impl Piano {
     pub fn new(max_note: PitchValue, min_note: PitchValue) -> Self {
-        Piano {
+        Self {
             max_note,
             min_note,
             size: vec2(50.0, 600.0),
