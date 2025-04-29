@@ -118,6 +118,7 @@ impl Default for StoreData {
                                 ],
                                 lfos: [BASE_LFO; 3],
                                 envelopes: [BASE_ENV; 3],
+                                matrix_config: ModMatrix::new(6, 3),
                             },
                         },
                         meta: GeneratorMeta {
