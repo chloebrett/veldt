@@ -74,9 +74,11 @@ impl From<MultiIndexFieldProto> for MultiIndexField {
             IndexFieldKindProto::UnknownIndexFieldKind => panic!(),
             IndexFieldKindProto::TrackIndexField => MultiIndexField::Track(b_tree),
             IndexFieldKindProto::PlacedNoteIndexField => MultiIndexField::PlacedNote(b_tree),
-            IndexFieldKindProto::TrackPlacementIndexField => MultiIndexField::TrackPlacement(b_tree),
+            IndexFieldKindProto::TrackPlacementIndexField => {
+                MultiIndexField::TrackPlacement(b_tree)
+            }
             IndexFieldKindProto::EffectIndexField => MultiIndexField::Effect(b_tree),
-            IndexFieldKindProto::GeneratorIndexField => MultiIndexField::Generator(b_tree)
+            IndexFieldKindProto::GeneratorIndexField => MultiIndexField::Generator(b_tree),
         }
     }
 }
@@ -92,7 +94,8 @@ impl From<MultiIndexField> for MultiIndexFieldProto {
                         index: index as u32,
                     })
                     .collect(),
-                kind: IndexFieldKindProto::TrackIndexField.into()},
+                kind: IndexFieldKindProto::TrackIndexField.into(),
+            },
             MultiIndexField::PlacedNote(it) => MultiIndexFieldProto {
                 values: it
                     .iter()
@@ -101,7 +104,8 @@ impl From<MultiIndexField> for MultiIndexFieldProto {
                         index: index as u32,
                     })
                     .collect(),
-                kind: IndexFieldKindProto::PlacedNoteIndexField.into()},
+                kind: IndexFieldKindProto::PlacedNoteIndexField.into(),
+            },
             MultiIndexField::TrackPlacement(it) => MultiIndexFieldProto {
                 values: it
                     .iter()
@@ -110,7 +114,8 @@ impl From<MultiIndexField> for MultiIndexFieldProto {
                         index: index as u32,
                     })
                     .collect(),
-                kind: IndexFieldKindProto::TrackPlacementIndexField.into()},
+                kind: IndexFieldKindProto::TrackPlacementIndexField.into(),
+            },
             MultiIndexField::Effect(it) => MultiIndexFieldProto {
                 values: it
                     .iter()
@@ -119,7 +124,8 @@ impl From<MultiIndexField> for MultiIndexFieldProto {
                         index: index as u32,
                     })
                     .collect(),
-                kind: IndexFieldKindProto::EffectIndexField.into()},
+                kind: IndexFieldKindProto::EffectIndexField.into(),
+            },
             MultiIndexField::Generator(it) => MultiIndexFieldProto {
                 values: it
                     .iter()
@@ -128,7 +134,8 @@ impl From<MultiIndexField> for MultiIndexFieldProto {
                         index: index as u32,
                     })
                     .collect(),
-                kind: IndexFieldKindProto::GeneratorIndexField.into()},
+                kind: IndexFieldKindProto::GeneratorIndexField.into(),
+            },
         }
     }
 }
