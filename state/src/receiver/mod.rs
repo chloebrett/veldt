@@ -4,10 +4,10 @@ mod effect;
 mod generator;
 mod mixer_channel;
 mod note;
+mod placement;
 mod project;
 mod store_data;
 mod track;
-mod placement;
 
 /// A model object that can receive actions.
 pub trait ActionReceiver {

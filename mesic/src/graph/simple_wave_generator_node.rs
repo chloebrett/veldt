@@ -2,7 +2,8 @@ use super::ProcessContext;
 use crate::wave::{beats_to_samples, unison_wave};
 use dasp_graph::{Buffer, Input, Node};
 use shared::model::{
-    GeneratorInstance, GeneratorMeta, GeneratorType, SimpleWaveConfig, Track, TrackPlacement,
+    GeneratorInstance, GeneratorMeta, GeneratorType, Placement, PlacementType, SimpleWaveConfig,
+    Track, TrackPlacement,
 };
 use shared::types::{Beats, KnobPosition, Volume};
 use std::cmp::min;
@@ -12,7 +13,7 @@ pub struct SimpleWaveGeneratorNode {
     meta: GeneratorMeta,
     generator_index: usize,
     sample_index: u32, // the sample that playback is currently up to.
-    placements: Vec<TrackPlacement>,
+    placements: Vec<Placement>,
     tracks: Vec<Track>,
     bpm: Beats,
 }
@@ -22,7 +23,7 @@ impl SimpleWaveGeneratorNode {
         config: SimpleWaveConfig,
         meta: GeneratorMeta,
         generator_index: usize,
-        placements: Vec<TrackPlacement>,
+        placements: Vec<Placement>,
         tracks: Vec<Track>,
         bpm: Beats,
     ) -> Self {
@@ -76,7 +77,14 @@ impl Node<ProcessContext> for SimpleWaveGeneratorNode {
 
         let mut buffer = Buffer::SILENT;
         for placement in &self.placements {
-            let track = &self.tracks[placement.track_id as usize];
+            let Placement {
+                kind: PlacementType::Track(track_placement),
+                ..
+            } = placement
+            else {
+                continue;
+            };
+            let track = &self.tracks[track_placement.track_index];
             let track_offset = *placement.offset;
             let track_duration = *placement
                 .clipped_duration

@@ -1,7 +1,7 @@
 use shared::action_proto::{TypeFieldProto, type_field_proto::Kind as TypeFieldKind};
 use shared::model::{
     AdsrEnvelope, AntiAliasingMode, EffectInstance, EqType, FileTreeConfig, FilenameTree,
-    PitchName, PlacedNote, Project, Sample, Scale, ScaleValue, Track, WaveType, Placement,
+    PitchName, PlacedNote, Placement, Project, Sample, Scale, ScaleValue, Track, WaveType,
 };
 use shared::pmodel::{AntiAliasingModeProto, EqTypeProto, ScaleProto, WaveTypeProto};
 
