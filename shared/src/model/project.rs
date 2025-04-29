@@ -41,7 +41,7 @@ impl Project {
         let mut max = OrderedFloat(0.0);
         for placement in &self.placements {
             if let &Ok(&TrackPlacement { track_index, .. }) = &placement.try_into() {
-                let track = &self.tracks[track_index as usize];
+                let track = &self.tracks[track_index];
                 let offset = &placement.offset;
                 let duration = placement
                     .clipped_duration

@@ -75,8 +75,8 @@ impl View for TrackPlacementView<'_> {
                 on_release,
             );
 
-            let max_note_length = *store.get().project.tracks[track_placement.track_index as usize]
-                .unclipped_duration();
+            let max_note_length =
+                *store.get().project.tracks[track_placement.track_index].unclipped_duration();
             let duration = *placement
                 .clipped_duration
                 .unwrap_or(OrderedFloat(max_note_length)) as f64;
