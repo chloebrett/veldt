@@ -5,6 +5,7 @@ use shared::model::{
     GeneratorInstance, GeneratorMeta, GeneratorType, SimpleWaveConfig, Track, TrackPlacement,
 };
 use shared::types::{Beats, KnobPosition, Volume};
+use std::cmp::min;
 
 pub struct SimpleWaveGeneratorNode {
     config: SimpleWaveConfig,
@@ -76,15 +77,22 @@ impl Node<ProcessContext> for SimpleWaveGeneratorNode {
         let mut buffer = Buffer::SILENT;
         for placement in &self.placements {
             let track = &self.tracks[placement.track_id as usize];
-            let offset = *placement.offset;
+            let track_offset = *placement.offset;
+            let track_duration = *placement
+                .clipped_duration
+                .unwrap_or(track.unclipped_duration());
+            let track_end_sample = beats_to_samples(track_offset + track_duration, self.bpm);
 
             // TODO: use a segment tree to determine which notes are in range of the current
             // buffer, instead of always iterating over all notes.
             // Then apply the same idea to tracks.
             for note in &track.notes {
-                let offset = offset + *note.offset;
-                let note_start_sample = beats_to_samples(offset, self.bpm);
-                let note_end_sample = beats_to_samples(offset + note.note.beats, self.bpm);
+                let offset = track_offset + *note.offset;
+                let note_start_sample = min(beats_to_samples(offset, self.bpm), track_end_sample);
+                let note_end_sample = min(
+                    beats_to_samples(offset + note.note.beats, self.bpm),
+                    track_end_sample,
+                );
 
                 // Don't play notes that aren't relevant to this buffer segment.
                 if note_start_sample > self.sample_index + Buffer::LEN as u32
