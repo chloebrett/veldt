@@ -253,7 +253,9 @@ impl<T: SequencerObject<T>> Widget for Sequencer<'_, T> {
                 if response.interact(Sense::click()).double_clicked() {
                     T::set_selected(ui, None)
                 }
-                if ui.input(|input| input.key_pressed(egui::Key::Backspace)) {
+                if ui.input(|input| {
+                    input.key_pressed(egui::Key::Delete) || input.key_pressed(egui::Key::Backspace)
+                }) {
                     T::delete_selected(ui, store, self.parent_index);
                     T::set_selected(ui, None);
                 }

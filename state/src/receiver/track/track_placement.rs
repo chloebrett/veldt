@@ -17,9 +17,14 @@ impl ActionReceiver for TrackPlacement {
                 Action::SetFloat(FloatField::Offset, *prev)
             }
             Action::SetChild(TypeField::ClippedDuration(duration)) => {
-                let prev = self.clipped_duration.map(|value| *value);
+                let prev = self.clipped_duration.as_deref().copied();
                 self.clipped_duration = duration.map(OrderedFloat);
                 Action::SetChild(TypeField::ClippedDuration(prev))
+            }
+            Action::SetUint(UintField::GeneratorIndex, generator_index) => {
+                let prev = self.generator_index;
+                self.generator_index = *generator_index as usize;
+                Action::SetUint(UintField::GeneratorIndex, prev as u32)
             }
             _ => return None,
         })

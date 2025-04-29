@@ -4,10 +4,12 @@ use dasp_graph::{Buffer, Input, Node};
 use shared::types::Volume;
 
 /// Node with a volume control.
-/// Can clip the post-gain signal if desired.
+/// Currently just reads from the overall project volume, but could be
+/// made configurable.
+/// Clips the post-gain signal.
+#[derive(Default)]
 pub struct AmpNode {
-    pub volume: Volume,
-    pub should_clip: bool,
+    volume: Volume,
 }
 
 impl AmpNode {
@@ -16,10 +18,8 @@ impl AmpNode {
             // Apply the volume multiplier.
             let mut amped = *x * self.volume;
 
-            // If applicable, clip the output so that the magnitude doesn't go above 1.
-            if self.should_clip {
-                amped = amped.clamp(-1.0, 1.0);
-            }
+            // Clip the output so that the magnitude doesn't go above 1.
+            amped = amped.clamp(-1.0, 1.0);
 
             *x = amped
         }
@@ -27,7 +27,9 @@ impl AmpNode {
 }
 
 impl Node<ProcessContext> for AmpNode {
-    fn process(&mut self, inputs: &[Input], output: &mut [Buffer], _payload: &ProcessContext) {
+    fn process(&mut self, inputs: &[Input], output: &mut [Buffer], payload: &ProcessContext) {
+        self.volume = payload.store.volume;
+
         let (out_left, out_right) = extract_outputs(output);
         let (in_left, in_right) = extract_inputs(inputs)[0];
 

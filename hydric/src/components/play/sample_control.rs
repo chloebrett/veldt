@@ -14,17 +14,14 @@ pub fn sample_control(
     if ui
         .add_enabled(
             !store.get().project.samples.is_empty(),
-            Button::new("Play sample"),
+            Button::new("Set audio from sample"),
         )
         .clicked()
     {
         let sample = store.get().project.samples[0].clone();
         let sample = interleave_stereo(sample.left, sample.right);
         audio_state.audio = sample.clone();
-        let volume = store.get().volume;
-        audio_state.player.init();
-        audio_state.player.set_audio(sample, volume);
-        audio_state.player.play();
+        audio_state.player.set_audio(sample);
     }
 
     if ui.button("Load sample").clicked() {

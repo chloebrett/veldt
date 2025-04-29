@@ -59,26 +59,25 @@ impl From<IndexField> for IndexFieldProto {
 
 #[derive(PartialEq, Clone, Debug)]
 pub enum MultiIndexField {
-    Track(BTreeSet<usize>),
-    PlacedNote(BTreeSet<usize>),
-    TrackPlacement(BTreeSet<usize>),
-    Effect(BTreeSet<usize>),
-    Generator(BTreeSet<usize>),
+    Track(Vec<usize>),
+    PlacedNote(Vec<usize>),
+    TrackPlacement(Vec<usize>),
+    Effect(Vec<usize>),
+    Generator(Vec<usize>),
 }
 
 impl From<MultiIndexFieldProto> for MultiIndexField {
     fn from(object: MultiIndexFieldProto) -> Self {
-        let b_tree: BTreeSet<usize> =
-            BTreeSet::from_iter(object.values.iter().map(|it| it.index as usize));
+        let indexes: Vec<usize> = object.values.iter().map(|it| it.index as usize).collect();
         match object.kind() {
             IndexFieldKindProto::UnknownIndexFieldKind => panic!(),
-            IndexFieldKindProto::TrackIndexField => MultiIndexField::Track(b_tree),
-            IndexFieldKindProto::PlacedNoteIndexField => MultiIndexField::PlacedNote(b_tree),
+            IndexFieldKindProto::TrackIndexField => MultiIndexField::Track(indexes),
+            IndexFieldKindProto::PlacedNoteIndexField => MultiIndexField::PlacedNote(indexes),
             IndexFieldKindProto::TrackPlacementIndexField => {
-                MultiIndexField::TrackPlacement(b_tree)
+                MultiIndexField::TrackPlacement(indexes)
             }
-            IndexFieldKindProto::EffectIndexField => MultiIndexField::Effect(b_tree),
-            IndexFieldKindProto::GeneratorIndexField => MultiIndexField::Generator(b_tree),
+            IndexFieldKindProto::EffectIndexField => MultiIndexField::Effect(indexes),
+            IndexFieldKindProto::GeneratorIndexField => MultiIndexField::Generator(indexes),
         }
     }
 }

@@ -17,14 +17,16 @@ impl ActionReceiver for Track {
                 self.notes.remove(*note_index);
                 Action::AddChild(TypeField::PlacedNote(prev))
             }
-            Action::DeleteChildren(MultiIndexField::PlacedNote(note_index_tree)) => {
+            Action::DeleteChildren(MultiIndexField::PlacedNote(note_indexes)) => {
                 let prev = self
                     .notes
                     .iter()
                     .map(|note| TypeField::PlacedNote(note.clone()))
                     .collect();
-                // Iterate in reverse so that removal note indexes do not change duration loop.
-                for index in note_index_tree.into_iter().rev() {
+                // Sort and iterate in reverse so that other indexes are not effected by removal
+                // duraing loop.
+                let indexes = note_indexes.clone();
+                for index in indexes.iter().rev() {
                     self.notes.remove(*index);
                 }
                 Action::SetChildren(MultiTypeField { values: prev })

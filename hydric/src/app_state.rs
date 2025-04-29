@@ -1,6 +1,7 @@
 use crate::{playback::AudioPlayer, promise::AsyncResult};
 use dasp_frame::Stereo;
 use egui::{Id, Pos2, Ui};
+use mesic::graph::RenderGraph;
 use shared::model::{FilenameTree, Project, Sample};
 use std::cmp::{Eq, Ord};
 use std::collections::{BTreeSet, HashSet};
@@ -19,10 +20,18 @@ pub struct AsyncState {
     pub export: AsyncResult<(), ()>,
 }
 
-#[derive(Default)]
 pub struct AudioState {
     pub audio: Vec<Stereo<f32>>,
     pub player: AudioPlayer,
+}
+
+impl AudioState {
+    pub fn new(graph: RenderGraph) -> Self {
+        AudioState {
+            audio: vec![],
+            player: AudioPlayer::new(graph),
+        }
+    }
 }
 
 pub struct MixerWindowState {

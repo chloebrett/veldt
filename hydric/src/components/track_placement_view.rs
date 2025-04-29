@@ -1,6 +1,6 @@
 use crate::app_state::DataState;
 use crate::view::View;
-use crate::widget::{StateWindow, default_window, get_set, selectable_value, slider};
+use crate::widget::{StateWindow, default_window, get_set, int_slider, selectable_value, slider};
 use egui::{Ui, pos2};
 use ordered_float::OrderedFloat;
 use shared::types::Beats;
@@ -50,6 +50,17 @@ impl View for TrackPlacementView<'_> {
                         );
                     }
                 });
+
+            // TODO: better UI than a slider for this!
+            let max_generator_index = (store.get().project.generators.len() - 1) as i32;
+            int_slider(
+                ui,
+                "Generator index",
+                placement.generator_index as f64,
+                |it| store.dispatch(&sel, Action::SetUint(UintField::GeneratorIndex, it as u32)),
+                0..=max_generator_index,
+                on_release,
+            );
 
             let offset = *placement.offset as f64;
             slider(

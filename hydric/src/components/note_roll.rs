@@ -301,8 +301,9 @@ impl SequencerObject<PlacedNote> for PlacedNote {
     fn delete_selected(ui: &mut Ui, store: &Store, parent_index: Option<usize>) {
         let indexes = DataState::SelectedNoteIndexes
             .get_value::<BTreeSet<usize>>(ui)
-            .unwrap_or_default();
-
+            .unwrap_or_default()
+            .into_iter()
+            .collect();
         store.dispatch(
             &Selector::Track(parent_index.expect("Should have been parent index supplied.")),
             Action::DeleteChildren(MultiIndexField::PlacedNote(indexes)),
