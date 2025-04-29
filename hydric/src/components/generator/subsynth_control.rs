@@ -1,4 +1,4 @@
-use super::super::{Piano, PianoOrientation, ModMatrixView};
+use super::super::{ModMatrixView, Piano, PianoOrientation};
 use super::subsynth_oscillator;
 use crate::view::View;
 use eframe::egui;
@@ -56,7 +56,14 @@ where
         });
         ui.add_space(5.0);
         ui.vertical(|ui| {
-            ModMatrixView::new(&config.matrix_config, vec!["ENV 1", "ENV 2", "ENV 3", "LFO 1", "LFO 2", "LFO 3"], vec!["OSC 1", "OSC 2", "OSC 3"], dispatch, on_release).ui(ui); // must wrap in ui.vertical to stop the matrix from unnecessarily stretching vertically
+            ModMatrixView::new(
+                &config.matrix_config,
+                vec!["ENV 1", "ENV 2", "ENV 3", "LFO 1", "LFO 2", "LFO 3"],
+                vec!["OSC 1", "OSC 2", "OSC 3"],
+                dispatch,
+                on_release,
+            )
+            .ui(ui); // must wrap in ui.vertical to stop the matrix from unnecessarily stretching vertically
         });
     });
 

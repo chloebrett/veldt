@@ -1,4 +1,5 @@
 mod checkbox;
+mod for_each_with_separator;
 mod get_set;
 mod knob;
 mod selectable_value;
@@ -9,6 +10,7 @@ mod text_rotator;
 mod window;
 
 pub use checkbox::*;
+pub use for_each_with_separator::*;
 pub use get_set::*;
 pub use knob::*;
 pub use selectable_value::*;

@@ -1,4 +1,4 @@
-use egui::{epaint, Color32, FontId, Pos2, Shape, Stroke, Ui};
+use egui::{Color32, FontId, Pos2, Shape, Stroke, Ui, epaint};
 use std::f32::consts::PI;
 
 pub enum TextRotation {
