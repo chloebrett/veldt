@@ -21,7 +21,7 @@ impl<'a> MenuBar<'a> {
         window_state: &'a mut WindowState,
         async_state: &'a mut AsyncState,
     ) -> Self {
-        MenuBar {
+        Self {
             store,
             window_state,
             async_state,

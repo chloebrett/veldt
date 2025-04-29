@@ -22,7 +22,7 @@ pub struct TrackRoll<'a> {
 
 impl<'a> TrackRoll<'a> {
     pub fn new(store: &'a Store, window_state: &'a mut WindowState) -> Self {
-        TrackRoll {
+        Self {
             store,
             window_state,
         }

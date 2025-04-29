@@ -13,13 +13,13 @@ pub struct NoteView<'a> {
 
 impl<'a> NoteView<'a> {
     pub fn new(store: &'a Store) -> Self {
-        NoteView { store }
+        Self { store }
     }
 }
 
 impl View for NoteView<'_> {
     fn ui(&mut self, ui: &mut Ui) {
-        let NoteView { store } = *self;
+        let Self { store } = self;
         let Some(note_index): Option<usize> = DataState::ActiveNoteIndex.get_value(ui) else {
             return;
         };

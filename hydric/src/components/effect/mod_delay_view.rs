@@ -13,7 +13,7 @@ pub struct ModDelayView<'a, F: Fn(Action), G: Fn()> {
 
 impl<'a, F: Fn(Action), G: Fn()> ModDelayView<'a, F, G> {
     pub fn new(config: &'a ModDelayConfig, dispatch: F, on_release: G) -> Self {
-        ModDelayView {
+        Self {
             config,
             dispatch,
             on_release,
@@ -23,7 +23,7 @@ impl<'a, F: Fn(Action), G: Fn()> ModDelayView<'a, F, G> {
 
 impl<F: Fn(Action), G: Fn()> View for ModDelayView<'_, F, G> {
     fn ui(&mut self, ui: &mut Ui) {
-        let ModDelayView {
+        let Self {
             config, dispatch, ..
         } = self;
 

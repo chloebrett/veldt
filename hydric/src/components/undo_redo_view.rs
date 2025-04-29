@@ -8,7 +8,7 @@ pub struct UndoRedoView<'a> {
 
 impl<'a> UndoRedoView<'a> {
     pub fn new(store: &'a mut Store) -> Self {
-        UndoRedoView { store }
+        Self { store }
     }
 }
 

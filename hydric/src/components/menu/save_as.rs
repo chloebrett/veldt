@@ -21,7 +21,7 @@ impl<'a, F: Fn(Action), G: FnMut()> SaveAs<'a, F, G> {
         dispatch: F,
         on_click: G,
     ) -> Self {
-        SaveAs {
+        Self {
             window_state,
             name,
             dispatch,

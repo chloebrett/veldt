@@ -26,7 +26,7 @@ pub struct NoteRoll<'a> {
 
 impl<'a> NoteRoll<'a> {
     pub fn new(store: &'a Store) -> Self {
-        NoteRoll {
+        Self {
             store,
             min_note: PitchName {
                 scale_value: ScaleValue::A,
@@ -69,7 +69,7 @@ impl<'a> NoteRoll<'a> {
 
 impl View for NoteRoll<'_> {
     fn ui(&mut self, ui: &mut Ui) {
-        let NoteRoll {
+        let Self {
             store,
             min_note,
             max_note,

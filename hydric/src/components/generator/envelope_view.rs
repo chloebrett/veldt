@@ -22,7 +22,7 @@ pub struct EnvelopeView<'a, F: Fn(Action), G: Fn()> {
 
 impl<'a, F: Fn(Action), G: Fn()> EnvelopeView<'a, F, G> {
     pub fn new(envelope: &'a AdsrEnvelope, dispatch: F, on_release: G) -> Self {
-        EnvelopeView {
+        Self {
             envelope,
             dispatch,
             on_release,
@@ -57,7 +57,7 @@ struct EnvelopeKey {
 
 impl From<AdsrEnvelope> for EnvelopeKey {
     fn from(other: AdsrEnvelope) -> Self {
-        EnvelopeKey {
+        Self {
             attack: OrderedFloat(other.attack),
             decay: OrderedFloat(other.decay),
             sustain: OrderedFloat(other.sustain),

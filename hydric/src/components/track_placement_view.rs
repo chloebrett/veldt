@@ -14,7 +14,7 @@ pub struct TrackPlacementView<'a> {
 
 impl<'a> TrackPlacementView<'a> {
     pub fn new(store: &'a Store) -> Self {
-        TrackPlacementView { store }
+        Self { store }
     }
 }
 
