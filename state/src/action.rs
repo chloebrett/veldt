@@ -6,11 +6,17 @@ use std::str::FromStr;
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum Action {
-    // Generic actions which act generically on entities.
+    // Set a child field that happens to be a float.
     SetFloat(FloatField, f32),
+    // Set a child field that happens to be a uint.
     SetUint(UintField, u32),
+    // Set a child field that happens to be an index.
+    SetIndex(IndexField),
+    // Delete a child object *by* index.
     DeleteChild(IndexField),
+    // Set a child object by type.
     SetChild(TypeField),
+    // Add a child object by type.
     AddChild(TypeField),
 
     // Note: avoid creating new ad hoc action types.
@@ -44,6 +50,7 @@ impl From<ActionProto> for Action {
                     .unwrap_or_else(|_| panic!("Expected uint field name: {}", it.key)),
                 it.value,
             ),
+            ActionKind::SetIndex(index) => Action::SetIndex(index.into()),
             ActionKind::DeleteChild(index) => Action::DeleteChild(index.into()),
             ActionKind::AddChild(child) => Action::AddChild(child.into()),
             ActionKind::SetChild(child) => Action::SetChild(child.into()),
@@ -63,6 +70,7 @@ impl From<Action> for ActionProto {
                     key: key.to_string(),
                     value,
                 }),
+                Action::SetIndex(index) => ActionKind::SetIndex(index.into()),
                 Action::SetChild(child) => ActionKind::SetChild(child.into()),
                 Action::AddChild(child) => ActionKind::AddChild(child.into()),
                 Action::DeleteChild(index) => ActionKind::DeleteChild(index.into()),

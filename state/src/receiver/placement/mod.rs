@@ -1,16 +1,21 @@
-use crate::receiver::ActionReceiver;
-use crate::{Action, FloatField, TypeField, UintField};
-use ordered_float::OrderedFloat;
-use shared::model::TrackPlacement;
+mod sample_placement;
+mod track_placement;
 
-impl ActionReceiver for TrackPlacement {
+use crate::receiver::ActionReceiver;
+use crate::{Action, FloatField, TypeField};
+use ordered_float::OrderedFloat;
+use shared::model::{Placement, PlacementType};
+
+impl ActionReceiver for Placement {
     fn apply(&mut self, action: &Action) -> Option<Action> {
+        if let Some(undo) = match &mut self.kind {
+            PlacementType::Track(track_placement) => track_placement.apply(action),
+            PlacementType::Sample(sample_placement) => sample_placement.apply(action),
+        } {
+            return Some(undo);
+        }
+
         Some(match action {
-            Action::SetUint(UintField::TrackId, track_id) => {
-                let prev = self.track_id;
-                self.track_id = *track_id;
-                Action::SetUint(UintField::TrackId, prev)
-            }
             Action::SetFloat(FloatField::Offset, offset) => {
                 let prev = self.offset;
                 self.offset = OrderedFloat(*offset);
@@ -20,11 +25,6 @@ impl ActionReceiver for TrackPlacement {
                 let prev = self.clipped_duration.as_deref().copied();
                 self.clipped_duration = duration.map(OrderedFloat);
                 Action::SetChild(TypeField::ClippedDuration(prev))
-            }
-            Action::SetUint(UintField::GeneratorIndex, generator_index) => {
-                let prev = self.generator_index;
-                self.generator_index = *generator_index as usize;
-                Action::SetUint(UintField::GeneratorIndex, prev as u32)
             }
             _ => return None,
         })

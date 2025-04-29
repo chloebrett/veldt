@@ -8,7 +8,9 @@ use crate::wave::beats_to_samples;
 use dasp_frame::Stereo;
 use dasp_graph::{BoxedNodeSend, Buffer, Node, NodeData, node::Sum};
 use petgraph::stable_graph::NodeIndex;
-use shared::model::{Effect, EffectInstance, GeneratorInstance, GeneratorType, Project};
+use shared::model::{
+    Effect, EffectInstance, GeneratorInstance, GeneratorType, PlacementType, Project,
+};
 use state::{Action, Selector};
 use std::sync::mpsc::Receiver;
 
@@ -87,10 +89,13 @@ impl RenderGraph {
         for generator_index in 0..project.generators.len() {
             // Placements that are linked to this generator.
             let placements: Vec<_> = project
-                .track_placements
+                .placements
                 .clone()
                 .into_iter()
-                .filter(|it| it.generator_index == generator_index)
+                .filter(|it| match &it.kind {
+                    PlacementType::Track(it) => it.generator_index == generator_index,
+                    _ => false,
+                })
                 .collect();
 
             // TODO: do better than just cloning all the tracks!
@@ -323,14 +328,11 @@ impl Iterator for RenderGraph {
 mod tests {
     use shared::model::{
         AdsrEnvelope, AntiAliasingMode, DelayConfig, EffectMeta, EqConfig, EqType, GeneratorMeta,
-        MixerChannel, ModDelayConfig, Note, PitchName, PlacedNote, ScaleValue, SimpleWaveConfig,
-        Track, TrackPlacement, WaveType,
+        MixerChannel, ModDelayConfig, Note, PitchName, PlacedNote, Placement, ScaleValue,
+        SimpleWaveConfig, Track, TrackPlacement, WaveType,
     };
 
-    use crate::{
-        graph::SimpleWaveGeneratorNode,
-        wave::{beats_to_samples, freq},
-    };
+    use crate::{graph::SimpleWaveGeneratorNode, wave::freq};
 
     use super::*;
 
@@ -356,13 +358,15 @@ mod tests {
         }
     }
 
-    fn make_track_placement() -> TrackPlacement {
-        TrackPlacement {
-            track_id: 0,
+    fn make_placement() -> Placement {
+        Placement {
+            kind: PlacementType::Track(TrackPlacement {
+                track_index: 0,
+                generator_index: 0,
+            }),
             offset: 0.0.into(),
             clipped_duration: None,
             visual_placement: 0,
-            generator_index: 0,
         }
     }
 
@@ -392,13 +396,13 @@ mod tests {
 
     fn make_simple_wave_generator_node() -> SimpleWaveGeneratorNode {
         let track = make_track();
-        let track_placement = make_track_placement();
+        let placement = make_placement();
         let bpm = 120.0;
         let generator_node = SimpleWaveGeneratorNode::new(
             make_simple_wave_config(),
             make_generator_meta(),
             0,
-            vec![track_placement],
+            vec![placement],
             vec![track],
             bpm,
         );

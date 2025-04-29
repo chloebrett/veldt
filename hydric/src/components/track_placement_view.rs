@@ -3,9 +3,11 @@ use crate::view::View;
 use crate::widget::{StateWindow, default_window, get_set, int_slider, selectable_value, slider};
 use egui::{Ui, pos2};
 use ordered_float::OrderedFloat;
+use shared::model::TrackPlacement;
 use shared::types::Beats;
-use state::{Action, FloatField, IndexField, Selector, Store, TypeField, UintField};
+use state::{Action, FloatField, IndexField, Selector, Store, TypeField};
 
+// TODO: rename to PlacementView if appropriate.
 pub struct TrackPlacementView<'a> {
     store: &'a Store,
 }
@@ -25,10 +27,11 @@ impl View for TrackPlacementView<'_> {
             return;
         };
         let on_release = || store.dispatchr(Action::Release);
-        let placement = &store.get().project.track_placements[placement_index];
+        let placement = &store.get().project.placements[placement_index];
+        let track_placement: &TrackPlacement = placement.try_into().unwrap();
         let tracks_length = store.get().project.tracks.len();
-        let sel = Selector::TrackPlacement(placement_index);
-        let title = format!("Track Placement {placement_index}");
+        let sel = Selector::Placement(placement_index);
+        let title = format!("Placement {placement_index}");
 
         let window = StateWindow(
             default_window(&title)
@@ -36,16 +39,16 @@ impl View for TrackPlacementView<'_> {
                 .resizable(true),
         );
         window.show(ui, DataState::TrackPlacementViewWindow, |ui| {
-            egui::ComboBox::from_id_salt(format!("track_placement_{placement_index}"))
-                .selected_text(format!("Track {}", placement.track_id))
+            egui::ComboBox::from_id_salt(format!("placement_{placement_index}"))
+                .selected_text(format!("Track {}", track_placement.track_index))
                 .show_ui(ui, |ui| {
                     for track_index in 0..tracks_length {
                         selectable_value(
                             ui,
-                            get_set(&placement.track_id, |it| {
-                                store.dispatch(&sel, Action::SetUint(UintField::TrackId, *it))
+                            get_set(&track_placement.track_index, |it| {
+                                store.dispatch(&sel, Action::SetIndex(IndexField::Track(*it)))
                             }),
-                            &(track_index as u32),
+                            &track_index,
                             track_index.to_string(),
                         );
                     }
@@ -56,8 +59,8 @@ impl View for TrackPlacementView<'_> {
             int_slider(
                 ui,
                 "Generator index",
-                placement.generator_index as f64,
-                |it| store.dispatch(&sel, Action::SetUint(UintField::GeneratorIndex, it as u32)),
+                track_placement.generator_index as f64,
+                |it| store.dispatch(&sel, Action::SetIndex(IndexField::Generator(it as usize))),
                 0..=max_generator_index,
                 on_release,
             );
@@ -73,7 +76,7 @@ impl View for TrackPlacementView<'_> {
             );
 
             let max_note_length =
-                *store.get().project.tracks[placement.track_id as usize].unclipped_duration();
+                *store.get().project.tracks[track_placement.track_index].unclipped_duration();
             let duration = *placement
                 .clipped_duration
                 .unwrap_or(OrderedFloat(max_note_length)) as f64;
@@ -98,9 +101,7 @@ impl View for TrackPlacementView<'_> {
             });
 
             if ui.button("Delete").clicked() {
-                store.dispatchr(Action::DeleteChild(IndexField::TrackPlacement(
-                    placement_index,
-                )));
+                store.dispatchr(Action::DeleteChild(IndexField::Placement(placement_index)));
                 DataState::TrackPlacementViewWindow.set_value(ui, false);
                 DataState::ActiveTrackPlacementIndex.remove_value(ui);
             }

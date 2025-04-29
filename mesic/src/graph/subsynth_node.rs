@@ -1,7 +1,7 @@
 use crate::graph::ProcessContext;
 use crate::wave::{beats_to_samples, sub_synth_wave};
 use dasp_graph::{Buffer, Input, Node};
-use shared::model::{GeneratorMeta, SubSynthConfig, Track, TrackPlacement};
+use shared::model::{GeneratorMeta, Placement, SubSynthConfig, Track};
 use shared::types::Beats;
 
 pub struct SubSynthNode {
@@ -9,7 +9,7 @@ pub struct SubSynthNode {
     config: SubSynthConfig,
     sample_index: u32, // the sample that playback is currently up to.
     track: Track,
-    track_placement: TrackPlacement,
+    placement: Placement,
     bpm: Beats,
     pub sample_count: usize,
 }
@@ -19,12 +19,12 @@ impl SubSynthNode {
         meta: GeneratorMeta,
         config: SubSynthConfig,
         track: Track,
-        track_placement: TrackPlacement,
+        placement: Placement,
         bpm: Beats,
     ) -> Self {
         let sample_count = beats_to_samples(
-            *track_placement.offset
-                + *track_placement
+            *placement.offset
+                + *placement
                     .clipped_duration
                     .unwrap_or(track.unclipped_duration()),
             bpm,
@@ -33,7 +33,7 @@ impl SubSynthNode {
             meta,
             config,
             track,
-            track_placement,
+            placement,
             bpm,
             sample_count,
             sample_index: 0,
@@ -43,9 +43,10 @@ impl SubSynthNode {
 
 impl Node<ProcessContext> for SubSynthNode {
     fn process(&mut self, _inputs: &[Input], output: &mut [Buffer], _payload: &ProcessContext) {
+        let placement = &self.placement;
+
         // Skip generating if muted!
         // TODO: disconnect muted generators from the graph.
-        let track_placement = &self.track_placement;
         if self.meta.mute {
             return;
         }
@@ -55,18 +56,14 @@ impl Node<ProcessContext> for SubSynthNode {
             // TODO: use a segment tree to determine which notes are in range of the current
             // buffer, instead of always iterating over all notes.
             // Then apply the same idea to tracks.
-            let note_start_sample =
-                beats_to_samples(*note.offset + *track_placement.offset, self.bpm);
+            let note_start_sample = beats_to_samples(*note.offset + *placement.offset, self.bpm);
             // Clip note end to sample_count
             // Skip notes that are outside of track sample_length
             if note_start_sample > self.sample_count as u32 {
                 continue;
             }
             let note_end_sample = u32::min(
-                beats_to_samples(
-                    *note.offset + note.note.beats + *track_placement.offset,
-                    self.bpm,
-                ),
+                beats_to_samples(*note.offset + note.note.beats + *placement.offset, self.bpm),
                 self.sample_count as u32,
             );
 

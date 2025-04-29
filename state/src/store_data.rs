@@ -4,8 +4,8 @@ use ordered_float::OrderedFloat;
 use shared::model::{
     AdsrEnvelope, AntiAliasingMode, FileTreeConfig, FilenameTree, GeneratorInstance, GeneratorMeta,
     GeneratorType, LfoConfig, MixerChannel, ModMatrix, Note, OscillatorConfig, PitchName,
-    PlacedNote, Project, Scale, ScaleValue, SimpleWaveConfig, SubSynthConfig, Track,
-    TrackPlacement, WaveType,
+    PlacedNote, Placement, PlacementType, Project, Scale, ScaleValue, SimpleWaveConfig,
+    SubSynthConfig, Track, TrackPlacement, WaveType,
 };
 use shared::types::Volume;
 
@@ -66,12 +66,14 @@ impl Default for StoreData {
                     }],
                     offset: OrderedFloat(0.0),
                 }],
-                track_placements: vec![TrackPlacement {
-                    track_id: 0,
+                placements: vec![Placement {
+                    kind: PlacementType::Track(TrackPlacement {
+                        track_index: 0,
+                        generator_index: 0,
+                    }),
+                    offset: 0.0.into(),
                     clipped_duration: None,
-                    offset: OrderedFloat(0.0),
                     visual_placement: 0,
-                    generator_index: 0,
                 }],
                 samples: vec![],
                 generators: vec![

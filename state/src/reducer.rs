@@ -23,9 +23,9 @@ pub fn reducer(data: &mut StoreData, selector: &Selector, action: &Action) -> Op
             let note = &mut data.project.tracks[*track_index].notes[*note_index];
             note.apply(action)
         }
-        Selector::TrackPlacement(track_placement_index) => {
-            let track_placement = &mut data.project.track_placements[*track_placement_index];
-            track_placement.apply(action)
+        Selector::Placement(placement_index) => {
+            let placement = &mut data.project.placements[*placement_index];
+            placement.apply(action)
         }
         Selector::Oscillator(generator_index, oscillator_index) => {
             let generator = &mut data.project.generators[*generator_index];

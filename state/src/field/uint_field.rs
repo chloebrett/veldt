@@ -8,6 +8,4 @@ pub enum UintField {
     OversampleFactor,
     MinDepth,
     MaxDepth,
-    TrackId,
-    GeneratorIndex,
 }

@@ -8,7 +8,7 @@ message ProjectProto {
   repeated TrackProto tracks = 2;
 
   /// Ordered based on start_position.
-  repeated TrackPlacementProto track_placements = 3;
+  repeated PlacementProto placements = 3;
 
   repeated SampleProto samples = 4;
 
@@ -35,16 +35,28 @@ message TrackProto {
   float offset = 2;
 }
 
+message PlacementProto {
+  float offset = 1;
+
+  optional float clipped_duration = 2;
+
+  uint32 visual_placement = 3;
+
+  oneof kind {
+    pmodel.TrackPlacementProto track = 4;
+
+    pmodel.SamplePlacementProto sample = 5;
+  }
+}
+
 message TrackPlacementProto {
-  uint32 track_id = 1;
+  uint32 track_index = 1;
 
-  float offset = 2;
+  uint32 generator_index = 2;
+}
 
-  optional float clipped_duration = 3;
-
-  uint32 visual_placement = 4;
-
-  uint32 generator_index = 5;
+message SamplePlacementProto {
+  uint32 sample_index = 1;
 }
 
 message SampleProto {
