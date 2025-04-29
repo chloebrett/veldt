@@ -33,7 +33,7 @@ impl<'a, F: Fn(Action), G: Fn()> ModMatrixView<'a, F, G> {
 
 impl<F: Fn(Action), G: Fn()> View for ModMatrixView<'_, F, G> {
     fn ui(&mut self, ui: &mut Ui) {
-        let config = self.config.clone();
+        let config = self.config;
         let row_titles = self.row_titles.clone();
         let col_titles = self.col_titles.clone();
         let dispatch = &self.dispatch;
