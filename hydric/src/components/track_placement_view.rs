@@ -6,6 +6,7 @@ use ordered_float::OrderedFloat;
 use shared::types::Beats;
 use state::{Action, FloatField, IndexField, Selector, Store, TypeField, UintField};
 
+// TODO: rename to PlacementView if appropriate.
 pub struct TrackPlacementView<'a> {
     store: &'a Store,
 }
@@ -25,10 +26,10 @@ impl View for TrackPlacementView<'_> {
             return;
         };
         let on_release = || store.dispatchr(Action::Release);
-        let placement = &store.get().project.track_placements[placement_index];
+        let placement = &store.get().project.placements[placement_index];
         let tracks_length = store.get().project.tracks.len();
-        let sel = Selector::TrackPlacement(placement_index);
-        let title = format!("Track Placement {placement_index}");
+        let sel = Selector::Placement(placement_index);
+        let title = format!("Placement {placement_index}");
 
         let window = StateWindow(
             default_window(&title)
@@ -36,7 +37,7 @@ impl View for TrackPlacementView<'_> {
                 .resizable(true),
         );
         window.show(ui, DataState::TrackPlacementViewWindow, |ui| {
-            egui::ComboBox::from_id_salt(format!("track_placement_{placement_index}"))
+            egui::ComboBox::from_id_salt(format!("placement_{placement_index}"))
                 .selected_text(format!("Track {}", placement.track_id))
                 .show_ui(ui, |ui| {
                     for track_index in 0..tracks_length {

@@ -106,6 +106,7 @@ impl<T: Hash + Ord + Copy> WindowStateField<T> {
 // E.g.
 //   - Current selected track
 //   - If an editor window is open.
+// TODO: rename TrackPlacement... to Placement here where appropriate.
 pub enum DataState {
     ActiveTrackIndex,
     ActiveTrackPlacementIndex,

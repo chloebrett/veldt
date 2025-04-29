@@ -1,7 +1,7 @@
 use crate::graph::ProcessContext;
 use crate::wave::{beats_to_samples, sub_synth_wave};
 use dasp_graph::{Buffer, Input, Node};
-use shared::model::{GeneratorMeta, Placement, SubSynthConfig, Track, TrackPlacement};
+use shared::model::{GeneratorMeta, Placement, SubSynthConfig, Track};
 use shared::types::Beats;
 
 pub struct SubSynthNode {

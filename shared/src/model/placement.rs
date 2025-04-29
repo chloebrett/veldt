@@ -37,11 +37,33 @@ pub struct TrackPlacement {
     pub generator_index: usize,
 }
 
+impl TryFrom<&Placement> for TrackPlacement {
+    type Error = ();
+
+    fn try_from(item: &Placement) -> Result<Self, ()> {
+        match &item.kind {
+            PlacementType::Track(it) => Ok(it.clone()),
+            _ => Err(()),
+        }
+    }
+}
+
 #[derive(Clone, Debug, PartialEq, Eq, FromProto, IntoProto)]
 pub struct SamplePlacement {
     /// TODO: use a more stable ID instead of the index.
     #[proto_type_u32]
     pub sample_index: usize,
+}
+
+impl TryFrom<&Placement> for SamplePlacement {
+    type Error = ();
+
+    fn try_from(item: &Placement) -> Result<Self, ()> {
+        match &item.kind {
+            PlacementType::Sample(it) => Ok(it.clone()),
+            _ => Err(()),
+        }
+    }
 }
 
 impl PartialOrd for Placement {

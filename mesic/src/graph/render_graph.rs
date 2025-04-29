@@ -328,14 +328,11 @@ impl Iterator for RenderGraph {
 mod tests {
     use shared::model::{
         AdsrEnvelope, AntiAliasingMode, DelayConfig, EffectMeta, EqConfig, EqType, GeneratorMeta,
-        MixerChannel, ModDelayConfig, Note, PitchName, PlacedNote, ScaleValue, SimpleWaveConfig,
-        Track, TrackPlacement, WaveType, Placement
+        MixerChannel, ModDelayConfig, Note, PitchName, PlacedNote, Placement, ScaleValue,
+        SimpleWaveConfig, Track, TrackPlacement, WaveType,
     };
 
-    use crate::{
-        graph::SimpleWaveGeneratorNode,
-        wave::{beats_to_samples, freq},
-    };
+    use crate::{graph::SimpleWaveGeneratorNode, wave::freq};
 
     use super::*;
 

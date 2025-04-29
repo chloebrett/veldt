@@ -36,12 +36,14 @@ impl View for TrackRoll<'_> {
             notes: vec![],
             offset: 0.0.into(),
         };
-        let default_track_placement = TrackPlacement {
-            track_id: 0 as TrackId,
+        let default_placement = Placement {
+            kind: PlacementType::Track(TrackPlacement {
+                track_index: 0,
+                generator_index: 0,
+            }),
             offset: (0.0 as Beats).into(),
             clipped_duration: None,
             visual_placement: 0,
-            generator_index: 0,
         };
         let placed_tracks: Vec<PlacedTrack> = store
             .get()
@@ -72,9 +74,7 @@ impl View for TrackRoll<'_> {
                         store.dispatchr(Action::AddChild(TypeField::Track(default_track)));
                     }
                     if ui.button("New track placement").clicked() {
-                        store.dispatchr(Action::AddChild(TypeField::TrackPlacement(
-                            default_track_placement,
-                        )));
+                        store.dispatchr(Action::AddChild(TypeField::Placement(default_placement)));
                     }
                     ui.checkbox(&mut select, "Select")
                 });
@@ -100,7 +100,8 @@ impl View for TrackRoll<'_> {
 }
 
 struct PlacedTrack {
-    placement: TrackPlacement,
+    placement: Placement,
+    track_placement: TrackPlacement,
     unclipped_duration: OrderedFloat<f32>,
 }
 

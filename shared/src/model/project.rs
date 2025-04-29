@@ -40,7 +40,7 @@ impl Project {
     pub fn duration(&self) -> OrderedFloat<f32> {
         let mut max = OrderedFloat(0.0);
         for placement in &self.placements {
-            if let PlacementType::Track(TrackPlacement { track_index, .. }) = placement.kind {
+            if let Ok(TrackPlacement { track_index, .. }) = placement.try_into() {
                 let track = &self.tracks[track_index as usize];
                 let offset = &placement.offset;
                 let duration = placement
