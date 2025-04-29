@@ -1,4 +1,4 @@
-use super::super::{Piano, PianoOrientation, mod_matrix};
+use super::super::{Piano, PianoOrientation, ModMatrixView};
 use super::subsynth_oscillator;
 use crate::view::View;
 use eframe::egui;
@@ -38,21 +38,6 @@ where
         pub static ref FILL_COLOURS: [Color32; 3] = [*GREEN_FILL, *PINK_FILL, *ORANGE_FILL,];
     }
 
-    fn draw_mod_matrix<F, G>(config: &SubSynthConfig, ui: &mut Ui, dispatch: &F, on_release: &G)
-    where
-        F: Fn(Action),
-        G: Fn(),
-    {
-        mod_matrix(
-            &config.matrix_config,
-            ui,
-            vec!["ENV 1", "ENV 2", "ENV 3", "LFO 1", "LFO 2", "LFO 3"],
-            vec!["OSC 1", "OSC 2", "OSC 3"],
-            dispatch,
-            on_release,
-        );
-    }
-
     ui.horizontal(|ui| {
         ui.vertical(|ui| {
             for oscillator_id in 0..3 {
@@ -71,7 +56,7 @@ where
         });
         ui.add_space(5.0);
         ui.vertical(|ui| {
-            draw_mod_matrix(config, ui, &dispatch, &on_release); // must wrap in ui.vertical to stop the matrix from unnecessarily stretching vertically
+            ModMatrixView::new(&config.matrix_config, vec!["ENV 1", "ENV 2", "ENV 3", "LFO 1", "LFO 2", "LFO 3"], vec!["OSC 1", "OSC 2", "OSC 3"], dispatch, on_release).ui(ui); // must wrap in ui.vertical to stop the matrix from unnecessarily stretching vertically
         });
     });
 
