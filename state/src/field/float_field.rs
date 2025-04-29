@@ -21,4 +21,5 @@ pub enum FloatField {
     Ratio,
     LfoFreq,
     Feedback,
+    ModFactor,
 }

@@ -70,6 +70,8 @@ where
             .fill(Color32::from_rgb(30, 30, 30))
             .corner_radius(8.0)
             .inner_margin(10.0);
+
+        const KNOB_SPACE: f32 = 2.0;
         four_knob_frame.show(ui, |ui| {
             ui.vertical(|ui| {
                 knob(
@@ -81,7 +83,7 @@ where
                     0.0,
                     on_release,
                 );
-                ui.add_space(6.0);
+                ui.add_space(KNOB_SPACE);
 
                 knob(
                     ui,
@@ -92,7 +94,7 @@ where
                     0.0,
                     on_release,
                 );
-                ui.add_space(6.0);
+                ui.add_space(KNOB_SPACE);
 
                 knob(
                     ui,
@@ -103,7 +105,7 @@ where
                     0.0,
                     on_release,
                 );
-                ui.add_space(6.0);
+                ui.add_space(KNOB_SPACE);
 
                 knob(
                     ui,

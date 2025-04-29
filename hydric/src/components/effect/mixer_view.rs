@@ -1,8 +1,8 @@
 use super::effect_name;
 use crate::WindowState;
 use crate::view::View;
-use crate::widget::{checkbox, default_window, knob};
-use egui::{Pos2, Ui};
+use crate::widget::{default_window, knob};
+use egui::{Button, Pos2, Ui};
 use shared::model::{Effect, EffectInstance, EffectMeta};
 use state::{Action, FloatField, IndexField, Selector, Store, TypeField};
 use strum::IntoEnumIterator;
@@ -41,68 +41,77 @@ impl View for MixerView<'_> {
             })
             .open(&mut window_state.mixer.visible)
             .show(ui.ctx(), |ui| {
+                ui.heading(format!("Mixer channel {}", mixer_index + 1));
+                ui.separator();
                 for effect_index in 0..mixer.effects.len() {
-                    let dispatch_effect = |action| {
-                        store.dispatch(&Selector::Effect(mixer_index, effect_index), action)
-                    };
-                    let effect = &mixer.effects[effect_index];
-                    ui.label(effect_name(&effect.effect));
-
-                    let show = window_state.effects.get((mixer_index, effect_index));
-                    let text = if show { "Hide" } else { "Show" };
-                    if ui.button(text).clicked() {
-                        window_state.effects.set((mixer_index, effect_index), !show);
-                    }
-
-                    let meta = &effect.meta;
-                    knob(
-                        ui,
-                        "Wet",
-                        meta.wet,
-                        |it| dispatch_effect(Action::SetFloat(FloatField::Wet, it)),
-                        0.0..=1.0,
-                        /* neutral= */ 0.5,
-                        on_release,
-                    );
-                    checkbox(
-                        ui,
-                        meta.mute,
-                        |it| dispatch_effect(Action::SetChild(TypeField::Mute(it))),
-                        "Mute",
-                    );
-                    if ui.button("Delete").clicked() {
+                    if ui.button("❌").clicked() {
                         dispatch_mixer(Action::DeleteChild(IndexField::Effect(effect_index)));
 
                         // Skip iterating for this frame.
                         break;
                     }
-                    if effect_index > 0 && ui.button("🔼").clicked() {
-                        // TODO: rearranging effects like this while their windows are open causes the
-                        // windows to reset position - because the IDs change. Should we have stable
-                        // IDs instead / as well?
-                        dispatch_mixer(Action::MoveEffectUp(effect_index));
+                    ui.horizontal(|ui| {
+                        ui.vertical(|ui| {
+                            if effect_index > 0 && ui.button("🔼").clicked() {
+                                // TODO: rearranging effects like this while their windows are open causes the
+                                // windows to reset position - because the IDs change. Should we have stable
+                                // IDs instead / as well?
+                                dispatch_mixer(Action::MoveEffectUp(effect_index));
 
-                        // TODO: use IDs instead of indexes to refer to effects - otherwise their
-                        // visibility is order-dependent.
-                    }
-                    if effect_index < mixer.effects.len() - 1 && ui.button("🔽").clicked() {
-                        dispatch_mixer(Action::MoveEffectDown(effect_index));
-                    }
+                                // TODO: use IDs instead of indexes to refer to effects - otherwise their
+                                // visibility is order-dependent.
+                            }
+                            if effect_index < mixer.effects.len() - 1 && ui.button("🔽").clicked()
+                            {
+                                dispatch_mixer(Action::MoveEffectDown(effect_index));
+                            }
+                        });
+                        let dispatch_effect = |action| {
+                            store.dispatch(&Selector::Effect(mixer_index, effect_index), action)
+                        };
+                        let effect = &mixer.effects[effect_index];
+
+                        let show = window_state.effects.get((mixer_index, effect_index));
+                        let text = effect_name(&effect.effect);
+                        let meta = &effect.meta;
+
+                        let mute_response = ui.add(Button::new("Mute").selected(meta.mute));
+                        if mute_response.clicked() {
+                            dispatch_effect(Action::SetChild(TypeField::Mute(!meta.mute)))
+                        }
+                        knob(
+                            ui,
+                            "Wet",
+                            meta.wet,
+                            |it| dispatch_effect(Action::SetFloat(FloatField::Wet, it)),
+                            0.0..=1.0,
+                            /* neutral= */ 0.5,
+                            on_release,
+                        );
+
+                        let response = ui.add(
+                            Button::new(text)
+                                .selected(window_state.effects.get((mixer_index, effect_index))),
+                        );
+                        if response.clicked() {
+                            window_state.effects.set((mixer_index, effect_index), !show);
+                        }
+                    });
                     ui.separator();
                 }
 
-                for effect in Effect::iter() {
-                    let text = format!("New {}", effect_name(&effect));
-                    if ui.button(text).clicked() {
-                        let instance = EffectInstance {
-                            effect,
-                            meta: EffectMeta::default(),
-                        };
-                        dispatch_mixer(Action::AddChild(TypeField::Effect(instance)));
+                ui.menu_button("Add new effect", |ui| {
+                    for effect in Effect::iter() {
+                        let text = format!("{}", effect_name(&effect));
+                        if ui.button(text).clicked() {
+                            let instance = EffectInstance {
+                                effect,
+                                meta: EffectMeta::default(),
+                            };
+                            dispatch_mixer(Action::AddChild(TypeField::Effect(instance)));
+                        }
                     }
-                }
-
-                ui.label(format!("Mixer channel {}", mixer_index + 1));
+                });
             });
     }
 }

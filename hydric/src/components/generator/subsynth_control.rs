@@ -1,4 +1,4 @@
-use super::super::{Piano, PianoOrientation};
+use super::super::{ModMatrixView, Piano, PianoOrientation};
 use super::subsynth_oscillator;
 use crate::view::View;
 use eframe::egui;
@@ -38,19 +38,34 @@ where
         pub static ref FILL_COLOURS: [Color32; 3] = [*GREEN_FILL, *PINK_FILL, *ORANGE_FILL,];
     }
 
-    for oscillator_id in 0..3 {
-        ui.push_id(oscillator_id, |ui| {
-            subsynth_oscillator(
-                &config.oscillators[oscillator_id],
-                ui,
-                &dispatch,
-                &on_release,
-                LINE_COLOURS[oscillator_id],
-                FILL_COLOURS[oscillator_id],
-            );
+    ui.horizontal(|ui| {
+        ui.vertical(|ui| {
+            for oscillator_id in 0..3 {
+                ui.push_id(oscillator_id, |ui| {
+                    subsynth_oscillator(
+                        &config.oscillators[oscillator_id],
+                        ui,
+                        &dispatch,
+                        &on_release,
+                        LINE_COLOURS[oscillator_id],
+                        FILL_COLOURS[oscillator_id],
+                    );
+                    ui.add_space(4.0);
+                });
+            }
         });
-        ui.add_space(4.0);
-    }
+        ui.add_space(5.0);
+        ui.vertical(|ui| {
+            ModMatrixView::new(
+                &config.matrix_config,
+                vec!["ENV 1", "ENV 2", "ENV 3", "LFO 1", "LFO 2", "LFO 3"],
+                vec!["OSC 1", "OSC 2", "OSC 3"],
+                dispatch,
+                on_release,
+            )
+            .ui(ui); // must wrap in ui.vertical to stop the matrix from unnecessarily stretching vertically
+        });
+    });
 
     fn draw_piano(ui: &mut Ui) {
         let min_note: PitchValue = PitchName {
