@@ -32,7 +32,7 @@ impl BufferNode {
 
 impl From<Vec<Stereo<f32>>> for BufferNode {
     fn from(item: Vec<Stereo<f32>>) -> Self {
-        BufferNode {
+        Self {
             buffer: item,
             index: 0,
         }

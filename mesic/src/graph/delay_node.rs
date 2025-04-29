@@ -20,10 +20,10 @@ fn ms_to_samples(ms: f32) -> usize {
 }
 
 impl DelayNode {
-    pub fn new(mixer_index: usize, effect_index: usize, config: DelayConfig) -> DelayNode {
+    pub fn new(mixer_index: usize, effect_index: usize, config: DelayConfig) -> Self {
         let delay_samples = ms_to_samples(config.delay_ms);
         let buffer = GrowableAllocRingBuffer::with_capacity(delay_samples);
-        DelayNode {
+        Self {
             mixer_index,
             effect_index,
             buffers: [buffer.clone(), buffer.clone()],
