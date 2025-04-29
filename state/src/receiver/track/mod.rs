@@ -24,10 +24,10 @@ impl ActionReceiver for Track {
                     .map(|note| TypeField::PlacedNote(note.clone()))
                     .collect();
                 // Sort and iterate in reverse so that other indexes are not effected by removal
-                // duraing loop.
+                // during loop.
                 let indexes = note_indexes.clone();
-                for index in indexes.iter().rev() {
-                    self.notes.remove(*index);
+                for index in indexes.into_iter().rev() {
+                    self.notes.remove(index);
                 }
                 Action::SetChildren(MultiTypeField { values: prev })
             }
