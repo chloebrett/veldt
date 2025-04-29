@@ -1,5 +1,3 @@
-use std::collections::BTreeSet;
-
 use shared::action_proto::{IndexFieldKindProto, IndexFieldProto, MultiIndexFieldProto};
 
 /// Fields that index into a list.
@@ -57,6 +55,7 @@ impl From<IndexField> for IndexFieldProto {
     }
 }
 
+// Extension of IndexField for handling multiple indexes at once.
 #[derive(PartialEq, Clone, Debug)]
 pub enum MultiIndexField {
     Track(Vec<usize>),
