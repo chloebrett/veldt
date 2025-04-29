@@ -1,6 +1,6 @@
 use crate::bytes::{as_bytes, as_floats};
 use crate::model::{
-    EffectInstance, GeneratorInstance, ModMatrix, Placement, PlacementType, Track, TrackPlacement,
+    EffectInstance, GeneratorInstance, ModMatrix, Placement, Track, TrackPlacement,
 };
 use crate::pmodel::*;
 use crate::types::Beats;
@@ -40,7 +40,7 @@ impl Project {
     pub fn duration(&self) -> OrderedFloat<f32> {
         let mut max = OrderedFloat(0.0);
         for placement in &self.placements {
-            if let Ok(TrackPlacement { track_index, .. }) = placement.try_into() {
+            if let &Ok(&TrackPlacement { track_index, .. }) = &placement.try_into() {
                 let track = &self.tracks[track_index as usize];
                 let offset = &placement.offset;
                 let duration = placement
@@ -91,8 +91,8 @@ mod tests {
     use crate::{
         model::{
             AdsrEnvelope, AntiAliasingMode, DelayConfig, Effect, EffectMeta, EqConfig, EqType,
-            GeneratorMeta, GeneratorType, ModDelayConfig, Note, PitchName, PlacedNote, ScaleValue,
-            SimpleWaveConfig, WaveType,
+            GeneratorMeta, GeneratorType, ModDelayConfig, Note, PitchName, PlacedNote,
+            PlacementType, ScaleValue, SimpleWaveConfig, WaveType,
         },
         testing::proto::proto_testing::assert_proto_round_trip,
     };

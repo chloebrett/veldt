@@ -37,12 +37,12 @@ pub struct TrackPlacement {
     pub generator_index: usize,
 }
 
-impl TryFrom<&Placement> for TrackPlacement {
+impl<'a> TryFrom<&'a Placement> for &'a TrackPlacement {
     type Error = ();
 
-    fn try_from(item: &Placement) -> Result<Self, ()> {
+    fn try_from(item: &'a Placement) -> Result<Self, ()> {
         match &item.kind {
-            PlacementType::Track(it) => Ok(it.clone()),
+            PlacementType::Track(it) => Ok(it),
             _ => Err(()),
         }
     }
@@ -55,12 +55,12 @@ pub struct SamplePlacement {
     pub sample_index: usize,
 }
 
-impl TryFrom<&Placement> for SamplePlacement {
+impl<'a> TryFrom<&'a Placement> for &'a SamplePlacement {
     type Error = ();
 
-    fn try_from(item: &Placement) -> Result<Self, ()> {
+    fn try_from(item: &'a Placement) -> Result<Self, ()> {
         match &item.kind {
-            PlacementType::Sample(it) => Ok(it.clone()),
+            PlacementType::Sample(it) => Ok(it),
             _ => Err(()),
         }
     }

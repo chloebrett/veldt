@@ -3,7 +3,6 @@ use super::{
     PlaybackUpdate,
 };
 use crossbeam_channel::{Receiver, Sender};
-use dasp_frame::Stereo;
 use mesic::graph::RenderGraph;
 
 /// Audio processor which runs in its own thread and communicates with the UI thread via crossbeam channels.

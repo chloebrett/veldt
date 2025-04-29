@@ -10,10 +10,10 @@ use egui::{
 };
 use ordered_float::OrderedFloat;
 use shared::{
-    model::{Track, TrackId, TrackPlacement},
+    model::{Placement, PlacementType, Track, TrackPlacement},
     types::Beats,
 };
-use state::{Action, FloatField, Selector, Store, TypeField, UintField};
+use state::{Action, FloatField, IndexField, Selector, Store, TypeField};
 
 pub struct TrackRoll<'a> {
     store: &'a Store,
@@ -48,12 +48,17 @@ impl View for TrackRoll<'_> {
         let placed_tracks: Vec<PlacedTrack> = store
             .get()
             .project
-            .track_placements
+            .placements
             .iter()
-            .map(|placement| PlacedTrack {
-                unclipped_duration: store.get().project.tracks[placement.track_id as usize]
-                    .unclipped_duration(),
-                placement: placement.clone(),
+            .map(|placement| {
+                // TODO: handle sample placements.
+                let track_placement: &TrackPlacement = placement.try_into().unwrap();
+
+                PlacedTrack {
+                    unclipped_duration: store.get().project.tracks[track_placement.track_index]
+                        .unclipped_duration(),
+                    placement: placement.clone(),
+                }
             })
             .collect();
         let track_count = store.get().project.tracks.len();
@@ -101,20 +106,23 @@ impl View for TrackRoll<'_> {
 
 struct PlacedTrack {
     placement: Placement,
-    track_placement: TrackPlacement,
     unclipped_duration: OrderedFloat<f32>,
 }
 
 impl SequencerObject<PlacedTrack> for PlacedTrack {
     fn to_pos(&self, range: Rect) -> Pos2 {
+        let track_placement: &TrackPlacement = (&self.placement).try_into().unwrap();
+
         // TODO handling multiple channels. Currently all are at `y=0`.
-        let y = self.placement.track_id as f32;
+        let y = track_placement.track_index as f32;
         let x = *self.placement.offset - range.left();
         pos2(x, y)
     }
 
     fn to_pos_horizontal(&self, range: Rect) -> Pos2 {
-        let y = self.placement.track_id as f32;
+        let track_placement: &TrackPlacement = (&self.placement).try_into().unwrap();
+
+        let y = track_placement.track_index as f32;
         let x = *self.placement.offset - range.left();
         pos2(x, y)
     }
@@ -137,7 +145,7 @@ impl SequencerObject<PlacedTrack> for PlacedTrack {
 
     fn y_action(&self, y: f32, _range: Rect) -> Option<Action> {
         // TODO implement multiple tracks.
-        Some(Action::SetUint(UintField::TrackId, y as u32))
+        Some(Action::SetIndex(IndexField::Track(y as usize)))
     }
 
     fn resize_action(&self, x: f32, _range: Rect) -> Option<Action> {
@@ -167,21 +175,22 @@ impl SequencerObject<PlacedTrack> for PlacedTrack {
 
     fn get_active(ui: &Ui, store: &Store) -> Option<PlacedTrack> {
         if let Some(index) = DataState::ActiveTrackPlacementIndex.get_value::<usize>(ui) {
-            let track_placement = store
+            let placement = store
                 .get()
                 .project
-                .track_placements
+                .placements
                 .get(index)
                 .expect("Should have been track placement at index");
+            let track_placement: &TrackPlacement = placement.try_into().unwrap();
             Some(PlacedTrack {
                 unclipped_duration: store
                     .get()
                     .project
                     .tracks
-                    .get(track_placement.track_id as usize)
+                    .get(track_placement.track_index)
                     .expect("Should have been track at index.")
                     .unclipped_duration(),
-                placement: track_placement.clone(),
+                placement: placement.clone(),
             })
         } else {
             None
@@ -209,21 +218,22 @@ impl SequencerObject<PlacedTrack> for PlacedTrack {
             index_list
                 .into_iter()
                 .map(|index| {
-                    let track_placement = store
+                    let placement = store
                         .get()
                         .project
-                        .track_placements
+                        .placements
                         .get(index)
                         .expect("Should have been track placement at index");
+                    let track_placement: &TrackPlacement = placement.try_into().unwrap();
                     PlacedTrack {
                         unclipped_duration: store
                             .get()
                             .project
                             .tracks
-                            .get(track_placement.track_id as usize)
+                            .get(track_placement.track_index)
                             .expect("Should have been track at index.")
                             .unclipped_duration(),
-                        placement: track_placement.clone(),
+                        placement: placement.clone(),
                     }
                 })
                 .collect(),
@@ -246,13 +256,15 @@ impl SequencerObject<PlacedTrack> for PlacedTrack {
     }
 
     fn selector(index: usize, _parent_index: Option<usize>) -> Selector {
-        Selector::TrackPlacement(index)
+        Selector::Placement(index)
     }
 
     fn set_active(&self, ui: &mut Ui, index: usize) {
+        let track_placement: &TrackPlacement = (&self.placement).try_into().unwrap();
+
         DataState::NoteRollWindow.set_value(ui, true);
         DataState::TrackPlacementViewWindow.set_value(ui, true);
-        DataState::ActiveTrackIndex.set_value(ui, self.placement.track_id as usize);
+        DataState::ActiveTrackIndex.set_value(ui, track_placement.track_index);
         DataState::ActiveTrackPlacementIndex.set_value(ui, index);
     }
 
@@ -261,30 +273,30 @@ impl SequencerObject<PlacedTrack> for PlacedTrack {
     }
 
     fn add_new(&self, store: &Store, _parent_index: Option<usize>) {
-        store.dispatchr(Action::AddChild(TypeField::TrackPlacement(
+        store.dispatchr(Action::AddChild(TypeField::Placement(
             self.placement.clone(),
         )));
     }
 
     fn from_pos(pos: Pos2, range: Rect) -> PlacedTrack {
-        let track_index = pos.y as u32;
+        let track_index = pos.y as usize;
         let offset = range.left() + pos.x;
         PlacedTrack {
-            placement: TrackPlacement {
-                track_id: track_index,
+            placement: Placement {
+                kind: PlacementType::Track(TrackPlacement {
+                    track_index,
+                    generator_index: 0,
+                }),
                 offset: offset.into(),
                 clipped_duration: None,
                 visual_placement: 0,
-                generator_index: 0,
             },
             unclipped_duration: 0.0.into(),
         }
     }
 
     fn delete(store: &Store, index: usize, _parent_index: Option<usize>) {
-        store.dispatchr(Action::DeleteChild(state::IndexField::TrackPlacement(
-            index,
-        )));
+        store.dispatchr(Action::DeleteChild(IndexField::Placement(index)));
     }
 
     fn delete_selected(ui: &mut Ui, store: &Store, parent_index: Option<usize>) {

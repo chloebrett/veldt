@@ -77,7 +77,7 @@ impl Node<ProcessContext> for SimpleWaveGeneratorNode {
 
         let mut buffer = Buffer::SILENT;
         for placement in &self.placements {
-            let Ok(TrackPlacement { track_index, .. }) = placement.try_into() else {
+            let &Ok(&TrackPlacement { track_index, .. }) = &placement.try_into() else {
                 continue;
             };
             let track = &self.tracks[track_index];
