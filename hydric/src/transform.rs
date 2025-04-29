@@ -4,8 +4,8 @@ pub trait Transform<T> {
     fn transform(&self, rect: RectTransform) -> T;
 }
 
-impl Transform<Shape> for Shape {
-    fn transform(&self, rect: RectTransform) -> Shape {
+impl Transform<Self> for Shape {
+    fn transform(&self, rect: RectTransform) -> Self {
         match self {
             // Note: currently ignores `closed` and `fill`.
             // Add these if needed.
@@ -28,34 +28,34 @@ impl Transform<Shape> for Shape {
     }
 }
 
-impl Transform<Vec<Shape>> for Vec<Shape> {
-    fn transform(&self, rect: RectTransform) -> Vec<Shape> {
+impl Transform<Self> for Vec<Shape> {
+    fn transform(&self, rect: RectTransform) -> Self {
         self.iter()
             .map(|shape| shape.clone().transform(rect))
             .collect()
     }
 }
 
-impl Transform<[Pos2; 2]> for [Pos2; 2] {
-    fn transform(&self, rect: RectTransform) -> [Pos2; 2] {
+impl Transform<Self> for [Pos2; 2] {
+    fn transform(&self, rect: RectTransform) -> Self {
         [rect * self[0], rect * self[1]]
     }
 }
 
-impl Transform<Rect> for Rect {
-    fn transform(&self, rect: RectTransform) -> Rect {
+impl Transform<Self> for Rect {
+    fn transform(&self, rect: RectTransform) -> Self {
         rect.transform_rect(*self)
     }
 }
 
-impl Transform<Pos2> for Pos2 {
-    fn transform(&self, rect: RectTransform) -> Pos2 {
+impl Transform<Self> for Pos2 {
+    fn transform(&self, rect: RectTransform) -> Self {
         rect * *self
     }
 }
 
-impl Transform<Vec<Pos2>> for Vec<Pos2> {
-    fn transform(&self, rect: RectTransform) -> Vec<Pos2> {
+impl Transform<Self> for Vec<Pos2> {
+    fn transform(&self, rect: RectTransform) -> Self {
         self.iter().map(|it| it.transform(rect)).collect()
     }
 }

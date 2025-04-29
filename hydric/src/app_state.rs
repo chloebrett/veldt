@@ -27,7 +27,7 @@ pub struct AudioState {
 
 impl AudioState {
     pub fn new(graph: RenderGraph) -> Self {
-        AudioState {
+        Self {
             audio: vec![],
             player: AudioPlayer::new(graph),
         }
@@ -56,8 +56,8 @@ pub struct WindowState {
 }
 
 impl Default for WindowState {
-    fn default() -> WindowState {
-        WindowState {
+    fn default() -> Self {
+        Self {
             mixer: MixerWindowState {
                 visible: false,
                 channel: 0,
