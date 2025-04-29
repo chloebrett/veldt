@@ -1,6 +1,6 @@
 use crate::WindowState;
-use crate::widget::{checkbox, default_window, knob};
-use egui::Pos2;
+use crate::widget::{default_window, knob};
+use egui::{Button, Pos2};
 use shared::model::GeneratorType;
 use state::{Action, FloatField, Selector, Store, TypeField};
 
@@ -26,42 +26,40 @@ pub fn generators_control(ctx: &egui::Context, window_state: &mut WindowState, s
                     GeneratorType::Noise { .. } => "Noise Generator",
                     GeneratorType::SubSynth { .. } => "Subtractive Synthesiser",
                 };
-                ui.label(label);
-
                 let show = window_state.generators.get(generator_index);
-                let text = if show { "Hide" } else { "Show" };
-                if ui.button(text).clicked() {
-                    window_state.generators.set(generator_index, !show);
-                }
-
                 let meta = generator.meta.clone();
-                knob(
-                    ui,
-                    "Volume",
-                    meta.volume,
-                    |it| store.dispatch(&sel, Action::SetFloat(FloatField::Volume, it)),
-                    // TODO: let this go up a bit past 1?
-                    0.0..=1.0,
-                    /* neutral= */ 0.8,
-                    on_release,
-                );
-                // TODO: make the pan knob centre at the top since it's bipolar.
-                knob(
-                    ui,
-                    "Pan",
-                    meta.pan,
-                    |it| store.dispatch(&sel, Action::SetFloat(FloatField::Pan, it)),
-                    -1.0..=1.0,
-                    /* neutral= */ 0.0,
-                    on_release,
-                );
-                checkbox(
-                    ui,
-                    meta.mute,
-                    |it| store.dispatch(&sel, Action::SetChild(TypeField::Mute(it))),
-                    "Mute",
-                );
+                ui.horizontal(|ui| {
+                    let mute_response = ui.add(Button::new("Mute").selected(meta.mute));
+                    if mute_response.clicked() {
+                        store.dispatch(&sel, Action::SetChild(TypeField::Mute(!meta.mute)))
+                    }
 
+                    let generator_response = ui.add(Button::new(label).selected(show));
+                    if generator_response.clicked() {
+                        window_state.generators.set(generator_index, !show);
+                    }
+
+                    knob(
+                        ui,
+                        "Volume",
+                        meta.volume,
+                        |it| store.dispatch(&sel, Action::SetFloat(FloatField::Volume, it)),
+                        // TODO: let this go up a bit past 1?
+                        0.0..=1.0,
+                        /* neutral= */ 0.8,
+                        on_release,
+                    );
+                    // TODO: make the pan knob centre at the top since it's bipolar.
+                    knob(
+                        ui,
+                        "Pan",
+                        meta.pan,
+                        |it| store.dispatch(&sel, Action::SetFloat(FloatField::Pan, it)),
+                        -1.0..=1.0,
+                        /* neutral= */ 0.0,
+                        on_release,
+                    );
+                });
                 if generator_index < generators.len() - 1 {
                     ui.separator();
                 }
