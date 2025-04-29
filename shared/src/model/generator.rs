@@ -9,6 +9,8 @@ use crate::types::{KnobPosition, Volume};
 use local_macro::{FromProto, IntoProto};
 use strum::{Display, EnumIter, EnumString};
 
+use super::ModMatrix;
+
 type GeneratorInstanceId = usize;
 
 #[derive(Clone, Debug, PartialEq, FromProto, IntoProto)]
@@ -100,6 +102,7 @@ pub struct SubSynthConfig {
     pub oscillators: [OscillatorConfig; 3],
     pub envelopes: [AdsrEnvelope; 3],
     pub lfos: [LfoConfig; 3],
+    pub matrix_config: ModMatrix,
 }
 
 impl From<SubSynthConfigProto> for SubSynthConfig {
@@ -119,6 +122,7 @@ impl From<SubSynthConfigProto> for SubSynthConfig {
         );
 
         let lfo_vec = proto.lfos;
+        let mod_matrix = proto.matrix_config;
         assert_eq!(lfo_vec.len(), 3, "SubSynthConfig must have exactly 3 lfos");
 
         SubSynthConfig {
@@ -129,6 +133,7 @@ impl From<SubSynthConfigProto> for SubSynthConfig {
             ],
             envelopes: [env_vec[0].into(), env_vec[1].into(), env_vec[2].into()],
             lfos: [lfo_vec[0].into(), lfo_vec[1].into(), lfo_vec[2].into()],
+            matrix_config: mod_matrix.unwrap().into(),
         }
     }
 }
@@ -139,6 +144,7 @@ impl From<SubSynthConfig> for SubSynthConfigProto {
             oscillators: map_vec(config.oscillators.to_vec()),
             envelopes: map_vec(config.envelopes.to_vec()),
             lfos: map_vec(config.lfos.to_vec()),
+            matrix_config: Some(config.matrix_config.into()),
         }
     }
 }

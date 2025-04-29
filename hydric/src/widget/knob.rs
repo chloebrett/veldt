@@ -322,7 +322,14 @@ impl Widget for Knob<'_> {
         }
 
         if let Some(label) = self.label {
-            let label_text = format!("{}: {}", label, (self.label_format)(*self.value));
+            let value_string = (self.label_format)(*self.value);
+            let label_text = if label.is_empty() {
+                // If the label is empty, format only the value string
+                format!("{}", value_string)
+            } else {
+                // If the label is not empty, format with the label, colon, and value string
+                format!("{}: {}", label, value_string)
+            };
             let font_id = egui::FontId::proportional(self.font_size);
 
             let (label_pos, alignment) = match self.label_position {
