@@ -1,5 +1,5 @@
-use crate::widget::{TextRotation, knob, text_rotator};
 use crate::view::View;
+use crate::widget::{TextRotation, for_each_with_separator, knob, text_rotator};
 use eframe::egui;
 use egui::{Color32, Ui};
 use shared::model::ModMatrix;
@@ -14,7 +14,13 @@ pub struct ModMatrixView<'a, F: Fn(Action), G: Fn()> {
 }
 
 impl<'a, F: Fn(Action), G: Fn()> ModMatrixView<'a, F, G> {
-    pub fn new(config: &'a ModMatrix, row_titles: Vec<&'a str>, col_titles: Vec<&'a str>, dispatch: F, on_release: G) -> Self {
+    pub fn new(
+        config: &'a ModMatrix,
+        row_titles: Vec<&'a str>,
+        col_titles: Vec<&'a str>,
+        dispatch: F,
+        on_release: G,
+    ) -> Self {
         ModMatrixView {
             config,
             row_titles,
@@ -25,27 +31,29 @@ impl<'a, F: Fn(Action), G: Fn()> ModMatrixView<'a, F, G> {
     }
 }
 
-impl<F: Fn(Action), G: Fn()> View for ModMatrixView<'_, F, G>{
+impl<F: Fn(Action), G: Fn()> View for ModMatrixView<'_, F, G> {
     fn ui(&mut self, ui: &mut Ui) {
         let config = self.config.clone();
         let row_titles = self.row_titles.clone();
         let col_titles = self.col_titles.clone();
         let dispatch = &self.dispatch;
         let on_release = &self.on_release;
-        
+
         const TEXT_COLOUR: Color32 = Color32::from_rgb(180, 180, 180);
-        
+
         let frame = egui::Frame::new()
             .fill(Color32::from_rgb(50, 50, 50))
             .stroke(egui::Stroke::new(1.0, Color32::from_rgb(60, 60, 60)))
             .corner_radius(8.0)
             .inner_margin(6.0);
 
-        frame
-            .show(ui, |ui| {
-                ui.horizontal(|ui| {
-                    for col in 0..config.cols {
-                        ui.add_space(32.0);
+        frame.show(ui, |ui| {
+            ui.horizontal(|ui| {
+                ui.add_space(32.0);
+                for_each_with_separator(
+                    ui,
+                    0..config.cols,
+                    |ui, col| {
                         text_rotator(
                             ui,
                             col_titles[col as usize],
@@ -53,13 +61,17 @@ impl<F: Fn(Action), G: Fn()> View for ModMatrixView<'_, F, G>{
                             TextRotation::Neutral,
                             TEXT_COLOUR,
                         );
-                        if col != config.cols - 1 {
-                            ui.add_space(10.0);
-                        }
-                    }
-                });
-                ui.vertical(|ui| {
-                    for row in 0..config.rows {
+                    },
+                    |ui| {
+                        ui.add_space(36.0);
+                    },
+                );
+            });
+            ui.vertical(|ui| {
+                for_each_with_separator(
+                    ui,
+                    0..config.rows,
+                    |ui, row| {
                         ui.horizontal(|ui| {
                             text_rotator(
                                 ui,
@@ -81,16 +93,14 @@ impl<F: Fn(Action), G: Fn()> View for ModMatrixView<'_, F, G>{
                                         &on_release,
                                     );
                                 });
-                                if col != config.cols - 1 {
-                                    ui.add_space(5.0);
-                                }
                             }
                         });
-                        if row != config.rows - 1 {
-                            ui.add_space(5.0)
-                        }
-                    }
-                });
+                    },
+                    |ui| {
+                        ui.add_space(5.0);
+                    },
+                );
             });
+        });
     }
 }
