@@ -4,9 +4,6 @@ use crate::widget::text_rotator;
 use crate::view::View;
 use super::TextRotation;
 
-
-
-
 pub enum TabOrientation {
     Left,
     Right,
