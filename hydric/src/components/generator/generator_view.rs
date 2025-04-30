@@ -33,9 +33,9 @@ impl<F: FnMut()> View for GeneratorView<'_, F> {
         let generator = &self.store.get().project.generators[self.generator_index];
 
         let title = match &generator.kind {
-            GeneratorType::SimpleWave { .. } => "Simple Wave Generator",
-            GeneratorType::Noise { .. } => "Noise Generator",
-            GeneratorType::SubSynth { .. } => "Subtractive Synth",
+            GeneratorType::SimpleWave(_) => "Simple Wave Generator",
+            GeneratorType::Noise(_) => "Noise Generator",
+            GeneratorType::SubSynth(_) => "Subtractive Synth",
         };
 
         StateWindow(default_window(title).default_pos(Pos2 { x: 1100.0, y: 20.0 }))
@@ -49,11 +49,11 @@ impl<F: FnMut()> View for GeneratorView<'_, F> {
                     let on_release = || self.store.dispatchr(Action::Release);
 
                     match generator_type {
-                        GeneratorType::SimpleWave { config } => {
+                        GeneratorType::SimpleWave(config) => {
                             simple_wave_control(&config, dispatch, on_release, ui)
                         }
-                        GeneratorType::Noise { .. } => todo!(),
-                        GeneratorType::SubSynth { config } => {
+                        GeneratorType::Noise(_) => todo!(),
+                        GeneratorType::SubSynth(config) => {
                             SubSynthView::new(&config, dispatch, on_release).ui(ui);
                         }
                     };

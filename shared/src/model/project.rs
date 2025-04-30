@@ -134,21 +134,19 @@ mod tests {
             }],
             generators: vec![GeneratorInstance {
                 id: 0,
-                kind: GeneratorType::SimpleWave {
-                    config: SimpleWaveConfig {
-                        wave: WaveType::Sine,
-                        envelope: AdsrEnvelope {
-                            attack: 0.1,
-                            decay: 0.1,
-                            sustain: 0.8,
-                            release: 0.1,
-                        },
-                        osc_count: 4,
-                        detune_cents: 5.0,
-                        anti_aliasing_mode: AntiAliasingMode::Off,
-                        oversample_factor: 2,
+                kind: GeneratorType::SimpleWave(SimpleWaveConfig {
+                    wave: WaveType::Sine,
+                    envelope: AdsrEnvelope {
+                        attack: 0.1,
+                        decay: 0.1,
+                        sustain: 0.8,
+                        release: 0.1,
                     },
-                },
+                    osc_count: 4,
+                    detune_cents: 5.0,
+                    anti_aliasing_mode: AntiAliasingMode::Off,
+                    oversample_factor: 2,
+                }),
                 meta: GeneratorMeta {
                     volume: 1.0,
                     mute: false,

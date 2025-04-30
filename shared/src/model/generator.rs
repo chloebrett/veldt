@@ -28,13 +28,13 @@ pub struct GeneratorInstance {
 impl From<GeneratorType> for GeneratorTypeProto {
     fn from(item: GeneratorType) -> Self {
         match item {
-            GeneratorType::SimpleWave { config } => Self::SimpleWave(SimpleWaveProto {
+            GeneratorType::SimpleWave(config) => Self::SimpleWave(SimpleWaveProto {
                 config: Some(config.into()),
             }),
-            GeneratorType::Noise { config } => Self::Noise(NoiseProto {
+            GeneratorType::Noise(config) => Self::Noise(NoiseProto {
                 config: Some(config.into()),
             }),
-            GeneratorType::SubSynth { config } => Self::SubSynth(SubSynthProto {
+            GeneratorType::SubSynth(config) => Self::SubSynth(SubSynthProto {
                 config: Some(config.into()),
             }),
         }
@@ -44,24 +44,20 @@ impl From<GeneratorType> for GeneratorTypeProto {
 impl From<GeneratorTypeProto> for GeneratorType {
     fn from(item: GeneratorTypeProto) -> Self {
         match item {
-            GeneratorTypeProto::SimpleWave(config) => Self::SimpleWave {
-                config: config.config.unwrap().into(),
-            },
-            GeneratorTypeProto::Noise(config) => Self::Noise {
-                config: config.config.unwrap().into(),
-            },
-            GeneratorTypeProto::SubSynth(config) => Self::SubSynth {
-                config: config.config.unwrap().into(),
-            },
+            GeneratorTypeProto::SimpleWave(config) => {
+                Self::SimpleWave(config.config.unwrap().into())
+            }
+            GeneratorTypeProto::Noise(config) => Self::Noise(config.config.unwrap().into()),
+            GeneratorTypeProto::SubSynth(config) => Self::SubSynth(config.config.unwrap().into()),
         }
     }
 }
 
 #[derive(Clone, Debug, PartialEq)]
 pub enum GeneratorType {
-    SimpleWave { config: SimpleWaveConfig },
-    Noise { config: NoiseConfig },
-    SubSynth { config: SubSynthConfig },
+    SimpleWave(SimpleWaveConfig),
+    Noise(NoiseConfig),
+    SubSynth(SubSynthConfig),
 }
 
 #[derive(Clone, Debug, PartialEq, FromProto, IntoProto)]
@@ -95,54 +91,39 @@ pub enum NoiseType {
     Pink,
 }
 
-#[derive(Clone, Debug, PartialEq)]
+#[derive(Clone, Debug, PartialEq, IntoProto)]
 pub struct SubSynthConfig {
+    #[proto_repeated]
     pub oscillators: [OscillatorConfig; 3],
+
+    #[proto_repeated]
     pub envelopes: [AdsrEnvelope; 3],
+
+    #[proto_repeated]
     pub lfos: [LfoConfig; 3],
+
+    #[proto_optional]
     pub matrix_config: ModMatrix,
 }
 
 impl From<SubSynthConfigProto> for SubSynthConfig {
     fn from(proto: SubSynthConfigProto) -> Self {
-        let oscillator_vec = proto.oscillators;
-        assert_eq!(
-            oscillator_vec.len(),
-            3,
-            "SubSynthConfig must have exactly 3 oscillators"
-        );
-
-        let env_vec = proto.envelopes;
-        assert_eq!(
-            env_vec.len(),
-            3,
-            "SubSynthConfig must have exactly 3 envelopes"
-        );
-
-        let lfo_vec = proto.lfos;
-        let mod_matrix = proto.matrix_config;
-        assert_eq!(lfo_vec.len(), 3, "SubSynthConfig must have exactly 3 lfos");
+        let SubSynthConfigProto {
+            oscillators,
+            envelopes,
+            lfos,
+            matrix_config,
+        } = proto;
 
         SubSynthConfig {
-            oscillators: [
-                oscillator_vec[0].into(),
-                oscillator_vec[1].into(),
-                oscillator_vec[2].into(),
-            ],
-            envelopes: [env_vec[0].into(), env_vec[1].into(), env_vec[2].into()],
-            lfos: [lfo_vec[0].into(), lfo_vec[1].into(), lfo_vec[2].into()],
-            matrix_config: mod_matrix.unwrap().into(),
-        }
-    }
-}
-
-impl From<SubSynthConfig> for SubSynthConfigProto {
-    fn from(config: SubSynthConfig) -> Self {
-        SubSynthConfigProto {
-            oscillators: map_vec(config.oscillators.to_vec()),
-            envelopes: map_vec(config.envelopes.to_vec()),
-            lfos: map_vec(config.lfos.to_vec()),
-            matrix_config: Some(config.matrix_config.into()),
+            oscillators: map_vec(oscillators)
+                .try_into()
+                .expect("Expected 3 oscillators!"),
+            envelopes: map_vec(envelopes)
+                .try_into()
+                .expect("Expected 3 envelopes!"),
+            lfos: map_vec(lfos).try_into().expect("Expected 3 LFOs!"),
+            matrix_config: matrix_config.unwrap().into(),
         }
     }
 }

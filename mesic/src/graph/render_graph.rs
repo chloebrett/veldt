@@ -106,7 +106,7 @@ impl RenderGraph {
 
             match &project.generators[generator_index] {
                 GeneratorInstance {
-                    kind: GeneratorType::SimpleWave { config },
+                    kind: GeneratorType::SimpleWave(config),
                     id: _,
                     meta,
                 } => {
