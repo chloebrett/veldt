@@ -15,21 +15,20 @@ pub async fn upload_sample(file_name: String, bytes: Vec<u8>) -> Result<(), Stri
     */
     const CHUNK_SIZE: usize = 3 * 1024 * 1024;
 
-    let total_chunks = (bytes.len() + CHUNK_SIZE - 1) / CHUNK_SIZE;
-    let total_chunks = total_chunks as u32; // Borrow checker gets angry if we leave as uSize.
-
-    // ::iter borrows from the inputted bytes, so we need to take ownsership.
+    // ::iter borrows from the inputted bytes, so we need to take ownership.
     let owned_chunks: Vec<Vec<u8>> = bytes
         .chunks(CHUNK_SIZE)
         .map(|chunk| chunk.to_vec())
         .collect();
+
+    let total_chunks = owned_chunks.len() as u32;
 
     // Create stream.
     let stream =
         futures::stream::iter(owned_chunks.into_iter().enumerate().map(move |(i, chunk)| {
             UploadChunkRequest {
                 file_name: file_name.clone(),
-                chunk_data: chunk.to_vec(),
+                chunk_data: chunk,
                 chunk_index: i as u32,
                 total_chunks,
             }

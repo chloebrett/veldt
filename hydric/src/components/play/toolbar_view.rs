@@ -76,7 +76,6 @@ impl View for ToolbarView<'_> {
                         current upload progress or errors.
                         */
                         spawn(&mut self.async_state.upload_sample, async move {
-                            info!("hi");
                             let Some(file) = rfd::AsyncFileDialog::new()
                                 .add_filter("Sound Sample", &["wav"])
                                 .pick_file()
@@ -87,9 +86,7 @@ impl View for ToolbarView<'_> {
                                 return Ok(());
                             };
 
-                            info!("[3] File selected: {}", file.file_name());
                             let file_data = file.read().await;
-                            info!("[4] Read {} bytes", file_data.len());
 
                             // Upload our sample
                             match upload_sample(file.file_name(), file_data).await {

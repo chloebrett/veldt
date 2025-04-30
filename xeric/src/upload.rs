@@ -17,7 +17,7 @@ impl Upload for UploadContext {
 
         // Loop over chunks
         while let Some(chunk) = stream.message().await? {
-            // Check if this is the first chunkm, if so initialise.
+            // Check if this is the first chunk, if so initialise.
             if file.is_none() {
                 let path = {
                     let mut p = sample_dir_path();
