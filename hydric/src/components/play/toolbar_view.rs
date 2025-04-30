@@ -4,6 +4,7 @@ use crate::rpc::upload_sample;
 use crate::view::View;
 use crate::widget::{default_window, knob, slider};
 use egui::{Pos2, Ui};
+use log::{error, info};
 use shared::types::Beats;
 use state::{Action, FloatField, Store};
 
@@ -75,18 +76,29 @@ impl View for ToolbarView<'_> {
                         current upload progress or errors.
                         */
                         spawn(&mut self.async_state.upload_sample, async move {
+                            info!("hi");
                             let Some(file) = rfd::AsyncFileDialog::new()
                                 .add_filter("Sound Sample", &["wav"])
                                 .pick_file()
                                 .await
                             else {
                                 // No proper error handling as a user canceling the action is typical.
+                                info!("User canceled file upload");
                                 return Ok(());
                             };
 
-                            let file_name = file.file_name();
+                            info!("[3] File selected: {}", file.file_name());
                             let file_data = file.read().await;
-                            upload_sample(file_name, file_data).await
+                            info!("[4] Read {} bytes", file_data.len());
+
+                            // Upload our sample
+                            match upload_sample(file.file_name(), file_data).await {
+                                Ok(_) => Ok(()),
+                                Err(e) => {
+                                    error!("[5] Upload failed: {:?}", e);
+                                    Err(())
+                                }
+                            }
                         });
 
                         ui.close_menu();
