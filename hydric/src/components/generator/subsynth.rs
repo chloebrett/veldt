@@ -1,6 +1,6 @@
 use super::super::{ModMatrixView, Piano, PianoOrientation};
 use super::subsynth_oscillator::SubSynthOscillatorView;
-use crate::app_state::DataState;
+use crate::DataState;
 use crate::view::View;
 use crate::widget::{TabDisplay, TabOrientation};
 use eframe::egui;
