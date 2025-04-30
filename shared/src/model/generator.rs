@@ -23,10 +23,10 @@ pub struct GeneratorInstance {
 impl From<Generator> for GeneratorProto {
     fn from(item: Generator) -> Self {
         match item {
-            Generator::SimpleWave(config) => Self::SimpleWave(SimpleWaveProto {
+            Generator::SimpleWave (config ) => Self::SimpleWave(SimpleWaveProto {
                 config: Some(config.into()),
             }),
-            Generator::Noise(config) => Self::Noise(NoiseProto {
+            Generator::Noise (config ) => Self::Noise(NoiseProto {
                 config: Some(config.into()),
             }),
             Generator::SubSynth(config) => Self::SubSynth(SubSynthProto {
