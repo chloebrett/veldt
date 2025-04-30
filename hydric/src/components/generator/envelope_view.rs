@@ -84,64 +84,6 @@ impl<F: Fn(Action), G: Fn()> View for EnvelopeView<'_, F, G> {
         let envelope = self.envelope.clone();
         let dispatch = &self.dispatch;
         let on_release = &self.on_release;
-
-        knob(
-            ui,
-            "Attack",
-            envelope.attack,
-            |attack| {
-                dispatch(Action::SetChild(TypeField::Envelope(AdsrEnvelope {
-                    attack,
-                    ..envelope
-                })))
-            },
-            0.0..=1.0,
-            /* neutral= */ 0.2,
-            on_release,
-        );
-        knob(
-            ui,
-            "Decay",
-            envelope.decay,
-            |decay| {
-                dispatch(Action::SetChild(TypeField::Envelope(AdsrEnvelope {
-                    decay,
-                    ..envelope
-                })))
-            },
-            0.0..=1.0,
-            /* neutral= */ 0.2,
-            on_release,
-        );
-        knob(
-            ui,
-            "Sustain",
-            envelope.sustain,
-            |sustain| {
-                dispatch(Action::SetChild(TypeField::Envelope(AdsrEnvelope {
-                    sustain,
-                    ..envelope
-                })))
-            },
-            0.0..=1.0,
-            /* neutral= */ 0.8,
-            on_release,
-        );
-        knob(
-            ui,
-            "Release",
-            envelope.release,
-            |release| {
-                dispatch(Action::SetChild(TypeField::Envelope(AdsrEnvelope {
-                    release,
-                    ..envelope
-                })))
-            },
-            0.0..=1.0,
-            /* neutral= */ 0.2,
-            on_release,
-        );
-
         Frame::canvas(ui.style()).show(ui, |ui| {
             ui.ctx().request_repaint();
             let desired_size = vec2(100.0, 50.0);
@@ -155,6 +97,69 @@ impl<F: Fn(Action), G: Fn()> View for EnvelopeView<'_, F, G> {
             });
 
             ui.painter().extend(vec![shape].transform(to_screen));
+        });
+
+        ui.horizontal(|ui| {
+            ui.vertical(|ui| {
+                knob(
+                    ui,
+                    "Attack",
+                    envelope.attack,
+                    |attack| {
+                        dispatch(Action::SetChild(TypeField::Envelope(AdsrEnvelope {
+                            attack,
+                            ..envelope
+                        })))
+                    },
+                    0.0..=1.0,
+                    /* neutral= */ 0.2,
+                    on_release,
+                );
+                knob(
+                    ui,
+                    "Decay",
+                    envelope.decay,
+                    |decay| {
+                        dispatch(Action::SetChild(TypeField::Envelope(AdsrEnvelope {
+                            decay,
+                            ..envelope
+                        })))
+                    },
+                    0.0..=1.0,
+                    /* neutral= */ 0.2,
+                    on_release,
+                );
+            });
+            ui.vertical(|ui| {
+                knob(
+                    ui,
+                    "Sustain",
+                    envelope.sustain,
+                    |sustain| {
+                        dispatch(Action::SetChild(TypeField::Envelope(AdsrEnvelope {
+                            sustain,
+                            ..envelope
+                        })))
+                    },
+                    0.0..=1.0,
+                    /* neutral= */ 0.8,
+                    on_release,
+                );
+                knob(
+                    ui,
+                    "Release",
+                    envelope.release,
+                    |release| {
+                        dispatch(Action::SetChild(TypeField::Envelope(AdsrEnvelope {
+                            release,
+                            ..envelope
+                        })))
+                    },
+                    0.0..=1.0,
+                    /* neutral= */ 0.2,
+                    on_release,
+                );
+            });
         });
     }
 }
