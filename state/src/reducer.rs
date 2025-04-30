@@ -1,39 +1,26 @@
-use crate::{Action, Selector, StoreData, receiver::ActionReceiver};
-use shared::model::Generator;
+use crate::{
+    Action, EffectSelector, GeneratorSelector, MixerSelector, NoteSelector, OscillatorSelector,
+    PlacementSelector, RootSelector, Selector, SelectorTrait, StoreData, TrackSelector,
+    receiver::ActionReceiver,
+};
+
+fn reducer_internal<T: SelectorTrait>(
+    selector: T,
+    data: &mut StoreData,
+    action: &Action,
+) -> Option<Action> {
+    selector.select_mut(data).apply(action)
+}
 
 pub fn reducer(data: &mut StoreData, selector: &Selector, action: &Action) -> Option<Action> {
-    match selector {
-        Selector::Track(track_index) => {
-            let track = &mut data.project.tracks[*track_index];
-            track.apply(action)
-        }
-        Selector::Generator(generator_index) => {
-            let generator = &mut data.project.generators[*generator_index];
-            generator.apply(action)
-        }
-        Selector::Effect(mixer_index, effect_index) => {
-            let effect = &mut data.project.mixer[*mixer_index].effects[*effect_index];
-            effect.apply(action)
-        }
-        Selector::Mixer(mixer_index) => {
-            let mixer_channel = &mut data.project.mixer[*mixer_index];
-            mixer_channel.apply(action)
-        }
-        Selector::Note(track_index, note_index) => {
-            let note = &mut data.project.tracks[*track_index].notes[*note_index];
-            note.apply(action)
-        }
-        Selector::Placement(placement_index) => {
-            let placement = &mut data.project.placements[*placement_index];
-            placement.apply(action)
-        }
-        Selector::Oscillator(generator_index, oscillator_index) => {
-            let generator = &mut data.project.generators[*generator_index];
-            match &mut generator.it {
-                Generator::SubSynth(config) => config.oscillators[*oscillator_index].apply(action),
-                _ => None,
-            }
-        }
-        Selector::Root => data.apply(action),
+    match *selector {
+        Selector::Root => reducer_internal(RootSelector, data, action),
+        Selector::Track(a) => reducer_internal(TrackSelector(a), data, action),
+        Selector::Note(a, b) => reducer_internal(NoteSelector(a, b), data, action),
+        Selector::Mixer(a) => reducer_internal(MixerSelector(a), data, action),
+        Selector::Effect(a, b) => reducer_internal(EffectSelector(a, b), data, action),
+        Selector::Placement(a) => reducer_internal(PlacementSelector(a), data, action),
+        Selector::Generator(a) => reducer_internal(GeneratorSelector(a), data, action),
+        Selector::Oscillator(a, b) => reducer_internal(OscillatorSelector(a, b), data, action),
     }
 }

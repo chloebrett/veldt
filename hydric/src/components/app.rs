@@ -11,11 +11,10 @@ use crate::rpc::broadcast_actions;
 use crate::rpc::load_project_list;
 use crate::view::View;
 use crate::{AsyncState, AudioState, WindowState};
-use crate::{EffectSelector, GeneratorSelector};
 use egui::{ScrollArea, Ui, scroll_area::ScrollBarVisibility};
 use mesic::graph::RenderGraph;
 use poll_promise::Promise;
-use state::{Action, Selector, Store};
+use state::{Action, EffectSelector, GeneratorSelector, Store};
 use std::sync::mpsc::channel;
 
 pub struct App {
@@ -108,13 +107,10 @@ impl View for App {
             generators_control(ui.ctx(), &mut self.window_state, &self.store);
         }
 
-        for generator_index in self.visible_generators() {
+        for sel in self.visible_generators() {
             let generators = &mut self.window_state.generators;
-            let visible = generators.get(generator_index);
-            GeneratorView::new(&self.store, generator_index, visible, || {
-                generators.set(generator_index, false)
-            })
-            .ui(ui);
+            let visible = generators.get(sel);
+            GeneratorView::new(&self.store, &sel, visible, || generators.set(sel, false)).ui(ui);
         }
         if self.window_state.mixer.visible {
             MixerView::new(&mut self.window_state, &self.store).ui(ui);
@@ -127,16 +123,12 @@ impl View for App {
         )
         .ui(ui);
 
-        for (mixer_index, effect_index) in self.visible_effects() {
-            let dispatch = |action| {
-                self.store
-                    .dispatch(&Selector::Effect(mixer_index, effect_index), action)
-            };
+        for effect_selector in self.visible_effects() {
+            let dispatch = |action| self.store.dispatch2(&effect_selector, action);
             let on_release = || self.store.dispatchr(Action::Release);
             if let Some(mut it) = EffectView::new(
                 &self.store,
-                mixer_index,
-                effect_index,
+                &effect_selector,
                 &mut self.window_state,
                 dispatch,
                 on_release,

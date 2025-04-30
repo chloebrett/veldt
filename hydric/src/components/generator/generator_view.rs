@@ -5,20 +5,25 @@ use crate::widget::StateWindow;
 use crate::widget::default_window;
 use egui::{Pos2, Ui};
 use shared::model::Generator;
-use state::{Action, Selector, Store};
+use state::{Action, GeneratorSelector, Store};
 
 pub struct GeneratorView<'a, F: FnMut()> {
     store: &'a Store,
-    generator_index: usize,
+    selector: &'a GeneratorSelector,
     visible: bool,
     on_close: F,
 }
 
 impl<'a, F: FnMut()> GeneratorView<'a, F> {
-    pub fn new(store: &'a Store, generator_index: usize, visible: bool, on_close: F) -> Self {
+    pub fn new(
+        store: &'a Store,
+        selector: &'a GeneratorSelector,
+        visible: bool,
+        on_close: F,
+    ) -> Self {
         Self {
             store,
-            generator_index,
+            selector,
             visible,
             on_close,
         }
@@ -27,10 +32,7 @@ impl<'a, F: FnMut()> GeneratorView<'a, F> {
 
 impl<F: FnMut()> View for GeneratorView<'_, F> {
     fn ui(&mut self, ui: &mut Ui) {
-        // TODO: reduce duplication of passing around indexes for e.g. generators as well as
-        // selectors. Just have a unique object for each selector type and pass that around?
-        let sel = Selector::Generator(self.generator_index);
-        let instance = &self.store.get().project.generators[self.generator_index];
+        let instance = &self.store.select(self.selector);
 
         let title = match &instance.it {
             Generator::SimpleWave(_) => "Simple Wave Generator",
@@ -45,7 +47,7 @@ impl<F: FnMut()> View for GeneratorView<'_, F> {
                 |_| (self.on_close)(),
                 |ui| {
                     let generator = instance.it.clone();
-                    let dispatch = |action| self.store.dispatch(&sel, action);
+                    let dispatch = |action| self.store.dispatch2(self.selector, action);
                     let on_release = || self.store.dispatchr(Action::Release);
 
                     match generator {

@@ -1,4 +1,7 @@
-use crate::{Action, ReversibleAction, Selector, StoreData, UndoStack};
+use crate::{
+    Action, ReversibleAction, Selector, SelectorTrait, StoreData, UndoStack,
+    receiver::ActionReceiver,
+};
 use log::info;
 use std::cell::RefCell;
 use std::sync::mpsc::Sender;
@@ -80,6 +83,34 @@ impl Store {
 
     pub fn get(&self) -> &StoreData {
         &self.data
+    }
+
+    pub fn try_select<'a, T: ActionReceiver + 'a, S: SelectorTrait<Item = T> + 'a>(
+        &'a self,
+        selector: &'a S,
+    ) -> Option<&'a T> {
+        selector.try_select(self.get())
+    }
+
+    pub fn select<'a, T: ActionReceiver + 'a, S: SelectorTrait<Item = T> + 'a>(
+        &'a self,
+        selector: &'a S,
+    ) -> &'a T {
+        selector.select(self.get())
+    }
+
+    // TODO: migrate all `dispatch` usages to this, then remove the old dispatch method.
+    pub fn dispatch2<'a, T: ActionReceiver + 'a, S: SelectorTrait<Item = T> + 'a>(
+        &self,
+        selector: &S,
+        action: Action,
+    ) {
+        info!("Recording action: {:?}", action.clone());
+        self.pending_actions
+            .borrow_mut()
+            // TODO: use the selector trait deeper in the store?
+            // Consider this once we've stopped using the old `dispatch`.
+            .push((selector.as_enum().clone(), action.clone()));
     }
 
     // Dispatching is allowed with only an immutable reference.

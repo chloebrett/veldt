@@ -53,6 +53,28 @@ pub enum Generator {
     SubSynth(SubSynthConfig),
 }
 
+impl<'a> TryFrom<&'a Generator> for &'a SubSynthConfig {
+    type Error = ();
+
+    fn try_from(item: &'a Generator) -> Result<Self, ()> {
+        match item {
+            Generator::SubSynth(it) => Ok(it),
+            _ => Err(()),
+        }
+    }
+}
+
+impl<'a> TryFrom<&'a mut Generator> for &'a mut SubSynthConfig {
+    type Error = ();
+
+    fn try_from(item: &'a mut Generator) -> Result<Self, ()> {
+        match item {
+            Generator::SubSynth(it) => Ok(it),
+            _ => Err(()),
+        }
+    }
+}
+
 #[derive(Clone, Debug, PartialEq, FromProto, IntoProto)]
 pub struct SimpleWaveConfig {
     #[proto_enum]
