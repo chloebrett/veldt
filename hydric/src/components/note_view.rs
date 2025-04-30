@@ -4,7 +4,7 @@ use crate::widget::{StateWindow, default_window, get_set, int_slider, selectable
 use egui::{Ui, pos2};
 use shared::model::ScaleValue;
 use shared::types::{Beats, Octave};
-use state::{Action, FloatField, IndexField, NoteSelector, Selector, Store, TypeField};
+use state::{Action, FloatField, IndexField, TrackSelector, NoteSelector, Selector, Store, TypeField};
 use strum::IntoEnumIterator;
 
 pub struct NoteView<'a> {
@@ -80,8 +80,8 @@ impl View for NoteView<'_> {
             );
 
             if ui.button("Delete").clicked() {
-                store.dispatch(
-                    &Selector::Track(track_index),
+                store.dispatch2(
+                    &TrackSelector(track_index),
                     Action::DeleteChild(IndexField::PlacedNote(note_index)),
                 );
                 DataState::ActiveNoteIndex.remove_value(ui);
