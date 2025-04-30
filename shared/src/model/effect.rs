@@ -1,4 +1,4 @@
-use crate::model::{SimpleEqConfig, WaveType};
+use crate::model::{EqConfig, WaveType};
 use crate::pmodel::{
     CompressorConfigProto, CompressorProto, DelayConfigProto, DelayProto, EffectInstanceProto,
     EffectMetaProto, ModDelayConfigProto, ModDelayProto, SimpleEqProto,
@@ -52,7 +52,7 @@ impl From<Effect> for EffectProto {
 pub enum Effect {
     Delay(DelayConfig),
     // Simple as opposed to parametric.
-    SimpleEq(SimpleEqConfig),
+    SimpleEq(EqConfig),
     Compressor(CompressorConfig),
     // Modulated delay, e.g. vibrato, flanger, chorus.
     ModDelay(ModDelayConfig),

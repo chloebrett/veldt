@@ -50,7 +50,7 @@ impl Node<ProcessContext> for DelayNode {
         // Apply any changes from the store if applicable.
         if let Some(mixer) = &payload.store.project.mixer.get(self.mixer_index) {
             if let Some(EffectInstance {
-                effect: Effect::SimpleDelay { config },
+                it: Effect::Delay(config),
                 ..
             }) = &mixer.effects.get(self.effect_index)
             {

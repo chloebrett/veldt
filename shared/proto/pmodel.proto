@@ -204,10 +204,10 @@ message DelayConfigProto {
 }
 
 message SimpleEqProto {
-  SimpleEqConfigProto config = 1;
+  EqConfigProto config = 1;
 }
 
-message SimpleEqConfigProto {
+message EqConfigProto {
   EqTypeProto kind = 1;
 
   float fc = 2;

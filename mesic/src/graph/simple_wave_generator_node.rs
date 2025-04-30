@@ -2,8 +2,7 @@ use super::ProcessContext;
 use crate::wave::{beats_to_samples, unison_wave};
 use dasp_graph::{Buffer, Input, Node};
 use shared::model::{
-    GeneratorInstance, GeneratorMeta, GeneratorType, Placement, SimpleWaveConfig, Track,
-    TrackPlacement,
+    Generator, GeneratorInstance, GeneratorMeta, Placement, SimpleWaveConfig, Track, TrackPlacement,
 };
 use shared::types::{Beats, KnobPosition, Volume};
 use std::cmp::min;
@@ -56,7 +55,7 @@ impl Node<ProcessContext> for SimpleWaveGeneratorNode {
 
         // Apply any applicable changes from the store.
         if let Some(GeneratorInstance {
-            kind: GeneratorType::SimpleWave(config),
+            it: Generator::SimpleWave(config),
             meta,
             ..
         }) = &payload.store.project.generators.get(self.generator_index)

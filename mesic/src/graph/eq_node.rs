@@ -29,7 +29,7 @@ impl Node<ProcessContext> for EqNode {
         // Apply any changes from the store if applicable.
         if let Some(mixer) = &payload.store.project.mixer.get(self.mixer_index) {
             if let Some(EffectInstance {
-                effect: Effect::SimpleEq { config, .. },
+                it: Effect::SimpleEq(config),
                 ..
             }) = &mixer.effects.get(self.effect_index)
             {

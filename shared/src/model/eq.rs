@@ -1,5 +1,5 @@
 use crate::{
-    pmodel::{EqTypeProto, SimpleEqConfigProto},
+    pmodel::{EqConfigProto, EqTypeProto},
     types::{Freq, GainDB, KnobPosition},
 };
 use local_macro::{FromProto, IntoProto};
@@ -27,7 +27,7 @@ pub enum EqType {
 }
 
 #[derive(Clone, Debug, PartialEq, FromProto, IntoProto)]
-pub struct SimpleEqConfig {
+pub struct EqConfig {
     #[proto_enum]
     pub kind: EqType,
 
@@ -38,7 +38,7 @@ pub struct SimpleEqConfig {
     pub q: KnobPosition,
 }
 
-impl Default for SimpleEqConfig {
+impl Default for EqConfig {
     fn default() -> Self {
         Self {
             kind: EqType::ParametricSecondOrderNonConstantQ,
