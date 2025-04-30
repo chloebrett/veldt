@@ -1,6 +1,6 @@
 use egui::{InnerResponse, Ui, Window};
 
-use crate::app_state::DataState;
+use crate::DataState;
 
 /// Creates a default window which is non-resizable, non-collapsible, and disables drag-to-scroll.
 pub fn default_window(title: &str) -> Window {

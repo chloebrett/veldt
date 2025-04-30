@@ -50,11 +50,9 @@ impl From<Effect> for EffectProto {
             Effect::SimpleEq { config } => Self::SimpleEq(SimpleEqProto {
                 config: Some(config.into()),
             }),
-            Effect::SimpleCompressor { config } => {
-                Self::SimpleCompressor(SimpleCompressorProto {
-                    config: Some(config.into()),
-                })
-            }
+            Effect::SimpleCompressor { config } => Self::SimpleCompressor(SimpleCompressorProto {
+                config: Some(config.into()),
+            }),
             Effect::ModDelay { config } => Self::ModDelay(ModDelayProto {
                 config: Some(config.into()),
             }),

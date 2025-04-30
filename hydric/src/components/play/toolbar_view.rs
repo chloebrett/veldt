@@ -1,8 +1,8 @@
-use crate::app_state::{AsyncState, AudioState};
 use crate::promise::spawn;
 use crate::rpc::upload_sample;
 use crate::view::View;
 use crate::widget::{default_window, knob, slider};
+use crate::{AsyncState, AudioState};
 use egui::{Pos2, Ui};
 use shared::types::Beats;
 use state::{Action, FloatField, Store};

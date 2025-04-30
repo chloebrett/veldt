@@ -1,7 +1,7 @@
 use state::{Action, TypeField};
 
 use crate::{
-    app_state::WindowState,
+    WindowState,
     view::View,
     widget::{default_window, get_set, string_observer},
 };

@@ -2,7 +2,7 @@ use std::collections::BTreeSet;
 
 use super::Piano;
 use crate::{
-    app_state::{DataState, update_select_data_state},
+    DataState, update_select_data_state,
     view::View,
     widget::{Sequencer, SequencerObject, StateWindow, default_window},
 };
