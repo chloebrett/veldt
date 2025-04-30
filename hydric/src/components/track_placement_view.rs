@@ -5,7 +5,7 @@ use egui::{Ui, pos2};
 use ordered_float::OrderedFloat;
 use shared::model::TrackPlacement;
 use shared::types::Beats;
-use state::{Action, FloatField, IndexField, Selector, Store, TypeField};
+use state::{Action, FloatField, IndexField, PlacementSelector, Store, TypeField};
 
 // TODO: rename to PlacementView if appropriate.
 pub struct TrackPlacementView<'a> {
@@ -30,7 +30,7 @@ impl View for TrackPlacementView<'_> {
         let placement = &store.get().project.placements[placement_index];
         let track_placement: &TrackPlacement = placement.try_into().unwrap();
         let tracks_length = store.get().project.tracks.len();
-        let sel = Selector::Placement(placement_index);
+        let sel = PlacementSelector(placement_index);
         let title = format!("Placement {placement_index}");
 
         let window = StateWindow(
@@ -46,7 +46,7 @@ impl View for TrackPlacementView<'_> {
                         selectable_value(
                             ui,
                             get_set(&track_placement.track_index, |it| {
-                                store.dispatch(&sel, Action::SetIndex(IndexField::Track(*it)))
+                                store.dispatch2(&sel, Action::SetIndex(IndexField::Track(*it)))
                             }),
                             &track_index,
                             track_index.to_string(),
@@ -60,7 +60,7 @@ impl View for TrackPlacementView<'_> {
                 ui,
                 "Generator index",
                 track_placement.generator_index as f64,
-                |it| store.dispatch(&sel, Action::SetIndex(IndexField::Generator(it as usize))),
+                |it| store.dispatch2(&sel, Action::SetIndex(IndexField::Generator(it as usize))),
                 0..=max_generator_index,
                 on_release,
             );
@@ -70,7 +70,7 @@ impl View for TrackPlacementView<'_> {
                 ui,
                 "Start position",
                 offset,
-                |it| store.dispatch(&sel, Action::SetFloat(FloatField::Offset, it as Beats)),
+                |it| store.dispatch2(&sel, Action::SetFloat(FloatField::Offset, it as Beats)),
                 0.0..=16.0,
                 on_release,
             );
@@ -86,7 +86,7 @@ impl View for TrackPlacementView<'_> {
                     "Clipped Duration",
                     duration,
                     |it| {
-                        store.dispatch(&sel, {
+                        store.dispatch2(&sel, {
                             let clipped_duration = if it < max_note_length as f64 {
                                 Some(it as Beats)
                             } else {

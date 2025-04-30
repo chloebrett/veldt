@@ -13,7 +13,7 @@ use shared::{
     types::PitchValue,
 };
 use state::{
-    Action, FloatField, IndexField, NoteSelector, Selector, SelectorTrait, Store, TrackSelector,
+    Action, FloatField, IndexField, NoteSelector, SelectorTrait, Store, TrackSelector,
     TypeField,
 };
 use std::collections::BTreeSet;
@@ -275,8 +275,8 @@ impl SequencerObject<PlacedNote> for PlacedNote {
     }
 
     fn add_new(&self, store: &Store, parent_index: Option<usize>) {
-        store.dispatch(
-            &Selector::Track(parent_index.expect("Should have been track index.")),
+        store.dispatch2(
+            &TrackSelector(parent_index.expect("Should have been track index.")),
             Action::AddChild(TypeField::PlacedNote(self.clone())),
         );
     }
@@ -294,8 +294,8 @@ impl SequencerObject<PlacedNote> for PlacedNote {
     }
 
     fn delete(store: &Store, index: usize, parent_index: Option<usize>) {
-        store.dispatch(
-            &Selector::Track(parent_index.expect("Should have been a parent index")),
+        store.dispatch2(
+            &TrackSelector(parent_index.expect("Should have been a parent index")),
             Action::DeleteChild(IndexField::PlacedNote(index)),
         );
     }

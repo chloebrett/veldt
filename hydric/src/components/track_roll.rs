@@ -11,9 +11,7 @@ use shared::{
     model::{Placement, PlacementType, Track, TrackPlacement},
     types::Beats,
 };
-use state::{
-    Action, FloatField, IndexField, PlacementSelector, SelectorTrait, Store, TypeField,
-};
+use state::{Action, FloatField, IndexField, PlacementSelector, SelectorTrait, Store, TypeField};
 use std::collections::BTreeSet;
 
 pub struct TrackRoll<'a> {
