@@ -2,7 +2,7 @@ use crate::model::{AdsrEnvelope, LfoConfig, WaveType};
 use crate::pmodel::{
     AntiAliasingModeProto, GeneratorInstanceProto, GeneratorMetaProto, NoiseConfigProto,
     NoiseProto, NoiseTypeProto, OscillatorConfigProto, SimpleWaveConfigProto, SimpleWaveProto,
-    SubSynthConfigProto, SubSynthProto, generator_instance_proto::Kind as GeneratorTypeProto,
+    SubSynthConfigProto, SubSynthProto, generator_instance_proto::It as GeneratorProto,
 };
 use crate::serialize::map_vec;
 use crate::types::{KnobPosition, Volume};
@@ -11,50 +11,43 @@ use strum::{Display, EnumIter, EnumString};
 
 use super::ModMatrix;
 
-type GeneratorInstanceId = usize;
-
 #[derive(Clone, Debug, PartialEq, FromProto, IntoProto)]
 pub struct GeneratorInstance {
-    #[proto_type_u32]
-    pub id: GeneratorInstanceId,
-
     #[proto_optional]
-    pub kind: GeneratorType,
+    pub it: Generator,
 
     #[proto_optional]
     pub meta: GeneratorMeta,
 }
 
-impl From<GeneratorType> for GeneratorTypeProto {
-    fn from(item: GeneratorType) -> Self {
+impl From<Generator> for GeneratorProto {
+    fn from(item: Generator) -> Self {
         match item {
-            GeneratorType::SimpleWave(config) => Self::SimpleWave(SimpleWaveProto {
+            Generator::SimpleWave(config) => Self::SimpleWave(SimpleWaveProto {
                 config: Some(config.into()),
             }),
-            GeneratorType::Noise(config) => Self::Noise(NoiseProto {
+            Generator::Noise(config) => Self::Noise(NoiseProto {
                 config: Some(config.into()),
             }),
-            GeneratorType::SubSynth(config) => Self::SubSynth(SubSynthProto {
+            Generator::SubSynth(config) => Self::SubSynth(SubSynthProto {
                 config: Some(config.into()),
             }),
         }
     }
 }
 
-impl From<GeneratorTypeProto> for GeneratorType {
-    fn from(item: GeneratorTypeProto) -> Self {
+impl From<GeneratorProto> for Generator {
+    fn from(item: GeneratorProto) -> Self {
         match item {
-            GeneratorTypeProto::SimpleWave(config) => {
-                Self::SimpleWave(config.config.unwrap().into())
-            }
-            GeneratorTypeProto::Noise(config) => Self::Noise(config.config.unwrap().into()),
-            GeneratorTypeProto::SubSynth(config) => Self::SubSynth(config.config.unwrap().into()),
+            GeneratorProto::SimpleWave(config) => Self::SimpleWave(config.config.unwrap().into()),
+            GeneratorProto::Noise(config) => Self::Noise(config.config.unwrap().into()),
+            GeneratorProto::SubSynth(config) => Self::SubSynth(config.config.unwrap().into()),
         }
     }
 }
 
 #[derive(Clone, Debug, PartialEq)]
-pub enum GeneratorType {
+pub enum Generator {
     SimpleWave(SimpleWaveConfig),
     Noise(NoiseConfig),
     SubSynth(SubSynthConfig),
@@ -103,7 +96,7 @@ pub struct SubSynthConfig {
     pub lfos: [LfoConfig; 3],
 
     #[proto_optional]
-    pub matrix_config: ModMatrix,
+    pub matrix: ModMatrix,
 }
 
 impl From<SubSynthConfigProto> for SubSynthConfig {
@@ -112,7 +105,7 @@ impl From<SubSynthConfigProto> for SubSynthConfig {
             oscillators,
             envelopes,
             lfos,
-            matrix_config,
+            matrix,
         } = proto;
 
         SubSynthConfig {
@@ -123,7 +116,7 @@ impl From<SubSynthConfigProto> for SubSynthConfig {
                 .try_into()
                 .expect("Expected 3 envelopes!"),
             lfos: map_vec(lfos).try_into().expect("Expected 3 LFOs!"),
-            matrix_config: matrix_config.unwrap().into(),
+            matrix: matrix.unwrap().into(),
         }
     }
 }

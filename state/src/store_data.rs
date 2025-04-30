@@ -2,8 +2,8 @@ use crate::reducer;
 use crate::{Action, Selector};
 use ordered_float::OrderedFloat;
 use shared::model::{
-    AdsrEnvelope, AntiAliasingMode, FileTreeConfig, FilenameTree, GeneratorInstance, GeneratorMeta,
-    GeneratorType, LfoConfig, MixerChannel, ModMatrix, Note, OscillatorConfig, PitchName,
+    AdsrEnvelope, AntiAliasingMode, FileTreeConfig, FilenameTree, Generator, GeneratorInstance,
+    GeneratorMeta, LfoConfig, MixerChannel, ModMatrix, Note, OscillatorConfig, PitchName,
     PlacedNote, Placement, PlacementType, Project, Scale, ScaleValue, SimpleWaveConfig,
     SubSynthConfig, Track, TrackPlacement, WaveType,
 };
@@ -78,8 +78,7 @@ impl Default for StoreData {
                 samples: vec![],
                 generators: vec![
                     GeneratorInstance {
-                        id: 0,
-                        kind: GeneratorType::SimpleWave(SimpleWaveConfig {
+                        it: Generator::SimpleWave(SimpleWaveConfig {
                             wave: WaveType::Sine,
                             envelope: AdsrEnvelope {
                                 attack: 0.1,
@@ -99,8 +98,7 @@ impl Default for StoreData {
                         },
                     },
                     GeneratorInstance {
-                        id: 1,
-                        kind: GeneratorType::SubSynth(SubSynthConfig {
+                        it: Generator::SubSynth(SubSynthConfig {
                             oscillators: [
                                 OscillatorConfig {
                                     wave: WaveType::Sine,
@@ -117,7 +115,7 @@ impl Default for StoreData {
                             ],
                             lfos: [BASE_LFO; 3],
                             envelopes: [BASE_ENV; 3],
-                            matrix_config: ModMatrix::new(6, 3),
+                            matrix: ModMatrix::new(6, 3),
                         }),
                         meta: GeneratorMeta {
                             volume: 1.0,

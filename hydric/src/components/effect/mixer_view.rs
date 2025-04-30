@@ -72,7 +72,7 @@ impl View for MixerView<'_> {
                         let effect = &mixer.effects[effect_index];
 
                         let show = window_state.effects.get((mixer_index, effect_index));
-                        let text = effect_name(&effect.effect);
+                        let text = effect_name(&effect.it);
                         let meta = &effect.meta;
 
                         let mute_response = ui.add(Button::new("Mute").selected(meta.mute));
@@ -105,7 +105,7 @@ impl View for MixerView<'_> {
                         let text = format!("{}", effect_name(&effect));
                         if ui.button(text).clicked() {
                             let instance = EffectInstance {
-                                effect,
+                                it: effect,
                                 meta: EffectMeta::default(),
                             };
                             dispatch_mixer(Action::AddChild(TypeField::Effect(instance)));

@@ -91,8 +91,8 @@ mod tests {
     use crate::{
         model::{
             AdsrEnvelope, AntiAliasingMode, DelayConfig, Effect, EffectMeta, EqConfig, EqType,
-            GeneratorMeta, GeneratorType, ModDelayConfig, Note, PitchName, PlacedNote,
-            PlacementType, ScaleValue, SimpleWaveConfig, WaveType,
+            Generator, GeneratorMeta, ModDelayConfig, Note, PitchName, PlacedNote, PlacementType,
+            ScaleValue, SimpleWaveConfig, WaveType,
         },
         testing::proto::proto_testing::assert_proto_round_trip,
     };
@@ -133,8 +133,7 @@ mod tests {
                 sample_rate: 1.0,
             }],
             generators: vec![GeneratorInstance {
-                id: 0,
-                kind: GeneratorType::SimpleWave(SimpleWaveConfig {
+                it: Generator::SimpleWave(SimpleWaveConfig {
                     wave: WaveType::Sine,
                     envelope: AdsrEnvelope {
                         attack: 0.1,
@@ -156,44 +155,35 @@ mod tests {
             mixer: vec![MixerChannel {
                 effects: vec![
                     EffectInstance {
-                        effect: Effect::SimpleEq {
-                            config: EqConfig {
-                                kind: EqType::SimpleResonator,
-                                fc: 1000.0,
-                                q: 1.0,
-                                gain: 0.0,
-                            },
-                        },
+                        it: Effect::SimpleEq(EqConfig {
+                            kind: EqType::SimpleResonator,
+                            fc: 1000.0,
+                            q: 1.0,
+                            gain: 0.0,
+                        }),
                         meta: EffectMeta {
-                            id: 0,
                             wet: 1.0,
                             mute: false,
                         },
                     },
                     EffectInstance {
-                        effect: Effect::SimpleDelay {
-                            config: DelayConfig {
-                                delay_ms: 250.0,
-                                feedback: 0.5,
-                            },
-                        },
+                        it: Effect::Delay(DelayConfig {
+                            delay_ms: 250.0,
+                            feedback: 0.5,
+                        }),
                         meta: EffectMeta {
-                            id: 1,
                             wet: 0.5,
                             mute: false,
                         },
                     },
                     EffectInstance {
-                        effect: Effect::ModDelay {
-                            config: ModDelayConfig {
-                                min_depth: 100,
-                                max_depth: 200,
-                                freq: 10.0,
-                                lfo_type: WaveType::Triangle,
-                            },
-                        },
+                        it: Effect::ModDelay(ModDelayConfig {
+                            min_depth: 100,
+                            max_depth: 200,
+                            freq: 10.0,
+                            lfo_type: WaveType::Triangle,
+                        }),
                         meta: EffectMeta {
-                            id: 1,
                             wet: 0.5,
                             mute: false,
                         },
