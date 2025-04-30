@@ -30,7 +30,7 @@ pub fn reducer(data: &mut StoreData, selector: &Selector, action: &Action) -> Op
         Selector::Oscillator(generator_index, oscillator_index) => {
             let generator = &mut data.project.generators[*generator_index];
             match &mut generator.kind {
-                GeneratorType::SubSynth { config } => {
+                GeneratorType::SubSynth(config) => {
                     config.oscillators[*oscillator_index].apply(action)
                 }
                 _ => None,

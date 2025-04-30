@@ -56,7 +56,7 @@ impl Node<ProcessContext> for SimpleWaveGeneratorNode {
 
         // Apply any applicable changes from the store.
         if let Some(GeneratorInstance {
-            kind: GeneratorType::SimpleWave { config },
+            kind: GeneratorType::SimpleWave(config),
             meta,
             ..
         }) = &payload.store.project.generators.get(self.generator_index)
