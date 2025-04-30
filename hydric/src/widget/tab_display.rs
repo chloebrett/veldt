@@ -1,18 +1,17 @@
-use egui::{Color32, FontId, Stroke, Ui, Frame, Vec2};
-use log::info;
-use crate::widget::text_rotator;
-use crate::view::View;
 use super::TextRotation;
+use crate::view::View;
+use crate::widget::text_rotator;
+use egui::{Color32, FontId, Frame, Stroke, Ui, Vec2};
 
 pub enum TabOrientation {
     Left,
     Right,
-    Top, 
+    Top,
 }
 
 type OnTabClick = Box<dyn Fn(&mut egui::Ui, usize) + Send + Sync + 'static>;
 
-pub struct TabDisplay<'a>{
+pub struct TabDisplay<'a> {
     active_tab: usize,
     tab_headings: Vec<&'a str>,
     orientation: TabOrientation,
@@ -49,29 +48,27 @@ impl View for TabDisplay<'_> {
         let mut tab_sizes: Vec<Vec2> = Vec::with_capacity(num_tabs);
         let font_id = FontId::proportional(TAB_FONT_SIZE);
         for heading in tab_headings {
-            let galley =
-                ui.fonts(|fonts| fonts.layout_no_wrap(heading.to_string(), font_id.clone(), Color32::WHITE)); // assign arbitrary font colour we're only concerned about the galley size
+            let galley = ui.fonts(|fonts| {
+                fonts.layout_no_wrap(heading.to_string(), font_id.clone(), Color32::WHITE)
+            }); // assign arbitrary font colour we're only concerned about the galley size
             let padded_size = galley.size() + egui::Vec2::splat(4.0);
             tab_sizes.push(padded_size);
         }
-    
-        let tab_rounding = match orientation{
-            TabOrientation::Left =>
-            egui::CornerRadius {
+
+        let tab_rounding = match orientation {
+            TabOrientation::Left => egui::CornerRadius {
                 nw: 5,
                 ne: 0,
                 sw: 5,
                 se: 0,
             },
-            TabOrientation::Right => 
-            egui::CornerRadius {
+            TabOrientation::Right => egui::CornerRadius {
                 nw: 0,
                 ne: 5,
                 sw: 0,
                 se: 5,
             },
-            TabOrientation::Top =>
-            egui::CornerRadius {
+            TabOrientation::Top => egui::CornerRadius {
                 nw: 5,
                 ne: 5,
                 sw: 0,
@@ -83,38 +80,39 @@ impl View for TabDisplay<'_> {
             for i in 0..tab_headings.len() {
                 let frame = if i == self.active_tab {
                     Frame::new()
-                    .fill(ACTIVE_TAB_COLOUR)
-                    .stroke(Stroke::new(1.0, ACTIVE_TAB_COLOUR))
-                    .corner_radius(tab_rounding)
+                        .fill(ACTIVE_TAB_COLOUR)
+                        .stroke(Stroke::new(1.0, ACTIVE_TAB_COLOUR))
+                        .corner_radius(tab_rounding)
+                        .inner_margin(4.0)
                 } else {
                     Frame::new()
-                    .fill(INACTIVE_TAB_COLOUR)
-                    .stroke(Stroke::new(1.0, INACTIVE_TAB_COLOUR))
-                    .corner_radius(tab_rounding)
+                        .fill(INACTIVE_TAB_COLOUR)
+                        .stroke(Stroke::new(1.0, INACTIVE_TAB_COLOUR))
+                        .corner_radius(tab_rounding)
+                        .inner_margin(4.0)
                 };
-    
-                let response = frame.show(ui, |ui| {
-                    let text_rotation = match orientation{
-                        TabOrientation::Left =>
-                            TextRotation::Anticlockwise90,
-                        TabOrientation::Right => 
-                            TextRotation::Clockwise90,
-                        TabOrientation::Top =>
-                            TextRotation::Neutral,
-                    };
-                    text_rotator(
-                        ui,
-                        tab_headings[i],
-                        TAB_FONT_SIZE,
-                        text_rotation,
-                        Color32::WHITE,
-                    )
-                    }
-                ).inner;
+
+                let response = frame
+                    .show(ui, |ui| {
+                        let text_rotation = match orientation {
+                            TabOrientation::Left => TextRotation::Anticlockwise90,
+                            TabOrientation::Right => TextRotation::Clockwise90,
+                            TabOrientation::Top => TextRotation::Neutral,
+                        };
+                        text_rotator(
+                            ui,
+                            tab_headings[i],
+                            TAB_FONT_SIZE,
+                            text_rotation,
+                            Color32::WHITE,
+                        )
+                    })
+                    .inner;
+                ui.add_space(8.0);
                 if response.clicked() {
-                    info!("Reponse happened {i}");
-                    (self.handle_click) (ui, i)
+                    (self.handle_click)(ui, i)
                 }
-    }});
-}
+            }
+        });
+    }
 }
