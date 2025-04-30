@@ -1,15 +1,18 @@
 use super::super::{ModMatrixView, Piano, PianoOrientation};
 use super::subsynth_oscillator::SubSynthOscillatorView;
+use crate::app_state::DataState;
 use crate::view::View;
 use eframe::egui;
 use egui::{Color32, Ui};
 use lazy_static::lazy_static;
+use log::info;
 use shared::model::SubSynthConfig;
 use shared::{
     model::{PitchName, ScaleValue},
     types::PitchValue,
 };
 use state::Action;
+use crate::widget::{TabDisplay, TabOrientation};
 
 pub struct SubSynthView<'a, F: Fn(Action), G: Fn()> {
     config: &'a SubSynthConfig,
@@ -81,6 +84,16 @@ impl<F: Fn(Action), G: Fn()> View for SubSynthView<'_, F, G> {
                     on_release,
                 )
                 .ui(ui); // must wrap in ui.vertical to stop the matrix from unnecessarily stretching vertically
+
+            let handle_lfo_tab_click: Box<dyn Fn(&mut egui::Ui, usize) + Send + Sync + 'static> = Box::new(move |ui, index| {
+                DataState::SubSynthLfoTab.set_value(ui, index);
+                info!("THIS HAPPENED {index}");
+                let blah = DataState::SubSynthLfoTab.get_value::<usize>(ui).unwrap_or_default();
+                info!("BLAH IS: {blah}")
+            });
+            let active_lfo_tab = DataState::SubSynthLfoTab.get_value::<usize>(ui).unwrap_or_default();
+            TabDisplay::new(active_lfo_tab, vec!["LFO 1", "LFO 2", "LFO 3"], TabOrientation::Left, handle_lfo_tab_click).ui(ui);
+
             });
         });
 
@@ -101,5 +114,15 @@ impl<F: Fn(Action), G: Fn()> View for SubSynthView<'_, F, G> {
         }
 
         draw_piano(ui);
+
+        // let handle_tab_click: Box<dyn Fn(&mut egui::Ui, usize) + Send + Sync + 'static> = Box::new(move |ui, index| {
+        //     DataState::SubSynthLfoTab.set_value(ui, index);
+        // });
+        // let Some(active_tab): Option<usize> = DataState::ActiveTrackIndex.get_value(ui) else {
+        //     return;
+        // };
+
+        // TabDisplay::new(active_tab, vec!["LFO 1", "LFO 2"], TabOrientation::Left, handle_tab_click).ui(ui);
+
     }
 }
