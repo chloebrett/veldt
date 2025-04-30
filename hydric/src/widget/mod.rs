@@ -18,6 +18,6 @@ pub use selectable_value::*;
 pub use sequencer::*;
 pub use slider::*;
 pub use string_observer::*;
+pub use tab_display::*;
 pub use text_rotator::*;
 pub use window::*;
-pub use tab_display::*;

@@ -167,11 +167,9 @@ impl DataState {
                 | Self::NoteRollSelectMode => data.insert_temp::<Option<bool>>(self.get_id(), None),
                 Self::ActiveNoteIndex
                 | Self::ActiveTrackIndex
-                | Self::ActiveTrackPlacementIndex 
+                | Self::ActiveTrackPlacementIndex
                 | Self::SubSynthLfoTab
-                | Self::SubSynthEnvTab => {
-                    data.insert_temp::<Option<usize>>(self.get_id(), None)
-                }
+                | Self::SubSynthEnvTab => data.insert_temp::<Option<usize>>(self.get_id(), None),
                 Self::SelectedNoteIndexes | Self::SelectedTrackPlacementIndexes => {
                     data.insert_temp::<Option<BTreeSet<usize>>>(self.get_id(), None);
                 }

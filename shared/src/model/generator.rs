@@ -28,11 +28,9 @@ pub struct GeneratorInstance {
 impl From<GeneratorType> for GeneratorTypeProto {
     fn from(item: GeneratorType) -> Self {
         match item {
-            GeneratorType::SimpleWave { config } => {
-                Self::SimpleWave(SimpleWaveProto {
-                    config: Some(config.into()),
-                })
-            }
+            GeneratorType::SimpleWave { config } => Self::SimpleWave(SimpleWaveProto {
+                config: Some(config.into()),
+            }),
             GeneratorType::Noise { config } => Self::Noise(NoiseProto {
                 config: Some(config.into()),
             }),
