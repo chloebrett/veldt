@@ -102,12 +102,12 @@ message PitchNameProto {
 message EffectInstanceProto {
   EffectMetaProto meta = 1;
 
-  oneof effect {
-    SimpleDelayProto simple_delay = 2;
+  oneof it {
+    DelayProto delay = 2;
 
     SimpleEqProto simple_eq = 3;
 
-    SimpleCompressorProto simple_compressor = 4;
+    CompressorProto compressor = 4;
 
     ModDelayProto mod_delay = 5;
   }
@@ -115,13 +115,13 @@ message EffectInstanceProto {
 }
 
 message GeneratorInstanceProto {
-  uint32 id = 1;
-
   GeneratorMetaProto meta = 2;
 
-  oneof kind {
+  oneof it {
     SimpleWaveProto simple_wave = 3;
+
     NoiseProto noise = 4;
+
     SubSynthProto sub_synth = 5;
   };
 }
@@ -149,7 +149,7 @@ message SubSynthConfigProto {
   repeated OscillatorConfigProto oscillators = 1; 
   repeated LfoConfigProto lfos = 2;
   repeated AdsrEnvelopeProto envelopes = 3;
-  ModMatrixProto matrix_config = 4;  
+  ModMatrixProto matrix = 4;  
 }
 
 message OscillatorConfigProto {
@@ -188,14 +188,12 @@ message SimpleWaveConfigProto {
 }
 
 message EffectMetaProto {
-  uint32 id = 1;
-
   float wet = 2;
 
   bool mute = 3;
 }
 
-message SimpleDelayProto {
+message DelayProto {
   DelayConfigProto config = 1;
 }
 
@@ -206,10 +204,10 @@ message DelayConfigProto {
 }
 
 message SimpleEqProto {
-  EqConfigProto config = 1;
+  SimpleEqConfigProto config = 1;
 }
 
-message EqConfigProto {
+message SimpleEqConfigProto {
   EqTypeProto kind = 1;
 
   float fc = 2;
@@ -219,7 +217,7 @@ message EqConfigProto {
   float gain = 4;
 }
 
-message SimpleCompressorProto {
+message CompressorProto {
   CompressorConfigProto config = 1;
 }
 

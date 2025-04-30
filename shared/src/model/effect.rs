@@ -1,21 +1,17 @@
-use crate::model::{EqConfig, WaveType};
+use crate::model::{SimpleEqConfig, WaveType};
 use crate::pmodel::{
-    CompressorConfigProto, DelayConfigProto, EffectInstanceProto, EffectMetaProto,
-    ModDelayConfigProto, ModDelayProto, SimpleCompressorProto, SimpleDelayProto, SimpleEqProto,
-    effect_instance_proto,
+    CompressorConfigProto, CompressorProto, DelayConfigProto, DelayProto, EffectInstanceProto,
+    EffectMetaProto, ModDelayConfigProto, ModDelayProto, SimpleEqProto,
+    effect_instance_proto::It as EffectProto,
 };
 use crate::types::{Freq, KnobPosition, Milliseconds, Volume};
-use effect_instance_proto::Effect as EffectProto;
 use local_macro::{FromProto, IntoProto};
 use strum::{EnumIter, EnumString};
-
-type EffectId = usize;
-type _EffectInstanceId = usize;
 
 #[derive(Clone, Debug, PartialEq, FromProto, IntoProto)]
 pub struct EffectInstance {
     #[proto_optional]
-    pub effect: Effect,
+    pub it: Effect,
 
     #[proto_optional]
     pub meta: EffectMeta,
@@ -25,18 +21,10 @@ pub struct EffectInstance {
 impl From<EffectProto> for Effect {
     fn from(item: EffectProto) -> Self {
         match item {
-            EffectProto::SimpleDelay(simple_delay) => Self::SimpleDelay {
-                config: simple_delay.config.unwrap().into(),
-            },
-            EffectProto::SimpleEq(simple_eq) => Self::SimpleEq {
-                config: simple_eq.config.unwrap().into(),
-            },
-            EffectProto::SimpleCompressor(simple_compressor) => Self::SimpleCompressor {
-                config: simple_compressor.config.unwrap().into(),
-            },
-            EffectProto::ModDelay(mod_delay) => Self::ModDelay {
-                config: mod_delay.config.unwrap().into(),
-            },
+            EffectProto::Delay(it) => Self::Delay(it.config.unwrap().into()),
+            EffectProto::SimpleEq(it) => Self::SimpleEq(it.config.unwrap().into()),
+            EffectProto::Compressor(it) => Self::Compressor(it.config.unwrap().into()),
+            EffectProto::ModDelay(it) => Self::ModDelay(it.config.unwrap().into()),
         }
     }
 }
@@ -44,16 +32,16 @@ impl From<EffectProto> for Effect {
 impl From<Effect> for EffectProto {
     fn from(item: Effect) -> Self {
         match item {
-            Effect::SimpleDelay { config } => Self::SimpleDelay(SimpleDelayProto {
+            Effect::Delay(config) => Self::Delay(DelayProto {
                 config: Some(config.into()),
             }),
-            Effect::SimpleEq { config } => Self::SimpleEq(SimpleEqProto {
+            Effect::SimpleEq(config) => Self::SimpleEq(SimpleEqProto {
                 config: Some(config.into()),
             }),
-            Effect::SimpleCompressor { config } => Self::SimpleCompressor(SimpleCompressorProto {
+            Effect::Compressor(config) => Self::Compressor(CompressorProto {
                 config: Some(config.into()),
             }),
-            Effect::ModDelay { config } => Self::ModDelay(ModDelayProto {
+            Effect::ModDelay(config) => Self::ModDelay(ModDelayProto {
                 config: Some(config.into()),
             }),
         }
@@ -62,27 +50,23 @@ impl From<Effect> for EffectProto {
 
 #[derive(Clone, Debug, PartialEq, EnumIter, EnumString)]
 pub enum Effect {
-    SimpleDelay { config: DelayConfig },
-    // simple as opposed to parametric.
-    SimpleEq { config: EqConfig },
-    SimpleCompressor { config: CompressorConfig },
+    Delay(DelayConfig),
+    // Simple as opposed to parametric.
+    SimpleEq(SimpleEqConfig),
+    Compressor(CompressorConfig),
     // Modulated delay, e.g. vibrato, flanger, chorus.
-    ModDelay { config: ModDelayConfig },
+    ModDelay(ModDelayConfig),
 }
 
 #[derive(Clone, Debug, PartialEq, FromProto, IntoProto)]
 pub struct EffectMeta {
-    #[proto_type_u32]
-    pub id: EffectId,
     pub wet: KnobPosition,
     pub mute: bool,
-    // TODO: pan
 }
 
 impl Default for EffectMeta {
     fn default() -> Self {
         Self {
-            id: 0,
             wet: 1.0,
             mute: false,
         }
@@ -110,6 +94,7 @@ pub struct ModDelayConfig {
     pub min_depth: u32, // Samples
     pub max_depth: u32, // Samples
     pub freq: Freq,     // LFO rate
+
     #[proto_enum]
     pub lfo_type: WaveType,
     // No support for feedback for now.

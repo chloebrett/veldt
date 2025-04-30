@@ -133,8 +133,7 @@ mod tests {
                 sample_rate: 1.0,
             }],
             generators: vec![GeneratorInstance {
-                id: 0,
-                kind: GeneratorType::SimpleWave(SimpleWaveConfig {
+                it: GeneratorType::SimpleWave(SimpleWaveConfig {
                     wave: WaveType::Sine,
                     envelope: AdsrEnvelope {
                         attack: 0.1,
