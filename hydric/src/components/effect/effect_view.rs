@@ -32,7 +32,7 @@ impl<'a, F: Fn(Action), G: Fn()> EffectView<'a, F, G> {
             .get(mixer_index)?
             .effects
             .get(effect_index)?
-            .effect;
+            .it;
         let visible = window_state.effects.get((mixer_index, effect_index));
         let on_close =
             Box::new(move || window_state.effects.set((mixer_index, effect_index), false));
@@ -78,14 +78,12 @@ impl<F: Fn(Action), G: Fn()> View for EffectView<'_, F, G> {
             |_| on_close(),
             |ui| {
                 match effect {
-                    Effect::SimpleEq { config } => EqView::new(config, dispatch, on_release).ui(ui),
-                    Effect::SimpleDelay { config } => {
-                        DelayView::new(config, dispatch, on_release).ui(ui)
-                    }
-                    Effect::SimpleCompressor { config } => {
+                    Effect::SimpleEq(config) => EqView::new(config, dispatch, on_release).ui(ui),
+                    Effect::Delay(config) => DelayView::new(config, dispatch, on_release).ui(ui),
+                    Effect::Compressor(config) => {
                         CompressorView::new(config, dispatch, on_release).ui(ui)
                     }
-                    Effect::ModDelay { config } => {
+                    Effect::ModDelay(config) => {
                         ModDelayView::new(config, dispatch, on_release).ui(ui)
                     }
                 }
@@ -103,9 +101,9 @@ impl<F: Fn(Action), G: Fn()> View for EffectView<'_, F, G> {
 
 pub fn effect_name(effect: &Effect) -> &str {
     match effect {
-        Effect::SimpleEq { .. } => "EQ",
-        Effect::SimpleDelay { .. } => "Delay",
-        Effect::SimpleCompressor { .. } => "Compressor",
-        Effect::ModDelay { .. } => "Modulated Delay",
+        Effect::SimpleEq(_) => "EQ",
+        Effect::Delay(_) => "Delay",
+        Effect::Compressor(_) => "Compressor",
+        Effect::ModDelay(_) => "Modulated Delay",
     }
 }

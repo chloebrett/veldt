@@ -1,4 +1,4 @@
-use crate::app_state::DataState;
+use crate::DataState;
 use crate::view::View;
 use crate::widget::{StateWindow, default_window, get_set, int_slider, selectable_value};
 use egui::{Ui, pos2};

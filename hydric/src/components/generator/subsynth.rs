@@ -83,7 +83,7 @@ impl<F: Fn(Action), G: Fn()> View for SubSynthView<'_, F, G> {
 
             ui.vertical(|ui| {
                 ModMatrixView::new(
-                    &config.matrix_config,
+                    &config.matrix,
                     vec!["ENV 1", "ENV 2", "ENV 3", "LFO 1", "LFO 2", "LFO 3"],
                     vec!["OSC 1", "OSC 2", "OSC 3"],
                     dispatch,

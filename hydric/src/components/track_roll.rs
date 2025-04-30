@@ -1,7 +1,7 @@
 use std::collections::BTreeSet;
 
 use crate::{
-    app_state::{DataState, WindowState, update_select_data_state},
+    DataState, WindowState, update_select_data_state,
     view::View,
     widget::{Sequencer, SequencerObject, default_window},
 };
