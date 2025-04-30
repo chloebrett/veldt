@@ -1,3 +1,4 @@
+use state::{EffectSelector, GeneratorSelector, MixerSelector};
 use std::cmp::{Eq, Ord};
 use std::collections::HashSet;
 use std::hash::Hash;
@@ -5,11 +6,8 @@ use std::hash::Hash;
 pub struct MixerWindowState {
     pub visible: bool,
     // Currently active / shown channel.
-    pub channel: usize,
+    pub channel: MixerSelector,
 }
-
-pub type EffectSelector = (usize, usize);
-pub type GeneratorSelector = usize;
 
 /// Which windows are currently shown.
 pub struct WindowState {
@@ -28,7 +26,7 @@ impl Default for WindowState {
         Self {
             mixer: MixerWindowState {
                 visible: false,
-                channel: 0,
+                channel: MixerSelector(0),
             },
             effects: WindowStateField(HashSet::new()),
             generator_list: false,

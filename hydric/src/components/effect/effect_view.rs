@@ -4,14 +4,13 @@ use crate::view::View;
 use crate::widget::{StateWindow, default_window};
 use egui::{Pos2, Ui};
 use shared::model::Effect;
-use state::{Action, Store};
+use state::{Action, EffectSelector, Store};
 
 pub struct EffectView<'a, F: Fn(Action), G: Fn()> {
     visible: bool,
     on_close: Box<dyn FnMut() + 'a>,
     effect: &'a Effect,
-    mixer_index: usize,
-    effect_index: usize,
+    selector: EffectSelector,
     dispatch: F,
     on_release: G,
 }
@@ -19,30 +18,21 @@ pub struct EffectView<'a, F: Fn(Action), G: Fn()> {
 impl<'a, F: Fn(Action), G: Fn()> EffectView<'a, F, G> {
     pub fn new(
         store: &'a Store,
-        mixer_index: usize,
-        effect_index: usize,
+        selector: &'a EffectSelector,
         window_state: &'a mut WindowState,
         dispatch: F,
         on_release: G,
     ) -> Option<Self> {
-        let effect = &store
-            .get()
-            .project
-            .mixer
-            .get(mixer_index)?
-            .effects
-            .get(effect_index)?
-            .it;
-        let visible = window_state.effects.get((mixer_index, effect_index));
-        let on_close =
-            Box::new(move || window_state.effects.set((mixer_index, effect_index), false));
+        let effect = store.try_select(selector)?;
+        let effect: &'a Effect = &effect.it;
+        let visible = window_state.effects.get(*selector);
+        let on_close = Box::new(move || window_state.effects.set(*selector, false));
 
         Some(Self {
             visible,
             on_close,
             effect,
-            mixer_index,
-            effect_index,
+            selector: *selector,
             dispatch,
             on_release,
         })
@@ -55,21 +45,19 @@ impl<F: Fn(Action), G: Fn()> View for EffectView<'_, F, G> {
             visible,
             on_close,
             effect,
-            mixer_index,
-            effect_index,
             ..
         } = self;
         let dispatch = &self.dispatch;
         let on_release = &self.on_release;
-
         let title = effect_name(effect);
+        let EffectSelector(mixer_index, effect_index) = self.selector;
 
         StateWindow(
             default_window(title)
                 .id(format!("effects_{}_{}", mixer_index, effect_index).into())
                 .default_pos(Pos2 {
-                    x: 1000.0 + 50.0 * *effect_index as f32,
-                    y: 150.0 + 50.0 * *effect_index as f32,
+                    x: 1000.0 + 50.0 * effect_index as f32,
+                    y: 150.0 + 50.0 * effect_index as f32,
                 }),
         )
         .show_with_closure(
@@ -91,8 +79,8 @@ impl<F: Fn(Action), G: Fn()> View for EffectView<'_, F, G> {
                 ui.separator();
                 ui.label(format!(
                     "Mixer {} | Effect {}",
-                    *mixer_index + 1,
-                    *effect_index + 1
+                    mixer_index + 1,
+                    effect_index + 1
                 ));
             },
         );
