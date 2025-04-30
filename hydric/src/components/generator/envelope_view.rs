@@ -84,22 +84,21 @@ impl<F: Fn(Action), G: Fn()> View for EnvelopeView<'_, F, G> {
         let envelope = self.envelope.clone();
         let dispatch = &self.dispatch;
         let on_release = &self.on_release;
-        Frame::canvas(ui.style()).show(ui, |ui| {
-            ui.ctx().request_repaint();
-            let desired_size = vec2(100.0, 50.0);
-            let (_id, rect) = ui.allocate_space(desired_size);
-            let to_screen =
-                RectTransform::from_to(Rect::from_x_y_ranges(0.0..=1.0, 1.0..=0.0), rect);
-
-            let shape = ui.memory_mut(|memory| {
-                let cache = memory.caches.cache::<AdsrEnvelopeCache<'_>>();
-                cache.get(self.envelope.clone().into())
-            });
-
-            ui.painter().extend(vec![shape].transform(to_screen));
-        });
-
         ui.horizontal(|ui| {
+            Frame::canvas(ui.style()).show(ui, |ui| {
+                ui.ctx().request_repaint();
+                let desired_size = vec2(200.0, 115.0);
+                let (_id, rect) = ui.allocate_space(desired_size);
+                let to_screen =
+                    RectTransform::from_to(Rect::from_x_y_ranges(0.0..=1.0, 1.0..=0.0), rect);
+
+                let shape = ui.memory_mut(|memory| {
+                    let cache = memory.caches.cache::<AdsrEnvelopeCache<'_>>();
+                    cache.get(self.envelope.clone().into())
+                });
+
+                ui.painter().extend(vec![shape].transform(to_screen));
+            });
             ui.vertical(|ui| {
                 knob(
                     ui,
@@ -129,8 +128,6 @@ impl<F: Fn(Action), G: Fn()> View for EnvelopeView<'_, F, G> {
                     /* neutral= */ 0.2,
                     on_release,
                 );
-            });
-            ui.vertical(|ui| {
                 knob(
                     ui,
                     "Sustain",
