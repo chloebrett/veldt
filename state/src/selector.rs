@@ -1,6 +1,108 @@
+use crate::StoreData;
 use shared::action_proto::{
     SelectorProto, selector_proto::IndexPair, selector_proto::Kind as SelectorKind,
 };
+use shared::model::{
+    EffectInstance, GeneratorInstance, MixerChannel, OscillatorConfig, PlacedNote, Placement,
+    SubSynthConfig, Track,
+};
+
+// TODO: rename to just Selector when Selector enum is gone.
+trait SelectorTrait {
+    type Item;
+
+    fn select<'a>(&'a self, store: &'a StoreData) -> &'a Self::Item {
+        self.try_select(store).unwrap()
+    }
+
+    fn try_select<'a>(&'a self, store: &'a StoreData) -> Option<&'a Self::Item>;
+}
+
+struct RootSelector;
+struct TrackSelector(/* track_index */ usize);
+struct NoteSelector(/* track_index */ usize, /* note_index */ usize);
+struct MixerSelector(/* mixer_index */ usize);
+struct EffectSelector(/* mixer_index */ usize, /* effect_index */ usize);
+struct GeneratorSelector(/* generator_index */ usize);
+struct PlacementSelector(/* placement_index */ usize);
+struct OscillatorSelector(
+    /* generator_index */ usize,
+    /* oscillator_index */ usize,
+);
+
+impl SelectorTrait for RootSelector {
+    type Item = StoreData;
+
+    fn try_select<'a>(&'a self, store: &'a StoreData) -> Option<&'a Self::Item> {
+        Some(store)
+    }
+}
+
+impl SelectorTrait for TrackSelector {
+    type Item = Track;
+
+    fn try_select<'a>(&'a self, store: &'a StoreData) -> Option<&'a Self::Item> {
+        store.project.tracks.get(self.0)
+    }
+}
+
+impl SelectorTrait for NoteSelector {
+    type Item = PlacedNote;
+
+    fn try_select<'a>(&'a self, store: &'a StoreData) -> Option<&'a Self::Item> {
+        store
+            .project
+            .tracks
+            .get(self.0)
+            .and_then(|it| it.notes.get(self.1))
+    }
+}
+
+impl SelectorTrait for MixerSelector {
+    type Item = MixerChannel;
+
+    fn try_select<'a>(&'a self, store: &'a StoreData) -> Option<&'a Self::Item> {
+        store.project.mixer.get(self.0)
+    }
+}
+
+impl SelectorTrait for EffectSelector {
+    type Item = EffectInstance;
+
+    fn try_select<'a>(&'a self, store: &'a StoreData) -> Option<&'a Self::Item> {
+        store
+            .project
+            .mixer
+            .get(self.0)
+            .and_then(|it| it.effects.get(self.1))
+    }
+}
+
+impl SelectorTrait for GeneratorSelector {
+    type Item = GeneratorInstance;
+
+    fn try_select<'a>(&'a self, store: &'a StoreData) -> Option<&'a Self::Item> {
+        store.project.generators.get(self.0)
+    }
+}
+
+impl SelectorTrait for PlacementSelector {
+    type Item = Placement;
+
+    fn try_select<'a>(&'a self, store: &'a StoreData) -> Option<&'a Self::Item> {
+        store.project.placements.get(self.0)
+    }
+}
+
+impl SelectorTrait for OscillatorSelector {
+    type Item = OscillatorConfig;
+
+    fn try_select<'a>(&'a self, store: &'a StoreData) -> Option<&'a Self::Item> {
+        let instance = &store.project.generators.get(self.0)?;
+        let subsynth: &SubSynthConfig = (&instance.it).try_into().ok()?;
+        subsynth.oscillators.get(self.1)
+    }
+}
 
 #[derive(Clone, Debug, PartialEq)]
 pub enum Selector {
