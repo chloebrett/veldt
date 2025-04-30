@@ -13,8 +13,7 @@ use shared::{
     types::PitchValue,
 };
 use state::{
-    Action, FloatField, IndexField, NoteSelector, SelectorTrait, Store, TrackSelector,
-    TypeField,
+    Action, FloatField, IndexField, NoteSelector, SelectorTrait, Store, TrackSelector, TypeField,
 };
 use std::collections::BTreeSet;
 
