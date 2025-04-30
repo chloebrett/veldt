@@ -3,6 +3,7 @@ use crate::view::View;
 use crate::widget::text_rotator;
 use egui::{Color32, FontId, Frame, Stroke, Ui, Vec2};
 
+#[derive(Clone)]
 pub enum TabOrientation {
     Left,
     Right,
@@ -10,6 +11,16 @@ pub enum TabOrientation {
 }
 
 type OnTabClick = Box<dyn Fn(&mut egui::Ui, usize) + Send + Sync + 'static>;
+
+impl From<TabOrientation> for TextRotation {
+    fn from(orientation: TabOrientation) -> Self {
+        match orientation {
+            TabOrientation::Left => TextRotation::Anticlockwise90,
+            TabOrientation::Right => TextRotation::Clockwise90,
+            TabOrientation::Top => TextRotation::Neutral,
+        }
+    }
+}
 
 pub struct TabDisplay<'a> {
     active_tab: usize,
@@ -77,7 +88,7 @@ impl View for TabDisplay<'_> {
         };
         ui.vertical(|ui| {
             ui.add_space(8.0);
-            for i in 0..tab_headings.len() {
+            for i in 0..num_tabs {
                 let frame = if i == self.active_tab {
                     Frame::new()
                         .fill(ACTIVE_TAB_COLOUR)
@@ -94,11 +105,7 @@ impl View for TabDisplay<'_> {
 
                 let response = frame
                     .show(ui, |ui| {
-                        let text_rotation = match orientation {
-                            TabOrientation::Left => TextRotation::Anticlockwise90,
-                            TabOrientation::Right => TextRotation::Clockwise90,
-                            TabOrientation::Top => TextRotation::Neutral,
-                        };
+                        let text_rotation = orientation.clone().into();
                         text_rotator(
                             ui,
                             tab_headings[i],

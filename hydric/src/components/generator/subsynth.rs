@@ -29,7 +29,6 @@ impl<'a, F: Fn(Action), G: Fn()> SubSynthView<'a, F, G> {
     }
 }
 
-// initialising constants
 const CHART_FILL_ALPHA: u8 = opacity_percentage_to_alpha(44.0);
 const HORIZONTAL_SPACE: f32 = 3.0;
 
