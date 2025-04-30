@@ -1,4 +1,5 @@
 use crate::StoreData;
+use crate::receiver::ActionReceiver;
 use shared::action_proto::{
     SelectorProto, selector_proto::IndexPair, selector_proto::Kind as SelectorKind,
 };
@@ -8,32 +9,48 @@ use shared::model::{
 };
 
 // TODO: rename to just Selector when Selector enum is gone.
-trait SelectorTrait {
-    type Item;
+pub trait SelectorTrait {
+    type Item: ActionReceiver;
 
     fn select<'a>(&'a self, store: &'a StoreData) -> &'a Self::Item {
         self.try_select(store).unwrap()
     }
 
+    fn select_mut<'a>(&'a self, store: &'a mut StoreData) -> &'a mut Self::Item {
+        self.try_select_mut(store).unwrap()
+    }
+
     fn try_select<'a>(&'a self, store: &'a StoreData) -> Option<&'a Self::Item>;
+
+    fn try_select_mut<'a>(&'a self, store: &'a mut StoreData) -> Option<&'a mut Self::Item>;
 }
 
-struct RootSelector;
-struct TrackSelector(/* track_index */ usize);
-struct NoteSelector(/* track_index */ usize, /* note_index */ usize);
-struct MixerSelector(/* mixer_index */ usize);
-struct EffectSelector(/* mixer_index */ usize, /* effect_index */ usize);
-struct GeneratorSelector(/* generator_index */ usize);
-struct PlacementSelector(/* placement_index */ usize);
-struct OscillatorSelector(
-    /* generator_index */ usize,
-    /* oscillator_index */ usize,
+pub struct RootSelector;
+pub struct TrackSelector(/* track_index */ pub usize);
+pub struct NoteSelector(
+    /* track_index */ pub usize,
+    /* note_index */ pub usize,
+);
+pub struct MixerSelector(/* mixer_index */ pub usize);
+pub struct EffectSelector(
+    /* mixer_index */ pub usize,
+    /* effect_index */ pub usize,
+);
+pub struct GeneratorSelector(/* generator_index */ pub usize);
+pub struct PlacementSelector(/* placement_index */ pub usize);
+pub struct OscillatorSelector(
+    /* generator_index */ pub usize,
+    /* oscillator_index */ pub usize,
 );
 
 impl SelectorTrait for RootSelector {
     type Item = StoreData;
 
     fn try_select<'a>(&'a self, store: &'a StoreData) -> Option<&'a Self::Item> {
+        Some(store)
+    }
+
+    fn try_select_mut<'a>(&'a self, store: &'a mut StoreData) -> Option<&'a mut Self::Item> {
         Some(store)
     }
 }
@@ -43,6 +60,10 @@ impl SelectorTrait for TrackSelector {
 
     fn try_select<'a>(&'a self, store: &'a StoreData) -> Option<&'a Self::Item> {
         store.project.tracks.get(self.0)
+    }
+
+    fn try_select_mut<'a>(&'a self, store: &'a mut StoreData) -> Option<&'a mut Self::Item> {
+        store.project.tracks.get_mut(self.0)
     }
 }
 
@@ -56,6 +77,14 @@ impl SelectorTrait for NoteSelector {
             .get(self.0)
             .and_then(|it| it.notes.get(self.1))
     }
+
+    fn try_select_mut<'a>(&'a self, store: &'a mut StoreData) -> Option<&'a mut Self::Item> {
+        store
+            .project
+            .tracks
+            .get_mut(self.0)
+            .and_then(|it| it.notes.get_mut(self.1))
+    }
 }
 
 impl SelectorTrait for MixerSelector {
@@ -63,6 +92,10 @@ impl SelectorTrait for MixerSelector {
 
     fn try_select<'a>(&'a self, store: &'a StoreData) -> Option<&'a Self::Item> {
         store.project.mixer.get(self.0)
+    }
+
+    fn try_select_mut<'a>(&'a self, store: &'a mut StoreData) -> Option<&'a mut Self::Item> {
+        store.project.mixer.get_mut(self.0)
     }
 }
 
@@ -76,6 +109,14 @@ impl SelectorTrait for EffectSelector {
             .get(self.0)
             .and_then(|it| it.effects.get(self.1))
     }
+
+    fn try_select_mut<'a>(&'a self, store: &'a mut StoreData) -> Option<&'a mut Self::Item> {
+        store
+            .project
+            .mixer
+            .get_mut(self.0)
+            .and_then(|it| it.effects.get_mut(self.1))
+    }
 }
 
 impl SelectorTrait for GeneratorSelector {
@@ -83,6 +124,10 @@ impl SelectorTrait for GeneratorSelector {
 
     fn try_select<'a>(&'a self, store: &'a StoreData) -> Option<&'a Self::Item> {
         store.project.generators.get(self.0)
+    }
+
+    fn try_select_mut<'a>(&'a self, store: &'a mut StoreData) -> Option<&'a mut Self::Item> {
+        store.project.generators.get_mut(self.0)
     }
 }
 
@@ -92,15 +137,25 @@ impl SelectorTrait for PlacementSelector {
     fn try_select<'a>(&'a self, store: &'a StoreData) -> Option<&'a Self::Item> {
         store.project.placements.get(self.0)
     }
+
+    fn try_select_mut<'a>(&'a self, store: &'a mut StoreData) -> Option<&'a mut Self::Item> {
+        store.project.placements.get_mut(self.0)
+    }
 }
 
 impl SelectorTrait for OscillatorSelector {
     type Item = OscillatorConfig;
 
     fn try_select<'a>(&'a self, store: &'a StoreData) -> Option<&'a Self::Item> {
-        let instance = &store.project.generators.get(self.0)?;
+        let instance = store.project.generators.get(self.0)?;
         let subsynth: &SubSynthConfig = (&instance.it).try_into().ok()?;
         subsynth.oscillators.get(self.1)
+    }
+
+    fn try_select_mut<'a>(&'a self, store: &'a mut StoreData) -> Option<&'a mut Self::Item> {
+        let instance = store.project.generators.get_mut(self.0)?;
+        let subsynth: &mut SubSynthConfig = (&mut instance.it).try_into().ok()?;
+        subsynth.oscillators.get_mut(self.1)
     }
 }
 
