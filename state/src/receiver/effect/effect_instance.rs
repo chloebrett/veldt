@@ -8,11 +8,11 @@ impl ActionReceiver for EffectInstance {
             return Some(undo);
         }
 
-        match &mut self.effect {
-            Effect::SimpleDelay { config } => config.apply(action),
-            Effect::SimpleEq { config } => config.apply(action),
-            Effect::SimpleCompressor { config } => config.apply(action),
-            Effect::ModDelay { config } => config.apply(action),
+        match &mut self.it {
+            Effect::Delay(config) => config.apply(action),
+            Effect::SimpleEq(config) => config.apply(action),
+            Effect::Compressor(config) => config.apply(action),
+            Effect::ModDelay(config) => config.apply(action),
         }
     }
 }
