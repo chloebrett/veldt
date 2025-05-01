@@ -1,5 +1,5 @@
 use crate::graph::ProcessContext;
-use crate::wave::{beats_to_samples, sub_synth_wave};
+use crate::wave::{beats_to_samples, subsynth_wave};
 use dasp_graph::{Buffer, Input, Node};
 use shared::model::{
     Generator, GeneratorInstance, GeneratorMeta, Placement, SubSynthConfig, Track, TrackPlacement,
