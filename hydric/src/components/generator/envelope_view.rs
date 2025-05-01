@@ -97,7 +97,7 @@ impl<F: Fn(Action), G: Fn()> View for EnvelopeView<'_, F, G> {
                     cache.get(self.envelope.clone().into())
                 });
 
-                ui.painter().extend(vec![shape].transform(to_screen));
+                ui.painter().add(shape.transform(to_screen));
             });
             ui.vertical(|ui| {
                 knob(
