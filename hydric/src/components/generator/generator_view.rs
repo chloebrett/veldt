@@ -5,7 +5,7 @@ use crate::widget::StateWindow;
 use crate::widget::default_window;
 use egui::{Pos2, Ui};
 use shared::model::Generator;
-use state::{Action, GeneratorSelector, OscillatorSelector, Store};
+use state::{Action, GeneratorSelector, Store};
 
 pub struct GeneratorView<'a, F: FnMut()> {
     store: &'a Store,
@@ -56,13 +56,7 @@ impl<F: FnMut()> View for GeneratorView<'_, F> {
                         }
                         Generator::Noise(_) => todo!(),
                         Generator::SubSynth(config) => {
-                            let generator_index = self.selector.0;
-                            let dispatch = |osc_index: usize, action| {
-                                self.store.dispatch2(
-                                    &OscillatorSelector(generator_index, osc_index),
-                                    action,
-                                )
-                            };
+                            SubSynthView::new(&config, dispatch, on_release).ui(ui);
                         }
                     };
                 },
