@@ -1,5 +1,3 @@
-use std::collections::BTreeSet;
-
 use super::Piano;
 use crate::{
     DataState, update_select_data_state,
@@ -14,7 +12,10 @@ use shared::{
     model::{Note, PitchName, PlacedNote, Scale, ScaleValue},
     types::PitchValue,
 };
-use state::{Action, FloatField, IndexField, Selector, Store, TypeField};
+use state::{
+    Action, FloatField, IndexField, NoteSelector, SelectorTrait, Store, TrackSelector, TypeField,
+};
+use std::collections::BTreeSet;
 
 pub struct NoteRoll<'a> {
     store: &'a Store,
@@ -115,8 +116,8 @@ impl View for NoteRoll<'_> {
         window.show(ui, DataState::NoteRollWindow, |ui| {
             ui.horizontal(|ui| {
                 if ui.button("New note").clicked() {
-                    store.dispatch(
-                        &Selector::Track(track_index),
+                    store.dispatch2(
+                        &TrackSelector(track_index),
                         Action::AddChild(TypeField::PlacedNote(default_note)),
                     );
                 }
@@ -256,8 +257,8 @@ impl SequencerObject<PlacedNote> for PlacedNote {
         ])
     }
 
-    fn selector(index: usize, parent_index: Option<usize>) -> Selector {
-        Selector::Note(
+    fn selector(index: usize, parent_index: Option<usize>) -> impl SelectorTrait {
+        NoteSelector(
             parent_index.expect("Track index should have been set as parent index"),
             index,
         )
@@ -273,8 +274,8 @@ impl SequencerObject<PlacedNote> for PlacedNote {
     }
 
     fn add_new(&self, store: &Store, parent_index: Option<usize>) {
-        store.dispatch(
-            &Selector::Track(parent_index.expect("Should have been track index.")),
+        store.dispatch2(
+            &TrackSelector(parent_index.expect("Should have been track index.")),
             Action::AddChild(TypeField::PlacedNote(self.clone())),
         );
     }
@@ -292,8 +293,8 @@ impl SequencerObject<PlacedNote> for PlacedNote {
     }
 
     fn delete(store: &Store, index: usize, parent_index: Option<usize>) {
-        store.dispatch(
-            &Selector::Track(parent_index.expect("Should have been a parent index")),
+        store.dispatch2(
+            &TrackSelector(parent_index.expect("Should have been a parent index")),
             Action::DeleteChild(IndexField::PlacedNote(index)),
         );
     }
