@@ -86,7 +86,7 @@ impl<F: Fn(Action), G: Fn()> View for EnvelopeView<'_, F, G> {
         let on_release = &self.on_release;
         Frame::canvas(ui.style()).show(ui, |ui| {
             ui.ctx().request_repaint();
-            let desired_size = vec2(100.0, 50.0);
+            let desired_size = vec2(200.0, 100.0);
             let (_id, rect) = ui.allocate_space(desired_size);
             let to_screen =
                 RectTransform::from_to(Rect::from_x_y_ranges(0.0..=1.0, 1.0..=0.0), rect);
