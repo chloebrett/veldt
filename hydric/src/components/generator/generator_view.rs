@@ -1,4 +1,4 @@
-use super::simple_wave_control;
+use super::simple_wave_control::SimpleWaveView;
 use super::subsynth::SubSynthView;
 use crate::view::View;
 use crate::widget::StateWindow;
@@ -52,7 +52,7 @@ impl<F: FnMut()> View for GeneratorView<'_, F> {
 
                     match generator {
                         Generator::SimpleWave(config) => {
-                            simple_wave_control(&config, dispatch, on_release, ui)
+                            SimpleWaveView::new(&config, dispatch, on_release).ui(ui)
                         }
                         Generator::Noise(_) => todo!(),
                         Generator::SubSynth(config) => {
