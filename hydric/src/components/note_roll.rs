@@ -21,6 +21,7 @@ use std::collections::BTreeSet;
 
 pub struct NoteRoll<'a> {
     store: &'a Store,
+    local_state: &'a mut LocalState,
     min_note: PitchValue,
     max_note: PitchValue,
     offset: f32,
@@ -28,9 +29,10 @@ pub struct NoteRoll<'a> {
 }
 
 impl<'a> NoteRoll<'a> {
-    pub fn new(store: &'a Store) -> Self {
+    pub fn new(store: &'a Store, local_state: &'a mut LocalState) -> Self {
         Self {
             store,
+            local_state,
             min_note: PitchName {
                 scale_value: ScaleValue::A,
                 octave: 1,
@@ -78,8 +80,9 @@ impl View for NoteRoll<'_> {
             max_note,
             offset,
             bar_length,
+            ..
         } = *self;
-        let Some(track_index): Option<usize> = DataState::ActiveTrackIndex.get_value(ui) else {
+        let Some(TrackSelector(track_index)) = self.local_state.active_track else {
             return;
         };
         let default_note = PlacedNote {
@@ -251,7 +254,7 @@ impl SequencerObject<PlacedNote> for PlacedNote {
         )
     }
 
-    fn set_active(&mut self, ui: &mut Ui, local_state: &mut LocalState, index: usize) {
+    fn set_active(&mut self, ui: &mut Ui, _local_state: &mut LocalState, index: usize) {
         DataState::NoteWindow.set_value(ui, true);
         DataState::ActiveNoteIndex.set_value(ui, index);
     }

@@ -150,7 +150,7 @@ impl View for App {
         }
 
         NoteView::new(&self.store).ui(ui);
-        NoteRoll::new(&self.store).ui(ui);
+        NoteRoll::new(&self.store, &mut self.local_state).ui(ui);
         TrackPlacementView::new(&self.store).ui(ui);
 
         SampleTreeView::new(
