@@ -407,28 +407,6 @@ mod tests {
         }
     }
 
-    fn make_subsynth_config() -> SubSynthConfig {
-        SubSynthConfig {
-            oscillators: [
-                OscillatorConfig {
-                    wave: WaveType::Sine,
-                    ..BASE_OSC
-                },
-                OscillatorConfig {
-                    wave: WaveType::Triangle,
-                    ..BASE_OSC
-                },
-                OscillatorConfig {
-                    wave: WaveType::Square,
-                    ..BASE_OSC
-                },
-            ],
-            lfos: [BASE_LFO; 3],
-            envelopes: [BASE_ENV; 3],
-            matrix: ModMatrix::new(6, 3),
-        }
-    }
-
     fn make_generator_meta() -> GeneratorMeta {
         GeneratorMeta {
             volume: 1.0,
@@ -443,21 +421,6 @@ mod tests {
         let bpm = 120.0;
         let generator_node = SimpleWaveGeneratorNode::new(
             make_simple_wave_config(),
-            make_generator_meta(),
-            0,
-            vec![placement],
-            vec![track],
-            bpm,
-        );
-        generator_node
-    }
-
-    fn make_subsynth_generator_node() -> SubSynthNode {
-        let track = make_track();
-        let placement = make_placement();
-        let bpm = 120.0;
-        let generator_node = SubSynthNode::new(
-            make_subsynth_config(),
             make_generator_meta(),
             0,
             vec![placement],
