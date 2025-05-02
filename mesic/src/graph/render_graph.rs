@@ -4,6 +4,7 @@ use super::{
     Processor, SimpleWaveGeneratorNode, make_graph, make_processor,
 };
 use crate::consts::SAMPLE_RATE;
+use crate::graph::subsynth_node::SubSynthNode;
 use crate::wave::beats_to_samples;
 use dasp_frame::Stereo;
 use dasp_graph::{BoxedNodeSend, Buffer, Node, NodeData, node::Sum};
@@ -117,6 +118,20 @@ impl RenderGraph {
                     );
                     self.add_simple_wave_generator(generator_node);
                 }
+                GeneratorInstance {
+                    it: Generator::SubSynth(config),
+                    meta,
+                } => {
+                    let generator_node = SubSynthNode::new(
+                        config.clone(),
+                        meta.clone(),
+                        generator_index,
+                        placements,
+                        tracks,
+                        bpm,
+                    );
+                    self.add_subsynth_generator(generator_node);
+                }
                 _ => {
                     // TODO: support adding other types of generators to the graph.
                 }
@@ -175,6 +190,15 @@ impl RenderGraph {
     }
 
     pub fn add_simple_wave_generator(&mut self, node: SimpleWaveGeneratorNode) {
+        let node_index = self
+            .graph
+            .add_node(NodeData::new2(BoxedNodeSend::new(node)));
+        // Keep track of node index to easily connect to Effects and Mixers
+        self.generator_indexes.push(node_index);
+        self.graph.add_edge(node_index, self.output_node_index, ());
+    }
+
+    pub fn add_subsynth_generator(&mut self, node: SubSynthNode) {
         let node_index = self
             .graph
             .add_node(NodeData::new2(BoxedNodeSend::new(node)));

@@ -29,6 +29,7 @@ impl<F: Fn(Action), G: Fn()> View for ModDelayView<'_, F, G> {
 
         // TODO: support integer knobs.
         // TODO: clamp the value within each frame to prevent min_depth from exceeding max_depth.
+        // Currently this is only clamped the following frame, which looks janky.
         knob(
             ui,
             "Min depth (samples)",

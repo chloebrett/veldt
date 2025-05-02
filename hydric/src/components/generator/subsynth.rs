@@ -1,6 +1,6 @@
-use super::super::{ModMatrixView, Piano, PianoOrientation};
 use super::subsynth_oscillator::SubSynthOscillatorView;
 use crate::DataState;
+use crate::components::{ModMatrixView, Piano, PianoOrientation};
 use crate::view::View;
 use crate::widget::{TabDisplay, TabOrientation};
 use eframe::egui;
@@ -11,20 +11,27 @@ use shared::{
     model::{PitchName, ScaleValue},
     types::PitchValue,
 };
-use state::Action;
+use state::{Action, GeneratorSelector, Store};
 
-pub struct SubSynthView<'a, F: Fn(Action), G: Fn()> {
+pub struct SubSynthView<'a, G: Fn()> {
     config: &'a SubSynthConfig,
-    dispatch: F,
     on_release: G,
+    store: &'a Store,
+    generator_sel: &'a GeneratorSelector,
 }
 
-impl<'a, F: Fn(Action), G: Fn()> SubSynthView<'a, F, G> {
-    pub fn new(config: &'a SubSynthConfig, dispatch: F, on_release: G) -> Self {
+impl<'a, G: Fn()> SubSynthView<'a, G> {
+    pub fn new(
+        config: &'a SubSynthConfig,
+        on_release: G,
+        store: &'a Store,
+        generator_sel: &'a GeneratorSelector,
+    ) -> Self {
         Self {
             config,
-            dispatch,
             on_release,
+            store,
+            generator_sel,
         }
     }
 }
@@ -46,23 +53,26 @@ lazy_static! {
     pub static ref ORANGE_OUTLINE: Color32 = Color32::from_rgb(227, 172, 84);
     pub static ref ORANGE_FILL: Color32 =
         Color32::from_rgba_unmultiplied(215, 171, 53, CHART_FILL_ALPHA);
-    pub static ref LINE_COLOURS: [Color32; 3] = [*GREEN_OUTLINE, *PINK_OUTLINE, *ORANGE_OUTLINE,];
-    pub static ref FILL_COLOURS: [Color32; 3] = [*GREEN_FILL, *PINK_FILL, *ORANGE_FILL,];
+    pub static ref LINE_COLOURS: [Color32; 3] = [*GREEN_OUTLINE, *PINK_OUTLINE, *ORANGE_OUTLINE];
+    pub static ref FILL_COLOURS: [Color32; 3] = [*GREEN_FILL, *PINK_FILL, *ORANGE_FILL];
 }
 
-impl<F: Fn(Action), G: Fn()> View for SubSynthView<'_, F, G> {
+impl<G: Fn()> View for SubSynthView<'_, G> {
     fn ui(&mut self, ui: &mut Ui) {
         let config = self.config;
-        let dispatch = &self.dispatch;
         let on_release = &self.on_release;
+        let gen_sel = self.generator_sel;
+        let gen_dispatch = |action| self.store.dispatch(gen_sel, action); // TODO: fix this for the mod_matrix
 
         ui.horizontal(|ui| {
             ui.vertical(|ui| {
                 for oscillator_id in 0..3 {
+                    let osc_sel = gen_sel.downcast_oscillator(oscillator_id);
+                    let osc_dispatch = |action| self.store.dispatch(&osc_sel, action);
                     ui.push_id(oscillator_id, |ui| {
                         SubSynthOscillatorView::new(
                             &config.oscillators[oscillator_id],
-                            &dispatch,
+                            &osc_dispatch,
                             &on_release,
                             LINE_COLOURS[oscillator_id],
                             FILL_COLOURS[oscillator_id],
@@ -86,7 +96,7 @@ impl<F: Fn(Action), G: Fn()> View for SubSynthView<'_, F, G> {
                     &config.matrix,
                     vec!["ENV 1", "ENV 2", "ENV 3", "LFO 1", "LFO 2", "LFO 3"],
                     vec!["OSC 1", "OSC 2", "OSC 3"],
-                    dispatch,
+                    gen_dispatch, // TODO: need to change this dispatch so that actions for modmatrix work, currently takes GeneratorSelector
                     on_release,
                 )
                 .ui(ui); // must wrap in ui.vertical to stop the matrix from unnecessarily stretching vertically
@@ -149,9 +159,8 @@ impl<F: Fn(Action), G: Fn()> View for SubSynthView<'_, F, G> {
                 octave: 8,
             }
             .into();
-            Piano::new(max_note, min_note - 1)
-                .with_orientation(PianoOrientation::Horizontal)
-                .ui(ui);
+            // TODO: piano is only rendering a subset of these notes.
+            Piano::new(max_note, min_note, PianoOrientation::Horizontal).ui(ui);
         }
 
         draw_piano(ui);

@@ -98,7 +98,7 @@ fn wave(
     buffer
 }
 
-pub fn sub_synth_wave(
+pub fn subsynth_wave(
     pitch_name: &PitchName,
     beats: Beats,
     bpm: Beats,

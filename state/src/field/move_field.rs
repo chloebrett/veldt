@@ -1,27 +1,12 @@
+use local_macro::{FromProto, IntoProto};
 use shared::action_proto::MoveFieldProto;
 
 use super::IndexField;
 
-#[derive(Clone, Debug, PartialEq)]
+#[derive(IntoProto, FromProto, Clone, Debug, PartialEq)]
 pub struct MoveField {
+    #[proto_optional]
     pub from_field: IndexField,
+    #[proto_optional]
     pub to_field: IndexField,
-}
-
-impl From<MoveFieldProto> for MoveField {
-    fn from(object: MoveFieldProto) -> Self {
-        Self {
-            from_field: object.from_field.unwrap().into(),
-            to_field: object.to_field.unwrap().into(),
-        }
-    }
-}
-
-impl From<MoveField> for MoveFieldProto {
-    fn from(object: MoveField) -> Self {
-        Self {
-            from_field: Some(object.from_field.into()),
-            to_field: Some(object.to_field.into()),
-        }
-    }
 }

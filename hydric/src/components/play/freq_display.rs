@@ -36,20 +36,20 @@ impl<'a> FrequencyDisplay<'a> {
         // Round `current_sample` so that the audio will be broken up into chunks based on
         // the visualisation frame rate.
         let chunk_head = current_sample / frame_size * frame_size;
-        if chunk_head + FFT_SAMPLE_SIZE < audio.len() {
-            // Cast as `OrderedFloat` set-length array so that the value can be cached.
-            let slice: [OrderedFloat<f32>; FFT_SAMPLE_SIZE] = audio
-                [chunk_head..(chunk_head + FFT_SAMPLE_SIZE)]
-                .try_into()
-                .unwrap_or([OrderedFloat(0.0); FFT_SAMPLE_SIZE]);
-
-            Some(ui.memory_mut(|memory| {
-                let cache = memory.caches.cache::<FrequencyDisplayCache<'_>>();
-                cache.get(FrequencyDisplayKey { audio: slice })
-            }))
-        } else {
-            None
+        if chunk_head + FFT_SAMPLE_SIZE >= audio.len() {
+            return None;
         }
+
+        // Cast as `OrderedFloat` set-length array so that the value can be cached.
+        let slice: [OrderedFloat<f32>; FFT_SAMPLE_SIZE] = audio
+            [chunk_head..(chunk_head + FFT_SAMPLE_SIZE)]
+            .try_into()
+            .unwrap_or([OrderedFloat(0.0); FFT_SAMPLE_SIZE]);
+
+        Some(ui.memory_mut(|memory| {
+            let cache = memory.caches.cache::<FrequencyDisplayCache<'_>>();
+            cache.get(FrequencyDisplayKey { audio: slice })
+        }))
     }
 }
 

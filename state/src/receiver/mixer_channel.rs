@@ -2,6 +2,8 @@ use crate::receiver::ActionReceiver;
 use crate::{Action, IndexField, MoveField, TypeField};
 use shared::model::MixerChannel;
 
+use super::move_elem;
+
 impl ActionReceiver for MixerChannel {
     fn apply(&mut self, action: &Action) -> Option<Action> {
         Some(match action {
@@ -17,23 +19,16 @@ impl ActionReceiver for MixerChannel {
                 from_field,
                 to_field,
             }) => {
-                if let (IndexField::Effect(from), IndexField::Effect(to)) = (from_field, to_field) {
-                    let prev = MoveField {
-                        from_field: to_field.clone(),
-                        to_field: from_field.clone(),
-                    };
-                    self.effects.insert(*to, self.effects[*from].clone());
-                    if from > to {
-                        // Inserted value has increased original index of value by 1
-                        self.effects.remove(from + 1);
-                    } else if from <= to {
-                        // Inserted value has not changed original index of value
-                        self.effects.remove(*from);
-                    };
-                    Action::MoveChild(prev)
-                } else {
-                    panic!("Action should have only recieved Effect IndexFields.")
-                }
+                let (IndexField::Effect(from), IndexField::Effect(to)) = (from_field, to_field)
+                else {
+                    panic!("Action should have only received Effect IndexFields.")
+                };
+                let prev = MoveField {
+                    from_field: to_field.clone(),
+                    to_field: from_field.clone(),
+                };
+                move_elem(&mut self.effects, *from, *to);
+                Action::MoveChild(prev)
             }
             Action::DeleteChild(IndexField::Effect(effect_index)) => {
                 let prev = self.effects[*effect_index].clone();

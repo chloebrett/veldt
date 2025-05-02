@@ -1,5 +1,6 @@
 use dasp_graph::{BoxedNodeSend, Buffer, Input, NodeData};
 use petgraph::stable_graph::StableGraph;
+use shared::types::{KnobPosition, Volume};
 use state::StoreData;
 
 mod amp_node;
@@ -75,4 +76,11 @@ fn extract_inputs_2(input: &[Input]) -> [(&Buffer, &Buffer); 2] {
     debug_assert!(input.len() >= 2);
     let x = extract_inputs(input);
     [x[0], x[1]]
+}
+
+/// TODO: use exponential pan curves, instead of linear.
+fn pan_multipliers(pan: KnobPosition) -> [Volume; 2] {
+    let left = 0.5 * (1.0 - pan);
+    let right = 0.5 * (1.0 + pan);
+    [left, right]
 }

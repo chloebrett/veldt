@@ -6,11 +6,8 @@ use crate::data_state::DataState;
 use crate::view::View;
 use crate::widget::{default_window, knob};
 use crate::window_state::WindowStateField;
-use egui::{
-    Button, Color32, Frame, InnerResponse, Layout, Pos2, Rect, Response, Stroke, Ui, Widget,
-};
-use shared::model::{Effect, EffectInstance, EffectMeta, MixerChannel};
-use shared::pmodel::effect_instance_proto;
+use egui::{Button, Color32, Frame, InnerResponse, Layout, Pos2, Response, Stroke, Ui, Widget};
+use shared::model::{Effect, EffectInstance, EffectMeta};
 use state::{
     Action, EffectSelector, FloatField, IndexField, MixerSelector, MoveField, Store, TypeField,
 };
@@ -76,7 +73,7 @@ impl View for MixerView<'_> {
         } = self;
         let mixer_sel = window_state.mixer.channel;
         let mixer = &store.select(&mixer_sel);
-        let dispatch_mixer = |action| store.dispatch2(&mixer_sel, action);
+        let dispatch_mixer = |action| store.dispatch(&mixer_sel, action);
         let on_release = || store.dispatchr(Action::Release);
         let MixerSelector(mixer_index) = mixer_sel;
         let edit_state = DataState::EditMixerState.get_value(ui).unwrap_or_default();
@@ -106,8 +103,8 @@ impl View for MixerView<'_> {
                         for effect_index in 0..mixer.effects.len() {
                             let effect_sel = mixer_sel.downcast_effect(effect_index);
                             let effect_window = &mut window_state.effects;
-                            let effect_dispatch =
-                                |action: Action| store.dispatch2(&effect_sel, action);
+                            let dispatch_effect =
+                                |action: Action| store.dispatch(&effect_sel, action);
                             // TODO Determine if this is the best way to do this.
                             // There seems to be no way to render an object once then pass the
                             // response into the `dnd_drag_zone` if `edit_state` is true.
@@ -118,7 +115,7 @@ impl View for MixerView<'_> {
                                         &mixer.effects[effect_index],
                                         effect_sel,
                                         effect_window,
-                                        effect_dispatch,
+                                        dispatch_effect,
                                         on_release,
                                     ),
                                 )
