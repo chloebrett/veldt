@@ -45,6 +45,7 @@ impl SubSynthNode {
     }
 }
 
+// NOTE: most logic is the exact same as simple wave generator node
 impl Node<ProcessContext> for SimpleWaveGeneratorNode {
     // TODO: a lot of this processing logic is generic and should be shared with
     // other generator types. How?
