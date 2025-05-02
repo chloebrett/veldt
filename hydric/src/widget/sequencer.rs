@@ -288,8 +288,6 @@ impl<T: SequencerObject<T>> Widget for Sequencer<'_, T> {
 pub trait SequencerObject<T> {
     fn to_pos(&self, range: Rect) -> Pos2;
 
-    fn to_pos_horizontal(&self, range: Rect) -> Pos2;
-
     fn to_rect(&self, range: Rect) -> Rect;
 
     fn x_action(&self, x: f32, range: Rect) -> Option<Action>;

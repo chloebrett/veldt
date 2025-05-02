@@ -1,6 +1,8 @@
 use super::Piano;
 use crate::{
-    DataState, update_select_data_state,
+    DataState,
+    transform::Yx,
+    update_select_data_state,
     view::View,
     widget::{Sequencer, SequencerObject, StateWindow, default_window},
 };
@@ -148,14 +150,6 @@ impl View for NoteRoll<'_> {
 impl SequencerObject<PlacedNote> for PlacedNote {
     fn to_pos(&self, range: Rect) -> Pos2 {
         let offset: f32 = self.offset.into();
-        let x = offset - range.left();
-        let pitch_value: PitchValue = self.note.pitch_name.into();
-        let y = range.bottom() as i32 - pitch_value;
-        pos2(x, y as f32)
-    }
-
-    fn to_pos_horizontal(&self, range: Rect) -> Pos2 {
-        let offset: f32 = self.offset.into();
         let y = offset - range.top();
         let pitch_value: PitchValue = self.note.pitch_name.into();
         let x = range.right() as i32 - pitch_value;
@@ -163,7 +157,7 @@ impl SequencerObject<PlacedNote> for PlacedNote {
     }
 
     fn to_rect(&self, range: Rect) -> Rect {
-        let pos = self.to_pos(range);
+        let pos = self.to_pos(range.yx()).yx();
         let note_size = vec2(self.note.beats, 1.0);
         Rect::from_min_size(pos, note_size)
     }

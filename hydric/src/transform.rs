@@ -1,4 +1,6 @@
-use egui::{Pos2, Rect, Shape, emath::RectTransform, epaint::PathShape, epaint::RectShape};
+use egui::{
+    CornerRadius, Pos2, Rect, Shape, emath::RectTransform, epaint::PathShape, epaint::RectShape,
+};
 
 pub trait Transform<T> {
     fn transform(&self, rect: RectTransform) -> T;
@@ -57,5 +59,33 @@ impl Transform<Self> for Pos2 {
 impl Transform<Self> for Vec<Pos2> {
     fn transform(&self, rect: RectTransform) -> Self {
         self.iter().map(|it| it.transform(rect)).collect()
+    }
+}
+
+/// Transposes a 2D object, replacing x values with y values and vice versa.
+pub trait Yx {
+    fn yx(&self) -> Self;
+}
+
+impl Yx for Pos2 {
+    fn yx(&self) -> Self {
+        // This function already exists for Vec2.
+        self.to_vec2().yx().to_pos2()
+    }
+}
+
+impl Yx for Rect {
+    fn yx(&self) -> Self {
+        Rect::from_min_max(self.min.yx(), self.max.yx())
+    }
+}
+
+impl Yx for CornerRadius {
+    fn yx(&self) -> Self {
+        CornerRadius {
+            ne: self.sw,
+            sw: self.ne,
+            ..*self
+        }
     }
 }

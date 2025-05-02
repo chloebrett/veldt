@@ -1,5 +1,6 @@
 use crate::{
-    DataState, WindowState, update_select_data_state,
+    DataState, WindowState,
+    update_select_data_state,
     view::View,
     widget::{Sequencer, SequencerObject, default_window},
 };
@@ -113,14 +114,6 @@ impl SequencerObject<PlacedTrack> for PlacedTrack {
         let track_placement: &TrackPlacement = (&self.placement).try_into().unwrap();
 
         // TODO handling multiple channels. Currently all are at `y=0`.
-        let y = track_placement.track_index as f32;
-        let x = *self.placement.offset - range.left();
-        pos2(x, y)
-    }
-
-    fn to_pos_horizontal(&self, range: Rect) -> Pos2 {
-        let track_placement: &TrackPlacement = (&self.placement).try_into().unwrap();
-
         let y = track_placement.track_index as f32;
         let x = *self.placement.offset - range.left();
         pos2(x, y)

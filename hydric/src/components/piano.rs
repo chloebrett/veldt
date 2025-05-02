@@ -1,4 +1,8 @@
-use crate::{transform::Transform, view::View, widget::SequencerObject};
+use crate::{
+    transform::{Transform, Yx},
+    view::View,
+    widget::SequencerObject,
+};
 use egui::{
     Color32, CornerRadius, Frame, Pos2, Rect, Sense, Shape, Stroke, StrokeKind, Ui, Vec2,
     emath::RectTransform, vec2,
@@ -88,21 +92,13 @@ impl Piano {
     }
 
     fn make_white_key(&self, note: PlacedNote, offset: f32, note_size: f32) -> Shape {
-        // TODO: this whole expression just produces the same rect but inverted, if given the same
-        // range each time!
-        let rect = match self.orientation {
-            PianoOrientation::Vertical => {
-                let note_pos = note.to_pos(self.range()) + vec2(0.0, offset);
-                let size = vec2(1.0, note_size);
-                Rect::from_min_size(note_pos, size)
-            }
-            PianoOrientation::Horizontal => {
-                // TODO: get rid of to_pos_horizontal, and just pass a vertical range here?
-                let note_pos = note.to_pos_horizontal(self.range()) + vec2(offset, 0.0);
-                let size = vec2(note_size, 1.0);
-                Rect::from_min_size(note_pos, size)
-            }
-        };
+        let note_pos = note.to_pos(self.range()) + vec2(offset, 0.0);
+        let size = vec2(note_size, 1.0);
+        let mut rect = Rect::from_min_size(note_pos, size);
+        if self.orientation == PianoOrientation::Vertical {
+            rect = rect.yx();
+        }
+
         Shape::rect_stroke(
             rect,
             CornerRadius::ZERO,
@@ -116,7 +112,7 @@ impl Piano {
 
         let (note_pos, note_size, corner_radius) = match self.orientation {
             PianoOrientation::Vertical => {
-                let note_pos = note.to_pos(self.range());
+                let note_pos = note.to_pos(self.range()).yx();
                 let note_size = vec2(black_note_length, 1.0);
                 // No radius on the left and small radius on the right.
                 // To reflect the actual shape of black keys on a piano.
@@ -129,7 +125,7 @@ impl Piano {
                 (note_pos, note_size, corner_radius)
             }
             PianoOrientation::Horizontal => {
-                let note_pos = note.to_pos_horizontal(self.range());
+                let note_pos = note.to_pos(self.range());
                 let note_size = vec2(1.0, black_note_length);
                 // No radius on the top and small radius on the bottom
                 let corner_radius = CornerRadius {
@@ -150,16 +146,18 @@ impl Piano {
     }
 
     fn range(&self) -> Rect {
-        let mut range =
-            Rect::from_x_y_ranges(self.min_note as f32..=self.max_note as f32, 0.0..=1.0);
-        if self.orientation == PianoOrientation::Vertical {
-            range = range.yx();
-        }
-        range
+        Rect::from_x_y_ranges(self.min_note as f32..=self.max_note as f32, 0.0..=1.0)
     }
 
     fn from_rect(&self) -> Rect {
-        Rect::from_min_size(Pos2::ZERO, self.range().size())
+        Rect::from_min_size(Pos2::ZERO, self.transpose_if_vertical(&self.range()).size())
+    }
+
+    fn transpose_if_vertical(&self, rect: &Rect) -> Rect {
+        match self.orientation {
+            PianoOrientation::Horizontal => *rect,
+            PianoOrientation::Vertical => rect.yx(),
+        }
     }
 }
 
@@ -184,29 +182,14 @@ impl View for Piano {
                     "min_note: {}, max_note: {}",
                     self.min_note, self.max_note
                 ));
-                ui.label(format!("range: {:?}", self.range()));
+                ui.label(format!(
+                    "range: {:?}",
+                    self.transpose_if_vertical(&self.range())
+                ));
                 ui.label(format!("Total notes: {}", self.max_note - self.min_note));
                 let piano_keys = self.make_all_piano_keys(self.get_piano_notes());
                 ui.label(format!("Piano keys: {:?}", piano_keys))
             });
         }
-    }
-}
-
-/// Transposes a 2D object, replacing x values with y values and vice versa.
-trait Yx {
-    fn yx(&self) -> Self;
-}
-
-impl Yx for Pos2 {
-    fn yx(&self) -> Self {
-        // This function already exists for Vec2.
-        self.to_vec2().yx().to_pos2()
-    }
-}
-
-impl Yx for Rect {
-    fn yx(&self) -> Self {
-        Rect::from_min_max(self.min.yx(), self.max.yx())
     }
 }
