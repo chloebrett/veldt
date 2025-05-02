@@ -6,67 +6,38 @@ use crate::data_state::DataState;
 use crate::view::View;
 use crate::widget::{default_window, knob};
 use crate::window_state::WindowStateField;
-use egui::{Button, Color32, Frame, InnerResponse, Pos2, Response, Sense, Stroke, Ui, Widget};
+use egui::{
+    Button, Color32, Frame, InnerResponse, Layout, Pos2, Rect, Response, Stroke, Ui, Widget,
+};
 use shared::model::{Effect, EffectInstance, EffectMeta, MixerChannel};
-use state::{Action, EffectSelector, FloatField, IndexField, MoveField, Store, TypeField};
+use shared::pmodel::effect_instance_proto;
+use state::{
+    Action, EffectSelector, FloatField, IndexField, MixerSelector, MoveField, Store, TypeField,
+};
 use strum::IntoEnumIterator;
 
-struct EffectWidget<'a, F: Fn()> {
-    store: &'a Store,
-    effect_window: &'a mut WindowStateField<EffectSelector>,
-    mixer: &'a MixerChannel,
-    effect_index: usize,
-    effect_sel: EffectSelector,
-    on_release: F,
-}
-
-impl<'a, F: Fn()> EffectWidget<'a, F> {
-    fn new(
-        effect_sel: EffectSelector,
-        store: &'a Store,
-        effect_window: &'a mut WindowStateField<EffectSelector>,
-        mixer: &'a MixerChannel,
-        effect_index: usize,
-        on_release: F,
-    ) -> Self {
-        Self {
-            store,
-            effect_window,
-            mixer,
-            effect_index,
-            effect_sel,
-            on_release,
-        }
-    }
-}
-
-impl<G: Fn()> Widget for EffectWidget<'_, G> {
+impl<F: Fn(Action), G: Fn()> Widget for EffectWidget<'_, F, G> {
     fn ui(self, ui: &mut Ui) -> Response {
         let Self {
-            store,
+            effect,
             effect_window,
-            mixer,
-            effect_index,
             effect_sel,
+            dispatch,
             on_release,
         } = self;
         let InnerResponse { inner: _, response } = ui.horizontal(|ui| {
-            let dispatch_effect = |action| store.dispatch2(&effect_sel, action);
-            let effect = &mixer.effects[effect_index];
-
             let show = effect_window.get(effect_sel);
             let text = effect_name(&effect.it);
             let meta = &effect.meta;
 
-            let mute_response = ui.add(Button::new("Mute").selected(meta.mute));
-            if mute_response.clicked() {
-                dispatch_effect(Action::SetChild(TypeField::Mute(!meta.mute)))
+            if ui.add(Button::new("Mute").selected(meta.mute)).clicked() {
+                dispatch(Action::SetChild(TypeField::Mute(!meta.mute)))
             }
             knob(
                 ui,
                 "Wet",
                 meta.wet,
-                |it| dispatch_effect(Action::SetFloat(FloatField::Wet, it)),
+                |it| dispatch(Action::SetFloat(FloatField::Wet, it)),
                 0.0..=1.0,
                 /* neutral= */ 0.5,
                 on_release,
@@ -96,11 +67,6 @@ impl<'a> MixerView<'a> {
     }
 }
 
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
-struct Location {
-    row: usize,
-}
-
 impl View for MixerView<'_> {
     fn ui(&mut self, ui: &mut Ui) {
         let Self {
@@ -112,11 +78,11 @@ impl View for MixerView<'_> {
         let mixer = &store.select(&mixer_sel);
         let dispatch_mixer = |action| store.dispatch2(&mixer_sel, action);
         let on_release = || store.dispatchr(Action::Release);
-        let mixer_index = mixer_sel.0;
+        let MixerSelector(mixer_index) = mixer_sel;
         let edit_state = DataState::EditMixerState.get_value(ui).unwrap_or_default();
 
-        // Keep track of from where and to an object is dropped.
-        let mut from: Option<Arc<Location>> = None;
+        // Keep track of an object being dragged.
+        let mut from = None;
         let mut to = None;
 
         default_window("Mixer")
@@ -128,80 +94,59 @@ impl View for MixerView<'_> {
             .open(&mut window_state.mixer.visible)
             .show(ui.ctx(), |ui| {
                 ui.heading(format!("Mixer channel {}", mixer_index + 1));
-                let edit_response = ui.add(Button::new("Edit").selected(edit_state));
-                if edit_response.clicked() {
+                if ui.add(Button::new("Edit").selected(edit_state)).clicked() {
                     DataState::EditMixerState.set_value(ui, !edit_state)
                 };
                 ui.separator();
-                let frame = if edit_state {
-                    Frame::default()
-                } else {
-                    Frame::NONE
-                };
-                let (_, dropped_payload) = ui.dnd_drop_zone::<Location, ()>(frame, |ui| {
-                    for effect_index in 0..mixer.effects.len() {
-                        let effect_sel = mixer_sel.downcast_effect(effect_index);
-                        let effect_window = &mut window_state.effects;
-                        if !edit_state {
-                            let effect_response = ui.add(EffectWidget::new(
-                                effect_sel,
-                                store,
-                                effect_window,
-                                mixer,
-                                effect_index,
-                                on_release,
-                            ));
-                        } else {
-                            let id = egui::Id::new(("effect_config", effect_index));
-                            let location = Location { row: effect_index };
-                            let response = ui
-                                .dnd_drag_source(id, location, |ui| {
-                                    ui.add(EffectWidget::new(
+                ui.with_layout(Layout::default(), |ui| {
+                    // Set background to transparent to avoid a lightened background caused by drag
+                    // and drop.
+                    ui.visuals_mut().widgets.inactive.bg_fill = Color32::TRANSPARENT;
+                    ui.dnd_drop_zone::<usize, ()>(Frame::default(), |ui| {
+                        for effect_index in 0..mixer.effects.len() {
+                            let effect_sel = mixer_sel.downcast_effect(effect_index);
+                            let effect_window = &mut window_state.effects;
+                            let effect_dispatch =
+                                |action: Action| store.dispatch2(&effect_sel, action);
+                            // TODO Determine if this is the best way to do this.
+                            // There seems to be no way to render an object once then pass the
+                            // response into the `dnd_drag_zone` if `edit_state` is true.
+                            let mut render_effect_widget = |ui: &mut Ui| {
+                                ui.add_enabled(
+                                    !edit_state,
+                                    EffectWidget::new(
+                                        &mixer.effects[effect_index],
                                         effect_sel,
-                                        store,
                                         effect_window,
-                                        mixer,
-                                        effect_index,
+                                        effect_dispatch,
                                         on_release,
-                                    ));
-                                })
-                                .response;
-                            if let (Some(pointer), Some(hovered_payload)) = (
-                                ui.input(|i| i.pointer.interact_pos()),
-                                response.dnd_hover_payload::<Location>(),
-                            ) {
-                                let rect = response.rect;
-
-                                // Preview Insertion
-                                let stroke = Stroke::new(1.0, Color32::WHITE);
-                                let insert_row_index = if *hovered_payload == location {
-                                    // Object is dragging onto itself.
-                                    ui.painter().hline(rect.x_range(), rect.center().y, stroke);
-                                    effect_index
-                                } else if pointer.y < rect.center().y {
-                                    // Object is dragging from above
-                                    ui.painter().hline(rect.x_range(), rect.top(), stroke);
-                                    effect_index
-                                } else {
-                                    // Object is dragging from below
-                                    ui.painter().hline(rect.x_range(), rect.bottom(), stroke);
-                                    effect_index + 1
-                                };
-                                if let Some(dragged_payload) = response.dnd_release_payload() {
-                                    // Object was dropped here
-                                    from = Some(dragged_payload);
-                                    to = Some(Location {
-                                        row: insert_row_index,
-                                    });
+                                    ),
+                                )
+                            };
+                            if !edit_state {
+                                render_effect_widget(ui);
+                            } else {
+                                let id = egui::Id::new(("effect_config", effect_index));
+                                let response = ui
+                                    .dnd_drag_source(id, effect_index, |ui| {
+                                        render_effect_widget(ui)
+                                    })
+                                    .response;
+                                // Update `To` and `From` if an object has been dragged and
+                                // released.
+                                if let (Some(new_from), Some(new_to)) =
+                                    handle_drag(ui, response, effect_index)
+                                {
+                                    from = Some(new_from);
+                                    to = Some(new_to);
                                 }
                             }
                         }
-                    }
+                    });
                 });
-
                 ui.menu_button("Add new effect", |ui| {
                     for effect in Effect::iter() {
-                        let text = format!("{}", effect_name(&effect));
+                        let text = effect_name(&effect);
                         if ui.button(text).clicked() {
                             let instance = EffectInstance {
                                 it: effect,
@@ -211,19 +156,79 @@ impl View for MixerView<'_> {
                         }
                     }
                 });
-                if let Some(dragged_payload) = dropped_payload {
-                    // The object is dropped but not on any item
-                    from = Some(dragged_payload);
-                    to = Some(Location {
-                        row: mixer.effects.len() - 1,
-                    });
-                }
             });
+        // Update effects based on drag and drop.
         if let (Some(from), Some(to)) = (from, to) {
             dispatch_mixer(Action::MoveChild(MoveField {
-                from_field: IndexField::Effect(from.row),
-                to_field: IndexField::Effect(to.row),
+                from_field: IndexField::Effect(*from),
+                to_field: IndexField::Effect(to),
             }));
         }
     }
+}
+
+/// A widget to display and edit basic effect controls in the MixerView
+/// Makes it easier to drag and drop.
+struct EffectWidget<'a, F: Fn(Action), G: Fn()> {
+    effect: &'a EffectInstance,
+    effect_window: &'a mut WindowStateField<EffectSelector>,
+    effect_sel: EffectSelector,
+    dispatch: F,
+    on_release: G,
+}
+
+impl<'a, F: Fn(Action), G: Fn()> EffectWidget<'a, F, G> {
+    fn new(
+        effect: &'a EffectInstance,
+        effect_sel: EffectSelector,
+        effect_window: &'a mut WindowStateField<EffectSelector>,
+        dispatch: F,
+        on_release: G,
+    ) -> Self {
+        Self {
+            effect,
+            effect_window,
+            effect_sel,
+            dispatch,
+            on_release,
+        }
+    }
+}
+
+/// Handle where an object is dragged to and preview where it will be placed.
+/// Code adapted from
+/// https://github.com/emilk/egui/blob/master/crates/egui_demo_lib/src/demo/drag_and_drop.rs
+fn handle_drag(
+    ui: &mut Ui,
+    response: Response,
+    effect_index: usize,
+) -> (Option<Arc<usize>>, Option<usize>) {
+    let (mut from, mut to) = (None, None);
+    if let (Some(pointer), Some(hovered_payload)) = (
+        ui.input(|i| i.pointer.interact_pos()),
+        response.dnd_hover_payload::<usize>(),
+    ) {
+        let rect = response.rect;
+        // Preview Insertion
+        let stroke = Stroke::new(1.0, Color32::WHITE);
+        let insert_index = if *hovered_payload == effect_index {
+            // Object is dragging onto itself.
+            ui.painter().hline(rect.x_range(), rect.center().y, stroke);
+            effect_index
+        } else if pointer.y < rect.center().y {
+            // Object is dragging to above shape.
+            ui.painter().hline(rect.x_range(), rect.top(), stroke);
+            effect_index
+        } else {
+            // Object is dragging below shape.
+            ui.painter().hline(rect.x_range(), rect.bottom(), stroke);
+            effect_index + 1
+        };
+        if let Some(dragged_payload) = response.dnd_release_payload::<usize>() {
+            // Object was dropped here
+            from = Some(dragged_payload.clone());
+            to = Some(insert_index);
+        }
+    }
+    return (from, to);
 }
