@@ -18,6 +18,16 @@ pub fn audio_vis(audio_state: &mut AudioState, ui: &mut Ui) {
         let to_screen =
             emath::RectTransform::from_to(Rect::from_x_y_ranges(0.0..=1.0, 1.0..=-1.0), rect);
 
+        // Seek on click.
+        let response = ui.interact(rect, id, Sense::click());
+        if response.clicked() {
+            if let Some(point) = response.interact_pointer_pos {
+                let point = point.transform(to_screen.inverse());
+                let sample = point.x * audio_len;
+                audio_state.player.seek(sample as usize);
+            }
+        }
+
         let mut averages: Vec<f32> = vec![0.0; canvas_size.x as usize];
         let chunking = (audio_len / canvas_size.x) as i32;
         // TODO: put this into a generic util.
@@ -46,21 +56,11 @@ pub fn audio_vis(audio_state: &mut AudioState, ui: &mut Ui) {
             .iter()
             .map(|pos| {
                 epaint::Shape::line(
-                    vec![to_screen * *pos, to_screen * pos2(pos.x, -pos.y)],
+                    vec![*pos, pos2(pos.x, -pos.y)].transform(to_screen),
                     PathStroke::new(thickness, Color32::WHITE),
                 )
             })
             .collect();
-
-        // Seek on click.
-        let response = ui.interact(rect, id, Sense::click());
-        if response.clicked() {
-            if let Some(point) = response.interact_pointer_pos {
-                let point = point.transform(to_screen.inverse());
-                let sample = point.x * audio_len;
-                audio_state.player.seek(sample as usize);
-            }
-        }
 
         let position = audio_state.player.effective_pos();
         let playthrough_ratio = position as f32 / audio_len;

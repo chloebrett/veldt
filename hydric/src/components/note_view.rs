@@ -4,9 +4,7 @@ use crate::widget::{StateWindow, default_window, get_set, int_slider, selectable
 use egui::{Ui, pos2};
 use shared::model::ScaleValue;
 use shared::types::{Beats, Octave};
-use state::{
-    Action, FloatField, IndexField, NoteSelector, Selector, Store, TrackSelector, TypeField,
-};
+use state::{Action, FloatField, IndexField, NoteSelector, Store, TrackSelector, TypeField};
 use strum::IntoEnumIterator;
 
 pub struct NoteView<'a> {
@@ -41,7 +39,7 @@ impl View for NoteView<'_> {
                         selectable_value(
                             ui,
                             get_set(&scale_value, |it| {
-                                store.dispatch2(&sel, Action::SetChild(TypeField::ScaleValue(*it)))
+                                store.dispatch(&sel, Action::SetChild(TypeField::ScaleValue(*it)))
                             }),
                             &scale_note,
                             scale_note.to_string(),
@@ -54,7 +52,7 @@ impl View for NoteView<'_> {
                 ui,
                 "Octave",
                 octave,
-                |it| store.dispatch2(&sel, Action::SetChild(TypeField::Octave(it as Octave))),
+                |it| store.dispatch(&sel, Action::SetChild(TypeField::Octave(it as Octave))),
                 0..=8,
                 on_release,
             );
@@ -65,7 +63,7 @@ impl View for NoteView<'_> {
                 ui,
                 "Beats",
                 duration,
-                |it| store.dispatch2(&sel, Action::SetFloat(FloatField::Duration, it as Beats)),
+                |it| store.dispatch(&sel, Action::SetFloat(FloatField::Duration, it as Beats)),
                 0..=10,
                 on_release,
             );
@@ -76,13 +74,13 @@ impl View for NoteView<'_> {
                 ui,
                 "Offset",
                 offset,
-                |it| store.dispatch2(&sel, Action::SetFloat(FloatField::Offset, it as Beats)),
+                |it| store.dispatch(&sel, Action::SetFloat(FloatField::Offset, it as Beats)),
                 0..=16,
                 on_release,
             );
 
             if ui.button("Delete").clicked() {
-                store.dispatch2(
+                store.dispatch(
                     &TrackSelector(track_index),
                     Action::DeleteChild(IndexField::PlacedNote(note_index)),
                 );

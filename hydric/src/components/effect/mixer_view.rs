@@ -4,7 +4,7 @@ use crate::view::View;
 use crate::widget::{default_window, knob};
 use egui::{Button, Pos2, Ui};
 use shared::model::{Effect, EffectInstance, EffectMeta};
-use state::{Action, FloatField, IndexField, Store, TypeField};
+use state::{Action, FloatField, IndexField, MixerSelector, Store, TypeField};
 use strum::IntoEnumIterator;
 
 pub struct MixerView<'a> {
@@ -30,9 +30,9 @@ impl View for MixerView<'_> {
         } = self;
         let mixer_sel = window_state.mixer.channel;
         let mixer = &store.select(&mixer_sel);
-        let dispatch_mixer = |action| store.dispatch2(&mixer_sel, action);
+        let dispatch_mixer = |action| store.dispatch(&mixer_sel, action);
         let on_release = || store.dispatchr(Action::Release);
-        let mixer_index = mixer_sel.0;
+        let MixerSelector(mixer_index) = mixer_sel;
 
         default_window("Mixer")
             .id(format!("mixer_{mixer_index}").into())
@@ -69,15 +69,14 @@ impl View for MixerView<'_> {
                                 dispatch_mixer(Action::MoveEffectDown(effect_index));
                             }
                         });
-                        let dispatch_effect = |action| store.dispatch2(&effect_sel, action);
+                        let dispatch_effect = |action| store.dispatch(&effect_sel, action);
                         let effect = &mixer.effects[effect_index];
 
                         let show = window_state.effects.get(effect_sel);
                         let text = effect_name(&effect.it);
                         let meta = &effect.meta;
 
-                        let mute_response = ui.add(Button::new("Mute").selected(meta.mute));
-                        if mute_response.clicked() {
+                        if ui.add(Button::new("Mute").selected(meta.mute)).clicked() {
                             dispatch_effect(Action::SetChild(TypeField::Mute(!meta.mute)))
                         }
                         knob(
@@ -90,9 +89,10 @@ impl View for MixerView<'_> {
                             on_release,
                         );
 
-                        let response = ui
-                            .add(Button::new(text).selected(window_state.effects.get(effect_sel)));
-                        if response.clicked() {
+                        if ui
+                            .add(Button::new(text).selected(window_state.effects.get(effect_sel)))
+                            .clicked()
+                        {
                             window_state.effects.set(effect_sel, !show);
                         }
                     });
@@ -101,7 +101,7 @@ impl View for MixerView<'_> {
 
                 ui.menu_button("Add new effect", |ui| {
                     for effect in Effect::iter() {
-                        let text = format!("{}", effect_name(&effect));
+                        let text = effect_name(&effect);
                         if ui.button(text).clicked() {
                             let instance = EffectInstance {
                                 it: effect,
