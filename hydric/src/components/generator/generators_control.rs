@@ -1,7 +1,7 @@
+use super::generator_name;
 use crate::WindowState;
 use crate::widget::{default_window, knob};
 use egui::{Button, Pos2};
-use shared::model::Generator;
 use state::GeneratorSelector;
 use state::{Action, FloatField, Store, TypeField};
 
@@ -22,11 +22,7 @@ pub fn generators_control(ctx: &egui::Context, window_state: &mut WindowState, s
                 let on_release = || store.dispatchr(Action::Release);
 
                 let generator = &generators[generator_index];
-                let label = match &generator.it {
-                    Generator::SimpleWave { .. } => "Simple Wave Generator",
-                    Generator::Noise { .. } => "Noise Generator",
-                    Generator::SubSynth { .. } => "Subtractive Synthesiser",
-                };
+                let label = generator_name(generator);
                 let show = window_state.generators.get(sel);
                 let meta = generator.meta.clone();
                 ui.horizontal(|ui| {

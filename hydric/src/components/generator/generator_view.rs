@@ -4,7 +4,7 @@ use crate::view::View;
 use crate::widget::StateWindow;
 use crate::widget::default_window;
 use egui::{Pos2, Ui};
-use shared::model::Generator;
+use shared::model::{Generator, GeneratorInstance};
 use state::{Action, GeneratorSelector, Store};
 
 pub struct GeneratorView<'a, F: FnMut()> {
@@ -34,12 +34,7 @@ impl<F: FnMut()> View for GeneratorView<'_, F> {
     fn ui(&mut self, ui: &mut Ui) {
         let instance = &self.store.select(self.selector);
 
-        let title = match &instance.it {
-            Generator::SimpleWave(_) => "Simple Wave Generator",
-            Generator::Noise(_) => "Noise Generator",
-            Generator::SubSynth(_) => "Subtractive Synth",
-        };
-
+        let title = generator_name(instance);
         StateWindow(default_window(title).default_pos(Pos2 { x: 1100.0, y: 20.0 }))
             .show_with_closure(
                 ui,
@@ -61,5 +56,13 @@ impl<F: FnMut()> View for GeneratorView<'_, F> {
                     };
                 },
             );
+    }
+}
+
+pub fn generator_name(instance: &GeneratorInstance) -> &str {
+    match &instance.it {
+        Generator::SimpleWave(_) => "Simple Wave Generator",
+        Generator::Noise(_) => "Noise Generator",
+        Generator::SubSynth(_) => "Subtractive Synth",
     }
 }

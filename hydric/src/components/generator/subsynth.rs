@@ -46,8 +46,8 @@ lazy_static! {
     pub static ref ORANGE_OUTLINE: Color32 = Color32::from_rgb(227, 172, 84);
     pub static ref ORANGE_FILL: Color32 =
         Color32::from_rgba_unmultiplied(215, 171, 53, CHART_FILL_ALPHA);
-    pub static ref LINE_COLOURS: [Color32; 3] = [*GREEN_OUTLINE, *PINK_OUTLINE, *ORANGE_OUTLINE,];
-    pub static ref FILL_COLOURS: [Color32; 3] = [*GREEN_FILL, *PINK_FILL, *ORANGE_FILL,];
+    pub static ref LINE_COLOURS: [Color32; 3] = [*GREEN_OUTLINE, *PINK_OUTLINE, *ORANGE_OUTLINE];
+    pub static ref FILL_COLOURS: [Color32; 3] = [*GREEN_FILL, *PINK_FILL, *ORANGE_FILL];
 }
 
 impl<F: Fn(Action), G: Fn()> View for SubSynthView<'_, F, G> {

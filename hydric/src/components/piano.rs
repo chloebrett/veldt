@@ -32,9 +32,10 @@ impl Piano {
 
     pub fn with_orientation(mut self, orientation: PianoOrientation) -> Self {
         // Adjust size based on orientation
+        let dims = vec2(600.0, 50.0);
         self.size = match orientation {
-            PianoOrientation::Vertical => vec2(50.0, 600.0),
-            PianoOrientation::Horizontal => vec2(600.0, 50.0),
+            PianoOrientation::Horizontal => dims,
+            PianoOrientation::Vertical => dims.yx(),
         };
 
         self.orientation = orientation;
@@ -49,25 +50,20 @@ impl Piano {
         )
     }
 
-    fn get_piano_notes(&self, range: Rect) -> Vec<PlacedNote> {
+    fn get_piano_notes(&self, rect: Rect) -> Vec<PlacedNote> {
+        let note = |pitch_value: i32| PlacedNote {
+            note: Note {
+                pitch_name: pitch_value.into(),
+                beats: 0.0,
+            },
+            offset: 0.0.into(),
+        };
         match self.orientation {
-            PianoOrientation::Vertical => (range.top() as i32..=range.bottom() as i32)
-                .map(|pitch_value| PlacedNote {
-                    note: Note {
-                        pitch_name: pitch_value.into(),
-                        beats: 0.0,
-                    },
-                    offset: 0.0.into(),
-                })
+            PianoOrientation::Horizontal => (rect.left() as i32..=rect.right() as i32)
+                .map(note)
                 .collect(),
-            PianoOrientation::Horizontal => (range.left() as i32..=range.right() as i32)
-                .map(|pitch_value| PlacedNote {
-                    note: Note {
-                        pitch_name: pitch_value.into(),
-                        beats: 0.0,
-                    },
-                    offset: 0.0.into(),
-                })
+            PianoOrientation::Vertical => (rect.top() as i32..=rect.bottom() as i32)
+                .map(note)
                 .collect(),
         }
     }
@@ -196,13 +192,17 @@ impl View for Piano {
             painter.extend(piano_keys.transform(piano_transform));
         });
 
-        // keep just in case
-        // egui::Window::new("Piano Debug").show(ui.ctx(), |ui| {
-        //     ui.label(format!("min_note: {}, max_note: {}", self.min_note, self.max_note));
-        //     ui.label(format!("range: {:?}", range));
-        //     ui.label(format!("Total notes: {}", self.max_note - self.min_note));
-        //     let piano_keys = self.make_all_piano_keys(self.get_piano_notes(range), range);
-        //     ui.label(format!("Piano keys: {:?}", piano_keys))
-        // });
+        if cfg!(feature = "extra_debug") {
+            egui::Window::new("Piano Debug").show(ui.ctx(), |ui| {
+                ui.label(format!(
+                    "min_note: {}, max_note: {}",
+                    self.min_note, self.max_note
+                ));
+                ui.label(format!("range: {:?}", range));
+                ui.label(format!("Total notes: {}", self.max_note - self.min_note));
+                let piano_keys = self.make_all_piano_keys(self.get_piano_notes(range), range);
+                ui.label(format!("Piano keys: {:?}", piano_keys))
+            });
+        }
     }
 }
