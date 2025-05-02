@@ -1,4 +1,4 @@
-use crate::{FloatField, IndexField, TypeField, UintField};
+use crate::{FloatField, IndexField, MoveField, TypeField, UintField};
 use shared::action_proto::{
     ActionProto, SetFloatProto, SetUintProto, action_proto::Kind as ActionKind,
 };
@@ -24,6 +24,7 @@ pub enum Action {
     // Perhaps a generic "MoveChild" action could work.
     MoveEffectUp(usize),
     MoveEffectDown(usize),
+    MoveChild(MoveField),
 
     /// Denotes that the mouse has been released from a UI element, finalizing its value.
     /// This is how we know to flatten (in the undo stack) actions that modify floats.
@@ -40,6 +41,7 @@ impl From<ActionProto> for Action {
         match other.kind.unwrap() {
             ActionKind::MoveEffectUp(it) => Action::MoveEffectUp(it as usize),
             ActionKind::MoveEffectDown(it) => Action::MoveEffectDown(it as usize),
+            ActionKind::MoveChild(it) => Action::MoveChild(it.into()),
             ActionKind::SetFloat(it) => Action::SetFloat(
                 FloatField::from_str(&it.key)
                     .unwrap_or_else(|_| panic!("Expected float field name: {}", it.key)),
@@ -76,6 +78,7 @@ impl From<Action> for ActionProto {
                 Action::DeleteChild(index) => ActionKind::DeleteChild(index.into()),
                 Action::MoveEffectUp(index) => ActionKind::MoveEffectUp(index as u32),
                 Action::MoveEffectDown(index) => ActionKind::MoveEffectDown(index as u32),
+                Action::MoveChild(it) => ActionKind::MoveChild(it.into()),
 
                 // Non-serializable actions
                 Action::Release => panic!(),

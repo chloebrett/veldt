@@ -1,6 +1,8 @@
 use crate::receiver::ActionReceiver;
-use crate::{Action, IndexField, TypeField};
+use crate::{Action, IndexField, MoveField, TypeField};
 use shared::model::MixerChannel;
+
+use super::move_elem;
 
 impl ActionReceiver for MixerChannel {
     fn apply(&mut self, action: &Action) -> Option<Action> {
@@ -12,6 +14,21 @@ impl ActionReceiver for MixerChannel {
             Action::MoveEffectUp(effect_index) => {
                 self.effects.swap(*effect_index, effect_index - 1);
                 Action::MoveEffectDown(*effect_index)
+            }
+            Action::MoveChild(MoveField {
+                from_field,
+                to_field,
+            }) => {
+                let (IndexField::Effect(from), IndexField::Effect(to)) = (from_field, to_field)
+                else {
+                    panic!("Action should have only received Effect IndexFields.")
+                };
+                let prev = MoveField {
+                    from_field: to_field.clone(),
+                    to_field: from_field.clone(),
+                };
+                move_elem(&mut self.effects, *from, *to);
+                Action::MoveChild(prev)
             }
             Action::DeleteChild(IndexField::Effect(effect_index)) => {
                 let prev = self.effects[*effect_index].clone();
