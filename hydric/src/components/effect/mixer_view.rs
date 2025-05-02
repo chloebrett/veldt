@@ -128,7 +128,7 @@ impl View for MixerView<'_> {
 }
 
 /// A widget to display and edit basic effect controls in the MixerView
-/// Being a widget that returns a `Reponse` makes it easier to drag and drop.
+/// Being a widget that returns a `Response` makes it easier to drag and drop.
 struct EffectWidget<'a, F: Fn(Action), G: Fn()> {
     effect: &'a EffectInstance,
     effect_window: &'a mut WindowStateField<EffectSelector>,
