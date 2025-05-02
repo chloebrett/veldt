@@ -1,9 +1,5 @@
 use super::{
-    KeyView, NoteRoll, NoteView, TrackPlacementView, TrackRoll,
-    effect::{EffectView, MixerView},
-    generator::{GeneratorView, generators_control},
-    menu::MenuBar,
-    play::{SampleTreeView, ToolbarView},
+    effect::{EffectView, MixerView}, generator::{generators_control, GeneratorView}, menu::MenuBar, play::{MicrophoneView, SampleTreeView, ToolbarView}, KeyView, NoteRoll, NoteView, TrackPlacementView, TrackRoll
 };
 use crate::components::FrameHistory;
 use crate::promise::spawn;
@@ -146,6 +142,12 @@ impl View for App {
         NoteView::new(&self.store).ui(ui);
         NoteRoll::new(&self.store).ui(ui);
         TrackPlacementView::new(&self.store).ui(ui);
+
+        MicrophoneView::new(      
+            &self.store,
+            &mut self.async_state,
+            &mut self.window_state.microphone
+        ).ui(ui);
 
         SampleTreeView::new(
             &self.store,

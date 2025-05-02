@@ -19,6 +19,7 @@ pub struct WindowState {
     pub sample_tree: bool,
     pub track_roll: bool,
     pub save: bool,
+    pub microphone: bool,
 }
 
 impl Default for WindowState {
@@ -35,6 +36,7 @@ impl Default for WindowState {
             sample_tree: false,
             track_roll: false,
             save: false,
+            microphone: false,
         }
     }
 }

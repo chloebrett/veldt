@@ -155,12 +155,20 @@ impl View for MenuBar<'_> {
             effect_response.on_hover_ui(|ui| {
                 ui.label("Effects/Mixers");
             });
+            
             let track_response = ui.add(Button::new("📄").selected(self.window_state.track_roll));
             if track_response.clicked() {
                 self.window_state.track_roll ^= true;
             }
             track_response.on_hover_ui(|ui| {
                 ui.label("Track Roll");
+            });
+            let microphone_response = ui.add(Button::new("🎤").selected(self.window_state.microphone));
+            if microphone_response.clicked() {
+                self.window_state.microphone ^= true;
+            }
+            microphone_response.on_hover_ui(|ui | {
+                ui.label("Record Microphone");
             })
         });
     }
