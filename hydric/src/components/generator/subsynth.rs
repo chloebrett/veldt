@@ -11,13 +11,13 @@ use shared::{
     model::{PitchName, ScaleValue},
     types::PitchValue,
 };
-use state::{Action, GeneratorSelector, OscillatorSelector, Store};
+use state::{Action, GeneratorSelector, Store};
 
 pub struct SubSynthView<'a, G: Fn()> {
     config: &'a SubSynthConfig,
     on_release: G,
     store: &'a Store,
-    generator_index: usize,
+    generator_sel: &'a GeneratorSelector,
 }
 
 impl<'a, G: Fn()> SubSynthView<'a, G> {
@@ -25,13 +25,13 @@ impl<'a, G: Fn()> SubSynthView<'a, G> {
         config: &'a SubSynthConfig,
         on_release: G,
         store: &'a Store,
-        generator_index: usize,
+        generator_sel: &'a GeneratorSelector,
     ) -> Self {
         Self {
             config,
             on_release,
             store,
-            generator_index,
+            generator_sel,
         }
     }
 }
@@ -61,14 +61,13 @@ impl<G: Fn()> View for SubSynthView<'_, G> {
     fn ui(&mut self, ui: &mut Ui) {
         let config = self.config;
         let on_release = &self.on_release;
-        let generator_index = self.generator_index;
-        let gen_sel = GeneratorSelector(generator_index);
-        let gen_dispatch = |action| self.store.dispatch2(&gen_sel, action); // TODO: fix this for the mod_matrix
+        let gen_sel = self.generator_sel;
+        let gen_dispatch = |action| self.store.dispatch2(gen_sel, action); // TODO: fix this for the mod_matrix
 
         ui.horizontal(|ui| {
             ui.vertical(|ui| {
                 for oscillator_id in 0..3 {
-                    let osc_sel = OscillatorSelector(generator_index, oscillator_id);
+                    let osc_sel = gen_sel.downcast_oscillator(oscillator_id);
                     let osc_dispatch = |action| self.store.dispatch2(&osc_sel, action);
                     ui.push_id(oscillator_id, |ui| {
                         SubSynthOscillatorView::new(
