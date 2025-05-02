@@ -13,43 +13,6 @@ use state::{
 };
 use strum::IntoEnumIterator;
 
-impl<F: Fn(Action), G: Fn()> Widget for EffectWidget<'_, F, G> {
-    fn ui(self, ui: &mut Ui) -> Response {
-        let Self {
-            effect,
-            effect_window,
-            effect_sel,
-            dispatch,
-            on_release,
-        } = self;
-        let InnerResponse { inner: _, response } = ui.horizontal(|ui| {
-            let show = effect_window.get(effect_sel);
-            let text = effect_name(&effect.it);
-            let meta = &effect.meta;
-
-            if ui.add(Button::new("Mute").selected(meta.mute)).clicked() {
-                dispatch(Action::SetChild(TypeField::Mute(!meta.mute)))
-            }
-            knob(
-                ui,
-                "Wet",
-                meta.wet,
-                |it| dispatch(Action::SetFloat(FloatField::Wet, it)),
-                0.0..=1.0,
-                /* neutral= */ 0.5,
-                on_release,
-            );
-
-            let response = ui.add(Button::new(text).selected(effect_window.get(effect_sel)));
-            if response.clicked() {
-                effect_window.set(effect_sel, !show)
-            }
-        });
-        ui.separator();
-        response
-    }
-}
-
 pub struct MixerView<'a> {
     window_state: &'a mut WindowState,
     store: &'a Store,
@@ -192,6 +155,43 @@ impl<'a, F: Fn(Action), G: Fn()> EffectWidget<'a, F, G> {
     }
 }
 
+impl<F: Fn(Action), G: Fn()> Widget for EffectWidget<'_, F, G> {
+    fn ui(self, ui: &mut Ui) -> Response {
+        let Self {
+            effect,
+            effect_window,
+            effect_sel,
+            dispatch,
+            on_release,
+        } = self;
+        let InnerResponse { inner: _, response } = ui.horizontal(|ui| {
+            let show = effect_window.get(effect_sel);
+            let text = effect_name(&effect.it);
+            let meta = &effect.meta;
+
+            if ui.add(Button::new("Mute").selected(meta.mute)).clicked() {
+                dispatch(Action::SetChild(TypeField::Mute(!meta.mute)))
+            }
+            knob(
+                ui,
+                "Wet",
+                meta.wet,
+                |it| dispatch(Action::SetFloat(FloatField::Wet, it)),
+                0.0..=1.0,
+                /* neutral= */ 0.5,
+                on_release,
+            );
+
+            let response = ui.add(Button::new(text).selected(effect_window.get(effect_sel)));
+            if response.clicked() {
+                effect_window.set(effect_sel, !show)
+            }
+        });
+        ui.separator();
+        response
+    }
+}
+
 /// Handle where an object is dragged to and preview where it will be placed.
 /// Code adapted from
 /// https://github.com/emilk/egui/blob/master/crates/egui_demo_lib/src/demo/drag_and_drop.rs
@@ -227,5 +227,5 @@ fn handle_drag(
             to = Some(insert_index);
         }
     }
-    return (from, to);
+    (from, to)
 }
