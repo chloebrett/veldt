@@ -23,6 +23,7 @@ pub enum DataState {
     NoteRollSelectMode,
     SubSynthLfoTab,
     SubSynthEnvTab,
+    EditMixerState,
 }
 
 impl DataState {
@@ -41,6 +42,7 @@ impl DataState {
             Self::NoteRollSelectMode => "note_roll_select_mode",
             Self::SubSynthLfoTab => "subsynth_lfo_tab_index",
             Self::SubSynthEnvTab => "subsynth_env_tab_index",
+            Self::EditMixerState => "edit_mixer_state",
         })
     }
 
@@ -66,6 +68,7 @@ impl DataState {
                 | Self::NoteWindow
                 | Self::NoteRollWindow
                 | Self::TrackRollSelectMode
+                | Self::EditMixerState
                 | Self::NoteRollSelectMode => data.insert_temp::<Option<bool>>(self.get_id(), None),
                 Self::ActiveNoteIndex
                 | Self::ActiveTrackIndex
