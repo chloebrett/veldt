@@ -42,7 +42,7 @@ impl Export for ExportContext {
         graph.set_from_project(&project);
 
         let spec = WavSpec {
-            channels: 1, // mono
+            channels: 2, // stereo
             sample_rate: SAMPLE_RATE as u32,
             bits_per_sample: 16,
             sample_format: SampleFormat::Int,
@@ -54,13 +54,16 @@ impl Export for ExportContext {
                 .map_err(|e| tonic::Status::invalid_argument(format!("{}", e)))?;
 
             for frame in graph {
-                let sample = *frame.channel(0).unwrap(); // mono
-                let sample_i16 =
-                    (sample * i16::MAX as f32).clamp(i16::MIN as f32, i16::MAX as f32) as i16;
+                for channel in 0..2 {
+                    let sample = *frame.channel(channel).unwrap();
 
-                writer
-                    .write_sample(sample_i16)
-                    .map_err(|e| tonic::Status::invalid_argument(format!("{}", e)))?;
+                    let sample_i16 =
+                        (sample * i16::MAX as f32).clamp(i16::MIN as f32, i16::MAX as f32) as i16;
+
+                    writer
+                        .write_sample(sample_i16)
+                        .map_err(|e| tonic::Status::invalid_argument(format!("{}", e)))?;
+                }
             }
 
             writer
