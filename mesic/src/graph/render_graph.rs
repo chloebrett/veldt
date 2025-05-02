@@ -8,9 +8,7 @@ use crate::wave::beats_to_samples;
 use dasp_frame::Stereo;
 use dasp_graph::{BoxedNodeSend, Buffer, Node, NodeData, node::Sum};
 use petgraph::stable_graph::NodeIndex;
-use shared::model::{
-    Effect, EffectInstance, GeneratorInstance, GeneratorType, PlacementType, Project,
-};
+use shared::model::{Effect, EffectInstance, Generator, GeneratorInstance, PlacementType, Project};
 use state::{Action, Selector};
 use std::sync::mpsc::Receiver;
 
@@ -106,8 +104,7 @@ impl RenderGraph {
 
             match &project.generators[generator_index] {
                 GeneratorInstance {
-                    kind: GeneratorType::SimpleWave { config },
-                    id: _,
+                    it: Generator::SimpleWave(config),
                     meta,
                 } => {
                     let generator_node = SimpleWaveGeneratorNode::new(
@@ -227,11 +224,11 @@ impl RenderGraph {
         effect: EffectInstance,
         dry: NodeIndex,
     ) -> NodeIndex {
-        let effect_node = match effect.effect {
-            Effect::SimpleEq { config } => {
+        let effect_node = match effect.it {
+            Effect::SimpleEq(config) => {
                 BoxedNodeSend::new(EqNode::new(mixer_index, effect_index, config))
             }
-            Effect::SimpleDelay { config } => {
+            Effect::Delay(config) => {
                 let delay_samples = config.delay_ms / 1000.0 * SAMPLE_RATE as f32;
                 let delay_samples = delay_samples as usize;
 
@@ -240,8 +237,8 @@ impl RenderGraph {
 
                 BoxedNodeSend::new(DelayNode::new(mixer_index, effect_index, config))
             }
-            Effect::SimpleCompressor { config } => BoxedNodeSend::new(CompressorNode::new(config)),
-            Effect::ModDelay { config } => BoxedNodeSend::new(ModDelayNode::new(config)),
+            Effect::Compressor(config) => BoxedNodeSend::new(CompressorNode::new(config)),
+            Effect::ModDelay(config) => BoxedNodeSend::new(ModDelayNode::new(config)),
         };
         let mixer_node = MixerNode::new(mixer_index, effect_index, effect.meta);
 
@@ -413,44 +410,35 @@ mod tests {
         MixerChannel {
             effects: vec![
                 EffectInstance {
-                    effect: Effect::SimpleEq {
-                        config: EqConfig {
-                            kind: EqType::SimpleResonator,
-                            fc: 1000.0,
-                            q: 1.0,
-                            gain: 0.0,
-                        },
-                    },
+                    it: Effect::SimpleEq(EqConfig {
+                        kind: EqType::SimpleResonator,
+                        fc: 1000.0,
+                        q: 1.0,
+                        gain: 0.0,
+                    }),
                     meta: EffectMeta {
-                        id: 0,
                         wet: 1.0,
                         mute: false,
                     },
                 },
                 EffectInstance {
-                    effect: Effect::SimpleDelay {
-                        config: DelayConfig {
-                            delay_ms: 250.0,
-                            feedback: 0.5,
-                        },
-                    },
+                    it: Effect::Delay(DelayConfig {
+                        delay_ms: 250.0,
+                        feedback: 0.5,
+                    }),
                     meta: EffectMeta {
-                        id: 1,
                         wet: 0.5,
                         mute: false,
                     },
                 },
                 EffectInstance {
-                    effect: Effect::ModDelay {
-                        config: ModDelayConfig {
-                            min_depth: 100,
-                            max_depth: 200,
-                            freq: 10.0,
-                            lfo_type: WaveType::Triangle,
-                        },
-                    },
+                    it: Effect::ModDelay(ModDelayConfig {
+                        min_depth: 100,
+                        max_depth: 200,
+                        freq: 10.0,
+                        lfo_type: WaveType::Triangle,
+                    }),
                     meta: EffectMeta {
-                        id: 1,
                         wet: 0.5,
                         mute: false,
                     },

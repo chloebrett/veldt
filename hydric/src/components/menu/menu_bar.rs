@@ -1,5 +1,5 @@
 use crate::{
-    app_state::{AsyncState, WindowState},
+    AsyncState, WindowState,
     promise::{poll, spawn},
     rpc::{export, load_project, load_project_list, save_project},
     view::View,

@@ -2,8 +2,8 @@ use crate::reducer;
 use crate::{Action, Selector};
 use ordered_float::OrderedFloat;
 use shared::model::{
-    AdsrEnvelope, AntiAliasingMode, FileTreeConfig, FilenameTree, GeneratorInstance, GeneratorMeta,
-    GeneratorType, LfoConfig, MixerChannel, ModMatrix, Note, OscillatorConfig, PitchName,
+    AdsrEnvelope, AntiAliasingMode, FileTreeConfig, FilenameTree, Generator, GeneratorInstance,
+    GeneratorMeta, LfoConfig, MixerChannel, ModMatrix, Note, OscillatorConfig, PitchName,
     PlacedNote, Placement, PlacementType, Project, Scale, ScaleValue, SimpleWaveConfig,
     SubSynthConfig, Track, TrackPlacement, WaveType,
 };
@@ -78,22 +78,19 @@ impl Default for StoreData {
                 samples: vec![],
                 generators: vec![
                     GeneratorInstance {
-                        id: 0,
-                        kind: GeneratorType::SimpleWave {
-                            config: SimpleWaveConfig {
-                                wave: WaveType::Sine,
-                                envelope: AdsrEnvelope {
-                                    attack: 0.1,
-                                    decay: 0.1,
-                                    sustain: 0.8,
-                                    release: 0.1,
-                                },
-                                osc_count: 4,
-                                detune_cents: 5.0,
-                                anti_aliasing_mode: AntiAliasingMode::Off,
-                                oversample_factor: 2,
+                        it: Generator::SimpleWave(SimpleWaveConfig {
+                            wave: WaveType::Sine,
+                            envelope: AdsrEnvelope {
+                                attack: 0.1,
+                                decay: 0.1,
+                                sustain: 0.8,
+                                release: 0.1,
                             },
-                        },
+                            osc_count: 4,
+                            detune_cents: 5.0,
+                            anti_aliasing_mode: AntiAliasingMode::Off,
+                            oversample_factor: 2,
+                        }),
                         meta: GeneratorMeta {
                             volume: 1.0,
                             mute: false,
@@ -101,28 +98,25 @@ impl Default for StoreData {
                         },
                     },
                     GeneratorInstance {
-                        id: 1,
-                        kind: GeneratorType::SubSynth {
-                            config: SubSynthConfig {
-                                oscillators: [
-                                    OscillatorConfig {
-                                        wave: WaveType::Sine,
-                                        ..BASE_OSC
-                                    },
-                                    OscillatorConfig {
-                                        wave: WaveType::Triangle,
-                                        ..BASE_OSC
-                                    },
-                                    OscillatorConfig {
-                                        wave: WaveType::Square,
-                                        ..BASE_OSC
-                                    },
-                                ],
-                                lfos: [BASE_LFO; 3],
-                                envelopes: [BASE_ENV; 3],
-                                matrix_config: ModMatrix::new(6, 3),
-                            },
-                        },
+                        it: Generator::SubSynth(SubSynthConfig {
+                            oscillators: [
+                                OscillatorConfig {
+                                    wave: WaveType::Sine,
+                                    ..BASE_OSC
+                                },
+                                OscillatorConfig {
+                                    wave: WaveType::Triangle,
+                                    ..BASE_OSC
+                                },
+                                OscillatorConfig {
+                                    wave: WaveType::Square,
+                                    ..BASE_OSC
+                                },
+                            ],
+                            lfos: [BASE_LFO; 3],
+                            envelopes: [BASE_ENV; 3],
+                            matrix: ModMatrix::new(6, 3),
+                        }),
                         meta: GeneratorMeta {
                             volume: 1.0,
                             mute: false,

@@ -1,10 +1,10 @@
-use crate::app_state::DataState;
+use crate::DataState;
 use crate::view::View;
 use crate::widget::{StateWindow, default_window, get_set, int_slider, selectable_value};
 use egui::{Ui, pos2};
 use shared::model::ScaleValue;
 use shared::types::{Beats, Octave};
-use state::{Action, FloatField, IndexField, Selector, Store, TypeField};
+use state::{Action, FloatField, IndexField, TrackSelector, NoteSelector, Selector, Store, TypeField};
 use strum::IntoEnumIterator;
 
 pub struct NoteView<'a> {
@@ -26,9 +26,9 @@ impl View for NoteView<'_> {
         let Some(track_index): Option<usize> = DataState::ActiveTrackIndex.get_value(ui) else {
             return;
         };
-        let note = &store.get().project.tracks[track_index].notes[note_index];
         let on_release = || store.dispatchr(Action::Release);
-        let sel = Selector::Note(track_index, note_index);
+        let sel = NoteSelector(track_index, note_index);
+        let note = &store.select(&sel);
         let window = StateWindow(default_window("Notes").default_pos(pos2(600.0, 20.0)));
         window.show(ui, DataState::NoteWindow, |ui| {
             egui::ComboBox::from_id_salt(format!("note_{note_index}"))
@@ -39,7 +39,7 @@ impl View for NoteView<'_> {
                         selectable_value(
                             ui,
                             get_set(&scale_value, |it| {
-                                store.dispatch(&sel, Action::SetChild(TypeField::ScaleValue(*it)))
+                                store.dispatch2(&sel, Action::SetChild(TypeField::ScaleValue(*it)))
                             }),
                             &scale_note,
                             scale_note.to_string(),
@@ -52,7 +52,7 @@ impl View for NoteView<'_> {
                 ui,
                 "Octave",
                 octave,
-                |it| store.dispatch(&sel, Action::SetChild(TypeField::Octave(it as Octave))),
+                |it| store.dispatch2(&sel, Action::SetChild(TypeField::Octave(it as Octave))),
                 0..=8,
                 on_release,
             );
@@ -63,7 +63,7 @@ impl View for NoteView<'_> {
                 ui,
                 "Beats",
                 duration,
-                |it| store.dispatch(&sel, Action::SetFloat(FloatField::Duration, it as Beats)),
+                |it| store.dispatch2(&sel, Action::SetFloat(FloatField::Duration, it as Beats)),
                 0..=10,
                 on_release,
             );
@@ -74,14 +74,14 @@ impl View for NoteView<'_> {
                 ui,
                 "Offset",
                 offset,
-                |it| store.dispatch(&sel, Action::SetFloat(FloatField::Offset, it as Beats)),
+                |it| store.dispatch2(&sel, Action::SetFloat(FloatField::Offset, it as Beats)),
                 0..=16,
                 on_release,
             );
 
             if ui.button("Delete").clicked() {
-                store.dispatch(
-                    &Selector::Track(track_index),
+                store.dispatch2(
+                    &TrackSelector(track_index),
                     Action::DeleteChild(IndexField::PlacedNote(note_index)),
                 );
                 DataState::ActiveNoteIndex.remove_value(ui);

@@ -1,4 +1,4 @@
-use egui::{Color32, FontId, Pos2, Shape, Stroke, Ui, epaint};
+use egui::{Color32, FontId, Pos2, Response, Shape, Stroke, Ui, epaint};
 use std::f32::consts::PI;
 
 pub enum TextRotation {
@@ -15,7 +15,7 @@ pub fn text_rotator(
     font_size: f32,
     rotation: TextRotation,
     text_colour: Color32,
-) {
+) -> Response {
     let font_id = FontId::proportional(font_size);
 
     // Galley is essentially the layout/container of the text
@@ -32,7 +32,7 @@ pub fn text_rotator(
     };
 
     // Allocating space in the layout
-    let (rect, _response) = ui.allocate_at_least(padded_size, egui::Sense::hover());
+    let (rect, response) = ui.allocate_at_least(padded_size, egui::Sense::click());
     let painter = ui.painter_at(rect);
 
     // Determining where to draw the rotated text
@@ -66,4 +66,5 @@ pub fn text_rotator(
     };
 
     painter.add(Shape::Text(text_shape));
+    response
 }

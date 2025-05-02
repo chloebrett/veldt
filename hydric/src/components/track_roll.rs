@@ -1,7 +1,5 @@
-use std::collections::BTreeSet;
-
 use crate::{
-    app_state::{DataState, WindowState, update_select_data_state},
+    DataState, WindowState, update_select_data_state,
     view::View,
     widget::{Sequencer, SequencerObject, default_window},
 };
@@ -13,7 +11,8 @@ use shared::{
     model::{Placement, PlacementType, Track, TrackPlacement},
     types::Beats,
 };
-use state::{Action, FloatField, IndexField, Selector, Store, TypeField};
+use state::{Action, FloatField, IndexField, PlacementSelector, SelectorTrait, Store, TypeField};
+use std::collections::BTreeSet;
 
 pub struct TrackRoll<'a> {
     store: &'a Store,
@@ -255,8 +254,8 @@ impl SequencerObject<PlacedTrack> for PlacedTrack {
         ])
     }
 
-    fn selector(index: usize, _parent_index: Option<usize>) -> Selector {
-        Selector::Placement(index)
+    fn selector(index: usize, _parent_index: Option<usize>) -> impl SelectorTrait {
+        PlacementSelector(index)
     }
 
     fn set_active(&self, ui: &mut Ui, index: usize) {

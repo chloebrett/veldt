@@ -285,9 +285,8 @@ mod tests {
             0,
             0,
             EffectInstance {
-                effect: Effect::SimpleCompressor { config },
+                it: Effect::Compressor(config),
                 meta: EffectMeta {
-                    id: 0,
                     wet: 1.0,
                     mute: false,
                 },

@@ -6,7 +6,7 @@ use crate::view::View;
 use crate::widget::{default_window, knob};
 use egui::{Button, Color32, Frame, Pos2, Stroke, Ui};
 use shared::model::{Effect, EffectInstance, EffectMeta};
-use state::{Action, FloatField, IndexField, Selector, Store, TypeField};
+use state::{Action, FloatField, IndexField, Store, TypeField};
 use strum::IntoEnumIterator;
 
 pub struct MixerView<'a> {
@@ -35,10 +35,11 @@ impl View for MixerView<'_> {
             store,
             ..
         } = self;
-        let mixer_index = window_state.mixer.channel;
-        let mixer = &store.get().project.mixer[mixer_index];
-        let dispatch_mixer = |action| store.dispatch(&Selector::Mixer(mixer_index), action);
+        let mixer_sel = window_state.mixer.channel;
+        let mixer = &store.select(&mixer_sel);
+        let dispatch_mixer = |action| store.dispatch2(&mixer_sel, action);
         let on_release = || store.dispatchr(Action::Release);
+        let mixer_index = mixer_sel.0;
 
         // Keep track of from where and to an object is dropped.
         let mut from: Option<Arc<Location>> = None;
@@ -57,6 +58,7 @@ impl View for MixerView<'_> {
                 let frame = Frame::default();
                 let (_, dropped_payload) = ui.dnd_drop_zone::<Location, ()>(frame, |ui| {
                     for effect_index in 0..mixer.effects.len() {
+                        let effect_sel = mixer_sel.downcast_effect(effect_index);
                         let id = egui::Id::new(("effect_config", effect_index));
                         let location = Location { row: effect_index };
                         let response = ui
@@ -107,13 +109,11 @@ impl View for MixerView<'_> {
                                     dispatch_mixer(Action::MoveEffectDown(effect_index));
                                 }
                             });
-                            let dispatch_effect = |action| {
-                                store.dispatch(&Selector::Effect(mixer_index, effect_index), action)
-                            };
+                            let dispatch_effect = |action| store.dispatch2(&effect_sel, action);
                             let effect = &mixer.effects[effect_index];
 
-                            let show = window_state.effects.get((mixer_index, effect_index));
-                            let text = effect_name(&effect.effect);
+                            let show = window_state.effects.get(effect_sel);
+                            let text = effect_name(&effect.it);
                             let meta = &effect.meta;
 
                             let mute_response = ui.add(Button::new("Mute").selected(meta.mute));
@@ -130,23 +130,22 @@ impl View for MixerView<'_> {
                                 on_release,
                             );
 
-                            let response =
-                                ui.add(Button::new(text).selected(
-                                    window_state.effects.get((mixer_index, effect_index)),
-                                ));
+                            let response = ui
+                                .add(Button::new(text).selected(window_state.effects.get(effect_sel)));
                             if response.clicked() {
-                                window_state.effects.set((mixer_index, effect_index), !show);
+                                window_state.effects.set(effect_sel, !show);
                             }
                         });
                         ui.separator();
                     }
                 });
+
                 ui.menu_button("Add new effect", |ui| {
                     for effect in Effect::iter() {
                         let text = format!("{}", effect_name(&effect));
                         if ui.button(text).clicked() {
                             let instance = EffectInstance {
-                                effect,
+                                it: effect,
                                 meta: EffectMeta::default(),
                             };
                             dispatch_mixer(Action::AddChild(TypeField::Effect(instance)));

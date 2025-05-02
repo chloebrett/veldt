@@ -1,10 +1,10 @@
-use crate::{app_state::DataState, transform::Transform};
+use crate::{DataState, transform::Transform};
 use egui::{
     Color32, CornerRadius, CursorIcon, Frame, Pos2, Rect, Response, Sense, Shape, Stroke, Ui, Vec2,
     Widget, emath::RectTransform, pos2, vec2,
 };
 use shared::types::Beats;
-use state::{Action, Selector, Store};
+use state::{Action, SelectorTrait, Store};
 
 pub struct Sequencer<'a, T: SequencerObject<T>> {
     store: &'a Store,
@@ -238,7 +238,7 @@ impl<T: SequencerObject<T>> Widget for Sequencer<'_, T> {
         let select = self.select;
         let background_shapes = &self.background_shapes;
         let edit_object = |index: usize, action: Action| {
-            store.dispatch(&T::selector(index, self.parent_index), action)
+            store.dispatch2(&T::selector(index, self.parent_index), action)
         };
         let on_release = || store.dispatchr(Action::Release);
         let add_object = |object: T| object.add_new(store, self.parent_index);
@@ -308,7 +308,7 @@ pub trait SequencerObject<T> {
 
     fn selected_shape(&self, range: Rect) -> Shape;
 
-    fn selector(index: usize, parent_index: Option<usize>) -> Selector;
+    fn selector(index: usize, parent_index: Option<usize>) -> impl SelectorTrait;
 
     fn set_active(&self, ui: &mut Ui, index: usize);
 

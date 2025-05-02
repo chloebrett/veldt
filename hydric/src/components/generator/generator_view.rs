@@ -1,24 +1,29 @@
-use super::simple_wave_control;
+use super::simple_wave_control::SimpleWaveView;
 use super::subsynth::SubSynthView;
 use crate::view::View;
 use crate::widget::StateWindow;
 use crate::widget::default_window;
 use egui::{Pos2, Ui};
-use shared::model::GeneratorType;
-use state::{Action, Selector, Store};
+use shared::model::Generator;
+use state::{Action, GeneratorSelector, Store};
 
 pub struct GeneratorView<'a, F: FnMut()> {
     store: &'a Store,
-    generator_index: usize,
+    selector: &'a GeneratorSelector,
     visible: bool,
     on_close: F,
 }
 
 impl<'a, F: FnMut()> GeneratorView<'a, F> {
-    pub fn new(store: &'a Store, generator_index: usize, visible: bool, on_close: F) -> Self {
+    pub fn new(
+        store: &'a Store,
+        selector: &'a GeneratorSelector,
+        visible: bool,
+        on_close: F,
+    ) -> Self {
         Self {
             store,
-            generator_index,
+            selector,
             visible,
             on_close,
         }
@@ -27,15 +32,12 @@ impl<'a, F: FnMut()> GeneratorView<'a, F> {
 
 impl<F: FnMut()> View for GeneratorView<'_, F> {
     fn ui(&mut self, ui: &mut Ui) {
-        // TODO: reduce duplication of passing around indexes for e.g. generators as well as
-        // selectors. Just have a unique object for each selector type and pass that around?
-        let sel = Selector::Generator(self.generator_index);
-        let generator = &self.store.get().project.generators[self.generator_index];
+        let instance = &self.store.select(self.selector);
 
-        let title = match &generator.kind {
-            GeneratorType::SimpleWave { .. } => "Simple Wave Generator",
-            GeneratorType::Noise { .. } => "Noise Generator",
-            GeneratorType::SubSynth { .. } => "Subtractive Synth",
+        let title = match &instance.it {
+            Generator::SimpleWave(_) => "Simple Wave Generator",
+            Generator::Noise(_) => "Noise Generator",
+            Generator::SubSynth(_) => "Subtractive Synth",
         };
 
         StateWindow(default_window(title).default_pos(Pos2 { x: 1100.0, y: 20.0 }))
@@ -44,16 +46,16 @@ impl<F: FnMut()> View for GeneratorView<'_, F> {
                 self.visible,
                 |_| (self.on_close)(),
                 |ui| {
-                    let generator_type = generator.kind.clone();
-                    let dispatch = |action| self.store.dispatch(&sel, action);
+                    let generator = instance.it.clone();
+                    let dispatch = |action| self.store.dispatch2(self.selector, action);
                     let on_release = || self.store.dispatchr(Action::Release);
 
-                    match generator_type {
-                        GeneratorType::SimpleWave { config } => {
-                            simple_wave_control(&config, dispatch, on_release, ui)
+                    match generator {
+                        Generator::SimpleWave(config) => {
+                            SimpleWaveView::new(&config, dispatch, on_release).ui(ui)
                         }
-                        GeneratorType::Noise { .. } => todo!(),
-                        GeneratorType::SubSynth { config } => {
+                        Generator::Noise(_) => todo!(),
+                        Generator::SubSynth(config) => {
                             SubSynthView::new(&config, dispatch, on_release).ui(ui);
                         }
                     };
