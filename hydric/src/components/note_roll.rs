@@ -1,6 +1,6 @@
 use super::{Piano, PianoOrientation};
 use crate::{
-    DataState,
+    DataState, LocalState,
     transform::Yx,
     update_select_data_state,
     view::View,
@@ -131,7 +131,8 @@ impl View for NoteRoll<'_> {
                     ui.horizontal(|ui| {
                         Piano::new(max_note, min_note - 1, PianoOrientation::Vertical).ui(ui);
                         ui.add(
-                            Sequencer::new(store, range)
+                            // TODO: pass down the real LocalState.
+                            Sequencer::new(store, &mut LocalState::default(), range)
                                 .objects(notes)
                                 .parent_index(track_index)
                                 .select(select)
@@ -250,7 +251,7 @@ impl SequencerObject<PlacedNote> for PlacedNote {
         )
     }
 
-    fn set_active(&mut self, ui: &mut Ui, index: usize) {
+    fn set_active(&mut self, ui: &mut Ui, local_state: &mut LocalState, index: usize) {
         DataState::NoteWindow.set_value(ui, true);
         DataState::ActiveNoteIndex.set_value(ui, index);
     }

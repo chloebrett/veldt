@@ -11,7 +11,10 @@ use shared::{
     model::{Placement, PlacementType, Track, TrackPlacement},
     types::Beats,
 };
-use state::{Action, FloatField, IndexField, PlacementSelector, SelectorTrait, Store, TypeField};
+use state::{
+    Action, FloatField, IndexField, PlacementSelector, SelectorTrait, Store, TrackSelector,
+    TypeField,
+};
 use std::collections::BTreeSet;
 
 pub struct TrackRoll<'a> {
@@ -81,7 +84,7 @@ impl View for TrackRoll<'_> {
                     .min_scrolled_height(400.0)
                     .show(ui, |ui| {
                         ui.add(
-                            Sequencer::new(store, range)
+                            Sequencer::new(store, self.local_state, range)
                                 .objects(placed_tracks)
                                 .size(vec2(600.0, 100.0 * track_count as f32))
                                 .select(select)
@@ -160,27 +163,19 @@ impl SequencerObject<PlacedTrack> for PlacedTrack {
     }
 
     fn get_active(ui: &Ui, store: &Store) -> Option<PlacedTrack> {
-        if let Some(index) = DataState::ActiveTrackPlacementIndex.get_value::<usize>(ui) {
-            let placement = store
-                .get()
-                .project
-                .placements
-                .get(index)
-                .expect("Should have been track placement at index");
-            let track_placement: &TrackPlacement = placement.try_into().unwrap();
-            Some(PlacedTrack {
-                unclipped_duration: store
-                    .get()
-                    .project
-                    .tracks
-                    .get(track_placement.track_index)
-                    .expect("Should have been track at index.")
-                    .unclipped_duration(),
-                placement: placement.clone(),
-            })
-        } else {
-            None
-        }
+        let Some(index) = DataState::ActiveTrackPlacementIndex.get_value::<usize>(ui) else {
+            return None;
+        };
+
+        let selector = PlacementSelector(index);
+        let placement = store.select(&selector);
+        let track_placement: &TrackPlacement = placement.try_into().unwrap();
+        Some(PlacedTrack {
+            unclipped_duration: store
+                .select(&TrackSelector(track_placement.track_index))
+                .unclipped_duration(),
+            placement: placement.clone(),
+        })
     }
 
     fn active_shape(&self, range: Rect) -> Shape {
@@ -245,12 +240,12 @@ impl SequencerObject<PlacedTrack> for PlacedTrack {
         PlacementSelector(index)
     }
 
-    fn set_active(&mut self, ui: &mut Ui, index: usize) {
+    fn set_active(&mut self, ui: &mut Ui, local_state: &mut LocalState, index: usize) {
         let track_placement: &TrackPlacement = (&self.placement).try_into().unwrap();
 
         DataState::NoteRollWindow.set_value(ui, true);
         DataState::TrackPlacementViewWindow.set_value(ui, true);
-        DataState::ActiveTrackIndex.set_value(ui, track_placement.track_index);
+        local_state.active_track = Some(TrackSelector(track_placement.track_index));
         DataState::ActiveTrackPlacementIndex.set_value(ui, index);
     }
 

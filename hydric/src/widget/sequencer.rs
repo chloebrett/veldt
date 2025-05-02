@@ -1,4 +1,4 @@
-use crate::{DataState, transform::Transform};
+use crate::{DataState, LocalState, transform::Transform};
 use egui::{
     Color32, CornerRadius, CursorIcon, Frame, Pos2, Rect, Response, Sense, Shape, Stroke, Ui, Vec2,
     Widget, emath::RectTransform, pos2, vec2,
@@ -8,6 +8,7 @@ use state::{Action, SelectorTrait, Store};
 
 pub struct Sequencer<'a, T: SequencerObject<T>> {
     store: &'a Store,
+    local_state: &'a mut LocalState,
     range: Rect,
     size: Vec2,
     objects: Vec<T>,
@@ -20,9 +21,10 @@ pub struct Sequencer<'a, T: SequencerObject<T>> {
 }
 
 impl<'a, T: SequencerObject<T>> Sequencer<'a, T> {
-    pub fn new(store: &'a Store, range: Rect) -> Self {
+    pub fn new(store: &'a Store, local_state: &'a mut LocalState, range: Rect) -> Self {
         Sequencer {
             store,
+            local_state,
             range,
             size: vec2(400.0, 600.0),
             objects: vec![],
@@ -132,7 +134,7 @@ impl<'a, T: SequencerObject<T>> Sequencer<'a, T> {
                     T::set_selected(ui, Some(index));
                 }
             } else if movable_resp.interact(Sense::click()).double_clicked() {
-                self.objects[index].set_active(ui, index);
+                self.objects[index].set_active(ui, &mut self.local_state, index);
             }
             if resize_resp.hovered() {
                 ui.ctx().set_cursor_icon(CursorIcon::ResizeColumn);
@@ -166,7 +168,7 @@ impl<'a, T: SequencerObject<T>> Sequencer<'a, T> {
             // Keep track of the delta between object and cursor position at drag start.
             if response.interact(Sense::drag()).drag_started() {
                 DataState::DragCursorDelta
-                    .set_value::<Pos2>(ui, drag_pos - response.rect.left_top().to_vec2());
+                    .set_value::<Pos2>(ui, drag_pos - response.rect.min.to_vec2());
             }
             let click_delta: Pos2 = DataState::DragCursorDelta
                 .get_value(ui)
@@ -312,7 +314,7 @@ pub trait SequencerObject<T> {
 
     fn selector(index: usize, parent_index: Option<usize>) -> impl SelectorTrait;
 
-    fn set_active(&mut self, ui: &mut Ui, index: usize);
+    fn set_active(&mut self, ui: &mut Ui, local_state: &mut LocalState, index: usize);
 
     fn set_selected(ui: &mut Ui, index: Option<usize>);
 
