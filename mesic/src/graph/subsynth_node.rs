@@ -1,5 +1,5 @@
-use super::ProcessContext;
-use crate::wave::{beats_to_samples, unison_wave};
+use crate::graph::ProcessContext;
+use crate::wave::{beats_to_samples, subsynth_wave};
 use dasp_graph::{Buffer, Input, Node};
 use shared::model::{
     Generator, GeneratorInstance, GeneratorMeta, Placement, SubSynthConfig, Track, TrackPlacement,
@@ -45,8 +45,8 @@ impl SubSynthNode {
     }
 }
 
-// NOTE: most logic is the exact same as simple wave generator node
-impl Node<ProcessContext> for SimpleWaveGeneratorNode {
+// NOTE: most of the logic is the same as simple wave
+impl Node<ProcessContext> for SubSynthNode {
     // TODO: a lot of this processing logic is generic and should be shared with
     // other generator types. How?
     fn process(&mut self, _inputs: &[Input], output: &mut [Buffer], payload: &ProcessContext) {
@@ -122,6 +122,7 @@ impl Node<ProcessContext> for SimpleWaveGeneratorNode {
             out_buf.copy_from_slice(&buffer);
             self.apply_volume_and_pan(out_buf, channel_index);
         }
+
         self.sample_index += Buffer::LEN as u32;
     }
 }
