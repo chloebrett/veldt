@@ -110,10 +110,9 @@ pub fn sub_synth_wave(
         .iter()
         .zip(config.envelopes.iter())
         .map(|(osc, envelope)| {
-            // TODO: handle unison
             let detunes = linspace(-osc.unison_detune, osc.unison_detune, osc.osc_count);
 
-            // create the unison waves
+            // Create the unison waves
             let unison_waves: Vec<Buffer> = detunes
                 .iter()
                 .map(|&detune| {
@@ -130,7 +129,7 @@ pub fn sub_synth_wave(
                 })
                 .collect();
 
-            // sum the unison waves
+            // Sum the unison waves
             let mut buf = multi_sum(&unison_waves);
 
             for x in buf.iter_mut() {
