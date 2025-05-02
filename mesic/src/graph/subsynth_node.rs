@@ -1,8 +1,11 @@
-use crate::graph::ProcessContext;
+use crate::graph::{ProcessContext, pan_multipliers};
 use crate::wave::{beats_to_samples, osc_wave, subsynth_wave};
 use dasp_graph::{Buffer, Input, Node};
-use shared::model::{GeneratorMeta, Placement, SubSynthConfig, Track};
+use shared::model::{
+    Generator, GeneratorInstance, GeneratorMeta, Placement, SubSynthConfig, Track, TrackPlacement,
+};
 use shared::types::{Beats, KnobPosition, Volume};
+use std::cmp::min;
 
 pub struct SubSynthNode {
     config: SubSynthConfig,
@@ -34,6 +37,7 @@ impl SubSynthNode {
         }
     }
 
+    // TODO: this logic is similar and shared with subsynth and simple wave, probably should move
     fn apply_volume_and_pan(
         &self,
         buffer: &mut Buffer,
@@ -107,48 +111,42 @@ impl Node<ProcessContext> for SubSynthNode {
                     continue;
                 }
 
-            // TODO: add envelopes once mod matrix is working
-            // NOTE: for now, osc 1 -> maps to env 1
-            let osc_buffers: Vec<Buffer> = self
-                .config
-                .oscillators
-                .iter()
-                .zip(self.config.envelopes.iter())
-                .map(|(osc, envelope)| {
-                    let mut buf = osc_wave(
-                        &note.note.pitch_name,
-                        note.note.beats,
-                        self.bpm,
-                        &osc,
-                        &envelope,
-                        self.sample_index as i32 - note_start_sample as i32,
-                    );
+                // TODO: add envelopes once mod matrix is working
+                // NOTE: for now, osc 1 -> maps to env 1
+                let osc_buffers: Vec<Buffer> = self
+                    .config
+                    .oscillators
+                    .iter()
+                    .zip(self.config.envelopes.iter())
+                    .map(|(osc, envelope)| {
+                        let mut buf = osc_wave(
+                            &note.note.pitch_name,
+                            note.note.beats,
+                            self.bpm,
+                            &osc,
+                            &envelope,
+                            self.sample_index as i32 - note_start_sample as i32,
+                        );
 
-                    for channel_index in 0..2 {
-                        self.apply_volume_and_pan(&mut buf, channel_index, osc.volume, osc.pan);
-                    }
+                        for channel_index in 0..2 {
+                            self.apply_volume_and_pan(&mut buf, channel_index, osc.volume, osc.pan);
+                        }
 
-                    buf
-                })
-                .collect();
+                        buf
+                    })
+                    .collect();
 
-            dasp_slice::add_in_place(&mut buffer, &subsynth_wave(osc_buffers));
+                dasp_slice::add_in_place(&mut buffer, &subsynth_wave(osc_buffers));
+            }
+
+            for (channel_index, out_buf) in output.iter_mut().enumerate() {
+                let volume = self.meta.volume;
+                let pan = self.meta.pan;
+                out_buf.copy_from_slice(&buffer);
+                self.apply_volume_and_pan(out_buf, channel_index, volume, pan);
+            }
+
+            self.sample_index += Buffer::LEN as u32;
         }
-
-        for (channel_index, out_buf) in output.iter_mut().enumerate() {
-            let volume = self.meta.volume;
-            let pan = self.meta.pan;
-            out_buf.copy_from_slice(&buffer);
-            self.apply_volume_and_pan(out_buf, channel_index, volume, pan);
-        }
-
-        self.sample_index += Buffer::LEN as u32;
     }
-}
-
-/// TODO: use exponential pan curves, instead of linear.
-fn pan_multipliers(pan: KnobPosition) -> [Volume; 2] {
-    let left = 0.5 * (1.0 - pan);
-    let right = 0.5 * (1.0 + pan);
-    [left, right]
 }

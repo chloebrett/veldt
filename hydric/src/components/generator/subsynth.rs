@@ -11,7 +11,7 @@ use shared::{
     model::{PitchName, ScaleValue},
     types::PitchValue,
 };
-use state::{Action, GeneratorSelector, Store};
+use state::{GeneratorSelector, Store};
 
 pub struct SubSynthView<'a, G: Fn()> {
     config: &'a SubSynthConfig,
@@ -62,13 +62,13 @@ impl<G: Fn()> View for SubSynthView<'_, G> {
         let config = self.config;
         let on_release = &self.on_release;
         let gen_sel = self.generator_sel;
-        let gen_dispatch = |action| self.store.dispatch2(gen_sel, action); // TODO: fix this for the mod_matrix
+        let gen_dispatch = |action| self.store.dispatch(gen_sel, action); // TODO: fix this for the mod_matrix
 
         ui.horizontal(|ui| {
             ui.vertical(|ui| {
                 for oscillator_id in 0..3 {
                     let osc_sel = gen_sel.downcast_oscillator(oscillator_id);
-                    let osc_dispatch = |action| self.store.dispatch2(&osc_sel, action);
+                    let osc_dispatch = |action| self.store.dispatch(&osc_sel, action);
                     ui.push_id(oscillator_id, |ui| {
                         SubSynthOscillatorView::new(
                             &config.oscillators[oscillator_id],
