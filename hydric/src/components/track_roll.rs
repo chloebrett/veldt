@@ -245,7 +245,7 @@ impl SequencerObject<PlacedTrack> for PlacedTrack {
         PlacementSelector(index)
     }
 
-    fn set_active(&self, ui: &mut Ui, index: usize) {
+    fn set_active(&mut self, ui: &mut Ui, index: usize) {
         let track_placement: &TrackPlacement = (&self.placement).try_into().unwrap();
 
         DataState::NoteRollWindow.set_value(ui, true);

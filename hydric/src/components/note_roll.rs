@@ -250,7 +250,7 @@ impl SequencerObject<PlacedNote> for PlacedNote {
         )
     }
 
-    fn set_active(&self, ui: &mut Ui, index: usize) {
+    fn set_active(&mut self, ui: &mut Ui, index: usize) {
         DataState::NoteWindow.set_value(ui, true);
         DataState::ActiveNoteIndex.set_value(ui, index);
     }
