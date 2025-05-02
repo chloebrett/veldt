@@ -50,7 +50,7 @@ impl<G: Fn()> Widget for EffectWidget<'_, G> {
             effect_sel,
             on_release,
         } = self;
-        let InnerResponse {inner: _, response} = ui.horizontal(|ui| {
+        let InnerResponse { inner: _, response } = ui.horizontal(|ui| {
             let dispatch_effect = |action| store.dispatch2(&effect_sel, action);
             let effect = &mixer.effects[effect_index];
 
@@ -133,24 +133,38 @@ impl View for MixerView<'_> {
                     DataState::EditMixerState.set_value(ui, !edit_state)
                 };
                 ui.separator();
-                let frame = Frame::default();
+                let frame = if edit_state {
+                    Frame::default()
+                } else {
+                    Frame::NONE
+                };
                 let (_, dropped_payload) = ui.dnd_drop_zone::<Location, ()>(frame, |ui| {
                     for effect_index in 0..mixer.effects.len() {
                         let effect_sel = mixer_sel.downcast_effect(effect_index);
                         let effect_window = &mut window_state.effects;
-                        let effect_response = ui.add(EffectWidget::new(
-                            effect_sel,
-                            store,
-                            effect_window,
-                            mixer,
-                            effect_index,
-                            on_release,
-                        ));
-                        if edit_state {
+                        if !edit_state {
+                            let effect_response = ui.add(EffectWidget::new(
+                                effect_sel,
+                                store,
+                                effect_window,
+                                mixer,
+                                effect_index,
+                                on_release,
+                            ));
+                        } else {
                             let id = egui::Id::new(("effect_config", effect_index));
                             let location = Location { row: effect_index };
                             let response = ui
-                                .dnd_drag_source(id, location, |ui| ui.label("Drag"))
+                                .dnd_drag_source(id, location, |ui| {
+                                    ui.add(EffectWidget::new(
+                                        effect_sel,
+                                        store,
+                                        effect_window,
+                                        mixer,
+                                        effect_index,
+                                        on_release,
+                                    ));
+                                })
                                 .response;
                             if let (Some(pointer), Some(hovered_payload)) = (
                                 ui.input(|i| i.pointer.interact_pos()),
@@ -171,12 +185,14 @@ impl View for MixerView<'_> {
                                 } else {
                                     // Object is dragging from below
                                     ui.painter().hline(rect.x_range(), rect.bottom(), stroke);
-                                    effect_index
+                                    effect_index + 1
                                 };
                                 if let Some(dragged_payload) = response.dnd_release_payload() {
                                     // Object was dropped here
                                     from = Some(dragged_payload);
-                                    to = Some(Location { row: effect_index });
+                                    to = Some(Location {
+                                        row: insert_row_index,
+                                    });
                                 }
                             }
                         }

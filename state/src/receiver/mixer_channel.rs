@@ -22,7 +22,14 @@ impl ActionReceiver for MixerChannel {
                         from_field: to_field.clone(),
                         to_field: from_field.clone(),
                     };
-                    self.effects.swap(*from, *to);
+                    self.effects.insert(*to, self.effects[*from].clone());
+                    if from > to {
+                        // Inserted value has increased original index of value by 1
+                        self.effects.remove(from + 1);
+                    } else if from <= to {
+                        // Inserted value has not changed original index of value
+                        self.effects.remove(*from);
+                    };
                     Action::MoveChild(prev)
                 } else {
                     panic!("Action should have only recieved Effect IndexFields.")
