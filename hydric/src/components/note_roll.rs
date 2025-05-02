@@ -1,4 +1,4 @@
-use super::Piano;
+use super::{Piano, PianoOrientation};
 use crate::{
     DataState,
     transform::Yx,
@@ -129,7 +129,7 @@ impl View for NoteRoll<'_> {
                 .min_scrolled_height(200.0)
                 .show(ui, |ui| {
                     ui.horizontal(|ui| {
-                        Piano::new(max_note, min_note - 1).ui(ui);
+                        Piano::new(max_note, min_note - 1, PianoOrientation::Vertical).ui(ui);
                         ui.add(
                             Sequencer::new(store, range)
                                 .objects(notes)
@@ -221,16 +221,8 @@ impl SequencerObject<PlacedNote> for PlacedNote {
             note_indexes
                 .into_iter()
                 .map(|note_index| {
-                    store
-                        .get()
-                        .project
-                        .tracks
-                        .get(track_index)
-                        .expect("Should have been track at index.")
-                        .notes
-                        .get(note_index)
-                        .expect("Should have been note at index")
-                        .clone()
+                    let sel = NoteSelector(track_index, note_index);
+                    store.select(&sel).clone()
                 })
                 .collect(),
         )

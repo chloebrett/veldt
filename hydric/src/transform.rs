@@ -1,5 +1,6 @@
 use egui::{
-    CornerRadius, Pos2, Rect, Shape, emath::RectTransform, epaint::PathShape, epaint::RectShape,
+    CornerRadius, Pos2, Rect, Shape, Vec2, emath::RectTransform, epaint::PathShape,
+    epaint::RectShape,
 };
 
 pub trait Transform<T> {
@@ -67,9 +68,16 @@ pub trait Yx {
     fn yx(&self) -> Self;
 }
 
-impl Yx for Pos2 {
+// Implementing so that we can pass a Vec2 to functions that expect an `impl Yx`.
+impl Yx for Vec2 {
     fn yx(&self) -> Self {
         // This function already exists for Vec2.
+        Vec2::yx(*self)
+    }
+}
+
+impl Yx for Pos2 {
+    fn yx(&self) -> Self {
         self.to_vec2().yx().to_pos2()
     }
 }

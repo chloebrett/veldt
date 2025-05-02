@@ -1,6 +1,6 @@
-use super::super::{ModMatrixView, Piano, PianoOrientation};
 use super::subsynth_oscillator::SubSynthOscillatorView;
 use crate::DataState;
+use crate::components::{ModMatrixView, Piano, PianoOrientation};
 use crate::view::View;
 use crate::widget::{TabDisplay, TabOrientation};
 use eframe::egui;
@@ -150,9 +150,7 @@ impl<F: Fn(Action), G: Fn()> View for SubSynthView<'_, F, G> {
             }
             .into();
             // TODO: piano is only rendering a subset of these notes.
-            Piano::new(max_note, min_note)
-                .with_orientation(PianoOrientation::Horizontal)
-                .ui(ui);
+            Piano::new(max_note, min_note, PianoOrientation::Horizontal).ui(ui);
         }
 
         draw_piano(ui);
