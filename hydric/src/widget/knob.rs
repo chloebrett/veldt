@@ -325,7 +325,7 @@ impl Widget for Knob<'_> {
             let value_string = (self.label_format)(*self.value);
             let label_text = if label.is_empty() {
                 // If the label is empty, format only the value string
-                format!("{}", value_string)
+                value_string.to_string()
             } else {
                 // If the label is not empty, format with the label, colon, and value string
                 format!("{}: {}", label, value_string)
@@ -365,9 +365,21 @@ impl Widget for Knob<'_> {
             );
         }
 
-        // Draw the bounding rect
-        // painter.rect_stroke(rect, 0.0, Stroke::new(1.0, Color32::RED), egui::StrokeKind::Inside);
-        // painter.rect_stroke(knob_rect, 0.0, Stroke::new(1.0, Color32::GREEN), egui::StrokeKind::Inside);
+        if cfg!(feature = "extra_debug") {
+            // Draw the bounding rect
+            painter.rect_stroke(
+                rect,
+                0.0,
+                Stroke::new(1.0, Color32::RED),
+                egui::StrokeKind::Inside,
+            );
+            painter.rect_stroke(
+                knob_rect,
+                0.0,
+                Stroke::new(1.0, Color32::GREEN),
+                egui::StrokeKind::Inside,
+            );
+        }
 
         ui.add_space(vertical_margin);
 

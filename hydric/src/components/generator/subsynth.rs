@@ -1,6 +1,6 @@
-use super::super::{ModMatrixView, Piano, PianoOrientation};
 use super::subsynth_oscillator::SubSynthOscillatorView;
 use crate::DataState;
+use crate::components::{ModMatrixView, Piano, PianoOrientation};
 use crate::view::View;
 use crate::widget::{TabDisplay, TabOrientation};
 use eframe::egui;
@@ -46,8 +46,8 @@ lazy_static! {
     pub static ref ORANGE_OUTLINE: Color32 = Color32::from_rgb(227, 172, 84);
     pub static ref ORANGE_FILL: Color32 =
         Color32::from_rgba_unmultiplied(215, 171, 53, CHART_FILL_ALPHA);
-    pub static ref LINE_COLOURS: [Color32; 3] = [*GREEN_OUTLINE, *PINK_OUTLINE, *ORANGE_OUTLINE,];
-    pub static ref FILL_COLOURS: [Color32; 3] = [*GREEN_FILL, *PINK_FILL, *ORANGE_FILL,];
+    pub static ref LINE_COLOURS: [Color32; 3] = [*GREEN_OUTLINE, *PINK_OUTLINE, *ORANGE_OUTLINE];
+    pub static ref FILL_COLOURS: [Color32; 3] = [*GREEN_FILL, *PINK_FILL, *ORANGE_FILL];
 }
 
 impl<F: Fn(Action), G: Fn()> View for SubSynthView<'_, F, G> {
@@ -149,9 +149,8 @@ impl<F: Fn(Action), G: Fn()> View for SubSynthView<'_, F, G> {
                 octave: 8,
             }
             .into();
-            Piano::new(max_note, min_note - 1)
-                .with_orientation(PianoOrientation::Horizontal)
-                .ui(ui);
+            // TODO: piano is only rendering a subset of these notes.
+            Piano::new(max_note, min_note, PianoOrientation::Horizontal).ui(ui);
         }
 
         draw_piano(ui);

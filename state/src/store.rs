@@ -1,5 +1,5 @@
 use crate::{
-    Action, ReversibleAction, Selector, SelectorTrait, StoreData, UndoStack,
+    Action, ReversibleAction, RootSelector, Selector, SelectorTrait, StoreData, UndoStack,
     receiver::ActionReceiver,
 };
 use log::info;
@@ -99,8 +99,13 @@ impl Store {
         selector.select(self.get())
     }
 
+    // Dispatching is allowed with only an immutable reference.
+    // We mutate via the RefCell containing the queued actions. This allows Store to be passed around immutably,
+    // while allowing the caller to dispatch actions to it. As long as dispatch() is only called in
+    // a single thread, which is the case in WASM, this is safe. If it needs to be sent across
+    // threads, it should be replaced with a Mutex.
     // TODO: migrate all `dispatch` usages to this, then remove the old dispatch method.
-    pub fn dispatch2<'a, T: ActionReceiver + 'a, S: SelectorTrait<Item = T> + 'a>(
+    pub fn dispatch<'a, T: ActionReceiver + 'a, S: SelectorTrait<Item = T> + 'a>(
         &self,
         selector: &S,
         action: Action,
@@ -113,12 +118,9 @@ impl Store {
             .push((selector.as_enum().clone(), action.clone()));
     }
 
-    // Dispatching is allowed with only an immutable reference.
-    // We mutate via the RefCell containing the queued actions. This allows Store to be passed around immutably,
-    // while allowing the caller to dispatch actions to it. As long as dispatch() is only called in
-    // a single thread, which is the case in WASM, this is safe. If it needs to be sent across
-    // threads, it should be replaced with a Mutex.
-    pub fn dispatch(&self, selector: &Selector, action: Action) {
+    // Dispatches an action with an enum selector.
+    // Prefer the trait-based dispatch method where possible.
+    pub fn dispatch_enum(&self, selector: &Selector, action: Action) {
         info!("Recording action: {:?}", action.clone());
         self.pending_actions
             .borrow_mut()
@@ -127,6 +129,6 @@ impl Store {
 
     /// Shorthand for dispatch(Selector::Root, ..)
     pub fn dispatchr(&self, action: Action) {
-        self.dispatch(&Selector::Root, action)
+        self.dispatch(&RootSelector, action)
     }
 }
