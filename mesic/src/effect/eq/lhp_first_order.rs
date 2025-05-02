@@ -16,7 +16,10 @@ pub fn lhp_first_order(config: &EqConfig, low_high: LowHigh) -> FirstOrderFilter
         LowHigh::Low => 0.5 * (1.0 - gamma),
         LowHigh::High => 0.5 * (1.0 + gamma),
     };
-    let a1 = a0;
+    let a1 = match low_high {
+        LowHigh::Low => a0,
+        LowHigh::High => 0.5 * (-1.0 - gamma),
+    };
     let b1 = -gamma;
 
     FirstOrderFilter::new_wet(FirstOrderFilterConfig { a0, a1, b1 })
