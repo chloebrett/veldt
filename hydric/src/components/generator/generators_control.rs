@@ -28,7 +28,7 @@ pub fn generators_control(ctx: &egui::Context, window_state: &mut WindowState, s
                 ui.horizontal(|ui| {
                     let mute_response = ui.add(Button::new("Mute").selected(meta.mute));
                     if mute_response.clicked() {
-                        store.dispatch2(&sel, Action::SetChild(TypeField::Mute(!meta.mute)))
+                        store.dispatch(&sel, Action::SetChild(TypeField::Mute(!meta.mute)))
                     }
 
                     let generator_response = ui.add(Button::new(label).selected(show));
@@ -40,7 +40,7 @@ pub fn generators_control(ctx: &egui::Context, window_state: &mut WindowState, s
                         ui,
                         "Volume",
                         meta.volume,
-                        |it| store.dispatch2(&sel, Action::SetFloat(FloatField::Volume, it)),
+                        |it| store.dispatch(&sel, Action::SetFloat(FloatField::Volume, it)),
                         // TODO: let this go up a bit past 1?
                         0.0..=1.0,
                         /* neutral= */ 0.8,
@@ -51,7 +51,7 @@ pub fn generators_control(ctx: &egui::Context, window_state: &mut WindowState, s
                         ui,
                         "Pan",
                         meta.pan,
-                        |it| store.dispatch2(&sel, Action::SetFloat(FloatField::Pan, it)),
+                        |it| store.dispatch(&sel, Action::SetFloat(FloatField::Pan, it)),
                         -1.0..=1.0,
                         /* neutral= */ 0.0,
                         on_release,

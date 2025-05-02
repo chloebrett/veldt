@@ -46,7 +46,7 @@ impl View for TrackPlacementView<'_> {
                         selectable_value(
                             ui,
                             get_set(&track_placement.track_index, |it| {
-                                store.dispatch2(&sel, Action::SetIndex(IndexField::Track(*it)))
+                                store.dispatch(&sel, Action::SetIndex(IndexField::Track(*it)))
                             }),
                             &track_index,
                             track_index.to_string(),
@@ -60,7 +60,7 @@ impl View for TrackPlacementView<'_> {
                 ui,
                 "Generator index",
                 track_placement.generator_index as f64,
-                |it| store.dispatch2(&sel, Action::SetIndex(IndexField::Generator(it as usize))),
+                |it| store.dispatch(&sel, Action::SetIndex(IndexField::Generator(it as usize))),
                 0..=max_generator_index,
                 on_release,
             );
@@ -70,7 +70,7 @@ impl View for TrackPlacementView<'_> {
                 ui,
                 "Start position",
                 offset,
-                |it| store.dispatch2(&sel, Action::SetFloat(FloatField::Offset, it as Beats)),
+                |it| store.dispatch(&sel, Action::SetFloat(FloatField::Offset, it as Beats)),
                 0.0..=16.0,
                 on_release,
             );
@@ -86,7 +86,7 @@ impl View for TrackPlacementView<'_> {
                     "Clipped Duration",
                     duration,
                     |it| {
-                        store.dispatch2(&sel, {
+                        store.dispatch(&sel, {
                             let clipped_duration = if it < max_note_length as f64 {
                                 Some(it as Beats)
                             } else {

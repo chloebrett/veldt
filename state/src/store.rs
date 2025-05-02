@@ -105,7 +105,7 @@ impl Store {
     // a single thread, which is the case in WASM, this is safe. If it needs to be sent across
     // threads, it should be replaced with a Mutex.
     // TODO: migrate all `dispatch` usages to this, then remove the old dispatch method.
-    pub fn dispatch2<'a, T: ActionReceiver + 'a, S: SelectorTrait<Item = T> + 'a>(
+    pub fn dispatch<'a, T: ActionReceiver + 'a, S: SelectorTrait<Item = T> + 'a>(
         &self,
         selector: &S,
         action: Action,
@@ -118,6 +118,8 @@ impl Store {
             .push((selector.as_enum().clone(), action.clone()));
     }
 
+    // Dispatches an action with an enum selector.
+    // Prefer the trait-based dispatch method where possible.
     pub fn dispatch_enum(&self, selector: &Selector, action: Action) {
         info!("Recording action: {:?}", action.clone());
         self.pending_actions
@@ -127,6 +129,6 @@ impl Store {
 
     /// Shorthand for dispatch(Selector::Root, ..)
     pub fn dispatchr(&self, action: Action) {
-        self.dispatch2(&RootSelector, action)
+        self.dispatch(&RootSelector, action)
     }
 }

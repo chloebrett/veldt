@@ -30,7 +30,7 @@ impl View for MixerView<'_> {
         } = self;
         let mixer_sel = window_state.mixer.channel;
         let mixer = &store.select(&mixer_sel);
-        let dispatch_mixer = |action| store.dispatch2(&mixer_sel, action);
+        let dispatch_mixer = |action| store.dispatch(&mixer_sel, action);
         let on_release = || store.dispatchr(Action::Release);
         let MixerSelector(mixer_index) = mixer_sel;
 
@@ -69,7 +69,7 @@ impl View for MixerView<'_> {
                                 dispatch_mixer(Action::MoveEffectDown(effect_index));
                             }
                         });
-                        let dispatch_effect = |action| store.dispatch2(&effect_sel, action);
+                        let dispatch_effect = |action| store.dispatch(&effect_sel, action);
                         let effect = &mixer.effects[effect_index];
 
                         let show = window_state.effects.get(effect_sel);

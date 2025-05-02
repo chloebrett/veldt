@@ -118,7 +118,7 @@ impl View for NoteRoll<'_> {
         window.show(ui, DataState::NoteRollWindow, |ui| {
             ui.horizontal(|ui| {
                 if ui.button("New note").clicked() {
-                    store.dispatch2(
+                    store.dispatch(
                         &TrackSelector(track_index),
                         Action::AddChild(TypeField::PlacedNote(default_note)),
                     );
@@ -260,7 +260,7 @@ impl SequencerObject<PlacedNote> for PlacedNote {
     }
 
     fn add_new(&self, store: &Store, parent_index: Option<usize>) {
-        store.dispatch2(
+        store.dispatch(
             &TrackSelector(parent_index.expect("Should have been track index.")),
             Action::AddChild(TypeField::PlacedNote(self.clone())),
         );
@@ -279,7 +279,7 @@ impl SequencerObject<PlacedNote> for PlacedNote {
     }
 
     fn delete(store: &Store, index: usize, parent_index: Option<usize>) {
-        store.dispatch2(
+        store.dispatch(
             &TrackSelector(parent_index.expect("Should have been a parent index")),
             Action::DeleteChild(IndexField::PlacedNote(index)),
         );

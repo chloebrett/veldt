@@ -238,7 +238,7 @@ impl<T: SequencerObject<T>> Widget for Sequencer<'_, T> {
         let select = self.select;
         let background_shapes = &self.background_shapes;
         let edit_object = |index: usize, action: Action| {
-            store.dispatch2(&T::selector(index, self.parent_index), action)
+            store.dispatch(&T::selector(index, self.parent_index), action)
         };
         let on_release = || store.dispatchr(Action::Release);
         let add_object = |object: T| object.add_new(store, self.parent_index);

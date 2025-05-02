@@ -124,7 +124,7 @@ impl View for App {
         .ui(ui);
 
         for effect_selector in self.visible_effects() {
-            let dispatch = |action| self.store.dispatch2(&effect_selector, action);
+            let dispatch = |action| self.store.dispatch(&effect_selector, action);
             let on_release = || self.store.dispatchr(Action::Release);
             if let Some(mut it) = EffectView::new(
                 &self.store,

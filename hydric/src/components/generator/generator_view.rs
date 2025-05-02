@@ -42,7 +42,7 @@ impl<F: FnMut()> View for GeneratorView<'_, F> {
                 |_| (self.on_close)(),
                 |ui| {
                     let generator = instance.it.clone();
-                    let dispatch = |action| self.store.dispatch2(self.selector, action);
+                    let dispatch = |action| self.store.dispatch(self.selector, action);
                     let on_release = || self.store.dispatchr(Action::Release);
 
                     match generator {
