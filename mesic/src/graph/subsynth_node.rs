@@ -74,23 +74,16 @@ impl Node<ProcessContext> for SubSynthNode {
                 continue;
             }
 
-            // go through all the oscillators 
-            for oscillator in &self.config.oscillators {
-                let mut unison_detune = 0.0;
-                for _ in 0..oscillator.osc_count {
-                    //TODO add the unison detune into the wave function
-                    dasp_slice::add_in_place(
-                        &mut buffer,
-                        &sub_synth_wave(
-                            &note.note.pitch_name,
-                            note.note.beats,
-                            self.bpm,
-                            &self.config,
-                            self.sample_index as i32 - note_start_sample as i32,
-                        ),
-                    );
-                }
-            }
+            dasp_slice::add_in_place(
+                &mut buffer,
+                &sub_synth_wave(
+                    &note.note.pitch_name,
+                    note.note.beats,
+                    self.bpm,
+                    &self.config,
+                    self.sample_index as i32 - note_start_sample as i32,
+                ),
+            );
         }
 
         for out_buf in output.iter_mut() {
