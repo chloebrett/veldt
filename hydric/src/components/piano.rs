@@ -50,22 +50,20 @@ impl Piano {
         )
     }
 
-    fn get_piano_notes(&self, rect: Rect) -> Vec<PlacedNote> {
-        let note = |pitch_value: i32| PlacedNote {
-            note: Note {
-                pitch_name: pitch_value.into(),
-                beats: 0.0,
-            },
-            offset: 0.0.into(),
+    fn get_piano_notes(&self) -> Vec<PlacedNote> {
+        let range = match self.orientation {
+            PianoOrientation::Horizontal => 0..=(self.max_note - self.min_note),
+            PianoOrientation::Vertical => self.min_note..=self.max_note,
         };
-        match self.orientation {
-            PianoOrientation::Horizontal => (rect.left() as i32..=rect.right() as i32)
-                .map(note)
-                .collect(),
-            PianoOrientation::Vertical => (rect.top() as i32..=rect.bottom() as i32)
-                .map(note)
-                .collect(),
-        }
+        range
+            .map(|pitch_value| PlacedNote {
+                note: Note {
+                    pitch_name: pitch_value.into(),
+                    beats: 0.0,
+                },
+                offset: 0.0.into(),
+            })
+            .collect()
     }
 
     fn make_all_piano_keys(&self, notes: Vec<PlacedNote>, range: Rect) -> Vec<Shape> {
@@ -120,42 +118,39 @@ impl Piano {
     fn make_black_key(&self, note: PlacedNote, range: Rect) -> Shape {
         let black_note_length = 0.6;
 
-        match self.orientation {
+        let (note_pos, note_size, corner_radius) = match self.orientation {
             PianoOrientation::Vertical => {
                 let note_pos = note.to_pos(range);
                 let note_size = vec2(black_note_length, 1.0);
-                let rect = Rect::from_min_size(note_pos, note_size);
-                Shape::rect_filled(
-                    rect,
-                    // No radius on the left and small radius on the right.
-                    // To reflect the actual shape of black keys on a piano.
-                    CornerRadius {
-                        nw: 0,
-                        ne: 2,
-                        sw: 0,
-                        se: 2,
-                    },
-                    Color32::BLACK,
-                )
+                // No radius on the left and small radius on the right.
+                // To reflect the actual shape of black keys on a piano.
+                let corner_radius = CornerRadius {
+                    nw: 0,
+                    ne: 2,
+                    sw: 0,
+                    se: 2,
+                };
+                (note_pos, note_size, corner_radius)
             }
             PianoOrientation::Horizontal => {
                 let note_pos = note.to_pos_horizontal(range);
                 let note_size = vec2(1.0, black_note_length);
-                let rect = Rect::from_min_size(note_pos, note_size);
-
-                Shape::rect_filled(
-                    rect,
-                    // No radius on the top and small radius on the bottom
-                    CornerRadius {
-                        nw: 0,
-                        ne: 0,
-                        sw: 2,
-                        se: 2,
-                    },
-                    Color32::BLACK,
-                )
+                // No radius on the top and small radius on the bottom
+                let corner_radius = CornerRadius {
+                    nw: 0,
+                    ne: 0,
+                    sw: 2,
+                    se: 2,
+                };
+                (note_pos, note_size, corner_radius)
             }
-        }
+        };
+
+        Shape::rect_filled(
+            Rect::from_min_size(note_pos, note_size),
+            corner_radius,
+            Color32::BLACK,
+        )
     }
 }
 
@@ -183,7 +178,7 @@ impl View for Piano {
                 response.rect,
             );
             let piano_board = self.make_piano_board(range);
-            let piano_keys = self.make_all_piano_keys(self.get_piano_notes(range), range);
+            let piano_keys = self.make_all_piano_keys(self.get_piano_notes(), range);
 
             // Draw piano board first
             painter.extend(vec![piano_board].transform(piano_transform));
@@ -200,7 +195,7 @@ impl View for Piano {
                 ));
                 ui.label(format!("range: {:?}", range));
                 ui.label(format!("Total notes: {}", self.max_note - self.min_note));
-                let piano_keys = self.make_all_piano_keys(self.get_piano_notes(range), range);
+                let piano_keys = self.make_all_piano_keys(self.get_piano_notes(), range);
                 ui.label(format!("Piano keys: {:?}", piano_keys))
             });
         }
