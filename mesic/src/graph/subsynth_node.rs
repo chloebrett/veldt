@@ -39,7 +39,7 @@ impl SubSynthNode {
 }
 
 impl Node<ProcessContext> for SubSynthNode {
-    fn process(&mut self, _inputs: &[Input], output: &mut [Buffer], payload: &ProcessContext) {
+    fn process(&mut self, _inputs: &[Input], _output: &mut [Buffer], payload: &ProcessContext) {
         if let Some(seek_pos) = payload.seek_pos {
             self.sample_index = seek_pos as u32;
         }
