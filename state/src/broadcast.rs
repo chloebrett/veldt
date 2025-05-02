@@ -17,6 +17,7 @@ pub fn broadcast_type(action: &Action) -> BroadcastType {
         Action::SetFloat(..) => BroadcastType::OnRelease,
         Action::SetUint(..) => BroadcastType::OnRelease,
         Action::SetIndex(..) => BroadcastType::OnRelease,
+        Action::MoveChild(..) => BroadcastType::Immediate,
         Action::SetChild(child) => match child {
             TypeField::ProjectList(..) => BroadcastType::Never,
             TypeField::Project(..) => BroadcastType::Never,

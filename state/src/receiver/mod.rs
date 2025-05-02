@@ -16,3 +16,14 @@ pub trait ActionReceiver {
     /// If the action isn't relevant, returns None.
     fn apply(&mut self, action: &Action) -> Option<Action>;
 }
+
+pub fn move_elem<T: Clone>(vec: &mut Vec<T>, from_index: usize, to_index: usize) {
+    vec.insert(to_index, vec[from_index].clone());
+    if from_index > to_index {
+        // Inserted value has increased original index of value by 1
+        vec.remove(from_index + 1);
+    } else if from_index <= to_index {
+        // Inserted value has not changed original index of value
+        vec.remove(from_index);
+    };
+}
