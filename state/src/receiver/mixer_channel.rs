@@ -32,7 +32,7 @@ impl ActionReceiver for MixerChannel {
                     };
                     Action::MoveChild(prev)
                 } else {
-                    panic!("Action should have only recieved Effect IndexFields.")
+                    panic!("Action should have only received Effect IndexFields.")
                 }
             }
             Action::DeleteChild(IndexField::Effect(effect_index)) => {
