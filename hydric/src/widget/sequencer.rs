@@ -231,6 +231,8 @@ impl<'a, T: SequencerObject<T>> Sequencer<'a, T> {
 
 impl<T: SequencerObject<T>> Widget for Sequencer<'_, T> {
     fn ui(mut self, ui: &mut Ui) -> Response {
+        let mut res: Option<Response> = None;
+
         Frame::canvas(ui.style()).show(ui, |ui| {
             let Self {
                 store,
@@ -240,8 +242,6 @@ impl<T: SequencerObject<T>> Widget for Sequencer<'_, T> {
                 select,
                 ..
             } = self;
-            let add_object = |object: T| object.add_new(store, self.parent_index);
-
             let (response, painter) = ui.allocate_painter(size, sense);
             let to_screen = RectTransform::from_to(
                 Rect::from_min_size(Pos2::ZERO, range.size()),
@@ -262,28 +262,30 @@ impl<T: SequencerObject<T>> Widget for Sequencer<'_, T> {
             } else if response.interact(Sense::click()).clicked() {
                 let pos = response.interact_pointer_pos().unwrap();
                 let object = T::from_pos(pos.transform(to_screen.inverse()), range);
-                add_object(object);
+                object.add_new(store, self.parent_index);
             }
 
             self.interact(ui, &response);
 
-            let active_object = T::get_active(ui, self.store);
-            let selected_objects = T::get_selected(ui, self.store);
             painter.extend(self.background_shapes.clone().transform(to_screen));
             painter.add(self.object_shapes().transform(to_screen));
-            if let Some(object) = active_object {
+
+            if let Some(object) = T::get_active(ui, self.store) {
                 painter.add(object.active_shape(range).transform(to_screen));
             }
-            if let Some(objects) = selected_objects {
+
+            if let Some(objects) = T::get_selected(ui, self.store) {
                 painter.extend(
                     objects
                         .into_iter()
                         .map(|object| object.selected_shape(range).transform(to_screen)),
                 )
             }
+
+            res = Some(response.clone());
         });
-        let (_rect, response) = ui.allocate_at_least(Vec2::ZERO, self.sense);
-        response
+
+        res.unwrap()
     }
 }
 
