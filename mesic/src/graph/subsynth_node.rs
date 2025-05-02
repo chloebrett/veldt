@@ -1,4 +1,4 @@
-use crate::graph::ProcessContext;
+use crate::graph::{ProcessContext, pan_multipliers};
 use crate::wave::{beats_to_samples, subsynth_wave};
 use dasp_graph::{Buffer, Input, Node};
 use shared::model::{
@@ -45,7 +45,7 @@ impl SubSynthNode {
     }
 }
 
-// NOTE: most of the logic is the same as simple wave
+// TODO: most of the logic is the same as simple wave, need to move this elsewhere
 impl Node<ProcessContext> for SubSynthNode {
     // TODO: a lot of this processing logic is generic and should be shared with
     // other generator types. How?
@@ -125,11 +125,4 @@ impl Node<ProcessContext> for SubSynthNode {
 
         self.sample_index += Buffer::LEN as u32;
     }
-}
-
-/// TODO: use exponential pan curves, instead of linear.
-fn pan_multipliers(pan: KnobPosition) -> [Volume; 2] {
-    let left = 0.5 * (1.0 - pan);
-    let right = 0.5 * (1.0 + pan);
-    [left, right]
 }
