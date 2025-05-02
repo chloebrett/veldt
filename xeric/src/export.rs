@@ -54,20 +54,16 @@ impl Export for ExportContext {
                 .map_err(|e| tonic::Status::invalid_argument(format!("{}", e)))?;
 
             for frame in graph {
-                let left_sample = *frame.channel(0).unwrap(); // left channel
-                let right_sample = *frame.channel(1).unwrap(); // right channel
+                for channel in 0..2 {
+                    let sample = *frame.channel(channel).unwrap();
 
-                let left_sample_i16 =
-                    (left_sample * i16::MAX as f32).clamp(i16::MIN as f32, i16::MAX as f32) as i16;
-                let right_sample_i16 =
-                    (right_sample * i16::MAX as f32).clamp(i16::MIN as f32, i16::MAX as f32) as i16;
+                    let sample_i16 =
+                        (sample * i16::MAX as f32).clamp(i16::MIN as f32, i16::MAX as f32) as i16;
 
-                writer
-                    .write_sample(left_sample_i16)
-                    .map_err(|e| tonic::Status::invalid_argument(format!("{}", e)))?;
-                writer
-                    .write_sample(right_sample_i16)
-                    .map_err(|e| tonic::Status::invalid_argument(format!("{}", e)))?;
+                    writer
+                        .write_sample(sample_i16)
+                        .map_err(|e| tonic::Status::invalid_argument(format!("{}", e)))?;
+                }
             }
 
             writer
