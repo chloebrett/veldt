@@ -1,5 +1,5 @@
 use crate::{
-    DataState, WindowState, update_select_data_state,
+    DataState, LocalState, WindowState, update_select_data_state,
     view::View,
     widget::{Sequencer, SequencerObject, default_window},
 };
@@ -17,13 +17,19 @@ use std::collections::BTreeSet;
 pub struct TrackRoll<'a> {
     store: &'a Store,
     window_state: &'a mut WindowState,
+    local_state: &'a mut LocalState,
 }
 
 impl<'a> TrackRoll<'a> {
-    pub fn new(store: &'a Store, window_state: &'a mut WindowState) -> Self {
+    pub fn new(
+        store: &'a Store,
+        window_state: &'a mut WindowState,
+        local_state: &'a mut LocalState,
+    ) -> Self {
         Self {
             store,
             window_state,
+            local_state,
         }
     }
 }
@@ -31,19 +37,6 @@ impl<'a> TrackRoll<'a> {
 impl View for TrackRoll<'_> {
     fn ui(&mut self, ui: &mut Ui) {
         let store = self.store;
-        let default_track = Track {
-            notes: vec![],
-            offset: 0.0.into(),
-        };
-        let default_placement = Placement {
-            kind: PlacementType::Track(TrackPlacement {
-                track_index: 0,
-                generator_index: 0,
-            }),
-            offset: (0.0 as Beats).into(),
-            clipped_duration: None,
-            visual_placement: 0,
-        };
         let placed_tracks: Vec<PlacedTrack> = store
             .get()
             .project
@@ -75,10 +68,12 @@ impl View for TrackRoll<'_> {
             .show(ui.ctx(), |ui| {
                 ui.horizontal(|ui| {
                     if ui.button("New track").clicked() {
-                        store.dispatchr(Action::AddChild(TypeField::Track(default_track)));
+                        store.dispatchr(Action::AddChild(TypeField::Track(Track::default())));
                     }
                     if ui.button("New track placement").clicked() {
-                        store.dispatchr(Action::AddChild(TypeField::Placement(default_placement)));
+                        store.dispatchr(Action::AddChild(TypeField::Placement(
+                            Placement::default(),
+                        )));
                     }
                     ui.checkbox(&mut select, "Select")
                 });

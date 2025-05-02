@@ -231,12 +231,15 @@ impl<'a, T: SequencerObject<T>> Sequencer<'a, T> {
 
 impl<T: SequencerObject<T>> Widget for Sequencer<'_, T> {
     fn ui(self, ui: &mut Ui) -> Response {
-        let store = self.store;
-        let range = self.range;
-        let size = self.size;
-        let sense = self.sense;
-        let select = self.select;
-        let background_shapes = &self.background_shapes;
+        let Self {
+            store,
+            range,
+            size,
+            sense,
+            select,
+            ref background_shapes,
+            ..
+        } = self;
         let edit_object = |index: usize, action: Action| {
             store.dispatch(&T::selector(index, self.parent_index), action)
         };
