@@ -130,8 +130,9 @@ impl View for MixerView<'_> {
                                 on_release,
                             );
 
-                            let response = ui
-                                .add(Button::new(text).selected(window_state.effects.get(effect_sel)));
+                            let response = ui.add(
+                                Button::new(text).selected(window_state.effects.get(effect_sel)),
+                            );
                             if response.clicked() {
                                 window_state.effects.set(effect_sel, !show);
                             }
@@ -158,6 +159,13 @@ impl View for MixerView<'_> {
                     to = Some(Location { row: usize::MAX });
                 }
             });
-        if let (Some(from), Some(mut to)) = (from, to) {}
+        if let (Some(from), Some(mut to)) = (from, to) {
+            if to.row == usize::MAX {
+                dispatch_mixer(Action::AddChild(TypeField::Effect(
+                    mixer.effects[from.row].clone(),
+                )));
+                dispatch_mixer(Action::DeleteChild(IndexField::Effect(from.row)));
+            }
+        }
     }
 }
