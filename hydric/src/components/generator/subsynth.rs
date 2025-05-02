@@ -63,7 +63,7 @@ impl<G: Fn()> View for SubSynthView<'_, G> {
         let on_release = &self.on_release;
         let generator_index = self.generator_index;
         let gen_sel = GeneratorSelector(generator_index);
-        let gen_dispatch = |action| self.store.dispatch2(&gen_sel, action);  // TODO: fix this for the mod_matrix
+        let gen_dispatch = |action| self.store.dispatch2(&gen_sel, action); // TODO: fix this for the mod_matrix
 
         ui.horizontal(|ui| {
             ui.vertical(|ui| {
@@ -97,7 +97,7 @@ impl<G: Fn()> View for SubSynthView<'_, G> {
                     &config.matrix,
                     vec!["ENV 1", "ENV 2", "ENV 3", "LFO 1", "LFO 2", "LFO 3"],
                     vec!["OSC 1", "OSC 2", "OSC 3"],
-                    gen_dispatch,  // TODO: fix
+                    gen_dispatch, // TODO: fix
                     on_release,
                 )
                 .ui(ui); // must wrap in ui.vertical to stop the matrix from unnecessarily stretching vertically

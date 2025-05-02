@@ -1,10 +1,10 @@
-use crate::graph::ProcessContext;
-use crate::wave::{beats_to_samples, subsynth_wave};
+use super::ProcessContext;
+use crate::wave::{beats_to_samples, unison_wave};
 use dasp_graph::{Buffer, Input, Node};
 use shared::model::{
     Generator, GeneratorInstance, GeneratorMeta, Placement, SubSynthConfig, Track, TrackPlacement,
 };
-use shared::types::Beats;
+use shared::types::{Beats, KnobPosition, Volume};
 use std::cmp::min;
 
 pub struct SubSynthNode {
@@ -36,10 +36,19 @@ impl SubSynthNode {
             sample_index: 0,
         }
     }
+
+    fn apply_volume_and_pan(&self, buffer: &mut Buffer, channel_index: usize) {
+        let pan_mult = pan_multipliers(self.meta.pan)[channel_index];
+        for x in buffer.iter_mut() {
+            *x *= pan_mult * self.meta.volume;
+        }
+    }
 }
 
-impl Node<ProcessContext> for SubSynthNode {
-    fn process(&mut self, _inputs: &[Input], _output: &mut [Buffer], payload: &ProcessContext) {
+impl Node<ProcessContext> for SimpleWaveGeneratorNode {
+    // TODO: a lot of this processing logic is generic and should be shared with
+    // other generator types. How?
+    fn process(&mut self, _inputs: &[Input], output: &mut [Buffer], payload: &ProcessContext) {
         if let Some(seek_pos) = payload.seek_pos {
             self.sample_index = seek_pos as u32;
         }
@@ -108,6 +117,17 @@ impl Node<ProcessContext> for SubSynthNode {
             }
         }
 
+        for (channel_index, out_buf) in output.iter_mut().enumerate() {
+            out_buf.copy_from_slice(&buffer);
+            self.apply_volume_and_pan(out_buf, channel_index);
+        }
         self.sample_index += Buffer::LEN as u32;
     }
+}
+
+/// TODO: use exponential pan curves, instead of linear.
+fn pan_multipliers(pan: KnobPosition) -> [Volume; 2] {
+    let left = 0.5 * (1.0 - pan);
+    let right = 0.5 * (1.0 + pan);
+    [left, right]
 }
