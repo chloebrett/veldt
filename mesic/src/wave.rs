@@ -110,20 +110,33 @@ pub fn sub_synth_wave(
         .iter()
         .zip(config.envelopes.iter())
         .map(|(osc, envelope)| {
-            let mut buf = wave(
-                pitch_name,
-                beats,
-                bpm,
-                envelope, // map osc 1 -> envelope 1, etc for now
-                osc.wave,
-                AntiAliasingMode::Off, // placeholder
-                osc.osc_detune,
-                start_index,
-            );
+            // TODO: handle unison
+            let detunes = linspace(-osc.unison_detune, osc.unison_detune, osc.osc_count);
+            
+            // create the unison waves
+            let unison_waves = detune_amounts
+                .iter()
+                .map(|&detune| {
+                    wave(
+                        pitch_name,
+                        beats,
+                        bpm,
+                        envelope,
+                        osc.wave,
+                        AntiAliasingMode::Off, // placeholder
+                        osc.osc_detune + detune,
+                        start_index,
+                    )
+                })
+                .collect();
+            
+            // sum the unison waves
+            let mut buf = multi_sum(&unison_waves);
+
             for x in buf.iter_mut() {
                 *x *= osc.volume;
             }
-            // TODO: handle pan and unison
+            // TODO: handle pan
             buf
         })
         .collect();
