@@ -1,13 +1,14 @@
 use crate::{transform::Transform, view::View, widget::SequencerObject};
 use egui::{
     Color32, CornerRadius, Frame, Pos2, Rect, Sense, Shape, Stroke, StrokeKind, Ui, Vec2,
-    emath::RectTransform, pos2, vec2,
+    emath::RectTransform, vec2,
 };
 use shared::{
     model::{Note, PlacedNote, ScaleValue},
     types::PitchValue,
 };
 
+#[derive(PartialEq)]
 pub enum PianoOrientation {
     Vertical,
     Horizontal,
@@ -42,20 +43,12 @@ impl Piano {
         self
     }
 
-    fn make_piano_board(&self, range: Rect) -> Shape {
-        Shape::rect_filled(
-            Rect::from_min_size(Pos2::ZERO, range.size()),
-            CornerRadius::ZERO,
-            Color32::WHITE,
-        )
+    fn make_piano_board(&self) -> Shape {
+        Shape::rect_filled(self.from_rect(), CornerRadius::ZERO, Color32::WHITE)
     }
 
     fn get_piano_notes(&self) -> Vec<PlacedNote> {
-        let range = match self.orientation {
-            PianoOrientation::Horizontal => 0..=(self.max_note - self.min_note),
-            PianoOrientation::Vertical => self.min_note..=self.max_note,
-        };
-        range
+        (self.min_note..=self.max_note)
             .map(|pitch_value| PlacedNote {
                 note: Note {
                     pitch_name: pitch_value.into(),
@@ -66,14 +59,14 @@ impl Piano {
             .collect()
     }
 
-    fn make_all_piano_keys(&self, notes: Vec<PlacedNote>, range: Rect) -> Vec<Shape> {
+    fn make_all_piano_keys(&self, notes: Vec<PlacedNote>) -> Vec<Shape> {
         notes
             .into_iter()
-            .map(|note| self.make_piano_key(note, range))
+            .map(|note| self.make_piano_key(note))
             .collect()
     }
 
-    fn make_piano_key(&self, note: PlacedNote, range: Rect) -> Shape {
+    fn make_piano_key(&self, note: PlacedNote) -> Shape {
         // White notes are arranged so that the edge of B and C and the edge of
         // E and F lines align with the edge of the equivalent background.
         // This helps visual align background notes with the piano keys.
@@ -89,20 +82,23 @@ impl Piano {
             ScaleValue::A => (-1.0 / 4.0, 7.0 / 4.0),
             ScaleValue::B => (0.0, 7.0 / 4.0),
             // return black key note as regular size and offset
-            _ => return self.make_black_key(note, range),
+            _ => return self.make_black_key(note),
         };
-        self.make_white_key(note, offset, note_size, range)
+        self.make_white_key(note, offset, note_size)
     }
 
-    fn make_white_key(&self, note: PlacedNote, offset: f32, note_size: f32, range: Rect) -> Shape {
+    fn make_white_key(&self, note: PlacedNote, offset: f32, note_size: f32) -> Shape {
+        // TODO: this whole expression just produces the same rect but inverted, if given the same
+        // range each time!
         let rect = match self.orientation {
             PianoOrientation::Vertical => {
-                let note_pos = note.to_pos(range) + vec2(0.0, offset);
+                let note_pos = note.to_pos(self.range()) + vec2(0.0, offset);
                 let size = vec2(1.0, note_size);
                 Rect::from_min_size(note_pos, size)
             }
             PianoOrientation::Horizontal => {
-                let note_pos = note.to_pos_horizontal(range) + vec2(offset, 0.0);
+                // TODO: get rid of to_pos_horizontal, and just pass a vertical range here?
+                let note_pos = note.to_pos_horizontal(self.range()) + vec2(offset, 0.0);
                 let size = vec2(note_size, 1.0);
                 Rect::from_min_size(note_pos, size)
             }
@@ -115,12 +111,12 @@ impl Piano {
         )
     }
 
-    fn make_black_key(&self, note: PlacedNote, range: Rect) -> Shape {
+    fn make_black_key(&self, note: PlacedNote) -> Shape {
         let black_note_length = 0.6;
 
         let (note_pos, note_size, corner_radius) = match self.orientation {
             PianoOrientation::Vertical => {
-                let note_pos = note.to_pos(range);
+                let note_pos = note.to_pos(self.range());
                 let note_size = vec2(black_note_length, 1.0);
                 // No radius on the left and small radius on the right.
                 // To reflect the actual shape of black keys on a piano.
@@ -133,7 +129,7 @@ impl Piano {
                 (note_pos, note_size, corner_radius)
             }
             PianoOrientation::Horizontal => {
-                let note_pos = note.to_pos_horizontal(range);
+                let note_pos = note.to_pos_horizontal(self.range());
                 let note_size = vec2(1.0, black_note_length);
                 // No radius on the top and small radius on the bottom
                 let corner_radius = CornerRadius {
@@ -152,33 +148,28 @@ impl Piano {
             Color32::BLACK,
         )
     }
+
+    fn range(&self) -> Rect {
+        let mut range =
+            Rect::from_x_y_ranges(self.min_note as f32..=self.max_note as f32, 0.0..=1.0);
+        if self.orientation == PianoOrientation::Vertical {
+            range = range.yx();
+        }
+        range
+    }
+
+    fn from_rect(&self) -> Rect {
+        Rect::from_min_size(Pos2::ZERO, self.range().size())
+    }
 }
 
 impl View for Piano {
     fn ui(&mut self, ui: &mut Ui) {
-        // Define range based on orientation
-        let range = match self.orientation {
-            PianoOrientation::Vertical => Rect::from_min_max(
-                pos2(0.0, self.min_note as f32),
-                pos2(1.0, self.max_note as f32),
-            ),
-            PianoOrientation::Horizontal => {
-                // min is top left corner which is 0,0 and max is bottom right which is 76,1
-                Rect::from_min_max(
-                    pos2(0.0, 0.0),
-                    pos2((self.max_note - self.min_note) as f32, 1.0),
-                )
-            }
-        };
-
         Frame::canvas(ui.style()).show(ui, |ui| {
             let (response, painter) = ui.allocate_painter(self.size, Sense::hover());
-            let piano_transform = RectTransform::from_to(
-                Rect::from_min_size(Pos2::ZERO, range.size()),
-                response.rect,
-            );
-            let piano_board = self.make_piano_board(range);
-            let piano_keys = self.make_all_piano_keys(self.get_piano_notes(), range);
+            let piano_transform = RectTransform::from_to(self.from_rect(), response.rect);
+            let piano_board = self.make_piano_board();
+            let piano_keys = self.make_all_piano_keys(self.get_piano_notes());
 
             // Draw piano board first
             painter.extend(vec![piano_board].transform(piano_transform));
@@ -193,11 +184,29 @@ impl View for Piano {
                     "min_note: {}, max_note: {}",
                     self.min_note, self.max_note
                 ));
-                ui.label(format!("range: {:?}", range));
+                ui.label(format!("range: {:?}", self.range()));
                 ui.label(format!("Total notes: {}", self.max_note - self.min_note));
-                let piano_keys = self.make_all_piano_keys(self.get_piano_notes(), range);
+                let piano_keys = self.make_all_piano_keys(self.get_piano_notes());
                 ui.label(format!("Piano keys: {:?}", piano_keys))
             });
         }
+    }
+}
+
+/// Transposes a 2D object, replacing x values with y values and vice versa.
+trait Yx {
+    fn yx(&self) -> Self;
+}
+
+impl Yx for Pos2 {
+    fn yx(&self) -> Self {
+        // This function already exists for Vec2.
+        self.to_vec2().yx().to_pos2()
+    }
+}
+
+impl Yx for Rect {
+    fn yx(&self) -> Self {
+        Rect::from_min_max(self.min.yx(), self.max.yx())
     }
 }

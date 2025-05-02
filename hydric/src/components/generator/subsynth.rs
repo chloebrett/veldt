@@ -149,7 +149,8 @@ impl<F: Fn(Action), G: Fn()> View for SubSynthView<'_, F, G> {
                 octave: 8,
             }
             .into();
-            Piano::new(max_note, min_note - 1)
+            // TODO: piano is only rendering a subset of these notes.
+            Piano::new(max_note, min_note)
                 .with_orientation(PianoOrientation::Horizontal)
                 .ui(ui);
         }
