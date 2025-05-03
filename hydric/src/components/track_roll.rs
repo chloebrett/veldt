@@ -1,5 +1,5 @@
 use crate::{
-    DataState, GetSetOption, LocalState, WindowState, update_select_data_state,
+    DataState, GetSet, LocalState, WindowState, update_select_data_state,
     view::View,
     widget::{Sequencer, SequencerObject, default_window},
 };
@@ -244,7 +244,7 @@ impl SequencerObject<PlacedTrack> for PlacedTrack {
         DataState::TrackPlacementViewWindow.set_value(ui, true);
         local_state
             .active_track
-            .set(TrackSelector(track_placement.track_index));
+            .set(Some(TrackSelector(track_placement.track_index)));
         DataState::ActiveTrackPlacementIndex.set_value(ui, index);
     }
 

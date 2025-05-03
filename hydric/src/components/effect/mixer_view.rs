@@ -1,5 +1,5 @@
 use super::effect_name;
-use crate::GetSetOption;
+use crate::GetSet;
 use crate::WindowState;
 use crate::local_state::LocalState;
 use crate::view::View;
@@ -45,7 +45,7 @@ impl View for MixerView<'_> {
         let dispatch_mixer = |action| store.dispatch(&mixer_sel, action);
         let on_release = || store.dispatchr(Action::Release);
         let MixerSelector(mixer_index) = mixer_sel;
-        let edit_state = local_state.mixer_edit_state.get().unwrap_or_default();
+        let edit_state = local_state.mixer_edit_state.get();
 
         // Keep track of an object being dragged.
         let mut from = None;

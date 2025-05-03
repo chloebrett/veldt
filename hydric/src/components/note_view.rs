@@ -1,5 +1,5 @@
 use crate::LocalState;
-use crate::local_state::GetSetOption;
+use crate::local_state::GetSet;
 use crate::view::View;
 use crate::widget::{StateWindow, default_window, get_set, int_slider, selectable_value};
 use egui::{Ui, pos2};
@@ -34,7 +34,7 @@ impl View for NoteView<'_> {
         let window = StateWindow(default_window("Notes").default_pos(pos2(600.0, 20.0)));
         window.show_with_closure(
             ui,
-            local_state.note_window.get().unwrap_or(false),
+            local_state.note_window.get(),
             |_| local_state.note_window.set(false),
             |ui| {
                 egui::ComboBox::from_id_salt(format!("note_{note_index}"))
@@ -93,7 +93,7 @@ impl View for NoteView<'_> {
                         &track_sel,
                         Action::DeleteChild(IndexField::PlacedNote(note_index)),
                     );
-                    self.local_state.active_note.set_none();
+                    self.local_state.active_note.set(None);
                     self.local_state.note_window.set(false);
                 }
             },

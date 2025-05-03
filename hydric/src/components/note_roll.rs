@@ -1,6 +1,6 @@
 use super::{Piano, PianoOrientation};
 use crate::{
-    DataState, GetSetOption, LocalState,
+    DataState, GetSet, LocalState,
     transform::Yx,
     view::View,
     widget::{Sequencer, SequencerObject, StateWindow, default_window},
@@ -110,7 +110,7 @@ impl View for NoteRoll<'_> {
         );
         let mut select = DataState::NoteRollSelectMode.get_value(ui).unwrap_or(false);
         if !select {
-            local_state.selected_notes.set_none();
+            local_state.selected_notes.set(None);
         }
         let title = format!("Track {}", track_sel.0);
         let window = StateWindow(
@@ -120,7 +120,7 @@ impl View for NoteRoll<'_> {
         );
         window.show_with_closure(
             ui,
-            local_state.note_roll_window.get().unwrap_or(false),
+            local_state.note_roll_window.get(),
             |_| local_state.note_roll_window.set(false),
             |ui| {
                 ui.horizontal(|ui| {
@@ -253,21 +253,21 @@ impl SequencerObject<PlacedNote> for PlacedNote {
         )
     }
 
-    fn set_active(&self, ui: &mut Ui, local_state: &LocalState, index: usize) {
+    fn set_active(&self, _ui: &mut Ui, local_state: &LocalState, index: usize) {
         local_state.note_window.set(true);
-        local_state.active_note.set(index);
+        local_state.active_note.set(Some(index));
     }
 
     fn set_selected(_ui: &mut Ui, local_state: &LocalState, index: Option<usize>) {
         let Some(index) = index else {
-            local_state.selected_notes.set_none();
+            local_state.selected_notes.set(None);
             return;
         };
 
         let Some(mut notes) = local_state.selected_notes.get() else {
             local_state
                 .selected_notes
-                .set(BTreeSet::from_iter(vec![index]));
+                .set(Some(BTreeSet::from_iter(vec![index])));
             return;
         };
 
@@ -277,7 +277,7 @@ impl SequencerObject<PlacedNote> for PlacedNote {
             notes.insert(index);
         }
 
-        local_state.selected_notes.set(notes);
+        local_state.selected_notes.set(Some(notes));
     }
 
     fn add_new(&self, store: &Store, parent_index: Option<usize>) {
