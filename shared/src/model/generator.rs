@@ -159,7 +159,9 @@ pub struct OscillatorConfig {
     pub unison_detune: f32,
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, EnumString, Display, EnumIter, IntoProto, FromProto)]
+#[derive(
+    Debug, Clone, Copy, PartialEq, Eq, EnumString, Display, EnumIter, IntoProto, FromProto, Hash,
+)]
 pub enum AntiAliasingMode {
     // No anti-aliasing. Uses naive waves without oversampling. Produces artifacts for waves like
     // square and saw, especially at high frequencies.
