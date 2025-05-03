@@ -3,7 +3,7 @@ use crate::envelope::apply_envelope;
 use dasp_graph::Buffer;
 use lazy_static::lazy_static;
 use shared::model::{
-    AdsrEnvelope, AntiAliasingMode, PitchName, SimpleWaveConfig, SubSynthConfig, WaveType,
+    AdsrEnvelope, AntiAliasingMode, OscillatorConfig, PitchName, SimpleWaveConfig, WaveType,
 };
 use shared::types::Beats;
 use shared::types::{Freq, PitchValue};
@@ -98,49 +98,41 @@ fn wave(
     buffer
 }
 
-pub fn subsynth_wave(
+pub fn osc_wave(
     pitch_name: &PitchName,
     beats: Beats,
     bpm: Beats,
-    config: &SubSynthConfig, // TODO: change to OscConfig later when matrix is made
+    config: &OscillatorConfig,
+    env: &AdsrEnvelope,
     start_index: i32,
 ) -> Buffer {
-    let buffers: Vec<Buffer> = config
-        .oscillators
+    let detunes = linspace(
+        -config.unison_detune,
+        config.unison_detune,
+        config.osc_count,
+    );
+
+    // Create the unison waves
+    let unison_waves: Vec<Buffer> = detunes
         .iter()
-        .zip(config.envelopes.iter())
-        .map(|(osc, envelope)| {
-            let detunes = linspace(-osc.unison_detune, osc.unison_detune, osc.osc_count);
-
-            // Create the unison waves
-            let unison_waves: Vec<Buffer> = detunes
-                .iter()
-                .map(|&detune| {
-                    wave(
-                        pitch_name,
-                        beats,
-                        bpm,
-                        envelope,
-                        osc.wave,
-                        AntiAliasingMode::Off, // placeholder
-                        osc.osc_detune + detune,
-                        start_index,
-                    )
-                })
-                .collect();
-
-            // Sum the unison waves
-            let mut buf = multi_sum(&unison_waves);
-
-            for x in buf.iter_mut() {
-                *x *= osc.volume;
-            }
-            // TODO: handle pan
-            buf
+        .map(|&detune| {
+            wave(
+                pitch_name,
+                beats,
+                bpm,
+                env,
+                config.wave,
+                AntiAliasingMode::Off, // placeholder
+                config.osc_detune + detune,
+                start_index,
+            )
         })
         .collect();
 
-    multi_sum(&buffers)
+    // Sum the unison waves
+    let buf = multi_sum(&unison_waves);
+
+    buf
 }
 
 pub fn beats_to_samples(beats: Beats, bpm: Beats) -> u32 {
@@ -181,8 +173,9 @@ fn linspace(low: f32, high: f32, count: u32) -> Vec<f32> {
         .collect()
 }
 
+// TODO: make multi_sum private
 /// Sums the input buffers into a single buffer.
-fn multi_sum(inputs: &[Buffer]) -> Buffer {
+pub fn multi_sum(inputs: &[Buffer]) -> Buffer {
     let mut output = Buffer::SILENT;
 
     for input in inputs {
