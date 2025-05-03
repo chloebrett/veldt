@@ -1,6 +1,7 @@
 use super::effect_name;
+use crate::GetSetOption;
 use crate::WindowState;
-use crate::data_state::DataState;
+use crate::local_state::LocalState;
 use crate::view::View;
 use crate::widget::{default_window, knob};
 use crate::window_state::WindowStateField;
@@ -14,13 +15,19 @@ use strum::IntoEnumIterator;
 pub struct MixerView<'a> {
     window_state: &'a mut WindowState,
     store: &'a Store,
+    local_state: &'a LocalState,
 }
 
 impl<'a> MixerView<'a> {
-    pub fn new(window_state: &'a mut WindowState, store: &'a Store) -> Self {
+    pub fn new(
+        window_state: &'a mut WindowState,
+        store: &'a Store,
+        local_state: &'a LocalState,
+    ) -> Self {
         Self {
             window_state,
             store,
+            local_state,
         }
     }
 }
@@ -30,6 +37,7 @@ impl View for MixerView<'_> {
         let Self {
             window_state,
             store,
+            local_state,
             ..
         } = self;
         let mixer_sel = window_state.mixer.channel;
@@ -37,7 +45,7 @@ impl View for MixerView<'_> {
         let dispatch_mixer = |action| store.dispatch(&mixer_sel, action);
         let on_release = || store.dispatchr(Action::Release);
         let MixerSelector(mixer_index) = mixer_sel;
-        let edit_state = DataState::EditMixerState.get_value(ui).unwrap_or_default();
+        let edit_state = local_state.mixer_edit_state.get().unwrap_or_default();
 
         // Keep track of an object being dragged.
         let mut from = None;
@@ -53,7 +61,7 @@ impl View for MixerView<'_> {
             .show(ui.ctx(), |ui| {
                 ui.heading(format!("Mixer channel {}", mixer_index + 1));
                 if ui.add(Button::new("Edit").selected(edit_state)).clicked() {
-                    DataState::EditMixerState.set_value(ui, !edit_state)
+                    local_state.mixer_edit_state.set(!edit_state);
                 };
                 ui.separator();
                 ui.with_layout(Layout::default(), |ui| {

@@ -5,6 +5,7 @@ use std::rc::Rc;
 #[derive(Default)]
 pub struct LocalState {
     pub active_track: Rc<RefCell<Option<TrackSelector>>>,
+    pub mixer_edit_state: Rc<RefCell<Option<bool>>>,
 }
 
 pub trait GetSetOption<T: Clone> {
