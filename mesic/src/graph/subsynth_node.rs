@@ -1,7 +1,7 @@
 use crate::consts::CHANNEL_COUNT;
 use crate::graph::{ProcessContext, pan_multipliers};
+use crate::wave::multi_sum;
 use crate::wave::{WaveSource, beats_to_samples};
-use crate::wave::{multi_sum};
 use dasp_graph::{Buffer, Input, Node};
 use shared::model::{
     Generator, GeneratorInstance, GeneratorMeta, Placement, SubSynthConfig, Track, TrackPlacement,
@@ -132,7 +132,12 @@ impl Node<ProcessContext> for SubSynthNode {
                         );
 
                         for channel_index in 0..CHANNEL_COUNT {
-                            Self::apply_volume_and_pan(&mut buf, channel_index, osc.volume, osc.pan);
+                            Self::apply_volume_and_pan(
+                                &mut buf,
+                                channel_index,
+                                osc.volume,
+                                osc.pan,
+                            );
                         }
 
                         buf
