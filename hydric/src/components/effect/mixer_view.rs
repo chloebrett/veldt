@@ -1,5 +1,3 @@
-use std::sync::Arc;
-
 use super::effect_name;
 use crate::WindowState;
 use crate::data_state::DataState;
@@ -83,9 +81,7 @@ impl View for MixerView<'_> {
                                     ),
                                 )
                             };
-                            if !edit_state {
-                                render_effect_widget(ui);
-                            } else {
+                            if edit_state {
                                 let id = egui::Id::new(("effect_config", effect_index));
                                 let response = ui
                                     .dnd_drag_source(id, effect_index, |ui| {
@@ -94,12 +90,14 @@ impl View for MixerView<'_> {
                                     .response;
                                 // Update `To` and `From` if an object has been dragged and
                                 // released.
-                                if let (Some(new_from), Some(new_to)) =
+                                if let Some((new_from, new_to)) =
                                     handle_drag(ui, response, effect_index)
                                 {
                                     from = Some(new_from);
                                     to = Some(new_to);
-                                }
+                                };
+                            } else {
+                                render_effect_widget(ui);
                             }
                         }
                     });
@@ -120,7 +118,7 @@ impl View for MixerView<'_> {
         // Update effects based on drag and drop.
         if let (Some(from), Some(to)) = (from, to) {
             dispatch_mixer(Action::MoveChild(MoveField {
-                from_field: IndexField::Effect(*from),
+                from_field: IndexField::Effect(from),
                 to_field: IndexField::Effect(to),
             }));
         }
@@ -164,7 +162,7 @@ impl<F: Fn(Action), G: Fn()> Widget for EffectWidget<'_, F, G> {
             dispatch,
             on_release,
         } = self;
-        let InnerResponse { inner: _, response } = ui.horizontal(|ui| {
+        let InnerResponse { response, .. } = ui.horizontal(|ui| {
             let show = effect_window.get(effect_sel);
             let text = effect_name(&effect.it);
             let meta = &effect.meta;
@@ -182,8 +180,10 @@ impl<F: Fn(Action), G: Fn()> Widget for EffectWidget<'_, F, G> {
                 on_release,
             );
 
-            let response = ui.add(Button::new(text).selected(effect_window.get(effect_sel)));
-            if response.clicked() {
+            if ui
+                .add(Button::new(text).selected(effect_window.get(effect_sel)))
+                .clicked()
+            {
                 effect_window.set(effect_sel, !show)
             }
         });
@@ -195,12 +195,8 @@ impl<F: Fn(Action), G: Fn()> Widget for EffectWidget<'_, F, G> {
 /// Handle where an object is dragged to and preview where it will be placed.
 /// Code adapted from
 /// https://github.com/emilk/egui/blob/master/crates/egui_demo_lib/src/demo/drag_and_drop.rs
-fn handle_drag(
-    ui: &mut Ui,
-    response: Response,
-    effect_index: usize,
-) -> (Option<Arc<usize>>, Option<usize>) {
-    let (mut from, mut to) = (None, None);
+fn handle_drag(ui: &mut Ui, response: Response, effect_index: usize) -> Option<(usize, usize)> {
+    let mut from_to = None;
     if let (Some(pointer), Some(hovered_payload)) = (
         ui.input(|i| i.pointer.interact_pos()),
         response.dnd_hover_payload::<usize>(),
@@ -223,9 +219,8 @@ fn handle_drag(
         };
         if let Some(dragged_payload) = response.dnd_release_payload::<usize>() {
             // Object was dropped here
-            from = Some(dragged_payload.clone());
-            to = Some(insert_index);
+            from_to = Some((*dragged_payload, insert_index));
         }
     }
-    (from, to)
+    from_to
 }
