@@ -11,7 +11,6 @@ use std::collections::BTreeSet;
 // TODO: rename TrackPlacement... to Placement here where appropriate.
 pub enum DataState {
     ActiveTrackPlacementIndex,
-    ActiveNoteIndex,
     TrackPlacementViewWindow,
     NoteRollWindow,
     NoteWindow,
@@ -27,7 +26,6 @@ pub enum DataState {
 impl DataState {
     fn get_id(&self) -> Id {
         Id::new(match self {
-            Self::ActiveNoteIndex => "active_note_index",
             Self::ActiveTrackPlacementIndex => "active_track_placement_index",
             Self::TrackPlacementViewWindow => "track_placement_window",
             Self::NoteRollWindow => "note_roll_window",
@@ -65,7 +63,6 @@ impl DataState {
                 | Self::NoteRollWindow
                 | Self::TrackRollSelectMode
                 | Self::NoteRollSelectMode => data.insert_temp::<Option<bool>>(self.get_id(), None),
-                Self::ActiveNoteIndex
                 | Self::ActiveTrackPlacementIndex
                 | Self::SubSynthLfoTab
                 | Self::_SubSynthEnvTab => data.insert_temp::<Option<usize>>(self.get_id(), None),

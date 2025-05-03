@@ -185,10 +185,9 @@ impl SequencerObject<PlacedNote> for PlacedNote {
         Shape::rect_filled(self.to_rect(range), CornerRadius::same(1), Color32::WHITE)
     }
 
-    fn get_active(ui: &Ui, store: &Store, local_state: &LocalState) -> Option<PlacedNote> {
+    fn get_active(_ui: &Ui, store: &Store, local_state: &LocalState) -> Option<PlacedNote> {
         let track_sel = local_state.active_track.get()?;
-        DataState::ActiveNoteIndex
-            .get_value::<usize>(ui)
+        local_state.active_note.get()
             .map(|note_index| {
                 let sel: NoteSelector = track_sel.downcast_note(note_index);
                 let note: &PlacedNote = store.select(&sel);
@@ -248,9 +247,9 @@ impl SequencerObject<PlacedNote> for PlacedNote {
         )
     }
 
-    fn set_active(&self, ui: &mut Ui, _local_state: &LocalState, index: usize) {
+    fn set_active(&self, ui: &mut Ui, local_state: &LocalState, index: usize) {
         DataState::NoteWindow.set_value(ui, true);
-        DataState::ActiveNoteIndex.set_value(ui, index);
+        local_state.active_note.set(index);
     }
 
     fn set_selected(ui: &mut Ui, index: Option<usize>) {
