@@ -67,7 +67,7 @@ mod tests {
 
     use super::*;
 
-    use crate::{SAMPLE_RATE};
+    use crate::SAMPLE_RATE;
 
     const EPSILON: f32 = 1e-5;
 

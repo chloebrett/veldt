@@ -3,10 +3,7 @@ use crate::envelope::apply_envelope;
 use dasp_graph::Buffer;
 use ordered_float::OrderedFloat;
 use shared::consts::SEMITONE_FREQ;
-use shared::model::{
-    AdsrEnvelope, AntiAliasingMode, SubSynthConfig,
-    OscillatorConfig, PitchName, SimpleWaveConfig, WaveType,
-};
+use shared::model::{AdsrEnvelope, AntiAliasingMode, OscillatorConfig, SimpleWaveConfig, WaveType};
 use shared::types::Beats;
 use shared::types::Freq;
 use std::cmp::min;
@@ -37,9 +34,14 @@ pub struct WaveCache {
     cache: HashMap<WaveKey, Wave>,
 }
 
-// Extra size multiplier for the buffers for cached waves, to reduce aliasing.
-// TODO: find out the exact number this should be, instead of guesstimating.
-// In theory, it should be 1.0.
+fn lerp(a: f32, b: f32, t: f32) -> f32 {
+    a * (1.0 - t) + b * t
+}
+
+// Multiplier on the lookup table size.
+// This is necessary when the frequency isn't a clean divisor of the sample rate,
+// which is most of the time.
+// A value of 10, coupled with lerping, gets rid of most of the audible harmonics.
 const FIDELITY: f32 = 10.0;
 
 impl WaveCache {
@@ -47,25 +49,35 @@ impl WaveCache {
     /// Phase is between 0.0..1.0.
     /// Note: "key" refers to a HashMap key, not a musical key.
     pub fn get(&mut self, key: &WaveKey, phase: f32) -> f32 {
-        debug_assert!(phase >= 0.0 && phase < 1.0);
-        let total_samples = (FIDELITY * TAU * SAMPLE_RATE as f32 / *key.freq) as usize;
-        let phase_samples = (total_samples as f32 * phase) as usize;
+        debug_assert!((0.0..1.0).contains(&phase));
+        let total_samples = FIDELITY * SAMPLE_RATE as f32 / *key.freq;
+        let total_samples_len = total_samples.round() as usize;
+        let phase_samples = total_samples_len as f32 * phase;
 
-        if let Some(wave) = self.cache.get(&key) {
-            debug_assert!(wave.buffer.len() == total_samples);
-            return wave.buffer[phase_samples];
+        if let Some(wave) = self.cache.get(key) {
+            debug_assert!(wave.buffer.len() == total_samples_len);
+
+            let a = wave.buffer[phase_samples.floor() as usize];
+            let b = wave.buffer[(phase_samples.floor() as usize) + 1];
+            let t = phase_samples % 1.0;
+
+            return lerp(a, b, t);
         }
 
-        let buffer: Vec<_> = (0..total_samples)
-            .map(|x| make_wave(x as f32 / total_samples as f32, key.kind, *key.freq, key.aa))
+        let buffer: Vec<_> = (0..=total_samples_len)
+            .map(|x| make_wave(x as f32 / total_samples, key.kind, *key.freq, key.aa))
             .collect();
 
-        debug_assert!(buffer.len() == total_samples);
-        let current_value = buffer[phase_samples];
+        debug_assert!(buffer.len() == total_samples_len);
+
+        let a = buffer[phase_samples.floor() as usize];
+        let b = buffer[(phase_samples.floor() as usize) + 1];
+        let t = phase_samples % 1.0;
+        let current_value = lerp(a, b, t);
 
         self.cache.insert(key.clone(), Wave { buffer });
 
-        return current_value;
+        current_value
     }
 }
 

@@ -13,6 +13,8 @@ pub fn apply_envelope(
     duration: Beats,
     bpm: Beats,
 ) -> f32 {
+    // TODO: don't scale by the length of the note.
+    // Treat the envelope as a state machine for each synth voice.
     let scale_factor = bpm / SECONDS_PER_MINUTE / duration;
     let beats = sample_index * scale_factor / (SAMPLE_RATE as f32);
 
