@@ -15,6 +15,7 @@ pub struct LocalState {
     pub note_window: Rc<RefCell<bool>>,
     pub note_roll_window: Rc<RefCell<bool>>,
     pub drag_cursor_delta: RcOption<Pos2>,
+    pub subsynth_lfo_tab: Rc<RefCell<usize>>,
 }
 
 pub trait GetSet<T: Clone> {

@@ -9,13 +9,13 @@ use std::collections::BTreeSet;
 //   - Current selected track
 //   - If an editor window is open.
 // TODO: rename TrackPlacement... to Placement here where appropriate.
+// IMPORTANT: use LocalState instead for anything new.
 pub enum DataState {
     ActiveTrackPlacementIndex,
     TrackPlacementViewWindow,
     SelectedTrackPlacementIndexes,
     TrackRollSelectMode,
     NoteRollSelectMode,
-    SubSynthLfoTab,
 }
 
 impl DataState {
@@ -26,7 +26,6 @@ impl DataState {
             Self::SelectedTrackPlacementIndexes => "selected_track_placement_indexes",
             Self::TrackRollSelectMode => "track_roll_select_mode",
             Self::NoteRollSelectMode => "note_roll_select_mode",
-            Self::SubSynthLfoTab => "subsynth_lfo_tab_index",
         })
     }
 
@@ -51,7 +50,7 @@ impl DataState {
                 Self::TrackPlacementViewWindow
                 | Self::TrackRollSelectMode
                 | Self::NoteRollSelectMode => data.insert_temp::<Option<bool>>(self.get_id(), None),
-                Self::ActiveTrackPlacementIndex | Self::SubSynthLfoTab => {
+                Self::ActiveTrackPlacementIndex => {
                     data.insert_temp::<Option<usize>>(self.get_id(), None)
                 }
                 Self::SelectedTrackPlacementIndexes => {
