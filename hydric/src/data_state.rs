@@ -19,7 +19,6 @@ pub enum DataState {
     TrackRollSelectMode,
     NoteRollSelectMode,
     SubSynthLfoTab,
-    _SubSynthEnvTab,
 }
 
 impl DataState {
@@ -34,7 +33,6 @@ impl DataState {
             Self::TrackRollSelectMode => "track_roll_select_mode",
             Self::NoteRollSelectMode => "note_roll_select_mode",
             Self::SubSynthLfoTab => "subsynth_lfo_tab_index",
-            Self::_SubSynthEnvTab => "subsynth_env_tab_index",
         })
     }
 
@@ -61,7 +59,7 @@ impl DataState {
                 | Self::NoteRollWindow
                 | Self::TrackRollSelectMode
                 | Self::NoteRollSelectMode => data.insert_temp::<Option<bool>>(self.get_id(), None),
-                Self::ActiveTrackPlacementIndex | Self::SubSynthLfoTab | Self::_SubSynthEnvTab => {
+                Self::ActiveTrackPlacementIndex | Self::SubSynthLfoTab => {
                     data.insert_temp::<Option<usize>>(self.get_id(), None)
                 }
                 Self::SelectedTrackPlacementIndexes => {

@@ -296,6 +296,8 @@ pub trait SequencerObject<T> {
 
     fn to_rect(&self, range: Rect) -> Rect;
 
+    fn from_pos(pos: Pos2, rect: Rect) -> T;
+
     fn x_action(&self, x: f32, range: Rect) -> Option<Action>;
 
     fn y_action(&self, y: f32, range: Rect) -> Option<Action>;
@@ -319,8 +321,6 @@ pub trait SequencerObject<T> {
     fn set_selected(ui: &mut Ui, local_state: &LocalState, index: Option<usize>);
 
     fn add_new(&self, store: &Store, parent_index: Option<usize>);
-
-    fn from_pos(pos: Pos2, rect: Rect) -> T;
 
     fn delete(store: &Store, index: usize, parent_index: Option<usize>);
 
