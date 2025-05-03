@@ -1,3 +1,4 @@
+mod effect;
 mod menu_bar;
 mod save_as;
 

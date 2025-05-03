@@ -4,7 +4,7 @@ use dasp_graph::{Buffer, Input, Node};
 use shared::model::{
     Generator, GeneratorInstance, GeneratorMeta, Placement, SubSynthConfig, Track, TrackPlacement,
 };
-use shared::types::{Beats, KnobPosition, Volume};
+use shared::types::Beats;
 use std::cmp::min;
 
 pub struct SubSynthNode {
