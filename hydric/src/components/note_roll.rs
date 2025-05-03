@@ -246,7 +246,7 @@ impl SequencerObject<PlacedNote> for PlacedNote {
     }
 
     fn set_active(&self, ui: &mut Ui, local_state: &LocalState, index: usize) {
-        DataState::NoteWindow.set_value(ui, true);
+        local_state.note_window.set(true);
         local_state.active_note.set(index);
     }
 
