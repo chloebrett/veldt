@@ -110,7 +110,7 @@ impl Node<ProcessContext> for SubSynthNode {
                 dasp_slice::add_in_place(
                     &mut buffer,
                     &self.wave_source.subsynth_wave(
-                        &note.note.pitch_name,
+                        note.note.pitch_name.into(),
                         note.note.beats,
                         self.bpm,
                         &self.config,

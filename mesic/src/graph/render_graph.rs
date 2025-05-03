@@ -353,7 +353,8 @@ mod tests {
         SimpleWaveConfig, Track, TrackPlacement, WaveType,
     };
 
-    use crate::{graph::SimpleWaveGeneratorNode, wave::freq};
+    use crate::{graph::SimpleWaveGeneratorNode};
+    use shared::types::Freq;
 
     use super::*;
 
@@ -519,7 +520,8 @@ mod tests {
         let samples = 120;
         let input: Vec<Stereo<f32>> = (0..samples as usize)
             .map(|it| {
-                let value = (it as f32 / SAMPLE_RATE as f32 * freq(pitch)).sin();
+                let freq: Freq = pitch.into();
+                let value = (it as f32 / SAMPLE_RATE as f32 * freq).sin();
                 [value, value]
             })
             .collect();
