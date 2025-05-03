@@ -1,10 +1,11 @@
+use crate::consts::CHANNEL_COUNT;
 use crate::graph::{ProcessContext, pan_multipliers};
 use crate::wave::{beats_to_samples, multi_sum, osc_wave};
 use dasp_graph::{Buffer, Input, Node};
 use shared::model::{
     Generator, GeneratorInstance, GeneratorMeta, Placement, SubSynthConfig, Track, TrackPlacement,
 };
-use shared::types::Beats;
+use shared::types::{Beats, KnobPosition, Volume};
 use std::cmp::min;
 
 pub struct SubSynthNode {
@@ -128,7 +129,7 @@ impl Node<ProcessContext> for SubSynthNode {
                             self.sample_index as i32 - note_start_sample as i32,
                         );
 
-                        for channel_index in 0..2 {
+                        for channel_index in 0..CHANNEL_COUNT {
                             self.apply_volume_and_pan(&mut buf, channel_index, osc.volume, osc.pan);
                         }
 

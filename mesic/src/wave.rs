@@ -173,6 +173,7 @@ fn linspace(low: f32, high: f32, count: u32) -> Vec<f32> {
         .collect()
 }
 
+// TODO: make multi_sum private
 /// Sums the input buffers into a single buffer.
 pub fn multi_sum(inputs: &[Buffer]) -> Buffer {
     let mut output = Buffer::SILENT;
