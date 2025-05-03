@@ -7,7 +7,7 @@ use crate::{
 use egui::{Button, Ui, menu::bar};
 use state::{Action, Store, TypeField};
 
-use super::{effect::EffectOptions, save_as::SaveAs};
+use super::{effect::EffectMenuOptions, save_as::SaveAs};
 
 pub struct MenuBar<'a> {
     store: &'a mut Store,
@@ -130,7 +130,7 @@ impl View for MenuBar<'_> {
                 button_with_tick("Track Roll", &mut self.window_state.track_roll);
             });
             ui.menu_button("Effects", |ui| {
-                EffectOptions::new(self.store, self.window_state).ui(ui);
+                EffectMenuOptions::new(self.store, self.window_state).ui(ui);
             });
             ui.menu_button(
                 "Generators",

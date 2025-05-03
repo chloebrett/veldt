@@ -5,12 +5,12 @@ use strum::IntoEnumIterator;
 
 use crate::{components::effect::effect_name, view::View, window_state::WindowState};
 
-pub struct EffectOptions<'a> {
+pub struct EffectMenuOptions<'a> {
     store: &'a Store,
     window_state: &'a mut WindowState,
 }
 
-impl<'a> EffectOptions<'a> {
+impl<'a> EffectMenuOptions<'a> {
     pub fn new(store: &'a Store, window_state: &'a mut WindowState) -> Self {
         Self {
             store,
@@ -19,7 +19,7 @@ impl<'a> EffectOptions<'a> {
     }
 }
 
-impl View for EffectOptions<'_> {
+impl View for EffectMenuOptions<'_> {
     fn ui(&mut self, ui: &mut Ui) {
         ui.menu_button("Add new", |ui| {
             for effect in Effect::iter() {
