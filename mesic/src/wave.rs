@@ -18,19 +18,20 @@ const HALF_PI: f32 = 0.5 * PI;
 const RECIP_HALF_PI: f32 = HALF_PI.recip(); // 2 / PI, not 1 / TAU.
 const RECIP_PI: f32 = PI.recip();
 
-#[derive(Hash, Eq, PartialEq)]
+#[derive(Hash, Eq, PartialEq, Clone, Debug)]
 pub struct WaveKey {
     pub kind: WaveType,
     pub aa: AntiAliasingMode,
     pub freq: OrderedFloat<Freq>,
 }
 
+#[derive(Debug)]
 pub struct Wave {
     // One full cycle, however long that may be at SAMPLE_RATE.
     pub buffer: Vec<f32>,
 }
 
-#[derive(Default)]
+#[derive(Default, Debug)]
 pub struct WaveCache {
     cache: HashMap<WaveKey, Wave>,
 }
@@ -39,7 +40,7 @@ impl WaveCache {
     /// Returns the amplitude of wave with the given configuration (key) at the given phase.
     /// Phase is between 0.0..1.0.
     /// Note: "key" refers to a HashMap key, not a musical key.
-    pub fn get(&mut self, key: WaveKey, phase: f32) -> f32 {
+    pub fn get(&mut self, key: &WaveKey, phase: f32) -> f32 {
         debug_assert!(phase >= 0.0 && phase < 1.0);
         let total_samples = (SAMPLE_RATE as f32 / *key.freq) as usize;
         let phase_samples = (total_samples as f32 * phase) as usize;
@@ -56,7 +57,7 @@ impl WaveCache {
         debug_assert!(buffer.len() == total_samples);
         let current_value = buffer[phase_samples];
 
-        self.cache.insert(key, Wave { buffer });
+        self.cache.insert(key.clone(), Wave { buffer });
 
         return current_value;
     }
@@ -174,6 +175,11 @@ impl WaveSource {
     ) -> Buffer {
         let wave_freq = freq(*pitch_name) * detune_multiplier(detune_cents);
         let step = wave_freq / (SAMPLE_RATE as f32);
+        let key = WaveKey {
+            kind: wave_type,
+            aa: anti_aliasing_mode,
+            freq: wave_freq.into(),
+        };
 
         let mut vec: Vec<_> = make_range(start_index, beats, bpm)
             .map(|x: i32| {
@@ -183,8 +189,8 @@ impl WaveSource {
                 if x < 0 {
                     return 0.0;
                 }
-                make_wave(x as f32 * step, wave_type, wave_freq, anti_aliasing_mode)
-                    * apply_envelope(x as f32, envelope, beats, bpm)
+                let phase = ((x as f32) * step) % 1.0;
+                self.cache.get(&key, phase) * apply_envelope(x as f32, envelope, beats, bpm)
             })
             .collect();
 
