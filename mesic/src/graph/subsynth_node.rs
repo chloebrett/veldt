@@ -1,6 +1,7 @@
 use crate::consts::CHANNEL_COUNT;
 use crate::graph::{ProcessContext, pan_multipliers};
-use crate::wave::{beats_to_samples, multi_sum, osc_wave};
+use crate::wave::{WaveSource, beats_to_samples};
+use crate::wave::{multi_sum};
 use dasp_graph::{Buffer, Input, Node};
 use shared::model::{
     Generator, GeneratorInstance, GeneratorMeta, Placement, SubSynthConfig, Track, TrackPlacement,
@@ -9,6 +10,7 @@ use shared::types::{Beats, KnobPosition, Volume};
 use std::cmp::min;
 
 pub struct SubSynthNode {
+    wave_source: WaveSource,
     config: SubSynthConfig,
     meta: GeneratorMeta,
     generator_index: usize,
@@ -28,6 +30,7 @@ impl SubSynthNode {
         bpm: Beats,
     ) -> Self {
         Self {
+            wave_source: WaveSource::new(bpm),
             config,
             meta,
             generator_index,
@@ -40,7 +43,6 @@ impl SubSynthNode {
 
     // TODO: this logic is similar and shared with subsynth and simple wave, probably should move
     fn apply_volume_and_pan(
-        &self,
         buffer: &mut Buffer,
         channel_index: usize,
         volume: Volume,
@@ -114,23 +116,23 @@ impl Node<ProcessContext> for SubSynthNode {
 
                 // TODO: add envelopes once mod matrix is working
                 // NOTE: for now, osc 1 -> maps to env 1
-                let osc_buffers: Vec<Buffer> = self
-                    .config
-                    .oscillators
+                let wave_source = &mut self.wave_source;
+                let oscillators = &self.config.oscillators;
+                let envelopes = &self.config.envelopes;
+                let osc_buffers: Vec<Buffer> = oscillators
                     .iter()
-                    .zip(self.config.envelopes.iter())
+                    .zip(envelopes.iter())
                     .map(|(osc, envelope)| {
-                        let mut buf = osc_wave(
+                        let mut buf = wave_source.osc_wave(
                             &note.note.pitch_name,
                             note.note.beats,
-                            self.bpm,
                             &osc,
                             &envelope,
                             self.sample_index as i32 - note_start_sample as i32,
                         );
 
                         for channel_index in 0..CHANNEL_COUNT {
-                            self.apply_volume_and_pan(&mut buf, channel_index, osc.volume, osc.pan);
+                            Self::apply_volume_and_pan(&mut buf, channel_index, osc.volume, osc.pan);
                         }
 
                         buf
@@ -144,7 +146,7 @@ impl Node<ProcessContext> for SubSynthNode {
                 let volume = self.meta.volume;
                 let pan = self.meta.pan;
                 out_buf.copy_from_slice(&buffer);
-                self.apply_volume_and_pan(out_buf, channel_index, volume, pan);
+                Self::apply_volume_and_pan(out_buf, channel_index, volume, pan);
             }
 
             self.sample_index += Buffer::LEN as u32;
