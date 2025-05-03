@@ -7,7 +7,7 @@ use crate::{
 use egui::{Button, Ui, menu::bar};
 use state::{Action, Store, TypeField};
 
-use super::save_as::SaveAs;
+use super::{effect::EffectMenuOptions, save_as::SaveAs};
 
 pub struct MenuBar<'a> {
     store: &'a mut Store,
@@ -129,7 +129,9 @@ impl View for MenuBar<'_> {
                 button_with_tick("Samples", &mut self.window_state.sample_tree);
                 button_with_tick("Track Roll", &mut self.window_state.track_roll);
             });
-            ui.menu_button("Effects", |ui| if ui.button("Add effect").clicked() {});
+            ui.menu_button("Effects", |ui| {
+                EffectMenuOptions::new(self.store, self.window_state).ui(ui);
+            });
             ui.menu_button(
                 "Generators",
                 |ui| {
@@ -143,9 +145,13 @@ impl View for MenuBar<'_> {
             sample_response.on_hover_ui(|ui| {
                 ui.label("Samples");
             });
-            let sound_response = ui.add(Button::new("🎷"));
+            let sound_response =
+                ui.add(Button::new("🎷").selected(self.window_state.generator_list));
+            if sound_response.clicked() {
+                self.window_state.generator_list ^= true;
+            }
             sound_response.on_hover_ui(|ui| {
-                ui.label("Sound library");
+                ui.label("Generators");
             });
             let effect_response =
                 ui.add(Button::new("🎨").selected(self.window_state.mixer.visible));

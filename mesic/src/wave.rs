@@ -4,7 +4,8 @@ use dasp_graph::Buffer;
 use ordered_float::OrderedFloat;
 use shared::consts::SEMITONE_FREQ;
 use shared::model::{
-    AdsrEnvelope, AntiAliasingMode, SimpleWaveConfig, SubSynthConfig, WaveType,
+    AdsrEnvelope, AntiAliasingMode, SubSynthConfig,
+    OscillatorConfig, PitchName, SimpleWaveConfig, WaveType,
 };
 use shared::types::Beats;
 use shared::types::Freq;
@@ -36,13 +37,18 @@ pub struct WaveCache {
     cache: HashMap<WaveKey, Wave>,
 }
 
+// Extra size multiplier for the buffers for cached waves, to reduce aliasing.
+// TODO: find out the exact number this should be, instead of guesstimating.
+// In theory, it should be 1.0.
+const FIDELITY: f32 = 10.0;
+
 impl WaveCache {
     /// Returns the amplitude of wave with the given configuration (key) at the given phase.
     /// Phase is between 0.0..1.0.
     /// Note: "key" refers to a HashMap key, not a musical key.
     pub fn get(&mut self, key: &WaveKey, phase: f32) -> f32 {
         debug_assert!(phase >= 0.0 && phase < 1.0);
-        let total_samples = (SAMPLE_RATE as f32 / *key.freq) as usize;
+        let total_samples = (FIDELITY * TAU * SAMPLE_RATE as f32 / *key.freq) as usize;
         let phase_samples = (total_samples as f32 * phase) as usize;
 
         if let Some(wave) = self.cache.get(&key) {
@@ -63,9 +69,18 @@ impl WaveCache {
     }
 }
 
-#[derive(Default)]
 pub struct WaveSource {
     pub cache: WaveCache,
+    bpm: Beats,
+}
+
+impl WaveSource {
+    pub fn new(bpm: Beats) -> Self {
+        Self {
+            cache: WaveCache::default(),
+            bpm,
+        }
+    }
 }
 
 pub struct Unison {
@@ -78,7 +93,6 @@ impl WaveSource {
         &mut self,
         freq: Freq,
         beats: Beats,
-        bpm: Beats,
         config: &SimpleWaveConfig,
         start_index: i32, // allows starting the wave in the middle. Can be negative - if it is, then
                           // -x will return x samples of silence before starting the wave.
@@ -94,7 +108,6 @@ impl WaveSource {
                 self.wave(
                     freq,
                     beats,
-                    bpm,
                     &config.envelope,
                     config.wave,
                     config.anti_aliasing_mode,
@@ -107,57 +120,10 @@ impl WaveSource {
         multi_sum(&outputs)
     }
 
-    pub fn subsynth_wave(
-        &mut self,
-        freq: Freq,
-        beats: Beats,
-        bpm: Beats,
-        config: &SubSynthConfig, // TODO: change to OscConfig later when matrix is made
-        start_index: i32,
-    ) -> Buffer {
-        let buffers: Vec<Buffer> = config
-            .oscillators
-            .iter()
-            .zip(config.envelopes.iter())
-            .map(|(osc, envelope)| {
-                let detunes = linspace(-osc.unison_detune, osc.unison_detune, osc.osc_count);
-
-                // Create the unison waves
-                let unison_waves: Vec<Buffer> = detunes
-                    .iter()
-                    .map(|&detune| {
-                        self.wave(
-                            freq,
-                            beats,
-                            bpm,
-                            envelope,
-                            osc.wave,
-                            AntiAliasingMode::Off, // placeholder
-                            osc.osc_detune + detune,
-                            start_index,
-                        )
-                    })
-                    .collect();
-
-                // Sum the unison waves
-                let mut buf = multi_sum(&unison_waves);
-
-                for x in buf.iter_mut() {
-                    *x *= osc.volume;
-                }
-                // TODO: handle pan
-                buf
-            })
-            .collect();
-
-        multi_sum(&buffers)
-    }
-
     fn wave(
         &mut self,
         freq: Freq,
         beats: Beats,
-        bpm: Beats,
         envelope: &AdsrEnvelope,
         wave_type: WaveType,
         anti_aliasing_mode: AntiAliasingMode,
@@ -172,7 +138,7 @@ impl WaveSource {
             freq: wave_freq.into(),
         };
 
-        let mut vec: Vec<_> = make_range(start_index, beats, bpm)
+        let mut vec: Vec<_> = make_range(start_index, beats, self.bpm)
             .map(|x: i32| {
                 // Handles the case where start_index < 0.
                 // This happens when the start of a note is in the middle of a buffer that is being
@@ -181,7 +147,7 @@ impl WaveSource {
                     return 0.0;
                 }
                 let phase = ((x as f32) * step) % 1.0;
-                self.cache.get(&key, phase) * apply_envelope(x as f32, envelope, beats, bpm)
+                self.cache.get(&key, phase) * apply_envelope(x as f32, envelope, beats, self.bpm)
             })
             .collect();
 
@@ -193,6 +159,40 @@ impl WaveSource {
         }
         buffer.copy_from_slice(&vec);
         buffer
+    }
+
+    pub fn osc_wave(
+        &mut self,
+        freq: Freq,
+        beats: Beats,
+        config: &OscillatorConfig,
+        env: &AdsrEnvelope,
+        start_index: i32,
+    ) -> Buffer {
+        let detunes = linspace(
+            -config.unison_detune,
+            config.unison_detune,
+            config.osc_count,
+        );
+
+        // Create the unison waves
+        let unison_waves: Vec<Buffer> = detunes
+            .iter()
+            .map(|&detune| {
+                self.wave(
+                    freq,
+                    beats,
+                    env,
+                    config.wave,
+                    AntiAliasingMode::Off, // placeholder
+                    config.osc_detune + detune,
+                    start_index,
+                )
+            })
+            .collect();
+
+        // Sum the unison waves
+        multi_sum(&unison_waves)
     }
 }
 
@@ -234,8 +234,9 @@ fn linspace(low: f32, high: f32, count: u32) -> Vec<f32> {
         .collect()
 }
 
+// TODO: make multi_sum private
 /// Sums the input buffers into a single buffer.
-fn multi_sum(inputs: &[Buffer]) -> Buffer {
+pub fn multi_sum(inputs: &[Buffer]) -> Buffer {
     let mut output = Buffer::SILENT;
 
     for input in inputs {

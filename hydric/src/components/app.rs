@@ -119,7 +119,7 @@ impl View for App {
             GeneratorView::new(&self.store, &sel, visible, || generators.set(sel, false)).ui(ui);
         }
         if self.window_state.mixer.visible {
-            MixerView::new(&mut self.window_state, &self.store).ui(ui);
+            MixerView::new(&mut self.window_state, &self.store, &self.local_state).ui(ui);
         }
 
         ToolbarView::new(
