@@ -73,7 +73,7 @@ impl WaveCache {
         debug_assert!(buffer.len() == total_samples_len);
 
         let a = buffer[phase_samples.floor() as usize];
-        let b = buffer[phase_samples.ceil() as usize];
+        let b = buffer[(phase_samples.floor() as usize) + 1];
         let t = phase_samples % 1.0;
         let current_value = lerp(a, b, t);
 
