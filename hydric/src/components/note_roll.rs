@@ -110,7 +110,7 @@ impl View for NoteRoll<'_> {
         );
         let mut select = local_state.note_roll_select_enabled.get();
         if !select {
-            local_state.selected_notes.set(None);
+            local_state.selected_notes.set(BTreeSet::default());
         }
         let title = format!("Track {}", track_sel.0);
         let window = StateWindow(
@@ -216,19 +216,20 @@ impl SequencerObject<PlacedNote> for PlacedNote {
         ])
     }
 
-    fn get_selected(_ui: &Ui, store: &Store, local_state: &LocalState) -> Option<Vec<PlacedNote>> {
-        let track_sel = local_state.active_track.get()?;
-        let note_indexes = local_state.selected_notes.get()?;
-        Some(
-            note_indexes
-                .into_iter()
-                .map(|note_index| {
-                    let sel: NoteSelector = track_sel.downcast_note(note_index);
-                    let note: &PlacedNote = store.select(&sel);
-                    note.clone()
-                })
-                .collect(),
-        )
+    fn get_selected(_ui: &Ui, store: &Store, local_state: &LocalState) -> Vec<PlacedNote> {
+        let Some(track_sel) = local_state.active_track.get() else {
+            return vec![];
+        };
+        local_state
+            .selected_notes
+            .get()
+            .into_iter()
+            .map(|note_index| {
+                let sel: NoteSelector = track_sel.downcast_note(note_index);
+                let note: &PlacedNote = store.select(&sel);
+                note.clone()
+            })
+            .collect()
     }
 
     fn selected_shape(&self, range: Rect) -> Shape {
@@ -260,16 +261,11 @@ impl SequencerObject<PlacedNote> for PlacedNote {
 
     fn set_selected(_ui: &mut Ui, local_state: &LocalState, index: Option<usize>) {
         let Some(index) = index else {
-            local_state.selected_notes.set(None);
+            local_state.selected_notes.set(BTreeSet::default());
             return;
         };
 
-        let Some(mut notes) = local_state.selected_notes.get() else {
-            local_state
-                .selected_notes
-                .set(Some(BTreeSet::from_iter(vec![index])));
-            return;
-        };
+        let mut notes = local_state.selected_notes.get();
 
         if notes.contains(&index) {
             notes.remove(&index);
@@ -277,7 +273,7 @@ impl SequencerObject<PlacedNote> for PlacedNote {
             notes.insert(index);
         }
 
-        local_state.selected_notes.set(Some(notes));
+        local_state.selected_notes.set(notes);
     }
 
     fn add_new(&self, store: &Store, parent_index: Option<usize>) {
@@ -317,13 +313,7 @@ impl SequencerObject<PlacedNote> for PlacedNote {
         // the note that was at `4` will now be at `3` and the algorithm will either delete the wrong note or raise
         // and error.
         // BTreeSet provides an effecient way to keep and get from a sorted list.
-        for index in local_state
-            .selected_notes
-            .get()
-            .unwrap_or_default()
-            .iter()
-            .rev()
-        {
+        for index in local_state.selected_notes.get().iter().rev() {
             PlacedNote::delete(store, *index, parent_index);
         }
     }

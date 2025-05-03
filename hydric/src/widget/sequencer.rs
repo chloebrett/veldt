@@ -279,12 +279,13 @@ impl<T: SequencerObject<T>> Widget for Sequencer<'_, T> {
                 painter.add(object.active_shape(range).transform(to_screen));
             }
 
-            if let Some(objects) = T::get_selected(ui, self.store, self.local_state) {
+            let objects = T::get_selected(ui, self.store, self.local_state);
+            if !objects.is_empty() {
                 painter.extend(
                     objects
                         .into_iter()
                         .map(|object| object.selected_shape(range).transform(to_screen)),
-                )
+                );
             }
 
             res = Some(response.clone());
@@ -313,7 +314,7 @@ pub trait SequencerObject<T> {
 
     fn active_shape(&self, range: Rect) -> Shape;
 
-    fn get_selected(ui: &Ui, store: &Store, local_state: &LocalState) -> Option<Vec<T>>;
+    fn get_selected(ui: &Ui, store: &Store, local_state: &LocalState) -> Vec<T>;
 
     fn selected_shape(&self, range: Rect) -> Shape;
 

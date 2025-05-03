@@ -1,6 +1,6 @@
 use crate::view::View;
 use crate::widget::{StateWindow, default_window, get_set, int_slider, selectable_value, slider};
-use crate::{DataState, GetSet, LocalState};
+use crate::{GetSet, LocalState};
 use egui::{Ui, pos2};
 use ordered_float::OrderedFloat;
 use shared::model::{Track, TrackPlacement};
@@ -22,8 +22,7 @@ impl<'a> TrackPlacementView<'a> {
 impl View for TrackPlacementView<'_> {
     fn ui(&mut self, ui: &mut Ui) {
         let store = &mut self.store;
-        let Some(placement_index): Option<usize> =
-            DataState::ActiveTrackPlacementIndex.get_value(ui)
+        let Some(placement_index): Option<usize> = self.local_state.active_track_placement.get()
         else {
             return;
         };
@@ -109,7 +108,7 @@ impl View for TrackPlacementView<'_> {
                 if ui.button("Delete").clicked() {
                     store.dispatchr(Action::DeleteChild(IndexField::Placement(placement_index)));
                     self.local_state.track_placement_window.set(false);
-                    DataState::ActiveTrackPlacementIndex.remove_value(ui);
+                    self.local_state.active_track_placement.set(None);
                 }
             },
         );
