@@ -14,7 +14,6 @@ pub enum DataState {
     TrackPlacementViewWindow,
     NoteRollWindow,
     NoteWindow,
-    SelectedNoteIndexes,
     SelectedTrackPlacementIndexes,
     DragCursorDelta,
     TrackRollSelectMode,
@@ -30,7 +29,6 @@ impl DataState {
             Self::TrackPlacementViewWindow => "track_placement_window",
             Self::NoteRollWindow => "note_roll_window",
             Self::NoteWindow => "note_window",
-            Self::SelectedNoteIndexes => "selected_note_indexes",
             Self::SelectedTrackPlacementIndexes => "selected_track_placement_indexes",
             Self::DragCursorDelta => "drag_start_from",
             Self::TrackRollSelectMode => "track_roll_select_mode",
@@ -63,10 +61,10 @@ impl DataState {
                 | Self::NoteRollWindow
                 | Self::TrackRollSelectMode
                 | Self::NoteRollSelectMode => data.insert_temp::<Option<bool>>(self.get_id(), None),
-                | Self::ActiveTrackPlacementIndex
-                | Self::SubSynthLfoTab
-                | Self::_SubSynthEnvTab => data.insert_temp::<Option<usize>>(self.get_id(), None),
-                Self::SelectedNoteIndexes | Self::SelectedTrackPlacementIndexes => {
+                Self::ActiveTrackPlacementIndex | Self::SubSynthLfoTab | Self::_SubSynthEnvTab => {
+                    data.insert_temp::<Option<usize>>(self.get_id(), None)
+                }
+                Self::SelectedTrackPlacementIndexes => {
                     data.insert_temp::<Option<BTreeSet<usize>>>(self.get_id(), None);
                 }
                 Self::DragCursorDelta => data.insert_temp::<Option<Pos2>>(self.get_id(), None),

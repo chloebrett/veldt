@@ -1,5 +1,6 @@
 use state::TrackSelector;
 use std::cell::RefCell;
+use std::collections::BTreeSet;
 use std::rc::Rc;
 
 type RcOption<T> = Rc<RefCell<Option<T>>>;
@@ -8,6 +9,7 @@ type RcOption<T> = Rc<RefCell<Option<T>>>;
 pub struct LocalState {
     pub active_track: RcOption<TrackSelector>,
     pub active_note: RcOption<usize>,
+    pub selected_notes: RcOption<BTreeSet<usize>>,
     pub mixer_edit_state: RcOption<bool>,
 }
 
