@@ -36,13 +36,18 @@ pub struct WaveCache {
     cache: HashMap<WaveKey, Wave>,
 }
 
+// Extra size multiplier for the buffers for cached waves, to reduce aliasing.
+// TODO: find out the exact number this should be, instead of guesstimating.
+// In theory, it should be 1.0.
+const FIDELITY: f32 = 10.0;
+
 impl WaveCache {
     /// Returns the amplitude of wave with the given configuration (key) at the given phase.
     /// Phase is between 0.0..1.0.
     /// Note: "key" refers to a HashMap key, not a musical key.
     pub fn get(&mut self, key: &WaveKey, phase: f32) -> f32 {
         debug_assert!(phase >= 0.0 && phase < 1.0);
-        let total_samples = (SAMPLE_RATE as f32 / *key.freq) as usize;
+        let total_samples = (FIDELITY * TAU * SAMPLE_RATE as f32 / *key.freq) as usize;
         let phase_samples = (total_samples as f32 * phase) as usize;
 
         if let Some(wave) = self.cache.get(&key) {
