@@ -1,3 +1,4 @@
+use egui::Pos2;
 use state::TrackSelector;
 use std::cell::RefCell;
 use std::collections::BTreeSet;
@@ -13,6 +14,7 @@ pub struct LocalState {
     pub mixer_edit_state: Rc<RefCell<bool>>,
     pub note_window: Rc<RefCell<bool>>,
     pub note_roll_window: Rc<RefCell<bool>>,
+    pub drag_cursor_delta: RcOption<Pos2>,
 }
 
 pub trait GetSet<T: Clone> {

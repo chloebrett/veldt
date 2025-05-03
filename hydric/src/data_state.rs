@@ -1,4 +1,4 @@
-use egui::{Id, Pos2, Ui};
+use egui::{Id, Ui};
 use std::collections::BTreeSet;
 
 // Interact with UI level state.
@@ -13,7 +13,6 @@ pub enum DataState {
     ActiveTrackPlacementIndex,
     TrackPlacementViewWindow,
     SelectedTrackPlacementIndexes,
-    DragCursorDelta,
     TrackRollSelectMode,
     NoteRollSelectMode,
     SubSynthLfoTab,
@@ -25,7 +24,6 @@ impl DataState {
             Self::ActiveTrackPlacementIndex => "active_track_placement_index",
             Self::TrackPlacementViewWindow => "track_placement_window",
             Self::SelectedTrackPlacementIndexes => "selected_track_placement_indexes",
-            Self::DragCursorDelta => "drag_start_from",
             Self::TrackRollSelectMode => "track_roll_select_mode",
             Self::NoteRollSelectMode => "note_roll_select_mode",
             Self::SubSynthLfoTab => "subsynth_lfo_tab_index",
@@ -59,7 +57,6 @@ impl DataState {
                 Self::SelectedTrackPlacementIndexes => {
                     data.insert_temp::<Option<BTreeSet<usize>>>(self.get_id(), None);
                 }
-                Self::DragCursorDelta => data.insert_temp::<Option<Pos2>>(self.get_id(), None),
             };
         })
     }

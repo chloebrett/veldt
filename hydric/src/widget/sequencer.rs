@@ -1,4 +1,4 @@
-use crate::{DataState, LocalState, transform::Transform};
+use crate::{GetSet, LocalState, transform::Transform};
 use egui::{
     Color32, CornerRadius, CursorIcon, Frame, Pos2, Rect, Response, Sense, Shape, Stroke, Ui, Vec2,
     Widget, emath::RectTransform, pos2, vec2,
@@ -143,7 +143,7 @@ impl<'a, T: SequencerObject<T>> Sequencer<'a, T> {
                 || self.resize_object(index, resize_resp, to_sequencer, &edit_object);
             if release {
                 on_release();
-                DataState::DragCursorDelta.remove_value(ui);
+                self.local_state.drag_cursor_delta.set(None);
             }
         }
     }
@@ -154,7 +154,7 @@ impl<'a, T: SequencerObject<T>> Sequencer<'a, T> {
 
     fn move_object(
         &self,
-        ui: &mut Ui,
+        _ui: &mut Ui,
         index: usize,
         response: Response,
         to_sequencer: RectTransform,
@@ -167,11 +167,14 @@ impl<'a, T: SequencerObject<T>> Sequencer<'a, T> {
         if let Some(drag_pos) = drag_pos {
             // Keep track of the delta between object and cursor position at drag start.
             if response.interact(Sense::drag()).drag_started() {
-                DataState::DragCursorDelta
-                    .set_value::<Pos2>(ui, drag_pos - response.rect.min.to_vec2());
+                self.local_state
+                    .drag_cursor_delta
+                    .set(Some(drag_pos - response.rect.min.to_vec2()));
             }
-            let click_delta: Pos2 = DataState::DragCursorDelta
-                .get_value(ui)
+            let click_delta: Pos2 = self
+                .local_state
+                .drag_cursor_delta
+                .get()
                 .unwrap_or(Pos2::ZERO);
             let scaled_pos = pos2(drag_pos.x - click_delta.x, drag_pos.y)
                 .transform(to_sequencer.inverse())
