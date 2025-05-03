@@ -10,7 +10,6 @@ use egui::{
     epaint::{PathStroke, Shape},
     pos2, vec2,
 };
-use log::info;
 use ordered_float::OrderedFloat;
 use shared::model::{AdsrEnvelope, SubSynthConfig};
 use state::{Action, TypeField};
@@ -30,6 +29,55 @@ impl<'a, F: Fn(Action), G: Fn()> SubSynthEnvelopeView<'a, F, G> {
         }
     }
 }
+
+fn envelope_line(envelope: &EnvelopeKey) -> Vec<Pos2> {
+    let mut points = vec![];
+    if *envelope.attack > 0.0 {
+        points.push(pos2(0.0, 0.0));
+    }
+    points.push(pos2(*envelope.attack, 1.0));
+    points.push(pos2(*envelope.attack + *envelope.decay, *envelope.sustain));
+    points.push(pos2(1.0 - *envelope.release, *envelope.sustain));
+    if *envelope.release > 0.0 {
+        points.push(pos2(1.0, 0.0));
+    }
+    points
+}
+
+#[derive(Default)]
+struct AdsrEnvelopeComputer;
+
+#[derive(Hash, Copy, Clone, Debug)]
+struct EnvelopeKey {
+    attack: OrderedFloat<f32>,
+    decay: OrderedFloat<f32>,
+    sustain: OrderedFloat<f32>,
+    release: OrderedFloat<f32>,
+}
+
+impl From<AdsrEnvelope> for EnvelopeKey {
+    fn from(other: AdsrEnvelope) -> Self {
+        Self {
+            attack: OrderedFloat(other.attack),
+            decay: OrderedFloat(other.decay),
+            sustain: OrderedFloat(other.sustain),
+            release: OrderedFloat(other.release),
+        }
+    }
+}
+
+impl ComputerMut<EnvelopeKey, Shape> for AdsrEnvelopeComputer {
+    fn compute(&mut self, envelope: EnvelopeKey) -> Shape {
+        info!("Computing shapes for ADSR envelope: {:?}", envelope);
+        let thickness = 2.0;
+        Shape::line(
+            envelope_line(&envelope),
+            PathStroke::new(thickness, Color32::WHITE),
+        )
+    }
+}
+
+type AdsrEnvelopeCache<'a> = FrameCache<Shape, AdsrEnvelopeComputer>;
 
 impl <F: Fn(Action), G: Fn()> View for SubSynthEnvelopeView<'_, F, G> {
     fn ui(&mut self, ui: &mut Ui) {
@@ -70,12 +118,84 @@ impl <F: Fn(Action), G: Fn()> View for SubSynthEnvelopeView<'_, F, G> {
                     .corner_radius(8.0)
                     .inner_margin(15.0);
                 inner_frame.show(ui, |ui| {
-                    // TODO replace this section with an actual envelope visualisation
-                    let size = egui::Vec2::new(200.0, 180.0);
-                    let (rect, _response) = ui.allocate_exact_size(size, egui::Sense::hover());
-                    let painter = ui.painter_at(rect);
-                    let rect_shape = egui::Shape::rect_filled(rect, 5.0, Color32::RED);
-                    painter.add(rect_shape);
+                    ui.vertical(|ui| {
+                        println!("Envelope number: {}", &active_env_tab);
+                        // Envelope graph
+                        Frame::canvas(ui.style()).show(ui, |ui| {
+                            ui.ctx().request_repaint();
+                            let desired_size = vec2(300.0, 160.0);
+                            let (_id, rect) = ui.allocate_space(desired_size);
+                            let to_screen = RectTransform::from_to(
+                                Rect::from_x_y_ranges(0.0..=1.0, 1.0..=0.0),
+                                rect
+                            );
+                            let shape = ui.memory_mut(|memory| {
+                                let cache = memory.caches.cache::<AdsrEnvelopeCache<'_>>();
+                                cache.get(config.envelopes[active_env_tab].clone().into())
+                            });
+                            ui.painter().add(shape.transform(to_screen));
+                        });
+                        ui.add_space(10.0);
+                        // All the knobs for envelope modification
+                        ui.horizontal(|ui| {
+                            knob(
+                                ui,
+                                "A",
+                                config.envelopes[active_env_tab].attack,
+                                |attack| {
+                                    dispatch(Action::SetChild(TypeField::Envelope(AdsrEnvelope {
+                                        attack,
+                                        ..config.envelopes[active_env_tab]
+                                    })))
+                                },
+                                0.0..=1.0,
+                                /* neutral= */ 0.1,
+                                on_release,
+                            );
+                            knob(
+                                ui,
+                                "D",
+                                config.envelopes[active_env_tab].decay,
+                                |decay| {
+                                    dispatch(Action::SetChild(TypeField::Envelope(AdsrEnvelope {
+                                        decay,
+                                        ..config.envelopes[active_env_tab]
+                                    })))
+                                },
+                                0.0..=1.0,
+                                /* neutral= */ 0.1,
+                                on_release,
+                            );
+                            knob(
+                                ui,
+                                "S",
+                                config.envelopes[active_env_tab].sustain,
+                                |sustain| {
+                                    dispatch(Action::SetChild(TypeField::Envelope(AdsrEnvelope {
+                                        sustain,
+                                        ..config.envelopes[active_env_tab]
+                                    })))
+                                },
+                                0.0..=1.0,
+                                /* neutral= */ 0.8,
+                                on_release,
+                            );
+                            knob(
+                                ui,
+                                "R",
+                                config.envelopes[active_env_tab].release,
+                                |release| {
+                                    dispatch(Action::SetChild(TypeField::Envelope(AdsrEnvelope {
+                                        release,
+                                        ..config.envelopes[active_env_tab]
+                                    })))
+                                },
+                                0.0..=1.0,
+                                /* neutral= */ 0.1,
+                                on_release,
+                            );
+                        });
+                    })
                 })
             });
             ui.spacing_mut().item_spacing = original_spacing; // reset ui spacing back to original
