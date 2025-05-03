@@ -1,33 +1,34 @@
-use crate::DataState;
 use crate::view::View;
 use crate::widget::{StateWindow, default_window, get_set, int_slider, selectable_value};
+use crate::{DataState, LocalState};
 use egui::{Ui, pos2};
 use shared::model::ScaleValue;
 use shared::types::{Beats, Octave};
-use state::{Action, FloatField, IndexField, NoteSelector, Store, TrackSelector, TypeField};
+use state::{Action, FloatField, IndexField, Store, TrackSelector, TypeField};
 use strum::IntoEnumIterator;
 
 pub struct NoteView<'a> {
     store: &'a Store,
+    local_state: &'a LocalState,
 }
 
 impl<'a> NoteView<'a> {
-    pub fn new(store: &'a Store) -> Self {
-        Self { store }
+    pub fn new(store: &'a Store, local_state: &'a LocalState) -> Self {
+        Self { store, local_state }
     }
 }
 
 impl View for NoteView<'_> {
     fn ui(&mut self, ui: &mut Ui) {
-        let Self { store } = self;
+        let Self { store, local_state } = self;
         let Some(note_index): Option<usize> = DataState::ActiveNoteIndex.get_value(ui) else {
             return;
         };
-        let Some(track_index): Option<usize> = DataState::ActiveTrackIndex.get_value(ui) else {
+        let Some(track_selector): Option<TrackSelector> = *local_state.active_track.borrow() else {
             return;
         };
         let on_release = || store.dispatchr(Action::Release);
-        let sel = NoteSelector(track_index, note_index);
+        let sel = track_selector.downcast_note(note_index);
         let note = &store.select(&sel);
         let window = StateWindow(default_window("Notes").default_pos(pos2(600.0, 20.0)));
         window.show(ui, DataState::NoteWindow, |ui| {
@@ -81,7 +82,7 @@ impl View for NoteView<'_> {
 
             if ui.button("Delete").clicked() {
                 store.dispatch(
-                    &TrackSelector(track_index),
+                    &track_selector,
                     Action::DeleteChild(IndexField::PlacedNote(note_index)),
                 );
                 DataState::ActiveNoteIndex.remove_value(ui);

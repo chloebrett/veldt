@@ -8,7 +8,7 @@ use state::{Action, SelectorTrait, Store};
 
 pub struct Sequencer<'a, T: SequencerObject<T>> {
     store: &'a Store,
-    local_state: &'a mut LocalState,
+    local_state: &'a LocalState,
     range: Rect,
     size: Vec2,
     objects: Vec<T>,
@@ -21,7 +21,7 @@ pub struct Sequencer<'a, T: SequencerObject<T>> {
 }
 
 impl<'a, T: SequencerObject<T>> Sequencer<'a, T> {
-    pub fn new(store: &'a Store, local_state: &'a mut LocalState, range: Rect) -> Self {
+    pub fn new(store: &'a Store, local_state: &'a LocalState, range: Rect) -> Self {
         Sequencer {
             store,
             local_state,
@@ -116,16 +116,16 @@ impl<'a, T: SequencerObject<T>> Sequencer<'a, T> {
             Rect::from_min_size(Pos2::ZERO, self.range.size()),
             response.rect,
         );
-        for index in 0..self.objects.len() {
+        for (index, object) in self.objects.iter().enumerate() {
             let movable_id = response.id.with(format!("movable_{}", index));
             let movable_resp = ui.interact(
-                make_movable_rect(&self.objects[index]).transform(to_sequencer),
+                make_movable_rect(object).transform(to_sequencer),
                 movable_id,
                 Sense::drag(),
             );
             let resize_id = response.id.with(format!("resize_{}", index));
             let resize_resp = ui.interact(
-                make_resize_rect(&self.objects[index]).transform(to_sequencer),
+                make_resize_rect(object).transform(to_sequencer),
                 resize_id,
                 Sense::drag(),
             );
@@ -134,7 +134,7 @@ impl<'a, T: SequencerObject<T>> Sequencer<'a, T> {
                     T::set_selected(ui, Some(index));
                 }
             } else if movable_resp.interact(Sense::click()).double_clicked() {
-                self.objects[index].set_active(ui, &self.local_state, index);
+                object.set_active(ui, self.local_state, index);
             }
             if resize_resp.hovered() {
                 ui.ctx().set_cursor_icon(CursorIcon::ResizeColumn);
@@ -272,11 +272,11 @@ impl<T: SequencerObject<T>> Widget for Sequencer<'_, T> {
             painter.extend(self.background_shapes.clone().transform(to_screen));
             painter.add(self.object_shapes().transform(to_screen));
 
-            if let Some(object) = T::get_active(ui, self.store) {
+            if let Some(object) = T::get_active(ui, self.store, self.local_state) {
                 painter.add(object.active_shape(range).transform(to_screen));
             }
 
-            if let Some(objects) = T::get_selected(ui, self.store) {
+            if let Some(objects) = T::get_selected(ui, self.store, self.local_state) {
                 painter.extend(
                     objects
                         .into_iter()
@@ -304,11 +304,11 @@ pub trait SequencerObject<T> {
 
     fn shape(&self, range: Rect) -> Shape;
 
-    fn get_active(ui: &Ui, store: &Store) -> Option<T>;
+    fn get_active(ui: &Ui, store: &Store, local_state: &LocalState) -> Option<T>;
 
     fn active_shape(&self, range: Rect) -> Shape;
 
-    fn get_selected(ui: &Ui, store: &Store) -> Option<Vec<T>>;
+    fn get_selected(ui: &Ui, store: &Store, local_state: &LocalState) -> Option<Vec<T>>;
 
     fn selected_shape(&self, range: Rect) -> Shape;
 

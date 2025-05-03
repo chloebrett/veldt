@@ -1,5 +1,5 @@
 use crate::{
-    DataState, LocalState, WindowState, update_select_data_state,
+    DataState, LocalState, WindowState, borrow_set, update_select_data_state,
     view::View,
     widget::{Sequencer, SequencerObject, default_window},
 };
@@ -162,11 +162,8 @@ impl SequencerObject<PlacedTrack> for PlacedTrack {
         }
     }
 
-    fn get_active(ui: &Ui, store: &Store) -> Option<PlacedTrack> {
-        let Some(index) = DataState::ActiveTrackPlacementIndex.get_value::<usize>(ui) else {
-            return None;
-        };
-
+    fn get_active(ui: &Ui, store: &Store, _local_state: &LocalState) -> Option<PlacedTrack> {
+        let index = DataState::ActiveTrackPlacementIndex.get_value::<usize>(ui)?;
         let selector = PlacementSelector(index);
         let placement = store.select(&selector);
         let track_placement: &TrackPlacement = placement.try_into().unwrap();
@@ -193,7 +190,7 @@ impl SequencerObject<PlacedTrack> for PlacedTrack {
         ])
     }
 
-    fn get_selected(ui: &Ui, store: &Store) -> Option<Vec<PlacedTrack>> {
+    fn get_selected(ui: &Ui, store: &Store, _local_state: &LocalState) -> Option<Vec<PlacedTrack>> {
         let index_list: BTreeSet<usize> = DataState::SelectedTrackPlacementIndexes.get_value(ui)?;
         Some(
             index_list
@@ -245,7 +242,10 @@ impl SequencerObject<PlacedTrack> for PlacedTrack {
 
         DataState::NoteRollWindow.set_value(ui, true);
         DataState::TrackPlacementViewWindow.set_value(ui, true);
-        *local_state.active_track.borrow_mut() = Some(TrackSelector(track_placement.track_index));
+        borrow_set(
+            &local_state.active_track,
+            TrackSelector(track_placement.track_index),
+        );
         DataState::ActiveTrackPlacementIndex.set_value(ui, index);
     }
 

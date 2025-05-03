@@ -1,6 +1,6 @@
 use super::{Piano, PianoOrientation};
 use crate::{
-    DataState, LocalState,
+    DataState, LocalState, borrow_get,
     transform::Yx,
     update_select_data_state,
     view::View,
@@ -21,7 +21,7 @@ use std::collections::BTreeSet;
 
 pub struct NoteRoll<'a> {
     store: &'a Store,
-    local_state: &'a mut LocalState,
+    local_state: &'a LocalState,
     min_note: PitchValue,
     max_note: PitchValue,
     offset: f32,
@@ -29,7 +29,7 @@ pub struct NoteRoll<'a> {
 }
 
 impl<'a> NoteRoll<'a> {
-    pub fn new(store: &'a Store, local_state: &'a mut LocalState) -> Self {
+    pub fn new(store: &'a Store, local_state: &'a LocalState) -> Self {
         Self {
             store,
             local_state,
@@ -80,9 +80,10 @@ impl View for NoteRoll<'_> {
             max_note,
             offset,
             bar_length,
+            local_state,
             ..
         } = *self;
-        let Some(TrackSelector(track_index)) = *self.local_state.active_track.borrow() else {
+        let Some(TrackSelector(track_index)) = borrow_get(&self.local_state.active_track) else {
             return;
         };
         let default_note = PlacedNote {
@@ -134,8 +135,7 @@ impl View for NoteRoll<'_> {
                     ui.horizontal(|ui| {
                         Piano::new(max_note, min_note - 1, PianoOrientation::Vertical).ui(ui);
                         ui.add(
-                            // TODO: pass down the real LocalState.
-                            Sequencer::new(store, &mut LocalState::default(), range)
+                            Sequencer::new(store, local_state, range)
                                 .objects(notes)
                                 .parent_index(track_index)
                                 .select(select)
@@ -185,21 +185,14 @@ impl SequencerObject<PlacedNote> for PlacedNote {
         Shape::rect_filled(self.to_rect(range), CornerRadius::same(1), Color32::WHITE)
     }
 
-    fn get_active(ui: &Ui, store: &Store) -> Option<PlacedNote> {
-        let track_index = DataState::ActiveTrackIndex.get_value::<usize>(ui)?;
+    fn get_active(ui: &Ui, store: &Store, local_state: &LocalState) -> Option<PlacedNote> {
+        let track_sel = borrow_get(&local_state.active_track)?;
         DataState::ActiveNoteIndex
             .get_value::<usize>(ui)
             .map(|note_index| {
-                store
-                    .get()
-                    .project
-                    .tracks
-                    .get(track_index)
-                    .expect("Should have been track at index.")
-                    .notes
-                    .get(note_index)
-                    .expect("Should have been note at index")
-                    .clone()
+                let sel: NoteSelector = track_sel.downcast_note(note_index);
+                let note: &PlacedNote = store.select(&sel);
+                note.clone()
             })
     }
 
@@ -218,15 +211,16 @@ impl SequencerObject<PlacedNote> for PlacedNote {
         ])
     }
 
-    fn get_selected(ui: &Ui, store: &Store) -> Option<Vec<PlacedNote>> {
-        let track_index = DataState::ActiveTrackIndex.get_value::<usize>(ui)?;
+    fn get_selected(ui: &Ui, store: &Store, local_state: &LocalState) -> Option<Vec<PlacedNote>> {
+        let track_sel = borrow_get(&local_state.active_track)?;
         let note_indexes = DataState::SelectedNoteIndexes.get_value::<BTreeSet<usize>>(ui)?;
         Some(
             note_indexes
                 .into_iter()
                 .map(|note_index| {
-                    let sel = NoteSelector(track_index, note_index);
-                    store.select(&sel).clone()
+                    let sel: NoteSelector = track_sel.downcast_note(note_index);
+                    let note: &PlacedNote = store.select(&sel);
+                    note.clone()
                 })
                 .collect(),
         )
