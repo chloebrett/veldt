@@ -103,7 +103,7 @@ impl RenderGraph {
             // Or even just get a &[Track] containing all the tracks in the store.
             let tracks = project.tracks.clone();
 
-            match &project.generators[generator_index] {
+            let generator_node_index = match &project.generators[generator_index] {
                 GeneratorInstance {
                     it: Generator::SimpleWave(config),
                     meta,
@@ -116,7 +116,7 @@ impl RenderGraph {
                         tracks,
                         bpm,
                     );
-                    self.add_simple_wave_generator(generator_node);
+                    self.add_simple_wave_generator(generator_node)
                 }
                 GeneratorInstance {
                     it: Generator::SubSynth(config),
@@ -130,26 +130,43 @@ impl RenderGraph {
                         tracks,
                         bpm,
                     );
-                    self.add_subsynth_generator(generator_node);
+                    self.add_subsynth_generator(generator_node)
                 }
                 _ => {
                     // TODO: support adding other types of generators to the graph.
+                    panic!("Not yet implemented.")
                 }
-            }
+            };
 
             // Apply effects.
             // TODO add all channels.
-            // TODO: this is buggy right now! IIUC we only actually link the final effect in
-            // the chain.
+            if project.mixer.is_empty() {
+                continue;
+            }
             let mixer_index = 0;
             let mixer_channel = &project.mixer[mixer_index];
+            let mut prev_node = generator_node_index;
+            // Add effects in a chain inputting the output of one to the next.
             for (effect_index, effect) in mixer_channel.effects.iter().enumerate() {
-                self.add_effect_with_mixer_to_generator(
+                let next_node = self.add_effect_with_mixer(
                     mixer_index,
                     effect_index,
                     effect.clone(),
-                    generator_index,
+                    prev_node,
                 );
+                prev_node = next_node;
+            }
+            if prev_node != generator_node_index {
+                // Effects have been applied.
+                // Remove edge between generator and output
+                if let Some(edge) = self
+                    .graph
+                    .find_edge(generator_node_index, self.output_node_index)
+                {
+                    self.graph.remove_edge(edge);
+                };
+                // Add edge between final mixer and output.
+                self.graph.add_edge(prev_node, self.output_node_index, ());
             }
         }
 
@@ -189,58 +206,27 @@ impl RenderGraph {
         self.output_node_index = node_index;
     }
 
-    pub fn add_simple_wave_generator(&mut self, node: SimpleWaveGeneratorNode) {
+    pub fn add_simple_wave_generator(&mut self, node: SimpleWaveGeneratorNode) -> NodeIndex {
         let node_index = self
             .graph
             .add_node(NodeData::new2(BoxedNodeSend::new(node)));
         // Keep track of node index to easily connect to Effects and Mixers
         self.generator_indexes.push(node_index);
         self.graph.add_edge(node_index, self.output_node_index, ());
+        node_index
     }
 
-    pub fn add_subsynth_generator(&mut self, node: SubSynthNode) {
+    pub fn add_subsynth_generator(&mut self, node: SubSynthNode) -> NodeIndex {
         let node_index = self
             .graph
             .add_node(NodeData::new2(BoxedNodeSend::new(node)));
         // Keep track of node index to easily connect to Effects and Mixers
         self.generator_indexes.push(node_index);
         self.graph.add_edge(node_index, self.output_node_index, ());
+        node_index
     }
 
-    pub fn add_effect_with_mixer_to_generator(
-        &mut self,
-        mixer_index: usize,
-        effect_index: usize,
-        effect: EffectInstance,
-        generator_index: usize,
-    ) {
-        let dry = *self
-            .generator_indexes
-            .get(generator_index)
-            .expect("Should be a generator node at this index.");
-        // TODO: this isn't right. We need to add the effect to the end of the effect chain.
-        // We need to make support for effect chains + multiple effect channels better.
-        // Currently I think this creates a bug where only the last effect is audible.
-        // Verify that.
-        let mixer = self.add_effect_with_mixer(mixer_index, effect_index, effect, dry);
-        // Disconnected direct edge from generator to output.
-        if let Some(edge) = self.graph.find_edge(dry, self.output_node_index) {
-            self.graph.remove_edge(edge);
-        };
-        self.graph.add_edge(mixer, self.output_node_index, ());
-    }
-
-    pub fn add_main_effect_with_mixer(
-        &mut self,
-        mixer_index: usize,
-        effect_index: usize,
-        effect: EffectInstance,
-    ) {
-        let dry = self.output_node_index;
-        let mixer = self.add_effect_with_mixer(mixer_index, effect_index, effect, dry);
-        self.output_node_index = mixer;
-    }
-
+    // Adds an effect with a mixer to the graph.
     fn add_effect_with_mixer(
         &mut self,
         mixer_index: usize,
@@ -287,6 +273,17 @@ impl RenderGraph {
         self.graph.add_edge(effect, mixer, ());
         self.graph.add_edge(dry, mixer, ());
         mixer
+    }
+
+    /// Adds an effect node with a mixer directly to output of graph.
+    pub fn add_main_effect_with_mixer(
+        &mut self,
+        mixer_index: usize,
+        effect_index: usize,
+        effect: EffectInstance,
+    ) {
+        self.output_node_index =
+            self.add_effect_with_mixer(mixer_index, effect_index, effect, self.output_node_index);
     }
 
     /// Creates a graph that plays the buffer contained in a Vec.
@@ -349,8 +346,8 @@ impl Iterator for RenderGraph {
 mod tests {
     use shared::model::{
         AdsrEnvelope, AntiAliasingMode, DelayConfig, EffectMeta, EqConfig, EqType, GeneratorMeta,
-        MixerChannel, ModDelayConfig, Note, PitchName, PlacedNote, Placement, ScaleValue,
-        SimpleWaveConfig, Track, TrackPlacement, WaveType,
+        MixerChannel, ModDelayConfig, ModMatrix, Note, PitchName, PlacedNote, Placement,
+        ScaleValue, SimpleWaveConfig, Track, TrackPlacement, WaveType,
     };
 
     use crate::{graph::SimpleWaveGeneratorNode, wave::freq};
@@ -360,6 +357,35 @@ mod tests {
     impl RenderGraph {
         fn set_sample_count(&mut self, count: usize) {
             self.sample_count = count;
+        }
+    }
+
+    // Root Mean Squared to calculate if there is signal in output.
+    fn rms(graph: RenderGraph) -> f32 {
+        let mut left_sum = 0.0;
+        let mut right_sum = 0.0;
+        let mut count = 0;
+        for [left, right] in graph {
+            count += 1;
+            left_sum += left.powi(2);
+            right_sum += right.powi(2);
+        }
+        ((left_sum / count as f32 + right_sum / count as f32) / 2.0).sqrt()
+    }
+
+    fn make_project() -> Project {
+        Project {
+            name: "test".into(),
+            tracks: vec![make_track()],
+            placements: vec![make_placement()],
+            samples: vec![],
+            generators: vec![GeneratorInstance {
+                it: Generator::SimpleWave(make_simple_wave_config()),
+                meta: make_generator_meta(),
+            }],
+            mixer: vec![make_mixer_channel()],
+            bpm: 120.0,
+            mod_matrix: ModMatrix::default(),
         }
     }
 
@@ -482,35 +508,30 @@ mod tests {
     #[test]
     fn basic_render_graph_renders_something() {
         // Arrange
-        let generator_node = make_simple_wave_generator_node();
-        let mixer_channel = make_mixer_channel();
         let mut graph = RenderGraph::default();
+        graph.set_from_project(&make_project());
         // Act
-        graph.add_simple_wave_generator(generator_node);
-        for (i, effect) in mixer_channel.effects.into_iter().enumerate() {
-            graph.add_effect_with_mixer_to_generator(0, i, effect, 0);
-        }
         graph.add_output_amp_node();
         // Assert
-        assert!(graph.peekable().peek().is_some())
+        assert!(rms(graph) > 0.0)
     }
 
     #[test]
     fn graph_with_only_generator_renders_something() {
         // Arrange
-        let generator_node = make_simple_wave_generator_node();
+        let mut project = make_project();
+        project.mixer = vec![];
         let mut graph = RenderGraph::default();
-        graph.set_sample_count(1);
 
         // Act
-        graph.add_simple_wave_generator(generator_node);
+        graph.set_from_project(&project);
 
         // Assert
-        assert!(graph.peekable().peek().is_some())
+        assert!(rms(graph) > 0.0);
     }
 
     #[test]
-    fn graph_built_from_sample_renders_something() {
+    fn graph_built_from_sample_renders_correctly() {
         // Arrange
         let pitch = PitchName {
             scale_value: ScaleValue::A,
@@ -530,5 +551,24 @@ mod tests {
 
         // Assert
         assert_eq!(output, input)
+    }
+
+    #[test]
+    fn adding_effects_changes_output() {
+        // Arrange
+        let mut project = make_project();
+        let mut graph = RenderGraph::default();
+        let mut graph_no_mixer = RenderGraph::default();
+
+        // Act
+        graph.set_from_project(&project);
+        project.mixer = vec![];
+        graph_no_mixer.set_from_project(&project);
+
+        // Assert
+        assert_ne!(
+            graph.collect::<Vec<[f32; 2]>>(),
+            graph_no_mixer.collect::<Vec<[f32; 2]>>()
+        );
     }
 }

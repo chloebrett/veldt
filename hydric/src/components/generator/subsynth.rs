@@ -11,7 +11,7 @@ use shared::{
     model::{PitchName, ScaleValue},
     types::PitchValue,
 };
-use state::{Action, GeneratorSelector, Store};
+use state::{GeneratorSelector, Store};
 
 pub struct SubSynthView<'a, G: Fn()> {
     config: &'a SubSynthConfig,

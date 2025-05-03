@@ -10,7 +10,6 @@ use std::collections::BTreeSet;
 //   - If an editor window is open.
 // TODO: rename TrackPlacement... to Placement here where appropriate.
 pub enum DataState {
-    ActiveTrackIndex,
     ActiveTrackPlacementIndex,
     ActiveNoteIndex,
     TrackPlacementViewWindow,
@@ -31,7 +30,6 @@ impl DataState {
         Id::new(match self {
             Self::ActiveNoteIndex => "active_note_index",
             Self::ActiveTrackPlacementIndex => "active_track_placement_index",
-            Self::ActiveTrackIndex => "active_track_index",
             Self::TrackPlacementViewWindow => "track_placement_window",
             Self::NoteRollWindow => "note_roll_window",
             Self::NoteWindow => "note_window",
@@ -71,7 +69,6 @@ impl DataState {
                 | Self::EditMixerState
                 | Self::NoteRollSelectMode => data.insert_temp::<Option<bool>>(self.get_id(), None),
                 Self::ActiveNoteIndex
-                | Self::ActiveTrackIndex
                 | Self::ActiveTrackPlacementIndex
                 | Self::SubSynthLfoTab
                 | Self::_SubSynthEnvTab => data.insert_temp::<Option<usize>>(self.get_id(), None),
