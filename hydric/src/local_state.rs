@@ -7,17 +7,27 @@ pub struct LocalState {
     pub active_track: Rc<RefCell<Option<TrackSelector>>>,
 }
 
-pub fn borrow_get<T: Clone>(field: &Rc<RefCell<T>>) -> T {
-    let cell: Rc<RefCell<T>> = (*field).clone();
-    cell.borrow().clone()
+pub trait EasyBorrow<T: Clone> {
+    fn borrow_get(&self) -> Option<T>;
+
+    fn borrow_set(&self, value: T);
+
+    fn borrow_set_none(&self);
 }
 
-pub fn borrow_set<T>(field: &Rc<RefCell<Option<T>>>, value: T) {
-    let cell: Rc<RefCell<Option<T>>> = (*field).clone();
-    *cell.borrow_mut() = Some(value);
-}
+impl<T: Clone> EasyBorrow<T> for Rc<RefCell<Option<T>>> {
+    fn borrow_get(&self) -> Option<T> {
+        let cell: Rc<RefCell<Option<T>>> = (*self).clone();
+        cell.borrow().clone()
+    }
 
-pub fn _borrow_set_none<T>(field: &Rc<RefCell<Option<T>>>) {
-    let cell: Rc<RefCell<Option<T>>> = (*field).clone();
-    *cell.borrow_mut() = None;
+    fn borrow_set(&self, value: T) {
+        let cell: Rc<RefCell<Option<T>>> = (*self).clone();
+        *cell.borrow_mut() = Some(value);
+    }
+
+    fn borrow_set_none(&self) {
+        let cell: Rc<RefCell<Option<T>>> = (*self).clone();
+        *cell.borrow_mut() = None;
+    }
 }

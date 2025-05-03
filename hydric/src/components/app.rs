@@ -159,6 +159,6 @@ impl View for App {
             &mut self.window_state.sample_tree,
         )
         .ui(ui);
-        TrackRoll::new(&self.store, &mut self.window_state, &mut self.local_state).ui(ui);
+        TrackRoll::new(&self.store, &mut self.window_state, &self.local_state).ui(ui);
     }
 }

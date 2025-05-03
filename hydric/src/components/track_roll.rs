@@ -1,5 +1,5 @@
 use crate::{
-    DataState, LocalState, WindowState, borrow_set, update_select_data_state,
+    DataState, EasyBorrow, LocalState, WindowState, update_select_data_state,
     view::View,
     widget::{Sequencer, SequencerObject, default_window},
 };
@@ -20,14 +20,14 @@ use std::collections::BTreeSet;
 pub struct TrackRoll<'a> {
     store: &'a Store,
     window_state: &'a mut WindowState,
-    local_state: &'a mut LocalState,
+    local_state: &'a LocalState,
 }
 
 impl<'a> TrackRoll<'a> {
     pub fn new(
         store: &'a Store,
         window_state: &'a mut WindowState,
-        local_state: &'a mut LocalState,
+        local_state: &'a LocalState,
     ) -> Self {
         Self {
             store,
@@ -242,10 +242,9 @@ impl SequencerObject<PlacedTrack> for PlacedTrack {
 
         DataState::NoteRollWindow.set_value(ui, true);
         DataState::TrackPlacementViewWindow.set_value(ui, true);
-        borrow_set(
-            &local_state.active_track,
-            TrackSelector(track_placement.track_index),
-        );
+        local_state
+            .active_track
+            .borrow_set(TrackSelector(track_placement.track_index));
         DataState::ActiveTrackPlacementIndex.set_value(ui, index);
     }
 
