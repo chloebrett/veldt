@@ -1,6 +1,6 @@
 use super::{Piano, PianoOrientation};
 use crate::{
-    DataState, GetSet, LocalState,
+    GetSet, LocalState,
     transform::Yx,
     view::View,
     widget::{Sequencer, SequencerObject, StateWindow, default_window},
@@ -108,7 +108,7 @@ impl View for NoteRoll<'_> {
                 max_note as f32,
             ),
         );
-        let mut select = DataState::NoteRollSelectMode.get_value(ui).unwrap_or(false);
+        let mut select = local_state.note_roll_select_enabled.get();
         if !select {
             local_state.selected_notes.set(None);
         }
@@ -154,7 +154,7 @@ impl View for NoteRoll<'_> {
                     });
             },
         );
-        DataState::NoteRollSelectMode.set_value(ui, select);
+        local_state.note_roll_select_enabled.set(select);
     }
 }
 

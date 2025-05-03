@@ -13,8 +13,6 @@ use std::collections::BTreeSet;
 pub enum DataState {
     ActiveTrackPlacementIndex,
     SelectedTrackPlacementIndexes,
-    TrackRollSelectMode,
-    NoteRollSelectMode,
 }
 
 impl DataState {
@@ -22,8 +20,6 @@ impl DataState {
         Id::new(match self {
             Self::ActiveTrackPlacementIndex => "active_track_placement_index",
             Self::SelectedTrackPlacementIndexes => "selected_track_placement_indexes",
-            Self::TrackRollSelectMode => "track_roll_select_mode",
-            Self::NoteRollSelectMode => "note_roll_select_mode",
         })
     }
 
@@ -45,9 +41,6 @@ impl DataState {
             // Value are stores by (Id, type) and so type of the value when not `None` must be
             // known.
             match self {
-                Self::TrackRollSelectMode | Self::NoteRollSelectMode => {
-                    data.insert_temp::<Option<bool>>(self.get_id(), None)
-                }
                 Self::ActiveTrackPlacementIndex => {
                     data.insert_temp::<Option<usize>>(self.get_id(), None)
                 }

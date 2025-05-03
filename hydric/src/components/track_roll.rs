@@ -58,9 +58,7 @@ impl View for TrackRoll<'_> {
             .collect();
         let track_count = store.get().project.tracks.len();
         let range = Rect::from_min_max(pos2(0.0, 0.0), pos2(16.0, track_count as f32));
-        let mut select = DataState::TrackRollSelectMode
-            .get_value(ui)
-            .unwrap_or(false);
+        let mut select = self.local_state.track_roll_select_enabled.get();
         if !select {
             DataState::SelectedTrackPlacementIndexes.remove_value(ui);
         }
@@ -97,7 +95,7 @@ impl View for TrackRoll<'_> {
                         );
                     });
             });
-        DataState::TrackRollSelectMode.set_value(ui, select);
+        self.local_state.track_roll_select_enabled.set(select);
     }
 }
 
