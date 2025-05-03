@@ -1,6 +1,6 @@
 use super::ProcessContext;
 use crate::graph::pan_multipliers;
-use crate::wave::{WaveSource, WaveCache, beats_to_samples};
+use crate::wave::{WaveSource, beats_to_samples};
 use dasp_graph::{Buffer, Input, Node};
 use shared::model::{
     Generator, GeneratorInstance, GeneratorMeta, Placement, SimpleWaveConfig, Track, TrackPlacement,
