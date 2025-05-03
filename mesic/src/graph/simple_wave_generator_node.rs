@@ -110,7 +110,7 @@ impl Node<ProcessContext> for SimpleWaveGeneratorNode {
                 dasp_slice::add_in_place(
                     &mut buffer,
                     &self.wave_source.unison_wave(
-                        &note.note.pitch_name,
+                        note.note.pitch_name.into(),
                         note.note.beats,
                         &self.config,
                         self.sample_index as i32 - note_start_sample as i32,

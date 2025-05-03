@@ -124,7 +124,7 @@ impl Node<ProcessContext> for SubSynthNode {
                     .zip(envelopes.iter())
                     .map(|(osc, envelope)| {
                         let mut buf = wave_source.osc_wave(
-                            &note.note.pitch_name,
+                            note.note.pitch_name.into(),
                             note.note.beats,
                             &osc,
                             &envelope,

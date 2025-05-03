@@ -1,13 +1,11 @@
-use crate::consts::{NYQUIST, REFERENCE_PITCH, SAMPLE_RATE, SECONDS_PER_MINUTE};
+use crate::consts::{NYQUIST, SAMPLE_RATE, SECONDS_PER_MINUTE};
 use crate::envelope::apply_envelope;
 use dasp_graph::Buffer;
-use lazy_static::lazy_static;
 use ordered_float::OrderedFloat;
-use shared::model::{
-    AdsrEnvelope, AntiAliasingMode, OscillatorConfig, PitchName, SimpleWaveConfig, WaveType,
-};
+use shared::consts::SEMITONE_FREQ;
+use shared::model::{AdsrEnvelope, AntiAliasingMode, OscillatorConfig, SimpleWaveConfig, WaveType};
 use shared::types::Beats;
-use shared::types::{Freq, PitchValue};
+use shared::types::Freq;
 use std::cmp::min;
 use std::collections::HashMap;
 use std::f32::consts::{PI, TAU};
@@ -51,12 +49,12 @@ impl WaveCache {
     /// Phase is between 0.0..1.0.
     /// Note: "key" refers to a HashMap key, not a musical key.
     pub fn get(&mut self, key: &WaveKey, phase: f32) -> f32 {
-        debug_assert!(phase >= 0.0 && phase < 1.0);
+        debug_assert!((0.0..1.0).contains(&phase));
         let total_samples = FIDELITY * SAMPLE_RATE as f32 / *key.freq;
         let total_samples_len = total_samples.round() as usize;
         let phase_samples = total_samples_len as f32 * phase;
 
-        if let Some(wave) = self.cache.get(&key) {
+        if let Some(wave) = self.cache.get(key) {
             debug_assert!(wave.buffer.len() == total_samples_len);
 
             let a = wave.buffer[phase_samples.floor() as usize];
@@ -79,22 +77,8 @@ impl WaveCache {
 
         self.cache.insert(key.clone(), Wave { buffer });
 
-        return current_value;
+        current_value
     }
-}
-
-// Returns the frequency based on the distance from reference pitch.
-pub fn freq(pitch_name: PitchName) -> Freq {
-    let pitch: PitchValue = pitch_name.into();
-    let reference: PitchValue = (*REFERENCE_PITCH.pitch_name).into();
-    let interval: PitchValue = pitch - reference;
-
-    REFERENCE_PITCH.frequency * SEMITONE_FREQ.powf(interval as f32)
-}
-
-lazy_static! {
-    // The frequency multiplier for a semitone.
-    pub static ref SEMITONE_FREQ: f32 = 2.0_f32.powf(1.0 / 12.0);
 }
 
 pub struct WaveSource {
@@ -111,10 +95,15 @@ impl WaveSource {
     }
 }
 
+pub struct Unison {
+    pub detune_cents: f32,
+    pub osc_count: usize,
+}
+
 impl WaveSource {
     pub fn unison_wave(
         &mut self,
-        pitch_name: &PitchName,
+        freq: Freq,
         beats: Beats,
         config: &SimpleWaveConfig,
         start_index: i32, // allows starting the wave in the middle. Can be negative - if it is, then
@@ -129,7 +118,7 @@ impl WaveSource {
             .iter()
             .map(|det| {
                 self.wave(
-                    pitch_name,
+                    freq,
                     beats,
                     &config.envelope,
                     config.wave,
@@ -145,7 +134,7 @@ impl WaveSource {
 
     fn wave(
         &mut self,
-        pitch_name: &PitchName,
+        freq: Freq,
         beats: Beats,
         envelope: &AdsrEnvelope,
         wave_type: WaveType,
@@ -153,7 +142,7 @@ impl WaveSource {
         detune_cents: f32,
         start_index: i32,
     ) -> Buffer {
-        let wave_freq = freq(*pitch_name) * detune_multiplier(detune_cents);
+        let wave_freq = freq * detune_multiplier(detune_cents);
         let step = wave_freq / (SAMPLE_RATE as f32);
         let key = WaveKey {
             kind: wave_type,
@@ -186,7 +175,7 @@ impl WaveSource {
 
     pub fn osc_wave(
         &mut self,
-        pitch_name: &PitchName,
+        freq: Freq,
         beats: Beats,
         config: &OscillatorConfig,
         env: &AdsrEnvelope,
@@ -203,7 +192,7 @@ impl WaveSource {
             .iter()
             .map(|&detune| {
                 self.wave(
-                    pitch_name,
+                    freq,
                     beats,
                     env,
                     config.wave,
