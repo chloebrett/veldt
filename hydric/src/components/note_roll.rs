@@ -1,6 +1,6 @@
 use super::{Piano, PianoOrientation};
 use crate::{
-    DataState, EasyBorrow, LocalState,
+    DataState, GetSetOption, LocalState,
     transform::Yx,
     update_select_data_state,
     view::View,
@@ -83,7 +83,7 @@ impl View for NoteRoll<'_> {
             local_state,
             ..
         } = *self;
-        let Some(TrackSelector(track_index)) = self.local_state.active_track.borrow_get() else {
+        let Some(TrackSelector(track_index)) = self.local_state.active_track.get() else {
             return;
         };
         let default_note = PlacedNote {
@@ -186,7 +186,7 @@ impl SequencerObject<PlacedNote> for PlacedNote {
     }
 
     fn get_active(ui: &Ui, store: &Store, local_state: &LocalState) -> Option<PlacedNote> {
-        let track_sel = local_state.active_track.borrow_get()?;
+        let track_sel = local_state.active_track.get()?;
         DataState::ActiveNoteIndex
             .get_value::<usize>(ui)
             .map(|note_index| {
@@ -212,7 +212,7 @@ impl SequencerObject<PlacedNote> for PlacedNote {
     }
 
     fn get_selected(ui: &Ui, store: &Store, local_state: &LocalState) -> Option<Vec<PlacedNote>> {
-        let track_sel = local_state.active_track.borrow_get()?;
+        let track_sel = local_state.active_track.get()?;
         let note_indexes = DataState::SelectedNoteIndexes.get_value::<BTreeSet<usize>>(ui)?;
         Some(
             note_indexes

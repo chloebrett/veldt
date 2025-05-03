@@ -7,27 +7,27 @@ pub struct LocalState {
     pub active_track: Rc<RefCell<Option<TrackSelector>>>,
 }
 
-pub trait EasyBorrow<T: Clone> {
-    fn borrow_get(&self) -> Option<T>;
+pub trait GetSetOption<T: Clone> {
+    fn get(&self) -> Option<T>;
 
-    fn borrow_set(&self, value: T);
+    fn set(&self, value: T);
 
-    fn borrow_set_none(&self);
+    fn _set_none(&self);
 }
 
-impl<T: Clone> EasyBorrow<T> for Rc<RefCell<Option<T>>> {
-    fn borrow_get(&self) -> Option<T> {
-        let cell: Rc<RefCell<Option<T>>> = (*self).clone();
-        cell.borrow().clone()
+/// Implementation of borrowing a RefCell, reading or mutating, and then immediately finishing the borrow.
+/// If this is the only interface through which a RefCell is used, it should be ~impossible to
+/// cause panics.
+impl<T: Clone> GetSetOption<T> for Rc<RefCell<Option<T>>> {
+    fn get(&self) -> Option<T> {
+        self.borrow().clone()
     }
 
-    fn borrow_set(&self, value: T) {
-        let cell: Rc<RefCell<Option<T>>> = (*self).clone();
-        *cell.borrow_mut() = Some(value);
+    fn set(&self, value: T) {
+        *self.borrow_mut() = Some(value);
     }
 
-    fn borrow_set_none(&self) {
-        let cell: Rc<RefCell<Option<T>>> = (*self).clone();
-        *cell.borrow_mut() = None;
+    fn _set_none(&self) {
+        *self.borrow_mut() = None;
     }
 }

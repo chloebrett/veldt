@@ -1,3 +1,4 @@
+use crate::local_state::GetSetOption;
 use crate::view::View;
 use crate::widget::{StateWindow, default_window, get_set, int_slider, selectable_value};
 use crate::{DataState, LocalState};
@@ -24,7 +25,7 @@ impl View for NoteView<'_> {
         let Some(note_index): Option<usize> = DataState::ActiveNoteIndex.get_value(ui) else {
             return;
         };
-        let Some(track_selector): Option<TrackSelector> = *local_state.active_track.borrow() else {
+        let Some(track_selector): Option<TrackSelector> = local_state.active_track.get() else {
             return;
         };
         let on_release = || store.dispatchr(Action::Release);
