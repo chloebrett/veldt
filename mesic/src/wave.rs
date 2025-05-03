@@ -2,14 +2,12 @@ use crate::consts::{NYQUIST, REFERENCE_PITCH, SAMPLE_RATE, SECONDS_PER_MINUTE};
 use crate::envelope::apply_envelope;
 use dasp_graph::Buffer;
 use lazy_static::lazy_static;
-use ordered_float::OrderedFloat;
 use shared::model::{
     AdsrEnvelope, AntiAliasingMode, PitchName, SimpleWaveConfig, SubSynthConfig, WaveType,
 };
 use shared::types::Beats;
 use shared::types::{Freq, PitchValue};
 use std::cmp::min;
-use std::collections::HashMap;
 use std::f32::consts::{PI, TAU};
 use std::iter::repeat_n;
 use std::ops::Range;
@@ -18,49 +16,9 @@ const HALF_PI: f32 = 0.5 * PI;
 const RECIP_HALF_PI: f32 = HALF_PI.recip(); // 2 / PI, not 1 / TAU.
 const RECIP_PI: f32 = PI.recip();
 
-#[derive(Hash, Eq, PartialEq, Clone, Debug)]
-pub struct WaveKey {
-    pub kind: WaveType,
-    pub aa: AntiAliasingMode,
-    pub freq: OrderedFloat<Freq>,
-}
-
-#[derive(Debug)]
-pub struct Wave {
-    // One full cycle, however long that may be at SAMPLE_RATE.
-    pub buffer: Vec<f32>,
-}
-
-#[derive(Default, Debug)]
-pub struct WaveCache {
-    cache: HashMap<WaveKey, Wave>,
-}
-
-impl WaveCache {
-    /// Returns the amplitude of wave with the given configuration (key) at the given phase.
-    /// Phase is between 0.0..1.0.
-    /// Note: "key" refers to a HashMap key, not a musical key.
-    pub fn get(&mut self, key: &WaveKey, phase: f32) -> f32 {
-        debug_assert!(phase >= 0.0 && phase < 1.0);
-        let total_samples = (SAMPLE_RATE as f32 / *key.freq) as usize;
-        let phase_samples = (total_samples as f32 * phase) as usize;
-
-        if let Some(wave) = self.cache.get(&key) {
-            debug_assert!(wave.buffer.len() == total_samples);
-            return wave.buffer[phase_samples];
-        }
-
-        let buffer: Vec<_> = (0..total_samples)
-            .map(|x| make_wave(x as f32 / total_samples as f32, key.kind, *key.freq, key.aa))
-            .collect();
-
-        debug_assert!(buffer.len() == total_samples);
-        let current_value = buffer[phase_samples];
-
-        self.cache.insert(key.clone(), Wave { buffer });
-
-        return current_value;
-    }
+lazy_static! {
+    // The frequency multiplier for a semitone.
+    pub static ref SEMITONE_FREQ: f32 = 2.0_f32.powf(1.0 / 12.0);
 }
 
 // Returns the frequency based on the distance from reference pitch.
@@ -72,137 +30,117 @@ pub fn freq(pitch_name: PitchName) -> Freq {
     REFERENCE_PITCH.frequency * SEMITONE_FREQ.powf(interval as f32)
 }
 
-lazy_static! {
-    // The frequency multiplier for a semitone.
-    pub static ref SEMITONE_FREQ: f32 = 2.0_f32.powf(1.0 / 12.0);
+pub fn unison_wave(
+    pitch_name: &PitchName,
+    beats: Beats,
+    bpm: Beats,
+    config: &SimpleWaveConfig,
+    start_index: i32, // allows starting the wave in the middle. Can be negative - if it is, then
+                      // -x will return x samples of silence before starting the wave.
+) -> Buffer {
+    let detune = config.detune_cents;
+    let osc_count = config.osc_count;
+
+    let detune_amounts = linspace(-detune, detune, osc_count);
+
+    let outputs: Vec<Buffer> = detune_amounts
+        .iter()
+        .map(|det| {
+            wave(
+                pitch_name,
+                beats,
+                bpm,
+                &config.envelope,
+                config.wave,
+                config.anti_aliasing_mode,
+                *det,
+                start_index,
+            )
+        })
+        .collect();
+
+    multi_sum(&outputs)
 }
 
-#[derive(Default)]
-pub struct WaveSource {
-    pub cache: WaveCache,
+fn wave(
+    pitch_name: &PitchName,
+    beats: Beats,
+    bpm: Beats,
+    envelope: &AdsrEnvelope,
+    wave_type: WaveType,
+    anti_aliasing_mode: AntiAliasingMode,
+    detune_cents: f32,
+    start_index: i32,
+) -> Buffer {
+    let wave_freq = freq(*pitch_name) * detune_multiplier(detune_cents);
+    let step = wave_freq / (SAMPLE_RATE as f32);
+
+    let mut vec: Vec<_> = make_range(start_index, beats, bpm)
+        .map(|x: i32| {
+            // Handles the case where start_index < 0.
+            // This happens when the start of a note is in the middle of a buffer that is being
+            // processed.
+            if x < 0 {
+                return 0.0;
+            }
+            make_wave(x as f32 * step, wave_type, wave_freq, anti_aliasing_mode)
+                * apply_envelope(x as f32, envelope, beats, bpm)
+        })
+        .collect();
+
+    let mut buffer = Buffer::SILENT;
+    // Handles the case where the range is smaller than the output buffer.
+    // This happens when a note finishes in the middle of a buffer.
+    if vec.len() < Buffer::LEN {
+        vec.extend(repeat_n(0.0, Buffer::LEN - vec.len()));
+    }
+    buffer.copy_from_slice(&vec);
+    buffer
 }
 
-impl WaveSource {
-    pub fn unison_wave(
-        &mut self,
-        pitch_name: &PitchName,
-        beats: Beats,
-        bpm: Beats,
-        config: &SimpleWaveConfig,
-        start_index: i32, // allows starting the wave in the middle. Can be negative - if it is, then
-                          // -x will return x samples of silence before starting the wave.
-    ) -> Buffer {
-        let detune = config.detune_cents;
-        let osc_count = config.osc_count;
+pub fn subsynth_wave(
+    pitch_name: &PitchName,
+    beats: Beats,
+    bpm: Beats,
+    config: &SubSynthConfig, // TODO: change to OscConfig later when matrix is made
+    start_index: i32,
+) -> Buffer {
+    let buffers: Vec<Buffer> = config
+        .oscillators
+        .iter()
+        .zip(config.envelopes.iter())
+        .map(|(osc, envelope)| {
+            let detunes = linspace(-osc.unison_detune, osc.unison_detune, osc.osc_count);
 
-        let detune_amounts = linspace(-detune, detune, osc_count);
+            // Create the unison waves
+            let unison_waves: Vec<Buffer> = detunes
+                .iter()
+                .map(|&detune| {
+                    wave(
+                        pitch_name,
+                        beats,
+                        bpm,
+                        envelope,
+                        osc.wave,
+                        AntiAliasingMode::Off, // placeholder
+                        osc.osc_detune + detune,
+                        start_index,
+                    )
+                })
+                .collect();
 
-        let outputs: Vec<Buffer> = detune_amounts
-            .iter()
-            .map(|det| {
-                self.wave(
-                    pitch_name,
-                    beats,
-                    bpm,
-                    &config.envelope,
-                    config.wave,
-                    config.anti_aliasing_mode,
-                    *det,
-                    start_index,
-                )
-            })
-            .collect();
+            // Sum the unison waves
+            let mut buf = multi_sum(&unison_waves);
 
-        multi_sum(&outputs)
-    }
+            for x in buf.iter_mut() {
+                *x *= osc.volume;
+            }
+            // TODO: handle pan
+            buf
+        })
+        .collect();
 
-    pub fn subsynth_wave(
-        &mut self,
-        pitch_name: &PitchName,
-        beats: Beats,
-        bpm: Beats,
-        config: &SubSynthConfig, // TODO: change to OscConfig later when matrix is made
-        start_index: i32,
-    ) -> Buffer {
-        let buffers: Vec<Buffer> = config
-            .oscillators
-            .iter()
-            .zip(config.envelopes.iter())
-            .map(|(osc, envelope)| {
-                let detunes = linspace(-osc.unison_detune, osc.unison_detune, osc.osc_count);
-
-                // Create the unison waves
-                let unison_waves: Vec<Buffer> = detunes
-                    .iter()
-                    .map(|&detune| {
-                        self.wave(
-                            pitch_name,
-                            beats,
-                            bpm,
-                            envelope,
-                            osc.wave,
-                            AntiAliasingMode::Off, // placeholder
-                            osc.osc_detune + detune,
-                            start_index,
-                        )
-                    })
-                    .collect();
-
-                // Sum the unison waves
-                let mut buf = multi_sum(&unison_waves);
-
-                for x in buf.iter_mut() {
-                    *x *= osc.volume;
-                }
-                // TODO: handle pan
-                buf
-            })
-            .collect();
-
-        multi_sum(&buffers)
-    }
-
-    fn wave(
-        &mut self,
-        pitch_name: &PitchName,
-        beats: Beats,
-        bpm: Beats,
-        envelope: &AdsrEnvelope,
-        wave_type: WaveType,
-        anti_aliasing_mode: AntiAliasingMode,
-        detune_cents: f32,
-        start_index: i32,
-    ) -> Buffer {
-        let wave_freq = freq(*pitch_name) * detune_multiplier(detune_cents);
-        let step = wave_freq / (SAMPLE_RATE as f32);
-        let key = WaveKey {
-            kind: wave_type,
-            aa: anti_aliasing_mode,
-            freq: wave_freq.into(),
-        };
-
-        let mut vec: Vec<_> = make_range(start_index, beats, bpm)
-            .map(|x: i32| {
-                // Handles the case where start_index < 0.
-                // This happens when the start of a note is in the middle of a buffer that is being
-                // processed.
-                if x < 0 {
-                    return 0.0;
-                }
-                let phase = ((x as f32) * step) % 1.0;
-                self.cache.get(&key, phase) * apply_envelope(x as f32, envelope, beats, bpm)
-            })
-            .collect();
-
-        let mut buffer = Buffer::SILENT;
-        // Handles the case where the range is smaller than the output buffer.
-        // This happens when a note finishes in the middle of a buffer.
-        if vec.len() < Buffer::LEN {
-            vec.extend(repeat_n(0.0, Buffer::LEN - vec.len()));
-        }
-        buffer.copy_from_slice(&vec);
-        buffer
-    }
+    multi_sum(&buffers)
 }
 
 pub fn beats_to_samples(beats: Beats, bpm: Beats) -> u32 {
