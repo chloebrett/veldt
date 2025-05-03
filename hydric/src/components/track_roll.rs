@@ -241,7 +241,7 @@ impl SequencerObject<PlacedTrack> for PlacedTrack {
         let track_placement: &TrackPlacement = (&self.placement).try_into().unwrap();
 
         local_state.note_roll_window.set(true);
-        DataState::TrackPlacementViewWindow.set_value(ui, true);
+        local_state.track_placement_window.set(true);
         local_state
             .active_track
             .set(Some(TrackSelector(track_placement.track_index)));
