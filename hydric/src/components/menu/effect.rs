@@ -37,9 +37,7 @@ impl View for EffectMenuOptions<'_> {
                             );
                             // Open mixer window.
                             self.window_state.mixer.channel = mixer_sel;
-                            if !self.window_state.mixer.visible {
-                                self.window_state.mixer.visible = true
-                            }
+                            self.window_state.mixer.visible = true;
                         }
                     }
                 });
