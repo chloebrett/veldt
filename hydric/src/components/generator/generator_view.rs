@@ -51,7 +51,8 @@ impl<F: FnMut()> View for GeneratorView<'_, F> {
                         }
                         Generator::Noise(_) => todo!(),
                         Generator::SubSynth(config) => {
-                            SubSynthView::new(&config, dispatch, on_release).ui(ui);
+                            SubSynthView::new(&config, on_release, &self.store, self.selector)
+                                .ui(ui);
                         }
                     };
                 },

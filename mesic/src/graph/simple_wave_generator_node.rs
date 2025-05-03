@@ -1,4 +1,5 @@
 use super::ProcessContext;
+use crate::graph::pan_multipliers;
 use crate::wave::{beats_to_samples, unison_wave};
 use dasp_graph::{Buffer, Input, Node};
 use shared::model::{
@@ -123,11 +124,4 @@ impl Node<ProcessContext> for SimpleWaveGeneratorNode {
         }
         self.sample_index += Buffer::LEN as u32;
     }
-}
-
-/// TODO: use exponential pan curves, instead of linear.
-fn pan_multipliers(pan: KnobPosition) -> [Volume; 2] {
-    let left = 0.5 * (1.0 - pan);
-    let right = 0.5 * (1.0 + pan);
-    [left, right]
 }
