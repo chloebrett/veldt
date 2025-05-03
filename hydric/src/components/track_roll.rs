@@ -240,12 +240,12 @@ impl SequencerObject<PlacedTrack> for PlacedTrack {
         PlacementSelector(index)
     }
 
-    fn set_active(&mut self, ui: &mut Ui, local_state: &mut LocalState, index: usize) {
+    fn set_active(&self, ui: &mut Ui, local_state: &LocalState, index: usize) {
         let track_placement: &TrackPlacement = (&self.placement).try_into().unwrap();
 
         DataState::NoteRollWindow.set_value(ui, true);
         DataState::TrackPlacementViewWindow.set_value(ui, true);
-        local_state.active_track = Some(TrackSelector(track_placement.track_index));
+        *local_state.active_track.borrow_mut() = Some(TrackSelector(track_placement.track_index));
         DataState::ActiveTrackPlacementIndex.set_value(ui, index);
     }
 

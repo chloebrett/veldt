@@ -82,7 +82,7 @@ impl View for NoteRoll<'_> {
             bar_length,
             ..
         } = *self;
-        let Some(TrackSelector(track_index)) = self.local_state.active_track else {
+        let Some(TrackSelector(track_index)) = *self.local_state.active_track.borrow() else {
             return;
         };
         let default_note = PlacedNote {
@@ -254,7 +254,7 @@ impl SequencerObject<PlacedNote> for PlacedNote {
         )
     }
 
-    fn set_active(&mut self, ui: &mut Ui, _local_state: &mut LocalState, index: usize) {
+    fn set_active(&self, ui: &mut Ui, _local_state: &LocalState, index: usize) {
         DataState::NoteWindow.set_value(ui, true);
         DataState::ActiveNoteIndex.set_value(ui, index);
     }

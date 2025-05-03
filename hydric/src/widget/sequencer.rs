@@ -95,7 +95,7 @@ impl<'a, T: SequencerObject<T>> Sequencer<'a, T> {
         self
     }
 
-    fn interact(&mut self, ui: &mut Ui, response: &Response) {
+    fn interact(&self, ui: &mut Ui, response: &Response) {
         let edit_object = |index: usize, action: Action| {
             self.store
                 .dispatch(&T::selector(index, self.parent_index), action)
@@ -134,7 +134,7 @@ impl<'a, T: SequencerObject<T>> Sequencer<'a, T> {
                     T::set_selected(ui, Some(index));
                 }
             } else if movable_resp.interact(Sense::click()).double_clicked() {
-                self.objects[index].set_active(ui, &mut self.local_state, index);
+                self.objects[index].set_active(ui, &self.local_state, index);
             }
             if resize_resp.hovered() {
                 ui.ctx().set_cursor_icon(CursorIcon::ResizeColumn);
@@ -232,7 +232,7 @@ impl<'a, T: SequencerObject<T>> Sequencer<'a, T> {
 }
 
 impl<T: SequencerObject<T>> Widget for Sequencer<'_, T> {
-    fn ui(mut self, ui: &mut Ui) -> Response {
+    fn ui(self, ui: &mut Ui) -> Response {
         let mut res: Option<Response> = None;
 
         Frame::canvas(ui.style()).show(ui, |ui| {
@@ -314,7 +314,7 @@ pub trait SequencerObject<T> {
 
     fn selector(index: usize, parent_index: Option<usize>) -> impl SelectorTrait;
 
-    fn set_active(&mut self, ui: &mut Ui, local_state: &mut LocalState, index: usize);
+    fn set_active(&self, ui: &mut Ui, local_state: &LocalState, index: usize);
 
     fn set_selected(ui: &mut Ui, index: Option<usize>);
 
