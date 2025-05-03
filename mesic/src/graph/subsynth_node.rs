@@ -1,5 +1,5 @@
 use crate::graph::{ProcessContext, pan_multipliers};
-use crate::wave::{beats_to_samples, osc_wave, subsynth_wave};
+use crate::wave::{beats_to_samples, multi_sum, osc_wave};
 use dasp_graph::{Buffer, Input, Node};
 use shared::model::{
     Generator, GeneratorInstance, GeneratorMeta, Placement, SubSynthConfig, Track, TrackPlacement,
@@ -136,7 +136,7 @@ impl Node<ProcessContext> for SubSynthNode {
                     })
                     .collect();
 
-                dasp_slice::add_in_place(&mut buffer, &subsynth_wave(osc_buffers));
+                dasp_slice::add_in_place(&mut buffer, &multi_sum(&osc_buffers));
             }
 
             for (channel_index, out_buf) in output.iter_mut().enumerate() {

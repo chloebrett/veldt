@@ -106,24 +106,33 @@ pub fn osc_wave(
     env: &AdsrEnvelope,
     start_index: i32,
 ) -> Buffer {
-    let buf = wave(
-        pitch_name,
-        beats,
-        bpm,
-        env,
-        config.wave,
-        AntiAliasingMode::Off,
-        config.osc_detune,
-        start_index,
+    let detunes = linspace(
+        -config.unison_detune,
+        config.unison_detune,
+        config.osc_count,
     );
 
-    // TODO: handle per-osc detune
+    // Create the unison waves
+    let unison_waves: Vec<Buffer> = detunes
+        .iter()
+        .map(|&detune| {
+            wave(
+                pitch_name,
+                beats,
+                bpm,
+                env,
+                config.wave,
+                AntiAliasingMode::Off, // placeholder
+                config.osc_detune + detune,
+                start_index,
+            )
+        })
+        .collect();
+
+    // Sum the unison waves
+    let buf = multi_sum(&unison_waves);
 
     buf
-}
-
-pub fn subsynth_wave(osc_waves: Vec<Buffer>) -> Buffer {
-    multi_sum(&osc_waves)
 }
 
 pub fn beats_to_samples(beats: Beats, bpm: Beats) -> u32 {
@@ -165,7 +174,7 @@ fn linspace(low: f32, high: f32, count: u32) -> Vec<f32> {
 }
 
 /// Sums the input buffers into a single buffer.
-fn multi_sum(inputs: &[Buffer]) -> Buffer {
+pub fn multi_sum(inputs: &[Buffer]) -> Buffer {
     let mut output = Buffer::SILENT;
 
     for input in inputs {
