@@ -1,5 +1,5 @@
 use crate::graph::{ProcessContext, pan_multipliers};
-use crate::wave::{WaveSource, beats_to_samples};
+use crate::wave::{beats_to_samples, subsynth_wave};
 use dasp_graph::{Buffer, Input, Node};
 use shared::model::{
     Generator, GeneratorInstance, GeneratorMeta, Placement, SubSynthConfig, Track, TrackPlacement,
@@ -8,7 +8,6 @@ use shared::types::Beats;
 use std::cmp::min;
 
 pub struct SubSynthNode {
-    wave_source: WaveSource,
     config: SubSynthConfig,
     meta: GeneratorMeta,
     generator_index: usize,
@@ -28,7 +27,6 @@ impl SubSynthNode {
         bpm: Beats,
     ) -> Self {
         Self {
-            wave_source: WaveSource::default(),
             config,
             meta,
             generator_index,
@@ -109,7 +107,7 @@ impl Node<ProcessContext> for SubSynthNode {
 
                 dasp_slice::add_in_place(
                     &mut buffer,
-                    &self.wave_source.subsynth_wave(
+                    &subsynth_wave(
                         &note.note.pitch_name,
                         note.note.beats,
                         self.bpm,
