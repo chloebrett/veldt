@@ -4,7 +4,7 @@ use dasp_graph::Buffer;
 use lazy_static::lazy_static;
 use ordered_float::OrderedFloat;
 use shared::model::{
-    AdsrEnvelope, AntiAliasingMode, PitchName, SimpleWaveConfig, SubSynthConfig, WaveType,
+    AdsrEnvelope, AntiAliasingMode, OscillatorConfig, PitchName, SimpleWaveConfig, WaveType,
 };
 use shared::types::Beats;
 use shared::types::{Freq, PitchValue};
@@ -82,9 +82,18 @@ lazy_static! {
     pub static ref SEMITONE_FREQ: f32 = 2.0_f32.powf(1.0 / 12.0);
 }
 
-#[derive(Default)]
 pub struct WaveSource {
     pub cache: WaveCache,
+    bpm: Beats,
+}
+
+impl WaveSource {
+    pub fn new(bpm: Beats) -> Self {
+        Self {
+            cache: WaveCache::default(),
+            bpm,
+        }
+    }
 }
 
 impl WaveSource {
@@ -92,7 +101,6 @@ impl WaveSource {
         &mut self,
         pitch_name: &PitchName,
         beats: Beats,
-        bpm: Beats,
         config: &SimpleWaveConfig,
         start_index: i32, // allows starting the wave in the middle. Can be negative - if it is, then
                           // -x will return x samples of silence before starting the wave.
@@ -108,7 +116,6 @@ impl WaveSource {
                 self.wave(
                     pitch_name,
                     beats,
-                    bpm,
                     &config.envelope,
                     config.wave,
                     config.anti_aliasing_mode,
@@ -121,57 +128,10 @@ impl WaveSource {
         multi_sum(&outputs)
     }
 
-    pub fn subsynth_wave(
-        &mut self,
-        pitch_name: &PitchName,
-        beats: Beats,
-        bpm: Beats,
-        config: &SubSynthConfig, // TODO: change to OscConfig later when matrix is made
-        start_index: i32,
-    ) -> Buffer {
-        let buffers: Vec<Buffer> = config
-            .oscillators
-            .iter()
-            .zip(config.envelopes.iter())
-            .map(|(osc, envelope)| {
-                let detunes = linspace(-osc.unison_detune, osc.unison_detune, osc.osc_count);
-
-                // Create the unison waves
-                let unison_waves: Vec<Buffer> = detunes
-                    .iter()
-                    .map(|&detune| {
-                        self.wave(
-                            pitch_name,
-                            beats,
-                            bpm,
-                            envelope,
-                            osc.wave,
-                            AntiAliasingMode::Off, // placeholder
-                            osc.osc_detune + detune,
-                            start_index,
-                        )
-                    })
-                    .collect();
-
-                // Sum the unison waves
-                let mut buf = multi_sum(&unison_waves);
-
-                for x in buf.iter_mut() {
-                    *x *= osc.volume;
-                }
-                // TODO: handle pan
-                buf
-            })
-            .collect();
-
-        multi_sum(&buffers)
-    }
-
     fn wave(
         &mut self,
         pitch_name: &PitchName,
         beats: Beats,
-        bpm: Beats,
         envelope: &AdsrEnvelope,
         wave_type: WaveType,
         anti_aliasing_mode: AntiAliasingMode,
@@ -186,7 +146,7 @@ impl WaveSource {
             freq: wave_freq.into(),
         };
 
-        let mut vec: Vec<_> = make_range(start_index, beats, bpm)
+        let mut vec: Vec<_> = make_range(start_index, beats, self.bpm)
             .map(|x: i32| {
                 // Handles the case where start_index < 0.
                 // This happens when the start of a note is in the middle of a buffer that is being
@@ -195,7 +155,7 @@ impl WaveSource {
                     return 0.0;
                 }
                 let phase = ((x as f32) * step) % 1.0;
-                self.cache.get(&key, phase) * apply_envelope(x as f32, envelope, beats, bpm)
+                self.cache.get(&key, phase) * apply_envelope(x as f32, envelope, beats, self.bpm)
             })
             .collect();
 
@@ -207,6 +167,40 @@ impl WaveSource {
         }
         buffer.copy_from_slice(&vec);
         buffer
+    }
+
+    pub fn osc_wave(
+        &mut self,
+        pitch_name: &PitchName,
+        beats: Beats,
+        config: &OscillatorConfig,
+        env: &AdsrEnvelope,
+        start_index: i32,
+    ) -> Buffer {
+        let detunes = linspace(
+            -config.unison_detune,
+            config.unison_detune,
+            config.osc_count,
+        );
+
+        // Create the unison waves
+        let unison_waves: Vec<Buffer> = detunes
+            .iter()
+            .map(|&detune| {
+                self.wave(
+                    pitch_name,
+                    beats,
+                    env,
+                    config.wave,
+                    AntiAliasingMode::Off, // placeholder
+                    config.osc_detune + detune,
+                    start_index,
+                )
+            })
+            .collect();
+
+        // Sum the unison waves
+        multi_sum(&unison_waves)
     }
 }
 
@@ -248,8 +242,9 @@ fn linspace(low: f32, high: f32, count: u32) -> Vec<f32> {
         .collect()
 }
 
+// TODO: make multi_sum private
 /// Sums the input buffers into a single buffer.
-fn multi_sum(inputs: &[Buffer]) -> Buffer {
+pub fn multi_sum(inputs: &[Buffer]) -> Buffer {
     let mut output = Buffer::SILENT;
 
     for input in inputs {

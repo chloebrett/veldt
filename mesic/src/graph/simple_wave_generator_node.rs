@@ -1,6 +1,6 @@
 use super::ProcessContext;
 use crate::graph::pan_multipliers;
-use crate::wave::{WaveSource, beats_to_samples};
+use crate::wave::{WaveSource, WaveCache, beats_to_samples};
 use dasp_graph::{Buffer, Input, Node};
 use shared::model::{
     Generator, GeneratorInstance, GeneratorMeta, Placement, SimpleWaveConfig, Track, TrackPlacement,
@@ -30,7 +30,7 @@ impl SimpleWaveGeneratorNode {
     ) -> Self {
         Self {
             config,
-            wave_source: WaveSource::default(),
+            wave_source: WaveSource::new(bpm),
             meta,
             generator_index,
             placements,
@@ -112,7 +112,6 @@ impl Node<ProcessContext> for SimpleWaveGeneratorNode {
                     &self.wave_source.unison_wave(
                         &note.note.pitch_name,
                         note.note.beats,
-                        self.bpm,
                         &self.config,
                         self.sample_index as i32 - note_start_sample as i32,
                     ),
