@@ -146,7 +146,7 @@ impl RenderGraph {
             let mixer_index = 0;
             let mixer_channel = &project.mixer[mixer_index];
             let mut prev_node = generator_node_index;
-            // Add effects in a chain inputing the output of one to the next.
+            // Add effects in a chain inputting the output of one to the next.
             for (effect_index, effect) in mixer_channel.effects.iter().enumerate() {
                 let next_node = self.add_effect_with_mixer(
                     mixer_index,
