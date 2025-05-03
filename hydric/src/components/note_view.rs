@@ -22,14 +22,14 @@ impl<'a> NoteView<'a> {
 impl View for NoteView<'_> {
     fn ui(&mut self, ui: &mut Ui) {
         let Self { store, local_state } = self;
-        let Some(note_index): Option<usize> = DataState::ActiveNoteIndex.get_value(ui) else {
+        let Some(note_index): Option<usize> = local_state.active_note.get() else {
             return;
         };
-        let Some(track_selector): Option<TrackSelector> = local_state.active_track.get() else {
+        let Some(track_sel): Option<TrackSelector> = local_state.active_track.get() else {
             return;
         };
         let on_release = || store.dispatchr(Action::Release);
-        let sel = track_selector.downcast_note(note_index);
+        let sel = track_sel.downcast_note(note_index);
         let note = &store.select(&sel);
         let window = StateWindow(default_window("Notes").default_pos(pos2(600.0, 20.0)));
         window.show(ui, DataState::NoteWindow, |ui| {
@@ -83,10 +83,10 @@ impl View for NoteView<'_> {
 
             if ui.button("Delete").clicked() {
                 store.dispatch(
-                    &track_selector,
+                    &track_sel,
                     Action::DeleteChild(IndexField::PlacedNote(note_index)),
                 );
-                DataState::ActiveNoteIndex.remove_value(ui);
+                self.local_state.active_note.set_none();
                 DataState::NoteWindow.set_value(ui, false);
             }
         });

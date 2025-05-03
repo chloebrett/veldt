@@ -248,7 +248,7 @@ impl SequencerObject<PlacedTrack> for PlacedTrack {
         DataState::ActiveTrackPlacementIndex.set_value(ui, index);
     }
 
-    fn set_selected(ui: &mut Ui, index: Option<usize>) {
+    fn set_selected(ui: &mut Ui, _local_state: &LocalState, index: Option<usize>) {
         update_select_data_state(ui, DataState::SelectedTrackPlacementIndexes, index);
     }
 
@@ -279,7 +279,12 @@ impl SequencerObject<PlacedTrack> for PlacedTrack {
         store.dispatchr(Action::DeleteChild(IndexField::Placement(index)));
     }
 
-    fn delete_selected(ui: &mut Ui, store: &Store, parent_index: Option<usize>) {
+    fn delete_selected(
+        ui: &mut Ui,
+        store: &Store,
+        _local_state: &LocalState,
+        parent_index: Option<usize>,
+    ) {
         // Track Placements must be deleted in reverse order so that indices for the rest of the selected
         // placements do not change mid-process. E.g., if deleting `3` and `4`, if `3` is deleted first
         // the placement that was at `4` will now be at `3` and the algorithm will either delete the wrong note or raise
