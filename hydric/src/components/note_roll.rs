@@ -118,34 +118,42 @@ impl View for NoteRoll<'_> {
                 .default_pos(Pos2 { x: 600.0, y: 20.0 })
                 .resizable(true),
         );
-        window.show(ui, DataState::NoteRollWindow, |ui| {
-            ui.horizontal(|ui| {
-                if ui.button("New note").clicked() {
-                    store.dispatch(
-                        &track_sel,
-                        Action::AddChild(TypeField::PlacedNote(default_note)),
-                    );
-                }
-                ui.checkbox(&mut select, "Select")
-            });
-            ScrollArea::vertical()
-                .min_scrolled_height(200.0)
-                .show(ui, |ui| {
-                    ui.horizontal(|ui| {
-                        Piano::new(max_note, min_note - 1, PianoOrientation::Vertical).ui(ui);
-                        ui.add(
-                            Sequencer::new(store, local_state, range)
-                                .objects(notes)
-                                .parent_index(track_sel.0)
-                                .select(select)
-                                .horizontal_rects(white_note_pattern, Color32::from_white_alpha(4))
-                                .vertical_bars(bar_length, Color32::from_white_alpha(6))
-                                .vertical_bars(1.0, Color32::from_white_alpha(3))
-                                .vertical_bars(1.0 / bar_length, Color32::from_white_alpha(1)),
+        window.show_with_closure(
+            ui,
+            local_state.note_roll_window.get().unwrap_or(false),
+            |_| local_state.note_roll_window.set(false),
+            |ui| {
+                ui.horizontal(|ui| {
+                    if ui.button("New note").clicked() {
+                        store.dispatch(
+                            &track_sel,
+                            Action::AddChild(TypeField::PlacedNote(default_note)),
                         );
-                    });
+                    }
+                    ui.checkbox(&mut select, "Select")
                 });
-        });
+                ScrollArea::vertical()
+                    .min_scrolled_height(200.0)
+                    .show(ui, |ui| {
+                        ui.horizontal(|ui| {
+                            Piano::new(max_note, min_note - 1, PianoOrientation::Vertical).ui(ui);
+                            ui.add(
+                                Sequencer::new(store, local_state, range)
+                                    .objects(notes)
+                                    .parent_index(track_sel.0)
+                                    .select(select)
+                                    .horizontal_rects(
+                                        white_note_pattern,
+                                        Color32::from_white_alpha(4),
+                                    )
+                                    .vertical_bars(bar_length, Color32::from_white_alpha(6))
+                                    .vertical_bars(1.0, Color32::from_white_alpha(3))
+                                    .vertical_bars(1.0 / bar_length, Color32::from_white_alpha(1)),
+                            );
+                        });
+                    });
+            },
+        );
         DataState::NoteRollSelectMode.set_value(ui, select);
     }
 }

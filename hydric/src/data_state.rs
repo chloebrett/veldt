@@ -12,7 +12,6 @@ use std::collections::BTreeSet;
 pub enum DataState {
     ActiveTrackPlacementIndex,
     TrackPlacementViewWindow,
-    NoteRollWindow,
     SelectedTrackPlacementIndexes,
     DragCursorDelta,
     TrackRollSelectMode,
@@ -25,7 +24,6 @@ impl DataState {
         Id::new(match self {
             Self::ActiveTrackPlacementIndex => "active_track_placement_index",
             Self::TrackPlacementViewWindow => "track_placement_window",
-            Self::NoteRollWindow => "note_roll_window",
             Self::SelectedTrackPlacementIndexes => "selected_track_placement_indexes",
             Self::DragCursorDelta => "drag_start_from",
             Self::TrackRollSelectMode => "track_roll_select_mode",
@@ -53,7 +51,6 @@ impl DataState {
             // known.
             match self {
                 Self::TrackPlacementViewWindow
-                | Self::NoteRollWindow
                 | Self::TrackRollSelectMode
                 | Self::NoteRollSelectMode => data.insert_temp::<Option<bool>>(self.get_id(), None),
                 Self::ActiveTrackPlacementIndex | Self::SubSynthLfoTab => {

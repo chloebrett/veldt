@@ -11,7 +11,9 @@ pub struct LocalState {
     pub active_note: RcOption<usize>,
     pub selected_notes: RcOption<BTreeSet<usize>>,
     pub mixer_edit_state: RcOption<bool>,
+    // TODO: just rc, no option
     pub note_window: RcOption<bool>,
+    pub note_roll_window: RcOption<bool>,
 }
 
 pub trait GetSetOption<T: Clone> {

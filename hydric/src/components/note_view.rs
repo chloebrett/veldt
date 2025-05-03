@@ -1,7 +1,7 @@
+use crate::LocalState;
 use crate::local_state::GetSetOption;
 use crate::view::View;
 use crate::widget::{StateWindow, default_window, get_set, int_slider, selectable_value};
-use crate::LocalState;
 use egui::{Ui, pos2};
 use shared::model::ScaleValue;
 use shared::types::{Beats, Octave};
