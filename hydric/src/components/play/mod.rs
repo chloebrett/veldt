@@ -5,8 +5,10 @@ mod sample_control;
 mod sample_tree_view;
 mod toolbar_view;
 mod microphone_view;
+mod microphone;
 
 use freq_display::*;
 pub use sample_tree_view::*;
 pub use toolbar_view::*;
 pub use microphone_view::*;
+pub use microphone::*;

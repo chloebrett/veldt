@@ -1,13 +1,11 @@
-use crate::AsyncState;
-use crate::promise::{poll, spawn};
-use crate::rpc::load_sample_tree;
+use crate::{components::play::Microphone, AsyncState};
+use crate::promise::spawn;
 use crate::view::View;
-use crate::widget::{checkbox, default_window, get_set, string_observer};
-use egui::{Pos2, ScrollArea, Ui};
-use egui_ltreeview::{TreeView, TreeViewBuilder};
-use shared::model::{FileTreeConfig, FilenameTree};
-use state::{Action, Store, TypeField};
+use crate::widget::default_window;
+use egui::{Pos2, Ui};
+use state::Store;
 use log::info;
+use super::microphone::*;
 
 pub struct MicrophoneView<'a> {
     store: &'a Store,
@@ -34,6 +32,20 @@ impl View for MicrophoneView<'_> {
             .show(ui.ctx(), |ui| {
                 if ui.button("test").clicked(){
                     info!("hi");
+                    spawn(&mut self.async_state.microphone, async move{
+
+                        let mut mic = Microphone::new();
+
+                        mic.start()
+                        .await
+                        .map(|stream| {
+                            let mic_stream = Some(stream);
+                            //let mic_error = None;
+                        })
+                        .map_err(|err| {
+                            let mic_error = Some(err.as_string().unwrap_or("Unknown error".into()));
+                        })
+                    });
                 }
             });
     }

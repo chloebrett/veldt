@@ -13,4 +13,5 @@ pub struct AsyncState {
     pub upload_sample: AsyncResult<(), ()>,
     pub load_sample_tree: AsyncResult<FilenameTree, ()>,
     pub export: AsyncResult<(), ()>,
+    pub microphone: AsyncResult<(), ()>
 }
