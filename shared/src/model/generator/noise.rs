@@ -1,8 +1,5 @@
-use crate::pmodel::{
-    NoiseConfigProto, NoiseTypeProto,
-};
+use crate::pmodel::{NoiseConfigProto, NoiseTypeProto};
 use local_macro::{FromProto, IntoProto};
-
 
 #[derive(Clone, Debug, PartialEq, FromProto, IntoProto)]
 pub struct NoiseConfig {

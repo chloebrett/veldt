@@ -3,7 +3,6 @@ use crate::pmodel::OscillatorProto;
 use crate::types::{KnobPosition, Volume};
 use local_macro::{FromProto, IntoProto};
 
-
 #[derive(Clone, Debug, PartialEq, FromProto, IntoProto)]
 pub struct Oscillator {
     #[proto_enum]

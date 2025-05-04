@@ -1,6 +1,6 @@
 use crate::pmodel::{
-    GeneratorInstanceProto, GeneratorMetaProto,
-    NoiseProto, SimpleWaveProto, SubSynthProto, generator_instance_proto::It as GeneratorProto,
+    GeneratorInstanceProto, GeneratorMetaProto, NoiseProto, SimpleWaveProto, SubSynthProto,
+    generator_instance_proto::It as GeneratorProto,
 };
 use crate::types::{KnobPosition, Volume};
 use local_macro::{FromProto, IntoProto};

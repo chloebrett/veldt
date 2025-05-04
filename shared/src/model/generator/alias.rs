@@ -2,7 +2,6 @@ use crate::pmodel::AntiAliasingModeProto;
 use local_macro::{FromProto, IntoProto};
 use strum::{Display, EnumIter, EnumString};
 
-
 #[derive(
     Debug, Clone, Copy, PartialEq, Eq, EnumString, Display, EnumIter, IntoProto, FromProto, Hash,
 )]

@@ -277,6 +277,7 @@ mod tests {
         let mut project = Project::default();
         project.generators.push(some_generator());
         project.mixer.push(MixerChannel {
+            volume: 1.0,
             effects: vec![some_effect()],
         });
 
@@ -315,9 +316,11 @@ mod tests {
         // Two effects on channel 1.
         project.mixer.extend([
             MixerChannel {
+                volume: 1.0,
                 effects: vec![some_effect()],
             },
             MixerChannel {
+                volume: 1.0,
                 effects: vec![some_effect(), some_effect()],
             },
         ]);
