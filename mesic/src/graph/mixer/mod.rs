@@ -179,6 +179,8 @@ impl Mixer {
         }
     }
 
+    /// Returns the buffers corresponding to the output node, which are filled after a processing
+    /// run.
     pub fn output_buffers(&self) -> &[Buffer] {
         &self.graph.node_weight(self.main_amp).unwrap().buffers
     }
@@ -188,14 +190,6 @@ impl Mixer {
     /// Therefore, the mixer is the only object allowed to mutate the Graph.
     pub fn process(&mut self, processor: &mut Processor, payload: &ProcessContext) {
         processor.process(&mut self.graph, payload, self.main_amp);
-    }
-
-    pub fn channels(&self) -> &Vec<ChannelInfo> {
-        &self.channels
-    }
-
-    pub fn output(&self) -> NodeIndex {
-        self.main_amp
     }
 }
 
@@ -226,7 +220,7 @@ mod tests {
         assert_eq!(mixer.graph.node_count(), 2);
         // Main sum -> main amp (1)
         assert_eq!(mixer.edge_counter.counts, edge_counts);
-        assert_eq!(mixer.channels().len(), 0);
+        assert_eq!(mixer.channels.len(), 0);
     }
 
     #[test]
@@ -254,7 +248,7 @@ mod tests {
         // Generator nodes (1)
         assert_eq!(mixer.graph.node_count(), 7);
         assert_eq!(mixer.edge_counter.counts, edge_counts);
-        assert_eq!(mixer.channels().len(), 1);
+        assert_eq!(mixer.channels.len(), 1);
     }
 
     #[test]
@@ -305,7 +299,7 @@ mod tests {
         // Mixer output -> main sum (2)
         // Main sum -> main amp (1)
         assert_eq!(mixer.edge_counter.counts, edge_counts);
-        assert_eq!(mixer.channels().len(), 2);
+        assert_eq!(mixer.channels.len(), 2);
     }
 
     // TODO: create defaults for each model object, to use in tests.
