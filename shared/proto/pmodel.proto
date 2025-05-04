@@ -68,7 +68,9 @@ message SampleProto {
 }
 
 message MixerChannelProto {
-  repeated EffectInstanceProto effects = 1;
+  float volume = 1;
+
+  repeated EffectInstanceProto effects = 2;
 }
 
 message PlacedNoteProto {
