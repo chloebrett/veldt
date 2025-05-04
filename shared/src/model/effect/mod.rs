@@ -1,7 +1,6 @@
 use crate::pmodel::{
-    CompressorProto, DelayProto, EffectInstanceProto,
-    EffectMetaProto, ModDelayProto, SimpleEqProto,
-    effect_instance_proto::It as EffectProto,
+    CompressorProto, DelayProto, EffectInstanceProto, EffectMetaProto, ModDelayProto,
+    SimpleEqProto, effect_instance_proto::It as EffectProto,
 };
 use crate::types::KnobPosition;
 use local_macro::{FromProto, IntoProto};

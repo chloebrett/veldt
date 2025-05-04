@@ -148,13 +148,13 @@ message SubSynthProto {
 }
 
 message SubSynthConfigProto {
-  repeated OscillatorConfigProto oscillators = 1; 
+  repeated OscillatorProto oscillators = 1; 
   repeated LfoConfigProto lfos = 2;
   repeated AdsrEnvelopeProto envelopes = 3;
   ModMatrixProto matrix = 4;  
 }
 
-message OscillatorConfigProto {
+message OscillatorProto {
   WaveTypeProto wave = 1;
   float volume = 2;
   float pan = 3;

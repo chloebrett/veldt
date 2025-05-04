@@ -3,12 +3,12 @@ use crate::view::View;
 use crate::widget::{get_set, int_slider, knob, selectable_value};
 use eframe::egui;
 use egui::{Color32, Ui};
-use shared::model::{OscillatorConfig, WaveType};
+use shared::model::{Oscillator, WaveType};
 use state::{Action, FloatField, TypeField, UintField};
 use strum::IntoEnumIterator;
 
 pub struct SubSynthOscillatorView<'a, F: Fn(Action), G: Fn()> {
-    config: &'a OscillatorConfig,
+    config: &'a Oscillator,
     dispatch: F,
     on_release: G,
     line_colour: Color32,
@@ -17,7 +17,7 @@ pub struct SubSynthOscillatorView<'a, F: Fn(Action), G: Fn()> {
 
 impl<'a, F: Fn(Action), G: Fn()> SubSynthOscillatorView<'a, F, G> {
     pub fn new(
-        config: &'a OscillatorConfig,
+        config: &'a Oscillator,
         dispatch: F,
         on_release: G,
         line_colour: Color32,
@@ -45,7 +45,7 @@ impl<F: Fn(Action), G: Fn()> View for SubSynthOscillatorView<'_, F, G> {
 
         fn draw_wave_selection<F>(
             ui: &mut Ui,
-            config: &OscillatorConfig,
+            config: &Oscillator,
             dispatch: &F,
             line_colour: Color32,
             fill_colour: Color32,
@@ -85,7 +85,7 @@ impl<F: Fn(Action), G: Fn()> View for SubSynthOscillatorView<'_, F, G> {
 
         fn draw_oscillator_controls<F, G>(
             ui: &mut Ui,
-            config: &OscillatorConfig,
+            config: &Oscillator,
             dispatch: &F,
             on_release: &G,
         ) where
@@ -150,7 +150,7 @@ impl<F: Fn(Action), G: Fn()> View for SubSynthOscillatorView<'_, F, G> {
 
         fn draw_stacking_controls<F, G>(
             ui: &mut Ui,
-            config: &OscillatorConfig,
+            config: &Oscillator,
             dispatch: &F,
             on_release: &G,
         ) where

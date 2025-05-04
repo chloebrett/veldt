@@ -3,7 +3,7 @@ use crate::envelope::apply_envelope;
 use dasp_graph::Buffer;
 use ordered_float::OrderedFloat;
 use shared::consts::SEMITONE_FREQ;
-use shared::model::{AdsrEnvelope, AntiAliasingMode, OscillatorConfig, SimpleWaveConfig, WaveType};
+use shared::model::{AdsrEnvelope, AntiAliasingMode, Oscillator, SimpleWaveConfig, WaveType};
 use shared::types::Beats;
 use shared::types::Freq;
 use std::cmp::min;
@@ -177,7 +177,7 @@ impl WaveSource {
         &mut self,
         freq: Freq,
         beats: Beats,
-        config: &OscillatorConfig,
+        config: &Oscillator,
         env: &AdsrEnvelope,
         start_index: i32,
     ) -> Buffer {

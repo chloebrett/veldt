@@ -4,7 +4,7 @@ use shared::action_proto::{
     SelectorProto, selector_proto::IndexPair, selector_proto::Kind as SelectorKind,
 };
 use shared::model::{
-    EffectInstance, GeneratorInstance, MixerChannel, OscillatorConfig, PlacedNote, Placement,
+    EffectInstance, GeneratorInstance, MixerChannel, Oscillator, PlacedNote, Placement,
     SubSynthConfig, Track,
 };
 
@@ -225,7 +225,7 @@ impl SelectorTrait for PlacementSelector {
 }
 
 impl SelectorTrait for OscillatorSelector {
-    type Item = OscillatorConfig;
+    type Item = Oscillator;
 
     fn try_select<'a>(&'a self, store: &'a StoreData) -> Option<&'a Self::Item> {
         let instance = store.project.generators.get(self.0)?;
