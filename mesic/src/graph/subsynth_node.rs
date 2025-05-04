@@ -126,8 +126,8 @@ impl Node<ProcessContext> for SubSynthNode {
                         let mut buf = wave_source.osc_wave(
                             note.note.pitch_name.into(),
                             note.note.beats,
-                            &osc,
-                            &envelope,
+                            osc,
+                            envelope,
                             self.sample_index as i32 - note_start_sample as i32,
                         );
 

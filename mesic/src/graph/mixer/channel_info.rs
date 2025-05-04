@@ -137,7 +137,7 @@ impl ChannelInfo {
         selector: &EffectSelector,
     ) {
         // EffectInfo::new handles adding nodes to the graph.
-        self.effects.push(EffectInfo::new(graph, effect, &selector));
+        self.effects.push(EffectInfo::new(graph, effect, selector));
     }
 
     /// Deletes a generator from the ChannelInfo's generator list, without deleting it from the graph.
@@ -151,7 +151,7 @@ impl ChannelInfo {
                 return Some(self.generators.swap_remove(i));
             }
         }
-        return None;
+        None
     }
 
     /// Adds a generator to the ChannelInfo's generator list, without re-adding it to the graph.

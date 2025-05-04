@@ -109,7 +109,7 @@ impl Mixer {
         .with_refreshed_edges()
     }
 
-    pub fn from_audio(audio: &Vec<Stereo<f32>>) -> Self {
+    pub fn from_audio(audio: &[Stereo<f32>]) -> Self {
         let mut graph = make_graph();
 
         // TODO: simply give buffers their own dedicated mixer channel,
@@ -117,7 +117,7 @@ impl Mixer {
         // This way, the user can run effects on samples, etc.
         // There is a bit more thinking to be done about how the "playing audio as a preview" idea
         // should work anyway.
-        let buffer_node: BufferNode = audio.clone().into();
+        let buffer_node: BufferNode = audio.to_owned().into();
         let main_buffer = graph.add_node(make_node(buffer_node));
 
         let main_sum = graph.add_node(make_node(Sum));
