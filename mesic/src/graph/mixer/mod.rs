@@ -3,49 +3,16 @@ use dasp_frame::Stereo;
 use dasp_graph::{BoxedNodeSend, Buffer, Node, NodeData, node::Sum};
 use petgraph::stable_graph::NodeIndex;
 use shared::model::Project;
-use std::collections::HashMap;
 
 mod channel_info;
+mod edge_counter;
 mod effect_info;
 mod generator_info;
 
 use channel_info::*;
+use edge_counter::*;
 use effect_info::*;
 use generator_info::*;
-
-/// The types of edges that can be added to the mixer graph.
-/// Used for counting and debugging.
-#[derive(Hash, Debug, Eq, PartialEq, Copy, Clone)]
-pub enum EdgeKey {
-    GenToMixIn,
-    MixInToEff,
-    MixInToEffMix,
-    EffToEffMix,
-    EffMixToNextEff,
-    EffMixToNextEffMix,
-    EffMixToMixOut,
-    MixInToMixOut,
-    MixOutToMainSum,
-    MainSumToMainAmp,
-    MainBufToMainSum,
-}
-
-// Counts edges in the graph by type.
-// Helpful for testing/debugging.
-// Note: consider extending this to also count nodes, if that would be helpful.
-#[derive(Debug, Default)]
-pub struct EdgeCounter {
-    counts: HashMap<EdgeKey, usize>,
-}
-
-impl EdgeCounter {
-    fn add_edge(&mut self, graph: &mut Graph, from: NodeIndex, to: NodeIndex, key: EdgeKey) {
-        graph.add_edge(from, to, ());
-        let current = self.counts.get(&key).unwrap_or(&0);
-        self.counts.insert(key, current + 1);
-        log::info!("Added edge: {:?}", key);
-    }
-}
 
 /// The mixer is responsible for creating, storing and manipulating mixer channels,
 /// and the effects and generators they contain.
@@ -207,6 +174,7 @@ mod tests {
         AdsrEnvelope, AntiAliasingMode, DelayConfig, Effect, EffectInstance, EffectMeta, Generator,
         GeneratorInstance, GeneratorMeta, MixerChannel, SimpleWaveConfig, WaveType,
     };
+    use std::collections::HashMap;
 
     #[test]
     fn empty_mixer() {
