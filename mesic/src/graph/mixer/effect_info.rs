@@ -17,12 +17,7 @@ pub struct EffectInfo {
 }
 
 impl EffectInfo {
-    pub fn new(
-        graph: &mut Graph,
-        edge_counter: &mut EdgeCounter,
-        effect: &EffectInstance,
-        effect_sel: &EffectSelector,
-    ) -> Self {
+    pub fn new(graph: &mut Graph, effect: &EffectInstance, effect_sel: &EffectSelector) -> Self {
         // TODO: just pass the selector down directly to the effect and mixer nodes.
         let EffectSelector(mixer_index, effect_index) = *effect_sel;
 
@@ -44,7 +39,6 @@ impl EffectInfo {
 
         let effect_node = graph.add_node(effect_node);
         let mixer_node = graph.add_node(mixer_node);
-        edge_counter.add_edge(graph, effect_node, mixer_node, EdgeKey::EffToEffMix);
 
         Self {
             effect_index,
@@ -53,12 +47,13 @@ impl EffectInfo {
         }
     }
 
-    fn effect_node(&self) -> NodeIndex {
-        self.effect_node
-    }
-
-    fn mixer_node(&self) -> NodeIndex {
-        self.mixer_node
+    pub fn add_edges(&self, graph: &mut Graph, edge_counter: &mut EdgeCounter) {
+        edge_counter.add_edge(
+            graph,
+            self.effect_node,
+            self.mixer_node,
+            EdgeKey::EffToEffMix,
+        );
     }
 
     pub fn link_to(
@@ -71,13 +66,13 @@ impl EffectInfo {
         edge_counter.add_edge(
             graph,
             self.mixer_node,
-            next_effect.effect_node(),
+            next_effect.effect_node,
             EdgeKey::EffMixToNextEff,
         );
         edge_counter.add_edge(
             graph,
             self.mixer_node,
-            next_effect.mixer_node(),
+            next_effect.mixer_node,
             EdgeKey::EffMixToNextEffMix,
         );
     }

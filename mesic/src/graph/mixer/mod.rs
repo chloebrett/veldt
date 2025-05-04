@@ -48,13 +48,15 @@ use generator_info::*;
 /// m = mixer node
 /// g = generator node
 /// s = sum node
-#[expect(dead_code)] // Will need to read fields to manipulate later.
 pub struct Mixer {
     graph: Graph,
 
     pub edge_counter: EdgeCounter,
 
     channels: Vec<ChannelInfo>,
+
+    // Buffer node, if the graph is just a single buffer.
+    main_buffer: Option<NodeIndex>,
 
     // Main sum node.
     // Adds up all of the mixer channel outputs.
@@ -68,60 +70,46 @@ pub struct Mixer {
 impl Mixer {
     pub fn empty() -> Self {
         let mut graph = make_graph();
-        let mut edge_counter = EdgeCounter::default();
 
         let main_sum = graph.add_node(make_node(Sum));
         let main_amp = graph.add_node(make_node(AmpNode::default()));
-        edge_counter.add_edge(&mut graph, main_sum, main_amp, EdgeKey::MainSumToMainAmp);
 
         Self {
             graph,
-            edge_counter,
+            edge_counter: EdgeCounter::default(),
             channels: vec![],
+            main_buffer: None,
             main_sum,
             main_amp,
         }
+        .with_refreshed_edges()
     }
 
     pub fn from_project(project: &Project) -> Self {
         let mut graph = make_graph();
-        let mut edge_counter = EdgeCounter::default();
-
         let main_sum = graph.add_node(make_node(Sum));
 
         // TODO: always have channel 0 as the "main" channel?
         // How would this change the graph?
         let channels: Vec<ChannelInfo> = (0..project.mixer.len())
-            .map(|channel_index| {
-                ChannelInfo::new(&mut graph, &mut edge_counter, project, channel_index)
-            })
+            .map(|channel_index| ChannelInfo::new(&mut graph, project, channel_index))
             .collect();
 
-        for channel in &channels {
-            edge_counter.add_edge(
-                &mut graph,
-                channel.output_node,
-                main_sum,
-                EdgeKey::MixOutToMainSum,
-            );
-        }
-
         let main_amp = graph.add_node(make_node(AmpNode::default()));
-        graph.add_edge(main_sum, main_amp, ());
-        edge_counter.add_edge(&mut graph, main_sum, main_amp, EdgeKey::MainSumToMainAmp);
 
         Self {
             graph,
-            edge_counter,
+            edge_counter: EdgeCounter::default(),
             channels,
+            main_buffer: None,
             main_sum,
             main_amp,
         }
+        .with_refreshed_edges()
     }
 
     pub fn from_audio(audio: &Vec<Stereo<f32>>) -> Self {
         let mut graph = make_graph();
-        let mut edge_counter = EdgeCounter::default();
 
         // TODO: simply give buffers their own dedicated mixer channel,
         // and then otherwise don't treat them differently to other generators.
@@ -134,16 +122,56 @@ impl Mixer {
         let main_sum = graph.add_node(make_node(Sum));
         let main_amp = graph.add_node(make_node(AmpNode::default()));
 
-        edge_counter.add_edge(&mut graph, main_buffer, main_sum, EdgeKey::MainBufToMainSum);
-        edge_counter.add_edge(&mut graph, main_sum, main_amp, EdgeKey::MainSumToMainAmp);
-
         Self {
             graph,
-            edge_counter,
+            edge_counter: EdgeCounter::default(),
             channels: vec![],
+            main_buffer: Some(main_buffer),
             main_sum,
             main_amp,
         }
+        .with_refreshed_edges()
+    }
+
+    /// Clears all the edges in the graph and re-evaluates them based on the arrangement of nodes.
+    /// The edges are a pure function of the current mixer state (determined by the arrangement of
+    /// the ChannelInfos and the structs contained within them).
+    pub fn refresh_edges(&mut self) {
+        self.graph.clear_edges();
+        self.edge_counter.reset();
+
+        if let Some(main_buffer) = self.main_buffer {
+            self.edge_counter.add_edge(
+                &mut self.graph,
+                main_buffer,
+                self.main_sum,
+                EdgeKey::MainBufToMainSum,
+            );
+        }
+
+        for channel in &self.channels {
+            channel.add_edges(&mut self.graph, &mut self.edge_counter);
+
+            self.edge_counter.add_edge(
+                &mut self.graph,
+                channel.output_node,
+                self.main_sum,
+                EdgeKey::MixOutToMainSum,
+            );
+        }
+
+        self.edge_counter.add_edge(
+            &mut self.graph,
+            self.main_sum,
+            self.main_amp,
+            EdgeKey::MainSumToMainAmp,
+        );
+    }
+
+    fn with_refreshed_edges(self) -> Self {
+        let mut mixer = self;
+        mixer.refresh_edges();
+        mixer
     }
 
     /// Returns the buffers corresponding to the output node, which are filled after a processing

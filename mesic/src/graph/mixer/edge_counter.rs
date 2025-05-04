@@ -17,6 +17,11 @@ impl EdgeCounter {
         self.counts.insert(key, current + 1);
         log::info!("Added edge: {:?}", key);
     }
+
+    pub fn reset(&mut self) {
+        self.counts.clear();
+        log::info!("Reset edge counter.");
+    }
 }
 
 /// The types of edges that can be added to the mixer graph.

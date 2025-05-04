@@ -7,7 +7,6 @@ use state::EffectSelector;
 
 /// Describes a mixer channel from the viewpoint of the graph.
 /// Contains references to the generator and effect nodes linked to this channel.
-#[expect(dead_code)] // Will need to read fields to manipulate later.
 pub struct ChannelInfo {
     // TODO: consider using a HashSet instead.
     generators: Vec<GeneratorInfo>,
@@ -25,12 +24,7 @@ pub struct ChannelInfo {
 }
 
 impl ChannelInfo {
-    pub fn new(
-        graph: &mut Graph,
-        edge_counter: &mut EdgeCounter,
-        project: &Project,
-        channel_index: usize,
-    ) -> Self {
+    pub fn new(graph: &mut Graph, project: &Project, channel_index: usize) -> Self {
         let generators: Vec<GeneratorInfo> = project
             .generators
             .iter()
@@ -43,23 +37,40 @@ impl ChannelInfo {
 
         let input_node = graph.add_node(make_node(Sum));
 
-        for generator in &generators {
-            edge_counter.add_edge(graph, generator.node(), input_node, EdgeKey::GenToMixIn);
-        }
-
         let effects: Vec<EffectInfo> = project.mixer[channel_index]
             .effects
             .iter()
             .enumerate()
             .map(|(effect_index, effect)| {
-                EffectInfo::new(
-                    graph,
-                    edge_counter,
-                    effect,
-                    &EffectSelector(channel_index, effect_index),
-                )
+                EffectInfo::new(graph, effect, &EffectSelector(channel_index, effect_index))
             })
             .collect();
+
+        // TODO: wire up the amp node to read the correct volume.
+        let output_node = graph.add_node(make_node(AmpNode::default()));
+
+        Self {
+            generators,
+            input_node,
+            effects,
+            output_node,
+        }
+    }
+
+    pub fn add_edges(&self, graph: &mut Graph, edge_counter: &mut EdgeCounter) {
+        for generator in &self.generators {
+            edge_counter.add_edge(
+                graph,
+                generator.node(),
+                self.input_node,
+                EdgeKey::GenToMixIn,
+            );
+        }
+
+        let effects = &self.effects;
+        for effect in effects {
+            effect.add_edges(graph, edge_counter);
+        }
 
         // TODO: get .zip() working.
         if !effects.is_empty() {
@@ -70,29 +81,39 @@ impl ChannelInfo {
             }
         }
 
-        // TODO: wire up the amp node to read the correct volume.
-        let output_node = graph.add_node(make_node(AmpNode::default()));
-
         // Link up the input -> effects -> output.
         // If there are no effects, link directly from input -> output.
         if effects.is_empty() {
-            edge_counter.add_edge(graph, input_node, output_node, EdgeKey::MixInToMixOut);
+            edge_counter.add_edge(
+                graph,
+                self.input_node,
+                self.output_node,
+                EdgeKey::MixInToMixOut,
+            );
         } else {
             let first = effects.first().unwrap();
             let last = effects.last().unwrap();
 
             // TODO: check the wet/dry direction here.
-            edge_counter.add_edge(graph, input_node, first.effect_node, EdgeKey::MixInToEff);
-            edge_counter.add_edge(graph, input_node, first.mixer_node, EdgeKey::MixInToEffMix);
+            edge_counter.add_edge(
+                graph,
+                self.input_node,
+                first.effect_node,
+                EdgeKey::MixInToEff,
+            );
+            edge_counter.add_edge(
+                graph,
+                self.input_node,
+                first.mixer_node,
+                EdgeKey::MixInToEffMix,
+            );
 
-            edge_counter.add_edge(graph, last.mixer_node, output_node, EdgeKey::EffMixToMixOut);
-        }
-
-        Self {
-            generators,
-            input_node,
-            effects,
-            output_node,
+            edge_counter.add_edge(
+                graph,
+                last.mixer_node,
+                self.output_node,
+                EdgeKey::EffMixToMixOut,
+            );
         }
     }
 }
