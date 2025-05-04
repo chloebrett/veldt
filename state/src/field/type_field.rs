@@ -5,7 +5,7 @@ use shared::action_proto::{
 use shared::model::{
     AdsrEnvelope, AntiAliasingMode, EffectInstance, EqType, FileTreeConfig, FilenameTree,
     GeneratorInstance, PitchName, PlacedNote, Placement, Project, Sample, Scale, ScaleValue, Track,
-    WaveType,
+    WaveType, MixerChannel,
 };
 use shared::pmodel::{AntiAliasingModeProto, EqTypeProto, ScaleProto, WaveTypeProto};
 use strum::{Display, EnumString};

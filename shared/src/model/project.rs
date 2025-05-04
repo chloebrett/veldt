@@ -80,7 +80,7 @@ impl From<Sample> for SampleProto {
 #[derive(Clone, Debug, PartialEq, FromProto, IntoProto)]
 pub struct MixerChannel {
     pub volume: Volume,
-    
+
     #[proto_repeated]
     pub effects: Vec<EffectInstance>,
 }
