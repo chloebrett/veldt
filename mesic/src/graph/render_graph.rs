@@ -1,7 +1,7 @@
 use super::{Mixer, ProcessContext, Processor, make_processor};
 use crate::wave::beats_to_samples;
 use dasp_frame::Stereo;
-use dasp_graph::{Buffer, Node};
+use dasp_graph::Buffer;
 use shared::model::Project;
 use state::{Action, Selector};
 use std::sync::mpsc::Receiver;

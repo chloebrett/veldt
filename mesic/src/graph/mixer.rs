@@ -8,8 +8,7 @@ use petgraph::stable_graph::NodeIndex;
 use shared::model::{Effect, EffectInstance, Generator, GeneratorInstance, PlacementType, Project};
 use state::EffectSelector;
 
-type ChannelIndex = usize;
-
+#[expect(dead_code)] // Will need to read fields to manipulate later.
 pub struct GeneratorInfo {
     // Generator index within the project model.
     generator_index: usize,
@@ -85,6 +84,7 @@ impl GeneratorInfo {
     }
 }
 
+#[expect(dead_code)] // Will need to read fields to manipulate later.
 #[derive(Debug)]
 pub struct EffectInfo {
     // Effect index within the project model.
@@ -144,6 +144,7 @@ impl EffectInfo {
     }
 }
 
+#[expect(dead_code)] // Will need to read fields to manipulate later.
 pub struct ChannelInfo {
     // TODO: consider using a HashSet instead.
     generators: Vec<GeneratorInfo>,
@@ -259,6 +260,7 @@ impl ChannelInfo {
 /// m = mixer node
 /// g = generator node
 /// s = sum node
+#[expect(dead_code)] // Will need to read fields to manipulate later.
 pub struct Mixer {
     graph: Graph,
 
@@ -345,11 +347,6 @@ impl Mixer {
         }
     }
 
-    // TODO: consider if this can be removed.
-    fn graph(&self) -> &Graph {
-        &self.graph
-    }
-
     pub fn output_buffers(&self) -> &[Buffer] {
         &self.graph.node_weight(self.main_amp).unwrap().buffers
     }
@@ -391,9 +388,9 @@ mod tests {
         let mixer = Mixer::from_project(&empty_project);
 
         // Main sum and amp nodes (2)
-        assert_eq!(mixer.graph().node_count(), 2);
+        assert_eq!(mixer.graph.node_count(), 2);
         // Main sum -> main amp (1)
-        assert_eq!(mixer.graph().edge_count(), 1);
+        assert_eq!(mixer.graph.edge_count(), 1);
         assert_eq!(mixer.channels().len(), 0);
     }
 
@@ -411,7 +408,7 @@ mod tests {
         // Effect and mixer nodes (2) +
         // Channel input and output nodes (2) +
         // Generator nodes (1)
-        assert_eq!(mixer.graph().node_count(), 7);
+        assert_eq!(mixer.graph.node_count(), 7);
         // Generator -> mixer input (1)
         // Mixer input -> effect (1)
         // Mixer input -> wet/dry mixer (1)
@@ -419,7 +416,7 @@ mod tests {
         // Wet/dry mixer -> mixer output (1)
         // Mixer output -> main sum (1)
         // Main sum -> main amp (1)
-        assert_eq!(mixer.graph().edge_count(), 7);
+        assert_eq!(mixer.graph.edge_count(), 7);
         assert_eq!(mixer.channels().len(), 1);
     }
 
@@ -451,7 +448,7 @@ mod tests {
         // Effect and mixer nodes (2 * 3 effects) +
         // Channel input and output nodes (2 * 2 channels) +
         // Generator nodes (3).
-        assert_eq!(mixer.graph().node_count(), 7);
+        assert_eq!(mixer.graph.node_count(), 15);
         // Generator -> mixer input (3)
         // Mixer input -> effect (2)
         // Mixer input -> wet/dry mixer (2)
@@ -459,7 +456,7 @@ mod tests {
         // Wet/dry mixer -> mixer output (2)
         // Mixer output -> main sum (2)
         // Main sum -> main amp (1)
-        assert_eq!(mixer.graph().edge_count(), 15);
+        assert_eq!(mixer.graph.edge_count(), 15);
         assert_eq!(mixer.channels().len(), 2);
     }
 

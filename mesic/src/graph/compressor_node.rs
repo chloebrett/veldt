@@ -279,7 +279,7 @@ mod tests {
     // * Test release.
     // * Test more complex input signals.
 
-    fn make_graph(input: Vec<Stereo<f32>>, config: CompressorConfig) -> RenderGraph {
+    fn make_graph(input: Vec<Stereo<f32>>, _config: CompressorConfig) -> RenderGraph {
         let graph = RenderGraph::from_vec(input.clone());
         /*graph.add_main_effect_with_mixer(
             0,
