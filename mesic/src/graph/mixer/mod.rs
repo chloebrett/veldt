@@ -6,6 +6,7 @@ use dasp_frame::Stereo;
 use dasp_graph::{BoxedNodeSend, Buffer, Node, NodeData, node::Sum};
 use petgraph::stable_graph::NodeIndex;
 use shared::model::Project;
+use std::collections::HashMap;
 
 mod channel_info;
 mod effect_info;
@@ -14,6 +15,34 @@ mod generator_info;
 use channel_info::*;
 use effect_info::*;
 use generator_info::*;
+
+#[derive(Hash, Debug, Eq, PartialEq, Copy, Clone)]
+enum EdgeKey {
+    GenToMixIn,
+    MixInToEff,
+    MixInToEffMix,
+    EffToEffMix,
+    EffMixToMixOut,
+    MixOutToMainSum,
+    MainSumToMainAmp,
+    MainBufToMainSum,
+}
+
+// Counts edges in the graph by type.
+// Helpful for testing/debugging.
+#[derive(Debug, Default)]
+struct EdgeCounter {
+    counts: HashMap<EdgeKey, usize>,
+}
+
+impl EdgeCounter {
+    fn add_edge(&mut self, graph: &mut Graph, from: NodeIndex, to: NodeIndex, key: EdgeKey) {
+        graph.add_edge(from, to, ());
+        let current = self.counts.get(&key).unwrap_or(&0);
+        self.counts.insert(key, current + 1);
+        log::info!("Added edge: {:?}", key);
+    }
+}
 
 /// Mixer arrangement looks like this:
 ///
@@ -50,6 +79,8 @@ use generator_info::*;
 pub struct Mixer {
     graph: Graph,
 
+    edge_counter: EdgeCounter,
+
     channels: Vec<ChannelInfo>,
 
     // Main sum node.
@@ -64,14 +95,15 @@ pub struct Mixer {
 impl Mixer {
     pub fn empty() -> Self {
         let mut graph = make_graph();
+        let mut edge_counter = EdgeCounter::default();
 
         let main_sum = graph.add_node(make_node(Sum));
         let main_amp = graph.add_node(make_node(AmpNode::default()));
-        graph.add_edge(main_sum, main_amp, ());
-        log::info!("Added edge: main sum -> main amp");
+        edge_counter.add_edge(&mut graph, main_sum, main_amp, EdgeKey::MainSumToMainAmp);
 
         Self {
             graph,
+            edge_counter,
             channels: vec![],
             main_sum,
             main_amp,
@@ -80,6 +112,7 @@ impl Mixer {
 
     pub fn from_project(project: &Project) -> Self {
         let mut graph = make_graph();
+        let mut edge_counter = EdgeCounter::default();
 
         let main_sum = graph.add_node(make_node(Sum));
 
@@ -90,16 +123,16 @@ impl Mixer {
             .collect();
 
         for channel in &channels {
-            graph.add_edge(channel.output_node, main_sum, ());
-            log::info!("Added edge: mixer channel output -> main sum");
+            edge_counter.add_edge(&mut graph, channel.output_node, main_sum, EdgeKey::MixOutToMainSum);
         }
 
         let main_amp = graph.add_node(make_node(AmpNode::default()));
         graph.add_edge(main_sum, main_amp, ());
-        log::info!("Added edge: main sum -> main amp");
+        edge_counter.add_edge(&mut graph, main_sum, main_amp, EdgeKey::MainSumToMainAmp);
 
         Self {
             graph,
+            edge_counter,
             channels,
             main_sum,
             main_amp,
@@ -108,6 +141,7 @@ impl Mixer {
 
     pub fn from_audio(audio: &Vec<Stereo<f32>>) -> Self {
         let mut graph = make_graph();
+        let mut edge_counter = EdgeCounter::default();
 
         // TODO: simply give buffers their own dedicated mixer channel,
         // and then otherwise don't treat them differently to other generators.
@@ -120,13 +154,12 @@ impl Mixer {
         let main_sum = graph.add_node(make_node(Sum));
         let main_amp = graph.add_node(make_node(AmpNode::default()));
 
-        graph.add_edge(main_buffer, main_sum, ());
-        log::info!("Added edge: main buffer -> main sum");
-        graph.add_edge(main_sum, main_amp, ());
-        log::info!("Added edge: main sum -> main amp");
+        edge_counter.add_edge(&mut graph, main_buffer, main_sum, EdgeKey::MainBufToMainSum);
+        edge_counter.add_edge(&mut graph, main_sum, main_amp, EdgeKey::MainSumToMainAmp);
 
         Self {
             graph,
+            edge_counter,
             channels: vec![],
             main_sum,
             main_amp,
