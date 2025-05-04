@@ -173,7 +173,7 @@ impl Mixer {
     /// If the graph changes, edges are refreshed.
     /// TODO: consider processing multiple actions at once, and only refreshing the edges a single
     /// time.
-    pub fn apply_action(&mut self, action: &Action, selector: &Selector) {
+    pub fn update(&mut self, selector: &Selector, action: &Action) {
         let did_change = match selector {
             Selector::Mixer(mixer_index) => match action {
                 Action::MoveChild(MoveField {
@@ -390,4 +390,6 @@ mod tests {
             meta,
         }
     }
+
+    // TODO: write tests for updating the store with actions.
 }

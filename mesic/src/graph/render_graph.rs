@@ -87,9 +87,11 @@ impl RenderGraph {
         let store = &mut self.process_context.store;
         if let Some(rx) = &self.rx {
             while let Ok((selector, action)) = rx.try_recv() {
-                // TODO: also update graph topology by listening for the appropriate actions.
-                // E.g. add/remove effect or generator.
                 store.update(&selector, &action);
+
+                // Also update the graph topology by listening for the appropriate actions.
+                // E.g. add/remove effect or generator.
+                self.mixer.update(&selector, &action);
             }
         }
     }
