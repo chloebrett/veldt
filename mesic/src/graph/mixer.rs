@@ -9,7 +9,7 @@ use state::EffectSelector;
 
 type ChannelIndex = usize;
 
-struct GeneratorInfo {
+pub struct GeneratorInfo {
     // Generator index within the project model.
     generator_index: usize,
 
@@ -84,7 +84,7 @@ impl GeneratorInfo {
     }
 }
 
-struct EffectInfo {
+pub struct EffectInfo {
     // Effect index within the project model.
     effect_index: usize,
 
@@ -139,7 +139,7 @@ impl EffectInfo {
     }
 }
 
-struct ChannelInfo {
+pub struct ChannelInfo {
     // TODO: consider using a HashSet instead.
     generators: Vec<GeneratorInfo>,
 
@@ -249,6 +249,8 @@ impl Mixer {
 
         let main_sum = graph.add_node(make_node(Sum));
 
+        // TODO: always have channel 0 as the "main" channel?
+        // How would this change the graph?
         let channels: Vec<ChannelInfo> = (0..project.mixer.len())
             .map(|channel_index| ChannelInfo::new(&mut graph, project, channel_index))
             .collect();
@@ -268,6 +270,14 @@ impl Mixer {
         }
     }
 
+    pub fn graph(&self) -> &Graph {
+        &self.graph
+    }
+
+    pub fn channels(&self) -> &Vec<ChannelInfo> {
+        &self.channels
+    }
+
     pub fn output(&self) -> NodeIndex {
         self.main_amp
     }
@@ -277,4 +287,124 @@ fn make_node(
     node: impl Node<ProcessContext> + 'static + Send,
 ) -> NodeData<BoxedNodeSend<ProcessContext>> {
     NodeData::new2(BoxedNodeSend::new(node))
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    use shared::model::{
+        AdsrEnvelope, AntiAliasingMode, DelayConfig, EffectMeta, GeneratorMeta, MixerChannel,
+        SimpleWaveConfig, WaveType,
+    };
+
+    #[test]
+    fn empty_mixer() {
+        let empty_project = Project::default();
+        let mixer = Mixer::from_project(&empty_project);
+        let node_count = mixer.graph().node_count();
+
+        // Main sum and amp nodes.
+        assert_eq!(node_count, 2);
+        assert_eq!(mixer.channels().len(), 0);
+    }
+
+    #[test]
+    fn one_generator_one_effect() {
+        let mut project = Project::default();
+        project.generators.push(some_generator());
+        project.mixer.push(MixerChannel {
+            effects: vec![some_effect()],
+        });
+
+        let mixer = Mixer::from_project(&project);
+        let node_count = mixer.graph().node_count();
+
+        // Main sum and amp nodes (2) +
+        // Effect and mixer nodes (2) +
+        // Channel input and output nodes (2) +
+        // Generator nodes (1).
+        assert_eq!(node_count, 7);
+        assert_eq!(mixer.channels().len(), 1);
+    }
+
+    #[test]
+    fn multiple_generators_effects_channels() {
+        let mut project = Project::default();
+
+        // Two generators on channel 0,
+        // One generator on channel 1.
+        project
+            .generators
+            .extend(vec![some_generator(), some_generator(), some_generator()]);
+        project.generators[2].meta.mixer_channel = 1;
+
+        // One effect on channel 0,
+        // Two effects on channel 1.
+        project.mixer.extend([
+            MixerChannel {
+                effects: vec![some_effect()],
+            },
+            MixerChannel {
+                effects: vec![some_effect(), some_effect()],
+            },
+        ]);
+
+        let mixer = Mixer::from_project(&project);
+        let node_count = mixer.graph().node_count();
+
+        // Main sum and amp nodes (2) +
+        // Effect and mixer nodes (2 * 3 effects) +
+        // Channel input and output nodes (2 * 2 channels) +
+        // Generator nodes (3).
+        assert_eq!(node_count, 15);
+        assert_eq!(mixer.channels().len(), 2);
+    }
+
+    // TODO: create defaults for each model object, to use in tests.
+    fn some_effect() -> EffectInstance {
+        let config = DelayConfig {
+            delay_ms: 10.0,
+            feedback: 0.5,
+        };
+
+        let meta = EffectMeta {
+            wet: 1.0,
+            mute: false,
+        };
+
+        EffectInstance {
+            it: Effect::Delay(config),
+            meta,
+        }
+    }
+
+    // TODO: create defaults for each model object, to use in tests.
+    fn some_generator() -> GeneratorInstance {
+        let config = SimpleWaveConfig {
+            wave: WaveType::Sine,
+            envelope: AdsrEnvelope {
+                attack: 0.1,
+                decay: 0.1,
+                sustain: 0.8,
+                release: 0.1,
+            },
+            osc_count: 4,
+            detune_cents: 5.0,
+            anti_aliasing_mode: AntiAliasingMode::Off,
+            oversample_factor: 2,
+        };
+
+        let meta = GeneratorMeta {
+            volume: 1.0,
+            mute: false,
+            pan: 0.0,
+            mixer_channel: 0,
+        };
+
+        GeneratorInstance {
+            it: Generator::SimpleWave(config),
+            meta,
+        }
+    }
 }

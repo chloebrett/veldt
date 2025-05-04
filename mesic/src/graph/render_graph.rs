@@ -434,6 +434,7 @@ mod tests {
             volume: 1.0,
             mute: false,
             pan: 0.0,
+            mixer_channel: 0,
         }
     }
 

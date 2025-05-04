@@ -10,7 +10,7 @@ use ordered_float::OrderedFloat;
 pub type TrackId = u32;
 type _SampleId = usize;
 
-#[derive(Clone, Debug, PartialEq, FromProto, IntoProto)]
+#[derive(Clone, Debug, PartialEq, FromProto, IntoProto, Default)]
 pub struct Project {
     pub name: String,
 
