@@ -7,14 +7,6 @@ use super::move_elem;
 impl ActionReceiver for MixerChannel {
     fn apply(&mut self, action: &Action) -> Option<Action> {
         Some(match action {
-            Action::MoveEffectDown(effect_index) => {
-                self.effects.swap(*effect_index, effect_index + 1);
-                Action::MoveEffectUp(*effect_index)
-            }
-            Action::MoveEffectUp(effect_index) => {
-                self.effects.swap(*effect_index, effect_index - 1);
-                Action::MoveEffectDown(*effect_index)
-            }
             Action::MoveChild(MoveField {
                 from_field,
                 to_field,

@@ -2,8 +2,8 @@ use super::{EdgeCounter, EdgeKey, EffectInfo, GeneratorInfo, make_node};
 use crate::graph::{AmpNode, Graph};
 use dasp_graph::node::Sum;
 use petgraph::stable_graph::NodeIndex;
-use shared::model::Project;
-use state::EffectSelector;
+use shared::model::{EffectInstance, Project};
+use state::{EffectSelector, move_elem};
 
 /// Describes a mixer channel from the viewpoint of the graph.
 /// Contains references to the generator and effect nodes linked to this channel.
@@ -115,5 +115,49 @@ impl ChannelInfo {
                 EdgeKey::EffMixToMixOut,
             );
         }
+    }
+
+    pub fn effects_count(&self) -> usize {
+        self.effects.len()
+    }
+
+    pub fn move_effect(&mut self, from_index: usize, to_index: usize) {
+        move_elem(&mut self.effects, from_index, to_index);
+    }
+
+    pub fn delete_effect(&mut self, graph: &mut Graph, index: usize) {
+        let mut effect = self.effects.remove(index);
+        effect.remove_from(graph);
+    }
+
+    pub fn add_effect(
+        &mut self,
+        graph: &mut Graph,
+        effect: &EffectInstance,
+        selector: &EffectSelector,
+    ) {
+        // EffectInfo::new handles adding nodes to the graph.
+        self.effects.push(EffectInfo::new(graph, effect, &selector));
+    }
+
+    /// Deletes a generator from the ChannelInfo's generator list, without deleting it from the graph.
+    /// This allows for a two-step process whereby a generator is soft-deleted from one
+    /// ChannelInfo then added to another, by reference, without actually recreating the generator.
+    pub fn soft_delete_generator(&mut self, generator_index: usize) -> Option<GeneratorInfo> {
+        for i in 0..self.generators.len() {
+            if self.generators[i].generator_index == generator_index {
+                // Note: swap_remove used because order of the generators doesn't matter,
+                // but the performance gain of this is negligible.
+                return Some(self.generators.swap_remove(i));
+            }
+        }
+        return None;
+    }
+
+    /// Adds a generator to the ChannelInfo's generator list, without re-adding it to the graph.
+    /// Designed to be used in tandem with soft_delete_generator for moving generator nodes
+    /// between mixer channels.
+    pub fn soft_add_generator(&mut self, generator: &GeneratorInfo) {
+        self.generators.push(generator.clone());
     }
 }

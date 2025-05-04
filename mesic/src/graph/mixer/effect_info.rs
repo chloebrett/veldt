@@ -7,7 +7,7 @@ use state::EffectSelector;
 /// Describes an effect + effect mixer from the viewpoint of the graph.
 /// Contains references to the effect node and the mixer node.
 #[expect(dead_code)] // Will need to read fields to manipulate later.
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct EffectInfo {
     // Effect index within the project model.
     effect_index: usize,
@@ -45,6 +45,12 @@ impl EffectInfo {
             effect_node,
             mixer_node,
         }
+    }
+
+    /// Removes the effect and its mixer from the graph.
+    pub fn remove_from(&mut self, graph: &mut Graph) {
+        graph.remove_node(self.effect_node);
+        graph.remove_node(self.mixer_node);
     }
 
     pub fn add_edges(&self, graph: &mut Graph, edge_counter: &mut EdgeCounter) {

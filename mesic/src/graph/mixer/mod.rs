@@ -3,6 +3,7 @@ use dasp_frame::Stereo;
 use dasp_graph::{BoxedNodeSend, Buffer, Node, NodeData, node::Sum};
 use petgraph::stable_graph::NodeIndex;
 use shared::model::Project;
+use state::{Action, EffectSelector, IndexField, MoveField, Selector, TypeField};
 
 mod channel_info;
 mod edge_counter;
@@ -166,6 +167,59 @@ impl Mixer {
             self.main_amp,
             EdgeKey::MainSumToMainAmp,
         );
+    }
+
+    /// Applies the given action, updating the underlying graph accordingly.
+    /// If the graph changes, edges are refreshed.
+    /// TODO: consider processing multiple actions at once, and only refreshing the edges a single
+    /// time.
+    pub fn apply_action(&mut self, action: &Action, selector: &Selector) {
+        let did_change = match selector {
+            Selector::Mixer(mixer_index) => match action {
+                Action::MoveChild(MoveField {
+                    from_field,
+                    to_field,
+                }) => {
+                    let (IndexField::Effect(from), IndexField::Effect(to)) = (from_field, to_field)
+                    else {
+                        panic!("Action should have only received Effect IndexFields.")
+                    };
+                    self.channels[*mixer_index].move_effect(*from, *to);
+                    true
+                }
+                Action::DeleteChild(IndexField::Effect(effect_index)) => {
+                    self.channels[*mixer_index].delete_effect(&mut self.graph, *effect_index);
+                    true
+                }
+                Action::AddChild(TypeField::Effect(effect)) => {
+                    let selector =
+                        EffectSelector(*mixer_index, self.channels[*mixer_index].effects_count());
+                    self.channels[*mixer_index].add_effect(&mut self.graph, effect, &selector);
+                    true
+                }
+                _ => false,
+            },
+            Selector::Generator(generator_index) => match action {
+                Action::SetIndex(IndexField::Mixer(mixer_channel)) => {
+                    // Find the channel containing this generator, then move it to the correct
+                    // channel.
+                    for channel in self.channels.iter_mut() {
+                        if let Some(generator) = channel.soft_delete_generator(*generator_index) {
+                            self.channels[*mixer_channel].soft_add_generator(&generator);
+                            break;
+                        }
+                    }
+                    true
+                }
+                _ => false,
+            },
+            // TODO: handle adding and deleting generators (not just changing their mixer channel).
+            _ => false,
+        };
+
+        if did_change {
+            self.refresh_edges();
+        }
     }
 
     fn with_refreshed_edges(self) -> Self {

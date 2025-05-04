@@ -6,8 +6,6 @@ import "pmodel.proto";
 
 message ActionProto {
   oneof kind {
-    uint32 move_effect_up = 1;
-    uint32 move_effect_down = 2;
     SetFloatProto set_float = 3;
     SetUintProto set_uint = 4;
     IndexFieldProto set_index = 5;
@@ -26,6 +24,7 @@ message IndexFieldProto {
     uint32 placed_note = 2;
     uint32 placement = 3;
     uint32 effect = 4;
+    uint32 mixer = 7;
     uint32 generator = 5;
     uint32 sample = 6;
   }
@@ -44,6 +43,7 @@ enum MultiIndexFieldKind {
   PlacedNoteIndexFieldKind = 2;
   PlacementIndexFieldKind = 3;
   EffectIndexFieldKind = 4;
+  MixerIndexFieldKind = 7;
   GeneratorIndexFieldKind = 5;
   SampleIndexFieldKind = 6;
 }
