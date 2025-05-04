@@ -1,233 +1,19 @@
-use super::{
-    AmpNode, BufferNode, CompressorNode, DelayNode, EqNode, Graph, MixerNode, ModDelayNode,
-    ProcessContext, Processor, SimpleWaveGeneratorNode, SubSynthNode, make_graph,
+use crate::graph::{
+    AmpNode, BufferNode, Graph,
+    ProcessContext, Processor, make_graph,
 };
 use dasp_frame::Stereo;
 use dasp_graph::{BoxedNodeSend, Buffer, Node, NodeData, node::Sum};
 use petgraph::stable_graph::NodeIndex;
-use shared::model::{Effect, EffectInstance, Generator, GeneratorInstance, PlacementType, Project};
-use state::EffectSelector;
+use shared::model::Project;
 
-#[expect(dead_code)] // Will need to read fields to manipulate later.
-pub struct GeneratorInfo {
-    // Generator index within the project model.
-    generator_index: usize,
+mod channel_info;
+mod effect_info;
+mod generator_info;
 
-    node: NodeIndex,
-}
-
-impl GeneratorInfo {
-    pub fn new(
-        graph: &mut Graph,
-        project: &Project,
-        generator: &GeneratorInstance,
-        generator_index: usize,
-    ) -> Self {
-        let bpm = project.bpm;
-        // Placements that are linked to this generator.
-        let placements: Vec<_> = project
-            .placements
-            .clone()
-            .into_iter()
-            .filter(|it| match &it.kind {
-                PlacementType::Track(it) => it.generator_index == generator_index,
-                _ => false,
-            })
-            .collect();
-
-        // TODO: do better than just cloning all the tracks!
-        // Perhaps load the relevant track data from the store
-        // out of the payload in each processing cycle?
-        // Or even just get a &[Track] containing all the tracks in the store, in each
-        // processing cycle, and don't store it anywhere.
-        let tracks = project.tracks.clone();
-
-        let node = match &generator {
-            GeneratorInstance {
-                it: Generator::SimpleWave(config),
-                meta,
-            } => make_node(SimpleWaveGeneratorNode::new(
-                config.clone(),
-                meta.clone(),
-                generator_index,
-                placements,
-                tracks,
-                bpm,
-            )),
-            GeneratorInstance {
-                it: Generator::SubSynth(config),
-                meta,
-            } => make_node(SubSynthNode::new(
-                config.clone(),
-                meta.clone(),
-                generator_index,
-                placements,
-                tracks,
-                bpm,
-            )),
-            _ => {
-                // TODO: support adding other types of generators to the graph.
-                panic!("Not yet implemented.")
-            }
-        };
-
-        let node = graph.add_node(node);
-
-        Self {
-            generator_index,
-            node,
-        }
-    }
-
-    pub fn node(&self) -> NodeIndex {
-        self.node
-    }
-}
-
-#[expect(dead_code)] // Will need to read fields to manipulate later.
-#[derive(Debug)]
-pub struct EffectInfo {
-    // Effect index within the project model.
-    effect_index: usize,
-
-    effect_node: NodeIndex,
-    mixer_node: NodeIndex,
-}
-
-impl EffectInfo {
-    pub fn new(graph: &mut Graph, effect: &EffectInstance, effect_sel: &EffectSelector) -> Self {
-        // TODO: just pass the selector down directly to the effect and mixer nodes.
-        let EffectSelector(mixer_index, effect_index) = *effect_sel;
-
-        let effect_node = match &effect.it {
-            Effect::SimpleEq(config) => {
-                make_node(EqNode::new(mixer_index, effect_index, config.clone()))
-            }
-            Effect::Delay(config) => {
-                make_node(DelayNode::new(mixer_index, effect_index, config.clone()))
-            }
-            Effect::Compressor(config) => make_node(CompressorNode::new(config.clone())),
-            Effect::ModDelay(config) => make_node(ModDelayNode::new(config.clone())),
-        };
-        let mixer_node = make_node(MixerNode::new(
-            mixer_index,
-            effect_index,
-            effect.meta.clone(),
-        ));
-
-        let effect_node = graph.add_node(effect_node);
-        let mixer_node = graph.add_node(mixer_node);
-        log::info!("Added edge: effect -> effect mixer");
-        graph.add_edge(effect_node, mixer_node, ());
-
-        Self {
-            effect_index,
-            effect_node,
-            mixer_node,
-        }
-    }
-
-    fn effect_node(&self) -> NodeIndex {
-        self.effect_node
-    }
-
-    fn mixer_node(&self) -> NodeIndex {
-        self.mixer_node
-    }
-
-    pub fn link_to(&self, next_effect: &EffectInfo, graph: &mut Graph) {
-        // TODO: confirm this results in the correct direction for wet/dry.
-        graph.add_edge(self.mixer_node, next_effect.effect_node(), ());
-        log::info!("Added edge: effect mixer -> next effect");
-        graph.add_edge(self.mixer_node, next_effect.mixer_node(), ());
-        log::info!("Added edge: effect mixer -> next effect mixer");
-    }
-}
-
-#[expect(dead_code)] // Will need to read fields to manipulate later.
-pub struct ChannelInfo {
-    // TODO: consider using a HashSet instead.
-    generators: Vec<GeneratorInfo>,
-
-    // Input sum node for this mixer channel.
-    // Sums together the generators.
-    input_node: NodeIndex,
-
-    // Effect/mixer pairs for this channel.
-    // Index = ordering within the channel.
-    effects: Vec<EffectInfo>,
-
-    // Output amp node for this mixer channel.
-    output_node: NodeIndex,
-}
-
-impl ChannelInfo {
-    pub fn new(graph: &mut Graph, project: &Project, channel_index: usize) -> Self {
-        let generators: Vec<GeneratorInfo> = project
-            .generators
-            .iter()
-            .filter(|generator| generator.meta.mixer_channel == channel_index)
-            .enumerate()
-            .map(|(generator_index, generator)| {
-                GeneratorInfo::new(graph, project, generator, generator_index)
-            })
-            .collect();
-
-        let input_node = graph.add_node(make_node(Sum));
-
-        for generator in &generators {
-            graph.add_edge(generator.node(), input_node, ());
-            log::info!("Added edge: generator -> mixer channel input");
-        }
-
-        let effects: Vec<EffectInfo> = project.mixer[channel_index]
-            .effects
-            .iter()
-            .enumerate()
-            .map(|(effect_index, effect)| {
-                EffectInfo::new(graph, effect, &EffectSelector(channel_index, effect_index))
-            })
-            .collect();
-
-        // TODO: get .zip() working.
-        if !effects.is_empty() {
-            for i in 0..effects.len() - 1 {
-                let effect = &effects[i];
-                let next_effect = &effects[i + 1];
-                effect.link_to(next_effect, graph);
-            }
-        }
-
-        // TODO: wire up the amp node to read the correct volume.
-        let output_node = graph.add_node(make_node(AmpNode::default()));
-
-        // Link up the input -> effects -> output.
-        // If there are no effects, link directly from input -> output.
-        if effects.is_empty() {
-            graph.add_edge(input_node, output_node, ());
-            log::info!("Added edge: mixer channel input -> mixer channel output");
-        } else {
-            let first = effects.first().unwrap();
-            let last = effects.last().unwrap();
-
-            // TODO: check the wet/dry direction here.
-            graph.add_edge(input_node, first.effect_node, ());
-            log::info!("Added edge: mixer channel input -> first effect");
-            graph.add_edge(input_node, first.mixer_node, ());
-            log::info!("Added edge: mixer channel input -> first effect mixer");
-
-            graph.add_edge(last.mixer_node, output_node, ());
-            log::info!("Added edge: last effect mixer -> mixer channel output");
-        }
-
-        Self {
-            generators,
-            input_node,
-            effects,
-            output_node,
-        }
-    }
-}
+use channel_info::*;
+use effect_info::*;
+use generator_info::*;
 
 /// Mixer arrangement looks like this:
 ///
@@ -379,7 +165,7 @@ mod tests {
 
     use shared::model::{
         AdsrEnvelope, AntiAliasingMode, DelayConfig, EffectMeta, GeneratorMeta, MixerChannel,
-        SimpleWaveConfig, WaveType,
+        SimpleWaveConfig, WaveType, Generator, GeneratorInstance, Effect, EffectInstance,
     };
 
     #[test]
