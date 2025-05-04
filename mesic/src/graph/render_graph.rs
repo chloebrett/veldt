@@ -350,15 +350,9 @@ mod tests {
         ScaleValue, SimpleWaveConfig, Track, TrackPlacement, WaveType,
     };
 
-    use crate::{graph::SimpleWaveGeneratorNode, wave::freq};
+    use shared::types::Freq;
 
     use super::*;
-
-    impl RenderGraph {
-        fn set_sample_count(&mut self, count: usize) {
-            self.sample_count = count;
-        }
-    }
 
     // Root Mean Squared to calculate if there is signal in output.
     fn rms(graph: RenderGraph) -> f32 {
@@ -439,21 +433,6 @@ mod tests {
             mute: false,
             pan: 0.0,
         }
-    }
-
-    fn make_simple_wave_generator_node() -> SimpleWaveGeneratorNode {
-        let track = make_track();
-        let placement = make_placement();
-        let bpm = 120.0;
-        let generator_node = SimpleWaveGeneratorNode::new(
-            make_simple_wave_config(),
-            make_generator_meta(),
-            0,
-            vec![placement],
-            vec![track],
-            bpm,
-        );
-        generator_node
     }
 
     fn make_mixer_channel() -> MixerChannel {
@@ -540,7 +519,8 @@ mod tests {
         let samples = 120;
         let input: Vec<Stereo<f32>> = (0..samples as usize)
             .map(|it| {
-                let value = (it as f32 / SAMPLE_RATE as f32 * freq(pitch)).sin();
+                let freq: Freq = pitch.into();
+                let value = (it as f32 / SAMPLE_RATE as f32 * freq).sin();
                 [value, value]
             })
             .collect();

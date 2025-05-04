@@ -1,3 +1,4 @@
+use crate::consts::{REFERENCE_PITCH, SEMITONE_FREQ};
 use crate::model::scale_value::ScaleValue;
 use crate::pmodel::*;
 use crate::types::*;
@@ -40,6 +41,17 @@ impl Add<PitchValue> for PitchName {
     fn add(self: PitchName, other: PitchValue) -> Self {
         let pitch_value: PitchValue = self.into();
         (pitch_value + other).into()
+    }
+}
+
+impl From<PitchName> for Freq {
+    // Returns the frequency based on the distance from reference pitch.
+    fn from(item: PitchName) -> Freq {
+        let pitch: PitchValue = item.into();
+        let reference: PitchValue = (*REFERENCE_PITCH.pitch_name).into();
+        let interval: PitchValue = pitch - reference;
+
+        REFERENCE_PITCH.frequency * SEMITONE_FREQ.powf(interval as f32)
     }
 }
 

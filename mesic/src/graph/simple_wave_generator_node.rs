@@ -1,6 +1,6 @@
 use super::ProcessContext;
 use crate::graph::pan_multipliers;
-use crate::wave::{beats_to_samples, unison_wave};
+use crate::wave::{WaveSource, beats_to_samples};
 use dasp_graph::{Buffer, Input, Node};
 use shared::model::{
     Generator, GeneratorInstance, GeneratorMeta, Placement, SimpleWaveConfig, Track, TrackPlacement,
@@ -9,6 +9,7 @@ use shared::types::Beats;
 use std::cmp::min;
 
 pub struct SimpleWaveGeneratorNode {
+    wave_source: WaveSource,
     config: SimpleWaveConfig,
     meta: GeneratorMeta,
     generator_index: usize,
@@ -29,6 +30,7 @@ impl SimpleWaveGeneratorNode {
     ) -> Self {
         Self {
             config,
+            wave_source: WaveSource::new(bpm),
             meta,
             generator_index,
             placements,
@@ -107,10 +109,9 @@ impl Node<ProcessContext> for SimpleWaveGeneratorNode {
 
                 dasp_slice::add_in_place(
                     &mut buffer,
-                    &unison_wave(
-                        &note.note.pitch_name,
+                    &self.wave_source.unison_wave(
+                        note.note.pitch_name.into(),
                         note.note.beats,
-                        self.bpm,
                         &self.config,
                         self.sample_index as i32 - note_start_sample as i32,
                     ),
