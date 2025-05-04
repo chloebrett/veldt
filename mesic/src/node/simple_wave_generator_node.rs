@@ -1,17 +1,16 @@
-use crate::consts::CHANNEL_COUNT;
-use crate::graph::{ProcessContext, pan_multipliers};
-use crate::wave::multi_sum;
+use super::pan_multipliers;
+use crate::graph::ProcessContext;
 use crate::wave::{WaveSource, beats_to_samples};
 use dasp_graph::{Buffer, Input, Node};
 use shared::model::{
-    Generator, GeneratorInstance, GeneratorMeta, Placement, SubSynthConfig, Track, TrackPlacement,
+    Generator, GeneratorInstance, GeneratorMeta, Placement, SimpleWaveConfig, Track, TrackPlacement,
 };
-use shared::types::{Beats, KnobPosition, Volume};
+use shared::types::Beats;
 use std::cmp::min;
 
-pub struct SubSynthNode {
+pub struct SimpleWaveGeneratorNode {
     wave_source: WaveSource,
-    config: SubSynthConfig,
+    config: SimpleWaveConfig,
     meta: GeneratorMeta,
     generator_index: usize,
     sample_index: u32, // the sample that playback is currently up to.
@@ -20,9 +19,9 @@ pub struct SubSynthNode {
     bpm: Beats,
 }
 
-impl SubSynthNode {
+impl SimpleWaveGeneratorNode {
     pub fn new(
-        config: SubSynthConfig,
+        config: SimpleWaveConfig,
         meta: GeneratorMeta,
         generator_index: usize,
         placements: Vec<Placement>,
@@ -30,8 +29,8 @@ impl SubSynthNode {
         bpm: Beats,
     ) -> Self {
         Self {
-            wave_source: WaveSource::new(bpm),
             config,
+            wave_source: WaveSource::new(bpm),
             meta,
             generator_index,
             placements,
@@ -41,21 +40,15 @@ impl SubSynthNode {
         }
     }
 
-    // TODO: this logic is similar and shared with subsynth and simple wave, probably should move
-    fn apply_volume_and_pan(
-        buffer: &mut Buffer,
-        channel_index: usize,
-        volume: Volume,
-        pan: KnobPosition,
-    ) {
-        let pan_mult = pan_multipliers(pan)[channel_index];
+    fn apply_volume_and_pan(&self, buffer: &mut Buffer, channel_index: usize) {
+        let pan_mult = pan_multipliers(self.meta.pan)[channel_index];
         for x in buffer.iter_mut() {
-            *x *= pan_mult * volume;
+            *x *= pan_mult * self.meta.volume;
         }
     }
 }
 
-impl Node<ProcessContext> for SubSynthNode {
+impl Node<ProcessContext> for SimpleWaveGeneratorNode {
     // TODO: a lot of this processing logic is generic and should be shared with
     // other generator types. How?
     fn process(&mut self, _inputs: &[Input], output: &mut [Buffer], payload: &ProcessContext) {
@@ -65,7 +58,7 @@ impl Node<ProcessContext> for SubSynthNode {
 
         // Apply any applicable changes from the store.
         if let Some(GeneratorInstance {
-            it: Generator::SubSynth(config),
+            it: Generator::SimpleWave(config),
             meta,
             ..
         }) = &payload.store.project.generators.get(self.generator_index)
@@ -114,47 +107,22 @@ impl Node<ProcessContext> for SubSynthNode {
                     continue;
                 }
 
-                // TODO: add envelopes once mod matrix is working
-                // NOTE: for now, osc 1 -> maps to env 1
-                let wave_source = &mut self.wave_source;
-                let oscillators = &self.config.oscillators;
-                let envelopes = &self.config.envelopes;
-                let osc_buffers: Vec<Buffer> = oscillators
-                    .iter()
-                    .zip(envelopes.iter())
-                    .map(|(osc, envelope)| {
-                        let mut buf = wave_source.osc_wave(
-                            note.note.pitch_name.into(),
-                            note.note.beats,
-                            osc,
-                            envelope,
-                            self.sample_index as i32 - note_start_sample as i32,
-                        );
-
-                        for channel_index in 0..CHANNEL_COUNT {
-                            Self::apply_volume_and_pan(
-                                &mut buf,
-                                channel_index,
-                                osc.volume,
-                                osc.pan,
-                            );
-                        }
-
-                        buf
-                    })
-                    .collect();
-
-                dasp_slice::add_in_place(&mut buffer, &multi_sum(&osc_buffers));
+                dasp_slice::add_in_place(
+                    &mut buffer,
+                    &self.wave_source.unison_wave(
+                        note.note.pitch_name.into(),
+                        note.note.beats,
+                        &self.config,
+                        self.sample_index as i32 - note_start_sample as i32,
+                    ),
+                );
             }
-
-            for (channel_index, out_buf) in output.iter_mut().enumerate() {
-                let volume = self.meta.volume;
-                let pan = self.meta.pan;
-                out_buf.copy_from_slice(&buffer);
-                Self::apply_volume_and_pan(out_buf, channel_index, volume, pan);
-            }
-
-            self.sample_index += Buffer::LEN as u32;
         }
+
+        for (channel_index, out_buf) in output.iter_mut().enumerate() {
+            out_buf.copy_from_slice(&buffer);
+            self.apply_volume_and_pan(out_buf, channel_index);
+        }
+        self.sample_index += Buffer::LEN as u32;
     }
 }

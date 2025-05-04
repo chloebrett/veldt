@@ -3,6 +3,8 @@ mod effect;
 mod envelope;
 pub mod fft;
 pub mod graph;
+mod mixer;
+mod node;
 mod scale;
 pub mod wave;
 

@@ -1,4 +1,5 @@
-use crate::graph::{ProcessContext, extract_outputs};
+use super::extract_outputs;
+use crate::graph::ProcessContext;
 use dasp_frame::Stereo;
 use dasp_graph::{Buffer, Input, Node};
 use std::cmp::min;

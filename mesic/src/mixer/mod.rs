@@ -1,4 +1,5 @@
-use crate::graph::{AmpNode, BufferNode, Graph, ProcessContext, Processor, make_graph};
+use crate::graph::{Graph, ProcessContext, Processor, make_graph};
+use crate::node::{AmpNode, BufferNode};
 use dasp_frame::Stereo;
 use dasp_graph::{BoxedNodeSend, Buffer, Node, NodeData, node::Sum};
 use petgraph::stable_graph::NodeIndex;

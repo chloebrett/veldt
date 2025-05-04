@@ -1,5 +1,6 @@
 use super::{EdgeCounter, EdgeKey, EffectInfo, GeneratorInfo, make_node};
-use crate::graph::{AmpNode, Graph};
+use crate::graph::Graph;
+use crate::node::AmpNode;
 use dasp_graph::node::Sum;
 use petgraph::stable_graph::NodeIndex;
 use shared::model::{EffectInstance, Project};

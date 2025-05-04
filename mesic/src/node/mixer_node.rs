@@ -1,4 +1,5 @@
-use crate::graph::{ProcessContext, extract_inputs_2, extract_outputs};
+use super::{extract_inputs_2, extract_outputs};
+use crate::graph::ProcessContext;
 use dasp_graph::{Buffer, Input, Node};
 use shared::model::{EffectInstance, EffectMeta};
 
