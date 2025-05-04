@@ -1,5 +1,6 @@
 use shared::action_proto::{
-    MultiTypeFieldProto, MultiTypeFieldKind, TypeFieldProto, type_field_proto::Kind as TypeFieldKind,
+    MultiTypeFieldKind, MultiTypeFieldProto, TypeFieldProto,
+    type_field_proto::Kind as TypeFieldKind,
 };
 use shared::model::{
     AdsrEnvelope, AntiAliasingMode, EffectInstance, EqType, FileTreeConfig, FilenameTree,
@@ -61,7 +62,9 @@ impl From<TypeFieldProto> for TypeField {
             TypeFieldKind::AntiAliasingMode(it) => {
                 TypeField::AntiAliasingMode(AntiAliasingModeProto::try_from(it).unwrap().into())
             }
-            TypeFieldKind::EqType(it) => TypeField::EqType(EqTypeProto::try_from(it).unwrap().into()),
+            TypeFieldKind::EqType(it) => {
+                TypeField::EqType(EqTypeProto::try_from(it).unwrap().into())
+            }
             TypeFieldKind::ClippedDuration(it) => TypeField::ClippedDuration(it.into()),
             TypeFieldKind::SampleTree(it) => TypeField::SampleTree(it.into()),
             TypeFieldKind::SampleTreeConfig(it) => TypeField::SampleTreeConfig(it.into()),
@@ -131,11 +134,11 @@ impl From<MultiTypeFieldProto> for MultiTypeField {
                 object
                     .values
                     .iter()
-                    .map(|value| {
+                    .filter_map(|value| {
                         if let Some(TypeFieldKind::Track(track_proto)) = &value.kind {
-                            track_proto.clone().into()
+                            Some(track_proto.clone().into())
                         } else {
-                            panic!()
+                            None
                         }
                     })
                     .collect(),
@@ -144,11 +147,11 @@ impl From<MultiTypeFieldProto> for MultiTypeField {
                 object
                     .values
                     .iter()
-                    .map(|value| {
+                    .filter_map(|value| {
                         if let Some(TypeFieldKind::PlacedNote(note)) = value.kind {
-                            note.into()
+                            Some(note.into())
                         } else {
-                            panic!()
+                            None
                         }
                     })
                     .collect(),
@@ -157,11 +160,11 @@ impl From<MultiTypeFieldProto> for MultiTypeField {
                 object
                     .values
                     .iter()
-                    .map(|value| {
+                    .filter_map(|value| {
                         if let Some(TypeFieldKind::Placement(placement)) = value.kind {
-                            placement.into()
+                            Some(placement.into())
                         } else {
-                            panic!()
+                            None
                         }
                     })
                     .collect(),
@@ -170,11 +173,11 @@ impl From<MultiTypeFieldProto> for MultiTypeField {
                 object
                     .values
                     .iter()
-                    .map(|value| {
+                    .filter_map(|value| {
                         if let Some(TypeFieldKind::Effect(effect)) = value.kind {
-                            effect.into()
+                            Some(effect.into())
                         } else {
-                            panic!()
+                            None
                         }
                     })
                     .collect(),
@@ -183,11 +186,11 @@ impl From<MultiTypeFieldProto> for MultiTypeField {
                 object
                     .values
                     .iter()
-                    .map(|value| {
+                    .filter_map(|value| {
                         if let Some(TypeFieldKind::Generator(generator)) = &value.kind {
-                            generator.clone().into()
+                            Some(generator.clone().into())
                         } else {
-                            panic!()
+                            None
                         }
                     })
                     .collect(),
