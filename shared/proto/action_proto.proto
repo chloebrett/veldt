@@ -15,6 +15,8 @@ message ActionProto {
     TypeFieldProto add_child = 7;
     IndexFieldProto delete_child = 8;
     MoveFieldProto move_child = 9;
+    MultiIndexFieldProto delete_children = 10;
+    MultiTypeFieldProto set_children = 11;
   }
 }
 
@@ -27,6 +29,23 @@ message IndexFieldProto {
     uint32 generator = 5;
     uint32 sample = 6;
   }
+}
+
+// Send Multiple IndexFields at once
+message MultiIndexFieldProto {
+  // `kind` field required for easy proto conversion.
+  MultiIndexFieldKind kind = 1;
+  repeated uint32 values = 2;
+}
+
+enum MultiIndexFieldKind {
+  UnknownIndexFieldKind = 0;
+  TrackIndexFieldKind = 1;
+  PlacedNoteIndexFieldKind = 2;
+  PlacementIndexFieldKind = 3;
+  EffectIndexFieldKind = 4;
+  GeneratorIndexFieldKind = 5;
+  SampleIndexFieldKind = 6;
 }
 
 message MoveFieldProto {
@@ -54,7 +73,24 @@ message TypeFieldProto {
     int32 octave = 16;
     pmodel.FilenameTreeProto sample_tree = 17;
     pmodel.FileTreeConfigProto sample_tree_config = 18;
+    pmodel.GeneratorInstanceProto generator = 19;
   }
+}
+
+// Send multiple TypeFields at once.
+message MultiTypeFieldProto {
+  // `kind` field required for easy proto conversion.
+  MultiTypeFieldKind kind = 1;
+  repeated TypeFieldProto values = 2;
+}
+
+enum MultiTypeFieldKind {
+  UnknownTypeFieldKind = 0;
+  TrackTypeFieldKind = 1;
+  PlacedNoteTypeFieldKind = 2;
+  PlacementTypeFieldKind = 3;
+  EffectTypeFieldKind = 4;
+  GeneratorTypeFieldKind = 5;
 }
 
 message SetFloatProto {

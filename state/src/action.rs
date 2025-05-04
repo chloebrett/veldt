@@ -1,4 +1,6 @@
-use crate::{FloatField, IndexField, MoveField, TypeField, UintField};
+use crate::{
+    FloatField, IndexField, MoveField, MultiIndexField, MultiTypeField, TypeField, UintField,
+};
 use shared::action_proto::{
     ActionProto, SetFloatProto, SetUintProto, action_proto::Kind as ActionKind,
 };
@@ -14,10 +16,14 @@ pub enum Action {
     SetIndex(IndexField),
     // Delete a child object *by* index.
     DeleteChild(IndexField),
+    // Delete multiple children "by" index.
+    DeleteChildren(MultiIndexField),
     // Set a child object by type.
     SetChild(TypeField),
     // Add a child object by type.
     AddChild(TypeField),
+    // Set children of an object by type.
+    SetChildren(MultiTypeField),
 
     // Note: avoid creating new ad hoc action types.
     // Try to encapsulate them within a generic action type like the ones above.
@@ -54,8 +60,10 @@ impl From<ActionProto> for Action {
             ),
             ActionKind::SetIndex(index) => Action::SetIndex(index.into()),
             ActionKind::DeleteChild(index) => Action::DeleteChild(index.into()),
+            ActionKind::DeleteChildren(indexes) => Action::DeleteChildren(indexes.into()),
             ActionKind::AddChild(child) => Action::AddChild(child.into()),
             ActionKind::SetChild(child) => Action::SetChild(child.into()),
+            ActionKind::SetChildren(children) => Action::SetChildren(children.into()),
         }
     }
 }
@@ -76,9 +84,11 @@ impl From<Action> for ActionProto {
                 Action::SetChild(child) => ActionKind::SetChild(child.into()),
                 Action::AddChild(child) => ActionKind::AddChild(child.into()),
                 Action::DeleteChild(index) => ActionKind::DeleteChild(index.into()),
+                Action::DeleteChildren(indexes) => ActionKind::DeleteChildren(indexes.into()),
                 Action::MoveEffectUp(index) => ActionKind::MoveEffectUp(index as u32),
                 Action::MoveEffectDown(index) => ActionKind::MoveEffectDown(index as u32),
                 Action::MoveChild(it) => ActionKind::MoveChild(it.into()),
+                Action::SetChildren(it) => ActionKind::SetChildren(it.into()),
 
                 // Non-serializable actions
                 Action::Release => panic!(),
