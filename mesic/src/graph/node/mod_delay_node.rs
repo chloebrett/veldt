@@ -1,6 +1,5 @@
-use super::ProcessContext;
-use super::{extract_inputs, extract_outputs};
 use crate::consts::SAMPLE_RATE_RECIP;
+use crate::graph::{ProcessContext, extract_inputs, extract_outputs};
 use crate::wave::make_wave;
 use dasp_graph::{Buffer, Input, Node};
 use ringbuffer::{AllocRingBuffer, RingBuffer};

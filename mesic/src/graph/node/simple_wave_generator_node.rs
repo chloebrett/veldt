@@ -1,5 +1,4 @@
-use super::ProcessContext;
-use crate::graph::pan_multipliers;
+use crate::graph::{ProcessContext, pan_multipliers};
 use crate::wave::{WaveSource, beats_to_samples};
 use dasp_graph::{Buffer, Input, Node};
 use shared::model::{

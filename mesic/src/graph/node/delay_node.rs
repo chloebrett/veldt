@@ -1,6 +1,5 @@
-use super::ProcessContext;
-use super::{extract_inputs, extract_outputs};
 use crate::SAMPLE_RATE;
+use crate::graph::{ProcessContext, extract_inputs, extract_outputs};
 use dasp_graph::{Buffer, Input, Node};
 use ringbuffer::{GrowableAllocRingBuffer, RingBuffer};
 use shared::model::{DelayConfig, Effect, EffectInstance};

@@ -1,5 +1,4 @@
-use super::ProcessContext;
-use super::{extract_inputs, extract_outputs};
+use crate::graph::{ProcessContext, extract_inputs, extract_outputs};
 use dasp_graph::{Buffer, Input, Node};
 use shared::types::Volume;
 
