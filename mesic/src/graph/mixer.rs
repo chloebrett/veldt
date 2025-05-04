@@ -85,6 +85,7 @@ impl GeneratorInfo {
     }
 }
 
+#[derive(Debug)]
 pub struct EffectInfo {
     // Effect index within the project model.
     effect_index: usize,
@@ -187,8 +188,13 @@ impl ChannelInfo {
             })
             .collect();
 
-        for (effect, next_effect) in effects.iter().zip(effects.iter().next()) {
-            effect.link_to(next_effect, graph);
+        // TODO: get .zip() working.
+        if !effects.is_empty() {
+            for i in 0..effects.len() - 1 {
+                let effect = &effects[i];
+                let next_effect = &effects[i + 1];
+                effect.link_to(next_effect, graph);
+            }
         }
 
         // TODO: wire up the amp node to read the correct volume.
@@ -198,6 +204,7 @@ impl ChannelInfo {
         // If there are no effects, link directly from input -> output.
         if effects.is_empty() {
             graph.add_edge(input_node, output_node, ());
+            log::info!("Added edge: mixer channel input -> mixer channel output");
         } else {
             let first = effects.first().unwrap();
             let last = effects.last().unwrap();
@@ -273,6 +280,7 @@ impl Mixer {
         let main_sum = graph.add_node(make_node(Sum));
         let main_amp = graph.add_node(make_node(AmpNode::default()));
         graph.add_edge(main_sum, main_amp, ());
+        log::info!("Added edge: main sum -> main amp");
 
         Self {
             graph,
@@ -295,10 +303,12 @@ impl Mixer {
 
         for channel in &channels {
             graph.add_edge(channel.output_node, main_sum, ());
+            log::info!("Added edge: mixer channel output -> main sum");
         }
 
         let main_amp = graph.add_node(make_node(AmpNode::default()));
         graph.add_edge(main_sum, main_amp, ());
+        log::info!("Added edge: main sum -> main amp");
 
         Self {
             graph,
@@ -323,7 +333,9 @@ impl Mixer {
         let main_amp = graph.add_node(make_node(AmpNode::default()));
 
         graph.add_edge(main_buffer, main_sum, ());
+        log::info!("Added edge: main buffer -> main sum");
         graph.add_edge(main_sum, main_amp, ());
+        log::info!("Added edge: main sum -> main amp");
 
         Self {
             graph,
@@ -403,10 +415,11 @@ mod tests {
         // Generator -> mixer input (1)
         // Mixer input -> effect (1)
         // Mixer input -> wet/dry mixer (1)
+        // Effect -> wet/dry mixer (1)
         // Wet/dry mixer -> mixer output (1)
         // Mixer output -> main sum (1)
         // Main sum -> main amp (1)
-        assert_eq!(mixer.graph().edge_count(), 6);
+        assert_eq!(mixer.graph().edge_count(), 7);
         assert_eq!(mixer.channels().len(), 1);
     }
 
@@ -433,13 +446,20 @@ mod tests {
         ]);
 
         let mixer = Mixer::from_project(&project);
-        let node_count = mixer.graph().node_count();
 
         // Main sum and amp nodes (2) +
         // Effect and mixer nodes (2 * 3 effects) +
         // Channel input and output nodes (2 * 2 channels) +
         // Generator nodes (3).
-        assert_eq!(node_count, 15);
+        assert_eq!(mixer.graph().node_count(), 7);
+        // Generator -> mixer input (3)
+        // Mixer input -> effect (2)
+        // Mixer input -> wet/dry mixer (2)
+        // Effect -> wet/dry mixer (3)
+        // Wet/dry mixer -> mixer output (2)
+        // Mixer output -> main sum (2)
+        // Main sum -> main amp (1)
+        assert_eq!(mixer.graph().edge_count(), 15);
         assert_eq!(mixer.channels().len(), 2);
     }
 

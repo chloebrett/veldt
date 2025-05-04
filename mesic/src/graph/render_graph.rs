@@ -1,7 +1,4 @@
-use super::{
-    Mixer,
-    ProcessContext, Processor, make_processor,
-};
+use super::{Mixer, ProcessContext, Processor, make_processor};
 use crate::wave::beats_to_samples;
 use dasp_frame::Stereo;
 use dasp_graph::{Buffer, Node};
@@ -128,13 +125,13 @@ impl Iterator for RenderGraph {
 
 #[cfg(test)]
 mod tests {
-    use shared::model::{
-        AdsrEnvelope, AntiAliasingMode, DelayConfig, EffectMeta, EqConfig, EqType, GeneratorMeta,
-        MixerChannel, ModDelayConfig, ModMatrix, Note, PitchName, PlacedNote, Placement,
-        ScaleValue, SimpleWaveConfig, Track, TrackPlacement, WaveType,
-        EffectInstance, Effect, PlacementType, Generator, GeneratorInstance,
-    };
     use crate::SAMPLE_RATE;
+    use shared::model::{
+        AdsrEnvelope, AntiAliasingMode, DelayConfig, Effect, EffectInstance, EffectMeta, EqConfig,
+        EqType, Generator, GeneratorInstance, GeneratorMeta, MixerChannel, ModDelayConfig,
+        ModMatrix, Note, PitchName, PlacedNote, Placement, PlacementType, ScaleValue,
+        SimpleWaveConfig, Track, TrackPlacement, WaveType,
+    };
 
     use shared::types::Freq;
 
