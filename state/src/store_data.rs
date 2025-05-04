@@ -95,6 +95,7 @@ impl Default for StoreData {
                             volume: 1.0,
                             mute: false,
                             pan: 0.0,
+                            mixer_channel: 0,
                         },
                     },
                     GeneratorInstance {
@@ -121,6 +122,7 @@ impl Default for StoreData {
                             volume: 1.0,
                             mute: false,
                             pan: 0.0,
+                            mixer_channel: 0,
                         },
                     },
                 ],

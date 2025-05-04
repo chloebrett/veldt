@@ -100,7 +100,8 @@ impl RenderGraph {
             // TODO: do better than just cloning all the tracks!
             // Perhaps load the relevant track data from the store
             // out of the payload in each processing cycle?
-            // Or even just get a &[Track] containing all the tracks in the store.
+            // Or even just get a &[Track] containing all the tracks in the store, in each
+            // processing cycle, and don't store it anywhere.
             let tracks = project.tracks.clone();
 
             let generator_node_index = match &project.generators[generator_index] {
@@ -243,6 +244,7 @@ impl RenderGraph {
                 let delay_samples = delay_samples as usize;
 
                 // Extend the graph duration by the delay amount.
+                // TODO: this shouldn't necessarily always happen.
                 self.sample_count += delay_samples;
 
                 BoxedNodeSend::new(DelayNode::new(mixer_index, effect_index, config))

@@ -167,6 +167,8 @@ message GeneratorMetaProto {
   bool mute = 2;
 
   float pan = 3;
+
+  uint32 mixer_channel = 4;
 }
 
 message SimpleWaveProto {
