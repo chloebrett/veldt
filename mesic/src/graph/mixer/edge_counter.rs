@@ -2,9 +2,9 @@ use crate::graph::Graph;
 use petgraph::stable_graph::NodeIndex;
 use std::collections::HashMap;
 
-// Counts edges in the graph by type.
-// Helpful for testing/debugging.
-// Note: consider extending this to also count nodes, if that would be helpful.
+/// Counts edges in the graph by type.
+/// Helpful for testing/debugging.
+/// Note: consider extending this to also count nodes, if that would be helpful.
 #[derive(Debug, Default)]
 pub struct EdgeCounter {
     pub counts: HashMap<EdgeKey, usize>,

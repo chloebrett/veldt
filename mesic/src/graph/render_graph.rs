@@ -6,7 +6,8 @@ use shared::model::Project;
 use state::{Action, Selector};
 use std::sync::mpsc::Receiver;
 
-/// A Graph with the required metadata to facilitate immediate processing into a Vec.
+/// Wraps a Mixer (which in turn wraps a Graph) to add processing/iteration, seeking, and listening
+/// for updates to the Store.
 pub struct RenderGraph {
     mixer: Mixer,
     sample_count: usize,
