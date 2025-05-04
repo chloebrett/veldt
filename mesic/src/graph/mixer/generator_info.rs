@@ -3,6 +3,8 @@ use crate::graph::{Graph, SimpleWaveGeneratorNode, SubSynthNode};
 use petgraph::stable_graph::NodeIndex;
 use shared::model::{Generator, GeneratorInstance, PlacementType, Project};
 
+/// Describes a generator from the viewpoint of the graph.
+/// Contains a reference to the generator node.
 #[expect(dead_code)] // Will need to read fields to manipulate later.
 pub struct GeneratorInfo {
     // Generator index within the project model.

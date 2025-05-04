@@ -4,6 +4,8 @@ use petgraph::stable_graph::NodeIndex;
 use shared::model::{Effect, EffectInstance};
 use state::EffectSelector;
 
+/// Describes an effect + effect mixer from the viewpoint of the graph.
+/// Contains references to the effect node and the mixer node.
 #[expect(dead_code)] // Will need to read fields to manipulate later.
 #[derive(Debug)]
 pub struct EffectInfo {

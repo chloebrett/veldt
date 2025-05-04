@@ -5,6 +5,8 @@ use petgraph::stable_graph::NodeIndex;
 use shared::model::Project;
 use state::EffectSelector;
 
+/// Describes a mixer channel from the viewpoint of the graph.
+/// Contains references to the generator and effect nodes linked to this channel.
 #[expect(dead_code)] // Will need to read fields to manipulate later.
 pub struct ChannelInfo {
     // TODO: consider using a HashSet instead.

@@ -45,7 +45,10 @@ impl EdgeCounter {
     }
 }
 
-/// Mixer arrangement looks like this:
+/// The mixer is responsible for creating, storing and manipulating mixer channels,
+/// and the effects and generators they contain.
+///
+/// The mixer arrangement looks like this:
 ///
 /// g  g // generators linked to mixer channel 1
 /// |  |
