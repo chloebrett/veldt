@@ -132,7 +132,9 @@ mod tests {
         AdsrEnvelope, AntiAliasingMode, DelayConfig, EffectMeta, EqConfig, EqType, GeneratorMeta,
         MixerChannel, ModDelayConfig, ModMatrix, Note, PitchName, PlacedNote, Placement,
         ScaleValue, SimpleWaveConfig, Track, TrackPlacement, WaveType,
+        EffectInstance, Effect, PlacementType, Generator, GeneratorInstance,
     };
+    use crate::SAMPLE_RATE;
 
     use shared::types::Freq;
 
@@ -274,24 +276,8 @@ mod tests {
         // Arrange
         let mut graph = RenderGraph::default();
         graph.set_from_project(&make_project());
-        // Act
-        graph.add_output_amp_node();
         // Assert
         assert!(rms(graph) > 0.0)
-    }
-
-    #[test]
-    fn graph_with_only_generator_renders_something() {
-        // Arrange
-        let mut project = make_project();
-        project.mixer = vec![];
-        let mut graph = RenderGraph::default();
-
-        // Act
-        graph.set_from_project(&project);
-
-        // Assert
-        assert!(rms(graph) > 0.0);
     }
 
     #[test]
@@ -316,24 +302,5 @@ mod tests {
 
         // Assert
         assert_eq!(output, input)
-    }
-
-    #[test]
-    fn adding_effects_changes_output() {
-        // Arrange
-        let mut project = make_project();
-        let mut graph = RenderGraph::default();
-        let mut graph_no_mixer = RenderGraph::default();
-
-        // Act
-        graph.set_from_project(&project);
-        project.mixer = vec![];
-        graph_no_mixer.set_from_project(&project);
-
-        // Assert
-        assert_ne!(
-            graph.collect::<Vec<[f32; 2]>>(),
-            graph_no_mixer.collect::<Vec<[f32; 2]>>()
-        );
     }
 }

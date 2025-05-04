@@ -116,6 +116,7 @@ impl EffectInfo {
 
         let effect_node = graph.add_node(effect_node);
         let mixer_node = graph.add_node(mixer_node);
+        log::info!("Added edge: effect -> effect mixer");
         graph.add_edge(effect_node, mixer_node, ());
 
         Self {
@@ -136,7 +137,9 @@ impl EffectInfo {
     pub fn link_to(&self, next_effect: &EffectInfo, graph: &mut Graph) {
         // TODO: confirm this results in the correct direction for wet/dry.
         graph.add_edge(self.mixer_node, next_effect.effect_node(), ());
+        log::info!("Added edge: effect mixer -> next effect");
         graph.add_edge(self.mixer_node, next_effect.mixer_node(), ());
+        log::info!("Added edge: effect mixer -> next effect mixer");
     }
 }
 
@@ -172,6 +175,7 @@ impl ChannelInfo {
 
         for generator in &generators {
             graph.add_edge(generator.node(), input_node, ());
+            log::info!("Added edge: generator -> mixer channel input");
         }
 
         let effects: Vec<EffectInfo> = project.mixer[channel_index]
@@ -189,6 +193,24 @@ impl ChannelInfo {
 
         // TODO: wire up the amp node to read the correct volume.
         let output_node = graph.add_node(make_node(AmpNode::default()));
+
+        // Link up the input -> effects -> output.
+        // If there are no effects, link directly from input -> output.
+        if effects.is_empty() {
+            graph.add_edge(input_node, output_node, ());
+        } else {
+            let first = effects.first().unwrap();
+            let last = effects.last().unwrap();
+
+            // TODO: check the wet/dry direction here.
+            graph.add_edge(input_node, first.effect_node, ());
+            log::info!("Added edge: mixer channel input -> first effect");
+            graph.add_edge(input_node, first.mixer_node, ());
+            log::info!("Added edge: mixer channel input -> first effect mixer");
+
+            graph.add_edge(last.mixer_node, output_node, ());
+            log::info!("Added edge: last effect mixer -> mixer channel output");
+        }
 
         Self {
             generators,
@@ -250,7 +272,6 @@ impl Mixer {
 
         let main_sum = graph.add_node(make_node(Sum));
         let main_amp = graph.add_node(make_node(AmpNode::default()));
-
         graph.add_edge(main_sum, main_amp, ());
 
         Self {
@@ -356,10 +377,11 @@ mod tests {
     fn empty_mixer() {
         let empty_project = Project::default();
         let mixer = Mixer::from_project(&empty_project);
-        let node_count = mixer.graph().node_count();
 
-        // Main sum and amp nodes.
-        assert_eq!(node_count, 2);
+        // Main sum and amp nodes (2)
+        assert_eq!(mixer.graph().node_count(), 2);
+        // Main sum -> main amp (1)
+        assert_eq!(mixer.graph().edge_count(), 1);
         assert_eq!(mixer.channels().len(), 0);
     }
 
@@ -372,13 +394,19 @@ mod tests {
         });
 
         let mixer = Mixer::from_project(&project);
-        let node_count = mixer.graph().node_count();
 
         // Main sum and amp nodes (2) +
         // Effect and mixer nodes (2) +
         // Channel input and output nodes (2) +
-        // Generator nodes (1).
-        assert_eq!(node_count, 7);
+        // Generator nodes (1)
+        assert_eq!(mixer.graph().node_count(), 7);
+        // Generator -> mixer input (1)
+        // Mixer input -> effect (1)
+        // Mixer input -> wet/dry mixer (1)
+        // Wet/dry mixer -> mixer output (1)
+        // Mixer output -> main sum (1)
+        // Main sum -> main amp (1)
+        assert_eq!(mixer.graph().edge_count(), 6);
         assert_eq!(mixer.channels().len(), 1);
     }
 
