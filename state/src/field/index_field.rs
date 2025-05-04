@@ -1,5 +1,5 @@
 use shared::action_proto::{
-    IndexFieldKind, IndexFieldProto, MultiIndexFieldProto, index_field_proto::Kind as ProtoKind,
+    MultiIndexFieldKind, IndexFieldProto, MultiIndexFieldProto, index_field_proto::Kind as IndexfieldKind,
 };
 use strum::{Display, EnumString};
 
@@ -18,12 +18,12 @@ pub enum IndexField {
 impl From<IndexFieldProto> for IndexField {
     fn from(other: IndexFieldProto) -> Self {
         match other.kind.unwrap() {
-            ProtoKind::Track(it) => IndexField::Track(it as usize),
-            ProtoKind::PlacedNote(it) => IndexField::PlacedNote(it as usize),
-            ProtoKind::Placement(it) => IndexField::Placement(it as usize),
-            ProtoKind::Effect(it) => IndexField::Effect(it as usize),
-            ProtoKind::Generator(it) => IndexField::Generator(it as usize),
-            ProtoKind::Sample(it) => IndexField::Sample(it as usize),
+            IndexfieldKind::Track(it) => IndexField::Track(it as usize),
+            IndexfieldKind::PlacedNote(it) => IndexField::PlacedNote(it as usize),
+            IndexfieldKind::Placement(it) => IndexField::Placement(it as usize),
+            IndexfieldKind::Effect(it) => IndexField::Effect(it as usize),
+            IndexfieldKind::Generator(it) => IndexField::Generator(it as usize),
+            IndexfieldKind::Sample(it) => IndexField::Sample(it as usize),
         }
     }
 }
@@ -32,12 +32,12 @@ impl From<IndexField> for IndexFieldProto {
     fn from(other: IndexField) -> Self {
         IndexFieldProto {
             kind: Some(match other {
-                IndexField::Track(it) => ProtoKind::Track(it as u32),
-                IndexField::PlacedNote(it) => ProtoKind::PlacedNote(it as u32),
-                IndexField::Placement(it) => ProtoKind::Placement(it as u32),
-                IndexField::Effect(it) => ProtoKind::Effect(it as u32),
-                IndexField::Generator(it) => ProtoKind::Generator(it as u32),
-                IndexField::Sample(it) => ProtoKind::Sample(it as u32),
+                IndexField::Track(it) => IndexfieldKind::Track(it as u32),
+                IndexField::PlacedNote(it) => IndexfieldKind::PlacedNote(it as u32),
+                IndexField::Placement(it) => IndexfieldKind::Placement(it as u32),
+                IndexField::Effect(it) => IndexfieldKind::Effect(it as u32),
+                IndexField::Generator(it) => IndexfieldKind::Generator(it as u32),
+                IndexField::Sample(it) => IndexfieldKind::Sample(it as u32),
             }),
         }
     }
@@ -57,13 +57,13 @@ impl From<MultiIndexFieldProto> for MultiIndexField {
     fn from(object: MultiIndexFieldProto) -> Self {
         let indexes = object.values.iter().map(|value| *value as usize).collect();
         match object.kind() {
-            IndexFieldKind::UnknownIndexFieldKind => panic!(),
-            IndexFieldKind::TrackIndexFieldKind => Self::Track(indexes),
-            IndexFieldKind::PlacedNoteIndexFieldKind => Self::PlacedNote(indexes),
-            IndexFieldKind::PlacementIndexFieldKind => Self::Placement(indexes),
-            IndexFieldKind::EffectIndexFieldKind => Self::Effect(indexes),
-            IndexFieldKind::GeneratorIndexFieldKind => Self::Generator(indexes),
-            IndexFieldKind::SampleIndexFieldKind => Self::Sample(indexes),
+            MultiIndexFieldKind::UnknownIndexFieldKind => panic!(),
+            MultiIndexFieldKind::TrackIndexFieldKind => Self::Track(indexes),
+            MultiIndexFieldKind::PlacedNoteIndexFieldKind => Self::PlacedNote(indexes),
+            MultiIndexFieldKind::PlacementIndexFieldKind => Self::Placement(indexes),
+            MultiIndexFieldKind::EffectIndexFieldKind => Self::Effect(indexes),
+            MultiIndexFieldKind::GeneratorIndexFieldKind => Self::Generator(indexes),
+            MultiIndexFieldKind::SampleIndexFieldKind => Self::Sample(indexes),
         }
     }
 }
@@ -72,27 +72,27 @@ impl From<MultiIndexField> for MultiIndexFieldProto {
     fn from(object: MultiIndexField) -> Self {
         match object {
             MultiIndexField::Track(indexes) => MultiIndexFieldProto {
-                kind: IndexFieldKind::TrackIndexFieldKind.into(),
+                kind: MultiIndexFieldKind::TrackIndexFieldKind.into(),
                 values: indexes.iter().map(|value| *value as u32).collect(),
             },
             MultiIndexField::PlacedNote(indexes) => MultiIndexFieldProto {
-                kind: IndexFieldKind::PlacedNoteIndexFieldKind.into(),
+                kind: MultiIndexFieldKind::PlacedNoteIndexFieldKind.into(),
                 values: indexes.iter().map(|value| *value as u32).collect(),
             },
             MultiIndexField::Placement(indexes) => MultiIndexFieldProto {
-                kind: IndexFieldKind::PlacementIndexFieldKind.into(),
+                kind: MultiIndexFieldKind::PlacementIndexFieldKind.into(),
                 values: indexes.iter().map(|value| *value as u32).collect(),
             },
             MultiIndexField::Effect(indexes) => MultiIndexFieldProto {
-                kind: IndexFieldKind::EffectIndexFieldKind.into(),
+                kind: MultiIndexFieldKind::EffectIndexFieldKind.into(),
                 values: indexes.iter().map(|value| *value as u32).collect(),
             },
             MultiIndexField::Generator(indexes) => MultiIndexFieldProto {
-                kind: IndexFieldKind::GeneratorIndexFieldKind.into(),
+                kind: MultiIndexFieldKind::GeneratorIndexFieldKind.into(),
                 values: indexes.iter().map(|value| *value as u32).collect(),
             },
             MultiIndexField::Sample(indexes) => MultiIndexFieldProto {
-                kind: IndexFieldKind::SampleIndexFieldKind.into(),
+                kind: MultiIndexFieldKind::SampleIndexFieldKind.into(),
                 values: indexes.iter().map(|value| *value as u32).collect(),
             },
         }

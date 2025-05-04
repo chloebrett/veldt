@@ -21,7 +21,7 @@ message ActionProto {
 }
 
 message IndexFieldProto {
-  oneof kind {
+   oneof kind {
     uint32 track = 1;
     uint32 placed_note = 2;
     uint32 placement = 3;
@@ -31,7 +31,14 @@ message IndexFieldProto {
   }
 }
 
-enum IndexFieldKind {
+// Send Multiple IndexFields at once
+message MultiIndexFieldProto {
+  // `kind` field required for easy proto conversion.
+  MultiIndexFieldKind kind = 1;
+  repeated uint32 values = 2;
+}
+
+enum MultiIndexFieldKind {
   UnknownIndexFieldKind = 0;
   TrackIndexFieldKind = 1;
   PlacedNoteIndexFieldKind = 2;
@@ -39,11 +46,6 @@ enum IndexFieldKind {
   EffectIndexFieldKind = 4;
   GeneratorIndexFieldKind = 5;
   SampleIndexFieldKind = 6;
-}
-
-message MultiIndexFieldProto {
-  IndexFieldKind kind = 1;
-  repeated uint32 values = 2;
 }
 
 message MoveFieldProto {
@@ -75,18 +77,20 @@ message TypeFieldProto {
   }
 }
 
-enum TypeFieldKind {
+// Send multiple TypeFields at once.
+message MultiTypeFieldProto {
+  // `kind` field required for easy proto conversion.
+  MultiTypeFieldKind kind = 1;
+  repeated TypeFieldProto values = 2;
+}
+
+enum MultiTypeFieldKind {
   UnknownTypeFieldKind = 0;
   TrackTypeFieldKind = 1;
   PlacedNoteTypeFieldKind = 2;
   PlacementTypeFieldKind = 3;
   EffectTypeFieldKind = 4;
   GeneratorTypeFieldKind = 5;
-}
-
-message MultiTypeFieldProto {
-  TypeFieldKind kind = 1;
-  repeated TypeFieldProto values = 2;
 }
 
 message SetFloatProto {
