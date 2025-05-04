@@ -281,6 +281,8 @@ mod tests {
 
     fn make_graph(input: Vec<Stereo<f32>>, _config: CompressorConfig) -> RenderGraph {
         let graph = RenderGraph::from_vec(input.clone());
+        // TODO: we can't re-enable these tests until the mixer supports effect channels for
+        // arbitrary audio.
         /*graph.add_main_effect_with_mixer(
             0,
             0,
