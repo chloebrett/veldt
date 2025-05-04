@@ -50,8 +50,7 @@ impl View for MixerView<'_> {
         let edit_state = local_state.mixer_edit_state.get().unwrap_or_default();
 
         // Keep track of an object being dragged.
-        let mut from = None;
-        let mut to = None;
+        let mut from_to = None;
 
         default_window("Mixer")
             .id(format!("mixer_{mixer_index}").into())
@@ -97,13 +96,10 @@ impl View for MixerView<'_> {
                                         &mut render_effect_widget,
                                     )
                                     .response;
-                                // Update `To` and `From` if an object has been dragged and
+                                // Update `from_to` if an object has been dragged and
                                 // released.
-                                if let Some((new_from, new_to)) =
-                                    handle_drag(ui, response, effect_index)
-                                {
-                                    from = Some(new_from);
-                                    to = Some(new_to);
+                                if let Some(new_from_to) = handle_drag(ui, response, effect_index) {
+                                    from_to = Some(new_from_to)
                                 };
                             } else {
                                 render_effect_widget(ui);
@@ -119,9 +115,8 @@ impl View for MixerView<'_> {
                             ui.separator();
                         })
                         .response;
-                    if let Some((new_from, new_to)) = handle_delete_drag(ui, response) {
-                        from = Some(new_from);
-                        to = Some(new_to);
+                    if let Some(new_from_to) = handle_delete_drag(ui, response) {
+                        from_to = Some(new_from_to)
                     };
                 }
                 ui.horizontal(|ui| {
@@ -137,14 +132,22 @@ impl View for MixerView<'_> {
                             }
                         }
                     });
-                    if ui.add(Button::new("Edit").selected(edit_state)).clicked() {
+                    // Disable edit state and button if there are no effects.
+                    let has_effects = !mixer.effects.is_empty();
+                    if !has_effects {
+                        local_state.mixer_edit_state.set(false);
+                    }
+                    if ui
+                        .add_enabled(has_effects, Button::new("Edit").selected(edit_state))
+                        .clicked()
+                    {
                         local_state.mixer_edit_state.set(!edit_state);
                     };
                 })
             });
 
         // Update effects based on drag and drop.
-        if let (Some(from), Some(to)) = (from, to) {
+        if let Some((from, to)) = from_to {
             match (from, to) {
                 // Object has been deleted.
                 (EffectLocation::Index(from_index), EffectLocation::Delete) => {
