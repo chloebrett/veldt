@@ -1,10 +1,12 @@
+use crate::consts::CHANNEL_COUNT;
 use crate::graph::{ProcessContext, pan_multipliers};
+use crate::wave::multi_sum;
 use crate::wave::{WaveSource, beats_to_samples};
 use dasp_graph::{Buffer, Input, Node};
 use shared::model::{
     Generator, GeneratorInstance, GeneratorMeta, Placement, SubSynthConfig, Track, TrackPlacement,
 };
-use shared::types::Beats;
+use shared::types::{Beats, KnobPosition, Volume};
 use std::cmp::min;
 
 pub struct SubSynthNode {
@@ -28,7 +30,7 @@ impl SubSynthNode {
         bpm: Beats,
     ) -> Self {
         Self {
-            wave_source: WaveSource::default(),
+            wave_source: WaveSource::new(bpm),
             config,
             meta,
             generator_index,
@@ -39,15 +41,20 @@ impl SubSynthNode {
         }
     }
 
-    fn apply_volume_and_pan(&self, buffer: &mut Buffer, channel_index: usize) {
-        let pan_mult = pan_multipliers(self.meta.pan)[channel_index];
+    // TODO: this logic is similar and shared with subsynth and simple wave, probably should move
+    fn apply_volume_and_pan(
+        buffer: &mut Buffer,
+        channel_index: usize,
+        volume: Volume,
+        pan: KnobPosition,
+    ) {
+        let pan_mult = pan_multipliers(pan)[channel_index];
         for x in buffer.iter_mut() {
-            *x *= pan_mult * self.meta.volume;
+            *x *= pan_mult * volume;
         }
     }
 }
 
-// TODO: most of the logic is the same as simple wave, need to move this elsewhere
 impl Node<ProcessContext> for SubSynthNode {
     // TODO: a lot of this processing logic is generic and should be shared with
     // other generator types. How?
@@ -107,24 +114,47 @@ impl Node<ProcessContext> for SubSynthNode {
                     continue;
                 }
 
-                dasp_slice::add_in_place(
-                    &mut buffer,
-                    &self.wave_source.subsynth_wave(
-                        &note.note.pitch_name,
-                        note.note.beats,
-                        self.bpm,
-                        &self.config,
-                        self.sample_index as i32 - note_start_sample as i32,
-                    ),
-                );
+                // TODO: add envelopes once mod matrix is working
+                // NOTE: for now, osc 1 -> maps to env 1
+                let wave_source = &mut self.wave_source;
+                let oscillators = &self.config.oscillators;
+                let envelopes = &self.config.envelopes;
+                let osc_buffers: Vec<Buffer> = oscillators
+                    .iter()
+                    .zip(envelopes.iter())
+                    .map(|(osc, envelope)| {
+                        let mut buf = wave_source.osc_wave(
+                            note.note.pitch_name.into(),
+                            note.note.beats,
+                            &osc,
+                            &envelope,
+                            self.sample_index as i32 - note_start_sample as i32,
+                        );
+
+                        for channel_index in 0..CHANNEL_COUNT {
+                            Self::apply_volume_and_pan(
+                                &mut buf,
+                                channel_index,
+                                osc.volume,
+                                osc.pan,
+                            );
+                        }
+
+                        buf
+                    })
+                    .collect();
+
+                dasp_slice::add_in_place(&mut buffer, &multi_sum(&osc_buffers));
             }
-        }
 
-        for (channel_index, out_buf) in output.iter_mut().enumerate() {
-            out_buf.copy_from_slice(&buffer);
-            self.apply_volume_and_pan(out_buf, channel_index);
-        }
+            for (channel_index, out_buf) in output.iter_mut().enumerate() {
+                let volume = self.meta.volume;
+                let pan = self.meta.pan;
+                out_buf.copy_from_slice(&buffer);
+                Self::apply_volume_and_pan(out_buf, channel_index, volume, pan);
+            }
 
-        self.sample_index += Buffer::LEN as u32;
+            self.sample_index += Buffer::LEN as u32;
+        }
     }
 }

@@ -2,7 +2,6 @@ use super::{Piano, PianoOrientation};
 use crate::{
     DataState, GetSetOption, LocalState,
     transform::Yx,
-    update_select_data_state,
     view::View,
     widget::{Sequencer, SequencerObject, StateWindow, default_window},
 };
@@ -83,7 +82,7 @@ impl View for NoteRoll<'_> {
             local_state,
             ..
         } = *self;
-        let Some(TrackSelector(track_index)) = self.local_state.active_track.get() else {
+        let Some(track_sel) = self.local_state.active_track.get() else {
             return;
         };
         let default_note = PlacedNote {
@@ -96,9 +95,9 @@ impl View for NoteRoll<'_> {
             },
             offset: offset.into(),
         };
-        let notes = store.get().project.tracks[track_index].notes.clone();
+        let notes = store.select(&track_sel).notes.clone();
         let white_note_pattern = self.make_white_note_pattern(max_note);
-        let unclipped_duration = store.get().project.tracks[track_index].unclipped_duration();
+        let unclipped_duration = store.select(&track_sel).unclipped_duration();
         let range = Rect::from_min_max(
             pos2(offset, min_note as f32 - 1.0),
             // NoteRoll is at least 1 bar long
@@ -111,9 +110,9 @@ impl View for NoteRoll<'_> {
         );
         let mut select = DataState::NoteRollSelectMode.get_value(ui).unwrap_or(false);
         if !select {
-            DataState::SelectedNoteIndexes.remove_value(ui);
+            local_state.selected_notes.set_none();
         }
-        let title = format!("Track {track_index}");
+        let title = format!("Track {}", track_sel.0);
         let window = StateWindow(
             default_window(&title)
                 .default_pos(Pos2 { x: 600.0, y: 20.0 })
@@ -123,7 +122,7 @@ impl View for NoteRoll<'_> {
             ui.horizontal(|ui| {
                 if ui.button("New note").clicked() {
                     store.dispatch(
-                        &TrackSelector(track_index),
+                        &track_sel,
                         Action::AddChild(TypeField::PlacedNote(default_note)),
                     );
                 }
@@ -137,7 +136,7 @@ impl View for NoteRoll<'_> {
                         ui.add(
                             Sequencer::new(store, local_state, range)
                                 .objects(notes)
-                                .parent_index(track_index)
+                                .parent_index(track_sel.0)
                                 .select(select)
                                 .horizontal_rects(white_note_pattern, Color32::from_white_alpha(4))
                                 .vertical_bars(bar_length, Color32::from_white_alpha(6))
@@ -185,15 +184,13 @@ impl SequencerObject<PlacedNote> for PlacedNote {
         Shape::rect_filled(self.to_rect(range), CornerRadius::same(1), Color32::WHITE)
     }
 
-    fn get_active(ui: &Ui, store: &Store, local_state: &LocalState) -> Option<PlacedNote> {
+    fn get_active(_ui: &Ui, store: &Store, local_state: &LocalState) -> Option<PlacedNote> {
         let track_sel = local_state.active_track.get()?;
-        DataState::ActiveNoteIndex
-            .get_value::<usize>(ui)
-            .map(|note_index| {
-                let sel: NoteSelector = track_sel.downcast_note(note_index);
-                let note: &PlacedNote = store.select(&sel);
-                note.clone()
-            })
+        local_state.active_note.get().map(|note_index| {
+            let sel: NoteSelector = track_sel.downcast_note(note_index);
+            let note: &PlacedNote = store.select(&sel);
+            note.clone()
+        })
     }
 
     fn active_shape(&self, range: Rect) -> Shape {
@@ -211,9 +208,9 @@ impl SequencerObject<PlacedNote> for PlacedNote {
         ])
     }
 
-    fn get_selected(ui: &Ui, store: &Store, local_state: &LocalState) -> Option<Vec<PlacedNote>> {
+    fn get_selected(_ui: &Ui, store: &Store, local_state: &LocalState) -> Option<Vec<PlacedNote>> {
         let track_sel = local_state.active_track.get()?;
-        let note_indexes = DataState::SelectedNoteIndexes.get_value::<BTreeSet<usize>>(ui)?;
+        let note_indexes = local_state.selected_notes.get()?;
         Some(
             note_indexes
                 .into_iter()
@@ -248,13 +245,31 @@ impl SequencerObject<PlacedNote> for PlacedNote {
         )
     }
 
-    fn set_active(&self, ui: &mut Ui, _local_state: &LocalState, index: usize) {
+    fn set_active(&self, ui: &mut Ui, local_state: &LocalState, index: usize) {
         DataState::NoteWindow.set_value(ui, true);
-        DataState::ActiveNoteIndex.set_value(ui, index);
+        local_state.active_note.set(index);
     }
 
-    fn set_selected(ui: &mut Ui, index: Option<usize>) {
-        update_select_data_state(ui, DataState::SelectedNoteIndexes, index);
+    fn set_selected(_ui: &mut Ui, local_state: &LocalState, index: Option<usize>) {
+        let Some(index) = index else {
+            local_state.selected_notes.set_none();
+            return;
+        };
+
+        let Some(mut notes) = local_state.selected_notes.get() else {
+            local_state
+                .selected_notes
+                .set(BTreeSet::from_iter(vec![index]));
+            return;
+        };
+
+        if notes.contains(&index) {
+            notes.remove(&index);
+        } else {
+            notes.insert(index);
+        }
+
+        local_state.selected_notes.set(notes);
     }
 
     fn add_new(&self, store: &Store, parent_index: Option<usize>) {
@@ -283,14 +298,20 @@ impl SequencerObject<PlacedNote> for PlacedNote {
         );
     }
 
-    fn delete_selected(ui: &mut Ui, store: &Store, parent_index: Option<usize>) {
+    fn delete_selected(
+        _ui: &mut Ui,
+        store: &Store,
+        local_state: &LocalState,
+        parent_index: Option<usize>,
+    ) {
         // Notes must be deleted in reverse order so that indices for the rest of the selected
         // notes do not change mid-process. E.g., if deleting `3` and `4`, if `3` is deleted first
         // the note that was at `4` will now be at `3` and the algorithm will either delete the wrong note or raise
         // and error.
         // BTreeSet provides an effecient way to keep and get from a sorted list.
-        for index in DataState::SelectedNoteIndexes
-            .get_value::<BTreeSet<usize>>(ui)
+        for index in local_state
+            .selected_notes
+            .get()
             .unwrap_or_default()
             .iter()
             .rev()

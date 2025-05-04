@@ -131,7 +131,7 @@ impl<'a, T: SequencerObject<T>> Sequencer<'a, T> {
             );
             if self.select {
                 if movable_resp.interact(Sense::click()).clicked() {
-                    T::set_selected(ui, Some(index));
+                    T::set_selected(ui, self.local_state, Some(index));
                 }
             } else if movable_resp.interact(Sense::click()).double_clicked() {
                 object.set_active(ui, self.local_state, index);
@@ -253,13 +253,13 @@ impl<T: SequencerObject<T>> Widget for Sequencer<'_, T> {
             // If user double clicks outside of an object remove all objects from selection.
             if select {
                 if response.interact(Sense::click()).double_clicked() {
-                    T::set_selected(ui, None)
+                    T::set_selected(ui, self.local_state, None)
                 }
                 if ui.input(|input| {
                     input.key_pressed(egui::Key::Delete) || input.key_pressed(egui::Key::Backspace)
                 }) {
-                    T::delete_selected(ui, store, self.parent_index);
-                    T::set_selected(ui, None);
+                    T::delete_selected(ui, store, self.local_state, self.parent_index);
+                    T::set_selected(ui, self.local_state, None);
                 }
             } else if response.interact(Sense::click()).clicked() {
                 let pos = response.interact_pointer_pos().unwrap();
@@ -316,7 +316,7 @@ pub trait SequencerObject<T> {
 
     fn set_active(&self, ui: &mut Ui, local_state: &LocalState, index: usize);
 
-    fn set_selected(ui: &mut Ui, index: Option<usize>);
+    fn set_selected(ui: &mut Ui, local_state: &LocalState, index: Option<usize>);
 
     fn add_new(&self, store: &Store, parent_index: Option<usize>);
 
@@ -324,5 +324,10 @@ pub trait SequencerObject<T> {
 
     fn delete(store: &Store, index: usize, parent_index: Option<usize>);
 
-    fn delete_selected(ui: &mut Ui, store: &Store, parent_index: Option<usize>);
+    fn delete_selected(
+        ui: &mut Ui,
+        store: &Store,
+        local_state: &LocalState,
+        parent_index: Option<usize>,
+    );
 }
