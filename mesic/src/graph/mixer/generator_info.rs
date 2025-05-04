@@ -1,7 +1,5 @@
 use super::make_node;
-use crate::graph::{
-    Graph, SimpleWaveGeneratorNode, SubSynthNode,
-};
+use crate::graph::{Graph, SimpleWaveGeneratorNode, SubSynthNode};
 use petgraph::stable_graph::NodeIndex;
 use shared::model::{Generator, GeneratorInstance, PlacementType, Project};
 

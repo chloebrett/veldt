@@ -1,7 +1,4 @@
-use crate::graph::{
-    AmpNode, BufferNode, Graph,
-    ProcessContext, Processor, make_graph,
-};
+use crate::graph::{AmpNode, BufferNode, Graph, ProcessContext, Processor, make_graph};
 use dasp_frame::Stereo;
 use dasp_graph::{BoxedNodeSend, Buffer, Node, NodeData, node::Sum};
 use petgraph::stable_graph::NodeIndex;
@@ -17,12 +14,15 @@ use effect_info::*;
 use generator_info::*;
 
 #[derive(Hash, Debug, Eq, PartialEq, Copy, Clone)]
-enum EdgeKey {
+pub enum EdgeKey {
     GenToMixIn,
     MixInToEff,
     MixInToEffMix,
     EffToEffMix,
+    EffMixToNextEff,
+    EffMixToNextEffMix,
     EffMixToMixOut,
+    MixInToMixOut,
     MixOutToMainSum,
     MainSumToMainAmp,
     MainBufToMainSum,
@@ -30,8 +30,9 @@ enum EdgeKey {
 
 // Counts edges in the graph by type.
 // Helpful for testing/debugging.
+// Note: consider extending this to also count nodes, if that would be helpful.
 #[derive(Debug, Default)]
-struct EdgeCounter {
+pub struct EdgeCounter {
     counts: HashMap<EdgeKey, usize>,
 }
 
@@ -79,7 +80,7 @@ impl EdgeCounter {
 pub struct Mixer {
     graph: Graph,
 
-    edge_counter: EdgeCounter,
+    pub edge_counter: EdgeCounter,
 
     channels: Vec<ChannelInfo>,
 
@@ -119,11 +120,18 @@ impl Mixer {
         // TODO: always have channel 0 as the "main" channel?
         // How would this change the graph?
         let channels: Vec<ChannelInfo> = (0..project.mixer.len())
-            .map(|channel_index| ChannelInfo::new(&mut graph, project, channel_index))
+            .map(|channel_index| {
+                ChannelInfo::new(&mut graph, &mut edge_counter, project, channel_index)
+            })
             .collect();
 
         for channel in &channels {
-            edge_counter.add_edge(&mut graph, channel.output_node, main_sum, EdgeKey::MixOutToMainSum);
+            edge_counter.add_edge(
+                &mut graph,
+                channel.output_node,
+                main_sum,
+                EdgeKey::MixOutToMainSum,
+            );
         }
 
         let main_amp = graph.add_node(make_node(AmpNode::default()));
@@ -197,8 +205,8 @@ mod tests {
     use super::*;
 
     use shared::model::{
-        AdsrEnvelope, AntiAliasingMode, DelayConfig, EffectMeta, GeneratorMeta, MixerChannel,
-        SimpleWaveConfig, WaveType, Generator, GeneratorInstance, Effect, EffectInstance,
+        AdsrEnvelope, AntiAliasingMode, DelayConfig, Effect, EffectInstance, EffectMeta, Generator,
+        GeneratorInstance, GeneratorMeta, MixerChannel, SimpleWaveConfig, WaveType,
     };
 
     #[test]
@@ -206,10 +214,13 @@ mod tests {
         let empty_project = Project::default();
         let mixer = Mixer::from_project(&empty_project);
 
+        let mut edge_counts = HashMap::new();
+        edge_counts.insert(EdgeKey::MainSumToMainAmp, 1);
+
         // Main sum and amp nodes (2)
         assert_eq!(mixer.graph.node_count(), 2);
         // Main sum -> main amp (1)
-        assert_eq!(mixer.graph.edge_count(), 1);
+        assert_eq!(mixer.edge_counter.counts, edge_counts);
         assert_eq!(mixer.channels().len(), 0);
     }
 
@@ -223,19 +234,21 @@ mod tests {
 
         let mixer = Mixer::from_project(&project);
 
+        let mut edge_counts = HashMap::new();
+        edge_counts.insert(EdgeKey::GenToMixIn, 1);
+        edge_counts.insert(EdgeKey::MixInToEff, 1);
+        edge_counts.insert(EdgeKey::MixInToEffMix, 1);
+        edge_counts.insert(EdgeKey::EffToEffMix, 1);
+        edge_counts.insert(EdgeKey::EffMixToMixOut, 1);
+        edge_counts.insert(EdgeKey::MixOutToMainSum, 1);
+        edge_counts.insert(EdgeKey::MainSumToMainAmp, 1);
+
         // Main sum and amp nodes (2) +
         // Effect and mixer nodes (2) +
         // Channel input and output nodes (2) +
         // Generator nodes (1)
         assert_eq!(mixer.graph.node_count(), 7);
-        // Generator -> mixer input (1)
-        // Mixer input -> effect (1)
-        // Mixer input -> wet/dry mixer (1)
-        // Effect -> wet/dry mixer (1)
-        // Wet/dry mixer -> mixer output (1)
-        // Mixer output -> main sum (1)
-        // Main sum -> main amp (1)
-        assert_eq!(mixer.graph.edge_count(), 7);
+        assert_eq!(mixer.edge_counter.counts, edge_counts);
         assert_eq!(mixer.channels().len(), 1);
     }
 
@@ -263,6 +276,17 @@ mod tests {
 
         let mixer = Mixer::from_project(&project);
 
+        let mut edge_counts = HashMap::new();
+        edge_counts.insert(EdgeKey::GenToMixIn, 3);
+        edge_counts.insert(EdgeKey::MixInToEff, 2);
+        edge_counts.insert(EdgeKey::MixInToEffMix, 2);
+        edge_counts.insert(EdgeKey::EffToEffMix, 3);
+        edge_counts.insert(EdgeKey::EffMixToNextEff, 1);
+        edge_counts.insert(EdgeKey::EffMixToNextEffMix, 1);
+        edge_counts.insert(EdgeKey::EffMixToMixOut, 2);
+        edge_counts.insert(EdgeKey::MixOutToMainSum, 2);
+        edge_counts.insert(EdgeKey::MainSumToMainAmp, 1);
+
         // Main sum and amp nodes (2) +
         // Effect and mixer nodes (2 * 3 effects) +
         // Channel input and output nodes (2 * 2 channels) +
@@ -275,7 +299,7 @@ mod tests {
         // Wet/dry mixer -> mixer output (2)
         // Mixer output -> main sum (2)
         // Main sum -> main amp (1)
-        assert_eq!(mixer.graph.edge_count(), 15);
+        assert_eq!(mixer.edge_counter.counts, edge_counts);
         assert_eq!(mixer.channels().len(), 2);
     }
 

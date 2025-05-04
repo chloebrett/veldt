@@ -1,7 +1,5 @@
-use super::{EffectInfo, GeneratorInfo, make_node};
-use crate::graph::{
-    AmpNode, Graph,
-};
+use super::{EdgeCounter, EdgeKey, EffectInfo, GeneratorInfo, make_node};
+use crate::graph::{AmpNode, Graph};
 use dasp_graph::node::Sum;
 use petgraph::stable_graph::NodeIndex;
 use shared::model::Project;
@@ -25,7 +23,12 @@ pub struct ChannelInfo {
 }
 
 impl ChannelInfo {
-    pub fn new(graph: &mut Graph, project: &Project, channel_index: usize) -> Self {
+    pub fn new(
+        graph: &mut Graph,
+        edge_counter: &mut EdgeCounter,
+        project: &Project,
+        channel_index: usize,
+    ) -> Self {
         let generators: Vec<GeneratorInfo> = project
             .generators
             .iter()
@@ -39,8 +42,7 @@ impl ChannelInfo {
         let input_node = graph.add_node(make_node(Sum));
 
         for generator in &generators {
-            graph.add_edge(generator.node(), input_node, ());
-            log::info!("Added edge: generator -> mixer channel input");
+            edge_counter.add_edge(graph, generator.node(), input_node, EdgeKey::GenToMixIn);
         }
 
         let effects: Vec<EffectInfo> = project.mixer[channel_index]
@@ -48,7 +50,12 @@ impl ChannelInfo {
             .iter()
             .enumerate()
             .map(|(effect_index, effect)| {
-                EffectInfo::new(graph, effect, &EffectSelector(channel_index, effect_index))
+                EffectInfo::new(
+                    graph,
+                    edge_counter,
+                    effect,
+                    &EffectSelector(channel_index, effect_index),
+                )
             })
             .collect();
 
@@ -57,7 +64,7 @@ impl ChannelInfo {
             for i in 0..effects.len() - 1 {
                 let effect = &effects[i];
                 let next_effect = &effects[i + 1];
-                effect.link_to(next_effect, graph);
+                effect.link_to(next_effect, graph, edge_counter);
             }
         }
 
@@ -67,20 +74,16 @@ impl ChannelInfo {
         // Link up the input -> effects -> output.
         // If there are no effects, link directly from input -> output.
         if effects.is_empty() {
-            graph.add_edge(input_node, output_node, ());
-            log::info!("Added edge: mixer channel input -> mixer channel output");
+            edge_counter.add_edge(graph, input_node, output_node, EdgeKey::MixInToMixOut);
         } else {
             let first = effects.first().unwrap();
             let last = effects.last().unwrap();
 
             // TODO: check the wet/dry direction here.
-            graph.add_edge(input_node, first.effect_node, ());
-            log::info!("Added edge: mixer channel input -> first effect");
-            graph.add_edge(input_node, first.mixer_node, ());
-            log::info!("Added edge: mixer channel input -> first effect mixer");
+            edge_counter.add_edge(graph, input_node, first.effect_node, EdgeKey::MixInToEff);
+            edge_counter.add_edge(graph, input_node, first.mixer_node, EdgeKey::MixInToEffMix);
 
-            graph.add_edge(last.mixer_node, output_node, ());
-            log::info!("Added edge: last effect mixer -> mixer channel output");
+            edge_counter.add_edge(graph, last.mixer_node, output_node, EdgeKey::EffMixToMixOut);
         }
 
         Self {

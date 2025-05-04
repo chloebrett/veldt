@@ -1,7 +1,5 @@
-use super::make_node;
-use crate::graph::{
-    CompressorNode, DelayNode, EqNode, Graph, MixerNode, ModDelayNode,
-};
+use super::{EdgeCounter, EdgeKey, make_node};
+use crate::graph::{CompressorNode, DelayNode, EqNode, Graph, MixerNode, ModDelayNode};
 use petgraph::stable_graph::NodeIndex;
 use shared::model::{Effect, EffectInstance};
 use state::EffectSelector;
@@ -17,7 +15,12 @@ pub struct EffectInfo {
 }
 
 impl EffectInfo {
-    pub fn new(graph: &mut Graph, effect: &EffectInstance, effect_sel: &EffectSelector) -> Self {
+    pub fn new(
+        graph: &mut Graph,
+        edge_counter: &mut EdgeCounter,
+        effect: &EffectInstance,
+        effect_sel: &EffectSelector,
+    ) -> Self {
         // TODO: just pass the selector down directly to the effect and mixer nodes.
         let EffectSelector(mixer_index, effect_index) = *effect_sel;
 
@@ -39,8 +42,7 @@ impl EffectInfo {
 
         let effect_node = graph.add_node(effect_node);
         let mixer_node = graph.add_node(mixer_node);
-        log::info!("Added edge: effect -> effect mixer");
-        graph.add_edge(effect_node, mixer_node, ());
+        edge_counter.add_edge(graph, effect_node, mixer_node, EdgeKey::EffToEffMix);
 
         Self {
             effect_index,
@@ -57,11 +59,24 @@ impl EffectInfo {
         self.mixer_node
     }
 
-    pub fn link_to(&self, next_effect: &EffectInfo, graph: &mut Graph) {
+    pub fn link_to(
+        &self,
+        next_effect: &EffectInfo,
+        graph: &mut Graph,
+        edge_counter: &mut EdgeCounter,
+    ) {
         // TODO: confirm this results in the correct direction for wet/dry.
-        graph.add_edge(self.mixer_node, next_effect.effect_node(), ());
-        log::info!("Added edge: effect mixer -> next effect");
-        graph.add_edge(self.mixer_node, next_effect.mixer_node(), ());
-        log::info!("Added edge: effect mixer -> next effect mixer");
+        edge_counter.add_edge(
+            graph,
+            self.mixer_node,
+            next_effect.effect_node(),
+            EdgeKey::EffMixToNextEff,
+        );
+        edge_counter.add_edge(
+            graph,
+            self.mixer_node,
+            next_effect.mixer_node(),
+            EdgeKey::EffMixToNextEffMix,
+        );
     }
 }
