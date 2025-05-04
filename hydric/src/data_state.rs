@@ -1,4 +1,4 @@
-use egui::{Id, Pos2, Ui};
+use egui::{Id, Ui};
 use std::collections::BTreeSet;
 
 // Interact with UI level state.
@@ -9,17 +9,13 @@ use std::collections::BTreeSet;
 //   - Current selected track
 //   - If an editor window is open.
 // TODO: rename TrackPlacement... to Placement here where appropriate.
+// IMPORTANT: use LocalState instead for anything new.
 pub enum DataState {
     ActiveTrackPlacementIndex,
     TrackPlacementViewWindow,
-    NoteRollWindow,
-    NoteWindow,
     SelectedTrackPlacementIndexes,
-    DragCursorDelta,
     TrackRollSelectMode,
     NoteRollSelectMode,
-    SubSynthLfoTab,
-    _SubSynthEnvTab,
 }
 
 impl DataState {
@@ -27,14 +23,9 @@ impl DataState {
         Id::new(match self {
             Self::ActiveTrackPlacementIndex => "active_track_placement_index",
             Self::TrackPlacementViewWindow => "track_placement_window",
-            Self::NoteRollWindow => "note_roll_window",
-            Self::NoteWindow => "note_window",
             Self::SelectedTrackPlacementIndexes => "selected_track_placement_indexes",
-            Self::DragCursorDelta => "drag_start_from",
             Self::TrackRollSelectMode => "track_roll_select_mode",
             Self::NoteRollSelectMode => "note_roll_select_mode",
-            Self::SubSynthLfoTab => "subsynth_lfo_tab_index",
-            Self::_SubSynthEnvTab => "subsynth_env_tab_index",
         })
     }
 
@@ -57,38 +48,15 @@ impl DataState {
             // known.
             match self {
                 Self::TrackPlacementViewWindow
-                | Self::NoteWindow
-                | Self::NoteRollWindow
                 | Self::TrackRollSelectMode
                 | Self::NoteRollSelectMode => data.insert_temp::<Option<bool>>(self.get_id(), None),
-                Self::ActiveTrackPlacementIndex | Self::SubSynthLfoTab | Self::_SubSynthEnvTab => {
+                Self::ActiveTrackPlacementIndex => {
                     data.insert_temp::<Option<usize>>(self.get_id(), None)
                 }
                 Self::SelectedTrackPlacementIndexes => {
                     data.insert_temp::<Option<BTreeSet<usize>>>(self.get_id(), None);
                 }
-                Self::DragCursorDelta => data.insert_temp::<Option<Pos2>>(self.get_id(), None),
             };
         })
-    }
-}
-
-/// Update the state of selected Sequencer Objects based on Ui interaction.
-pub fn update_select_data_state(ui: &mut Ui, data_state: DataState, index: Option<usize>) {
-    if let Some(it) = index {
-        if let Some(mut selected) = data_state.get_value::<BTreeSet<usize>>(ui) {
-            // If index is already in the set remove it.
-            if selected.contains(&it) {
-                selected.remove(&it);
-            } else {
-                selected.insert(it);
-            }
-            data_state.set_value(ui, selected)
-        } else {
-            data_state.set_value::<BTreeSet<usize>>(ui, BTreeSet::from_iter(vec![it]))
-        }
-    } else {
-        // If there was no index supplied, remove value.
-        data_state.remove_value(ui);
     }
 }

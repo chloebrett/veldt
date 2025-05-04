@@ -10,8 +10,6 @@ pub enum TabOrientation {
     _Top,
 }
 
-type OnTabClick = Box<dyn Fn(&mut Ui, usize) + Send + Sync + 'static>;
-
 impl From<TabOrientation> for TextRotation {
     fn from(orientation: TabOrientation) -> Self {
         match orientation {
@@ -22,19 +20,19 @@ impl From<TabOrientation> for TextRotation {
     }
 }
 
-pub struct TabDisplay<'a> {
+pub struct TabDisplay<'a, F: Fn(usize)> {
     active_tab: usize,
     tab_headings: Vec<&'a str>,
     orientation: TabOrientation,
-    handle_click: OnTabClick,
+    handle_click: F,
 }
 
-impl<'a> TabDisplay<'a> {
+impl<'a, F: Fn(usize)> TabDisplay<'a, F> {
     pub fn new(
         active_tab: usize,
         tab_headings: Vec<&'a str>,
         orientation: TabOrientation,
-        handle_click: OnTabClick,
+        handle_click: F,
     ) -> Self {
         Self {
             active_tab,
@@ -45,7 +43,7 @@ impl<'a> TabDisplay<'a> {
     }
 }
 
-impl View for TabDisplay<'_> {
+impl<F: Fn(usize)> View for TabDisplay<'_, F> {
     fn ui(&mut self, ui: &mut Ui) {
         let Self {
             ref tab_headings,
@@ -100,7 +98,7 @@ impl View for TabDisplay<'_> {
                     .inner;
                 ui.add_space(8.0);
                 if response.clicked() {
-                    handle_click(ui, i)
+                    handle_click(i)
                 }
             }
         });

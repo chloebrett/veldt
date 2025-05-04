@@ -1,5 +1,5 @@
 use crate::{
-    DataState, GetSetOption, LocalState, WindowState, update_select_data_state,
+    DataState, GetSet, LocalState, WindowState,
     view::View,
     widget::{Sequencer, SequencerObject, default_window},
 };
@@ -240,16 +240,32 @@ impl SequencerObject<PlacedTrack> for PlacedTrack {
     fn set_active(&self, ui: &mut Ui, local_state: &LocalState, index: usize) {
         let track_placement: &TrackPlacement = (&self.placement).try_into().unwrap();
 
-        DataState::NoteRollWindow.set_value(ui, true);
+        local_state.note_roll_window.set(true);
         DataState::TrackPlacementViewWindow.set_value(ui, true);
         local_state
             .active_track
-            .set(TrackSelector(track_placement.track_index));
+            .set(Some(TrackSelector(track_placement.track_index)));
         DataState::ActiveTrackPlacementIndex.set_value(ui, index);
     }
 
     fn set_selected(ui: &mut Ui, _local_state: &LocalState, index: Option<usize>) {
-        update_select_data_state(ui, DataState::SelectedTrackPlacementIndexes, index);
+        let data_state = DataState::SelectedTrackPlacementIndexes;
+        if let Some(it) = index {
+            if let Some(mut selected) = data_state.get_value::<BTreeSet<usize>>(ui) {
+                // If index is already in the set remove it.
+                if selected.contains(&it) {
+                    selected.remove(&it);
+                } else {
+                    selected.insert(it);
+                }
+                data_state.set_value(ui, selected)
+            } else {
+                data_state.set_value::<BTreeSet<usize>>(ui, BTreeSet::from_iter(vec![it]))
+            }
+        } else {
+            // If there was no index supplied, remove value.
+            data_state.remove_value(ui);
+        }
     }
 
     fn add_new(&self, store: &Store, _parent_index: Option<usize>) {
