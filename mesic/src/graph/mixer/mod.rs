@@ -218,7 +218,6 @@ mod tests {
 
         // Main sum and amp nodes (2)
         assert_eq!(mixer.graph.node_count(), 2);
-        // Main sum -> main amp (1)
         assert_eq!(mixer.edge_counter.counts, edge_counts);
         assert_eq!(mixer.channels.len(), 0);
     }
@@ -291,13 +290,6 @@ mod tests {
         // Channel input and output nodes (2 * 2 channels) +
         // Generator nodes (3).
         assert_eq!(mixer.graph.node_count(), 15);
-        // Generator -> mixer input (3)
-        // Mixer input -> effect (2)
-        // Mixer input -> wet/dry mixer (2)
-        // Effect -> wet/dry mixer (3)
-        // Wet/dry mixer -> mixer output (2)
-        // Mixer output -> main sum (2)
-        // Main sum -> main amp (1)
         assert_eq!(mixer.edge_counter.counts, edge_counts);
         assert_eq!(mixer.channels.len(), 2);
     }
