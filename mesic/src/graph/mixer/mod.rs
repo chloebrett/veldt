@@ -13,6 +13,8 @@ use channel_info::*;
 use effect_info::*;
 use generator_info::*;
 
+/// The types of edges that can be added to the mixer graph.
+/// Used for counting and debugging.
 #[derive(Hash, Debug, Eq, PartialEq, Copy, Clone)]
 pub enum EdgeKey {
     GenToMixIn,
