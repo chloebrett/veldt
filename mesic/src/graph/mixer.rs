@@ -1,8 +1,9 @@
 use super::{
-    AmpNode, CompressorNode, DelayNode, EqNode, Graph, MixerNode, ModDelayNode, ProcessContext,
-    SimpleWaveGeneratorNode, SubSynthNode, make_graph,
+    AmpNode, BufferNode, CompressorNode, DelayNode, EqNode, Graph, MixerNode, ModDelayNode,
+    ProcessContext, Processor, SimpleWaveGeneratorNode, SubSynthNode, make_graph,
 };
-use dasp_graph::{BoxedNodeSend, Node, NodeData, node::Sum};
+use dasp_frame::Stereo;
+use dasp_graph::{BoxedNodeSend, Buffer, Node, NodeData, node::Sum};
 use petgraph::stable_graph::NodeIndex;
 use shared::model::{Effect, EffectInstance, Generator, GeneratorInstance, PlacementType, Project};
 use state::EffectSelector;
@@ -244,6 +245,22 @@ pub struct Mixer {
 }
 
 impl Mixer {
+    pub fn empty() -> Self {
+        let mut graph = make_graph();
+
+        let main_sum = graph.add_node(make_node(Sum));
+        let main_amp = graph.add_node(make_node(AmpNode::default()));
+
+        graph.add_edge(main_sum, main_amp, ());
+
+        Self {
+            graph,
+            channels: vec![],
+            main_sum,
+            main_amp,
+        }
+    }
+
     pub fn from_project(project: &Project) -> Self {
         let mut graph = make_graph();
 
@@ -270,8 +287,45 @@ impl Mixer {
         }
     }
 
-    pub fn graph(&self) -> &Graph {
+    pub fn from_audio(audio: &Vec<Stereo<f32>>) -> Self {
+        let mut graph = make_graph();
+
+        // TODO: simply give buffers their own dedicated mixer channel,
+        // and then otherwise don't treat them differently to other generators.
+        // This way, the user can run effects on samples, etc.
+        // There is a bit more thinking to be done about how the "playing audio as a preview" idea
+        // should work anyway.
+        let buffer_node: BufferNode = audio.clone().into();
+        let main_buffer = graph.add_node(make_node(buffer_node));
+
+        let main_sum = graph.add_node(make_node(Sum));
+        let main_amp = graph.add_node(make_node(AmpNode::default()));
+
+        graph.add_edge(main_buffer, main_sum, ());
+        graph.add_edge(main_sum, main_amp, ());
+
+        Self {
+            graph,
+            channels: vec![],
+            main_sum,
+            main_amp,
+        }
+    }
+
+    // TODO: consider if this can be removed.
+    fn graph(&self) -> &Graph {
         &self.graph
+    }
+
+    pub fn output_buffers(&self) -> &[Buffer] {
+        &self.graph.node_weight(self.main_amp).unwrap().buffers
+    }
+
+    /// Processes the graph.
+    /// Exposed as a method so that we don't ever have to expose a mutable version of Graph.
+    /// Therefore, the mixer is the only object allowed to mutate the Graph.
+    pub fn process(&mut self, processor: &mut Processor, payload: &ProcessContext) {
+        processor.process(&mut self.graph, payload, self.main_amp);
     }
 
     pub fn channels(&self) -> &Vec<ChannelInfo> {
