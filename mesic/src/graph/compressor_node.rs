@@ -91,7 +91,7 @@ mod tests {
     use crate::graph::RenderGraph;
     use assert_float_eq::assert_float_absolute_eq;
     use dasp_frame::Stereo;
-    use shared::model::{Effect, EffectInstance, EffectMeta, PitchName, ScaleValue};
+    use shared::model::{PitchName, ScaleValue};
     use shared::types::Freq;
 
     const FLOAT_THRES: f32 = 1e-5;
@@ -279,9 +279,11 @@ mod tests {
     // * Test release.
     // * Test more complex input signals.
 
-    fn make_graph(input: Vec<Stereo<f32>>, config: CompressorConfig) -> RenderGraph {
-        let mut graph = RenderGraph::from_vec(input.clone());
-        graph.add_main_effect_with_mixer(
+    fn make_graph(input: Vec<Stereo<f32>>, _config: CompressorConfig) -> RenderGraph {
+        let graph = RenderGraph::from_vec(input.clone());
+        // TODO: we can't re-enable these tests until the mixer supports effect channels for
+        // arbitrary audio.
+        /*graph.add_main_effect_with_mixer(
             0,
             0,
             EffectInstance {
@@ -291,7 +293,7 @@ mod tests {
                     mute: false,
                 },
             },
-        );
+        );*/
         graph
     }
 

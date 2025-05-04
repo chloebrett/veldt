@@ -183,4 +183,7 @@ pub struct GeneratorMeta {
     pub mute: bool,
 
     pub pan: KnobPosition,
+
+    #[proto_type_u32]
+    pub mixer_channel: usize,
 }

@@ -8,6 +8,7 @@ mod buffer_node;
 mod compressor_node;
 mod delay_node;
 mod eq_node;
+mod mixer;
 mod mixer_node;
 mod mod_delay_node;
 mod render_graph;
@@ -19,10 +20,12 @@ pub use buffer_node::*;
 use compressor_node::*;
 use delay_node::*;
 use eq_node::*;
+pub use mixer::*;
 pub use mixer_node::*;
 use mod_delay_node::*;
 pub use render_graph::*;
 pub use simple_wave_generator_node::*;
+pub use subsynth_node::*;
 
 #[derive(Default)]
 pub struct ProcessContext {
