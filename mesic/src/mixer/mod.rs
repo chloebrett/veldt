@@ -41,10 +41,12 @@ use generator_info::*;
 /// |
 /// | // note: more nodes will be added here in future for channel routing
 /// v
-/// s // main sum (joins together all channels)
+/// s // main sum (TODO: remove this as it's redundant now that only the main channel uses it).
 /// |
 /// v
 /// a // main out
+///
+/// Note: the diagram above does not account for mixers routing to each other!
 ///
 /// ------------
 /// a = amp node
@@ -93,8 +95,6 @@ impl Mixer {
         let mut graph = make_graph();
         let main_sum = graph.add_node(make_node(Sum));
 
-        // TODO: always have channel 0 as the "main" channel?
-        // How would this change the graph?
         let channels: Vec<ChannelInfo> = (0..project.mixer.channels.len())
             .map(|channel_index| ChannelInfo::new(&mut graph, project, channel_index))
             .collect();
