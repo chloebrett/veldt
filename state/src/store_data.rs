@@ -1,5 +1,5 @@
-use crate::reducer;
-use crate::{Action, Selector};
+use crate::receiver::ActionReceiver;
+use crate::{Action, Selector, SelectorTrait, reducer};
 use ordered_float::OrderedFloat;
 use shared::model::{
     AdsrEnvelope, AntiAliasingMode, FileTreeConfig, FilenameTree, Generator, GeneratorInstance,
@@ -24,6 +24,13 @@ pub struct StoreData {
 impl StoreData {
     pub fn update(&mut self, selector: &Selector, action: &Action) -> Option<Action> {
         reducer(self, selector, action)
+    }
+
+    pub fn select<'a, T: ActionReceiver + 'a, S: SelectorTrait<Item = T> + 'a>(
+        &'a self,
+        selector: &'a S,
+    ) -> &'a T {
+        selector.select(self)
     }
 }
 

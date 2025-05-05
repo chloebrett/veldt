@@ -4,12 +4,12 @@ use crate::graph::ProcessContext;
 use dasp_graph::{Buffer, Input, Node};
 use ringbuffer::{GrowableAllocRingBuffer, RingBuffer};
 use shared::model::{DelayConfig, Effect, EffectInstance};
+use state::EffectSelector;
 
 /// Similar to dasp_graph::node::Delay, except delays per-channel.
 #[derive(Clone, Debug, PartialEq)]
 pub struct DelayNode {
-    mixer_index: usize,
-    effect_index: usize,
+    selector: EffectSelector,
     buffers: [GrowableAllocRingBuffer<f32>; 2],
     config: DelayConfig,
     delay_samples: usize,
@@ -20,12 +20,11 @@ fn ms_to_samples(ms: f32) -> usize {
 }
 
 impl DelayNode {
-    pub fn new(mixer_index: usize, effect_index: usize, config: DelayConfig) -> Self {
+    pub fn new(selector: EffectSelector, config: DelayConfig) -> Self {
         let delay_samples = ms_to_samples(config.delay_ms);
         let buffer = GrowableAllocRingBuffer::with_capacity(delay_samples);
         Self {
-            mixer_index,
-            effect_index,
+            selector,
             buffers: [buffer.clone(), buffer.clone()],
             delay_samples,
             config,
@@ -47,17 +46,15 @@ impl DelayNode {
 
 impl Node<ProcessContext> for DelayNode {
     fn process(&mut self, inputs: &[Input], output: &mut [Buffer], payload: &ProcessContext) {
-        // Apply any changes from the store if applicable.
-        if let Some(mixer) = &payload.store.project.mixer.get(self.mixer_index) {
-            if let Some(EffectInstance {
-                it: Effect::Delay(config),
-                ..
-            }) = &mixer.effects.get(self.effect_index)
-            {
-                if *config != self.config {
-                    self.config = config.clone();
-                    self.delay_samples = ms_to_samples(self.config.delay_ms);
-                }
+        // Apply changes from the store.
+        if let EffectInstance {
+            it: Effect::Delay(config),
+            ..
+        } = &payload.store.select(&self.selector)
+        {
+            if *config != self.config {
+                self.config = config.clone();
+                self.delay_samples = ms_to_samples(self.config.delay_ms);
             }
         }
 

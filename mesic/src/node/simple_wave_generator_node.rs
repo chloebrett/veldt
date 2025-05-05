@@ -6,13 +6,14 @@ use shared::model::{
     Generator, GeneratorInstance, GeneratorMeta, Placement, SimpleWaveConfig, Track, TrackPlacement,
 };
 use shared::types::Beats;
+use state::GeneratorSelector;
 use std::cmp::min;
 
 pub struct SimpleWaveGeneratorNode {
     wave_source: WaveSource,
     config: SimpleWaveConfig,
     meta: GeneratorMeta,
-    generator_index: usize,
+    selector: GeneratorSelector,
     sample_index: u32, // the sample that playback is currently up to.
     placements: Vec<Placement>,
     tracks: Vec<Track>,
@@ -23,7 +24,7 @@ impl SimpleWaveGeneratorNode {
     pub fn new(
         config: SimpleWaveConfig,
         meta: GeneratorMeta,
-        generator_index: usize,
+        selector: GeneratorSelector,
         placements: Vec<Placement>,
         tracks: Vec<Track>,
         bpm: Beats,
@@ -32,7 +33,7 @@ impl SimpleWaveGeneratorNode {
             config,
             wave_source: WaveSource::new(bpm),
             meta,
-            generator_index,
+            selector,
             placements,
             tracks,
             bpm,
@@ -57,11 +58,11 @@ impl Node<ProcessContext> for SimpleWaveGeneratorNode {
         }
 
         // Apply any applicable changes from the store.
-        if let Some(GeneratorInstance {
+        if let GeneratorInstance {
             it: Generator::SimpleWave(config),
             meta,
             ..
-        }) = &payload.store.project.generators.get(self.generator_index)
+        } = &payload.store.select(&self.selector)
         {
             if *config != self.config {
                 self.config = config.clone();
@@ -73,7 +74,7 @@ impl Node<ProcessContext> for SimpleWaveGeneratorNode {
 
         // Skip generating if muted!
         // TODO: disconnect muted generators from the graph.
-        if self.meta.mute {
+        if self.meta.mute || self.meta.volume == 0.0 {
             return;
         }
 

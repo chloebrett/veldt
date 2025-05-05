@@ -4,7 +4,7 @@ use crate::node::AmpNode;
 use dasp_graph::node::Sum;
 use petgraph::stable_graph::NodeIndex;
 use shared::model::{EffectInstance, Project};
-use state::{EffectSelector, move_elem};
+use state::{EffectSelector, GeneratorSelector, move_elem};
 
 /// Describes a mixer channel from the viewpoint of the graph.
 /// Contains references to the generator and effect nodes linked to this channel.
@@ -32,7 +32,12 @@ impl ChannelInfo {
             .filter(|generator| generator.meta.mixer_channel == channel_index)
             .enumerate()
             .map(|(generator_index, generator)| {
-                GeneratorInfo::new(graph, project, generator, generator_index)
+                GeneratorInfo::new(
+                    graph,
+                    project,
+                    generator,
+                    &GeneratorSelector(generator_index),
+                )
             })
             .collect();
 
@@ -106,13 +111,13 @@ impl ChannelInfo {
             edge_counter.add_edge(
                 graph,
                 self.input_node,
-                first.mixer_node,
+                first.wet_dry_node,
                 EdgeKey::MixInToEffMix,
             );
 
             edge_counter.add_edge(
                 graph,
-                last.mixer_node,
+                last.wet_dry_node,
                 self.output_node,
                 EdgeKey::EffMixToMixOut,
             );

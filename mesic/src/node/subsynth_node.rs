@@ -81,7 +81,7 @@ impl Node<ProcessContext> for SubSynthNode {
 
         // Skip generating if muted!
         // TODO: disconnect muted generators from the graph.
-        if self.meta.mute {
+        if self.meta.mute || self.meta.volume == 0.0 {
             return;
         }
 
