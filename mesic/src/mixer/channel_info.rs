@@ -47,8 +47,9 @@ impl ChannelInfo {
             })
             .collect();
 
-        // TODO: wire up the amp node to read the correct volume.
-        let output_node = graph.add_node(make_node(AmpNode::default()));
+        let output_node = graph.add_node(make_node(AmpNode {
+            channel_index: Some(channel_index),
+        }));
 
         Self {
             generators,
