@@ -132,9 +132,9 @@ mod tests {
     use crate::SAMPLE_RATE;
     use shared::model::{
         self, AdsrEnvelope, AntiAliasingMode, DelayConfig, Effect, EffectInstance, EffectMeta,
-        EqConfig, EqType, Generator, GeneratorInstance, GeneratorMeta, MixerChannel,
+        EqConfig, EqType, Generator, GeneratorInstance, GeneratorMeta, MixerChannel, MixerMatrix,
         ModDelayConfig, ModMatrix, Note, PitchName, PlacedNote, Placement, PlacementType,
-        ScaleValue, SimpleWaveConfig, Track, TrackPlacement, WaveType, MixerMatrix,
+        ScaleValue, SimpleWaveConfig, Track, TrackPlacement, WaveType,
     };
 
     use shared::types::Freq;

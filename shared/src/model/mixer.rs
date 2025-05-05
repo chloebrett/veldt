@@ -25,22 +25,20 @@ pub struct MixerChannel {
 /// need special logic to avoid graph cycles.
 #[derive(Clone, Default, Debug, PartialEq, FromProto, IntoProto)]
 pub struct MixerMatrix {
+    // TODO: this is technically repeated data, since the mixer channels list is the same length.
+    // Can we deduplicate/normalise?
     #[proto_type_u8]
-    pub rows: u8,
-
-    #[proto_type_u8]
-    pub cols: u8,
+    pub channels: u8,
 
     #[proto_repeated]
     pub matrix: Vec<f32>,
 }
 
 impl MixerMatrix {
-    pub fn with_channels(count: u8) -> Self {
+    pub fn with_channels(channels: u8) -> Self {
         MixerMatrix {
-            rows: count,
-            cols: count,
-            matrix: vec![0.0; count as usize * count as usize],
+            channels,
+            matrix: vec![0.0; channels as usize * channels as usize],
         }
     }
 }

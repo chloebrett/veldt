@@ -1,27 +1,27 @@
 use crate::view::View;
-use crate::widget::{TextRotation, for_each_with_separator, knob, text_rotator};
+use crate::widget::{TextRotation, for_each_with_separator, knob, knob_disabled, text_rotator};
 use eframe::egui;
 use egui::{Color32, Ui};
-use shared::model::ModMatrix;
+use shared::model::MixerMatrix;
 use state::{Action, FloatField};
 
-pub struct ModMatrixView<'a, F: Fn(Action), G: Fn()> {
-    matrix: &'a ModMatrix,
-    row_titles: Vec<&'a str>,
-    col_titles: Vec<&'a str>,
+pub struct MixerMatrixView<'a, F: Fn(Action), G: Fn()> {
+    matrix: &'a MixerMatrix,
+    row_titles: Vec<String>,
+    col_titles: Vec<String>,
     dispatch: F,
     on_release: G,
 }
 
-impl<'a, F: Fn(Action), G: Fn()> ModMatrixView<'a, F, G> {
+impl<'a, F: Fn(Action), G: Fn()> MixerMatrixView<'a, F, G> {
     pub fn new(
-        matrix: &'a ModMatrix,
-        row_titles: Vec<&'a str>,
-        col_titles: Vec<&'a str>,
+        matrix: &'a MixerMatrix,
+        row_titles: Vec<String>,
+        col_titles: Vec<String>,
         dispatch: F,
         on_release: G,
     ) -> Self {
-        ModMatrixView {
+        MixerMatrixView {
             matrix,
             row_titles,
             col_titles,
@@ -31,7 +31,7 @@ impl<'a, F: Fn(Action), G: Fn()> ModMatrixView<'a, F, G> {
     }
 }
 
-impl<F: Fn(Action), G: Fn()> View for ModMatrixView<'_, F, G> {
+impl<F: Fn(Action), G: Fn()> View for MixerMatrixView<'_, F, G> {
     fn ui(&mut self, ui: &mut Ui) {
         let Self {
             matrix,
@@ -76,18 +76,27 @@ impl<F: Fn(Action), G: Fn()> View for ModMatrixView<'_, F, G> {
                                 TextRotation::Anticlockwise90,
                                 TEXT_COLOUR,
                             );
-                            for col in 0..matrix.cols {
-                                let id = format!("{:?}", (row, col));
+                            for col in 0..matrix.channels {
+                                let id = format!("mixer_matrix_{}_{}", row, col);
                                 ui.push_id(id, |ui| {
-                                    knob(
-                                        ui,
-                                        "",
-                                        0.0,
-                                        |it| dispatch(Action::SetFloat(FloatField::ModFactor, it)), // TODO need a selector for each knob
-                                        -1.0..=1.0,
-                                        0.0,
-                                        on_release,
-                                    );
+                                    if row == col as usize {
+                                        knob_disabled(ui, "", 0.0, -1.0..=1.0);
+                                    } else {
+                                        knob(
+                                            ui,
+                                            "",
+                                            0.0,
+                                            |it| {
+                                                dispatch(Action::SetFloat(
+                                                    FloatField::ModFactor,
+                                                    it,
+                                                ))
+                                            }, // TODO need a selector for each knob
+                                            0.0..=1.0,
+                                            0.0,
+                                            on_release,
+                                        );
+                                    }
                                 });
                             }
                         });

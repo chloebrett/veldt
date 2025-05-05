@@ -28,9 +28,7 @@ message MixerProto {
 }
 
 message MixerMatrixProto {
-  uint32 rows = 1;
-
-  uint32 cols = 2;
+  uint32 channels = 1;
 
   repeated float matrix = 3;
 }
