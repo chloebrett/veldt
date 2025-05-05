@@ -68,8 +68,15 @@ impl View for MixerView<'_> {
                 let matrix = &store.get().project.mixer.matrix;
                 let row_titles: Vec<String> =
                     (0..matrix.channels).map(|i| format!("Ch{i} in")).collect();
-                let col_titles: Vec<String> =
-                    (0..matrix.channels).map(|i| format!("Ch{i} out")).collect();
+                let col_titles: Vec<String> = (0..matrix.channels)
+                    .map(|i| {
+                        if i == 0 {
+                            "Main out".to_string()
+                        } else {
+                            format!("Ch{i} out")
+                        }
+                    })
+                    .collect();
                 MixerMatrixView::new(matrix, row_titles, col_titles, store, on_release).ui(ui);
 
                 // TODO: better UI than a slider for this!
