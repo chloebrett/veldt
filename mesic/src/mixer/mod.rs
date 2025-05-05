@@ -153,15 +153,30 @@ impl Mixer {
             );
         }
 
-        for channel in &self.channels {
+        let inputs: Vec<_> = self
+            .channels
+            .iter()
+            .map(|channel| channel.input_node)
+            .collect();
+
+        for (channel_index, channel) in self.channels.iter().enumerate() {
             channel.add_edges(&mut self.graph, &mut self.edge_counter);
 
-            self.edge_counter.add_edge(
-                &mut self.graph,
-                channel.output_node,
-                self.main_sum,
-                EdgeKey::MixOutToMainSum,
-            );
+            // Only add the main channel to the main output.
+            // Other channels need to be routed via main.
+            // TODO: we don't actually need the main sum node anymore,
+            // considering that only the main channel routes to it.
+            // We can just route directly to the main amp.
+            if channel_index == 0 {
+                self.edge_counter.add_edge(
+                    &mut self.graph,
+                    channel.output_node,
+                    self.main_sum,
+                    EdgeKey::MixOutToMainSum,
+                );
+            } else {
+                channel.route_to_inputs(&mut self.graph, &mut self.edge_counter, &inputs);
+            }
         }
 
         self.edge_counter.add_edge(

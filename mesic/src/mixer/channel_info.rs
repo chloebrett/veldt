@@ -14,7 +14,7 @@ pub struct ChannelInfo {
 
     // Input sum node for this mixer channel.
     // Sums together the generators.
-    input_node: NodeIndex,
+    pub input_node: NodeIndex,
 
     // Effect/mixer pairs for this channel.
     // Index = ordering within the channel.
@@ -214,5 +214,19 @@ impl ChannelInfo {
     /// between mixer channels.
     pub fn soft_add_generator(&mut self, generator: &GeneratorInfo) {
         self.generators.push(generator.clone());
+    }
+
+    pub fn route_to_inputs(
+        &self,
+        graph: &mut Graph,
+        edge_counter: &mut EdgeCounter,
+        inputs: &[NodeIndex],
+    ) {
+        for (input_channel_index, route_start) in self.output_routes.iter().enumerate() {
+            if let Some(route_start) = route_start {
+                let route_end = inputs[input_channel_index];
+                edge_counter.add_edge(graph, *route_start, route_end, EdgeKey::RouteToMixIn);
+            }
+        }
     }
 }
