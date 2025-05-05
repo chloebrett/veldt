@@ -2,7 +2,6 @@ use crate::receiver::ActionReceiver;
 use crate::{Action, FloatField};
 use shared::model::MatrixCell;
 
-
 impl ActionReceiver for MatrixCell {
     fn apply(&mut self, action: &Action) -> Option<Action> {
         Some(match action {

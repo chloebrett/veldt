@@ -68,6 +68,12 @@ impl<G: Fn()> View for MixerMatrixView<'_, G> {
                     ui,
                     row_titles.iter().enumerate(),
                     |ui, (row, row_title)| {
+                        // Skip the first row (main channel in).
+                        // The main channel can't be directed into any other channels.
+                        if row == 0 {
+                            return;
+                        }
+
                         ui.horizontal(|ui| {
                             text_rotator(
                                 ui,
@@ -77,13 +83,25 @@ impl<G: Fn()> View for MixerMatrixView<'_, G> {
                                 TEXT_COLOUR,
                             );
                             for col in 0..matrix.channels {
+                                let id = format!("mixer_matrix_{}_{}", row, col);
+
                                 let sel = MixerMatrixCellSelector(row, col);
                                 let value: &MatrixCell = store.select(&sel);
                                 let value: f32 = (*value).into();
-                                let id = format!("mixer_matrix_{}_{}", row, col);
+
+                                let transpose_sel = MixerMatrixCellSelector(col, row); // flipped!
+                                let transpose_value: &MatrixCell = store.select(&transpose_sel);
+                                let transpose_value: f32 = (*transpose_value).into();
+
+                                // Don't allow the mixer knob to be non-zero when:
+                                // (a) the row == col (self cycle)
+                                // (b) the transpose (swap row/col) value is non-zero (direct cycle).
+                                // TODO: also consider transitive cycles!
+                                let disabled = (row == col as usize) || (transpose_value != 0.0);
+
                                 ui.push_id(id, |ui| {
-                                    if row == col as usize {
-                                        knob_disabled(ui, "", 0.0, -1.0..=1.0);
+                                    if disabled {
+                                        knob_disabled(ui, "", 0.0, 0.0..=1.0);
                                     } else {
                                         knob(
                                             ui,
