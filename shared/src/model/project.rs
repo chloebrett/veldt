@@ -1,9 +1,9 @@
-use crate::bytes::{as_bytes, as_floats};
 use crate::model::{
-    EffectInstance, GeneratorInstance, ModMatrix, Placement, Track, TrackPlacement,
+    GeneratorInstance, MixerChannel, ModMatrix, Placement, Sample, Track,
+    TrackPlacement,
 };
 use crate::pmodel::*;
-use crate::types::{Beats, Volume};
+use crate::types::Beats;
 use local_macro::{FromProto, IntoProto};
 use ordered_float::OrderedFloat;
 
@@ -50,48 +50,13 @@ impl Project {
     }
 }
 
-#[derive(Clone, Debug, PartialEq)]
-pub struct Sample {
-    pub left: Vec<f32>,
-    pub right: Vec<f32>,
-    pub sample_rate: f32,
-}
-
-impl From<SampleProto> for Sample {
-    fn from(item: SampleProto) -> Self {
-        Self {
-            left: as_floats(&item.left),
-            right: as_floats(&item.right),
-            sample_rate: item.sample_rate,
-        }
-    }
-}
-
-impl From<Sample> for SampleProto {
-    fn from(item: Sample) -> Self {
-        Self {
-            left: as_bytes(&item.left),
-            right: as_bytes(&item.right),
-            sample_rate: item.sample_rate,
-        }
-    }
-}
-
-#[derive(Clone, Debug, PartialEq, FromProto, IntoProto)]
-pub struct MixerChannel {
-    pub volume: Volume,
-
-    #[proto_repeated]
-    pub effects: Vec<EffectInstance>,
-}
-
 #[cfg(test)]
 mod tests {
     use crate::{
         model::{
             AdsrEnvelope, AntiAliasingMode, DelayConfig, Effect, EffectMeta, EqConfig, EqType,
             Generator, GeneratorMeta, ModDelayConfig, Note, PitchName, PlacedNote, PlacementType,
-            ScaleValue, SimpleWaveConfig, WaveType,
+            ScaleValue, SimpleWaveConfig, WaveType, EffectInstance,
         },
         testing::proto::proto_testing::assert_proto_round_trip,
     };
