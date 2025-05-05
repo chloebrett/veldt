@@ -50,7 +50,7 @@ impl GeneratorInfo {
             } => make_node(SimpleWaveGeneratorNode::new(
                 config.clone(),
                 meta.clone(),
-                selector.clone(),
+                *selector,
                 placements,
                 tracks,
                 bpm,
