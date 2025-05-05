@@ -20,13 +20,13 @@ pub struct EffectInfo {
 impl EffectInfo {
     pub fn new(graph: &mut Graph, effect: &EffectInstance, sel: &EffectSelector) -> Self {
         let effect_node = match &effect.it {
-            Effect::SimpleEq(config) => make_node(EqNode::new(sel.clone(), config.clone())),
-            Effect::Delay(config) => make_node(DelayNode::new(sel.clone(), config.clone())),
+            Effect::SimpleEq(config) => make_node(EqNode::new(*sel, config.clone())),
+            Effect::Delay(config) => make_node(DelayNode::new(*sel, config.clone())),
             Effect::Compressor(config) => make_node(CompressorNode::new(config.clone())),
             Effect::ModDelay(config) => make_node(ModDelayNode::new(config.clone())),
         };
 
-        let wet_dry_node = make_node(WetDryNode::new(sel.clone(), effect.meta.clone()));
+        let wet_dry_node = make_node(WetDryNode::new(*sel, effect.meta.clone()));
 
         let effect_node = graph.add_node(effect_node);
         let wet_dry_node = graph.add_node(wet_dry_node);
