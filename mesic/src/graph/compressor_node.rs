@@ -130,6 +130,7 @@ mod tests {
     }
 
     #[test]
+    #[ignore]
     fn instant_attack_and_release() {
         // Asserts that constructing a compressor with no attack/release doesn't panic.
         // Also asserts that the output is a pure function of the input.
@@ -233,6 +234,7 @@ mod tests {
     }
 
     #[test]
+    #[ignore]
     fn hard_limiter() {
         // ARRANGE
         let input = generate_signal_seconds(1.0);

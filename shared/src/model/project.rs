@@ -3,12 +3,9 @@ use crate::model::{
     EffectInstance, GeneratorInstance, ModMatrix, Placement, Track, TrackPlacement,
 };
 use crate::pmodel::*;
-use crate::types::Beats;
+use crate::types::{Beats, Volume};
 use local_macro::{FromProto, IntoProto};
 use ordered_float::OrderedFloat;
-
-pub type TrackId = u32;
-type _SampleId = usize;
 
 #[derive(Clone, Debug, PartialEq, FromProto, IntoProto, Default)]
 pub struct Project {
@@ -82,6 +79,8 @@ impl From<Sample> for SampleProto {
 
 #[derive(Clone, Debug, PartialEq, FromProto, IntoProto)]
 pub struct MixerChannel {
+    pub volume: Volume,
+
     #[proto_repeated]
     pub effects: Vec<EffectInstance>,
 }
@@ -154,6 +153,7 @@ mod tests {
                 },
             }],
             mixer: vec![MixerChannel {
+                volume: 1.0,
                 effects: vec![
                     EffectInstance {
                         it: Effect::SimpleEq(EqConfig {

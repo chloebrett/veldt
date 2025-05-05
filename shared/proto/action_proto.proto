@@ -74,6 +74,7 @@ message TypeFieldProto {
     pmodel.FilenameTreeProto sample_tree = 17;
     pmodel.FileTreeConfigProto sample_tree_config = 18;
     pmodel.GeneratorInstanceProto generator = 19;
+    pmodel.MixerChannelProto mixer_channel = 20;
   }
 }
 

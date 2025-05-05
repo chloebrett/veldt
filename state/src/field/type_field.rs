@@ -4,8 +4,8 @@ use shared::action_proto::{
 };
 use shared::model::{
     AdsrEnvelope, AntiAliasingMode, EffectInstance, EqType, FileTreeConfig, FilenameTree,
-    GeneratorInstance, PitchName, PlacedNote, Placement, Project, Sample, Scale, ScaleValue, Track,
-    WaveType,
+    GeneratorInstance, MixerChannel, PitchName, PlacedNote, Placement, Project, Sample, Scale,
+    ScaleValue, Track, WaveType,
 };
 use shared::pmodel::{AntiAliasingModeProto, EqTypeProto, ScaleProto, WaveTypeProto};
 use strum::{Display, EnumString};
@@ -37,6 +37,7 @@ pub enum TypeField {
     ClippedDuration(Option<f32>),
     SampleTreeConfig(FileTreeConfig),
     Generator(GeneratorInstance),
+    MixerChannel(MixerChannel),
 
     // Note: if we end up with more bools/primitives, make dedicated types for them so that we
     // don't have to keep expanding the proto.
@@ -69,6 +70,7 @@ impl From<TypeFieldProto> for TypeField {
             TypeFieldKind::SampleTree(it) => TypeField::SampleTree(it.into()),
             TypeFieldKind::SampleTreeConfig(it) => TypeField::SampleTreeConfig(it.into()),
             TypeFieldKind::Generator(it) => TypeField::Generator(it.into()),
+            TypeFieldKind::MixerChannel(it) => TypeField::MixerChannel(it.into()),
             // Note: if we end up with more bools/primitives, make dedicated types for them so that we
             // don't have to keep expanding the proto.
             TypeFieldKind::Mute(it) => TypeField::Mute(it),
@@ -106,6 +108,7 @@ impl From<TypeField> for TypeFieldProto {
                 TypeField::ClippedDuration(it) => TypeFieldKind::ClippedDuration(it.into()),
                 TypeField::SampleTreeConfig(it) => TypeFieldKind::SampleTreeConfig(it.into()),
                 TypeField::Generator(it) => TypeFieldKind::Generator(it.into()),
+                TypeField::MixerChannel(it) => TypeFieldKind::MixerChannel(it.into()),
 
                 // Note: if we end up with more bools/primitives, make dedicated types for them so that we
                 // don't have to keep expanding the proto.

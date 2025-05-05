@@ -3,9 +3,9 @@ use crate::{Action, Selector};
 use ordered_float::OrderedFloat;
 use shared::model::{
     AdsrEnvelope, AntiAliasingMode, FileTreeConfig, FilenameTree, Generator, GeneratorInstance,
-    GeneratorMeta, LfoConfig, MixerChannel, ModMatrix, Note, OscillatorConfig, PitchName,
-    PlacedNote, Placement, PlacementType, Project, Scale, ScaleValue, SimpleWaveConfig,
-    SubSynthConfig, Track, TrackPlacement, WaveType,
+    GeneratorMeta, LfoConfig, MixerChannel, ModMatrix, Note, Oscillator, PitchName, PlacedNote,
+    Placement, PlacementType, Project, Scale, ScaleValue, SimpleWaveConfig, SubSynthConfig, Track,
+    TrackPlacement, WaveType,
 };
 use shared::types::Volume;
 
@@ -27,7 +27,7 @@ impl StoreData {
     }
 }
 
-const BASE_OSC: OscillatorConfig = OscillatorConfig {
+const BASE_OSC: Oscillator = Oscillator {
     wave: WaveType::Sine,
     volume: 1.0,
     pan: 0.0,
@@ -101,15 +101,15 @@ impl Default for StoreData {
                     GeneratorInstance {
                         it: Generator::SubSynth(SubSynthConfig {
                             oscillators: [
-                                OscillatorConfig {
+                                Oscillator {
                                     wave: WaveType::Sine,
                                     ..BASE_OSC
                                 },
-                                OscillatorConfig {
+                                Oscillator {
                                     wave: WaveType::Triangle,
                                     ..BASE_OSC
                                 },
-                                OscillatorConfig {
+                                Oscillator {
                                     wave: WaveType::Square,
                                     ..BASE_OSC
                                 },
@@ -126,7 +126,10 @@ impl Default for StoreData {
                         },
                     },
                 ],
-                mixer: vec![MixerChannel { effects: vec![] }],
+                mixer: vec![MixerChannel {
+                    volume: 1.0,
+                    effects: vec![],
+                }],
                 bpm: 120.0,
                 mod_matrix: ModMatrix::default(),
             },
