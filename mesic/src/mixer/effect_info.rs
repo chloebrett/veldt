@@ -23,12 +23,8 @@ impl EffectInfo {
         let EffectSelector(mixer_index, effect_index) = *effect_sel;
 
         let effect_node = match &effect.it {
-            Effect::SimpleEq(config) => {
-                make_node(EqNode::new(mixer_index, effect_index, config.clone()))
-            }
-            Effect::Delay(config) => {
-                make_node(DelayNode::new(mixer_index, effect_index, config.clone()))
-            }
+            Effect::SimpleEq(config) => make_node(EqNode::new(*effect_sel, config.clone())),
+            Effect::Delay(config) => make_node(DelayNode::new(*effect_sel, config.clone())),
             Effect::Compressor(config) => make_node(CompressorNode::new(config.clone())),
             Effect::ModDelay(config) => make_node(ModDelayNode::new(config.clone())),
         };
