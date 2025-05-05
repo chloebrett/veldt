@@ -3,8 +3,8 @@ use crate::graph::Graph;
 use crate::node::AmpNode;
 use dasp_graph::node::Sum;
 use petgraph::stable_graph::NodeIndex;
-use shared::model::{EffectInstance, Project};
-use state::{EffectSelector, GeneratorSelector, move_elem};
+use shared::model::{EffectInstance, MatrixCell, Project};
+use state::{EffectSelector, GeneratorSelector, MixerMatrixCellSelector, MixerSelector, move_elem};
 
 /// Describes a mixer channel from the viewpoint of the graph.
 /// Contains references to the generator and effect nodes linked to this channel.
@@ -22,6 +22,15 @@ pub struct ChannelInfo {
 
     // Output amp node for this mixer channel.
     pub output_node: NodeIndex,
+
+    // Output routes for this mixer channel.
+    // Indexes correspond to other mixer channels.
+    // Values of None correspond to no route.
+    // None values are necessarily the case for
+    // (a) all outputs from the main channel, and
+    // (b) each output from a channel to itself.
+    // Nodes are AmpNodes, which control the volume sent from each channel to each other channel.
+    pub output_routes: Vec<Option<NodeIndex>>,
 }
 
 impl ChannelInfo {
@@ -52,15 +61,33 @@ impl ChannelInfo {
             })
             .collect();
 
-        let output_node = graph.add_node(make_node(AmpNode {
-            channel_index: Some(channel_index),
-        }));
+        let output_node = graph.add_node(make_node(AmpNode::new_for_channel(MixerSelector(
+            channel_index,
+        ))));
+
+        let row = channel_index;
+        let matrix = &project.mixer.matrix;
+        let output_routes: Vec<_> = (0..matrix.channels)
+            .map(|col| {
+                let default: MatrixCell = 0.0.into();
+                let cell: &MatrixCell = matrix.get(row, col).unwrap_or(&default);
+                let cell: f32 = (*cell).into();
+                if cell != 0.0 {
+                    let selector = MixerMatrixCellSelector(row, col);
+                    let node = graph.add_node(make_node(AmpNode::new_for_route(selector)));
+                    Some(node)
+                } else {
+                    None
+                }
+            })
+            .collect();
 
         Self {
             generators,
             input_node,
             effects,
             output_node,
+            output_routes,
         }
     }
 

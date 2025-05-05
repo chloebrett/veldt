@@ -73,6 +73,7 @@ impl MixerMatrix {
         matrix
     }
 
+    // TODO: return an owned value, to make the caller ergonomics better.
     pub fn get(&self, row: usize, col: usize) -> Option<&MatrixCell> {
         self.matrix.get(row * self.channels + col)
     }
