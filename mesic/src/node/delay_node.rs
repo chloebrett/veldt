@@ -47,10 +47,10 @@ impl DelayNode {
 impl Node<ProcessContext> for DelayNode {
     fn process(&mut self, inputs: &[Input], output: &mut [Buffer], payload: &ProcessContext) {
         // Apply changes from the store.
-        if let EffectInstance {
+        if let Some(EffectInstance {
             it: Effect::Delay(config),
             ..
-        } = &payload.store.select(&self.selector)
+        }) = &payload.store.try_select(&self.selector)
         {
             if *config != self.config {
                 self.config = config.clone();

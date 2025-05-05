@@ -4,7 +4,9 @@ use dasp_frame::Stereo;
 use dasp_graph::{BoxedNodeSend, Buffer, Node, NodeData, node::Sum};
 use petgraph::stable_graph::NodeIndex;
 use shared::model::Project;
-use state::{Action, EffectSelector, IndexField, MoveField, Selector, TypeField};
+use state::{
+    Action, EffectSelector, FloatField, IndexField, MoveField, Selector, StoreData, TypeField,
+};
 
 mod channel_info;
 mod edge_counter;
@@ -39,10 +41,12 @@ use generator_info::*;
 /// |
 /// | // note: more nodes will be added here in future for channel routing
 /// v
-/// s // main sum (joins together all channels)
+/// s // main sum (TODO: remove this as it's redundant now that only the main channel uses it).
 /// |
 /// v
 /// a // main out
+///
+/// Note: the diagram above does not account for mixers routing to each other!
 ///
 /// ------------
 /// a = amp node
@@ -74,9 +78,7 @@ impl Mixer {
         let mut graph = make_graph();
 
         let main_sum = graph.add_node(make_node(Sum));
-        let main_amp = graph.add_node(make_node(AmpNode {
-            channel_index: None,
-        }));
+        let main_amp = graph.add_node(make_node(AmpNode::new_main()));
 
         Self {
             graph,
@@ -93,15 +95,11 @@ impl Mixer {
         let mut graph = make_graph();
         let main_sum = graph.add_node(make_node(Sum));
 
-        // TODO: always have channel 0 as the "main" channel?
-        // How would this change the graph?
         let channels: Vec<ChannelInfo> = (0..project.mixer.channels.len())
             .map(|channel_index| ChannelInfo::new(&mut graph, project, channel_index))
             .collect();
 
-        let main_amp = graph.add_node(make_node(AmpNode {
-            channel_index: None,
-        }));
+        let main_amp = graph.add_node(make_node(AmpNode::new_main()));
 
         Self {
             graph,
@@ -126,9 +124,7 @@ impl Mixer {
         let main_buffer = graph.add_node(make_node(buffer_node));
 
         let main_sum = graph.add_node(make_node(Sum));
-        let main_amp = graph.add_node(make_node(AmpNode {
-            channel_index: None,
-        }));
+        let main_amp = graph.add_node(make_node(AmpNode::new_main()));
 
         Self {
             graph,
@@ -157,15 +153,30 @@ impl Mixer {
             );
         }
 
-        for channel in &self.channels {
+        let inputs: Vec<_> = self
+            .channels
+            .iter()
+            .map(|channel| channel.input_node)
+            .collect();
+
+        for (channel_index, channel) in self.channels.iter().enumerate() {
             channel.add_edges(&mut self.graph, &mut self.edge_counter);
 
-            self.edge_counter.add_edge(
-                &mut self.graph,
-                channel.output_node,
-                self.main_sum,
-                EdgeKey::MixOutToMainSum,
-            );
+            // Only add the main channel to the main output.
+            // Other channels need to be routed via main.
+            // TODO: we don't actually need the main sum node anymore,
+            // considering that only the main channel routes to it.
+            // We can just route directly to the main amp.
+            if channel_index == 0 {
+                self.edge_counter.add_edge(
+                    &mut self.graph,
+                    channel.output_node,
+                    self.main_sum,
+                    EdgeKey::MixOutToMainSum,
+                );
+            } else {
+                channel.route_to_inputs(&mut self.graph, &mut self.edge_counter, &inputs);
+            }
         }
 
         self.edge_counter.add_edge(
@@ -180,7 +191,7 @@ impl Mixer {
     /// If the graph changes, edges are refreshed.
     /// TODO: consider processing multiple actions at once, and only refreshing the edges a single
     /// time.
-    pub fn update(&mut self, selector: &Selector, action: &Action) {
+    pub fn update(&mut self, selector: &Selector, action: &Action, store: &StoreData) {
         let did_change = match selector {
             Selector::Mixer(mixer_index) => match action {
                 Action::MoveChild(MoveField {
@@ -215,6 +226,17 @@ impl Mixer {
                             self.channels[*mixer_channel].soft_add_generator(&generator);
                             break;
                         }
+                    }
+                    true
+                }
+                _ => false,
+            },
+            Selector::MixerMatrixCell(..) => match action {
+                // If the matrix changes, reset the routes for each node, then refresh the edges.
+                // NOTE: in future, consider what happens if the size of the matrix changes too.
+                Action::SetFloat(FloatField::ModFactor, _) => {
+                    for (channel_index, channel) in self.channels.iter_mut().enumerate() {
+                        channel.refresh_routes(&mut self.graph, channel_index, &store.project);
                     }
                     true
                 }
@@ -304,7 +326,16 @@ mod tests {
         // Channel input and output nodes (2) +
         // Generator nodes (1)
         assert_eq!(mixer.graph.node_count(), 7);
-        assert_eq!(mixer.edge_counter.counts, edge_counts);
+        for (key, count) in mixer.edge_counter.counts.iter() {
+            assert_eq!(
+                Some(count),
+                edge_counts.get(key),
+                "{:?} {} {:?}",
+                key,
+                count,
+                edge_counts.get(key)
+            );
+        }
         assert_eq!(mixer.channels.len(), 1);
     }
 
@@ -342,7 +373,7 @@ mod tests {
         edge_counts.insert(EdgeKey::EffMixToNextEff, 1);
         edge_counts.insert(EdgeKey::EffMixToNextEffMix, 1);
         edge_counts.insert(EdgeKey::EffMixToMixOut, 2);
-        edge_counts.insert(EdgeKey::MixOutToMainSum, 2);
+        edge_counts.insert(EdgeKey::MixOutToMainSum, 1);
         edge_counts.insert(EdgeKey::MainSumToMainAmp, 1);
 
         // Main sum and amp nodes (2) +
@@ -350,7 +381,16 @@ mod tests {
         // Channel input and output nodes (2 * 2 channels) +
         // Generator nodes (3).
         assert_eq!(mixer.graph.node_count(), 15);
-        assert_eq!(mixer.edge_counter.counts, edge_counts);
+        for (key, count) in mixer.edge_counter.counts.iter() {
+            assert_eq!(
+                Some(count),
+                edge_counts.get(key),
+                "{:?} {} {:?}",
+                key,
+                count,
+                edge_counts.get(key)
+            );
+        }
         assert_eq!(mixer.channels.len(), 2);
     }
 
@@ -402,4 +442,5 @@ mod tests {
     }
 
     // TODO: write tests for updating the store with actions.
+    // TODO: write tests for routing between mixer channels.
 }

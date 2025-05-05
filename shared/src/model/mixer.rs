@@ -60,12 +60,20 @@ impl From<MatrixCell> for f32 {
 
 impl MixerMatrix {
     pub fn with_channels(channels: usize) -> Self {
-        MixerMatrix {
+        let mut matrix = MixerMatrix {
             channels,
             matrix: vec![MatrixCell(0.0); channels * channels],
+        };
+
+        // Set all inputs to the first (main) channel to 1.0.
+        for row in 0..channels {
+            matrix.get_mut(row, /* col= */ 0).unwrap().set(1.0);
         }
+
+        matrix
     }
 
+    // TODO: return an owned value, to make the caller ergonomics better.
     pub fn get(&self, row: usize, col: usize) -> Option<&MatrixCell> {
         self.matrix.get(row * self.channels + col)
     }

@@ -41,9 +41,10 @@ impl WetDryNode {
 impl Node<ProcessContext> for WetDryNode {
     fn process(&mut self, inputs: &[Input], output: &mut [Buffer], payload: &ProcessContext) {
         // Apply changes from the store.
-        let EffectInstance { meta, .. } = &payload.store.select(&self.selector);
-        if *meta != self.meta {
-            self.meta = meta.clone();
+        if let Some(EffectInstance { meta, .. }) = &payload.store.try_select(&self.selector) {
+            if *meta != self.meta {
+                self.meta = meta.clone();
+            }
         }
 
         debug_assert!(self.meta.wet >= 0.0 && self.meta.wet <= 1.0);

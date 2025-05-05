@@ -3,8 +3,8 @@ use crate::graph::Graph;
 use crate::node::AmpNode;
 use dasp_graph::node::Sum;
 use petgraph::stable_graph::NodeIndex;
-use shared::model::{EffectInstance, Project};
-use state::{EffectSelector, GeneratorSelector, move_elem};
+use shared::model::{EffectInstance, MatrixCell, Project};
+use state::{EffectSelector, GeneratorSelector, MixerMatrixCellSelector, MixerSelector, move_elem};
 
 /// Describes a mixer channel from the viewpoint of the graph.
 /// Contains references to the generator and effect nodes linked to this channel.
@@ -14,7 +14,7 @@ pub struct ChannelInfo {
 
     // Input sum node for this mixer channel.
     // Sums together the generators.
-    input_node: NodeIndex,
+    pub input_node: NodeIndex,
 
     // Effect/mixer pairs for this channel.
     // Index = ordering within the channel.
@@ -22,6 +22,15 @@ pub struct ChannelInfo {
 
     // Output amp node for this mixer channel.
     pub output_node: NodeIndex,
+
+    // Output routes for this mixer channel.
+    // Indexes correspond to other mixer channels.
+    // Values of None correspond to no route.
+    // None values are necessarily the case for
+    // (a) all outputs from the main channel, and
+    // (b) each output from a channel to itself.
+    // Nodes are AmpNodes, which control the volume sent from each channel to each other channel.
+    pub output_routes: Vec<Option<NodeIndex>>,
 }
 
 impl ChannelInfo {
@@ -52,16 +61,49 @@ impl ChannelInfo {
             })
             .collect();
 
-        let output_node = graph.add_node(make_node(AmpNode {
-            channel_index: Some(channel_index),
-        }));
+        let output_node = graph.add_node(make_node(AmpNode::new_for_channel(MixerSelector(
+            channel_index,
+        ))));
 
-        Self {
+        let mut partial = Self {
             generators,
             input_node,
             effects,
             output_node,
+            output_routes: vec![],
+        };
+        partial.refresh_routes(graph, channel_index, project);
+        partial
+    }
+
+    pub fn refresh_routes(&mut self, graph: &mut Graph, channel_index: usize, project: &Project) {
+        // Delete existing route nodes, before adding new ones!
+        // This is reasonably fine because the nodes are fairly small and stateless.
+        // It still needs some allocations though, so we could be a bit pickier / more efficient if
+        // we wanted to be. E.g. doing this on *every* matrix knob change isn't particularly
+        // efficient. We should only do it when disconnecting/reconnecting completely, and even
+        // then, only change the relevant node.
+        // This would need a lot of unit testing to make sure it was correct.
+        for route in self.output_routes.iter().flatten() {
+            graph.remove_node(*route);
         }
+
+        let row = channel_index;
+        let matrix = &project.mixer.matrix;
+        self.output_routes = (0..matrix.channels)
+            .map(|col| {
+                let default: MatrixCell = 0.0.into();
+                let cell: &MatrixCell = matrix.get(row, col).unwrap_or(&default);
+                let cell: f32 = (*cell).into();
+                if cell != 0.0 {
+                    let selector = MixerMatrixCellSelector(row, col);
+                    let node = graph.add_node(make_node(AmpNode::new_for_route(selector)));
+                    Some(node)
+                } else {
+                    None
+                }
+            })
+            .collect();
     }
 
     pub fn add_edges(&self, graph: &mut Graph, edge_counter: &mut EdgeCounter) {
@@ -122,6 +164,12 @@ impl ChannelInfo {
                 EdgeKey::EffMixToMixOut,
             );
         }
+
+        // Link up the channel's outputs to its routes.
+        // .flatten() ignores the None nodes.
+        for route in self.output_routes.iter().flatten() {
+            edge_counter.add_edge(graph, self.output_node, *route, EdgeKey::MixOutToRoute);
+        }
     }
 
     pub fn effects_count(&self) -> usize {
@@ -166,5 +214,19 @@ impl ChannelInfo {
     /// between mixer channels.
     pub fn soft_add_generator(&mut self, generator: &GeneratorInfo) {
         self.generators.push(generator.clone());
+    }
+
+    pub fn route_to_inputs(
+        &self,
+        graph: &mut Graph,
+        edge_counter: &mut EdgeCounter,
+        inputs: &[NodeIndex],
+    ) {
+        for (input_channel_index, route_start) in self.output_routes.iter().enumerate() {
+            if let Some(route_start) = route_start {
+                let route_end = inputs[input_channel_index];
+                edge_counter.add_edge(graph, *route_start, route_end, EdgeKey::RouteToMixIn);
+            }
+        }
     }
 }
