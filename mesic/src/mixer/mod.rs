@@ -95,7 +95,7 @@ impl Mixer {
 
         // TODO: always have channel 0 as the "main" channel?
         // How would this change the graph?
-        let channels: Vec<ChannelInfo> = (0..project.mixer.len())
+        let channels: Vec<ChannelInfo> = (0..project.mixer.channels.len())
             .map(|channel_index| ChannelInfo::new(&mut graph, project, channel_index))
             .collect();
 
@@ -283,7 +283,7 @@ mod tests {
     fn one_generator_one_effect() {
         let mut project = Project::default();
         project.generators.push(some_generator());
-        project.mixer.push(MixerChannel {
+        project.mixer.channels.push(MixerChannel {
             volume: 1.0,
             effects: vec![some_effect()],
         });
@@ -321,7 +321,7 @@ mod tests {
 
         // One effect on channel 0,
         // Two effects on channel 1.
-        project.mixer.extend([
+        project.mixer.channels.extend([
             MixerChannel {
                 volume: 1.0,
                 effects: vec![some_effect()],

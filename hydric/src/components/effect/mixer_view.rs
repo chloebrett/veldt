@@ -1,4 +1,4 @@
-use super::effect_name;
+use super::{MixerMatrixView, effect_name};
 use crate::GetSet;
 use crate::WindowState;
 use crate::local_state::LocalState;
@@ -65,10 +65,15 @@ impl View for MixerView<'_> {
             .show(ui.ctx(), |ui| {
                 ui.heading("Mixer");
 
-                ui.separator();
+                let matrix = &store.get().project.mixer.matrix;
+                let row_titles: Vec<String> =
+                    (0..matrix.channels).map(|i| format!("Ch{i} in")).collect();
+                let col_titles: Vec<String> =
+                    (0..matrix.channels).map(|i| format!("Ch{i} out")).collect();
+                MixerMatrixView::new(matrix, row_titles, col_titles, store, on_release).ui(ui);
 
                 // TODO: better UI than a slider for this!
-                let max_channel_index = (store.get().project.mixer.len() - 1) as i32;
+                let max_channel_index = (store.get().project.mixer.channels.len() - 1) as i32;
                 int_slider(
                     ui,
                     "Selected channel",
@@ -78,6 +83,7 @@ impl View for MixerView<'_> {
                     /* on_release= */
                     || {}, // no-op on_release since this doesn't use the store.
                 );
+
                 ui.separator();
 
                 ui.horizontal(|ui| {

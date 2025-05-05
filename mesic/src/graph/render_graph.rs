@@ -131,10 +131,10 @@ impl Iterator for RenderGraph {
 mod tests {
     use crate::SAMPLE_RATE;
     use shared::model::{
-        AdsrEnvelope, AntiAliasingMode, DelayConfig, Effect, EffectInstance, EffectMeta, EqConfig,
-        EqType, Generator, GeneratorInstance, GeneratorMeta, MixerChannel, ModDelayConfig,
-        ModMatrix, Note, PitchName, PlacedNote, Placement, PlacementType, ScaleValue,
-        SimpleWaveConfig, Track, TrackPlacement, WaveType,
+        self, AdsrEnvelope, AntiAliasingMode, DelayConfig, Effect, EffectInstance, EffectMeta,
+        EqConfig, EqType, Generator, GeneratorInstance, GeneratorMeta, MixerChannel, MixerMatrix,
+        ModDelayConfig, ModMatrix, Note, PitchName, PlacedNote, Placement, PlacementType,
+        ScaleValue, SimpleWaveConfig, Track, TrackPlacement, WaveType,
     };
 
     use shared::types::Freq;
@@ -164,7 +164,10 @@ mod tests {
                 it: Generator::SimpleWave(make_simple_wave_config()),
                 meta: make_generator_meta(),
             }],
-            mixer: vec![make_mixer_channel()],
+            mixer: model::Mixer {
+                matrix: MixerMatrix::with_channels(1),
+                channels: vec![make_mixer_channel()],
+            },
             bpm: 120.0,
             mod_matrix: ModMatrix::default(),
         }

@@ -3,9 +3,9 @@ use crate::{Action, Selector, SelectorTrait, reducer};
 use ordered_float::OrderedFloat;
 use shared::model::{
     AdsrEnvelope, AntiAliasingMode, FileTreeConfig, FilenameTree, Generator, GeneratorInstance,
-    GeneratorMeta, LfoConfig, MixerChannel, ModMatrix, Note, Oscillator, PitchName, PlacedNote,
-    Placement, PlacementType, Project, Scale, ScaleValue, SimpleWaveConfig, SubSynthConfig, Track,
-    TrackPlacement, WaveType,
+    GeneratorMeta, LfoConfig, Mixer, MixerChannel, MixerMatrix, ModMatrix, Note, Oscillator,
+    PitchName, PlacedNote, Placement, PlacementType, Project, Scale, ScaleValue, SimpleWaveConfig,
+    SubSynthConfig, Track, TrackPlacement, WaveType,
 };
 use shared::types::Volume;
 
@@ -57,6 +57,11 @@ const BASE_ENV: AdsrEnvelope = AdsrEnvelope {
 
 impl Default for StoreData {
     fn default() -> Self {
+        const EMPTY_CHANNEL: MixerChannel = MixerChannel {
+            volume: 1.0,
+            effects: vec![],
+        };
+
         StoreData {
             project: Project {
                 name: "My Project".to_string(),
@@ -102,7 +107,7 @@ impl Default for StoreData {
                             volume: 1.0,
                             mute: false,
                             pan: 0.0,
-                            mixer_channel: 0,
+                            mixer_channel: 2,
                         },
                     },
                     GeneratorInstance {
@@ -129,24 +134,14 @@ impl Default for StoreData {
                             volume: 1.0,
                             mute: false,
                             pan: 0.0,
-                            mixer_channel: 0,
+                            mixer_channel: 2,
                         },
                     },
                 ],
-                mixer: vec![
-                    MixerChannel {
-                        volume: 1.0,
-                        effects: vec![],
-                    },
-                    MixerChannel {
-                        volume: 1.0,
-                        effects: vec![],
-                    },
-                    MixerChannel {
-                        volume: 1.0,
-                        effects: vec![],
-                    },
-                ],
+                mixer: Mixer {
+                    matrix: MixerMatrix::with_channels(3),
+                    channels: vec![EMPTY_CHANNEL; 3],
+                },
                 bpm: 120.0,
                 mod_matrix: ModMatrix::default(),
             },

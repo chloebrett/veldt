@@ -11,6 +11,7 @@ pub struct AmpNode {
     // If none, corresponds to the main volume.
     // TODO: just have channel 0 be the main channel,
     // and therefore no need for special casing the main volume.
+    // TODO: change to Option<MixerSelector> (and then just MixerSelector).
     pub channel_index: Option<usize>,
 }
 
@@ -31,7 +32,7 @@ impl AmpNode {
 impl Node<ProcessContext> for AmpNode {
     fn process(&mut self, inputs: &[Input], output: &mut [Buffer], payload: &ProcessContext) {
         let volume = if let Some(index) = self.channel_index {
-            payload.store.project.mixer[index].volume
+            payload.store.project.mixer.channels[index].volume
         } else {
             payload.store.volume
         };

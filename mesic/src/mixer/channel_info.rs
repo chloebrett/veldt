@@ -43,7 +43,7 @@ impl ChannelInfo {
 
         let input_node = graph.add_node(make_node(Sum));
 
-        let effects: Vec<EffectInfo> = project.mixer[channel_index]
+        let effects: Vec<EffectInfo> = project.mixer.channels[channel_index]
             .effects
             .iter()
             .enumerate()
