@@ -106,13 +106,13 @@ impl ChannelInfo {
             edge_counter.add_edge(
                 graph,
                 self.input_node,
-                first.mixer_node,
+                first.wet_dry_node,
                 EdgeKey::MixInToEffMix,
             );
 
             edge_counter.add_edge(
                 graph,
-                last.mixer_node,
+                last.wet_dry_node,
                 self.output_node,
                 EdgeKey::EffMixToMixOut,
             );

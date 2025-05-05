@@ -25,7 +25,7 @@ impl EqNode {
 
 impl Node<ProcessContext> for EqNode {
     fn process(&mut self, inputs: &[Input], output: &mut [Buffer], payload: &ProcessContext) {
-        // Apply any changes from the store if applicable.
+        // Apply changes from the store.
         if let EffectInstance {
             it: Effect::SimpleEq(config),
             ..

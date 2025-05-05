@@ -46,7 +46,7 @@ impl DelayNode {
 
 impl Node<ProcessContext> for DelayNode {
     fn process(&mut self, inputs: &[Input], output: &mut [Buffer], payload: &ProcessContext) {
-        // Apply any changes from the store if applicable.
+        // Apply changes from the store.
         if let EffectInstance {
             it: Effect::Delay(config),
             ..
