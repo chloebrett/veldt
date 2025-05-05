@@ -5,10 +5,10 @@ use shared::model::{Generator, GeneratorInstance, PlacementType, Project};
 
 /// Describes a generator from the viewpoint of the graph.
 /// Contains a reference to the generator node.
-#[expect(dead_code)] // Will need to read fields to manipulate later.
+#[derive(Clone)]
 pub struct GeneratorInfo {
     // Generator index within the project model.
-    generator_index: usize,
+    pub generator_index: usize,
 
     node: NodeIndex,
 }

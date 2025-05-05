@@ -12,6 +12,7 @@ pub enum IndexField {
     PlacedNote(usize),
     Placement(usize),
     Effect(usize),
+    Mixer(usize),
     Generator(usize),
     Sample(usize),
 }
@@ -23,6 +24,7 @@ impl From<IndexFieldProto> for IndexField {
             IndexFieldKind::PlacedNote(it) => IndexField::PlacedNote(it as usize),
             IndexFieldKind::Placement(it) => IndexField::Placement(it as usize),
             IndexFieldKind::Effect(it) => IndexField::Effect(it as usize),
+            IndexFieldKind::Mixer(it) => IndexField::Mixer(it as usize),
             IndexFieldKind::Generator(it) => IndexField::Generator(it as usize),
             IndexFieldKind::Sample(it) => IndexField::Sample(it as usize),
         }
@@ -37,6 +39,7 @@ impl From<IndexField> for IndexFieldProto {
                 IndexField::PlacedNote(it) => IndexFieldKind::PlacedNote(it as u32),
                 IndexField::Placement(it) => IndexFieldKind::Placement(it as u32),
                 IndexField::Effect(it) => IndexFieldKind::Effect(it as u32),
+                IndexField::Mixer(it) => IndexFieldKind::Mixer(it as u32),
                 IndexField::Generator(it) => IndexFieldKind::Generator(it as u32),
                 IndexField::Sample(it) => IndexFieldKind::Sample(it as u32),
             }),
@@ -50,6 +53,7 @@ pub enum MultiIndexField {
     PlacedNote(Vec<usize>),
     Placement(Vec<usize>),
     Effect(Vec<usize>),
+    Mixer(Vec<usize>),
     Generator(Vec<usize>),
     Sample(Vec<usize>),
 }
@@ -63,6 +67,7 @@ impl From<MultiIndexFieldProto> for MultiIndexField {
             MultiIndexFieldKind::PlacedNoteIndexFieldKind => Self::PlacedNote(indexes),
             MultiIndexFieldKind::PlacementIndexFieldKind => Self::Placement(indexes),
             MultiIndexFieldKind::EffectIndexFieldKind => Self::Effect(indexes),
+            MultiIndexFieldKind::MixerIndexFieldKind => Self::Mixer(indexes),
             MultiIndexFieldKind::GeneratorIndexFieldKind => Self::Generator(indexes),
             MultiIndexFieldKind::SampleIndexFieldKind => Self::Sample(indexes),
         }
@@ -86,6 +91,10 @@ impl From<MultiIndexField> for MultiIndexFieldProto {
             },
             MultiIndexField::Effect(indexes) => MultiIndexFieldProto {
                 kind: MultiIndexFieldKind::EffectIndexFieldKind.into(),
+                values: to_u32s(indexes),
+            },
+            MultiIndexField::Mixer(indexes) => MultiIndexFieldProto {
+                kind: MultiIndexFieldKind::MixerIndexFieldKind.into(),
                 values: to_u32s(indexes),
             },
             MultiIndexField::Generator(indexes) => MultiIndexFieldProto {

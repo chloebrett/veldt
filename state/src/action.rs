@@ -24,12 +24,6 @@ pub enum Action {
     AddChild(TypeField),
     // Set children of an object by type.
     SetChildren(MultiTypeField),
-
-    // Note: avoid creating new ad hoc action types.
-    // Try to encapsulate them within a generic action type like the ones above.
-    // Perhaps a generic "MoveChild" action could work.
-    MoveEffectUp(usize),
-    MoveEffectDown(usize),
     MoveChild(MoveField),
 
     /// Denotes that the mouse has been released from a UI element, finalizing its value.
@@ -45,8 +39,6 @@ pub enum Action {
 impl From<ActionProto> for Action {
     fn from(other: ActionProto) -> Action {
         match other.kind.unwrap() {
-            ActionKind::MoveEffectUp(it) => Action::MoveEffectUp(it as usize),
-            ActionKind::MoveEffectDown(it) => Action::MoveEffectDown(it as usize),
             ActionKind::MoveChild(it) => Action::MoveChild(it.into()),
             ActionKind::SetFloat(it) => Action::SetFloat(
                 FloatField::from_str(&it.key)
@@ -85,8 +77,6 @@ impl From<Action> for ActionProto {
                 Action::AddChild(child) => ActionKind::AddChild(child.into()),
                 Action::DeleteChild(index) => ActionKind::DeleteChild(index.into()),
                 Action::DeleteChildren(indexes) => ActionKind::DeleteChildren(indexes.into()),
-                Action::MoveEffectUp(index) => ActionKind::MoveEffectUp(index as u32),
-                Action::MoveEffectDown(index) => ActionKind::MoveEffectDown(index as u32),
                 Action::MoveChild(it) => ActionKind::MoveChild(it.into()),
                 Action::SetChildren(it) => ActionKind::SetChildren(it.into()),
 

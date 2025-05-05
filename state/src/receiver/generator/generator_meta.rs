@@ -1,5 +1,5 @@
 use crate::receiver::ActionReceiver;
-use crate::{Action, FloatField, TypeField};
+use crate::{Action, FloatField, IndexField, TypeField};
 use shared::model::GeneratorMeta;
 
 impl ActionReceiver for GeneratorMeta {
@@ -19,6 +19,11 @@ impl ActionReceiver for GeneratorMeta {
                 let prev = self.pan;
                 self.pan = *pan;
                 Action::SetFloat(FloatField::Pan, prev)
+            }
+            Action::SetIndex(IndexField::Mixer(mixer_channel)) => {
+                let prev = self.mixer_channel;
+                self.mixer_channel = *mixer_channel;
+                Action::SetIndex(IndexField::Mixer(prev))
             }
             _ => return None,
         })

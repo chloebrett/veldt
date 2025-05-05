@@ -11,6 +11,7 @@ mod undo;
 pub use action::*;
 use broadcast::*;
 pub use field::*;
+pub use receiver::move_elem;
 use reducer::*;
 pub use selector::*;
 pub use store::*;
