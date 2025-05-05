@@ -1,6 +1,6 @@
-use super::ProcessContext;
 use super::{extract_inputs, extract_outputs};
 use crate::consts::SAMPLE_RATE;
+use crate::graph::ProcessContext;
 use dasp_graph::{Buffer, Input, Node};
 use shared::model::CompressorConfig;
 use std::cmp::max;

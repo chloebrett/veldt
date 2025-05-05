@@ -1,5 +1,6 @@
 use super::{EdgeCounter, EdgeKey, make_node};
-use crate::graph::{CompressorNode, DelayNode, EqNode, Graph, MixerNode, ModDelayNode};
+use crate::graph::Graph;
+use crate::node::{CompressorNode, DelayNode, EqNode, MixerNode, ModDelayNode};
 use petgraph::stable_graph::NodeIndex;
 use shared::model::{Effect, EffectInstance};
 use state::EffectSelector;

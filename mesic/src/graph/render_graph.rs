@@ -1,4 +1,5 @@
-use super::{Mixer, ProcessContext, Processor, make_processor};
+use super::{ProcessContext, Processor, make_processor};
+use crate::mixer::Mixer;
 use crate::wave::beats_to_samples;
 use dasp_frame::Stereo;
 use dasp_graph::Buffer;

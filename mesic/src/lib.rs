@@ -1,8 +1,10 @@
 mod consts;
-mod effect;
+mod eq;
 mod envelope;
 pub mod fft;
 pub mod graph;
+mod mixer;
+mod node;
 mod scale;
 pub mod wave;
 
