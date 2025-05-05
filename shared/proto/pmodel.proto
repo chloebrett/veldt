@@ -22,7 +22,17 @@ message ProjectProto {
 }
 
 message MixerProto {
-  repeated MixerChannelProto channels = 1;
+  MixerMatrixProto matrix = 1;
+
+  repeated MixerChannelProto channels = 2;
+}
+
+message MixerMatrixProto {
+  uint32 rows = 1;
+
+  uint32 cols = 2;
+
+  repeated float matrix = 3;
 }
 
 message ModMatrixProto {

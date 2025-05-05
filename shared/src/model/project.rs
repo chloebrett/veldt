@@ -52,8 +52,8 @@ mod tests {
     use crate::{
         model::{
             AdsrEnvelope, AntiAliasingMode, DelayConfig, Effect, EffectInstance, EffectMeta,
-            EqConfig, EqType, Generator, GeneratorMeta, MixerChannel, ModDelayConfig, Note,
-            PitchName, PlacedNote, PlacementType, ScaleValue, SimpleWaveConfig, WaveType,
+            EqConfig, EqType, Generator, GeneratorMeta, MixerChannel, MixerMatrix, ModDelayConfig,
+            Note, PitchName, PlacedNote, PlacementType, ScaleValue, SimpleWaveConfig, WaveType,
         },
         testing::proto::proto_testing::assert_proto_round_trip,
     };
@@ -115,6 +115,7 @@ mod tests {
                 },
             }],
             mixer: Mixer {
+                matrix: MixerMatrix::with_channels(3),
                 channels: vec![MixerChannel {
                     volume: 1.0,
                     effects: vec![

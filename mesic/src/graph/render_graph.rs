@@ -134,7 +134,7 @@ mod tests {
         self, AdsrEnvelope, AntiAliasingMode, DelayConfig, Effect, EffectInstance, EffectMeta,
         EqConfig, EqType, Generator, GeneratorInstance, GeneratorMeta, MixerChannel,
         ModDelayConfig, ModMatrix, Note, PitchName, PlacedNote, Placement, PlacementType,
-        ScaleValue, SimpleWaveConfig, Track, TrackPlacement, WaveType,
+        ScaleValue, SimpleWaveConfig, Track, TrackPlacement, WaveType, MixerMatrix,
     };
 
     use shared::types::Freq;
@@ -165,6 +165,7 @@ mod tests {
                 meta: make_generator_meta(),
             }],
             mixer: model::Mixer {
+                matrix: MixerMatrix::with_channels(1),
                 channels: vec![make_mixer_channel()],
             },
             bpm: 120.0,

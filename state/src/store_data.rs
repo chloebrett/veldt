@@ -5,7 +5,7 @@ use shared::model::{
     AdsrEnvelope, AntiAliasingMode, FileTreeConfig, FilenameTree, Generator, GeneratorInstance,
     GeneratorMeta, LfoConfig, Mixer, MixerChannel, ModMatrix, Note, Oscillator, PitchName,
     PlacedNote, Placement, PlacementType, Project, Scale, ScaleValue, SimpleWaveConfig,
-    SubSynthConfig, Track, TrackPlacement, WaveType,
+    SubSynthConfig, Track, TrackPlacement, WaveType, MixerMatrix,
 };
 use shared::types::Volume;
 
@@ -57,6 +57,11 @@ const BASE_ENV: AdsrEnvelope = AdsrEnvelope {
 
 impl Default for StoreData {
     fn default() -> Self {
+        const EMPTY_CHANNEL: MixerChannel = MixerChannel {
+            volume: 1.0,
+            effects: vec![],
+        };
+
         StoreData {
             project: Project {
                 name: "My Project".to_string(),
@@ -134,20 +139,8 @@ impl Default for StoreData {
                     },
                 ],
                 mixer: Mixer {
-                    channels: vec![
-                        MixerChannel {
-                            volume: 1.0,
-                            effects: vec![],
-                        },
-                        MixerChannel {
-                            volume: 1.0,
-                            effects: vec![],
-                        },
-                        MixerChannel {
-                            volume: 1.0,
-                            effects: vec![],
-                        },
-                    ],
+                    matrix: MixerMatrix::with_channels(3),
+                    channels: vec![EMPTY_CHANNEL; 3],
                 },
                 bpm: 120.0,
                 mod_matrix: ModMatrix::default(),
