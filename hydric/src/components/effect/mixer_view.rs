@@ -63,21 +63,30 @@ impl View for MixerView<'_> {
             })
             .open(&mut window_state.mixer.visible)
             .show(ui.ctx(), |ui| {
-                ui.heading("Mixer");
+                ui.add_space(8.0);
 
-                let matrix = &store.get().project.mixer.matrix;
-                let row_titles: Vec<String> =
-                    (0..matrix.channels).map(|i| format!("Ch{i} out")).collect();
-                let col_titles: Vec<String> = (0..matrix.channels)
-                    .map(|i| {
-                        if i == 0 {
-                            "Main in".to_string()
-                        } else {
-                            format!("Ch{i} in")
-                        }
-                    })
-                    .collect();
-                MixerMatrixView::new(matrix, row_titles, col_titles, store, on_release).ui(ui);
+                ui.horizontal(|ui| {
+                    ui.add_space(8.0);
+
+                    ui.vertical(|ui| {
+                        let matrix = &store.get().project.mixer.matrix;
+                        let row_titles: Vec<String> =
+                            (0..matrix.channels).map(|i| format!("Ch{i}")).collect();
+                        let col_titles: Vec<String> = (0..matrix.channels)
+                            .map(|i| {
+                                if i == 0 {
+                                    "Main in".to_string()
+                                } else {
+                                    format!("Ch{i} in")
+                                }
+                            })
+                            .collect();
+                        MixerMatrixView::new(matrix, row_titles, col_titles, store, on_release)
+                            .ui(ui);
+                    });
+                });
+
+                ui.add_space(8.0);
 
                 // TODO: better UI than a slider for this!
                 let max_channel_index = (store.get().project.mixer.channels.len() - 1) as i32;
@@ -94,7 +103,12 @@ impl View for MixerView<'_> {
                 ui.separator();
 
                 ui.horizontal(|ui| {
-                    ui.heading(format!("Mixer channel {}", mixer_index));
+                    let heading = if mixer_index == 0 {
+                        "Main channel"
+                    } else {
+                        &format!("Channel {mixer_index}")
+                    };
+                    ui.heading(heading);
 
                     knob(
                         ui,
