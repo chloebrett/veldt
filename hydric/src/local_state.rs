@@ -11,6 +11,7 @@ pub struct LocalState {
     pub active_track: RcOption<TrackSelector>,
     pub active_note: RcOption<usize>,
     pub active_track_placement: RcOption<usize>,
+
     pub selected_notes: Rc<RefCell<BTreeSet<usize>>>,
     pub selected_track_placements: Rc<RefCell<BTreeSet<usize>>>,
 

@@ -126,10 +126,20 @@ impl Default for StoreData {
                         },
                     },
                 ],
-                mixer: vec![MixerChannel {
-                    volume: 1.0,
-                    effects: vec![],
-                }],
+                mixer: vec![
+                    MixerChannel {
+                        volume: 1.0,
+                        effects: vec![],
+                    },
+                    MixerChannel {
+                        volume: 1.0,
+                        effects: vec![],
+                    },
+                    MixerChannel {
+                        volume: 1.0,
+                        effects: vec![],
+                    },
+                ],
                 bpm: 120.0,
                 mod_matrix: ModMatrix::default(),
             },

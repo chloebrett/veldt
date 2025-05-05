@@ -1,6 +1,6 @@
 mod consts;
-mod eq;
 mod envelope;
+mod eq;
 pub mod fft;
 pub mod graph;
 mod mixer;

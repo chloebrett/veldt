@@ -3,6 +3,7 @@ use crate::GetSet;
 use crate::WindowState;
 use crate::local_state::LocalState;
 use crate::view::View;
+use crate::widget::int_slider;
 use crate::widget::{default_window, knob};
 use crate::window_state::WindowStateField;
 use egui::CornerRadius;
@@ -42,25 +43,43 @@ impl View for MixerView<'_> {
             local_state,
             ..
         } = self;
-        let mixer_sel = window_state.mixer.channel;
+        let mixer_sel = window_state.mixer.channel.clone();
+        let MixerSelector(mixer_index) = mixer_sel;
+        let mixer_sel_mut = &mut window_state.mixer.channel;
+
         let mixer = &store.select(&mixer_sel);
         let dispatch_mixer = |action| store.dispatch(&mixer_sel, action);
         let on_release = || store.dispatchr(Action::Release);
-        let MixerSelector(mixer_index) = mixer_sel;
         let edit_state = local_state.mixer_edit_state.get();
 
         // Keep track of an object being dragged.
         let mut from_to = None;
 
         default_window("Mixer")
-            .id(format!("mixer_{mixer_index}").into())
+            .id(format!("mixer").into())
             .default_pos(Pos2 {
                 x: 1000.0,
                 y: 150.0,
             })
             .open(&mut window_state.mixer.visible)
             .show(ui.ctx(), |ui| {
-                ui.heading(format!("Mixer channel {}", mixer_index + 1));
+                ui.heading("Mixer");
+                ui.separator();
+
+                // TODO: better UI than a slider for this!
+                let max_channel_index = (store.get().project.mixer.len() - 1) as i32;
+                int_slider(
+                    ui,
+                    "Selected channel",
+                    mixer_index as f64,
+                    |it| *mixer_sel_mut = MixerSelector(it as usize),
+                    0..=max_channel_index,
+                    /* on_release= */
+                    || {}, // no-op on_release since this doesn't use the store.
+                );
+                ui.separator();
+
+                ui.heading(format!("Mixer channel {}", mixer_index));
                 ui.separator();
                 ui.with_layout(Layout::default(), |ui| {
                     // Set background to transparent to avoid a lightened background caused by drag
