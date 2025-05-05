@@ -2,42 +2,42 @@ use crate::view::View;
 use crate::widget::{TextRotation, for_each_with_separator, knob, knob_disabled, text_rotator};
 use eframe::egui;
 use egui::{Color32, Ui};
-use shared::model::MixerMatrix;
-use state::{Action, FloatField};
+use shared::model::{MatrixCell, MixerMatrix};
+use state::{Action, FloatField, MixerMatrixCellSelector, Store};
 
-pub struct MixerMatrixView<'a, F: Fn(Action), G: Fn()> {
+pub struct MixerMatrixView<'a, G: Fn()> {
     matrix: &'a MixerMatrix,
     row_titles: Vec<String>,
     col_titles: Vec<String>,
-    dispatch: F,
+    store: &'a Store,
     on_release: G,
 }
 
-impl<'a, F: Fn(Action), G: Fn()> MixerMatrixView<'a, F, G> {
+impl<'a, G: Fn()> MixerMatrixView<'a, G> {
     pub fn new(
         matrix: &'a MixerMatrix,
         row_titles: Vec<String>,
         col_titles: Vec<String>,
-        dispatch: F,
+        store: &'a Store,
         on_release: G,
     ) -> Self {
         MixerMatrixView {
             matrix,
             row_titles,
             col_titles,
-            dispatch,
+            store,
             on_release,
         }
     }
 }
 
-impl<F: Fn(Action), G: Fn()> View for MixerMatrixView<'_, F, G> {
+impl<G: Fn()> View for MixerMatrixView<'_, G> {
     fn ui(&mut self, ui: &mut Ui) {
         let Self {
             matrix,
             ref row_titles,
             ref col_titles,
-            ref dispatch,
+            ref store,
             ref on_release,
         } = *self;
 
@@ -77,6 +77,9 @@ impl<F: Fn(Action), G: Fn()> View for MixerMatrixView<'_, F, G> {
                                 TEXT_COLOUR,
                             );
                             for col in 0..matrix.channels {
+                                let sel = MixerMatrixCellSelector(row, col);
+                                let value: &MatrixCell = store.select(&sel);
+                                let value: f32 = (*value).into();
                                 let id = format!("mixer_matrix_{}_{}", row, col);
                                 ui.push_id(id, |ui| {
                                     if row == col as usize {
@@ -85,12 +88,12 @@ impl<F: Fn(Action), G: Fn()> View for MixerMatrixView<'_, F, G> {
                                         knob(
                                             ui,
                                             "",
-                                            0.0,
+                                            value,
                                             |it| {
-                                                dispatch(Action::SetFloat(
-                                                    FloatField::ModFactor,
-                                                    it,
-                                                ))
+                                                store.dispatch(
+                                                    &sel,
+                                                    Action::SetFloat(FloatField::ModFactor, it),
+                                                )
                                             }, // TODO need a selector for each knob
                                             0.0..=1.0,
                                             0.0,

@@ -3,7 +3,7 @@ use shared::action_proto::{
     SelectorProto, selector_proto::IndexPair, selector_proto::Kind as SelectorKind,
 };
 use shared::model::{
-    EffectInstance, GeneratorInstance, MixerChannel, Oscillator, PlacedNote, Placement,
+    EffectInstance, GeneratorInstance, MatrixCell, MixerChannel, Oscillator, PlacedNote, Placement,
     SubSynthConfig, Track,
 };
 
@@ -88,6 +88,9 @@ pub struct OscillatorSelector(
     /* generator_index */ pub usize,
     /* oscillator_index */ pub usize,
 );
+
+#[derive(Eq, PartialEq, Ord, PartialOrd, Copy, Clone, Debug, Hash)]
+pub struct MixerMatrixCellSelector(/* row */ pub usize, /* col */ pub usize);
 
 impl OscillatorSelector {
     pub fn upcast(&self) -> GeneratorSelector {
@@ -245,6 +248,22 @@ impl SelectorTrait for OscillatorSelector {
     }
 }
 
+impl SelectorTrait for MixerMatrixCellSelector {
+    type Item = MatrixCell;
+
+    fn try_select<'a>(&'a self, store: &'a StoreData) -> Option<&'a Self::Item> {
+        store.project.mixer.matrix.get(self.0, self.1)
+    }
+
+    fn try_select_mut<'a>(&'a self, store: &'a mut StoreData) -> Option<&'a mut Self::Item> {
+        store.project.mixer.matrix.get_mut(self.0, self.1)
+    }
+
+    fn as_enum(&self) -> Selector {
+        Selector::MixerMatrixCell(self.0, self.1)
+    }
+}
+
 // Enum version of the selector.
 // TODO: hide the visibility of this. We will still use it internally to efficiently represent a
 // generic selector.
@@ -262,6 +281,7 @@ pub enum Selector {
         /* generator_index */ usize,
         /* oscillator_index */ usize,
     ),
+    MixerMatrixCell(/* row */ usize, /* col */ usize),
 }
 
 impl From<Selector> for SelectorProto {
@@ -277,6 +297,9 @@ impl From<Selector> for SelectorProto {
                 Selector::Placement(it) => SelectorKind::Placement(it as u32),
                 Selector::Oscillator(first, second) => {
                     SelectorKind::Oscillator(pair(first, second))
+                }
+                Selector::MixerMatrixCell(first, second) => {
+                    SelectorKind::MixerMatrixCell(pair(first, second))
                 }
             }),
         }
@@ -299,6 +322,9 @@ impl From<SelectorProto> for Selector {
             SelectorKind::Placement(it) => Selector::Placement(it as usize),
             SelectorKind::Oscillator(IndexPair { first, second }) => {
                 Selector::Oscillator(first as usize, second as usize)
+            }
+            SelectorKind::MixerMatrixCell(IndexPair { first, second }) => {
+                Selector::MixerMatrixCell(first as usize, second as usize)
             }
         }
     }

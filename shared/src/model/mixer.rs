@@ -27,18 +27,50 @@ pub struct MixerChannel {
 pub struct MixerMatrix {
     // TODO: this is technically repeated data, since the mixer channels list is the same length.
     // Can we deduplicate/normalise?
-    #[proto_type_u8]
-    pub channels: u8,
+    #[proto_type_u32]
+    pub channels: usize,
 
     #[proto_repeated]
-    pub matrix: Vec<f32>,
+    pub matrix: Vec<MatrixCell>,
+}
+
+/// NewType wrapper so that we can implement ActionReceiver for this type.
+/// TODO: consider implementing Deref/DerefMut.
+/// TODO: also consider whether this should contain OrderedFloat. I think it isn't necessary.
+#[derive(Copy, Clone, PartialEq, Debug)]
+pub struct MatrixCell(f32);
+
+impl MatrixCell {
+    pub fn set(&mut self, value: f32) {
+        self.0 = value;
+    }
+}
+
+impl From<f32> for MatrixCell {
+    fn from(item: f32) -> Self {
+        Self(item)
+    }
+}
+
+impl From<MatrixCell> for f32 {
+    fn from(item: MatrixCell) -> Self {
+        item.0
+    }
 }
 
 impl MixerMatrix {
-    pub fn with_channels(channels: u8) -> Self {
+    pub fn with_channels(channels: usize) -> Self {
         MixerMatrix {
             channels,
-            matrix: vec![0.0; channels as usize * channels as usize],
+            matrix: vec![MatrixCell(0.0); channels * channels],
         }
+    }
+
+    pub fn get(&self, row: usize, col: usize) -> Option<&MatrixCell> {
+        self.matrix.get(row * self.channels + col)
+    }
+
+    pub fn get_mut(&mut self, row: usize, col: usize) -> Option<&mut MatrixCell> {
+        self.matrix.get_mut(row * self.channels + col)
     }
 }

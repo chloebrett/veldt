@@ -2,6 +2,7 @@ use crate::Action;
 
 mod effect;
 mod generator;
+mod matrix_cell;
 mod mixer_channel;
 mod note;
 mod placement;

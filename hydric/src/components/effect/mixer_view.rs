@@ -70,14 +70,7 @@ impl View for MixerView<'_> {
                     (0..matrix.channels).map(|i| format!("Ch{i} in")).collect();
                 let col_titles: Vec<String> =
                     (0..matrix.channels).map(|i| format!("Ch{i} out")).collect();
-                MixerMatrixView::new(
-                    matrix,
-                    row_titles,
-                    col_titles,
-                    |action| store.dispatchr(action),
-                    on_release,
-                )
-                .ui(ui);
+                MixerMatrixView::new(matrix, row_titles, col_titles, store, on_release).ui(ui);
 
                 // TODO: better UI than a slider for this!
                 let max_channel_index = (store.get().project.mixer.channels.len() - 1) as i32;
