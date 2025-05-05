@@ -3,6 +3,7 @@ use crate::graph::Graph;
 use crate::node::{SimpleWaveGeneratorNode, SubSynthNode};
 use petgraph::stable_graph::NodeIndex;
 use shared::model::{Generator, GeneratorInstance, PlacementType, Project};
+use state::GeneratorSelector;
 
 /// Describes a generator from the viewpoint of the graph.
 /// Contains a reference to the generator node.
@@ -19,9 +20,11 @@ impl GeneratorInfo {
         graph: &mut Graph,
         project: &Project,
         generator: &GeneratorInstance,
-        generator_index: usize,
+        selector: &GeneratorSelector,
     ) -> Self {
+        let GeneratorSelector(generator_index) = *selector;
         let bpm = project.bpm;
+
         // Placements that are linked to this generator.
         let placements: Vec<_> = project
             .placements
@@ -47,7 +50,7 @@ impl GeneratorInfo {
             } => make_node(SimpleWaveGeneratorNode::new(
                 config.clone(),
                 meta.clone(),
-                generator_index,
+                selector.clone(),
                 placements,
                 tracks,
                 bpm,
