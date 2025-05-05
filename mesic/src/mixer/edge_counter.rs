@@ -26,6 +26,7 @@ impl EdgeCounter {
 
 /// The types of edges that can be added to the mixer graph.
 /// Used for counting and debugging.
+/// TODO: rename "EffMix" to "EffWetDry".
 #[derive(Hash, Debug, Eq, PartialEq, Copy, Clone)]
 pub enum EdgeKey {
     GenToMixIn,

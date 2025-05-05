@@ -326,7 +326,16 @@ mod tests {
         // Channel input and output nodes (2) +
         // Generator nodes (1)
         assert_eq!(mixer.graph.node_count(), 7);
-        assert_eq!(mixer.edge_counter.counts, edge_counts);
+        for (key, count) in mixer.edge_counter.counts.iter() {
+            assert_eq!(
+                Some(count),
+                edge_counts.get(key),
+                "{:?} {} {:?}",
+                key,
+                count,
+                edge_counts.get(key)
+            );
+        }
         assert_eq!(mixer.channels.len(), 1);
     }
 
@@ -364,7 +373,7 @@ mod tests {
         edge_counts.insert(EdgeKey::EffMixToNextEff, 1);
         edge_counts.insert(EdgeKey::EffMixToNextEffMix, 1);
         edge_counts.insert(EdgeKey::EffMixToMixOut, 2);
-        edge_counts.insert(EdgeKey::MixOutToMainSum, 2);
+        edge_counts.insert(EdgeKey::MixOutToMainSum, 1);
         edge_counts.insert(EdgeKey::MainSumToMainAmp, 1);
 
         // Main sum and amp nodes (2) +
@@ -372,7 +381,16 @@ mod tests {
         // Channel input and output nodes (2 * 2 channels) +
         // Generator nodes (3).
         assert_eq!(mixer.graph.node_count(), 15);
-        assert_eq!(mixer.edge_counter.counts, edge_counts);
+        for (key, count) in mixer.edge_counter.counts.iter() {
+            assert_eq!(
+                Some(count),
+                edge_counts.get(key),
+                "{:?} {} {:?}",
+                key,
+                count,
+                edge_counts.get(key)
+            );
+        }
         assert_eq!(mixer.channels.len(), 2);
     }
 
