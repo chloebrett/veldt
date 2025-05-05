@@ -36,6 +36,8 @@ pub enum EdgeKey {
     EffMixToNextEffMix,
     EffMixToMixOut,
     MixInToMixOut,
+    MixOutToRoute,
+    RouteToMixIn,
     MixOutToMainSum,
     MainSumToMainAmp,
     MainBufToMainSum,

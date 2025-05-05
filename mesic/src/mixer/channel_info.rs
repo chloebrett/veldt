@@ -149,6 +149,12 @@ impl ChannelInfo {
                 EdgeKey::EffMixToMixOut,
             );
         }
+
+        // Link up the channel's outputs to its routes.
+        // .flatten() ignores the None nodes.
+        for route in self.output_routes.iter().flatten() {
+            edge_counter.add_edge(graph, self.output_node, *route, EdgeKey::MixOutToRoute);
+        }
     }
 
     pub fn effects_count(&self) -> usize {
