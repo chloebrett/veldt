@@ -64,6 +64,7 @@ impl View for MixerView<'_> {
             .open(&mut window_state.mixer.visible)
             .show(ui.ctx(), |ui| {
                 ui.heading("Mixer");
+
                 ui.separator();
 
                 // TODO: better UI than a slider for this!
@@ -79,7 +80,20 @@ impl View for MixerView<'_> {
                 );
                 ui.separator();
 
-                ui.heading(format!("Mixer channel {}", mixer_index));
+                ui.horizontal(|ui| {
+                    ui.heading(format!("Mixer channel {}", mixer_index));
+
+                    knob(
+                        ui,
+                        "Volume",
+                        mixer.volume,
+                        |it| dispatch_mixer(Action::SetFloat(FloatField::Volume, it)),
+                        0.0..=1.0,
+                        /* neutral= */ 1.0,
+                        on_release,
+                    );
+                });
+
                 ui.separator();
                 ui.with_layout(Layout::default(), |ui| {
                     // Set background to transparent to avoid a lightened background caused by drag
@@ -138,6 +152,7 @@ impl View for MixerView<'_> {
                         from_to = Some(new_from_to)
                     };
                 }
+
                 ui.horizontal(|ui| {
                     ui.menu_button("Add new effect", |ui| {
                         for effect in Effect::iter() {

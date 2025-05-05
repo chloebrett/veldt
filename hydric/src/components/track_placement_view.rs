@@ -88,7 +88,7 @@ impl View for TrackPlacementView<'_> {
                 ui.horizontal(|ui| {
                     slider(
                         ui,
-                        "Clipped Duration",
+                        "Clipped duration",
                         duration,
                         |it| {
                             store.dispatch(&sel, {
