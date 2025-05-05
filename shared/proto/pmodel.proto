@@ -14,11 +14,15 @@ message ProjectProto {
 
   repeated GeneratorInstanceProto generators = 5;
 
-  repeated MixerChannelProto mixer = 6;
+  MixerProto mixer = 6;
 
   float bpm = 7;
 
   ModMatrixProto mod_matrix = 8;
+}
+
+message MixerProto {
+  repeated MixerChannelProto channels = 1;
 }
 
 message ModMatrixProto {

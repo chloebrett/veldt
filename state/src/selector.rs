@@ -1,5 +1,4 @@
-use crate::StoreData;
-use crate::receiver::ActionReceiver;
+use crate::{StoreData, receiver::ActionReceiver};
 use shared::action_proto::{
     SelectorProto, selector_proto::IndexPair, selector_proto::Kind as SelectorKind,
 };
@@ -156,11 +155,11 @@ impl SelectorTrait for MixerSelector {
     type Item = MixerChannel;
 
     fn try_select<'a>(&'a self, store: &'a StoreData) -> Option<&'a Self::Item> {
-        store.project.mixer.get(self.0)
+        store.project.mixer.channels.get(self.0)
     }
 
     fn try_select_mut<'a>(&'a self, store: &'a mut StoreData) -> Option<&'a mut Self::Item> {
-        store.project.mixer.get_mut(self.0)
+        store.project.mixer.channels.get_mut(self.0)
     }
 
     fn as_enum(&self) -> Selector {
@@ -175,6 +174,7 @@ impl SelectorTrait for EffectSelector {
         store
             .project
             .mixer
+            .channels
             .get(self.0)
             .and_then(|it| it.effects.get(self.1))
     }
@@ -183,6 +183,7 @@ impl SelectorTrait for EffectSelector {
         store
             .project
             .mixer
+            .channels
             .get_mut(self.0)
             .and_then(|it| it.effects.get_mut(self.1))
     }

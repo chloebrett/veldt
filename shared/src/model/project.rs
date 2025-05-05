@@ -1,7 +1,4 @@
-use crate::model::{
-    GeneratorInstance, MixerChannel, ModMatrix, Placement, Sample, Track,
-    TrackPlacement,
-};
+use crate::model::{GeneratorInstance, Mixer, ModMatrix, Placement, Sample, Track, TrackPlacement};
 use crate::pmodel::*;
 use crate::types::Beats;
 use local_macro::{FromProto, IntoProto};
@@ -24,8 +21,8 @@ pub struct Project {
     #[proto_repeated]
     pub generators: Vec<GeneratorInstance>,
 
-    #[proto_repeated]
-    pub mixer: Vec<MixerChannel>,
+    #[proto_optional]
+    pub mixer: Mixer,
 
     pub bpm: Beats,
 
@@ -54,9 +51,9 @@ impl Project {
 mod tests {
     use crate::{
         model::{
-            AdsrEnvelope, AntiAliasingMode, DelayConfig, Effect, EffectMeta, EqConfig, EqType,
-            Generator, GeneratorMeta, ModDelayConfig, Note, PitchName, PlacedNote, PlacementType,
-            ScaleValue, SimpleWaveConfig, WaveType, EffectInstance,
+            AdsrEnvelope, AntiAliasingMode, DelayConfig, Effect, EffectInstance, EffectMeta,
+            EqConfig, EqType, Generator, GeneratorMeta, MixerChannel, ModDelayConfig, Note,
+            PitchName, PlacedNote, PlacementType, ScaleValue, SimpleWaveConfig, WaveType,
         },
         testing::proto::proto_testing::assert_proto_round_trip,
     };
@@ -117,45 +114,47 @@ mod tests {
                     mixer_channel: 0,
                 },
             }],
-            mixer: vec![MixerChannel {
-                volume: 1.0,
-                effects: vec![
-                    EffectInstance {
-                        it: Effect::SimpleEq(EqConfig {
-                            kind: EqType::SimpleResonator,
-                            fc: 1000.0,
-                            q: 1.0,
-                            gain: 0.0,
-                        }),
-                        meta: EffectMeta {
-                            wet: 1.0,
-                            mute: false,
+            mixer: Mixer {
+                channels: vec![MixerChannel {
+                    volume: 1.0,
+                    effects: vec![
+                        EffectInstance {
+                            it: Effect::SimpleEq(EqConfig {
+                                kind: EqType::SimpleResonator,
+                                fc: 1000.0,
+                                q: 1.0,
+                                gain: 0.0,
+                            }),
+                            meta: EffectMeta {
+                                wet: 1.0,
+                                mute: false,
+                            },
                         },
-                    },
-                    EffectInstance {
-                        it: Effect::Delay(DelayConfig {
-                            delay_ms: 250.0,
-                            feedback: 0.5,
-                        }),
-                        meta: EffectMeta {
-                            wet: 0.5,
-                            mute: false,
+                        EffectInstance {
+                            it: Effect::Delay(DelayConfig {
+                                delay_ms: 250.0,
+                                feedback: 0.5,
+                            }),
+                            meta: EffectMeta {
+                                wet: 0.5,
+                                mute: false,
+                            },
                         },
-                    },
-                    EffectInstance {
-                        it: Effect::ModDelay(ModDelayConfig {
-                            min_depth: 100,
-                            max_depth: 200,
-                            freq: 10.0,
-                            lfo_type: WaveType::Triangle,
-                        }),
-                        meta: EffectMeta {
-                            wet: 0.5,
-                            mute: false,
+                        EffectInstance {
+                            it: Effect::ModDelay(ModDelayConfig {
+                                min_depth: 100,
+                                max_depth: 200,
+                                freq: 10.0,
+                                lfo_type: WaveType::Triangle,
+                            }),
+                            meta: EffectMeta {
+                                wet: 0.5,
+                                mute: false,
+                            },
                         },
-                    },
-                ],
-            }],
+                    ],
+                }],
+            },
             bpm: 120.0,
             mod_matrix: ModMatrix::default(),
         };

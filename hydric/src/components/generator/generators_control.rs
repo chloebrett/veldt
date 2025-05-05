@@ -58,7 +58,7 @@ pub fn generators_control(ctx: &egui::Context, window_state: &mut WindowState, s
                 });
 
                 // TODO: better UI than a slider for this!
-                let max_channel_index = (store.get().project.mixer.len() - 1) as i32;
+                let max_channel_index = (store.get().project.mixer.channels.len() - 1) as i32;
                 int_slider(
                     ui,
                     "Mixer channel",

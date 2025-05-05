@@ -3,6 +3,12 @@ use crate::pmodel::*;
 use crate::types::Volume;
 use local_macro::{FromProto, IntoProto};
 
+#[derive(Default, Clone, Debug, PartialEq, FromProto, IntoProto)]
+pub struct Mixer {
+    #[proto_repeated]
+    pub channels: Vec<MixerChannel>,
+}
+
 #[derive(Clone, Debug, PartialEq, FromProto, IntoProto)]
 pub struct MixerChannel {
     pub volume: Volume,

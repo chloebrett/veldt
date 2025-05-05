@@ -3,9 +3,9 @@ use crate::{Action, Selector, SelectorTrait, reducer};
 use ordered_float::OrderedFloat;
 use shared::model::{
     AdsrEnvelope, AntiAliasingMode, FileTreeConfig, FilenameTree, Generator, GeneratorInstance,
-    GeneratorMeta, LfoConfig, MixerChannel, ModMatrix, Note, Oscillator, PitchName, PlacedNote,
-    Placement, PlacementType, Project, Scale, ScaleValue, SimpleWaveConfig, SubSynthConfig, Track,
-    TrackPlacement, WaveType,
+    GeneratorMeta, LfoConfig, Mixer, MixerChannel, ModMatrix, Note, Oscillator, PitchName,
+    PlacedNote, Placement, PlacementType, Project, Scale, ScaleValue, SimpleWaveConfig,
+    SubSynthConfig, Track, TrackPlacement, WaveType,
 };
 use shared::types::Volume;
 
@@ -133,20 +133,22 @@ impl Default for StoreData {
                         },
                     },
                 ],
-                mixer: vec![
-                    MixerChannel {
-                        volume: 1.0,
-                        effects: vec![],
-                    },
-                    MixerChannel {
-                        volume: 1.0,
-                        effects: vec![],
-                    },
-                    MixerChannel {
-                        volume: 1.0,
-                        effects: vec![],
-                    },
-                ],
+                mixer: Mixer {
+                    channels: vec![
+                        MixerChannel {
+                            volume: 1.0,
+                            effects: vec![],
+                        },
+                        MixerChannel {
+                            volume: 1.0,
+                            effects: vec![],
+                        },
+                        MixerChannel {
+                            volume: 1.0,
+                            effects: vec![],
+                        },
+                    ],
+                },
                 bpm: 120.0,
                 mod_matrix: ModMatrix::default(),
             },
