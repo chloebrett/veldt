@@ -26,10 +26,10 @@ impl EqNode {
 impl Node<ProcessContext> for EqNode {
     fn process(&mut self, inputs: &[Input], output: &mut [Buffer], payload: &ProcessContext) {
         // Apply changes from the store.
-        if let EffectInstance {
+        if let Some(EffectInstance {
             it: Effect::SimpleEq(config),
             ..
-        } = &payload.store.select(&self.selector)
+        }) = &payload.store.try_select(&self.selector)
         {
             if *config != self.config {
                 self.config = config.clone();

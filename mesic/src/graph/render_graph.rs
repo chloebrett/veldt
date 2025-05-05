@@ -85,6 +85,9 @@ impl RenderGraph {
 
     fn update_store(&mut self) {
         // Update the store if there are actions to process.
+        // TODO: there is a bug where new effects won't pick up these changes immediately,
+        // and have to have their values tweaked first.
+        // Investigate.
         let store = &mut self.process_context.store;
         if let Some(rx) = &self.rx {
             while let Ok((selector, action)) = rx.try_recv() {

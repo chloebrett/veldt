@@ -32,6 +32,13 @@ impl StoreData {
     ) -> &'a T {
         selector.select(self)
     }
+
+    pub fn try_select<'a, T: ActionReceiver + 'a, S: SelectorTrait<Item = T> + 'a>(
+        &'a self,
+        selector: &'a S,
+    ) -> Option<&'a T> {
+        selector.try_select(self)
+    }
 }
 
 const BASE_OSC: Oscillator = Oscillator {

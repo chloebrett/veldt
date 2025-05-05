@@ -67,13 +67,13 @@ impl View for MixerView<'_> {
 
                 let matrix = &store.get().project.mixer.matrix;
                 let row_titles: Vec<String> =
-                    (0..matrix.channels).map(|i| format!("Ch{i} in")).collect();
+                    (0..matrix.channels).map(|i| format!("Ch{i} out")).collect();
                 let col_titles: Vec<String> = (0..matrix.channels)
                     .map(|i| {
                         if i == 0 {
-                            "Main out".to_string()
+                            "Main in".to_string()
                         } else {
-                            format!("Ch{i} out")
+                            format!("Ch{i} in")
                         }
                     })
                     .collect();
