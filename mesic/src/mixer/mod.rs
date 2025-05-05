@@ -74,7 +74,9 @@ impl Mixer {
         let mut graph = make_graph();
 
         let main_sum = graph.add_node(make_node(Sum));
-        let main_amp = graph.add_node(make_node(AmpNode::default()));
+        let main_amp = graph.add_node(make_node(AmpNode {
+            channel_index: None,
+        }));
 
         Self {
             graph,
@@ -97,7 +99,9 @@ impl Mixer {
             .map(|channel_index| ChannelInfo::new(&mut graph, project, channel_index))
             .collect();
 
-        let main_amp = graph.add_node(make_node(AmpNode::default()));
+        let main_amp = graph.add_node(make_node(AmpNode {
+            channel_index: None,
+        }));
 
         Self {
             graph,
@@ -122,7 +126,9 @@ impl Mixer {
         let main_buffer = graph.add_node(make_node(buffer_node));
 
         let main_sum = graph.add_node(make_node(Sum));
-        let main_amp = graph.add_node(make_node(AmpNode::default()));
+        let main_amp = graph.add_node(make_node(AmpNode {
+            channel_index: None,
+        }));
 
         Self {
             graph,
