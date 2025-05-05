@@ -65,9 +65,32 @@ impl ChannelInfo {
             channel_index,
         ))));
 
+        let mut partial = Self {
+            generators,
+            input_node,
+            effects,
+            output_node,
+            output_routes: vec![],
+        };
+        partial.refresh_routes(graph, channel_index, project);
+        partial
+    }
+
+    pub fn refresh_routes(&mut self, graph: &mut Graph, channel_index: usize, project: &Project) {
+        // Delete existing route nodes, before adding new ones!
+        // This is reasonably fine because the nodes are fairly small and stateless.
+        // It still needs some allocations though, so we could be a bit pickier / more efficient if
+        // we wanted to be. E.g. doing this on *every* matrix knob change isn't particularly
+        // efficient. We should only do it when disconnecting/reconnecting completely, and even
+        // then, only change the relevant node.
+        // This would need a lot of unit testing to make sure it was correct.
+        for route in self.output_routes.iter().flatten() {
+            graph.remove_node(*route);
+        }
+
         let row = channel_index;
         let matrix = &project.mixer.matrix;
-        let output_routes: Vec<_> = (0..matrix.channels)
+        self.output_routes = (0..matrix.channels)
             .map(|col| {
                 let default: MatrixCell = 0.0.into();
                 let cell: &MatrixCell = matrix.get(row, col).unwrap_or(&default);
@@ -81,14 +104,6 @@ impl ChannelInfo {
                 }
             })
             .collect();
-
-        Self {
-            generators,
-            input_node,
-            effects,
-            output_node,
-            output_routes,
-        }
     }
 
     pub fn add_edges(&self, graph: &mut Graph, edge_counter: &mut EdgeCounter) {

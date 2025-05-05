@@ -4,7 +4,9 @@ use dasp_frame::Stereo;
 use dasp_graph::{BoxedNodeSend, Buffer, Node, NodeData, node::Sum};
 use petgraph::stable_graph::NodeIndex;
 use shared::model::Project;
-use state::{Action, EffectSelector, IndexField, MoveField, Selector, TypeField};
+use state::{
+    Action, EffectSelector, FloatField, IndexField, MoveField, Selector, StoreData, TypeField,
+};
 
 mod channel_info;
 mod edge_counter;
@@ -174,7 +176,7 @@ impl Mixer {
     /// If the graph changes, edges are refreshed.
     /// TODO: consider processing multiple actions at once, and only refreshing the edges a single
     /// time.
-    pub fn update(&mut self, selector: &Selector, action: &Action) {
+    pub fn update(&mut self, selector: &Selector, action: &Action, store: &StoreData) {
         let did_change = match selector {
             Selector::Mixer(mixer_index) => match action {
                 Action::MoveChild(MoveField {
@@ -209,6 +211,17 @@ impl Mixer {
                             self.channels[*mixer_channel].soft_add_generator(&generator);
                             break;
                         }
+                    }
+                    true
+                }
+                _ => false,
+            },
+            Selector::MixerMatrixCell(..) => match action {
+                // If the matrix changes, reset the routes for each node, then refresh the edges.
+                // NOTE: in future, consider what happens if the size of the matrix changes too.
+                Action::SetFloat(FloatField::ModFactor, _) => {
+                    for (channel_index, channel) in self.channels.iter_mut().enumerate() {
+                        channel.refresh_routes(&mut self.graph, channel_index, &store.project);
                     }
                     true
                 }
