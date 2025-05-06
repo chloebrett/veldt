@@ -160,7 +160,7 @@ impl<G: Fn()> View for SubSynthView<'_, G> {
             }
             .into();
             // TODO: piano is only rendering a subset of these notes.
-            Piano::new(max_note, min_note, PianoOrientation::Horizontal).ui(ui);
+            Piano::new(max_note + 1, min_note, PianoOrientation::Horizontal).ui(ui);
         }
 
         draw_piano(ui);
