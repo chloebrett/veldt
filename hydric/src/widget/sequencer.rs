@@ -326,8 +326,6 @@ pub trait SequencerObject<T> {
 
     fn add_new(&self, store: &Store, parent_index: Option<usize>);
 
-    fn delete(store: &Store, index: usize, parent_index: Option<usize>);
-
     fn delete_selected(
         ui: &mut Ui,
         store: &Store,
