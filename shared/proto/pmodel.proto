@@ -8,17 +8,29 @@ message ProjectProto {
   repeated TrackProto tracks = 2;
 
   /// Ordered based on start_position.
-  repeated TrackPlacementProto track_placements = 3;
+  repeated PlacementProto placements = 3;
 
   repeated SampleProto samples = 4;
 
   repeated GeneratorInstanceProto generators = 5;
 
-  repeated MixerChannelProto mixer = 6;
+  MixerProto mixer = 6;
 
   float bpm = 7;
 
   ModMatrixProto mod_matrix = 8;
+}
+
+message MixerProto {
+  MixerMatrixProto matrix = 1;
+
+  repeated MixerChannelProto channels = 2;
+}
+
+message MixerMatrixProto {
+  uint32 channels = 1;
+
+  repeated float matrix = 3;
 }
 
 message ModMatrixProto {
@@ -35,24 +47,42 @@ message TrackProto {
   float offset = 2;
 }
 
+message PlacementProto {
+  float offset = 1;
+
+  optional float clipped_duration = 2;
+
+  uint32 visual_placement = 3;
+
+  oneof kind {
+    pmodel.TrackPlacementProto track = 4;
+
+    pmodel.SamplePlacementProto sample = 5;
+  }
+}
+
 message TrackPlacementProto {
-  uint32 track_id = 1;
+  uint32 track_index = 1;
 
-  float offset = 2;
+  uint32 generator_index = 2;
+}
 
-  optional float clipped_duration = 3;
-
-  uint32 visual_placement = 4;
+message SamplePlacementProto {
+  uint32 sample_index = 1;
 }
 
 message SampleProto {
-  bytes data = 1;
+  bytes left = 1;
 
-  float sample_rate = 2;
+  bytes right = 2;
+
+  float sample_rate = 3;
 }
 
 message MixerChannelProto {
-  repeated EffectInstanceProto effects = 1;
+  float volume = 1;
+
+  repeated EffectInstanceProto effects = 2;
 }
 
 message PlacedNoteProto {
@@ -86,12 +116,12 @@ message PitchNameProto {
 message EffectInstanceProto {
   EffectMetaProto meta = 1;
 
-  oneof effect {
-    SimpleDelayProto simple_delay = 2;
+  oneof it {
+    DelayProto delay = 2;
 
     SimpleEqProto simple_eq = 3;
 
-    SimpleCompressorProto simple_compressor = 4;
+    CompressorProto compressor = 4;
 
     ModDelayProto mod_delay = 5;
   }
@@ -99,13 +129,13 @@ message EffectInstanceProto {
 }
 
 message GeneratorInstanceProto {
-  uint32 id = 1;
-
   GeneratorMetaProto meta = 2;
 
-  oneof kind {
+  oneof it {
     SimpleWaveProto simple_wave = 3;
+
     NoiseProto noise = 4;
+
     SubSynthProto sub_synth = 5;
   };
 }
@@ -130,11 +160,13 @@ message SubSynthProto {
 }
 
 message SubSynthConfigProto {
-  repeated OscillatorConfigProto oscillators = 1; 
+  repeated OscillatorProto oscillators = 1; 
   repeated LfoConfigProto lfos = 2;
+  repeated AdsrEnvelopeProto envelopes = 3;
+  ModMatrixProto matrix = 4;  
 }
 
-message OscillatorConfigProto {
+message OscillatorProto {
   WaveTypeProto wave = 1;
   float volume = 2;
   float pan = 3;
@@ -149,6 +181,8 @@ message GeneratorMetaProto {
   bool mute = 2;
 
   float pan = 3;
+
+  uint32 mixer_channel = 4;
 }
 
 message SimpleWaveProto {
@@ -170,14 +204,12 @@ message SimpleWaveConfigProto {
 }
 
 message EffectMetaProto {
-  uint32 id = 1;
-
   float wet = 2;
 
   bool mute = 3;
 }
 
-message SimpleDelayProto {
+message DelayProto {
   DelayConfigProto config = 1;
 }
 
@@ -201,7 +233,7 @@ message EqConfigProto {
   float gain = 4;
 }
 
-message SimpleCompressorProto {
+message CompressorProto {
   CompressorConfigProto config = 1;
 }
 

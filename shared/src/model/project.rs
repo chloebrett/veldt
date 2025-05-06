@@ -1,15 +1,10 @@
-use crate::bytes::{as_bytes, as_floats};
-use crate::model::{EffectInstance, GeneratorInstance, ModMatrix, Track};
+use crate::model::{GeneratorInstance, Mixer, ModMatrix, Placement, Sample, Track, TrackPlacement};
 use crate::pmodel::*;
 use crate::types::Beats;
 use local_macro::{FromProto, IntoProto};
 use ordered_float::OrderedFloat;
-use std::cmp::Ordering;
 
-pub type TrackId = u32;
-type _SampleId = usize;
-
-#[derive(Clone, Debug, PartialEq, FromProto, IntoProto)]
+#[derive(Clone, Debug, PartialEq, FromProto, IntoProto, Default)]
 pub struct Project {
     pub name: String,
 
@@ -18,7 +13,7 @@ pub struct Project {
 
     /// Ordered based on start_position.
     #[proto_repeated]
-    pub track_placements: Vec<TrackPlacement>,
+    pub placements: Vec<Placement>,
 
     #[proto_repeated]
     pub samples: Vec<Sample>,
@@ -26,8 +21,8 @@ pub struct Project {
     #[proto_repeated]
     pub generators: Vec<GeneratorInstance>,
 
-    #[proto_repeated]
-    pub mixer: Vec<MixerChannel>,
+    #[proto_optional]
+    pub mixer: Mixer,
 
     pub bpm: Beats,
 
@@ -35,95 +30,34 @@ pub struct Project {
     pub mod_matrix: ModMatrix,
 }
 
-#[derive(Clone, Debug, PartialEq, Eq)]
-pub struct TrackPlacement {
-    pub track_id: TrackId,
-
-    /// The time that the track starts within the arrangement.
-    pub offset: OrderedFloat<Beats>,
-
-    /// If None, then duration is not clipped.
-    pub clipped_duration: Option<OrderedFloat<Beats>>,
-
-    /// Position that the track should be displayed visually, useful if there are overlapping tracks.
-    /// Zero is the top.
-    pub visual_placement: u32,
-}
-
-impl PartialOrd for TrackPlacement {
-    fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
-        Some(self.cmp(other))
-    }
-}
-
-impl Ord for TrackPlacement {
-    fn cmp(&self, other: &Self) -> Ordering {
-        self.offset.cmp(&other.offset)
-    }
-}
-
-impl From<TrackPlacementProto> for TrackPlacement {
-    fn from(item: TrackPlacementProto) -> Self {
-        TrackPlacement {
-            track_id: item.track_id,
-            offset: item.offset.into(),
-            clipped_duration: item.clipped_duration.map(OrderedFloat),
-            visual_placement: item.visual_placement,
+impl Project {
+    pub fn duration(&self) -> OrderedFloat<f32> {
+        let mut max = OrderedFloat(0.0);
+        for placement in &self.placements {
+            if let &Ok(&TrackPlacement { track_index, .. }) = &placement.try_into() {
+                let track = &self.tracks[track_index];
+                let offset = &placement.offset;
+                let duration = placement
+                    .clipped_duration
+                    .unwrap_or(track.unclipped_duration());
+                max = std::cmp::max(max, offset + duration);
+            }
         }
+        max
     }
-}
-
-impl From<TrackPlacement> for TrackPlacementProto {
-    fn from(item: TrackPlacement) -> Self {
-        TrackPlacementProto {
-            track_id: item.track_id,
-            offset: *item.offset,
-            clipped_duration: item.clipped_duration.map(|it| *it),
-            visual_placement: item.visual_placement,
-        }
-    }
-}
-
-#[derive(Clone, Debug, PartialEq)]
-pub struct Sample {
-    pub data: Vec<f32>,
-    pub sample_rate: f32,
-}
-
-impl From<SampleProto> for Sample {
-    fn from(item: SampleProto) -> Self {
-        Sample {
-            data: as_floats(&item.data),
-            sample_rate: item.sample_rate,
-        }
-    }
-}
-
-impl From<Sample> for SampleProto {
-    fn from(item: Sample) -> Self {
-        SampleProto {
-            data: as_bytes(&item.data),
-            sample_rate: item.sample_rate,
-        }
-    }
-}
-
-#[derive(Clone, Debug, PartialEq, FromProto, IntoProto)]
-pub struct MixerChannel {
-    #[proto_repeated]
-    pub effects: Vec<EffectInstance>,
 }
 
 #[cfg(test)]
 mod tests {
     use crate::{
         model::{
-            AdsrEnvelope, AntiAliasingMode, DelayConfig, Effect, EffectMeta, EqConfig, EqType,
-            GeneratorMeta, GeneratorType, ModDelayConfig, Note, PitchName, PlacedNote, ScaleValue,
-            SimpleWaveConfig, WaveType,
+            AdsrEnvelope, AntiAliasingMode, DelayConfig, Effect, EffectInstance, EffectMeta,
+            EqConfig, EqType, Generator, GeneratorMeta, MixerChannel, MixerMatrix, ModDelayConfig,
+            Note, PitchName, PlacedNote, PlacementType, ScaleValue, SimpleWaveConfig, WaveType,
         },
         testing::proto::proto_testing::assert_proto_round_trip,
     };
+    use ordered_float::OrderedFloat;
 
     use super::*;
 
@@ -145,86 +79,83 @@ mod tests {
                 }],
                 offset: OrderedFloat(0.0),
             }],
-            track_placements: vec![TrackPlacement {
-                track_id: 3,
+            placements: vec![Placement {
+                kind: PlacementType::Track(TrackPlacement {
+                    track_index: 3,
+                    generator_index: 3,
+                }),
                 offset: 2.5.into(),
                 clipped_duration: Some(5.2.into()),
                 visual_placement: 6,
             }],
             samples: vec![Sample {
-                data: vec![0.0, 1.0, 3.0],
+                left: vec![0.0, 1.0, 3.0],
+                right: vec![0.0, 1.0, 3.0],
                 sample_rate: 1.0,
             }],
             generators: vec![GeneratorInstance {
-                id: 0,
-                kind: GeneratorType::SimpleWave {
-                    config: SimpleWaveConfig {
-                        wave: WaveType::Sine,
-                        envelope: AdsrEnvelope {
-                            attack: 0.1,
-                            decay: 0.1,
-                            sustain: 0.8,
-                            release: 0.1,
-                        },
-                        osc_count: 4,
-                        detune_cents: 5.0,
-                        anti_aliasing_mode: AntiAliasingMode::Off,
-                        oversample_factor: 2,
+                it: Generator::SimpleWave(SimpleWaveConfig {
+                    wave: WaveType::Sine,
+                    envelope: AdsrEnvelope {
+                        attack: 0.1,
+                        decay: 0.1,
+                        sustain: 0.8,
+                        release: 0.1,
                     },
-                },
+                    osc_count: 4,
+                    detune_cents: 5.0,
+                    anti_aliasing_mode: AntiAliasingMode::Additive,
+                    oversample_factor: 2,
+                }),
                 meta: GeneratorMeta {
                     volume: 1.0,
                     mute: false,
                     pan: 0.0,
+                    mixer_channel: 0,
                 },
             }],
-            mixer: vec![MixerChannel {
-                effects: vec![
-                    EffectInstance {
-                        effect: Effect::SimpleEq {
-                            config: EqConfig {
+            mixer: Mixer {
+                matrix: MixerMatrix::with_channels(3),
+                channels: vec![MixerChannel {
+                    volume: 1.0,
+                    effects: vec![
+                        EffectInstance {
+                            it: Effect::SimpleEq(EqConfig {
                                 kind: EqType::SimpleResonator,
                                 fc: 1000.0,
                                 q: 1.0,
                                 gain: 0.0,
+                            }),
+                            meta: EffectMeta {
+                                wet: 1.0,
+                                mute: false,
                             },
                         },
-                        meta: EffectMeta {
-                            id: 0,
-                            wet: 1.0,
-                            mute: false,
-                        },
-                    },
-                    EffectInstance {
-                        effect: Effect::SimpleDelay {
-                            config: DelayConfig {
+                        EffectInstance {
+                            it: Effect::Delay(DelayConfig {
                                 delay_ms: 250.0,
                                 feedback: 0.5,
+                            }),
+                            meta: EffectMeta {
+                                wet: 0.5,
+                                mute: false,
                             },
                         },
-                        meta: EffectMeta {
-                            id: 1,
-                            wet: 0.5,
-                            mute: false,
-                        },
-                    },
-                    EffectInstance {
-                        effect: Effect::ModDelay {
-                            config: ModDelayConfig {
+                        EffectInstance {
+                            it: Effect::ModDelay(ModDelayConfig {
                                 min_depth: 100,
                                 max_depth: 200,
                                 freq: 10.0,
                                 lfo_type: WaveType::Triangle,
+                            }),
+                            meta: EffectMeta {
+                                wet: 0.5,
+                                mute: false,
                             },
                         },
-                        meta: EffectMeta {
-                            id: 1,
-                            wet: 0.5,
-                            mute: false,
-                        },
-                    },
-                ],
-            }],
+                    ],
+                }],
+            },
             bpm: 120.0,
             mod_matrix: ModMatrix::default(),
         };

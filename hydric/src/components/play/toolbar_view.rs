@@ -1,8 +1,10 @@
-use crate::app_state::{AsyncState, AudioState};
-use crate::components::undo_redo_control;
+use crate::promise::spawn;
+use crate::rpc::upload_sample;
 use crate::view::View;
 use crate::widget::{default_window, knob, slider};
+use crate::{AsyncState, AudioState};
 use egui::{Pos2, Ui};
+use log::{error, info};
 use shared::types::Beats;
 use state::{Action, FloatField, Store};
 
@@ -34,38 +36,71 @@ impl View for ToolbarView<'_> {
             .default_pos(Pos2 { x: 600.0, y: 20.0 })
             .show(ui.ctx(), |ui| {
                 let on_release = || self.store.dispatchr(Action::Release);
+                ui.horizontal(|ui| {
+                    let volume = self.store.get().volume;
+                    knob(
+                        ui,
+                        "Volume",
+                        volume,
+                        |it| {
+                            self.store
+                                .dispatchr(Action::SetFloat(FloatField::Volume, it))
+                        },
+                        0.0..=1.0,
+                        /* neutral= */ 1.0,
+                        on_release,
+                    );
 
-                let volume = self.store.get().volume;
-                knob(
-                    ui,
-                    "Volume",
-                    volume,
-                    |it| {
-                        self.store
-                            .dispatchr(Action::SetFloat(FloatField::Volume, it))
-                    },
-                    0.0..=1.0,
-                    /* neutral= */ 1.0,
-                    on_release,
-                );
-
-                let bpm = self.store.get().project.bpm as f64;
-                slider(
-                    ui,
-                    "BPM",
-                    bpm,
-                    |it| {
-                        self.store
-                            .dispatchr(Action::SetFloat(FloatField::Bpm, it as Beats))
-                    },
-                    20.0..=200.0,
-                    on_release,
-                );
-                undo_redo_control(self.store, ui);
+                    let bpm = self.store.get().project.bpm as f64;
+                    slider(
+                        ui,
+                        "BPM",
+                        bpm,
+                        |it| {
+                            self.store
+                                .dispatchr(Action::SetFloat(FloatField::Bpm, it as Beats))
+                        },
+                        20.0..=200.0,
+                        on_release,
+                    );
+                });
                 ui.separator();
                 play_control(self.store, self.async_state, self.audio_state, ui);
                 ui.separator();
-                sample_control(self.store, self.audio_state, self.async_state, ui);
+
+                ui.horizontal(|ui| {
+                    sample_control(self.store, self.audio_state, self.async_state, ui);
+                    if ui.button("Upload Sample").clicked() {
+                        /*
+                        In future it is worth considering extending the async_state expected result to handle
+                        current upload progress or errors.
+                        */
+                        spawn(&mut self.async_state.upload_sample, async move {
+                            let Some(file) = rfd::AsyncFileDialog::new()
+                                .add_filter("Sound Sample", &["wav"])
+                                .pick_file()
+                                .await
+                            else {
+                                // No proper error handling as a user canceling the action is typical.
+                                info!("User canceled file upload");
+                                return Ok(());
+                            };
+
+                            let file_data = file.read().await;
+
+                            // Upload our sample
+                            match upload_sample(file.file_name(), file_data).await {
+                                Ok(_) => Ok(()),
+                                Err(e) => {
+                                    error!("[5] Upload failed: {:?}", e);
+                                    Err(())
+                                }
+                            }
+                        });
+
+                        ui.close_menu();
+                    }
+                })
             });
     }
 }

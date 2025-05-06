@@ -22,7 +22,7 @@ pub struct EnvelopeView<'a, F: Fn(Action), G: Fn()> {
 
 impl<'a, F: Fn(Action), G: Fn()> EnvelopeView<'a, F, G> {
     pub fn new(envelope: &'a AdsrEnvelope, dispatch: F, on_release: G) -> Self {
-        EnvelopeView {
+        Self {
             envelope,
             dispatch,
             on_release,
@@ -57,7 +57,7 @@ struct EnvelopeKey {
 
 impl From<AdsrEnvelope> for EnvelopeKey {
     fn from(other: AdsrEnvelope) -> Self {
-        EnvelopeKey {
+        Self {
             attack: OrderedFloat(other.attack),
             decay: OrderedFloat(other.decay),
             sustain: OrderedFloat(other.sustain),
@@ -84,77 +84,79 @@ impl<F: Fn(Action), G: Fn()> View for EnvelopeView<'_, F, G> {
         let envelope = self.envelope.clone();
         let dispatch = &self.dispatch;
         let on_release = &self.on_release;
+        ui.horizontal(|ui| {
+            Frame::canvas(ui.style()).show(ui, |ui| {
+                ui.ctx().request_repaint();
+                let desired_size = vec2(200.0, 115.0);
+                let (_id, rect) = ui.allocate_space(desired_size);
+                let to_screen =
+                    RectTransform::from_to(Rect::from_x_y_ranges(0.0..=1.0, 1.0..=0.0), rect);
 
-        knob(
-            ui,
-            "Attack",
-            envelope.attack,
-            |attack| {
-                dispatch(Action::SetChild(TypeField::Envelope(AdsrEnvelope {
-                    attack,
-                    ..envelope
-                })))
-            },
-            0.0..=1.0,
-            /* neutral= */ 0.2,
-            on_release,
-        );
-        knob(
-            ui,
-            "Decay",
-            envelope.decay,
-            |decay| {
-                dispatch(Action::SetChild(TypeField::Envelope(AdsrEnvelope {
-                    decay,
-                    ..envelope
-                })))
-            },
-            0.0..=1.0,
-            /* neutral= */ 0.2,
-            on_release,
-        );
-        knob(
-            ui,
-            "Sustain",
-            envelope.sustain,
-            |sustain| {
-                dispatch(Action::SetChild(TypeField::Envelope(AdsrEnvelope {
-                    sustain,
-                    ..envelope
-                })))
-            },
-            0.0..=1.0,
-            /* neutral= */ 0.8,
-            on_release,
-        );
-        knob(
-            ui,
-            "Release",
-            envelope.release,
-            |release| {
-                dispatch(Action::SetChild(TypeField::Envelope(AdsrEnvelope {
-                    release,
-                    ..envelope
-                })))
-            },
-            0.0..=1.0,
-            /* neutral= */ 0.2,
-            on_release,
-        );
+                let shape = ui.memory_mut(|memory| {
+                    let cache = memory.caches.cache::<AdsrEnvelopeCache<'_>>();
+                    cache.get(self.envelope.clone().into())
+                });
 
-        Frame::canvas(ui.style()).show(ui, |ui| {
-            ui.ctx().request_repaint();
-            let desired_size = vec2(100.0, 50.0);
-            let (_id, rect) = ui.allocate_space(desired_size);
-            let to_screen =
-                RectTransform::from_to(Rect::from_x_y_ranges(0.0..=1.0, 1.0..=0.0), rect);
-
-            let shape = ui.memory_mut(|memory| {
-                let cache = memory.caches.cache::<AdsrEnvelopeCache<'_>>();
-                cache.get(self.envelope.clone().into())
+                ui.painter().add(shape.transform(to_screen));
             });
-
-            ui.painter().extend(vec![shape].transform(to_screen));
+            ui.vertical(|ui| {
+                knob(
+                    ui,
+                    "Attack",
+                    envelope.attack,
+                    |attack| {
+                        dispatch(Action::SetChild(TypeField::Envelope(AdsrEnvelope {
+                            attack,
+                            ..envelope
+                        })))
+                    },
+                    0.0..=1.0,
+                    /* neutral= */ 0.2,
+                    on_release,
+                );
+                knob(
+                    ui,
+                    "Decay",
+                    envelope.decay,
+                    |decay| {
+                        dispatch(Action::SetChild(TypeField::Envelope(AdsrEnvelope {
+                            decay,
+                            ..envelope
+                        })))
+                    },
+                    0.0..=1.0,
+                    /* neutral= */ 0.2,
+                    on_release,
+                );
+                knob(
+                    ui,
+                    "Sustain",
+                    envelope.sustain,
+                    |sustain| {
+                        dispatch(Action::SetChild(TypeField::Envelope(AdsrEnvelope {
+                            sustain,
+                            ..envelope
+                        })))
+                    },
+                    0.0..=1.0,
+                    /* neutral= */ 0.8,
+                    on_release,
+                );
+                knob(
+                    ui,
+                    "Release",
+                    envelope.release,
+                    |release| {
+                        dispatch(Action::SetChild(TypeField::Envelope(AdsrEnvelope {
+                            release,
+                            ..envelope
+                        })))
+                    },
+                    0.0..=1.0,
+                    /* neutral= */ 0.2,
+                    on_release,
+                );
+            });
         });
     }
 }

@@ -1,9 +1,9 @@
-mod track_placement;
-
 use crate::receiver::ActionReceiver;
-use crate::{Action, FloatField, IndexField, TypeField};
+use crate::{Action, FloatField, IndexField, MultiIndexField, MultiTypeField, TypeField};
 use ordered_float::OrderedFloat;
 use shared::model::Track;
+
+use super::delete_elems;
 
 impl ActionReceiver for Track {
     fn apply(&mut self, action: &Action) -> Option<Action> {
@@ -26,6 +26,16 @@ impl ActionReceiver for Track {
                 let prev = self.offset;
                 self.offset = OrderedFloat(*offset);
                 Action::SetFloat(FloatField::Offset, *prev)
+            }
+            Action::DeleteChildren(MultiIndexField::PlacedNote(indexes)) => {
+                let prev = self.notes.clone();
+                delete_elems(&mut self.notes, indexes.clone());
+                Action::SetChildren(MultiTypeField::PlacedNote(prev))
+            }
+            Action::SetChildren(MultiTypeField::PlacedNote(notes)) => {
+                let prev = self.notes.clone();
+                self.notes = notes.to_vec();
+                Action::SetChildren(MultiTypeField::PlacedNote(prev))
             }
             _ => return None,
         })

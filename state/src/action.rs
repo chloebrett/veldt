@@ -1,4 +1,6 @@
-use crate::{FloatField, IndexField, TypeField, UintField};
+use crate::{
+    FloatField, IndexField, MoveField, MultiIndexField, MultiTypeField, TypeField, UintField,
+};
 use shared::action_proto::{
     ActionProto, SetFloatProto, SetUintProto, action_proto::Kind as ActionKind,
 };
@@ -6,18 +8,23 @@ use std::str::FromStr;
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum Action {
-    // Generic actions which act generically on entities.
+    // Set a child field that happens to be a float.
     SetFloat(FloatField, f32),
+    // Set a child field that happens to be a uint.
     SetUint(UintField, u32),
+    // Set a child field that happens to be an index.
+    SetIndex(IndexField),
+    // Delete a child object *by* index.
     DeleteChild(IndexField),
+    // Delete multiple children "by" index.
+    DeleteChildren(MultiIndexField),
+    // Set a child object by type.
     SetChild(TypeField),
+    // Add a child object by type.
     AddChild(TypeField),
-
-    // Note: avoid creating new ad hoc action types.
-    // Try to encapsulate them within a generic action type like the ones above.
-    // Perhaps a generic "MoveChild" action could work.
-    MoveEffectUp(usize),
-    MoveEffectDown(usize),
+    // Set children of an object by type.
+    SetChildren(MultiTypeField),
+    MoveChild(MoveField),
 
     /// Denotes that the mouse has been released from a UI element, finalizing its value.
     /// This is how we know to flatten (in the undo stack) actions that modify floats.
@@ -32,8 +39,7 @@ pub enum Action {
 impl From<ActionProto> for Action {
     fn from(other: ActionProto) -> Action {
         match other.kind.unwrap() {
-            ActionKind::MoveEffectUp(it) => Action::MoveEffectUp(it as usize),
-            ActionKind::MoveEffectDown(it) => Action::MoveEffectDown(it as usize),
+            ActionKind::MoveChild(it) => Action::MoveChild(it.into()),
             ActionKind::SetFloat(it) => Action::SetFloat(
                 FloatField::from_str(&it.key)
                     .unwrap_or_else(|_| panic!("Expected float field name: {}", it.key)),
@@ -44,9 +50,12 @@ impl From<ActionProto> for Action {
                     .unwrap_or_else(|_| panic!("Expected uint field name: {}", it.key)),
                 it.value,
             ),
+            ActionKind::SetIndex(index) => Action::SetIndex(index.into()),
             ActionKind::DeleteChild(index) => Action::DeleteChild(index.into()),
+            ActionKind::DeleteChildren(indexes) => Action::DeleteChildren(indexes.into()),
             ActionKind::AddChild(child) => Action::AddChild(child.into()),
             ActionKind::SetChild(child) => Action::SetChild(child.into()),
+            ActionKind::SetChildren(children) => Action::SetChildren(children.into()),
         }
     }
 }
@@ -63,11 +72,13 @@ impl From<Action> for ActionProto {
                     key: key.to_string(),
                     value,
                 }),
+                Action::SetIndex(index) => ActionKind::SetIndex(index.into()),
                 Action::SetChild(child) => ActionKind::SetChild(child.into()),
                 Action::AddChild(child) => ActionKind::AddChild(child.into()),
                 Action::DeleteChild(index) => ActionKind::DeleteChild(index.into()),
-                Action::MoveEffectUp(index) => ActionKind::MoveEffectUp(index as u32),
-                Action::MoveEffectDown(index) => ActionKind::MoveEffectDown(index as u32),
+                Action::DeleteChildren(indexes) => ActionKind::DeleteChildren(indexes.into()),
+                Action::MoveChild(it) => ActionKind::MoveChild(it.into()),
+                Action::SetChildren(it) => ActionKind::SetChildren(it.into()),
 
                 // Non-serializable actions
                 Action::Release => panic!(),

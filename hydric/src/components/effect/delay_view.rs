@@ -12,7 +12,7 @@ pub struct DelayView<'a, F: Fn(Action), G: Fn()> {
 
 impl<'a, F: Fn(Action), G: Fn()> DelayView<'a, F, G> {
     pub fn new(config: &'a DelayConfig, dispatch: F, on_release: G) -> Self {
-        DelayView {
+        Self {
             config,
             dispatch,
             on_release,
@@ -22,7 +22,7 @@ impl<'a, F: Fn(Action), G: Fn()> DelayView<'a, F, G> {
 
 impl<F: Fn(Action), G: Fn()> View for DelayView<'_, F, G> {
     fn ui(&mut self, ui: &mut Ui) {
-        let DelayView {
+        let Self {
             config, dispatch, ..
         } = self;
 

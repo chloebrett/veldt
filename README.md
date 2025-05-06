@@ -58,8 +58,8 @@ rustup target add wasm32-unknown-unknown
 # Clippy
 rustup component add clippy
 
-# Trunk
-cargo install trunk
+# Wasm-bindgen, for building hydric
+cargo install wasm-bindgen-cli
 ```
 
 ## Commands

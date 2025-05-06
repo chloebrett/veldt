@@ -12,7 +12,7 @@ pub struct CompressorView<'a, F: Fn(Action), G: Fn()> {
 
 impl<'a, F: Fn(Action), G: Fn()> CompressorView<'a, F, G> {
     pub fn new(config: &'a CompressorConfig, dispatch: F, on_release: G) -> Self {
-        CompressorView {
+        Self {
             config,
             dispatch,
             on_release,
@@ -22,7 +22,7 @@ impl<'a, F: Fn(Action), G: Fn()> CompressorView<'a, F, G> {
 
 impl<F: Fn(Action), G: Fn()> View for CompressorView<'_, F, G> {
     fn ui(&mut self, ui: &mut Ui) {
-        let CompressorView {
+        let Self {
             config, dispatch, ..
         } = self;
 

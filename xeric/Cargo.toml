@@ -6,7 +6,7 @@ edition = "2024"
 [dependencies]
 shared = { path = "../shared" }
 tonic = "0.12.3"
-tokio = { version = "1.44.2", features = ["rt-multi-thread"] }
+tokio = { version = "1.44.2", features = ["fs", "io-util", "rt-multi-thread"] }
 anyhow = "1.0.95"
 tonic-web = "0.12.3"
 state = { path = "../state" }
@@ -19,3 +19,4 @@ dasp_frame = "0.11.0"
 log = "0.4.27"
 pretty_env_logger = "0.5.0"
 prost = "0.13.4"
+itertools = "0.14.0"

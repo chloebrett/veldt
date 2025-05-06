@@ -1,13 +1,13 @@
 use crate::{
-    app_state::{AsyncState, WindowState},
+    AsyncState, WindowState,
     promise::{poll, spawn},
-    rpc::{load_project, load_project_list, save_project},
+    rpc::{export, load_project, load_project_list, save_project},
     view::View,
 };
 use egui::{Button, Ui, menu::bar};
 use state::{Action, Store, TypeField};
 
-use super::{load::LoadView, save_as::SaveAs};
+use super::{effect::EffectMenuOptions, save_as::SaveAs};
 
 pub struct MenuBar<'a> {
     store: &'a mut Store,
@@ -21,100 +21,99 @@ impl<'a> MenuBar<'a> {
         window_state: &'a mut WindowState,
         async_state: &'a mut AsyncState,
     ) -> Self {
-        MenuBar {
+        Self {
             store,
             window_state,
             async_state,
         }
     }
-}
 
-fn save_load(
-    ui: &mut Ui,
-    store: &mut Store,
-    window_state: &mut WindowState,
-    async_state: &mut AsyncState,
-) {
-    let dispatch = |action: Action| store.dispatchr(action);
+    fn save(&mut self, ui: &mut Ui) {
+        let dispatch = |action: Action| self.store.dispatchr(action);
 
-    poll(&mut async_state.save_project, |_| {
-        spawn(&mut async_state.project_list, async move {
-            load_project_list().await
+        poll(&mut self.async_state.save_project, |_| {
+            spawn(&mut self.async_state.project_list, async move {
+                load_project_list().await
+            });
         });
-    });
 
-    poll(&mut async_state.project_list, |list| {
-        store.dispatchr(Action::SetChild(TypeField::ProjectList(list.clone())));
-    });
+        let save_click = || {
+            let project = self.store.get().project.clone();
+            spawn(&mut self.async_state.save_project, async move {
+                save_project(project).await
+            });
+        };
 
-    poll(&mut async_state.load_project, |project| {
-        store.dispatchr(Action::SetChild(TypeField::Project(project.clone())));
-    });
+        let name = &self.store.get().project.name;
+        SaveAs::new(self.window_state, name, dispatch, save_click).ui(ui);
+    }
 
-    let save_click = || {
-        let project = store.get().project.clone();
-        spawn(&mut async_state.save_project, async move {
-            save_project(project).await
+    fn load_options(&mut self, ui: &mut Ui) {
+        poll(&mut self.async_state.project_list, |list| {
+            self.store
+                .dispatchr(Action::SetChild(TypeField::ProjectList(list.clone())));
         });
-    };
 
-    let load_click = |name: String| {
-        spawn(&mut async_state.load_project, async move {
-            load_project(name).await
-        })
-    };
+        poll(&mut self.async_state.load_project, |project| {
+            self.store
+                .dispatchr(Action::SetChild(TypeField::Project(project.clone())));
+        });
 
-    let name = &store.get().project.name;
-    SaveAs::new(window_state, name, dispatch, save_click).ui(ui);
-    let current_name = &store.get().load_project_name;
-    let project_names = &store.get().project_list;
-    LoadView::new(
-        window_state,
-        current_name,
-        project_names,
-        dispatch,
-        load_click,
-    )
-    .ui(ui);
+        let dispatch = |action| self.store.dispatchr(action);
+        let mut load_click = |name: String| {
+            spawn(&mut self.async_state.load_project, async move {
+                load_project(name).await
+            })
+        };
+        let project_names = &self.store.get().project_list;
+        for name in project_names {
+            let button_response = ui.add(Button::new(name).wrap_mode(egui::TextWrapMode::Extend));
+            if button_response.clicked() {
+                dispatch(Action::SetChild(TypeField::LoadProjectName(name.clone())));
+                load_click(name.clone());
+            }
+        }
+    }
 }
 
 impl View for MenuBar<'_> {
     fn ui(&mut self, ui: &mut Ui) {
-        let MenuBar {
-            store,
-            window_state,
-            async_state,
-        } = self;
-        save_load(ui, store, window_state, async_state);
+        self.save(ui);
         bar(ui, |ui| {
             ui.label("Veldt");
             ui.menu_button("File", |ui| {
                 if ui.button("Save").clicked() {
-                    let project = store.get().project.clone();
-                    spawn(&mut async_state.save_project, async move {
+                    let project = self.store.get().project.clone();
+                    spawn(&mut self.async_state.save_project, async move {
                         save_project(project).await
                     });
                 }
                 if ui.button("Save As").clicked() {
-                    window_state.save = true;
+                    self.window_state.save = true;
                 }
-                if ui.button("Load").clicked() {
-                    window_state.load = true;
+                ui.menu_button("Load", |ui| {
+                    self.load_options(ui);
+                });
+
+                if ui.button("Export").clicked() {
+                    let project = self.store.get().project.clone();
+                    spawn(&mut self.async_state.export, async move {
+                        export(project).await
+                    });
                 }
-                if ui.button("Export").clicked() {}
             });
             ui.menu_button("Edit", |ui| {
                 if ui
-                    .add_enabled(store.can_undo(), Button::new("Undo"))
+                    .add_enabled(self.store.can_undo(), Button::new("Undo"))
                     .clicked()
                 {
-                    store.pend_undo();
+                    self.store.pend_undo();
                 }
                 if ui
-                    .add_enabled(store.can_redo(), Button::new("Redo"))
+                    .add_enabled(self.store.can_redo(), Button::new("Redo"))
                     .clicked()
                 {
-                    store.pend_redo();
+                    self.store.pend_redo();
                 }
             });
             ui.menu_button("Windows", |ui| {
@@ -124,40 +123,47 @@ impl View for MenuBar<'_> {
                         *state = !*state
                     }
                 };
-                button_with_tick("Mixers", &mut window_state.mixer.visible);
-                button_with_tick("Generators", &mut window_state.generator_list);
-                button_with_tick("Scale", &mut window_state.scale);
-                button_with_tick("Samples", &mut window_state.sample_tree);
-                button_with_tick("Track Roll", &mut window_state.track_roll);
+                button_with_tick("Mixers", &mut self.window_state.mixer.visible);
+                button_with_tick("Generators", &mut self.window_state.generator_list);
+                button_with_tick("Scale", &mut self.window_state.scale);
+                button_with_tick("Samples", &mut self.window_state.sample_tree);
+                button_with_tick("Track Roll", &mut self.window_state.track_roll);
             });
-            ui.menu_button("Effects", |ui| if ui.button("Add effect").clicked() {});
+            ui.menu_button("Effects", |ui| {
+                EffectMenuOptions::new(self.store, self.window_state).ui(ui);
+            });
             ui.menu_button(
                 "Generators",
                 |ui| {
                     if ui.button("Add generator").clicked() {}
                 },
             );
-            let sample_response = ui.add(Button::new("📂").selected(window_state.sample_tree));
+            let sample_response = ui.add(Button::new("📂").selected(self.window_state.sample_tree));
             if sample_response.clicked() {
-                window_state.sample_tree ^= true;
+                self.window_state.sample_tree ^= true;
             }
             sample_response.on_hover_ui(|ui| {
                 ui.label("Samples");
             });
-            let sound_response = ui.add(Button::new("🎷"));
+            let sound_response =
+                ui.add(Button::new("🎷").selected(self.window_state.generator_list));
+            if sound_response.clicked() {
+                self.window_state.generator_list ^= true;
+            }
             sound_response.on_hover_ui(|ui| {
-                ui.label("Sound library");
+                ui.label("Generators");
             });
-            let effect_response = ui.add(Button::new("🎨").selected(window_state.mixer.visible));
+            let effect_response =
+                ui.add(Button::new("🎨").selected(self.window_state.mixer.visible));
             if effect_response.clicked() {
-                window_state.mixer.visible ^= true;
+                self.window_state.mixer.visible ^= true;
             }
             effect_response.on_hover_ui(|ui| {
                 ui.label("Effects/Mixers");
             });
-            let track_response = ui.add(Button::new("📄").selected(window_state.track_roll));
+            let track_response = ui.add(Button::new("📄").selected(self.window_state.track_roll));
             if track_response.clicked() {
-                window_state.track_roll ^= true;
+                self.window_state.track_roll ^= true;
             }
             track_response.on_hover_ui(|ui| {
                 ui.label("Track Roll");

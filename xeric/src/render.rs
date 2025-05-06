@@ -1,5 +1,5 @@
 use dasp_frame::Frame;
-use mesic::render;
+use mesic::graph::RenderGraph;
 use shared::bytes::as_bytes;
 use shared::render::render_server::Render;
 use shared::render::{RenderReply, RenderRequest};
@@ -20,12 +20,12 @@ impl Render for RenderContext {
             .project
             .ok_or(tonic::Status::invalid_argument("Project must be supplied"))?
             .into();
-        let graph = &mut render(&project);
-        // TODO: render out stereo audio.
-        // Currently, this gets sent over the wire as mono, then put into a BufferNode, which will
-        // cause it to play as stereo but only the left channel.
-        let bytes = as_bytes(&graph.map(|it| *it.channel(0).unwrap()).collect());
+        let mut graph = RenderGraph::default();
+        graph.set_from_project(&project);
+        let audio: Vec<_> = graph.collect();
+        let left = as_bytes(&audio.iter().map(|it| *it.channel(0).unwrap()).collect());
+        let right = as_bytes(&audio.iter().map(|it| *it.channel(1).unwrap()).collect());
 
-        Ok(tonic::Response::new(RenderReply { audio: bytes }))
+        Ok(tonic::Response::new(RenderReply { left, right }))
     }
 }

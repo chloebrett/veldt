@@ -16,6 +16,8 @@ pub fn broadcast_type(action: &Action) -> BroadcastType {
     match action {
         Action::SetFloat(..) => BroadcastType::OnRelease,
         Action::SetUint(..) => BroadcastType::OnRelease,
+        Action::SetIndex(..) => BroadcastType::OnRelease,
+        Action::MoveChild(..) => BroadcastType::Immediate,
         Action::SetChild(child) => match child {
             TypeField::ProjectList(..) => BroadcastType::Never,
             TypeField::Project(..) => BroadcastType::Never,
@@ -25,6 +27,7 @@ pub fn broadcast_type(action: &Action) -> BroadcastType {
             TypeField::Octave(..) => BroadcastType::OnRelease,
             _ => BroadcastType::Immediate,
         },
+        Action::SetChildren(..) => BroadcastType::Immediate,
         Action::AddChild(child) => match child {
             // TODO: handle sample load/save better. Currently this could mean clients get out of sync with
             // each other.
@@ -32,8 +35,7 @@ pub fn broadcast_type(action: &Action) -> BroadcastType {
             _ => BroadcastType::Immediate,
         },
         Action::DeleteChild(..) => BroadcastType::Immediate,
-        Action::MoveEffectUp(..) => BroadcastType::Immediate,
-        Action::MoveEffectDown(..) => BroadcastType::Immediate,
+        Action::DeleteChildren(..) => BroadcastType::Immediate,
         Action::Release => BroadcastType::Never,
         Action::NonReversible => BroadcastType::Never,
     }

@@ -14,7 +14,7 @@ pub struct EqView<'a, F: Fn(Action), G: Fn()> {
 
 impl<'a, F: Fn(Action), G: Fn()> EqView<'a, F, G> {
     pub fn new(config: &'a EqConfig, dispatch: F, on_release: G) -> Self {
-        EqView {
+        Self {
             config,
             dispatch,
             on_release,
@@ -24,7 +24,7 @@ impl<'a, F: Fn(Action), G: Fn()> EqView<'a, F, G> {
 
 impl<F: Fn(Action), G: Fn()> View for EqView<'_, F, G> {
     fn ui(&mut self, ui: &mut Ui) {
-        let EqView {
+        let Self {
             config, dispatch, ..
         } = self;
 
@@ -60,7 +60,7 @@ impl<F: Fn(Action), G: Fn()> View for EqView<'_, F, G> {
 
         let eq_type = config.kind.clone();
         egui::ComboBox::from_label("EQ type")
-            .selected_text(format!("{}", eq_type))
+            .selected_text(eq_type.to_string())
             .show_ui(ui, |ui| {
                 for eq_type in EqType::iter() {
                     selectable_value(

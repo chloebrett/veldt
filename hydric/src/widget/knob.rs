@@ -43,8 +43,28 @@ pub fn knob<F>(
     }
 }
 
+pub fn knob_disabled(ui: &mut Ui, label: &str, value: KnobPosition, range: RangeInclusive<f32>) {
+    let min = *range.start();
+    let max = *range.end();
+    let mut temp = value.clamp(min, max);
+    let knob = Knob::new(&mut temp, min, max, 0.0, KnobStyle::Wiper)
+        .with_size(20.0)
+        .with_font_size(12.0)
+        .with_stroke_width(2.0)
+        .with_colors(
+            Color32::DARK_GRAY,
+            Color32::GRAY,
+            Color32::GRAY,
+            Color32::GRAY,
+        )
+        .with_label(label, LabelPosition::Right)
+        .with_label_offset(4.0)
+        .enabled(false);
+    ui.add(knob);
+}
+
 /// Position of the label relative to the knob
-#[allow(dead_code)]
+#[expect(dead_code)]
 enum LabelPosition {
     Top,
     Bottom,
@@ -53,7 +73,7 @@ enum LabelPosition {
 }
 
 /// Visual style of the knob indicator
-#[allow(dead_code)]
+#[expect(dead_code)]
 enum KnobStyle {
     /// A line extending from the center to the edge
     Wiper,
@@ -89,6 +109,7 @@ struct Knob<'a> {
     label_offset: f32,
     label_format: Box<dyn Fn(f32) -> String>,
     step: Option<f32>,
+    enabled: bool,
 }
 
 impl<'a> Knob<'a> {
@@ -118,6 +139,7 @@ impl<'a> Knob<'a> {
             label_offset: 1.0,
             label_format: Box::new(|v| format!("{:.2}", v)),
             step: None,
+            enabled: true,
         }
     }
 
@@ -171,7 +193,6 @@ impl<'a> Knob<'a> {
     }
 
     /// Sets the spacing between the knob and its label
-    #[allow(dead_code)]
     pub fn with_label_offset(mut self, offset: f32) -> Self {
         self.label_offset = offset;
         self
@@ -185,7 +206,7 @@ impl<'a> Knob<'a> {
     /// Knob::new(&mut value, 0.0, 1.0, KnobStyle::Wiper)
     ///     .with_label_format(|v| format!("{:.1}%", v * 100.0));
     /// ```
-    #[allow(dead_code)]
+    #[expect(dead_code)]
     pub fn with_label_format(mut self, format: impl Fn(f32) -> String + 'static) -> Self {
         self.label_format = Box::new(format);
         self
@@ -194,9 +215,14 @@ impl<'a> Knob<'a> {
     /// Sets the step size for value changes
     ///
     /// When set, the value will snap to discrete steps as the knob is dragged.
-    #[allow(dead_code)]
+    #[expect(dead_code)]
     pub fn with_step(mut self, step: f32) -> Self {
         self.step = Some(step);
+        self
+    }
+
+    pub fn enabled(mut self, enabled: bool) -> Self {
+        self.enabled = enabled;
         self
     }
 }
@@ -235,33 +261,35 @@ impl Widget for Knob<'_> {
 
         let mut is_dragging = false;
 
-        // Double click to return to neutral state.
-        if response.double_clicked() {
-            *self.value = self.neutral;
-            response.mark_changed();
-        } else if response.dragged() {
-            is_dragging = true;
-            let mut delta = response.drag_delta().y;
+        if self.enabled {
+            // Double click to return to neutral state.
+            if response.double_clicked() {
+                *self.value = self.neutral;
+                response.mark_changed();
+            } else if response.dragged() {
+                is_dragging = true;
+                let mut delta = response.drag_delta().y;
 
-            // Hold ctrl, alt or shift to move finely.
-            ui.input(|input| {
-                if input.modifiers.ctrl || input.modifiers.shift || input.modifiers.alt {
-                    delta *= 0.2;
-                }
-            });
+                // Hold ctrl, alt or shift to move finely.
+                ui.input(|input| {
+                    if input.modifiers.ctrl || input.modifiers.shift || input.modifiers.alt {
+                        delta *= 0.2;
+                    }
+                });
 
-            let range = self.max - self.min;
-            let step = self.step.unwrap_or(range * 0.005);
-            let new_value = (*self.value - delta * step).clamp(self.min, self.max);
+                let range = self.max - self.min;
+                let step = self.step.unwrap_or(range * 0.005);
+                let new_value = (*self.value - delta * step).clamp(self.min, self.max);
 
-            *self.value = if let Some(step) = self.step {
-                let steps = ((new_value - self.min) / step).round();
-                (self.min + steps * step).clamp(self.min, self.max)
-            } else {
-                new_value
-            };
+                *self.value = if let Some(step) = self.step {
+                    let steps = ((new_value - self.min) / step).round();
+                    (self.min + steps * step).clamp(self.min, self.max)
+                } else {
+                    new_value
+                };
 
-            response.mark_changed();
+                response.mark_changed();
+            }
         }
 
         let painter = ui.painter();
@@ -322,7 +350,14 @@ impl Widget for Knob<'_> {
         }
 
         if let Some(label) = self.label {
-            let label_text = format!("{}: {}", label, (self.label_format)(*self.value));
+            let value_string = (self.label_format)(*self.value);
+            let label_text = if label.is_empty() {
+                // If the label is empty, format only the value string
+                value_string.to_string()
+            } else {
+                // If the label is not empty, format with the label, colon, and value string
+                format!("{}: {}", label, value_string)
+            };
             let font_id = egui::FontId::proportional(self.font_size);
 
             let (label_pos, alignment) = match self.label_position {
@@ -358,9 +393,21 @@ impl Widget for Knob<'_> {
             );
         }
 
-        // Draw the bounding rect
-        // painter.rect_stroke(rect, 0.0, Stroke::new(1.0, Color32::RED), egui::StrokeKind::Inside);
-        // painter.rect_stroke(knob_rect, 0.0, Stroke::new(1.0, Color32::GREEN), egui::StrokeKind::Inside);
+        if cfg!(feature = "extra_debug") {
+            // Draw the bounding rect
+            painter.rect_stroke(
+                rect,
+                0.0,
+                Stroke::new(1.0, Color32::RED),
+                egui::StrokeKind::Inside,
+            );
+            painter.rect_stroke(
+                knob_rect,
+                0.0,
+                Stroke::new(1.0, Color32::GREEN),
+                egui::StrokeKind::Inside,
+            );
+        }
 
         ui.add_space(vertical_margin);
 

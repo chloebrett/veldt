@@ -1,23 +1,25 @@
 use crate::receiver::ActionReceiver;
-use crate::{Action, FloatField, IndexField, TypeField};
+use crate::{Action, FloatField, IndexField, MultiIndexField, MultiTypeField, TypeField};
 use shared::model::Project;
+
+use super::delete_elems;
 
 impl ActionReceiver for Project {
     fn apply(&mut self, action: &Action) -> Option<Action> {
         Some(match action {
-            Action::AddChild(TypeField::TrackPlacement(track_placement)) => {
-                let index = self.track_placements.len();
-                self.track_placements.push(track_placement.clone());
-                Action::DeleteChild(IndexField::TrackPlacement(index))
+            Action::AddChild(TypeField::Placement(placement)) => {
+                let index = self.placements.len();
+                self.placements.push(placement.clone());
+                Action::DeleteChild(IndexField::Placement(index))
             }
-            Action::DeleteChild(IndexField::TrackPlacement(index)) => {
+            Action::DeleteChild(IndexField::Placement(index)) => {
                 let prev = self
-                    .track_placements
+                    .placements
                     .get(*index)
                     .expect("Can't delete non-existent track placement!")
                     .clone();
-                self.track_placements.remove(*index);
-                Action::AddChild(TypeField::TrackPlacement(prev))
+                self.placements.remove(*index);
+                Action::AddChild(TypeField::Placement(prev))
             }
             Action::SetChild(TypeField::ProjectName(name)) => {
                 let prev = self.name.clone();
@@ -46,6 +48,16 @@ impl ActionReceiver for Project {
                     .clone();
                 self.tracks.remove(*index);
                 Action::AddChild(TypeField::Track(prev))
+            }
+            Action::DeleteChildren(MultiIndexField::Placement(indexes)) => {
+                let prev = self.placements.clone();
+                delete_elems(&mut self.placements, indexes.clone());
+                Action::SetChildren(MultiTypeField::Placement(prev))
+            }
+            Action::SetChildren(MultiTypeField::Placement(placements)) => {
+                let prev = self.placements.clone();
+                self.placements = placements.to_vec();
+                Action::SetChildren(MultiTypeField::Placement(prev))
             }
             _ => return None,
         })

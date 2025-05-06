@@ -23,9 +23,9 @@ pub struct FileTreeConfig {
 impl From<FilenameTreeProto> for FilenameTree {
     fn from(other: FilenameTreeProto) -> Self {
         match other.kind.unwrap() {
-            FilenameTreeProtoKind::Filename(name) => FilenameTree::File(name),
+            FilenameTreeProtoKind::Filename(name) => Self::File(name),
             FilenameTreeProtoKind::Directory(directory) => {
-                FilenameTree::Directory(directory.name, map_vec(directory.contents))
+                Self::Directory(directory.name, map_vec(directory.contents))
             }
         }
     }
@@ -33,7 +33,7 @@ impl From<FilenameTreeProto> for FilenameTree {
 
 impl From<FilenameTree> for FilenameTreeProto {
     fn from(other: FilenameTree) -> Self {
-        FilenameTreeProto {
+        Self {
             kind: Some(match other {
                 FilenameTree::File(name) => FilenameTreeProtoKind::Filename(name),
                 FilenameTree::Directory(name, contents) => {

@@ -13,7 +13,7 @@ pub struct ModDelayView<'a, F: Fn(Action), G: Fn()> {
 
 impl<'a, F: Fn(Action), G: Fn()> ModDelayView<'a, F, G> {
     pub fn new(config: &'a ModDelayConfig, dispatch: F, on_release: G) -> Self {
-        ModDelayView {
+        Self {
             config,
             dispatch,
             on_release,
@@ -23,12 +23,13 @@ impl<'a, F: Fn(Action), G: Fn()> ModDelayView<'a, F, G> {
 
 impl<F: Fn(Action), G: Fn()> View for ModDelayView<'_, F, G> {
     fn ui(&mut self, ui: &mut Ui) {
-        let ModDelayView {
+        let Self {
             config, dispatch, ..
         } = self;
 
         // TODO: support integer knobs.
         // TODO: clamp the value within each frame to prevent min_depth from exceeding max_depth.
+        // Currently this is only clamped the following frame, which looks janky.
         knob(
             ui,
             "Min depth (samples)",

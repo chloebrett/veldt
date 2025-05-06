@@ -1,7 +1,7 @@
 use state::{Action, TypeField};
 
 use crate::{
-    app_state::WindowState,
+    WindowState,
     view::View,
     widget::{default_window, get_set, string_observer},
 };
@@ -21,7 +21,7 @@ impl<'a, F: Fn(Action), G: FnMut()> SaveAs<'a, F, G> {
         dispatch: F,
         on_click: G,
     ) -> Self {
-        SaveAs {
+        Self {
             window_state,
             name,
             dispatch,

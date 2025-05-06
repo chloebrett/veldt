@@ -14,7 +14,7 @@ pub fn fft(signal: Vec<f32>) -> Vec<f32> {
     let fft = Radix4::new(signal_length, FftDirection::Forward);
     let mut complex_signal: Vec<Complex<f32>> = map_vec(signal);
     let complex_array = &mut complex_signal[0..signal_length];
-    fft.process((complex_array).into());
+    fft.process(complex_array);
     // Find magnitude of complex output and normalise by array length.
     complex_signal
         .iter()
@@ -62,11 +62,12 @@ mod tests {
     use shared::{
         model::{PitchName, ScaleValue},
         serialize::map_vec,
+        types::Freq,
     };
 
     use super::*;
 
-    use crate::{SAMPLE_RATE, wave::freq};
+    use crate::SAMPLE_RATE;
 
     const EPSILON: f32 = 1e-5;
 
@@ -127,16 +128,17 @@ mod tests {
             scale_value: ScaleValue::A,
             octave: 4,
         };
+        let freq: Freq = pitch.into();
         let samples = 1024;
         // The frequency window of each values returned in the fft response vector.
         let freq_window = SAMPLE_RATE as f32 / samples as f32;
         let input: Vec<f32> = (0..samples as usize)
-            .map(|it| (TAU * it as f32 / SAMPLE_RATE as f32 * freq(pitch)).sin())
+            .map(|it| (TAU * it as f32 / SAMPLE_RATE as f32 * freq).sin())
             .collect();
         // Act
         let response = fft(input);
         let bins = make_log_buckets(response, 10);
-        let expected_max_bin = (freq(pitch) / freq_window + 2.0).log2() as usize - 1;
+        let expected_max_bin = (freq / freq_window + 2.0).log2() as usize - 1;
         let max_bin = index_of_max(&map_vec::<f32, OrderedFloat<f32>>(bins));
         assert_eq!(max_bin, expected_max_bin);
     }

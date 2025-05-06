@@ -1,9 +1,14 @@
-use shared::action_proto::{TypeFieldProto, type_field_proto::Kind as TypeFieldKind};
+use shared::action_proto::{
+    MultiTypeFieldKind, MultiTypeFieldProto, TypeFieldProto,
+    type_field_proto::Kind as TypeFieldKind,
+};
 use shared::model::{
     AdsrEnvelope, AntiAliasingMode, EffectInstance, EqType, FileTreeConfig, FilenameTree,
-    PitchName, PlacedNote, Project, Sample, Scale, ScaleValue, Track, TrackPlacement, WaveType,
+    GeneratorInstance, MixerChannel, PitchName, PlacedNote, Placement, Project, Sample, Scale,
+    ScaleValue, Track, WaveType,
 };
 use shared::pmodel::{AntiAliasingModeProto, EqTypeProto, ScaleProto, WaveTypeProto};
+use strum::{Display, EnumString};
 
 /// Fields of various types.
 /// Used to distinguish *which* field of this type is being referred to,
@@ -16,7 +21,7 @@ pub enum TypeField {
     Key(ScaleValue),
     ScaleValue(ScaleValue),
     Scale(Scale),
-    TrackPlacement(TrackPlacement),
+    Placement(Placement),
     Project(Project),
     ProjectName(String),
     ProjectList(Vec<String>),
@@ -31,6 +36,8 @@ pub enum TypeField {
     EqType(EqType),
     ClippedDuration(Option<f32>),
     SampleTreeConfig(FileTreeConfig),
+    Generator(GeneratorInstance),
+    MixerChannel(MixerChannel),
 
     // Note: if we end up with more bools/primitives, make dedicated types for them so that we
     // don't have to keep expanding the proto.
@@ -47,7 +54,7 @@ impl From<TypeFieldProto> for TypeField {
             TypeFieldKind::Key(it) => TypeField::Key(it.into()),
             TypeFieldKind::ScaleValue(it) => TypeField::ScaleValue(it.into()),
             TypeFieldKind::Scale(it) => TypeField::Scale(ScaleProto::try_from(it).unwrap().into()),
-            TypeFieldKind::TrackPlacement(it) => TypeField::TrackPlacement(it.into()),
+            TypeFieldKind::Placement(it) => TypeField::Placement(it.into()),
             TypeFieldKind::ProjectName(it) => TypeField::ProjectName(it),
             TypeFieldKind::Track(it) => TypeField::Track(it.into()),
             TypeFieldKind::PlacedNote(it) => TypeField::PlacedNote(it.into()),
@@ -62,7 +69,8 @@ impl From<TypeFieldProto> for TypeField {
             TypeFieldKind::ClippedDuration(it) => TypeField::ClippedDuration(it.into()),
             TypeFieldKind::SampleTree(it) => TypeField::SampleTree(it.into()),
             TypeFieldKind::SampleTreeConfig(it) => TypeField::SampleTreeConfig(it.into()),
-
+            TypeFieldKind::Generator(it) => TypeField::Generator(it.into()),
+            TypeFieldKind::MixerChannel(it) => TypeField::MixerChannel(it.into()),
             // Note: if we end up with more bools/primitives, make dedicated types for them so that we
             // don't have to keep expanding the proto.
             TypeFieldKind::Mute(it) => TypeField::Mute(it),
@@ -87,7 +95,7 @@ impl From<TypeField> for TypeFieldProto {
                 TypeField::Key(it) => TypeFieldKind::Key(it.into()),
                 TypeField::ScaleValue(it) => TypeFieldKind::ScaleValue(it.into()),
                 TypeField::Scale(it) => TypeFieldKind::Scale(ScaleProto::from(it).into()),
-                TypeField::TrackPlacement(it) => TypeFieldKind::TrackPlacement(it.into()),
+                TypeField::Placement(it) => TypeFieldKind::Placement(it.into()),
                 TypeField::ProjectName(it) => TypeFieldKind::ProjectName(it),
                 TypeField::Track(it) => TypeFieldKind::Track(it.into()),
                 TypeField::PlacedNote(it) => TypeFieldKind::PlacedNote(it.into()),
@@ -99,12 +107,149 @@ impl From<TypeField> for TypeFieldProto {
                 TypeField::EqType(it) => TypeFieldKind::EqType(EqTypeProto::from(it).into()),
                 TypeField::ClippedDuration(it) => TypeFieldKind::ClippedDuration(it.into()),
                 TypeField::SampleTreeConfig(it) => TypeFieldKind::SampleTreeConfig(it.into()),
+                TypeField::Generator(it) => TypeFieldKind::Generator(it.into()),
+                TypeField::MixerChannel(it) => TypeFieldKind::MixerChannel(it.into()),
 
                 // Note: if we end up with more bools/primitives, make dedicated types for them so that we
                 // don't have to keep expanding the proto.
                 TypeField::Mute(it) => TypeFieldKind::Mute(it),
                 TypeField::Octave(it) => TypeFieldKind::Octave(it),
             }),
+        }
+    }
+}
+
+/// Extension of TypeField for working with multiple values.
+#[derive(EnumString, Display, PartialEq, Clone, Debug)]
+pub enum MultiTypeField {
+    Track(Vec<Track>),
+    PlacedNote(Vec<PlacedNote>),
+    Placement(Vec<Placement>),
+    Effect(Vec<EffectInstance>),
+    Generator(Vec<GeneratorInstance>),
+}
+
+impl From<MultiTypeFieldProto> for MultiTypeField {
+    fn from(object: MultiTypeFieldProto) -> Self {
+        match object.kind() {
+            MultiTypeFieldKind::UnknownTypeFieldKind => panic!(),
+            MultiTypeFieldKind::TrackTypeFieldKind => MultiTypeField::Track(
+                object
+                    .values
+                    .iter()
+                    .filter_map(|value| {
+                        if let Some(TypeFieldKind::Track(track_proto)) = &value.kind {
+                            Some(track_proto.clone().into())
+                        } else {
+                            None
+                        }
+                    })
+                    .collect(),
+            ),
+            MultiTypeFieldKind::PlacedNoteTypeFieldKind => MultiTypeField::PlacedNote(
+                object
+                    .values
+                    .iter()
+                    .filter_map(|value| {
+                        if let Some(TypeFieldKind::PlacedNote(note)) = value.kind {
+                            Some(note.into())
+                        } else {
+                            None
+                        }
+                    })
+                    .collect(),
+            ),
+            MultiTypeFieldKind::PlacementTypeFieldKind => MultiTypeField::Placement(
+                object
+                    .values
+                    .iter()
+                    .filter_map(|value| {
+                        if let Some(TypeFieldKind::Placement(placement)) = value.kind {
+                            Some(placement.into())
+                        } else {
+                            None
+                        }
+                    })
+                    .collect(),
+            ),
+            MultiTypeFieldKind::EffectTypeFieldKind => MultiTypeField::Effect(
+                object
+                    .values
+                    .iter()
+                    .filter_map(|value| {
+                        if let Some(TypeFieldKind::Effect(effect)) = value.kind {
+                            Some(effect.into())
+                        } else {
+                            None
+                        }
+                    })
+                    .collect(),
+            ),
+            MultiTypeFieldKind::GeneratorTypeFieldKind => MultiTypeField::Generator(
+                object
+                    .values
+                    .iter()
+                    .filter_map(|value| {
+                        if let Some(TypeFieldKind::Generator(generator)) = &value.kind {
+                            Some(generator.clone().into())
+                        } else {
+                            None
+                        }
+                    })
+                    .collect(),
+            ),
+        }
+    }
+}
+
+impl From<MultiTypeField> for MultiTypeFieldProto {
+    fn from(object: MultiTypeField) -> Self {
+        match object {
+            MultiTypeField::Track(tracks) => Self {
+                kind: MultiTypeFieldKind::TrackTypeFieldKind.into(),
+                values: tracks
+                    .into_iter()
+                    .map(|value| TypeFieldProto {
+                        kind: Some(TypeFieldKind::Track(value.into())),
+                    })
+                    .collect(),
+            },
+            MultiTypeField::PlacedNote(notes) => Self {
+                kind: MultiTypeFieldKind::PlacedNoteTypeFieldKind.into(),
+                values: notes
+                    .into_iter()
+                    .map(|value| TypeFieldProto {
+                        kind: Some(TypeFieldKind::PlacedNote(value.into())),
+                    })
+                    .collect(),
+            },
+            MultiTypeField::Placement(placements) => Self {
+                kind: MultiTypeFieldKind::PlacementTypeFieldKind.into(),
+                values: placements
+                    .into_iter()
+                    .map(|value| TypeFieldProto {
+                        kind: Some(TypeFieldKind::Placement(value.into())),
+                    })
+                    .collect(),
+            },
+            MultiTypeField::Effect(effects) => Self {
+                kind: MultiTypeFieldKind::EffectTypeFieldKind.into(),
+                values: effects
+                    .into_iter()
+                    .map(|value| TypeFieldProto {
+                        kind: Some(TypeFieldKind::Effect(value.into())),
+                    })
+                    .collect(),
+            },
+            MultiTypeField::Generator(generators) => Self {
+                kind: MultiTypeFieldKind::GeneratorTypeFieldKind.into(),
+                values: generators
+                    .into_iter()
+                    .map(|value| TypeFieldProto {
+                        kind: Some(TypeFieldKind::Generator(value.into())),
+                    })
+                    .collect(),
+            },
         }
     }
 }

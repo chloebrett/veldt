@@ -1,17 +1,23 @@
 mod checkbox;
+mod for_each_with_separator;
 mod get_set;
 mod knob;
 mod selectable_value;
 mod sequencer;
 mod slider;
 mod string_observer;
+mod tab_display;
+mod text_rotator;
 mod window;
 
 pub use checkbox::*;
+pub use for_each_with_separator::*;
 pub use get_set::*;
 pub use knob::*;
 pub use selectable_value::*;
 pub use sequencer::*;
 pub use slider::*;
 pub use string_observer::*;
+pub use tab_display::*;
+pub use text_rotator::*;
 pub use window::*;

@@ -1,7 +1,7 @@
 use super::{
     KeyView, NoteRoll, NoteView, TrackPlacementView, TrackRoll,
     effect::{EffectView, MixerView},
-    generator::{generator_control, generators_control},
+    generator::{GeneratorView, generators_control},
     menu::MenuBar,
     play::{SampleTreeView, ToolbarView},
 };
@@ -10,17 +10,20 @@ use crate::promise::spawn;
 use crate::rpc::broadcast_actions;
 use crate::rpc::load_project_list;
 use crate::view::View;
-use crate::{AsyncState, AudioState, WindowState};
-use crate::{EffectSelector, GeneratorSelector};
+use crate::{AsyncState, AudioState, LocalState, WindowState};
 use egui::{ScrollArea, Ui, scroll_area::ScrollBarVisibility};
 use mesic::graph::RenderGraph;
 use poll_promise::Promise;
-use state::{Action, Selector, Store};
+use state::{Action, EffectSelector, GeneratorSelector, Store};
 use std::sync::mpsc::channel;
 
 pub struct App {
+    // State used for rendering audio and/or by other users.
+    // Example: knob positions.
     pub store: Store,
-    graph: RenderGraph,
+    // State only used for rendering local UIs.
+    // Example: selected notes in the note roll.
+    pub local_state: LocalState,
     pub frame_history: FrameHistory,
     pub async_state: AsyncState,
     pub audio_state: AudioState,
@@ -37,10 +40,10 @@ impl Default for App {
         graph.set_receiver(rx);
         App {
             store: Store::new(broadcast, tx),
-            graph,
+            local_state: LocalState::default(),
             frame_history: FrameHistory::default(),
             async_state: AsyncState::default(),
-            audio_state: AudioState::default(),
+            audio_state: AudioState::new(graph),
             window_state: WindowState::default(),
         }
     }
@@ -79,13 +82,17 @@ impl eframe::App for App {
         self.frame_history
             .on_new_frame(ctx.input(|i| i.time), frame.info().cpu_usage);
 
-        egui::CentralPanel::default().show(ctx, |ui| {
+        self.audio_state.player.maybe_update();
+
+        egui::TopBottomPanel::top("veldt_menu").show(ctx, |ui| {
             MenuBar::new(
                 &mut self.store,
                 &mut self.window_state,
                 &mut self.async_state,
             )
             .ui(ui);
+        });
+        egui::CentralPanel::default().show(ctx, |ui| {
             ScrollArea::vertical()
                 .auto_shrink(false)
                 .scroll_bar_visibility(ScrollBarVisibility::VisibleWhenNeeded)
@@ -106,15 +113,16 @@ impl View for App {
             generators_control(ui.ctx(), &mut self.window_state, &self.store);
         }
 
-        for generator_index in self.visible_generators() {
-            // TODO: make a GeneratorView.
-            let visible = self.window_state.generators.get(generator_index);
-            generator_control(&self.store, ui, generator_index, visible, || {
-                self.window_state.generators.set(generator_index, false)
-            });
+        for sel in self.visible_generators() {
+            let generators = &mut self.window_state.generators;
+            let visible = generators.get(sel);
+            GeneratorView::new(&self.store, &sel, &self.local_state, visible, || {
+                generators.set(sel, false)
+            })
+            .ui(ui);
         }
         if self.window_state.mixer.visible {
-            MixerView::new(&mut self.window_state, &self.store).ui(ui);
+            MixerView::new(&mut self.window_state, &self.store, &self.local_state).ui(ui);
         }
 
         ToolbarView::new(
@@ -124,21 +132,18 @@ impl View for App {
         )
         .ui(ui);
 
-        for (mixer_index, effect_index) in self.visible_effects() {
-            let dispatch = |action| {
-                self.store
-                    .dispatch(&Selector::Effect(mixer_index, effect_index), action)
-            };
+        for effect_selector in self.visible_effects() {
+            let dispatch = |action| self.store.dispatch(&effect_selector, action);
             let on_release = || self.store.dispatchr(Action::Release);
-            EffectView::new(
+            if let Some(mut it) = EffectView::new(
                 &self.store,
-                mixer_index,
-                effect_index,
+                &effect_selector,
                 &mut self.window_state,
                 dispatch,
                 on_release,
-            )
-            .map(|mut it| it.ui(ui));
+            ) {
+                it.ui(ui)
+            }
         }
         if self.window_state.scale {
             let dispatch = |action| self.store.dispatchr(action);
@@ -147,9 +152,9 @@ impl View for App {
             KeyView::new(dispatch, &mut self.window_state.scale, key, scale).ui(ui);
         }
 
-        NoteView::new(&self.store).ui(ui);
-        NoteRoll::new(&self.store).ui(ui);
-        TrackPlacementView::new(&self.store).ui(ui);
+        NoteView::new(&self.store, &self.local_state).ui(ui);
+        NoteRoll::new(&self.store, &self.local_state).ui(ui);
+        TrackPlacementView::new(&self.store, &self.local_state).ui(ui);
 
         SampleTreeView::new(
             &self.store,
@@ -157,6 +162,6 @@ impl View for App {
             &mut self.window_state.sample_tree,
         )
         .ui(ui);
-        TrackRoll::new(&self.store, &mut self.window_state).ui(ui);
+        TrackRoll::new(&self.store, &mut self.window_state, &self.local_state).ui(ui);
     }
 }

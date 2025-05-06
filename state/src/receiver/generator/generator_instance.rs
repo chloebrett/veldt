@@ -1,6 +1,6 @@
 use crate::Action;
 use crate::receiver::ActionReceiver;
-use shared::model::{GeneratorInstance, GeneratorType};
+use shared::model::{Generator, GeneratorInstance};
 
 impl ActionReceiver for GeneratorInstance {
     fn apply(&mut self, action: &Action) -> Option<Action> {
@@ -8,10 +8,10 @@ impl ActionReceiver for GeneratorInstance {
             return Some(undo);
         }
 
-        match &mut self.kind {
-            GeneratorType::SimpleWave { config } => config.apply(action),
-            GeneratorType::Noise { .. } => todo!(),
-            GeneratorType::SubSynth { config } => config.apply(action),
+        match &mut self.it {
+            Generator::SimpleWave(config) => config.apply(action),
+            Generator::Noise(_) => todo!(),
+            Generator::SubSynth(_) => todo!(),
         }
     }
 }
