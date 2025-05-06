@@ -28,7 +28,7 @@ pub struct Piano {
 
 impl Piano {
     pub fn new(max_note: PitchValue, min_note: PitchValue, orientation: PianoOrientation) -> Self {
-        let mut size = vec2(600.0, 50.0); // TODO size should be adjustable OG 600
+        let mut size = vec2(900.0, 50.0); // TODO size should be adjustable OG 600
         if orientation == PianoOrientation::Vertical {
             size = size.yx();
         }
@@ -58,7 +58,7 @@ impl Piano {
     }
 
     fn make_all_piano_keys(&self, notes: Vec<PlacedNote>) -> Vec<Shape> {
-        info!("{:?}", notes);
+        // info!("{:?}", notes);
         notes
             .into_iter()
             .map(|note| self.make_piano_key(note))
@@ -84,16 +84,14 @@ impl Piano {
                 _ => return self.make_black_key(note),
             }
         } else {
-            // Assuming horizontal orientation adjustment
             match note.note.pitch_name.scale_value {
-                ScaleValue::C => (0.0, 5.0 / 3.0), // 0.0
-                ScaleValue::D => (-1.0/5.0, 5.0 / 3.0), // -1/4.5, -1/4, -1/5
-                ScaleValue::E => (-3.0/7.5 / 4.0, 5.0 / 3.0), //-1/2, -3/6.5, -3/7.5
-                ScaleValue::F => (1.0 / 4.0, 7.0 / 4.0), //1/3.5, 1.4
-                ScaleValue::G => (0.0, 7.0 / 4.0), // 0.0
-                ScaleValue::A => (-1.0 / 3.0, 7.0 / 4.0), // -1/3
-                ScaleValue::B => (-2.0 / 3.0, 7.0 / 4.0), // -2/3
-                // ABC need to move up
+                ScaleValue::C => (0.0, 5.0 / 3.0),
+                ScaleValue::D => (-1.0 / 3.0, 5.0 / 3.0),
+                ScaleValue::E => (-2.0 / 3.0, 5.0 / 3.0),
+                ScaleValue::F => (0.0, 7.0 / 4.0),
+                ScaleValue::G => (-1.0 / 4.0, 7.0 / 4.0),
+                ScaleValue::A => (-1.0 / 2.0, 7.0 / 4.0),
+                ScaleValue::B => (-3.0 / 4.0, 7.0 / 4.0),
                 _ => return self.make_black_key(note),
             }
         };
@@ -165,7 +163,7 @@ impl Piano {
         let prob = range.right();
         let left = range.left();
         let x = pitch_value as f32 - range.left();
-        info!("left: {left}, right: {prob},pitch: {pitch_value}, x: {x}");
+        // info!("left: {left}, right: {prob},pitch: {pitch_value}, x: {x}");
         pos2(x, y)
     }
 }
