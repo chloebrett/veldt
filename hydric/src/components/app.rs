@@ -116,7 +116,10 @@ impl View for App {
         for sel in self.visible_generators() {
             let generators = &mut self.window_state.generators;
             let visible = generators.get(sel);
-            GeneratorView::new(&self.store, &sel, visible, || generators.set(sel, false)).ui(ui);
+            GeneratorView::new(&self.store, &sel, &self.local_state, visible, || {
+                generators.set(sel, false)
+            })
+            .ui(ui);
         }
         if self.window_state.mixer.visible {
             MixerView::new(&mut self.window_state, &self.store, &self.local_state).ui(ui);
@@ -151,7 +154,7 @@ impl View for App {
 
         NoteView::new(&self.store, &self.local_state).ui(ui);
         NoteRoll::new(&self.store, &self.local_state).ui(ui);
-        TrackPlacementView::new(&self.store).ui(ui);
+        TrackPlacementView::new(&self.store, &self.local_state).ui(ui);
 
         SampleTreeView::new(
             &self.store,

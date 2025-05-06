@@ -24,7 +24,7 @@ impl View for EffectMenuOptions<'_> {
         ui.menu_button("Add new", |ui| {
             for effect in Effect::iter() {
                 ui.menu_button(effect_name(&effect.clone()), |ui| {
-                    for mixer_index in 0..self.store.get().project.mixer.len() {
+                    for mixer_index in 0..self.store.get().project.mixer.channels.len() {
                         if ui.button(format!("Mixer {}", mixer_index + 1)).clicked() {
                             let instance = EffectInstance {
                                 it: effect.clone(),

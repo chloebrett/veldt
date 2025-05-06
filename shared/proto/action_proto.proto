@@ -6,8 +6,6 @@ import "pmodel.proto";
 
 message ActionProto {
   oneof kind {
-    uint32 move_effect_up = 1;
-    uint32 move_effect_down = 2;
     SetFloatProto set_float = 3;
     SetUintProto set_uint = 4;
     IndexFieldProto set_index = 5;
@@ -15,6 +13,8 @@ message ActionProto {
     TypeFieldProto add_child = 7;
     IndexFieldProto delete_child = 8;
     MoveFieldProto move_child = 9;
+    MultiIndexFieldProto delete_children = 10;
+    MultiTypeFieldProto set_children = 11;
   }
 }
 
@@ -24,9 +24,28 @@ message IndexFieldProto {
     uint32 placed_note = 2;
     uint32 placement = 3;
     uint32 effect = 4;
+    uint32 mixer = 7;
     uint32 generator = 5;
     uint32 sample = 6;
   }
+}
+
+// Send Multiple IndexFields at once
+message MultiIndexFieldProto {
+  // `kind` field required for easy proto conversion.
+  MultiIndexFieldKind kind = 1;
+  repeated uint32 values = 2;
+}
+
+enum MultiIndexFieldKind {
+  UnknownIndexFieldKind = 0;
+  TrackIndexFieldKind = 1;
+  PlacedNoteIndexFieldKind = 2;
+  PlacementIndexFieldKind = 3;
+  EffectIndexFieldKind = 4;
+  MixerIndexFieldKind = 7;
+  GeneratorIndexFieldKind = 5;
+  SampleIndexFieldKind = 6;
 }
 
 message MoveFieldProto {
@@ -54,7 +73,25 @@ message TypeFieldProto {
     int32 octave = 16;
     pmodel.FilenameTreeProto sample_tree = 17;
     pmodel.FileTreeConfigProto sample_tree_config = 18;
+    pmodel.GeneratorInstanceProto generator = 19;
+    pmodel.MixerChannelProto mixer_channel = 20;
   }
+}
+
+// Send multiple TypeFields at once.
+message MultiTypeFieldProto {
+  // `kind` field required for easy proto conversion.
+  MultiTypeFieldKind kind = 1;
+  repeated TypeFieldProto values = 2;
+}
+
+enum MultiTypeFieldKind {
+  UnknownTypeFieldKind = 0;
+  TrackTypeFieldKind = 1;
+  PlacedNoteTypeFieldKind = 2;
+  PlacementTypeFieldKind = 3;
+  EffectTypeFieldKind = 4;
+  GeneratorTypeFieldKind = 5;
 }
 
 message SetFloatProto {
@@ -84,6 +121,7 @@ message SelectorProto {
     uint32 generator = 6;
     uint32 placement = 7;
     IndexPair oscillator = 8;
+    IndexPair mixer_matrix_cell = 9;
   }
 
   message IndexPair {

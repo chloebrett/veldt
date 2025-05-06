@@ -6,7 +6,7 @@ use shared::model::ModMatrix;
 use state::{Action, FloatField};
 
 pub struct ModMatrixView<'a, F: Fn(Action), G: Fn()> {
-    config: &'a ModMatrix,
+    matrix: &'a ModMatrix,
     row_titles: Vec<&'a str>,
     col_titles: Vec<&'a str>,
     dispatch: F,
@@ -15,14 +15,14 @@ pub struct ModMatrixView<'a, F: Fn(Action), G: Fn()> {
 
 impl<'a, F: Fn(Action), G: Fn()> ModMatrixView<'a, F, G> {
     pub fn new(
-        config: &'a ModMatrix,
+        matrix: &'a ModMatrix,
         row_titles: Vec<&'a str>,
         col_titles: Vec<&'a str>,
         dispatch: F,
         on_release: G,
     ) -> Self {
         ModMatrixView {
-            config,
+            matrix,
             row_titles,
             col_titles,
             dispatch,
@@ -34,7 +34,7 @@ impl<'a, F: Fn(Action), G: Fn()> ModMatrixView<'a, F, G> {
 impl<F: Fn(Action), G: Fn()> View for ModMatrixView<'_, F, G> {
     fn ui(&mut self, ui: &mut Ui) {
         let Self {
-            config,
+            matrix,
             ref row_titles,
             ref col_titles,
             ref dispatch,
@@ -76,7 +76,7 @@ impl<F: Fn(Action), G: Fn()> View for ModMatrixView<'_, F, G> {
                                 TextRotation::Anticlockwise90,
                                 TEXT_COLOUR,
                             );
-                            for col in 0..config.cols {
+                            for col in 0..matrix.cols {
                                 let id = format!("{:?}", (row, col));
                                 ui.push_id(id, |ui| {
                                     knob(

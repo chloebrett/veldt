@@ -1,9 +1,8 @@
 use super::generator_name;
 use crate::WindowState;
-use crate::widget::{default_window, knob};
+use crate::widget::{default_window, int_slider, knob};
 use egui::{Button, Pos2};
-use state::GeneratorSelector;
-use state::{Action, FloatField, Store, TypeField};
+use state::{Action, FloatField, GeneratorSelector, IndexField, Store, TypeField};
 
 pub fn generators_control(ctx: &egui::Context, window_state: &mut WindowState, store: &Store) {
     let generators = &store.get().project.generators;
@@ -57,6 +56,18 @@ pub fn generators_control(ctx: &egui::Context, window_state: &mut WindowState, s
                         on_release,
                     );
                 });
+
+                // TODO: better UI than a slider for this!
+                let max_channel_index = (store.get().project.mixer.channels.len() - 1) as i32;
+                int_slider(
+                    ui,
+                    "Mixer channel",
+                    meta.mixer_channel as f64,
+                    |it| store.dispatch(&sel, Action::SetIndex(IndexField::Mixer(it as usize))),
+                    0..=max_channel_index,
+                    on_release,
+                );
+
                 if generator_index < generators.len() - 1 {
                     ui.separator();
                 }

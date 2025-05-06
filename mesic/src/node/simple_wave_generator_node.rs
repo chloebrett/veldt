@@ -1,35 +1,39 @@
-use crate::graph::{ProcessContext, pan_multipliers};
-use crate::wave::{beats_to_samples, subsynth_wave};
+use super::pan_multipliers;
+use crate::graph::ProcessContext;
+use crate::wave::{WaveSource, beats_to_samples};
 use dasp_graph::{Buffer, Input, Node};
 use shared::model::{
-    Generator, GeneratorInstance, GeneratorMeta, Placement, SubSynthConfig, Track, TrackPlacement,
+    Generator, GeneratorInstance, GeneratorMeta, Placement, SimpleWaveConfig, Track, TrackPlacement,
 };
 use shared::types::Beats;
+use state::GeneratorSelector;
 use std::cmp::min;
 
-pub struct SubSynthNode {
-    config: SubSynthConfig,
+pub struct SimpleWaveGeneratorNode {
+    wave_source: WaveSource,
+    config: SimpleWaveConfig,
     meta: GeneratorMeta,
-    generator_index: usize,
+    selector: GeneratorSelector,
     sample_index: u32, // the sample that playback is currently up to.
     placements: Vec<Placement>,
     tracks: Vec<Track>,
     bpm: Beats,
 }
 
-impl SubSynthNode {
+impl SimpleWaveGeneratorNode {
     pub fn new(
-        config: SubSynthConfig,
+        config: SimpleWaveConfig,
         meta: GeneratorMeta,
-        generator_index: usize,
+        selector: GeneratorSelector,
         placements: Vec<Placement>,
         tracks: Vec<Track>,
         bpm: Beats,
     ) -> Self {
         Self {
             config,
+            wave_source: WaveSource::new(bpm),
             meta,
-            generator_index,
+            selector,
             placements,
             tracks,
             bpm,
@@ -45,8 +49,7 @@ impl SubSynthNode {
     }
 }
 
-// TODO: most of the logic is the same as simple wave, need to move this elsewhere
-impl Node<ProcessContext> for SubSynthNode {
+impl Node<ProcessContext> for SimpleWaveGeneratorNode {
     // TODO: a lot of this processing logic is generic and should be shared with
     // other generator types. How?
     fn process(&mut self, _inputs: &[Input], output: &mut [Buffer], payload: &ProcessContext) {
@@ -55,11 +58,11 @@ impl Node<ProcessContext> for SubSynthNode {
         }
 
         // Apply any applicable changes from the store.
-        if let Some(GeneratorInstance {
-            it: Generator::SubSynth(config),
+        if let GeneratorInstance {
+            it: Generator::SimpleWave(config),
             meta,
             ..
-        }) = &payload.store.project.generators.get(self.generator_index)
+        } = &payload.store.select(&self.selector)
         {
             if *config != self.config {
                 self.config = config.clone();
@@ -71,7 +74,7 @@ impl Node<ProcessContext> for SubSynthNode {
 
         // Skip generating if muted!
         // TODO: disconnect muted generators from the graph.
-        if self.meta.mute {
+        if self.meta.mute || self.meta.volume == 0.0 {
             return;
         }
 
@@ -107,10 +110,9 @@ impl Node<ProcessContext> for SubSynthNode {
 
                 dasp_slice::add_in_place(
                     &mut buffer,
-                    &subsynth_wave(
-                        &note.note.pitch_name,
+                    &self.wave_source.unison_wave(
+                        note.note.pitch_name.into(),
                         note.note.beats,
-                        self.bpm,
                         &self.config,
                         self.sample_index as i32 - note_start_sample as i32,
                     ),
@@ -122,7 +124,6 @@ impl Node<ProcessContext> for SubSynthNode {
             out_buf.copy_from_slice(&buffer);
             self.apply_volume_and_pan(out_buf, channel_index);
         }
-
         self.sample_index += Buffer::LEN as u32;
     }
 }
