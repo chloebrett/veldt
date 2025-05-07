@@ -2,7 +2,6 @@ use crate::transform::Transform;
 use crate::view::View;
 use crate::widget::{TabDisplay, TabOrientation, knob};
 use crate::{GetSet, LocalState};
-use egui::cache::{ComputerMut, FrameCache};
 use egui::{
     Color32, Pos2, Rect, Stroke, Ui, Vec2,
     containers::Frame,
@@ -52,9 +51,6 @@ fn envelope_line(envelope: &EnvelopeKey) -> Vec<Pos2> {
     points
 }
 
-#[derive(Default)]
-struct AdsrEnvelopeComputer;
-
 #[derive(Hash, Copy, Clone, Debug)]
 struct EnvelopeKey {
     attack: OrderedFloat<f32>,
@@ -63,8 +59,8 @@ struct EnvelopeKey {
     release: OrderedFloat<f32>,
 }
 
-impl From<AdsrEnvelope> for EnvelopeKey {
-    fn from(other: AdsrEnvelope) -> Self {
+impl From<&AdsrEnvelope> for EnvelopeKey {
+    fn from(other: &AdsrEnvelope) -> Self {
         Self {
             attack: OrderedFloat(other.attack),
             decay: OrderedFloat(other.decay),
@@ -73,19 +69,6 @@ impl From<AdsrEnvelope> for EnvelopeKey {
         }
     }
 }
-
-impl ComputerMut<EnvelopeKey, Shape> for AdsrEnvelopeComputer {
-    fn compute(&mut self, envelope: EnvelopeKey) -> Shape {
-        info!("Computing shapes for ADSR envelope: {:?}", envelope);
-        let thickness = 2.0;
-        Shape::line(
-            envelope_line(&envelope),
-            PathStroke::new(thickness, Color32::WHITE),
-        )
-    }
-}
-
-type AdsrEnvelopeCache<'a> = FrameCache<Shape, AdsrEnvelopeComputer>;
 
 impl<F: Fn(Action), G: Fn()> View for SubSynthEnvelopeView<'_, F, G> {
     fn ui(&mut self, ui: &mut Ui) {
@@ -99,8 +82,8 @@ impl<F: Fn(Action), G: Fn()> View for SubSynthEnvelopeView<'_, F, G> {
         let active_env_tab = self.local_state.subsynth_env_tab.get();
 
         let outer_frame = Frame::new()
-            .fill(Color32::from_rgb(50, 50, 50))
-            .stroke(Stroke::new(1.0, Color32::from_rgb(50, 50, 50)))
+            .fill(Color32::from_gray(50))
+            .stroke(Stroke::new(1.0, Color32::from_gray(50)))
             .corner_radius(8.0)
             .inner_margin(6.0);
 
@@ -116,13 +99,12 @@ impl<F: Fn(Action), G: Fn()> View for SubSynthEnvelopeView<'_, F, G> {
                     handle_env_tab_click,
                 )
                 .ui(ui);
-                let inner_frame = Frame::new()
-                    .fill(Color32::from_rgb(30, 30, 30))
-                    .stroke(Stroke::new(1.0, Color32::from_rgb(30, 30, 30)))
+                Frame::new()
+                    .fill(Color32::from_gray(30))
+                    .stroke(Stroke::new(1.0, Color32::from_gray(30)))
                     .corner_radius(8.0)
-                    .inner_margin(15.0);
-
-                inner_frame.show(ui, |ui| {
+                    .inner_margin(15.0)
+                    .show(ui, |ui| {
                     ui.vertical(|ui| {
                         // Envelope graph
                         Frame::canvas(ui.style()).show(ui, |ui| {
@@ -133,11 +115,12 @@ impl<F: Fn(Action), G: Fn()> View for SubSynthEnvelopeView<'_, F, G> {
                                 Rect::from_x_y_ranges(0.0..=1.0, 1.0..=0.0),
                                 rect,
                             );
-                            let shape = ui.memory_mut(|memory| {
-                                let cache = memory.caches.cache::<AdsrEnvelopeCache<'_>>();
-                                info!("Active Env: {:?}", active_env_tab);
-                                cache.get(config.envelopes[active_env_tab].clone().into())
-                            });
+                            info!("Envelope number: {}", active_env_tab);
+                            let shape = Shape::line(
+                                envelope_line(&EnvelopeKey::from(&config.envelopes[active_env_tab])),
+                                PathStroke::new(2.0, Color32::WHITE),
+                            );
+
                             ui.painter().add(shape.transform(to_screen));
                         });
                         ui.add_space(10.0);
