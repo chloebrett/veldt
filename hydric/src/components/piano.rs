@@ -8,7 +8,7 @@ use egui::{
     emath::RectTransform, vec2, pos2
 };
 use shared::{
-    model::{Note, PlacedNote, ScaleValue},
+    model::{Note, PlacedNote, ScaleValue, PitchName},
     types::PitchValue,
 };
 use log::info;
@@ -28,7 +28,7 @@ pub struct Piano {
 
 impl Piano {
     pub fn new(max_note: PitchValue, min_note: PitchValue, orientation: PianoOrientation) -> Self {
-        let mut size = vec2(900.0, 50.0); // TODO size should be adjustable OG 600
+        let mut size = vec2(1100.0, 50.0); // TODO size should be adjustable OG 600
         if orientation == PianoOrientation::Vertical {
             size = size.yx();
         }
@@ -58,7 +58,6 @@ impl Piano {
     }
 
     fn make_all_piano_keys(&self, notes: Vec<PlacedNote>) -> Vec<Shape> {
-        // info!("{:?}", notes);
         notes
             .into_iter()
             .map(|note| self.make_piano_key(note))
@@ -104,10 +103,6 @@ impl Piano {
         } else {
             self.to_horizontal_pos(self.range(), note) + vec2(offset, 0.0)
         };
-        // if vertical
-        //let note_pos = note.to_pos(self.range()) + vec2(offset, 0.0);
-        // if horizontal
-        // let note_pos = self.to_horizontal_pos(self.range(), note) + vec2(offset, 0.0);
         let size = vec2(note_size, 1.0);
         let rect = Rect::from_min_size(note_pos, size);
 
@@ -160,10 +155,7 @@ impl Piano {
         let offset: f32 = note.offset.into();
         let y = offset - range.top();
         let pitch_value: PitchValue = note.note.pitch_name.into();
-        let prob = range.right();
-        let left = range.left();
         let x = pitch_value as f32 - range.left();
-        // info!("left: {left}, right: {prob},pitch: {pitch_value}, x: {x}");
         pos2(x, y)
     }
 }
@@ -182,44 +174,52 @@ impl View for Piano {
 
             // Then draw keys on top
             painter.extend(piano_keys.transform(piano_transform));
+
+            let calculate_clicked_note = |position: Pos2| {
+                let piano_notes = self.get_piano_notes();
+                let mut clicked_note: Option<PlacedNote> = None;
+                for note in piano_notes {
+                    let current_note = note.clone();
+                    info!("Transformed note Corners: {:?}", note.note.pitch_name);
+                    let key = self.make_piano_key(note);
+                    let transformed_key = key.transform(piano_transform).visual_bounding_rect();
+
+                    let top_left = piano_transform.inverse().transform_pos(transformed_key.min);
+                    let top_right = piano_transform.inverse().transform_pos(pos2(transformed_key.max.x, transformed_key.min.y));
+                    let bottom_left = piano_transform.inverse().transform_pos(pos2(transformed_key.min.x, transformed_key.max.y));
+                    let bottom_right = piano_transform.inverse().transform_pos(transformed_key.max);
+                    
+                    // debugging
+                    info!("  Top-Left: {:?}", top_left);
+                    info!("  Top-Right: {:?}", top_right);
+                    info!("  Bottom-Left: {:?}", bottom_left);
+                    info!("  Bottom-Right: {:?}", bottom_right);
+
+                    // this is for horizontal
+                    if position.x >= top_left.x && position.x <= top_right.x && position.y >= top_left.y && position.y <= bottom_left.y {
+                        if top_right.x - top_left.x == 1.0 || bottom_right.y == 0.6 {
+                            clicked_note = Some(current_note);
+                            info!("Clicked Note: {:?}", clicked_note.clone().unwrap());
+                            break // stop iterating if you hit a black note
+                        }
+                        clicked_note = Some(current_note);
+
+                    }
+                }
+                info!("Clicked Note: {:?}", clicked_note.clone().unwrap());
+                // let note_shadow = self.make_piano_key(clicked_note.clone().unwrap()).transform(piano_transform);
+                // painter.add(self.make_piano_key(clicked_note.clone().unwrap()).transform(piano_transform));
+                clicked_note
+            };
        
             if response.clicked() {
-                // Get the absolute mouse position
                 if let Some(pointer_pos) = response.interact_pointer_pos() {
-                    // Calculate position relative to the rect
-                    let relative_pos = pointer_pos - response.rect.min;
-                    
-                    // or use the transform to go from screen to local coordinates
                     let local_pos = piano_transform.inverse().transform_pos(pointer_pos);
-                    
-                    // Log the relative position
-                    info!("Clicked at relative position: ({:.1}, {:.1})", relative_pos.x, relative_pos.y);
+
                     info!("Clicked at local position: ({:.1}, {:.1})", local_pos.x, local_pos.y);
-                    // info!("{:?}", piano_notes);
 
                     let clicked_note = calculate_clicked_note(local_pos);
-
-                    // for (i, key_shape) in transformed_piano_keys.iter().enumerate().rev() {
-                    //     // For rectangular keys, check if the point is inside the rect
-                    //     let rect = key_shape.visual_bounding_rect();
-                    //     if rect.contains(pointer_pos) {
-                    //         info!("Clicked on piano key index: {}", i);
-                    //         // TODO do something
-                    //         info!("{i}");
-                    //         break;
-                    //     }
-                        
-                    // }
                 }
-            }
-
-            fn calculate_clicked_note(position: Pos2) {
-                // These dimensions are the relative dimensions of the keys in the piano so they should be the same regardless of the size of the piano
-                let black_key_long = 0.6;
-                let black_key_short = 1.0;
-                let white_key_long = 1.0;
-                let white_key_short = 1.6;
-
             }
         });
 
