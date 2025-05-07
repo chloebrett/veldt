@@ -20,3 +20,16 @@ pub struct SimpleWaveConfig {
 
     pub oversample_factor: u32,
 }
+
+impl Default for SimpleWaveConfig {
+    fn default() -> Self {
+        Self {
+            wave: WaveType::Sine,
+            envelope: AdsrEnvelope::default(),
+            osc_count: 1,
+            detune_cents: 0.0,
+            anti_aliasing_mode: AntiAliasingMode::default(),
+            oversample_factor: 1,
+        }
+    }
+}

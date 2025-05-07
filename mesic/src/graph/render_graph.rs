@@ -95,7 +95,7 @@ impl RenderGraph {
 
                 // Also update the graph topology by listening for the appropriate actions.
                 // E.g. add/remove effect or generator.
-                self.mixer.update(&selector, &action, &store);
+                self.mixer.update(&selector, &action, store);
             }
         }
     }

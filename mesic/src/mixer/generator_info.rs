@@ -45,16 +45,9 @@ impl GeneratorInfo {
 
         let node = match &generator {
             GeneratorInstance {
-                it: Generator::SimpleWave(config),
-                meta,
-            } => make_node(SimpleWaveGeneratorNode::new(
-                config.clone(),
-                meta.clone(),
-                *selector,
-                placements,
-                tracks,
-                bpm,
-            )),
+                it: Generator::SimpleWave(..),
+                ..
+            } => make_node(SimpleWaveGeneratorNode::new(*selector)),
             GeneratorInstance {
                 it: Generator::SubSynth(config),
                 meta,
