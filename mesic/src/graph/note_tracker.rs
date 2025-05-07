@@ -76,14 +76,20 @@ impl NoteTracker {
                         continue;
                     }
 
+                    let start_sample = (note_start_sample as i32 - global_sample_index as i32)
+                        .clamp(0, Buffer::LEN as i32)
+                        as usize;
+                    let end_sample = (note_end_sample as i32 - global_sample_index as i32)
+                        .clamp(0, Buffer::LEN as i32)
+                        as usize;
+
                     result[generator_index].push(NoteEvent {
                         pitch_name: note.note.pitch_name,
                         samples_since_started: global_sample_index as i32
                             - note_start_sample as i32,
                         duration: note.note.beats,
-                        start_sample: (note_start_sample - global_sample_index)
-                            .clamp(0, Buffer::LEN),
-                        end_sample: (note_end_sample - global_sample_index).clamp(0, Buffer::LEN),
+                        start_sample,
+                        end_sample,
                     });
                 }
             }
