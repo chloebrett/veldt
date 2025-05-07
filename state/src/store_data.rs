@@ -2,11 +2,10 @@ use crate::receiver::ActionReceiver;
 use crate::{Action, Selector, SelectorTrait, reducer};
 use ordered_float::OrderedFloat;
 use shared::model::{
-    AdsrEnvelope, AntiAliasingMode, Effect, EffectInstance, EffectMeta, EqConfig, EqType,
-    FileTreeConfig, FilenameTree, Generator, GeneratorInstance, GeneratorMeta, LfoConfig, Mixer,
-    MixerChannel, MixerMatrix, ModMatrix, Note, Oscillator, PitchName, PlacedNote, Placement,
-    PlacementType, Project, Scale, ScaleValue, SimpleWaveConfig, SubSynthConfig, Track,
-    TrackPlacement, WaveType,
+    AdsrEnvelope, AntiAliasingMode, FileTreeConfig, FilenameTree, Generator, GeneratorInstance,
+    GeneratorMeta, LfoConfig, Mixer, MixerChannel, MixerMatrix, ModMatrix, Note, Oscillator,
+    PitchName, PlacedNote, Placement, PlacementType, Project, Scale, ScaleValue, SimpleWaveConfig,
+    SubSynthConfig, SubSynthLpf, Track, TrackPlacement, WaveType,
 };
 use shared::types::Volume;
 
@@ -137,18 +136,7 @@ impl Default for StoreData {
                             lfos: [BASE_LFO; 3],
                             envelopes: [BASE_ENV; 3],
                             matrix: ModMatrix::new(6, 3),
-                            filter: EffectInstance {
-                                it: Effect::SimpleEq(EqConfig {
-                                    kind: EqType::SimpleSecondOrderLowPass,
-                                    fc: 1000.0,
-                                    q: 1.0,
-                                    gain: 0.0,
-                                }),
-                                meta: EffectMeta {
-                                    wet: 1.0,
-                                    mute: false,
-                                },
-                            },
+                            lpf: SubSynthLpf::new(),
                         }),
                         meta: GeneratorMeta {
                             volume: 1.0,

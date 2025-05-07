@@ -164,7 +164,17 @@ message SubSynthConfigProto {
   repeated LfoConfigProto lfos = 2;
   repeated AdsrEnvelopeProto envelopes = 3;
   ModMatrixProto matrix = 4;  
-  EffectInstanceProto filter = 5;
+  SubSynthLpfProto lpf = 5;
+}
+
+message SubSynthLpfProto {
+  EqTypeProto kind = 1;
+  
+  float fc = 2;
+
+  float q = 3;
+
+  float gain = 4; 
 }
 
 message OscillatorProto {
