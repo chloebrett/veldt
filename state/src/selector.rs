@@ -1,10 +1,9 @@
-use crate::StoreData;
-use crate::receiver::ActionReceiver;
+use crate::{StoreData, receiver::ActionReceiver};
 use shared::action_proto::{
     SelectorProto, selector_proto::IndexPair, selector_proto::Kind as SelectorKind,
 };
 use shared::model::{
-    EffectInstance, GeneratorInstance, MixerChannel, OscillatorConfig, PlacedNote, Placement,
+    EffectInstance, GeneratorInstance, MatrixCell, MixerChannel, Oscillator, PlacedNote, Placement,
     SubSynthConfig, Track,
 };
 
@@ -90,6 +89,9 @@ pub struct OscillatorSelector(
     /* oscillator_index */ pub usize,
 );
 
+#[derive(Eq, PartialEq, Ord, PartialOrd, Copy, Clone, Debug, Hash)]
+pub struct MixerMatrixCellSelector(/* row */ pub usize, /* col */ pub usize);
+
 impl OscillatorSelector {
     pub fn upcast(&self) -> GeneratorSelector {
         GeneratorSelector(self.0)
@@ -156,11 +158,11 @@ impl SelectorTrait for MixerSelector {
     type Item = MixerChannel;
 
     fn try_select<'a>(&'a self, store: &'a StoreData) -> Option<&'a Self::Item> {
-        store.project.mixer.get(self.0)
+        store.project.mixer.channels.get(self.0)
     }
 
     fn try_select_mut<'a>(&'a self, store: &'a mut StoreData) -> Option<&'a mut Self::Item> {
-        store.project.mixer.get_mut(self.0)
+        store.project.mixer.channels.get_mut(self.0)
     }
 
     fn as_enum(&self) -> Selector {
@@ -175,6 +177,7 @@ impl SelectorTrait for EffectSelector {
         store
             .project
             .mixer
+            .channels
             .get(self.0)
             .and_then(|it| it.effects.get(self.1))
     }
@@ -183,6 +186,7 @@ impl SelectorTrait for EffectSelector {
         store
             .project
             .mixer
+            .channels
             .get_mut(self.0)
             .and_then(|it| it.effects.get_mut(self.1))
     }
@@ -225,7 +229,7 @@ impl SelectorTrait for PlacementSelector {
 }
 
 impl SelectorTrait for OscillatorSelector {
-    type Item = OscillatorConfig;
+    type Item = Oscillator;
 
     fn try_select<'a>(&'a self, store: &'a StoreData) -> Option<&'a Self::Item> {
         let instance = store.project.generators.get(self.0)?;
@@ -241,6 +245,35 @@ impl SelectorTrait for OscillatorSelector {
 
     fn as_enum(&self) -> Selector {
         Selector::Oscillator(self.0, self.1)
+    }
+}
+
+impl SelectorTrait for MixerMatrixCellSelector {
+    type Item = MatrixCell;
+
+    fn try_select<'a>(&'a self, store: &'a StoreData) -> Option<&'a Self::Item> {
+        store.project.mixer.matrix.get(self.0, self.1)
+    }
+
+    fn try_select_mut<'a>(&'a self, store: &'a mut StoreData) -> Option<&'a mut Self::Item> {
+        store.project.mixer.matrix.get_mut(self.0, self.1)
+    }
+
+    fn as_enum(&self) -> Selector {
+        Selector::MixerMatrixCell(self.0, self.1)
+    }
+}
+
+// TODO implement a selector trait for the envelopes for the generators.
+#[derive(Eq, PartialEq, Ord, PartialOrd, Copy, Clone, Debug, Hash)]
+pub struct EnvelopeSelector(
+    /* generator_index */ usize,
+    /* envelope_index */ usize,
+);
+
+impl EnvelopeSelector {
+    pub fn upcast(&self) -> GeneratorSelector {
+        GeneratorSelector(self.0)
     }
 }
 
@@ -261,6 +294,7 @@ pub enum Selector {
         /* generator_index */ usize,
         /* oscillator_index */ usize,
     ),
+    MixerMatrixCell(/* row */ usize, /* col */ usize),
 }
 
 impl From<Selector> for SelectorProto {
@@ -276,6 +310,9 @@ impl From<Selector> for SelectorProto {
                 Selector::Placement(it) => SelectorKind::Placement(it as u32),
                 Selector::Oscillator(first, second) => {
                     SelectorKind::Oscillator(pair(first, second))
+                }
+                Selector::MixerMatrixCell(first, second) => {
+                    SelectorKind::MixerMatrixCell(pair(first, second))
                 }
             }),
         }
@@ -298,6 +335,9 @@ impl From<SelectorProto> for Selector {
             SelectorKind::Placement(it) => Selector::Placement(it as usize),
             SelectorKind::Oscillator(IndexPair { first, second }) => {
                 Selector::Oscillator(first as usize, second as usize)
+            }
+            SelectorKind::MixerMatrixCell(IndexPair { first, second }) => {
+                Selector::MixerMatrixCell(first as usize, second as usize)
             }
         }
     }

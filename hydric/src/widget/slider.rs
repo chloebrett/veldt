@@ -1,4 +1,4 @@
-use super::get_set;
+use super::get_set_mut;
 use egui::Ui;
 use std::ops::RangeInclusive;
 
@@ -30,7 +30,7 @@ pub fn log_slider<T: PartialEq + Clone + Into<f64> + From<f64>, F: Fn(T), G: Fn(
     );
 }
 
-pub fn int_slider<T: PartialEq + Clone + Into<f64> + From<f64>, F: Fn(T), G: Fn()>(
+pub fn int_slider<T: PartialEq + Clone + Into<f64> + From<f64>, F: FnMut(T), G: Fn()>(
     ui: &mut Ui,
     label: &str,
     value: T,
@@ -50,18 +50,18 @@ pub fn int_slider<T: PartialEq + Clone + Into<f64> + From<f64>, F: Fn(T), G: Fn(
     );
 }
 
-fn slider_internal<T: PartialEq + Clone + Into<f64> + From<f64>, F: Fn(T), G: Fn()>(
+fn slider_internal<T: PartialEq + Clone + Into<f64> + From<f64>, F: FnMut(T), G: Fn()>(
     ui: &mut Ui,
     label: &str,
     value: T,
-    setter: F,
+    mut setter: F,
     range: RangeInclusive<f64>,
     on_release: G,
     logarithmic: bool,
     fixed_decimals: Option<usize>,
 ) {
     let mut slider =
-        egui::Slider::from_get_set(range, get_set(value.into(), |it| setter(it.into())))
+        egui::Slider::from_get_set(range, get_set_mut(value.into(), |it| setter(it.into())))
             .text(label)
             .logarithmic(logarithmic);
 

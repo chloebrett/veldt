@@ -1,4 +1,4 @@
-use crate::{DataState, transform::Transform};
+use crate::{GetSet, LocalState, transform::Transform};
 use egui::{
     Color32, CornerRadius, CursorIcon, Frame, Pos2, Rect, Response, Sense, Shape, Stroke, Ui, Vec2,
     Widget, emath::RectTransform, pos2, vec2,
@@ -8,6 +8,7 @@ use state::{Action, SelectorTrait, Store};
 
 pub struct Sequencer<'a, T: SequencerObject<T>> {
     store: &'a Store,
+    local_state: &'a LocalState,
     range: Rect,
     size: Vec2,
     objects: Vec<T>,
@@ -20,9 +21,10 @@ pub struct Sequencer<'a, T: SequencerObject<T>> {
 }
 
 impl<'a, T: SequencerObject<T>> Sequencer<'a, T> {
-    pub fn new(store: &'a Store, range: Rect) -> Self {
+    pub fn new(store: &'a Store, local_state: &'a LocalState, range: Rect) -> Self {
         Sequencer {
             store,
+            local_state,
             range,
             size: vec2(400.0, 600.0),
             objects: vec![],
@@ -93,13 +95,13 @@ impl<'a, T: SequencerObject<T>> Sequencer<'a, T> {
         self
     }
 
-    fn interact(
-        &self,
-        ui: &mut Ui,
-        response: &Response,
-        edit_object: &impl Fn(usize, Action),
-        on_release: &impl Fn(),
-    ) {
+    fn interact(&self, ui: &mut Ui, response: &Response) {
+        let edit_object = |index: usize, action: Action| {
+            self.store
+                .dispatch(&T::selector(index, self.parent_index), action)
+        };
+        let on_release = || self.store.dispatchr(Action::Release);
+
         let make_movable_rect = |object: &T| object.to_rect(self.range);
         let make_resize_rect = |object: &T| {
             let rect = object.to_rect(self.range);
@@ -129,19 +131,19 @@ impl<'a, T: SequencerObject<T>> Sequencer<'a, T> {
             );
             if self.select {
                 if movable_resp.interact(Sense::click()).clicked() {
-                    T::set_selected(ui, Some(index));
+                    T::set_selected(ui, self.local_state, Some(index));
                 }
             } else if movable_resp.interact(Sense::click()).double_clicked() {
-                object.set_active(ui, index);
+                object.set_active(ui, self.local_state, index);
             }
             if resize_resp.hovered() {
                 ui.ctx().set_cursor_icon(CursorIcon::ResizeColumn);
             }
-            let release = self.move_object(ui, index, movable_resp, to_sequencer, edit_object)
-                || self.resize_object(index, resize_resp, to_sequencer, edit_object);
+            let release = self.move_object(ui, index, movable_resp, to_sequencer, &edit_object)
+                || self.resize_object(index, resize_resp, to_sequencer, &edit_object);
             if release {
                 on_release();
-                DataState::DragCursorDelta.remove_value(ui);
+                self.local_state.drag_cursor_delta.set(None);
             }
         }
     }
@@ -152,24 +154,27 @@ impl<'a, T: SequencerObject<T>> Sequencer<'a, T> {
 
     fn move_object(
         &self,
-        ui: &mut Ui,
+        _ui: &mut Ui,
         index: usize,
         response: Response,
         to_sequencer: RectTransform,
         edit_object: &impl Fn(usize, Action),
     ) -> bool {
-        let object = self.objects.get(index).expect("Should have gotten object.");
+        let object = self.objects.get(index).expect("Should have got object.");
         let drag_pos = response.interact_pointer_pos();
         let drag_delta = response.drag_delta();
         let mut action_dispatched = false;
         if let Some(drag_pos) = drag_pos {
             // Keep track of the delta between object and cursor position at drag start.
             if response.interact(Sense::drag()).drag_started() {
-                DataState::DragCursorDelta
-                    .set_value::<Pos2>(ui, drag_pos - response.rect.left_top().to_vec2());
+                self.local_state
+                    .drag_cursor_delta
+                    .set(Some(drag_pos - response.rect.min.to_vec2()));
             }
-            let click_delta: Pos2 = DataState::DragCursorDelta
-                .get_value(ui)
+            let click_delta: Pos2 = self
+                .local_state
+                .drag_cursor_delta
+                .get()
                 .unwrap_or(Pos2::ZERO);
             let scaled_pos = pos2(drag_pos.x - click_delta.x, drag_pos.y)
                 .transform(to_sequencer.inverse())
@@ -231,66 +236,71 @@ impl<'a, T: SequencerObject<T>> Sequencer<'a, T> {
 
 impl<T: SequencerObject<T>> Widget for Sequencer<'_, T> {
     fn ui(self, ui: &mut Ui) -> Response {
-        let store = self.store;
-        let range = self.range;
-        let size = self.size;
-        let sense = self.sense;
-        let select = self.select;
-        let background_shapes = &self.background_shapes;
-        let edit_object = |index: usize, action: Action| {
-            store.dispatch2(&T::selector(index, self.parent_index), action)
-        };
-        let on_release = || store.dispatchr(Action::Release);
-        let add_object = |object: T| object.add_new(store, self.parent_index);
+        let mut res: Option<Response> = None;
+
         Frame::canvas(ui.style()).show(ui, |ui| {
+            let Self {
+                store,
+                range,
+                size,
+                sense,
+                select,
+                ..
+            } = self;
             let (response, painter) = ui.allocate_painter(size, sense);
-            let sequencer_transform = RectTransform::from_to(
+            let to_screen = RectTransform::from_to(
                 Rect::from_min_size(Pos2::ZERO, range.size()),
                 response.rect,
             );
+
             // If user double clicks outside of an object remove all objects from selection.
             if select {
                 if response.interact(Sense::click()).double_clicked() {
-                    T::set_selected(ui, None)
+                    T::set_selected(ui, self.local_state, None)
                 }
                 if ui.input(|input| {
                     input.key_pressed(egui::Key::Delete) || input.key_pressed(egui::Key::Backspace)
                 }) {
-                    T::delete_selected(ui, store, self.parent_index);
-                    T::set_selected(ui, None);
+                    T::delete_selected(ui, store, self.local_state, self.parent_index);
+                    T::set_selected(ui, self.local_state, None);
                 }
             } else if response.interact(Sense::click()).clicked() {
                 let pos = response.interact_pointer_pos().unwrap();
-                let object = T::from_pos(pos.transform(sequencer_transform.inverse()), range);
-                add_object(object)
+                let object = T::from_pos(pos.transform(to_screen.inverse()), range);
+                object.add_new(store, self.parent_index);
             }
-            self.interact(ui, &response, &edit_object, &on_release);
-            let active_object = T::get_active(ui, self.store);
-            let selected_objects = T::get_selected(ui, self.store);
-            painter.extend(background_shapes.clone().transform(sequencer_transform));
-            painter.add(self.object_shapes().transform(sequencer_transform));
-            if let Some(object) = active_object {
-                painter.add(object.active_shape(range).transform(sequencer_transform));
+
+            self.interact(ui, &response);
+
+            painter.extend(self.background_shapes.clone().transform(to_screen));
+            painter.add(self.object_shapes().transform(to_screen));
+
+            if let Some(object) = T::get_active(ui, self.store, self.local_state) {
+                painter.add(object.active_shape(range).transform(to_screen));
             }
-            if let Some(objects) = selected_objects {
+
+            let objects = T::get_selected(ui, self.store, self.local_state);
+            if !objects.is_empty() {
                 painter.extend(
                     objects
                         .into_iter()
-                        .map(|object| object.selected_shape(range).transform(sequencer_transform)),
-                )
+                        .map(|object| object.selected_shape(range).transform(to_screen)),
+                );
             }
+
+            res = Some(response.clone());
         });
-        let (_rect, response) = ui.allocate_at_least(Vec2::ZERO, sense);
-        response
+
+        res.unwrap()
     }
 }
 
 pub trait SequencerObject<T> {
     fn to_pos(&self, range: Rect) -> Pos2;
 
-    fn to_pos_horizontal(&self, range: Rect) -> Pos2;
-
     fn to_rect(&self, range: Rect) -> Rect;
+
+    fn from_pos(pos: Pos2, rect: Rect) -> T;
 
     fn x_action(&self, x: f32, range: Rect) -> Option<Action>;
 
@@ -300,25 +310,26 @@ pub trait SequencerObject<T> {
 
     fn shape(&self, range: Rect) -> Shape;
 
-    fn get_active(ui: &Ui, store: &Store) -> Option<T>;
+    fn get_active(ui: &Ui, store: &Store, local_state: &LocalState) -> Option<T>;
 
     fn active_shape(&self, range: Rect) -> Shape;
 
-    fn get_selected(ui: &Ui, store: &Store) -> Option<Vec<T>>;
+    fn get_selected(ui: &Ui, store: &Store, local_state: &LocalState) -> Vec<T>;
 
     fn selected_shape(&self, range: Rect) -> Shape;
 
     fn selector(index: usize, parent_index: Option<usize>) -> impl SelectorTrait;
 
-    fn set_active(&self, ui: &mut Ui, index: usize);
+    fn set_active(&self, ui: &mut Ui, local_state: &LocalState, index: usize);
 
-    fn set_selected(ui: &mut Ui, index: Option<usize>);
+    fn set_selected(ui: &mut Ui, local_state: &LocalState, index: Option<usize>);
 
     fn add_new(&self, store: &Store, parent_index: Option<usize>);
 
-    fn from_pos(pos: Pos2, rect: Rect) -> T;
-
-    fn delete(store: &Store, index: usize, parent_index: Option<usize>);
-
-    fn delete_selected(ui: &mut Ui, store: &Store, parent_index: Option<usize>);
+    fn delete_selected(
+        ui: &mut Ui,
+        store: &Store,
+        local_state: &LocalState,
+        parent_index: Option<usize>,
+    );
 }

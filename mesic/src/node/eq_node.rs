@@ -1,22 +1,21 @@
-use super::ProcessContext;
 use super::{extract_inputs, extract_outputs};
-use crate::effect::{ApplyFilter, eq_filter};
+use crate::eq::{ApplyFilter, eq_filter};
+use crate::graph::ProcessContext;
 use dasp_graph::{Buffer, Input, Node};
 use shared::model::{Effect, EffectInstance, EqConfig};
+use state::EffectSelector;
 
 pub struct EqNode {
-    mixer_index: usize,
-    effect_index: usize,
+    selector: EffectSelector,
     config: EqConfig,
     filter_left: Box<dyn ApplyFilter + Send>,
     filter_right: Box<dyn ApplyFilter + Send>,
 }
 
 impl EqNode {
-    pub fn new(mixer_index: usize, effect_index: usize, config: EqConfig) -> Self {
+    pub fn new(selector: EffectSelector, config: EqConfig) -> Self {
         EqNode {
-            mixer_index,
-            effect_index,
+            selector,
             config: config.clone(),
             filter_left: eq_filter(&config),
             filter_right: eq_filter(&config),
@@ -26,18 +25,16 @@ impl EqNode {
 
 impl Node<ProcessContext> for EqNode {
     fn process(&mut self, inputs: &[Input], output: &mut [Buffer], payload: &ProcessContext) {
-        // Apply any changes from the store if applicable.
-        if let Some(mixer) = &payload.store.project.mixer.get(self.mixer_index) {
-            if let Some(EffectInstance {
-                it: Effect::SimpleEq(config),
-                ..
-            }) = &mixer.effects.get(self.effect_index)
-            {
-                if *config != self.config {
-                    self.config = config.clone();
-                    self.filter_left = eq_filter(config);
-                    self.filter_right = eq_filter(config);
-                }
+        // Apply changes from the store.
+        if let Some(EffectInstance {
+            it: Effect::SimpleEq(config),
+            ..
+        }) = &payload.store.try_select(&self.selector)
+        {
+            if *config != self.config {
+                self.config = config.clone();
+                self.filter_left = eq_filter(config);
+                self.filter_right = eq_filter(config);
             }
         }
 

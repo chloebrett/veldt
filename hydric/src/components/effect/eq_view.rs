@@ -60,7 +60,7 @@ impl<F: Fn(Action), G: Fn()> View for EqView<'_, F, G> {
 
         let eq_type = config.kind.clone();
         egui::ComboBox::from_label("EQ type")
-            .selected_text(format!("{}", eq_type))
+            .selected_text(eq_type.to_string())
             .show_ui(ui, |ui| {
                 for eq_type in EqType::iter() {
                     selectable_value(

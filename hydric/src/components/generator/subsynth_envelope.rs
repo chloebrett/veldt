@@ -1,7 +1,7 @@
-use crate::DataState;
 use crate::transform::Transform;
 use crate::view::View;
 use crate::widget::{TabDisplay, TabOrientation, knob};
+use crate::{GetSet, LocalState};
 use egui::cache::{ComputerMut, FrameCache};
 use egui::{
     Color32, Pos2, Rect, Stroke, Ui, Vec2,
@@ -19,14 +19,21 @@ pub struct SubSynthEnvelopeView<'a, F: Fn(Action), G: Fn()> {
     config: &'a SubSynthConfig,
     dispatch: F,
     on_release: G,
+    local_state: &'a LocalState,
 }
 
 impl<'a, F: Fn(Action), G: Fn()> SubSynthEnvelopeView<'a, F, G> {
-    pub fn new(config: &'a SubSynthConfig, dispatch: F, on_release: G) -> Self {
+    pub fn new(
+        config: &'a SubSynthConfig,
+        dispatch: F,
+        on_release: G,
+        local_state: &'a LocalState,
+    ) -> Self {
         Self {
             config,
             dispatch,
             on_release,
+            local_state,
         }
     }
 }
@@ -86,14 +93,10 @@ impl<F: Fn(Action), G: Fn()> View for SubSynthEnvelopeView<'_, F, G> {
         let dispatch = &self.dispatch;
         let on_release = &self.on_release;
 
-        let handle_env_tab_click: Box<dyn Fn(&mut egui::Ui, usize) + Send + Sync + 'static> =
-            Box::new(move |ui, index| {
-                DataState::SubSynthEnvTab.set_value(ui, index);
-            });
-
-        let active_env_tab = DataState::SubSynthEnvTab
-            .get_value::<usize>(ui)
-            .unwrap_or_default();
+        let handle_env_tab_click = |index| {
+            self.local_state.subsynth_env_tab.set(index);
+        };
+        let active_env_tab = self.local_state.subsynth_env_tab.get();
 
         let outer_frame = Frame::new()
             .fill(Color32::from_rgb(50, 50, 50))

@@ -1,10 +1,10 @@
-use crate::reducer;
-use crate::{Action, Selector};
+use crate::receiver::ActionReceiver;
+use crate::{Action, Selector, SelectorTrait, reducer};
 use ordered_float::OrderedFloat;
 use shared::model::{
     AdsrEnvelope, AntiAliasingMode, FileTreeConfig, FilenameTree, Generator, GeneratorInstance,
-    GeneratorMeta, LfoConfig, MixerChannel, ModMatrix, Note, OscillatorConfig, PitchName,
-    PlacedNote, Placement, PlacementType, Project, Scale, ScaleValue, SimpleWaveConfig,
+    GeneratorMeta, LfoConfig, Mixer, MixerChannel, MixerMatrix, ModMatrix, Note, Oscillator,
+    PitchName, PlacedNote, Placement, PlacementType, Project, Scale, ScaleValue, SimpleWaveConfig,
     SubSynthConfig, Track, TrackPlacement, WaveType,
 };
 use shared::types::Volume;
@@ -25,9 +25,23 @@ impl StoreData {
     pub fn update(&mut self, selector: &Selector, action: &Action) -> Option<Action> {
         reducer(self, selector, action)
     }
+
+    pub fn select<'a, T: ActionReceiver + 'a, S: SelectorTrait<Item = T> + 'a>(
+        &'a self,
+        selector: &'a S,
+    ) -> &'a T {
+        selector.select(self)
+    }
+
+    pub fn try_select<'a, T: ActionReceiver + 'a, S: SelectorTrait<Item = T> + 'a>(
+        &'a self,
+        selector: &'a S,
+    ) -> Option<&'a T> {
+        selector.try_select(self)
+    }
 }
 
-const BASE_OSC: OscillatorConfig = OscillatorConfig {
+const BASE_OSC: Oscillator = Oscillator {
     wave: WaveType::Sine,
     volume: 1.0,
     pan: 0.0,
@@ -50,6 +64,11 @@ const BASE_ENV: AdsrEnvelope = AdsrEnvelope {
 
 impl Default for StoreData {
     fn default() -> Self {
+        const EMPTY_CHANNEL: MixerChannel = MixerChannel {
+            volume: 1.0,
+            effects: vec![],
+        };
+
         StoreData {
             project: Project {
                 name: "My Project".to_string(),
@@ -95,20 +114,21 @@ impl Default for StoreData {
                             volume: 1.0,
                             mute: false,
                             pan: 0.0,
+                            mixer_channel: 2,
                         },
                     },
                     GeneratorInstance {
                         it: Generator::SubSynth(SubSynthConfig {
                             oscillators: [
-                                OscillatorConfig {
+                                Oscillator {
                                     wave: WaveType::Sine,
                                     ..BASE_OSC
                                 },
-                                OscillatorConfig {
+                                Oscillator {
                                     wave: WaveType::Triangle,
                                     ..BASE_OSC
                                 },
-                                OscillatorConfig {
+                                Oscillator {
                                     wave: WaveType::Square,
                                     ..BASE_OSC
                                 },
@@ -121,10 +141,14 @@ impl Default for StoreData {
                             volume: 1.0,
                             mute: false,
                             pan: 0.0,
+                            mixer_channel: 2,
                         },
                     },
                 ],
-                mixer: vec![MixerChannel { effects: vec![] }],
+                mixer: Mixer {
+                    matrix: MixerMatrix::with_channels(3),
+                    channels: vec![EMPTY_CHANNEL; 3],
+                },
                 bpm: 120.0,
                 mod_matrix: ModMatrix::default(),
             },

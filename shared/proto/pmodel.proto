@@ -14,11 +14,23 @@ message ProjectProto {
 
   repeated GeneratorInstanceProto generators = 5;
 
-  repeated MixerChannelProto mixer = 6;
+  MixerProto mixer = 6;
 
   float bpm = 7;
 
   ModMatrixProto mod_matrix = 8;
+}
+
+message MixerProto {
+  MixerMatrixProto matrix = 1;
+
+  repeated MixerChannelProto channels = 2;
+}
+
+message MixerMatrixProto {
+  uint32 channels = 1;
+
+  repeated float matrix = 3;
 }
 
 message ModMatrixProto {
@@ -68,7 +80,9 @@ message SampleProto {
 }
 
 message MixerChannelProto {
-  repeated EffectInstanceProto effects = 1;
+  float volume = 1;
+
+  repeated EffectInstanceProto effects = 2;
 }
 
 message PlacedNoteProto {
@@ -146,13 +160,13 @@ message SubSynthProto {
 }
 
 message SubSynthConfigProto {
-  repeated OscillatorConfigProto oscillators = 1; 
+  repeated OscillatorProto oscillators = 1; 
   repeated LfoConfigProto lfos = 2;
   repeated AdsrEnvelopeProto envelopes = 3;
   ModMatrixProto matrix = 4;  
 }
 
-message OscillatorConfigProto {
+message OscillatorProto {
   WaveTypeProto wave = 1;
   float volume = 2;
   float pan = 3;
@@ -167,6 +181,8 @@ message GeneratorMetaProto {
   bool mute = 2;
 
   float pan = 3;
+
+  uint32 mixer_channel = 4;
 }
 
 message SimpleWaveProto {

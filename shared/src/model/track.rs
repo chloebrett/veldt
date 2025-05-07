@@ -5,7 +5,7 @@ use local_macro::{FromProto, IntoProto};
 use ordered_float::OrderedFloat;
 use std::cmp::Ordering;
 
-#[derive(Clone, Debug, PartialEq, FromProto, IntoProto)]
+#[derive(Clone, Debug, PartialEq, FromProto, IntoProto, Default)]
 pub struct Track {
     /// Ordered by offset.
     #[proto_repeated]

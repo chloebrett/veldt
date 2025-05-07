@@ -1,5 +1,5 @@
 use crate::receiver::ActionReceiver;
-use crate::{Action, IndexField, MoveField, TypeField};
+use crate::{Action, FloatField, IndexField, MoveField, TypeField};
 use shared::model::MixerChannel;
 
 use super::move_elem;
@@ -7,13 +7,10 @@ use super::move_elem;
 impl ActionReceiver for MixerChannel {
     fn apply(&mut self, action: &Action) -> Option<Action> {
         Some(match action {
-            Action::MoveEffectDown(effect_index) => {
-                self.effects.swap(*effect_index, effect_index + 1);
-                Action::MoveEffectUp(*effect_index)
-            }
-            Action::MoveEffectUp(effect_index) => {
-                self.effects.swap(*effect_index, effect_index - 1);
-                Action::MoveEffectDown(*effect_index)
+            Action::SetFloat(FloatField::Volume, volume) => {
+                let prev = self.volume;
+                self.volume = *volume;
+                Action::SetFloat(FloatField::Volume, prev)
             }
             Action::MoveChild(MoveField {
                 from_field,

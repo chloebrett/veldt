@@ -44,7 +44,7 @@ impl BroadcastActions for CollabContext {
             self.store
                 .lock()
                 .unwrap()
-                .dispatch(&action.selector, action.forward);
+                .dispatch_enum(&action.selector, action.forward);
             // TODO: validate that reverse actions match up - if not, then we need conflict resolution.
         }
 
