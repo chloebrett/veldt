@@ -3,7 +3,7 @@ use crate::graph::ProcessContext;
 use crate::wave::WaveSource;
 use dasp_graph::{Buffer, Input, Node};
 use shared::model::{
-    Generator, GeneratorInstance, GeneratorMeta, Placement, PlacementType, SimpleWaveConfig,
+    Generator, GeneratorInstance, GeneratorMeta, SimpleWaveConfig,
 };
 use shared::types::Beats;
 use state::GeneratorSelector;
@@ -20,8 +20,6 @@ struct NodeState {
     wave_source: WaveSource,
     config: SimpleWaveConfig,
     meta: GeneratorMeta,
-    sample_index: u32, // the sample that playback is currently up to.
-    placements: Vec<Placement>,
 }
 
 impl Default for NodeState {
@@ -31,8 +29,6 @@ impl Default for NodeState {
             wave_source: WaveSource::new(0.0),
             config: SimpleWaveConfig::default(),
             meta: GeneratorMeta::default(),
-            sample_index: 0,
-            placements: vec![],
         }
     }
 }
@@ -60,25 +56,6 @@ impl NodeState {
                 self.meta = meta.clone();
             }
         }
-
-        // Placements that are linked to this generator.
-        let GeneratorSelector(generator_index) = selector;
-        let placements: Vec<_> = project
-            .placements
-            .clone()
-            .into_iter()
-            .filter(|it| match &it.kind {
-                PlacementType::Track(it) => it.generator_index == generator_index,
-                _ => false,
-            })
-            .collect();
-        if self.placements != placements {
-            self.placements = placements;
-        }
-
-        if let Some(seek_pos) = payload.seek_pos {
-            self.sample_index = seek_pos as u32;
-        }
     }
 }
 
@@ -99,8 +76,6 @@ impl SimpleWaveGeneratorNode {
 }
 
 impl Node<ProcessContext> for SimpleWaveGeneratorNode {
-    // TODO: a lot of this processing logic is generic and should be shared with
-    // other generator types. How?
     fn process(&mut self, _inputs: &[Input], output: &mut [Buffer], payload: &ProcessContext) {
         let state = &mut self.state;
         state.update(payload, self.selector);
@@ -122,7 +97,7 @@ impl Node<ProcessContext> for SimpleWaveGeneratorNode {
                     note.pitch_name.into(),
                     note.duration,
                     &state.config,
-                    state.sample_index as i32 - note.global_start_sample as i32,
+                    note.samples_since_started,
                 ),
             );
         }
@@ -131,6 +106,5 @@ impl Node<ProcessContext> for SimpleWaveGeneratorNode {
             out_buf.copy_from_slice(&buffer);
             Self::apply_volume_and_pan(state, out_buf, channel_index);
         }
-        state.sample_index += Buffer::LEN as u32;
     }
 }

@@ -12,11 +12,14 @@ pub struct NoteEvent {
     pub pitch_name: PitchName,
 
     // Global values.
-    pub global_start_sample: usize,
+    // Can be negative.
+    pub samples_since_started: i32,
     pub duration: Beats,
 
     // Local values.
+    // Within the current buffer. Always 0 - 64.
     pub start_sample: usize,
+    // Within the current buffer. Always 0 - 64.
     pub end_sample: usize,
 }
 
@@ -75,7 +78,8 @@ impl NoteTracker {
 
                     result[generator_index].push(NoteEvent {
                         pitch_name: note.note.pitch_name,
-                        global_start_sample: note_start_sample,
+                        samples_since_started: global_sample_index as i32
+                            - note_start_sample as i32,
                         duration: note.note.beats,
                         start_sample: (note_start_sample - global_sample_index)
                             .clamp(0, Buffer::LEN),
