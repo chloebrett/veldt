@@ -5,7 +5,7 @@ use shared::model::CompressorConfig;
 impl ActionReceiver for CompressorConfig {
     fn apply(&mut self, action: &Action) -> Option<Action> {
         Some(match action {
-            Action::SetFloat(FloatField::Volume, volume) => {
+            Action::SetFloat(FloatField::Threshold, volume) => {
                 let prev = self.threshold;
                 self.threshold = *volume;
                 Action::SetFloat(FloatField::Volume, prev)
