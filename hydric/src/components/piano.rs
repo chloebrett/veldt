@@ -4,8 +4,7 @@ use crate::{
     widget::SequencerObject,
 };
 use egui::{
-    Color32, CornerRadius, Frame, Pos2, Rect, Sense, Shape, Stroke, StrokeKind, Ui, Vec2,
-    emath::RectTransform, vec2, pos2
+    emath::RectTransform, epaint::RectShape, pos2, vec2, Color32, CornerRadius, Frame, Pos2, Rect, Sense, Shape, Stroke, StrokeKind, Ui, Vec2
 };
 use shared::{
     model::{Note, PlacedNote, ScaleValue, PitchName},
@@ -174,19 +173,31 @@ impl View for Piano {
             // Then draw keys on top
             painter.extend(piano_keys.transform(piano_transform));
 
+            let create_shape_with_new_color = |shape: &Shape, new_color: egui::Color32| {
+                let corner_radius = self.transpose_if_vertical(CornerRadius {
+                    nw: 0,
+                    ne: 0,
+                    sw: 2,
+                    se: 2,
+                });
+                Shape::rect_filled(shape.visual_bounding_rect(), corner_radius, new_color)
+            };
+
             let calculate_clicked_note = |position: Pos2| {
                 let piano_notes = self.get_piano_notes();
                 let mut clicked_note: Option<PlacedNote> = None;
+                let mut is_black = false;
                 for note in piano_notes {
                     let current_note = note.clone();
                     info!("Transformed note Corners: {:?}", note.note.pitch_name);
                     let key = self.make_piano_key(note);
-                    let transformed_key = key.transform(piano_transform).visual_bounding_rect();
+                    let transformed_key = key.transform(piano_transform);
+                    let key_rect = transformed_key.visual_bounding_rect();
 
-                    let top_left = piano_transform.inverse().transform_pos(transformed_key.min);
-                    let top_right = piano_transform.inverse().transform_pos(pos2(transformed_key.max.x, transformed_key.min.y));
-                    let bottom_left = piano_transform.inverse().transform_pos(pos2(transformed_key.min.x, transformed_key.max.y));
-                    let bottom_right = piano_transform.inverse().transform_pos(transformed_key.max);
+                    let top_left = piano_transform.inverse().transform_pos(key_rect.min);
+                    let top_right = piano_transform.inverse().transform_pos(pos2(key_rect.max.x, key_rect.min.y));
+                    let bottom_left = piano_transform.inverse().transform_pos(pos2(key_rect.min.x, key_rect.max.y));
+                    let bottom_right = piano_transform.inverse().transform_pos(key_rect.max);
                     
                     // debugging
                     info!("  Top-Left: {:?}", top_left);
@@ -200,11 +211,13 @@ impl View for Piano {
                         match self.orientation {
                             PianoOrientation::Horizontal => {
                                 if top_right.x - top_left.x == 1.0 || bottom_right.y == 0.6 {
+                                    is_black = true;
                                     break
                                 }
                             },
                             PianoOrientation::Vertical => {
                                 if bottom_left.y - top_left.y == 1.0 || top_right.x == 0.6 {
+                                    is_black = true;
                                     break
                                 }
                             }
@@ -212,8 +225,9 @@ impl View for Piano {
                     }
                 }
                 info!("Clicked Note: {:?}", clicked_note.clone().unwrap());
-                // let note_shadow = self.make_piano_key(clicked_note.clone().unwrap()).transform(piano_transform);
-                // painter.add(self.make_piano_key(clicked_note.clone().unwrap()).transform(piano_transform));
+                let note_shadow = create_shape_with_new_color(&self.make_piano_key(clicked_note.clone().unwrap()).transform(piano_transform), Color32::RED);
+                // change_shape_fill_color(note_shadow, Color32::BLACK);
+                painter.add(note_shadow);
                 clicked_note
             };
        
