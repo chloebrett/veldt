@@ -1,5 +1,5 @@
 use super::{Generator, Oscillator};
-use crate::model::{AdsrEnvelope, LfoConfig, ModMatrix};
+use crate::model::{AdsrEnvelope, EffectInstance, LfoConfig, ModMatrix};
 use crate::pmodel::SubSynthConfigProto;
 use crate::serialize::map_vec;
 use local_macro::IntoProto;
@@ -17,6 +17,9 @@ pub struct SubSynthConfig {
 
     #[proto_optional]
     pub matrix: ModMatrix,
+
+    #[proto_optional]
+    pub filter: EffectInstance,
 }
 
 impl<'a> TryFrom<&'a Generator> for &'a SubSynthConfig {
@@ -48,6 +51,7 @@ impl From<SubSynthConfigProto> for SubSynthConfig {
             envelopes,
             lfos,
             matrix,
+            filter,
         } = proto;
 
         SubSynthConfig {
@@ -59,6 +63,7 @@ impl From<SubSynthConfigProto> for SubSynthConfig {
                 .expect("Expected 3 envelopes!"),
             lfos: map_vec(lfos).try_into().expect("Expected 3 LFOs!"),
             matrix: matrix.unwrap().into(),
+            filter: filter.unwrap().into(),
         }
     }
 }
