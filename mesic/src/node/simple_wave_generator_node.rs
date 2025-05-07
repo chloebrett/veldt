@@ -1,14 +1,12 @@
 use super::pan_multipliers;
 use crate::graph::ProcessContext;
-use crate::wave::{WaveSource, beats_to_samples};
+use crate::wave::WaveSource;
 use dasp_graph::{Buffer, Input, Node};
 use shared::model::{
     Generator, GeneratorInstance, GeneratorMeta, Placement, PlacementType, SimpleWaveConfig,
-    TrackPlacement,
 };
 use shared::types::Beats;
 use state::GeneratorSelector;
-use std::cmp::min;
 
 pub struct SimpleWaveGeneratorNode {
     selector: GeneratorSelector,
@@ -109,50 +107,24 @@ impl Node<ProcessContext> for SimpleWaveGeneratorNode {
 
         // Skip generating if muted!
         // TODO: disconnect muted generators from the graph.
+        // This should be handled from the mixer.
         if state.meta.mute || state.meta.volume == 0.0 {
             return;
         }
 
         let mut buffer = Buffer::SILENT;
-        for placement in &state.placements {
-            let &Ok(&TrackPlacement { track_index, .. }) = &placement.try_into() else {
-                continue;
-            };
-            let track = &payload.store.project.tracks[track_index];
-            let track_offset = *placement.offset;
-            let track_duration = *placement
-                .clipped_duration
-                .unwrap_or(track.unclipped_duration());
-            let track_end_sample = beats_to_samples(track_offset + track_duration, state.bpm);
+        let GeneratorSelector(generator_index) = self.selector;
 
-            // TODO: use a segment tree to determine which notes are in range of the current
-            // buffer, instead of always iterating over all notes.
-            // Then apply the same idea to tracks.
-            for note in &track.notes {
-                let offset = track_offset + *note.offset;
-                let note_start_sample = min(beats_to_samples(offset, state.bpm), track_end_sample);
-                let note_end_sample = min(
-                    beats_to_samples(offset + note.note.beats, state.bpm),
-                    track_end_sample,
-                );
-
-                // Don't play notes that aren't relevant to this buffer segment.
-                if note_start_sample > state.sample_index + Buffer::LEN as u32
-                    || note_end_sample < state.sample_index
-                {
-                    continue;
-                }
-
-                dasp_slice::add_in_place(
-                    &mut buffer,
-                    &state.wave_source.unison_wave(
-                        note.note.pitch_name.into(),
-                        note.note.beats,
-                        &state.config,
-                        state.sample_index as i32 - note_start_sample as i32,
-                    ),
-                );
-            }
+        for note in &payload.notes[generator_index] {
+            dasp_slice::add_in_place(
+                &mut buffer,
+                &state.wave_source.unison_wave(
+                    note.pitch_name.into(),
+                    note.duration,
+                    &state.config,
+                    state.sample_index as i32 - note.global_start_sample as i32,
+                ),
+            );
         }
 
         for (channel_index, out_buf) in output.iter_mut().enumerate() {
