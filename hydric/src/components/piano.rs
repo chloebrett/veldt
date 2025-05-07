@@ -194,13 +194,21 @@ impl View for Piano {
                     info!("  Bottom-Left: {:?}", bottom_left);
                     info!("  Bottom-Right: {:?}", bottom_right);
 
-                    // this is for horizontal
                     if position.x >= top_left.x && position.x <= top_right.x && position.y >= top_left.y && position.y <= bottom_left.y {
                         clicked_note = Some(current_note);
-                        if top_right.x - top_left.x == 1.0 || bottom_right.y == 0.6 {
-                            break // stop iterating if you hit a black note
+                        // Check if intercepted with black note, if black note is hit then stop iterating.
+                        match self.orientation {
+                            PianoOrientation::Horizontal => {
+                                if top_right.x - top_left.x == 1.0 || bottom_right.y == 0.6 {
+                                    break
+                                }
+                            },
+                            PianoOrientation::Vertical => {
+                                if bottom_left.y - top_left.y == 1.0 || top_right.x == 0.6 {
+                                    break
+                                }
+                            }
                         }
-
                     }
                 }
                 info!("Clicked Note: {:?}", clicked_note.clone().unwrap());
