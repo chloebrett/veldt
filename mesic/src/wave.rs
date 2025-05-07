@@ -1,6 +1,7 @@
 use crate::consts::{NYQUIST, SAMPLE_RATE, SECONDS_PER_MINUTE};
 use crate::envelope::apply_envelope;
 use dasp_graph::Buffer;
+use log::info;
 use ordered_float::OrderedFloat;
 use shared::consts::SEMITONE_FREQ;
 use shared::model::{AdsrEnvelope, AntiAliasingMode, Oscillator, SimpleWaveConfig, WaveType};
@@ -117,7 +118,7 @@ impl WaveSource {
         let outputs: Vec<Buffer> = detune_amounts
             .iter()
             .map(|det| {
-                self.wave(
+                let mut buffer = self.wave(
                     freq,
                     beats,
                     &config.envelope,
@@ -125,10 +126,24 @@ impl WaveSource {
                     config.anti_aliasing_mode,
                     *det,
                     start_index,
-                )
+                );
+                for sample in buffer.iter_mut() {
+                    *sample /= osc_count as f32;
+                }
+                buffer
+                // self.wave(
+                //         freq,
+                //         beats,
+                //         &config.envelope,
+                //         config.wave,
+                //         config.anti_aliasing_mode,
+                //         *det,
+                //         start_index,
+                //     )
             })
             .collect();
-
+        
+        // divide_buffer(multi_sum(&outputs), osc_count)
         multi_sum(&outputs)
     }
 
@@ -256,6 +271,20 @@ pub fn multi_sum(inputs: &[Buffer]) -> Buffer {
     }
 
     output
+}
+
+// TODO divide a single buffer by a single value
+pub fn divide_buffer(buffer: Buffer, value: u32) -> Buffer {
+    if value == 0 {
+        panic!("Tried to divide by zero");
+    }
+    let mut buffer = buffer.clone();
+
+    for sample in buffer.iter_mut() {
+        *sample /= value.ilog10() as f32;
+    }
+
+    buffer
 }
 
 /// Constructs the given wave at the given phase. x is between 0 and TAU (or will be modulo'd to be
