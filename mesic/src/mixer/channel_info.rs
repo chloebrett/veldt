@@ -41,11 +41,7 @@ impl ChannelInfo {
             .filter(|generator| generator.meta.mixer_channel == channel_index)
             .enumerate()
             .map(|(generator_index, generator)| {
-                GeneratorInfo::new(
-                    graph,
-                    generator,
-                    GeneratorSelector(generator_index),
-                )
+                GeneratorInfo::new(graph, generator, GeneratorSelector(generator_index))
             })
             .collect();
 

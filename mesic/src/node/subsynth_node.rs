@@ -3,9 +3,7 @@ use crate::consts::CHANNEL_COUNT;
 use crate::graph::ProcessContext;
 use crate::wave::{WaveSource, multi_sum};
 use dasp_graph::{Buffer, Input, Node};
-use shared::model::{
-    Generator, GeneratorInstance, GeneratorMeta, SubSynthConfig,
-};
+use shared::model::{Generator, GeneratorInstance, GeneratorMeta, SubSynthConfig};
 use shared::types::{Beats, KnobPosition, Volume};
 use state::GeneratorSelector;
 

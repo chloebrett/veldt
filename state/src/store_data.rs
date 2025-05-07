@@ -3,9 +3,9 @@ use crate::{Action, Selector, SelectorTrait, reducer};
 use ordered_float::OrderedFloat;
 use shared::model::{
     AdsrEnvelope, AntiAliasingMode, FileTreeConfig, FilenameTree, Generator, GeneratorInstance,
-    GeneratorMeta, Mixer, MixerChannel, MixerMatrix, ModMatrix, Note,
-    PitchName, PlacedNote, Placement, PlacementType, Project, Scale, ScaleValue, SimpleWaveConfig,
-    SubSynthConfig, Track, TrackPlacement, WaveType,
+    GeneratorMeta, Mixer, MixerChannel, MixerMatrix, ModMatrix, Note, PitchName, PlacedNote,
+    Placement, PlacementType, Project, Scale, ScaleValue, SimpleWaveConfig, SubSynthConfig, Track,
+    TrackPlacement, WaveType,
 };
 use shared::types::Volume;
 
