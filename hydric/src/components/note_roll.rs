@@ -14,9 +14,10 @@ use shared::{
     types::PitchValue,
 };
 use state::{
-    Action, FloatField, IndexField, NoteSelector, SelectorTrait, Store, TrackSelector, TypeField,
+    Action, FloatField, MultiIndexField, NoteSelector, SelectorTrait, Store, TrackSelector,
+    TypeField,
 };
-use std::collections::BTreeSet;
+use std::collections::HashSet;
 
 pub struct NoteRoll<'a> {
     store: &'a Store,
@@ -110,7 +111,7 @@ impl View for NoteRoll<'_> {
         );
         let mut select = local_state.note_roll_select_enabled.get();
         if !select {
-            local_state.selected_notes.set(BTreeSet::default());
+            local_state.selected_notes.set(HashSet::default());
         }
         let title = format!("Track {}", track_sel.0);
         let window = StateWindow(
@@ -261,7 +262,7 @@ impl SequencerObject<PlacedNote> for PlacedNote {
 
     fn set_selected(_ui: &mut Ui, local_state: &LocalState, index: Option<usize>) {
         let Some(index) = index else {
-            local_state.selected_notes.set(BTreeSet::default());
+            local_state.selected_notes.set(HashSet::default());
             return;
         };
 
@@ -295,26 +296,17 @@ impl SequencerObject<PlacedNote> for PlacedNote {
         }
     }
 
-    fn delete(store: &Store, index: usize, parent_index: Option<usize>) {
-        store.dispatch(
-            &TrackSelector(parent_index.expect("Should have been a parent index")),
-            Action::DeleteChild(IndexField::PlacedNote(index)),
-        );
-    }
-
     fn delete_selected(
         _ui: &mut Ui,
         store: &Store,
         local_state: &LocalState,
         parent_index: Option<usize>,
     ) {
-        // Notes must be deleted in reverse order so that indices for the rest of the selected
-        // notes do not change mid-process. E.g., if deleting `3` and `4`, if `3` is deleted first
-        // the note that was at `4` will now be at `3` and the algorithm will either delete the wrong note or raise
-        // and error.
-        // BTreeSet provides an effecient way to keep and get from a sorted list.
-        for index in local_state.selected_notes.get().iter().rev() {
-            PlacedNote::delete(store, *index, parent_index);
-        }
+        store.dispatch(
+            &TrackSelector(parent_index.expect("Should have been a parent index")),
+            Action::DeleteChildren(MultiIndexField::PlacedNote(
+                local_state.selected_notes.get().into_iter().collect(),
+            )),
+        );
     }
 }

@@ -12,10 +12,10 @@ use shared::{
     types::Beats,
 };
 use state::{
-    Action, FloatField, IndexField, PlacementSelector, SelectorTrait, Store, TrackSelector,
-    TypeField,
+    Action, FloatField, IndexField, MultiIndexField, PlacementSelector, SelectorTrait, Store,
+    TrackSelector, TypeField,
 };
-use std::collections::BTreeSet;
+use std::collections::HashSet;
 
 pub struct TrackRoll<'a> {
     store: &'a Store,
@@ -62,7 +62,7 @@ impl View for TrackRoll<'_> {
         if !select {
             self.local_state
                 .selected_track_placements
-                .set(BTreeSet::default());
+                .set(HashSet::default());
         }
         default_window("Track Roll")
             .default_pos(pos2(30.0, 200.0))
@@ -244,7 +244,7 @@ impl SequencerObject<PlacedTrack> for PlacedTrack {
         let Some(index) = index else {
             local_state
                 .selected_track_placements
-                .set(BTreeSet::default());
+                .set(HashSet::default());
             return;
         };
 
@@ -281,23 +281,18 @@ impl SequencerObject<PlacedTrack> for PlacedTrack {
         }
     }
 
-    fn delete(store: &Store, index: usize, _parent_index: Option<usize>) {
-        store.dispatchr(Action::DeleteChild(IndexField::Placement(index)));
-    }
-
     fn delete_selected(
         _ui: &mut Ui,
         store: &Store,
         local_state: &LocalState,
-        parent_index: Option<usize>,
+        _parent_index: Option<usize>,
     ) {
-        // Track Placements must be deleted in reverse order so that indices for the rest of the selected
-        // placements do not change mid-process. E.g., if deleting `3` and `4`, if `3` is deleted first
-        // the placement that was at `4` will now be at `3` and the algorithm will either delete the wrong note or raise
-        // and error.
-        // BTreeSet provides an effecient way to keep and get from a sorted list.
-        for index in local_state.selected_track_placements.get().iter().rev() {
-            PlacedTrack::delete(store, *index, parent_index);
-        }
+        store.dispatchr(Action::DeleteChildren(MultiIndexField::Placement(
+            local_state
+                .selected_track_placements
+                .get()
+                .into_iter()
+                .collect(),
+        )));
     }
 }
