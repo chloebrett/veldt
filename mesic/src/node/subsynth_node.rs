@@ -1,44 +1,72 @@
 use super::pan_multipliers;
 use crate::consts::CHANNEL_COUNT;
 use crate::graph::ProcessContext;
-use crate::wave::multi_sum;
-use crate::wave::{WaveSource, beats_to_samples};
+use crate::wave::{WaveSource, multi_sum};
 use dasp_graph::{Buffer, Input, Node};
 use shared::model::{
-    Generator, GeneratorInstance, GeneratorMeta, Placement, SubSynthConfig, Track, TrackPlacement,
+    Generator, GeneratorInstance, GeneratorMeta, SubSynthConfig,
 };
 use shared::types::{Beats, KnobPosition, Volume};
-use std::cmp::min;
+use state::GeneratorSelector;
 
 pub struct SubSynthNode {
+    selector: GeneratorSelector,
+    state: NodeState,
+}
+
+/// State persisted between buffers.
+/// Specific to this node.
+struct NodeState {
+    bpm: Beats,
     wave_source: WaveSource,
     config: SubSynthConfig,
     meta: GeneratorMeta,
-    generator_index: usize,
-    sample_index: u32, // the sample that playback is currently up to.
-    placements: Vec<Placement>,
-    tracks: Vec<Track>,
-    bpm: Beats,
+}
+
+impl Default for NodeState {
+    fn default() -> Self {
+        Self {
+            bpm: 0.0,
+            wave_source: WaveSource::new(0.0),
+            config: SubSynthConfig::default(),
+            meta: GeneratorMeta::default(),
+        }
+    }
+}
+
+impl NodeState {
+    // TODO: update logic is almost the same as the simple wave generator.
+    // Should it be de-duplicated?
+    fn update(&mut self, payload: &ProcessContext, selector: GeneratorSelector) {
+        let project = &payload.store.project;
+        let bpm = project.bpm;
+
+        if bpm != self.bpm {
+            self.bpm = bpm;
+            self.wave_source = WaveSource::new(bpm);
+        }
+
+        if let GeneratorInstance {
+            it: Generator::SubSynth(config),
+            meta,
+            ..
+        } = &payload.store.select(&selector)
+        {
+            if self.config != *config {
+                self.config = config.clone();
+            }
+            if self.meta != *meta {
+                self.meta = meta.clone();
+            }
+        }
+    }
 }
 
 impl SubSynthNode {
-    pub fn new(
-        config: SubSynthConfig,
-        meta: GeneratorMeta,
-        generator_index: usize,
-        placements: Vec<Placement>,
-        tracks: Vec<Track>,
-        bpm: Beats,
-    ) -> Self {
+    pub fn new(selector: GeneratorSelector) -> Self {
         Self {
-            wave_source: WaveSource::new(bpm),
-            config,
-            meta,
-            generator_index,
-            placements,
-            tracks,
-            bpm,
-            sample_index: 0,
+            selector,
+            state: NodeState::default(),
         }
     }
 
@@ -57,105 +85,53 @@ impl SubSynthNode {
 }
 
 impl Node<ProcessContext> for SubSynthNode {
-    // TODO: a lot of this processing logic is generic and should be shared with
-    // other generator types. How?
     fn process(&mut self, _inputs: &[Input], output: &mut [Buffer], payload: &ProcessContext) {
-        if let Some(seek_pos) = payload.seek_pos {
-            self.sample_index = seek_pos as u32;
-        }
-
-        // Apply any applicable changes from the store.
-        if let Some(GeneratorInstance {
-            it: Generator::SubSynth(config),
-            meta,
-            ..
-        }) = &payload.store.project.generators.get(self.generator_index)
-        {
-            if *config != self.config {
-                self.config = config.clone();
-            }
-            if *meta != self.meta {
-                self.meta = meta.clone();
-            }
-        }
+        let state = &mut self.state;
+        state.update(payload, self.selector);
 
         // Skip generating if muted!
         // TODO: disconnect muted generators from the graph.
-        if self.meta.mute || self.meta.volume == 0.0 {
+        // This should be handled from the mixer.
+        if state.meta.mute || state.meta.volume == 0.0 {
             return;
         }
 
         let mut buffer = Buffer::SILENT;
-        for placement in &self.placements {
-            let &Ok(&TrackPlacement { track_index, .. }) = &placement.try_into() else {
-                continue;
-            };
-            let track = &self.tracks[track_index];
-            let track_offset = *placement.offset;
-            let track_duration = *placement
-                .clipped_duration
-                .unwrap_or(track.unclipped_duration());
-            let track_end_sample = beats_to_samples(track_offset + track_duration, self.bpm);
+        let GeneratorSelector(generator_index) = self.selector;
 
-            // TODO: use a segment tree to determine which notes are in range of the current
-            // buffer, instead of always iterating over all notes.
-            // Then apply the same idea to tracks.
-            for note in &track.notes {
-                let offset = track_offset + *note.offset;
-                let note_start_sample = min(beats_to_samples(offset, self.bpm), track_end_sample);
-                let note_end_sample = min(
-                    beats_to_samples(offset + note.note.beats, self.bpm),
-                    track_end_sample,
-                );
+        for note in &payload.notes[generator_index] {
+            // TODO: add envelopes once mod matrix is working
+            // NOTE: for now, osc 1 -> maps to env 1
+            let wave_source = &mut self.state.wave_source;
+            let oscillators = &self.state.config.oscillators;
+            let envelopes = &self.state.config.envelopes;
+            let osc_buffers: Vec<Buffer> = oscillators
+                .iter()
+                .zip(envelopes.iter())
+                .map(|(osc, envelope)| {
+                    let mut buf = wave_source.osc_wave(
+                        note.pitch_name.into(),
+                        note.duration,
+                        osc,
+                        envelope,
+                        note.samples_since_started,
+                    );
 
-                // Don't play notes that aren't relevant to this buffer segment.
-                if note_start_sample > self.sample_index + Buffer::LEN as u32
-                    || note_end_sample < self.sample_index
-                {
-                    continue;
-                }
+                    for channel_index in 0..CHANNEL_COUNT {
+                        Self::apply_volume_and_pan(&mut buf, channel_index, osc.volume, osc.pan);
+                    }
 
-                // TODO: add envelopes once mod matrix is working
-                // NOTE: for now, osc 1 -> maps to env 1
-                let wave_source = &mut self.wave_source;
-                let oscillators = &self.config.oscillators;
-                let envelopes = &self.config.envelopes;
-                let osc_buffers: Vec<Buffer> = oscillators
-                    .iter()
-                    .zip(envelopes.iter())
-                    .map(|(osc, envelope)| {
-                        let mut buf = wave_source.osc_wave(
-                            note.note.pitch_name.into(),
-                            note.note.beats,
-                            osc,
-                            envelope,
-                            self.sample_index as i32 - note_start_sample as i32,
-                        );
+                    buf
+                })
+                .collect();
 
-                        for channel_index in 0..CHANNEL_COUNT {
-                            Self::apply_volume_and_pan(
-                                &mut buf,
-                                channel_index,
-                                osc.volume,
-                                osc.pan,
-                            );
-                        }
+            dasp_slice::add_in_place(&mut buffer, &multi_sum(&osc_buffers));
+        }
 
-                        buf
-                    })
-                    .collect();
-
-                dasp_slice::add_in_place(&mut buffer, &multi_sum(&osc_buffers));
-            }
-
-            for (channel_index, out_buf) in output.iter_mut().enumerate() {
-                let volume = self.meta.volume;
-                let pan = self.meta.pan;
-                out_buf.copy_from_slice(&buffer);
-                Self::apply_volume_and_pan(out_buf, channel_index, volume, pan);
-            }
-
-            self.sample_index += Buffer::LEN as u32;
+        for (channel_index, out_buf) in output.iter_mut().enumerate() {
+            out_buf.copy_from_slice(&buffer);
+            let meta = &self.state.meta;
+            Self::apply_volume_and_pan(out_buf, channel_index, meta.volume, meta.pan);
         }
     }
 }
