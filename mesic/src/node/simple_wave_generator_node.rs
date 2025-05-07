@@ -3,7 +3,7 @@ use crate::graph::ProcessContext;
 use crate::wave::{WaveSource, beats_to_samples};
 use dasp_graph::{Buffer, Input, Node};
 use shared::model::{
-    Generator, GeneratorInstance, GeneratorMeta, Placement, PlacementType, SimpleWaveConfig, Track,
+    Generator, GeneratorInstance, GeneratorMeta, Placement, PlacementType, SimpleWaveConfig,
     TrackPlacement,
 };
 use shared::types::Beats;
@@ -24,8 +24,6 @@ struct NodeState {
     meta: GeneratorMeta,
     sample_index: u32, // the sample that playback is currently up to.
     placements: Vec<Placement>,
-    // TODO: instead of copying this track list here, which is expensive, just use a reference to the payload?
-    tracks: Vec<Track>,
 }
 
 impl Default for NodeState {
@@ -37,7 +35,6 @@ impl Default for NodeState {
             meta: GeneratorMeta::default(),
             sample_index: 0,
             placements: vec![],
-            tracks: vec![],
         }
     }
 }
@@ -81,10 +78,6 @@ impl NodeState {
             self.placements = placements;
         }
 
-        if self.tracks != project.tracks {
-            self.tracks = project.tracks.clone();
-        }
-
         if let Some(seek_pos) = payload.seek_pos {
             self.sample_index = seek_pos as u32;
         }
@@ -125,7 +118,7 @@ impl Node<ProcessContext> for SimpleWaveGeneratorNode {
             let &Ok(&TrackPlacement { track_index, .. }) = &placement.try_into() else {
                 continue;
             };
-            let track = &state.tracks[track_index];
+            let track = &payload.store.project.tracks[track_index];
             let track_offset = *placement.offset;
             let track_duration = *placement
                 .clipped_duration
