@@ -1,15 +1,16 @@
+use crate::DataState;
+use crate::transform::Transform;
 use crate::view::View;
 use crate::widget::{TabDisplay, TabOrientation, knob};
-use crate::transform::Transform;
-use crate::DataState;
 use egui::cache::{ComputerMut, FrameCache};
 use egui::{
-    Color32, Stroke, Vec2, Pos2, Rect, Ui,
+    Color32, Pos2, Rect, Stroke, Ui, Vec2,
     containers::Frame,
     emath::RectTransform,
     epaint::{PathStroke, Shape},
     pos2, vec2,
 };
+use log::info;
 use ordered_float::OrderedFloat;
 use shared::model::{AdsrEnvelope, SubSynthConfig};
 use state::{Action, TypeField};
@@ -79,16 +80,16 @@ impl ComputerMut<EnvelopeKey, Shape> for AdsrEnvelopeComputer {
 
 type AdsrEnvelopeCache<'a> = FrameCache<Shape, AdsrEnvelopeComputer>;
 
-impl <F: Fn(Action), G: Fn()> View for SubSynthEnvelopeView<'_, F, G> {
+impl<F: Fn(Action), G: Fn()> View for SubSynthEnvelopeView<'_, F, G> {
     fn ui(&mut self, ui: &mut Ui) {
         let config = self.config.clone();
         let dispatch = &self.dispatch;
         let on_release = &self.on_release;
 
         let handle_env_tab_click: Box<dyn Fn(&mut egui::Ui, usize) + Send + Sync + 'static> =
-                Box::new(move |ui, index| {
-                    DataState::SubSynthEnvTab.set_value(ui, index);
-                });
+            Box::new(move |ui, index| {
+                DataState::SubSynthEnvTab.set_value(ui, index);
+            });
 
         let active_env_tab = DataState::SubSynthEnvTab
             .get_value::<usize>(ui)
@@ -117,9 +118,9 @@ impl <F: Fn(Action), G: Fn()> View for SubSynthEnvelopeView<'_, F, G> {
                     .stroke(Stroke::new(1.0, Color32::from_rgb(30, 30, 30)))
                     .corner_radius(8.0)
                     .inner_margin(15.0);
+
                 inner_frame.show(ui, |ui| {
                     ui.vertical(|ui| {
-                        println!("Envelope number: {}", &active_env_tab);
                         // Envelope graph
                         Frame::canvas(ui.style()).show(ui, |ui| {
                             ui.ctx().request_repaint();
@@ -127,10 +128,11 @@ impl <F: Fn(Action), G: Fn()> View for SubSynthEnvelopeView<'_, F, G> {
                             let (_id, rect) = ui.allocate_space(desired_size);
                             let to_screen = RectTransform::from_to(
                                 Rect::from_x_y_ranges(0.0..=1.0, 1.0..=0.0),
-                                rect
+                                rect,
                             );
                             let shape = ui.memory_mut(|memory| {
                                 let cache = memory.caches.cache::<AdsrEnvelopeCache<'_>>();
+                                info!("Active Env: {:?}", active_env_tab);
                                 cache.get(config.envelopes[active_env_tab].clone().into())
                             });
                             ui.painter().add(shape.transform(to_screen));

@@ -1,6 +1,6 @@
 use super::super::{ModMatrixView, Piano, PianoOrientation};
-use super::subsynth_oscillator::SubSynthOscillatorView;
 use super::subsynth_envelope::SubSynthEnvelopeView;
+use super::subsynth_oscillator::SubSynthOscillatorView;
 use crate::DataState;
 use crate::view::View;
 use crate::widget::{TabDisplay, TabOrientation};
@@ -77,11 +77,7 @@ impl<F: Fn(Action), G: Fn()> View for SubSynthView<'_, F, G> {
             ui.add_space(HORIZONTAL_SPACE);
 
             ui.vertical(|ui| {
-                SubSynthEnvelopeView::new(
-                    &config,
-                    &dispatch,
-                    &on_release,
-                ).ui(ui);
+                SubSynthEnvelopeView::new(&config, &dispatch, &on_release).ui(ui);
                 ui.add_space(4.0);
                 draw_lfos(ui);
             });
