@@ -70,3 +70,14 @@ pub struct GeneratorMeta {
     #[proto_type_u32]
     pub mixer_channel: usize,
 }
+
+impl Default for GeneratorMeta {
+    fn default() -> Self {
+        Self {
+            volume: 1.0,
+            mute: false,
+            pan: 0.0,
+            mixer_channel: 0,
+        }
+    }
+}
