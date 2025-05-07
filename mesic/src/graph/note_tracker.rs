@@ -1,7 +1,6 @@
-use super::ProcessContext;
 use crate::wave::beats_to_samples;
 use dasp_graph::Buffer;
-use shared::model::{PitchName, PlacementType, TrackPlacement};
+use shared::model::{PitchName, PlacementType, TrackPlacement, Project};
 use shared::types::Beats;
 use std::cmp::min;
 
@@ -26,10 +25,9 @@ pub struct NoteEvent {
 pub struct NoteTracker;
 
 impl NoteTracker {
-    pub fn track(payload: &ProcessContext, global_sample_index: usize) -> NoteEventsByGenerator {
+    pub fn track(project: &Project, global_sample_index: usize) -> NoteEventsByGenerator {
         let mut result = Vec::new();
 
-        let project = &payload.store.project;
         let bpm = project.bpm;
 
         // TODO: make this loop more efficient, instead of looping over generators one by one.

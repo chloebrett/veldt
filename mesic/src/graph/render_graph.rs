@@ -102,7 +102,7 @@ impl RenderGraph {
 
     fn update_notes(&mut self) {
         self.process_context.notes =
-            NoteTracker::track(&self.process_context, self.processed_samples_count);
+            NoteTracker::track(&self.process_context.store.project, self.processed_samples_count);
     }
 }
 
