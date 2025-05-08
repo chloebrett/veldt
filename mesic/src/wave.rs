@@ -3,7 +3,7 @@ use crate::envelope::trivial_envelope;
 use dasp_graph::Buffer;
 use ordered_float::OrderedFloat;
 use shared::consts::SEMITONE_FREQ;
-use shared::model::{AdsrEnvelope, AntiAliasingMode, Oscillator, SimpleWaveConfig, WaveType};
+use shared::model::{AdsrEnvelope, AntiAliasingMode, Oscillator, WaveType};
 use shared::types::{Beats, Freq, Milliseconds};
 use std::cmp::min;
 use std::collections::HashMap;
@@ -100,57 +100,6 @@ pub struct Unison {
 }
 
 impl WaveSource {
-    pub fn unison_wave(
-        &mut self,
-        freq: Freq,
-        beats: Beats,
-        config: &SimpleWaveConfig,
-        start_index: i32, // allows starting the wave in the middle. Can be negative - if it is, then
-                          // -x will return x samples of silence before starting the wave.
-    ) -> Buffer {
-        let detune = config.detune_cents;
-        let osc_count = config.osc_count;
-
-        let detune_amounts = linspace(-detune, detune, osc_count);
-
-        let outputs: Vec<Buffer> = detune_amounts
-            .iter()
-            .map(|det| {
-                let freq = freq * detune_multiplier(*det);
-                let step = freq / (SAMPLE_RATE as f32);
-                let key = WaveKey {
-                    kind: config.wave,
-                    aa: config.anti_aliasing_mode,
-                    freq: freq.into(),
-                };
-
-                let mut vec: Vec<_> = make_range(start_index, beats, self.bpm)
-                    .map(|x: i32| {
-                        // Handles the case where start_index < 0.
-                        // This happens when the start of a note is in the middle of a buffer that is being
-                        // processed.
-                        if x < 0 {
-                            return 0.0;
-                        }
-                        let phase = ((x as f32) * step) % 1.0;
-                        self.cache.get(&key, phase)
-                    })
-                    .collect();
-
-                let mut buffer = Buffer::SILENT;
-                // Handles the case where the range is smaller than the output buffer.
-                // This happens when a note finishes in the middle of a buffer.
-                if vec.len() < Buffer::LEN {
-                    vec.extend(repeat_n(0.0, Buffer::LEN - vec.len()));
-                }
-                buffer.copy_from_slice(&vec);
-                buffer
-            })
-            .collect();
-
-        multi_sum(&outputs)
-    }
-
     fn wave(
         &mut self,
         freq: Freq,

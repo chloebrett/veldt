@@ -2,10 +2,10 @@ use super::pan_multipliers;
 use crate::SAMPLE_RATE;
 use crate::envelope::EnvelopeGenerator;
 use crate::graph::{NoteEventType, ProcessContext};
-use crate::wave::{WaveCache, WaveKey, WaveSource};
+use crate::wave::{WaveCache, WaveKey};
 use dasp_graph::{Buffer, Input, Node};
-use shared::model::{Generator, GeneratorInstance, GeneratorMeta, PlacedNote, SimpleWaveConfig};
-use shared::types::{Beats, Freq};
+use shared::model::{Generator, GeneratorInstance, GeneratorMeta, SimpleWaveConfig};
+use shared::types::Freq;
 use state::GeneratorSelector;
 
 struct Voice {
@@ -110,7 +110,12 @@ impl Node<ProcessContext> for SimpleWaveGeneratorNode {
             }
 
             let amp = state.voice.eg.next().unwrap_or(0.0);
-            let wave = state.voice.source.as_mut().map(|it| it.next().unwrap_or(0.0)).unwrap_or(0.0);
+            let wave = state
+                .voice
+                .source
+                .as_mut()
+                .map(|it| it.next().unwrap_or(0.0))
+                .unwrap_or(0.0);
 
             buffer[i] = amp * wave;
         }
