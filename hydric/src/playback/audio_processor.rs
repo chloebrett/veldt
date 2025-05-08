@@ -83,6 +83,12 @@ impl AudioProcessor {
             PlaybackMessage::Loop(is_looping) => {
                 self.is_looping = is_looping;
             }
+            PlaybackMessage::NoteOn(generator, pitch_name) => {
+                self.graph.note_on(generator, pitch_name);
+            }
+            PlaybackMessage::NoteOff(generator, pitch_name) => {
+                self.graph.note_off(generator, pitch_name);
+            }
         }
     }
 
