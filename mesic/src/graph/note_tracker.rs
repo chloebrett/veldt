@@ -1,6 +1,6 @@
 use crate::wave::beats_to_samples;
 use dasp_graph::Buffer;
-use shared::model::{PitchName, PlacementType, Project, TrackPlacement, PlacedNote};
+use shared::model::{PitchName, PlacementType, Project, TrackPlacement};
 use shared::types::Beats;
 use std::cmp::min;
 
@@ -23,26 +23,25 @@ pub struct NoteEvent {
     pub end_sample: usize,
 }
 
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub struct NoteEvent2 {
     kind: NoteEventType,
     sample_index: usize,
-    note_id: usize,
 }
 
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub enum NoteEventType {
     On { pitch: PitchName },
     Off,
 }
 
-pub struct NoteTracker {
-    // Continuously incremented value.
-    // Used for determining if note on/off events match.
-    note_id: usize,
-}
+pub struct NoteTracker {}
 
 impl NoteTracker {
+    pub fn new() -> Self {
+        Self {}
+    }
+
     pub fn track(project: &Project, global_sample_index: usize) -> NoteEventsByGenerator {
         let mut result: NoteEventsByGenerator = vec![vec![]; project.generators.len()];
 
@@ -164,24 +163,24 @@ impl NoteTracker {
                     let start_sample = note_start_sample as isize - global_sample_index as isize;
                     let end_sample = note_end_sample as isize - global_sample_index as isize;
 
-                    if (0..Buffer::LEN as isize).contains(&start_sample) {
+                    let buf_range = 0..Buffer::LEN as isize;
+
+                    if buf_range.contains(&start_sample) {
                         result[generator_index].push({
                             NoteEvent2 {
                                 kind: NoteEventType::On {
                                     pitch: note.note.pitch_name,
                                 },
                                 sample_index: start_sample as usize,
-                                note_id: self.next_note_id(),
                             }
                         });
                     }
 
-                    if (0..Buffer::LEN as isize).contains(&end_sample) {
+                    if buf_range.contains(&end_sample) {
                         result[generator_index].push({
                             NoteEvent2 {
                                 kind: NoteEventType::Off,
                                 sample_index: end_sample as usize,
-                                note_id: self.next_note_id(),
                             }
                         });
                     }
@@ -189,10 +188,5 @@ impl NoteTracker {
             }
         }
         result
-    }
-
-    fn next_note_id(&mut self) -> usize {
-        self.note_id += 1;
-        self.note_id
     }
 }

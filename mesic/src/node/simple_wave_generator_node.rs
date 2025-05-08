@@ -1,9 +1,9 @@
 use super::pan_multipliers;
+use crate::envelope::EnvelopeGenerator;
 use crate::graph::ProcessContext;
 use crate::wave::WaveSource;
-use crate::envelope::EnvelopeGenerator;
 use dasp_graph::{Buffer, Input, Node};
-use shared::model::{Generator, GeneratorInstance, GeneratorMeta, SimpleWaveConfig, PlacedNote};
+use shared::model::{Generator, GeneratorInstance, GeneratorMeta, PlacedNote, SimpleWaveConfig};
 use shared::types::Beats;
 use state::GeneratorSelector;
 
@@ -38,7 +38,7 @@ impl Default for NodeState {
             voice: Voice {
                 eg: EnvelopeGenerator::new(config.envelope.clone()),
                 note: None,
-            }
+            },
         }
     }
 }
@@ -99,6 +99,10 @@ impl Node<ProcessContext> for SimpleWaveGeneratorNode {
 
         let mut buffer = Buffer::SILENT;
         let GeneratorSelector(generator_index) = self.selector;
+
+        for note_event in &payload.note_events[generator_index] {
+            log::info!("{:?}", note_event);
+        }
 
         for note in &payload.notes[generator_index] {
             dasp_slice::add_in_place(
