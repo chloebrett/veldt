@@ -1,6 +1,6 @@
 use crate::wave::beats_to_samples;
 use dasp_graph::Buffer;
-use shared::model::{PitchName, PlacementType, Project, TrackPlacement};
+use shared::model::{PitchName, PlacementType, Project, TrackPlacement, PlacedNote};
 use shared::types::Beats;
 use std::cmp::min;
 
@@ -23,7 +23,24 @@ pub struct NoteEvent {
     pub end_sample: usize,
 }
 
-pub struct NoteTracker;
+#[derive(Clone)]
+pub struct NoteEvent2 {
+    kind: NoteEventType,
+    sample_index: usize,
+    note_id: usize,
+}
+
+#[derive(Clone)]
+pub enum NoteEventType {
+    On { pitch: PitchName },
+    Off,
+}
+
+pub struct NoteTracker {
+    // Continuously incremented value.
+    // Used for determining if note on/off events match.
+    note_id: usize,
+}
 
 impl NoteTracker {
     pub fn track(project: &Project, global_sample_index: usize) -> NoteEventsByGenerator {
@@ -92,5 +109,90 @@ impl NoteTracker {
             }
         }
         result
+    }
+
+    pub fn track2(
+        &mut self,
+        project: &Project,
+        global_sample_index: usize,
+    ) -> Vec<Vec<NoteEvent2>> {
+        let mut result: Vec<Vec<NoteEvent2>> = vec![vec![]; project.generators.len()];
+
+        let bpm = project.bpm;
+
+        // TODO: make this loop more efficient, instead of looping over generators one by one.
+        for generator_index in 0..project.generators.len() {
+            let placements: Vec<_> = project
+                .placements
+                .clone()
+                .into_iter()
+                .filter(|it| match &it.kind {
+                    PlacementType::Track(it) => it.generator_index == generator_index,
+                    _ => false,
+                })
+                .collect();
+
+            for placement in &placements {
+                let &Ok(&TrackPlacement { track_index, .. }) = &placement.try_into() else {
+                    continue;
+                };
+                let track = &project.tracks[track_index];
+                let track_offset = *placement.offset;
+                let track_duration = *placement
+                    .clipped_duration
+                    .unwrap_or(track.unclipped_duration());
+                let track_end_sample = beats_to_samples(track_offset + track_duration, bpm);
+
+                // TODO: use some kind of tree to determine which notes are in range of the current
+                // buffer, instead of always iterating over all notes.
+                // Then apply the same idea to tracks.
+                for note in &track.notes {
+                    let offset = beats_to_samples(track_offset + *note.offset, bpm);
+                    let note_start_sample = min(offset, track_end_sample) as usize;
+                    let note_end_sample = min(
+                        offset + beats_to_samples(note.note.beats, bpm),
+                        track_end_sample,
+                    ) as usize;
+
+                    // Don't play notes that aren't relevant to this buffer segment.
+                    if note_start_sample > global_sample_index + Buffer::LEN
+                        || note_end_sample < global_sample_index
+                    {
+                        continue;
+                    }
+
+                    let start_sample = note_start_sample as isize - global_sample_index as isize;
+                    let end_sample = note_end_sample as isize - global_sample_index as isize;
+
+                    if (0..Buffer::LEN as isize).contains(&start_sample) {
+                        result[generator_index].push({
+                            NoteEvent2 {
+                                kind: NoteEventType::On {
+                                    pitch: note.note.pitch_name,
+                                },
+                                sample_index: start_sample as usize,
+                                note_id: self.next_note_id(),
+                            }
+                        });
+                    }
+
+                    if (0..Buffer::LEN as isize).contains(&end_sample) {
+                        result[generator_index].push({
+                            NoteEvent2 {
+                                kind: NoteEventType::Off,
+                                sample_index: end_sample as usize,
+                                note_id: self.next_note_id(),
+                            }
+                        });
+                    }
+                }
+            }
+        }
+        result
+    }
+
+    fn next_note_id(&mut self) -> usize {
+        self.note_id += 1;
+        self.note_id
     }
 }

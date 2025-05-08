@@ -39,7 +39,7 @@ enum EnvelopeState {
     Shutdown,
 }
 
-struct EnvelopeGenerator {
+pub struct EnvelopeGenerator {
     state: EnvelopeState,
     config: AdsrEnvelope,
     last_output: f32,
@@ -115,19 +115,11 @@ impl Iterator for EnvelopeGenerator {
     fn next(&mut self) -> Option<Self::Item> {
         let output: f32 = match self.state {
             EnvelopeState::Off => 0.0,
-            EnvelopeState::Attack => {
-                self.last_output + self.attack_per_sample
-            },
-            EnvelopeState::Decay => {
-                self.last_output + self.decay_per_sample
-            }
+            EnvelopeState::Attack => self.last_output + self.attack_per_sample,
+            EnvelopeState::Decay => self.last_output + self.decay_per_sample,
             EnvelopeState::Sustain => self.config.sustain,
-            EnvelopeState::Release => {
-                self.last_output - self.release_per_sample
-            }
-            EnvelopeState::Shutdown => {
-                self.last_output - SHUTDOWN_PER_SAMPLE
-            }
+            EnvelopeState::Release => self.last_output - self.release_per_sample,
+            EnvelopeState::Shutdown => self.last_output - SHUTDOWN_PER_SAMPLE,
         };
 
         let output = output.clamp(0.0, 1.0);
