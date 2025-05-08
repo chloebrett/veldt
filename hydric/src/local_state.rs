@@ -23,7 +23,7 @@ pub struct LocalState {
 
     pub drag_cursor_delta: RcOption<Pos2>,
 
-    // TODO: in the instance of multiple subsynths, both env and lfo should be in a HashMap
+    // TODO: in the instance of multiple subsynths, both env and lfo should be in a HashSet
     // with the generator id as the key
     pub subsynth_env_tab: Rc<RefCell<usize>>,
     pub subsynth_lfo_tab: Rc<RefCell<usize>>,
