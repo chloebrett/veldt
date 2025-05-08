@@ -1,11 +1,15 @@
 use super::pan_multipliers;
 use crate::SAMPLE_RATE;
 use crate::consts::CHANNEL_COUNT;
-use crate::graph::ProcessContext;
-use crate::wave::{WaveCache, WaveKey, WaveSource, detune_multiplier, linspace, multi_sum};
+use crate::envelope::EnvelopeGenerator;
+use crate::graph::{NoteEventType, ProcessContext};
+use crate::wave::{WaveCache, WaveKey, WaveSource, detune_multiplier, linspace};
 use dasp_frame::Stereo;
 use dasp_graph::{Buffer, Input, Node};
-use shared::model::{Generator, Oscillator, GeneratorInstance, GeneratorMeta, PitchName, SubSynthConfig, AntiAliasingMode};
+use shared::model::{
+    AntiAliasingMode, Generator, GeneratorInstance, GeneratorMeta, Oscillator, PitchName,
+    SubSynthConfig,
+};
 use shared::types::{Beats, Freq, KnobPosition, Volume};
 use state::GeneratorSelector;
 
@@ -21,15 +25,26 @@ struct NodeState {
     wave_source: WaveSource,
     config: SubSynthConfig,
     meta: GeneratorMeta,
+    voice: Voice,
+}
+
+struct Voice {
+    eg: EnvelopeGenerator,
+    source: Option<SubSynthWaveSource>,
 }
 
 impl Default for NodeState {
     fn default() -> Self {
+        let config = SubSynthConfig::default();
         Self {
             bpm: 0.0,
             wave_source: WaveSource::new(0.0),
-            config: SubSynthConfig::default(),
+            config: config.clone(),
             meta: GeneratorMeta::default(),
+            voice: Voice {
+                eg: EnvelopeGenerator::new(config.envelopes[0].clone()),
+                source: None,
+            },
         }
     }
 }
@@ -99,33 +114,70 @@ impl Node<ProcessContext> for SubSynthNode {
         let mut buffer = Buffer::SILENT;
         let GeneratorSelector(generator_index) = self.selector;
 
-        for note in &payload.notes[generator_index] {
-            // TODO: add envelopes once mod matrix is working
-            // NOTE: for now, osc 1 -> maps to env 1
-            let wave_source = &mut self.state.wave_source;
-            let oscillators = &self.state.config.oscillators;
-            let envelopes = &self.state.config.envelopes;
-            let osc_buffers: Vec<Buffer> = oscillators
-                .iter()
-                .zip(envelopes.iter())
-                .map(|(osc, envelope)| {
-                    let mut buf = wave_source.osc_wave(
-                        note.pitch_name.into(),
-                        note.duration,
-                        osc,
-                        envelope,
-                        note.samples_since_started,
-                    );
-
-                    for channel_index in 0..CHANNEL_COUNT {
-                        Self::apply_volume_and_pan(&mut buf, channel_index, osc.volume, osc.pan);
-                    }
-
-                    buf
-                })
+        // TODO: fix this, it's n^2 right now. (well, n*64).
+        for i in 0..buffer.len() {
+            let mut events: Vec<_> = payload.note_events[generator_index]
+                .clone()
+                .into_iter()
+                .filter(|it| it.sample_index == i)
                 .collect();
 
-            dasp_slice::add_in_place(&mut buffer, &multi_sum(&osc_buffers));
+            // Special case: if there are both note_on and note_off events in a single sample,
+            // don't process the note_off events.
+            if events.iter().any(|it| it.kind == NoteEventType::On) {
+                events = events
+                    .into_iter()
+                    .filter(|it| it.kind == NoteEventType::On)
+                    .collect();
+            }
+
+            for note_event in events {
+                match &note_event.kind {
+                    NoteEventType::On => {
+                        log::info!(
+                            "Note on event! {:?} {:?}",
+                            note_event.pitch_name,
+                            state.config
+                        );
+                        state.voice.eg.note_on();
+                        // TODO: use all envelopes
+                        state
+                            .voice
+                            .eg
+                            .set_envelope(state.config.envelopes[0].clone());
+                        // TODO: update config dynamically, not just when starting a new note.
+                        state.voice.source = Some(SubSynthWaveSource::new(
+                            note_event.pitch_name.into(),
+                            // TODO: use all oscs
+                            state.config.oscillators[0].clone(),
+                        ));
+                    }
+                    NoteEventType::Off => {
+                        log::info!(
+                            "Note off event! {:?} {:?}",
+                            note_event.pitch_name,
+                            state.config
+                        );
+                        // TODO: check against start/stop time too?
+                        if let Some(source) = &state.voice.source {
+                            if source.same_pitch(note_event.pitch_name) {
+                                state.voice.eg.note_off();
+                            }
+                        }
+                    }
+                }
+            }
+
+            let amp = state.voice.eg.next().unwrap_or(0.0);
+            let wave = state
+                .voice
+                .source
+                .as_mut()
+                .map(|it| it.next().unwrap_or([0.0; 2]))
+                .unwrap_or([0.0; 2]);
+
+            // TODO: stereo
+            buffer[i] = amp * wave[0];
         }
 
         for (channel_index, out_buf) in output.iter_mut().enumerate() {
