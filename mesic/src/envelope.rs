@@ -191,10 +191,17 @@ mod tests {
         eg.note_off();
         result.extend(eg.take(10));
 
-        let mut expected = vec![
-            0.2, 0.4, 0.6, 0.8, 1.0, 0.8, 0.6, 0.4, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5,
-            0.5, 0.5, 0.5, 0.3, 0.1, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0
-        ];
+        let mut expected = vec![];
+        // Attack
+        expected.extend([0.2, 0.4, 0.6, 0.8, 1.0]);
+        // Decay
+        expected.extend([0.8, 0.6, 0.4]);
+        // Sustain
+        expected.extend([0.5; 12]);
+        // Release
+        expected.extend([0.3, 0.1]);
+        // Off
+        expected.extend([0.0; 8]);
         assert_almost_equal(result, expected);
     }
 
