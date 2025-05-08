@@ -1,3 +1,4 @@
+use super::subsynth_lpf::SubSynthLpfView;
 use super::subsynth_oscillator::SubSynthOscillatorView;
 use crate::components::{ModMatrixView, Piano, PianoOrientation};
 use crate::view::View;
