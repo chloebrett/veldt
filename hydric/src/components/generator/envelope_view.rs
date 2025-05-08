@@ -27,7 +27,7 @@ impl<'a, F: Fn(Action), G: Fn()> EnvelopeView<'a, F, G> {
     }
 }
 
-fn envelope_line(envelope: &AdsrEnvelope, x_size: f32) -> Vec<Pos2> {
+pub fn envelope_line(envelope: &AdsrEnvelope, x_size: f32) -> Vec<Pos2> {
     vec![
         pos2(0.0, 0.0),
         pos2(envelope.attack, 1.0),
