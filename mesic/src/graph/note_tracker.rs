@@ -107,10 +107,7 @@ impl NoteTracker {
         result
     }
 
-    pub fn track2(
-        project: &Project,
-        global_sample_index: usize,
-    ) -> Vec<Vec<NoteEvent2>> {
+    pub fn track2(project: &Project, global_sample_index: usize) -> Vec<Vec<NoteEvent2>> {
         let mut result: Vec<Vec<NoteEvent2>> = vec![vec![]; project.generators.len()];
 
         let bpm = project.bpm;
@@ -164,9 +161,7 @@ impl NoteTracker {
                     if buf_range.contains(&start_sample) {
                         result[generator_index].push({
                             NoteEvent2 {
-                                kind: NoteEventType::On {
-                                    note: note.clone(),
-                                },
+                                kind: NoteEventType::On { note: note.clone() },
                                 sample_index: start_sample as usize,
                             }
                         });

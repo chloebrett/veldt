@@ -1,7 +1,7 @@
 use super::pan_multipliers;
 use crate::SAMPLE_RATE;
 use crate::envelope::EnvelopeGenerator;
-use crate::graph::{ProcessContext, NoteEventType};
+use crate::graph::{NoteEventType, ProcessContext};
 use crate::wave::{WaveCache, WaveKey, WaveSource};
 use dasp_graph::{Buffer, Input, Node};
 use shared::model::{Generator, GeneratorInstance, GeneratorMeta, PlacedNote, SimpleWaveConfig};
@@ -10,7 +10,7 @@ use state::GeneratorSelector;
 
 struct Voice {
     eg: EnvelopeGenerator,
-    note: Option<PlacedNote>,
+    source: Option<SimpleWaveSource>,
 }
 
 pub struct SimpleWaveGeneratorNode {
@@ -38,7 +38,7 @@ impl Default for NodeState {
             meta: GeneratorMeta::default(),
             voice: Voice {
                 eg: EnvelopeGenerator::new(config.envelope.clone()),
-                note: None,
+                source: None,
             },
         }
     }
@@ -109,6 +109,11 @@ impl Node<ProcessContext> for SimpleWaveGeneratorNode {
                     match &note_event.kind {
                         NoteEventType::On { note } => {
                             state.voice.eg.note_on();
+                            // TODO: update config dynamically, not just when starting a new note.
+                            state.voice.source = Some(SimpleWaveSource::new(
+                                note.note.pitch_name.into(),
+                                state.config.clone(),
+                            ));
                         }
                         NoteEventType::Off => {
                             state.voice.eg.note_off();
@@ -117,13 +122,16 @@ impl Node<ProcessContext> for SimpleWaveGeneratorNode {
                 }
             }
 
-            let amp = state.voice.eg.next();
+            let amp = state.voice.eg.next().unwrap_or(0.0);
+            let wave = state.voice.source.as_mut().map(|it| it.next().unwrap_or(0.0)).unwrap_or(0.0);
+
+            buffer[i] = amp * wave;
         }
         for note_event in &payload.note_events[generator_index] {
             log::info!("{:?}", note_event);
         }
 
-        for note in &payload.notes[generator_index] {
+        /*for note in &payload.notes[generator_index] {
             dasp_slice::add_in_place(
                 &mut buffer,
                 &state.wave_source.unison_wave(
@@ -133,7 +141,7 @@ impl Node<ProcessContext> for SimpleWaveGeneratorNode {
                     note.samples_since_started,
                 ),
             );
-        }
+        }*/
 
         for (channel_index, out_buf) in output.iter_mut().enumerate() {
             out_buf.copy_from_slice(&buffer);
