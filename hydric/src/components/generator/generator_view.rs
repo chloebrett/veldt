@@ -1,6 +1,6 @@
 use super::simple_wave_control::SimpleWaveView;
 use super::subsynth::SubSynthView;
-use crate::LocalState;
+use crate::{LocalState, AudioState};
 use crate::view::View;
 use crate::widget::StateWindow;
 use crate::widget::default_window;
@@ -12,6 +12,7 @@ pub struct GeneratorView<'a, F: FnMut()> {
     store: &'a Store,
     selector: &'a GeneratorSelector,
     local_state: &'a LocalState,
+    audio_state: &'a AudioState,
     visible: bool,
     on_close: F,
 }
@@ -21,6 +22,7 @@ impl<'a, F: FnMut()> GeneratorView<'a, F> {
         store: &'a Store,
         selector: &'a GeneratorSelector,
         local_state: &'a LocalState,
+    audio_state: &'a AudioState,
         visible: bool,
         on_close: F,
     ) -> Self {
@@ -28,6 +30,7 @@ impl<'a, F: FnMut()> GeneratorView<'a, F> {
             store,
             selector,
             local_state,
+            audio_state,
             visible,
             on_close,
         }
@@ -51,7 +54,7 @@ impl<F: FnMut()> View for GeneratorView<'_, F> {
 
                     match generator {
                         Generator::SimpleWave(config) => {
-                            SimpleWaveView::new(&config, dispatch, on_release).ui(ui)
+                            SimpleWaveView::new(*self.selector, &config, self.audio_state, dispatch, on_release).ui(ui)
                         }
                         Generator::Noise(_) => todo!(),
                         Generator::SubSynth(config) => {

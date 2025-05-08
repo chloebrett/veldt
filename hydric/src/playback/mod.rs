@@ -5,7 +5,8 @@ pub use audio_player::*;
 use audio_processor::*;
 
 use dasp_frame::Stereo;
-use shared::model::Project;
+use shared::model::{PitchName, Project};
+use state::GeneratorSelector;
 
 // Number of samples to process and send to the audio player at a time.
 // This matches the value configured in CPAL.
@@ -28,6 +29,8 @@ enum PlaybackMessage {
     Seek(PlaybackPosition),
     State(PlaybackState),
     Loop(bool),
+    NoteOn(GeneratorSelector, PitchName),
+    NoteOff(GeneratorSelector, PitchName),
 }
 
 // Messages that can be received from the processor thread.
