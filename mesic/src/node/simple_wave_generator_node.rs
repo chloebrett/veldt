@@ -95,6 +95,7 @@ impl Node<ProcessContext> for SimpleWaveGeneratorNode {
                 if note_event.sample_index == i {
                     match &note_event.kind {
                         NoteEventType::On { note } => {
+                            log::info!("Note on event! {:?}", state.config);
                             state.voice.eg.note_on();
                             // TODO: update config dynamically, not just when starting a new note.
                             state.voice.source = Some(SimpleWaveSource::new(
@@ -103,6 +104,7 @@ impl Node<ProcessContext> for SimpleWaveGeneratorNode {
                             ));
                         }
                         NoteEventType::Off => {
+                            log::info!("Note off event! {:?}", state.config);
                             state.voice.eg.note_off();
                         }
                     }

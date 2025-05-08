@@ -30,6 +30,7 @@ pub fn trivial_envelope(sample_index: i32, envelope: &AdsrEnvelope, duration: Mi
     }
 }
 
+#[derive(Debug)]
 enum EnvelopeState {
     Off,
     Attack,
@@ -39,6 +40,7 @@ enum EnvelopeState {
     _Shutdown,
 }
 
+#[derive(Debug)]
 pub struct EnvelopeGenerator {
     state: EnvelopeState,
     config: AdsrEnvelope,
@@ -66,7 +68,15 @@ impl EnvelopeGenerator {
 
     pub fn note_on(&mut self) {
         match self.state {
-            EnvelopeState::Off => self.state = EnvelopeState::Attack,
+            EnvelopeState::Off => {
+                if self.config.attack > 0.0 {
+                    self.state = EnvelopeState::Attack;
+                } else if self.config.decay > 0.0 {
+                    self.state = EnvelopeState::Decay;
+                } else {
+                    self.state = EnvelopeState::Sustain;
+                }
+            }
             _ => {}
         }
     }
@@ -116,7 +126,7 @@ impl Iterator for EnvelopeGenerator {
         let output: f32 = match self.state {
             EnvelopeState::Off => 0.0,
             EnvelopeState::Attack => self.last_output + self.attack_per_sample,
-            EnvelopeState::Decay => self.last_output + self.decay_per_sample,
+            EnvelopeState::Decay => self.last_output - self.decay_per_sample,
             EnvelopeState::Sustain => self.config.sustain,
             EnvelopeState::Release => self.last_output - self.release_per_sample,
             EnvelopeState::_Shutdown => self.last_output - SHUTDOWN_PER_SAMPLE,
@@ -126,5 +136,80 @@ impl Iterator for EnvelopeGenerator {
         self.last_output = output;
         self.check_state_transitions();
         Some(output)
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use assert_float_eq::assert_float_absolute_eq;
+
+    const FLOAT_THRES: f32 = 1e-6;
+
+    #[test]
+    fn eg_off() {
+        let envelope = AdsrEnvelope {
+            attack: 0.0,
+            decay: 0.0,
+            sustain: 1.0,
+            release: 0.0,
+        };
+        let eg = EnvelopeGenerator::new(envelope);
+
+        let result: Vec<_> = eg.take(100).collect();
+        assert_eq!(result, vec![0.0; 100]);
+    }
+
+    #[test]
+    fn eg_on_sustain_only() {
+        let envelope = AdsrEnvelope {
+            attack: 0.0,
+            decay: 0.0,
+            sustain: 0.9,
+            release: 0.0,
+        };
+        let mut eg = EnvelopeGenerator::new(envelope);
+        eg.note_on();
+
+        let result: Vec<_> = eg.take(100).collect();
+        assert_eq!(result, vec![0.9; 100]);
+    }
+
+    #[test]
+    fn eg_on_adsr() {
+        let five_samples_in_ms = 5.0 / SAMPLE_RATE as f32 * 1000.0;
+        let envelope = AdsrEnvelope {
+            attack: five_samples_in_ms,
+            decay: five_samples_in_ms,
+            sustain: 0.5,
+            release: five_samples_in_ms,
+        };
+        let mut eg = EnvelopeGenerator::new(envelope);
+        eg.note_on();
+
+        let mut result: Vec<_> = eg.by_ref().take(20).collect();
+        eg.note_off();
+        result.extend(eg.take(10));
+
+        let mut expected = vec![
+            0.2, 0.4, 0.6, 0.8, 1.0, 0.8, 0.6, 0.4, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5,
+            0.5, 0.5, 0.5, 0.3, 0.1, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0
+        ];
+        assert_almost_equal(result, expected);
+    }
+
+    fn assert_almost_equal(first: Vec<f32>, second: Vec<f32>) {
+        // TODO: make the errors for this more readable,
+        // and perhaps make our own macro.
+        if first.len() != second.len() {
+            panic!("Lengths differed! {}, {}", first.len(), second.len());
+        }
+        for i in 0..first.len() {
+            let a = first[i];
+            let b = second[i];
+            if (a - b).abs() > FLOAT_THRES {
+                panic!("Floats {a}, {b} differed at index {i}");
+            }
+        }
     }
 }
