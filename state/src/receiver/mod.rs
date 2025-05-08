@@ -2,6 +2,7 @@ use crate::Action;
 
 mod effect;
 mod generator;
+mod matrix_cell;
 mod mixer_channel;
 mod note;
 mod placement;
@@ -26,4 +27,13 @@ pub fn move_elem<T: Clone>(vec: &mut Vec<T>, from_index: usize, to_index: usize)
         // Inserted value has not changed original index of value
         vec.remove(from_index);
     };
+}
+
+pub fn delete_elems<T: Clone>(vec: &mut Vec<T>, indexes: Vec<usize>) {
+    let mut indexes = indexes;
+    indexes.sort();
+    // Delete indexes in reverse so that indexes not yet removed are not changed during operation.
+    for index in indexes.iter().rev() {
+        vec.remove(*index);
+    }
 }

@@ -1,7 +1,7 @@
 mod async_state;
 mod audio_state;
 mod components;
-mod data_state;
+mod local_state;
 mod playback;
 mod promise;
 mod rpc;
@@ -13,8 +13,8 @@ mod window_state;
 use crate::components::App;
 use async_state::*;
 use audio_state::*;
-use data_state::*;
 use eframe::web_sys;
+use local_state::*;
 use window_state::*;
 
 fn main() {

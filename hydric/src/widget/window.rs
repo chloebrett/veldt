@@ -1,7 +1,5 @@
 use egui::{InnerResponse, Ui, Window};
 
-use crate::DataState;
-
 /// Creates a default window which is non-resizable, non-collapsible, and disables drag-to-scroll.
 pub fn default_window(title: &str) -> Window {
     Window::new(title)
@@ -10,24 +8,11 @@ pub fn default_window(title: &str) -> Window {
         .drag_to_scroll(false)
 }
 
-/// New Type pattern to extend `egui::containers::Window::show` with logic to open and close window using a DataState enum.
+/// NewType pattern to extend `egui::containers::Window::show` with logic to open and close
+/// window using arbitrary data.
 pub struct StateWindow<'a>(pub Window<'a>);
 
 impl StateWindow<'_> {
-    pub fn show<R>(
-        self,
-        ui: &mut Ui,
-        window_state: DataState,
-        add_contents: impl FnOnce(&mut Ui) -> R,
-    ) -> Option<InnerResponse<Option<R>>> {
-        self.show_with_closure(
-            ui,
-            window_state.get_value::<bool>(ui).unwrap_or(false),
-            move |ui| window_state.set_value(ui, false),
-            add_contents,
-        )
-    }
-
     /// Shows a window that calls a closure when it is closed.
     pub fn show_with_closure<R>(
         self,

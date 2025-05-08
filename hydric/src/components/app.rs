@@ -10,7 +10,7 @@ use crate::promise::spawn;
 use crate::rpc::broadcast_actions;
 use crate::rpc::load_project_list;
 use crate::view::View;
-use crate::{AsyncState, AudioState, WindowState};
+use crate::{AsyncState, AudioState, LocalState, WindowState};
 use egui::{ScrollArea, Ui, scroll_area::ScrollBarVisibility};
 use mesic::graph::RenderGraph;
 use poll_promise::Promise;
@@ -18,7 +18,12 @@ use state::{Action, EffectSelector, GeneratorSelector, Store};
 use std::sync::mpsc::channel;
 
 pub struct App {
+    // State used for rendering audio and/or by other users.
+    // Example: knob positions.
     pub store: Store,
+    // State only used for rendering local UIs.
+    // Example: selected notes in the note roll.
+    pub local_state: LocalState,
     pub frame_history: FrameHistory,
     pub async_state: AsyncState,
     pub audio_state: AudioState,
@@ -35,6 +40,7 @@ impl Default for App {
         graph.set_receiver(rx);
         App {
             store: Store::new(broadcast, tx),
+            local_state: LocalState::default(),
             frame_history: FrameHistory::default(),
             async_state: AsyncState::default(),
             audio_state: AudioState::new(graph),
@@ -110,10 +116,18 @@ impl View for App {
         for sel in self.visible_generators() {
             let generators = &mut self.window_state.generators;
             let visible = generators.get(sel);
-            GeneratorView::new(&self.store, &sel, visible, || generators.set(sel, false)).ui(ui);
+            GeneratorView::new(
+                &self.store,
+                &sel,
+                &self.local_state,
+                &self.audio_state,
+                visible,
+                || generators.set(sel, false),
+            )
+            .ui(ui);
         }
         if self.window_state.mixer.visible {
-            MixerView::new(&mut self.window_state, &self.store).ui(ui);
+            MixerView::new(&mut self.window_state, &self.store, &self.local_state).ui(ui);
         }
 
         ToolbarView::new(
@@ -124,7 +138,7 @@ impl View for App {
         .ui(ui);
 
         for effect_selector in self.visible_effects() {
-            let dispatch = |action| self.store.dispatch2(&effect_selector, action);
+            let dispatch = |action| self.store.dispatch(&effect_selector, action);
             let on_release = || self.store.dispatchr(Action::Release);
             if let Some(mut it) = EffectView::new(
                 &self.store,
@@ -143,9 +157,9 @@ impl View for App {
             KeyView::new(dispatch, &mut self.window_state.scale, key, scale).ui(ui);
         }
 
-        NoteView::new(&self.store).ui(ui);
-        NoteRoll::new(&self.store).ui(ui);
-        TrackPlacementView::new(&self.store).ui(ui);
+        NoteView::new(&self.store, &self.local_state).ui(ui);
+        NoteRoll::new(&self.store, &self.local_state).ui(ui);
+        TrackPlacementView::new(&self.store, &self.local_state).ui(ui);
 
         SampleTreeView::new(
             &self.store,
@@ -153,6 +167,6 @@ impl View for App {
             &mut self.window_state.sample_tree,
         )
         .ui(ui);
-        TrackRoll::new(&self.store, &mut self.window_state).ui(ui);
+        TrackRoll::new(&self.store, &mut self.window_state, &self.local_state).ui(ui);
     }
 }

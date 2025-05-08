@@ -22,6 +22,9 @@ subprocess.run(
     [
         "cargo",
         "build",
+        # Uncomment the lines below to get extra debug UIs.
+        #"--features",
+        #"extra_debug",
         "--target",
         "wasm32-unknown-unknown",
         "--release",

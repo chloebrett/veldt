@@ -3,12 +3,12 @@ use crate::view::View;
 use crate::widget::{get_set, int_slider, knob, selectable_value};
 use eframe::egui;
 use egui::{Color32, Ui};
-use shared::model::{OscillatorConfig, WaveType};
+use shared::model::{Oscillator, WaveType};
 use state::{Action, FloatField, TypeField, UintField};
 use strum::IntoEnumIterator;
 
 pub struct SubSynthOscillatorView<'a, F: Fn(Action), G: Fn()> {
-    config: &'a OscillatorConfig,
+    config: &'a Oscillator,
     dispatch: F,
     on_release: G,
     line_colour: Color32,
@@ -17,7 +17,7 @@ pub struct SubSynthOscillatorView<'a, F: Fn(Action), G: Fn()> {
 
 impl<'a, F: Fn(Action), G: Fn()> SubSynthOscillatorView<'a, F, G> {
     pub fn new(
-        config: &'a OscillatorConfig,
+        config: &'a Oscillator,
         dispatch: F,
         on_release: G,
         line_colour: Color32,
@@ -35,15 +35,17 @@ impl<'a, F: Fn(Action), G: Fn()> SubSynthOscillatorView<'a, F, G> {
 
 impl<F: Fn(Action), G: Fn()> View for SubSynthOscillatorView<'_, F, G> {
     fn ui(&mut self, ui: &mut Ui) {
-        let config = self.config;
-        let dispatch = &self.dispatch;
-        let on_release = &self.on_release;
-        let line_colour = self.line_colour;
-        let fill_colour = self.fill_colour;
+        let Self {
+            config,
+            ref dispatch,
+            ref on_release,
+            line_colour,
+            fill_colour,
+        } = *self;
 
         fn draw_wave_selection<F>(
             ui: &mut Ui,
-            config: &OscillatorConfig,
+            config: &Oscillator,
             dispatch: &F,
             line_colour: Color32,
             fill_colour: Color32,
@@ -51,7 +53,7 @@ impl<F: Fn(Action), G: Fn()> View for SubSynthOscillatorView<'_, F, G> {
             F: Fn(Action),
         {
             let osc_selection_frame = egui::Frame::new()
-                .fill(Color32::from_rgb(30, 30, 30))
+                .fill(Color32::from_gray(30))
                 .corner_radius(8.0)
                 .inner_margin(10.0);
             osc_selection_frame.show(ui, |ui| {
@@ -83,7 +85,7 @@ impl<F: Fn(Action), G: Fn()> View for SubSynthOscillatorView<'_, F, G> {
 
         fn draw_oscillator_controls<F, G>(
             ui: &mut Ui,
-            config: &OscillatorConfig,
+            config: &Oscillator,
             dispatch: &F,
             on_release: &G,
         ) where
@@ -123,6 +125,8 @@ impl<F: Fn(Action), G: Fn()> View for SubSynthOscillatorView<'_, F, G> {
                     knob(
                         ui,
                         "Coarse",
+                        // TODO: this won't work properly with negative numbers.
+                        // E.g. -12.7 should round to -12, not -13. .floor() rounds it to -13.
                         config.osc_detune.floor(),
                         |it| dispatch(Action::SetFloat(FloatField::Detune, it)),
                         -24.0..=24.0,
@@ -146,7 +150,7 @@ impl<F: Fn(Action), G: Fn()> View for SubSynthOscillatorView<'_, F, G> {
 
         fn draw_stacking_controls<F, G>(
             ui: &mut Ui,
-            config: &OscillatorConfig,
+            config: &Oscillator,
             dispatch: &F,
             on_release: &G,
         ) where
@@ -154,7 +158,7 @@ impl<F: Fn(Action), G: Fn()> View for SubSynthOscillatorView<'_, F, G> {
             G: Fn(),
         {
             let stacking_frame = egui::Frame::new()
-                .fill(Color32::from_rgb(30, 30, 30))
+                .fill(Color32::from_gray(30))
                 .corner_radius(8.0)
                 .inner_margin(10.0);
             stacking_frame.show(ui, |ui| {
