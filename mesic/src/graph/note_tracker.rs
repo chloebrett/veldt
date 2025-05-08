@@ -113,7 +113,7 @@ impl NoteTracker {
         let bpm = project.bpm;
 
         // TODO: make this loop more efficient, instead of looping over generators one by one.
-        for generator_index in 0..project.generators.len() {
+        for (generator_index, result) in result.iter_mut().enumerate() {
             let placements: Vec<_> = project
                 .placements
                 .clone()
@@ -159,7 +159,7 @@ impl NoteTracker {
                     let buf_range = 0..Buffer::LEN as isize;
 
                     if buf_range.contains(&start_sample) {
-                        result[generator_index].push({
+                        result.push({
                             NoteEvent2 {
                                 kind: NoteEventType::On { note: note.clone() },
                                 sample_index: start_sample as usize,
@@ -168,7 +168,7 @@ impl NoteTracker {
                     }
 
                     if buf_range.contains(&end_sample) {
-                        result[generator_index].push({
+                        result.push({
                             NoteEvent2 {
                                 kind: NoteEventType::Off,
                                 sample_index: end_sample as usize,

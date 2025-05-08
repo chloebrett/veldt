@@ -21,8 +21,6 @@ pub struct SimpleWaveGeneratorNode {
 /// State persisted between buffers.
 /// Specific to this node.
 struct NodeState {
-    bpm: Beats,
-    wave_source: WaveSource,
     config: SimpleWaveConfig,
     meta: GeneratorMeta,
     voice: Voice,
@@ -32,8 +30,6 @@ impl Default for NodeState {
     fn default() -> Self {
         let config = SimpleWaveConfig::default();
         Self {
-            bpm: 0.0,
-            wave_source: WaveSource::new(0.0),
             config: config.clone(),
             meta: GeneratorMeta::default(),
             voice: Voice {
@@ -46,14 +42,6 @@ impl Default for NodeState {
 
 impl NodeState {
     fn update(&mut self, payload: &ProcessContext, selector: GeneratorSelector) {
-        let project = &payload.store.project;
-        let bpm = project.bpm;
-
-        if bpm != self.bpm {
-            self.bpm = bpm;
-            self.wave_source = WaveSource::new(bpm);
-        }
-
         if let GeneratorInstance {
             it: Generator::SimpleWave(config),
             meta,
@@ -105,7 +93,6 @@ impl Node<ProcessContext> for SimpleWaveGeneratorNode {
         for i in 0..buffer.len() {
             for note_event in &payload.note_events[generator_index] {
                 if note_event.sample_index == i {
-                    log::info!("Sample index match! {i} {:?}", note_event);
                     match &note_event.kind {
                         NoteEventType::On { note } => {
                             state.voice.eg.note_on();
@@ -127,21 +114,6 @@ impl Node<ProcessContext> for SimpleWaveGeneratorNode {
 
             buffer[i] = amp * wave;
         }
-        for note_event in &payload.note_events[generator_index] {
-            log::info!("{:?}", note_event);
-        }
-
-        /*for note in &payload.notes[generator_index] {
-            dasp_slice::add_in_place(
-                &mut buffer,
-                &state.wave_source.unison_wave(
-                    note.pitch_name.into(),
-                    note.duration,
-                    &state.config,
-                    note.samples_since_started,
-                ),
-            );
-        }*/
 
         for (channel_index, out_buf) in output.iter_mut().enumerate() {
             out_buf.copy_from_slice(&buffer);
@@ -156,11 +128,6 @@ pub struct SimpleWaveSource {
     freq: Freq,
     config: SimpleWaveConfig,
     sample_index: usize,
-}
-
-pub struct Unison {
-    pub detune_cents: f32,
-    pub osc_count: usize,
 }
 
 impl SimpleWaveSource {

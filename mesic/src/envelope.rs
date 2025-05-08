@@ -36,7 +36,7 @@ enum EnvelopeState {
     Decay,
     Sustain,
     Release,
-    Shutdown,
+    _Shutdown,
 }
 
 pub struct EnvelopeGenerator {
@@ -80,10 +80,10 @@ impl EnvelopeGenerator {
         }
     }
 
-    fn shutdown(&mut self) {
+    fn _shutdown(&mut self) {
         match self.state {
             EnvelopeState::Attack | EnvelopeState::Decay | EnvelopeState::Sustain => {
-                self.state = EnvelopeState::Shutdown
+                self.state = EnvelopeState::_Shutdown
             }
             _ => {}
         }
@@ -98,7 +98,7 @@ impl EnvelopeGenerator {
             EnvelopeState::Decay if output <= self.config.sustain => {
                 self.state = EnvelopeState::Sustain;
             }
-            EnvelopeState::Release | EnvelopeState::Shutdown if output <= 0.0 => {
+            EnvelopeState::Release | EnvelopeState::_Shutdown if output <= 0.0 => {
                 self.state = EnvelopeState::Off;
             }
             _ => {}
@@ -119,7 +119,7 @@ impl Iterator for EnvelopeGenerator {
             EnvelopeState::Decay => self.last_output + self.decay_per_sample,
             EnvelopeState::Sustain => self.config.sustain,
             EnvelopeState::Release => self.last_output - self.release_per_sample,
-            EnvelopeState::Shutdown => self.last_output - SHUTDOWN_PER_SAMPLE,
+            EnvelopeState::_Shutdown => self.last_output - SHUTDOWN_PER_SAMPLE,
         };
 
         let output = output.clamp(0.0, 1.0);
