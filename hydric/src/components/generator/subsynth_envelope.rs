@@ -7,7 +7,8 @@ use egui::{
     Color32, Rect, Stroke, Ui, Vec2,
     containers::Frame,
     emath::RectTransform,
-    epaint::{PathStroke, Shape}, vec2,
+    epaint::{PathStroke, Shape},
+    vec2,
 };
 use shared::model::{AdsrEnvelope, SubSynthConfig};
 use state::{Action, TypeField};

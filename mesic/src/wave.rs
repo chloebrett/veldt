@@ -3,7 +3,7 @@ use crate::envelope::trivial_envelope;
 use dasp_graph::Buffer;
 use ordered_float::OrderedFloat;
 use shared::consts::SEMITONE_FREQ;
-use shared::model::{AdsrEnvelope, AntiAliasingMode, Oscillator, SimpleWaveConfig, WaveType};
+use shared::model::{AdsrEnvelope, AntiAliasingMode, Oscillator, WaveType};
 use shared::types::{Beats, Freq, Milliseconds};
 use std::cmp::min;
 use std::collections::HashMap;
@@ -100,37 +100,6 @@ pub struct Unison {
 }
 
 impl WaveSource {
-    pub fn unison_wave(
-        &mut self,
-        freq: Freq,
-        beats: Beats,
-        config: &SimpleWaveConfig,
-        start_index: i32, // allows starting the wave in the middle. Can be negative - if it is, then
-                          // -x will return x samples of silence before starting the wave.
-    ) -> Buffer {
-        let detune = config.detune_cents;
-        let osc_count = config.osc_count;
-
-        let detune_amounts = linspace(-detune, detune, osc_count);
-
-        let outputs: Vec<Buffer> = detune_amounts
-            .iter()
-            .map(|det| {
-                self.wave(
-                    freq,
-                    beats,
-                    &config.envelope,
-                    config.wave,
-                    config.anti_aliasing_mode,
-                    *det,
-                    start_index,
-                )
-            })
-            .collect();
-
-        multi_sum(&outputs)
-    }
-
     fn wave(
         &mut self,
         freq: Freq,
@@ -225,7 +194,7 @@ fn make_range(start_index: i32, beats: Beats, bpm: Beats) -> Range<i32> {
         )
 }
 
-fn detune_multiplier(cents: f32) -> Freq {
+pub fn detune_multiplier(cents: f32) -> Freq {
     if cents == 0.0 {
         return 1.0;
     }
@@ -236,7 +205,7 @@ fn detune_multiplier(cents: f32) -> Freq {
 }
 
 /// Returns a vec range with `count` evenly spaced values from `low` to `high`.
-fn linspace(low: f32, high: f32, count: u32) -> Vec<f32> {
+pub fn linspace(low: f32, high: f32, count: u32) -> Vec<f32> {
     if count == 0 {
         panic!("Tried to linspace with count == 0");
     }
