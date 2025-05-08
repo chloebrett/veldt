@@ -2200,6 +2200,7 @@ dependencies = [
  "egui_ltreeview",
  "egui_plot",
  "futures",
+ "js-sys",
  "lazy_static",
  "log",
  "mesic",
