@@ -1,5 +1,4 @@
 use crate::consts::{NYQUIST, SAMPLE_RATE, SECONDS_PER_MINUTE};
-use dasp_graph::Buffer;
 use ordered_float::OrderedFloat;
 use shared::consts::SEMITONE_FREQ;
 use shared::model::{AntiAliasingMode, WaveType};
@@ -76,11 +75,6 @@ impl WaveCache {
     }
 }
 
-pub struct Unison {
-    pub detune_cents: f32,
-    pub osc_count: usize,
-}
-
 pub fn beats_to_samples(beats: Beats, bpm: Beats) -> u32 {
     let seconds = beats / bpm * SECONDS_PER_MINUTE;
     (SAMPLE_RATE as f32 * seconds) as u32
@@ -109,18 +103,6 @@ pub fn linspace(low: f32, high: f32, count: u32) -> Vec<f32> {
     (0..count)
         .map(|x| (x as f32) * (high - low) / ((count - 1) as f32) + low)
         .collect()
-}
-
-// TODO: make multi_sum private
-/// Sums the input buffers into a single buffer.
-pub fn multi_sum(inputs: &[Buffer]) -> Buffer {
-    let mut output = Buffer::SILENT;
-
-    for input in inputs {
-        dasp_slice::add_in_place(&mut output, input);
-    }
-
-    output
 }
 
 /// Constructs the given wave at the given phase. x is between 0 and TAU (or will be modulo'd to be
