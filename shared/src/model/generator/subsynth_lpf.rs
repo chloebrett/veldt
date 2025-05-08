@@ -17,8 +17,8 @@ pub struct SubSynthLpf {
     pub q: KnobPosition,
 }
 
-impl SubSynthLpf {
-    pub fn new() -> Self {
+impl Default for SubSynthLpf {
+    fn default() -> Self {
         Self {
             kind: EqType::SimpleSecondOrderLowPass,
             fc: 1000.0,
