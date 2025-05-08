@@ -1,10 +1,11 @@
 use super::pan_multipliers;
+use crate::SAMPLE_RATE;
 use crate::envelope::EnvelopeGenerator;
-use crate::graph::ProcessContext;
-use crate::wave::WaveSource;
+use crate::graph::{ProcessContext, NoteEventType};
+use crate::wave::{WaveCache, WaveKey, WaveSource};
 use dasp_graph::{Buffer, Input, Node};
 use shared::model::{Generator, GeneratorInstance, GeneratorMeta, PlacedNote, SimpleWaveConfig};
-use shared::types::Beats;
+use shared::types::{Beats, Freq};
 use state::GeneratorSelector;
 
 struct Voice {
@@ -100,6 +101,24 @@ impl Node<ProcessContext> for SimpleWaveGeneratorNode {
         let mut buffer = Buffer::SILENT;
         let GeneratorSelector(generator_index) = self.selector;
 
+        // TODO: fix this, it's n^2 right now. (well, n*64).
+        for i in 0..buffer.len() {
+            for note_event in &payload.note_events[generator_index] {
+                if note_event.sample_index == i {
+                    log::info!("Sample index match! {i} {:?}", note_event);
+                    match &note_event.kind {
+                        NoteEventType::On { note } => {
+                            state.voice.eg.note_on();
+                        }
+                        NoteEventType::Off => {
+                            state.voice.eg.note_off();
+                        }
+                    }
+                }
+            }
+
+            let amp = state.voice.eg.next();
+        }
         for note_event in &payload.note_events[generator_index] {
             log::info!("{:?}", note_event);
         }
@@ -120,5 +139,49 @@ impl Node<ProcessContext> for SimpleWaveGeneratorNode {
             out_buf.copy_from_slice(&buffer);
             Self::apply_volume_and_pan(state, out_buf, channel_index);
         }
+    }
+}
+
+pub struct SimpleWaveSource {
+    // TODO: recycle the wave cache?
+    cache: WaveCache,
+    freq: Freq,
+    config: SimpleWaveConfig,
+    sample_index: usize,
+}
+
+pub struct Unison {
+    pub detune_cents: f32,
+    pub osc_count: usize,
+}
+
+impl SimpleWaveSource {
+    pub fn new(freq: Freq, config: SimpleWaveConfig) -> Self {
+        Self {
+            cache: WaveCache::default(),
+            freq,
+            config,
+            sample_index: 0,
+        }
+    }
+}
+
+impl Iterator for SimpleWaveSource {
+    type Item = f32;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        // TODO: support unison again.
+
+        let step = self.freq / (SAMPLE_RATE as f32);
+        let phase = ((self.sample_index as f32) * step) % 1.0;
+
+        self.sample_index += 1;
+
+        let key = WaveKey {
+            kind: self.config.wave,
+            aa: self.config.anti_aliasing_mode,
+            freq: self.freq.into(),
+        };
+        Some(self.cache.get(&key, phase))
     }
 }

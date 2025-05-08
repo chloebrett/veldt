@@ -1,6 +1,6 @@
 use crate::wave::beats_to_samples;
 use dasp_graph::Buffer;
-use shared::model::{PitchName, PlacementType, Project, TrackPlacement};
+use shared::model::{PitchName, PlacedNote, PlacementType, Project, TrackPlacement};
 use shared::types::Beats;
 use std::cmp::min;
 
@@ -25,23 +25,20 @@ pub struct NoteEvent {
 
 #[derive(Clone, Debug)]
 pub struct NoteEvent2 {
-    kind: NoteEventType,
-    sample_index: usize,
+    pub kind: NoteEventType,
+    pub sample_index: usize,
 }
 
 #[derive(Clone, Debug)]
 pub enum NoteEventType {
-    On { pitch: PitchName },
+    On { note: PlacedNote },
     Off,
 }
 
-pub struct NoteTracker {}
+#[derive(Default)]
+pub struct NoteTracker;
 
 impl NoteTracker {
-    pub fn new() -> Self {
-        Self {}
-    }
-
     pub fn track(project: &Project, global_sample_index: usize) -> NoteEventsByGenerator {
         let mut result: NoteEventsByGenerator = vec![vec![]; project.generators.len()];
 
@@ -111,7 +108,6 @@ impl NoteTracker {
     }
 
     pub fn track2(
-        &mut self,
         project: &Project,
         global_sample_index: usize,
     ) -> Vec<Vec<NoteEvent2>> {
@@ -169,7 +165,7 @@ impl NoteTracker {
                         result[generator_index].push({
                             NoteEvent2 {
                                 kind: NoteEventType::On {
-                                    pitch: note.note.pitch_name,
+                                    note: note.clone(),
                                 },
                                 sample_index: start_sample as usize,
                             }

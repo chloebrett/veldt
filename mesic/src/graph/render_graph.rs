@@ -13,7 +13,6 @@ pub struct RenderGraph {
     mixer: Mixer,
     sample_count: usize,
     processor: Processor,
-    note_tracker: NoteTracker,
 
     // Contains a copy of the project.
     // Updated based on actions from the main store at each buffer cycle.
@@ -31,7 +30,6 @@ impl Default for RenderGraph {
             mixer: Mixer::empty(),
             sample_count: 0,
             processor: make_processor(),
-            note_tracker: NoteTracker::new(),
             process_context: ProcessContext::default(),
             rx: None,
             processed_samples_count: 0,
@@ -107,7 +105,7 @@ impl RenderGraph {
             &self.process_context.store.project,
             self.processed_samples_count,
         );
-        self.process_context.note_events = self.note_tracker.track2(
+        self.process_context.note_events = NoteTracker::track2(
             &self.process_context.store.project,
             self.processed_samples_count,
         );

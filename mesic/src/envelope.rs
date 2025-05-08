@@ -64,14 +64,14 @@ impl EnvelopeGenerator {
         }
     }
 
-    fn note_on(&mut self) {
+    pub fn note_on(&mut self) {
         match self.state {
             EnvelopeState::Off => self.state = EnvelopeState::Attack,
             _ => {}
         }
     }
 
-    fn note_off(&mut self) {
+    pub fn note_off(&mut self) {
         match self.state {
             EnvelopeState::Attack | EnvelopeState::Decay | EnvelopeState::Sustain => {
                 self.state = EnvelopeState::Release
