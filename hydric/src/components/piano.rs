@@ -4,10 +4,10 @@ use crate::{
     widget::SequencerObject,
 };
 use egui::{
-    emath::RectTransform, epaint::RectShape, pos2, vec2, Color32, CornerRadius, Frame, Pos2, Rect, Sense, Shape, Stroke, StrokeKind, Ui, Vec2
+    emath::RectTransform, pos2, vec2, Color32, CornerRadius, Frame, Pos2, Rect, Sense, Shape, Stroke, StrokeKind, Ui, Vec2
 };
 use shared::{
-    model::{Note, PlacedNote, ScaleValue, PitchName},
+    model::{Note, PlacedNote, ScaleValue},
     types::PitchValue,
 };
 use log::info;
@@ -161,7 +161,7 @@ impl Piano {
 impl View for Piano {
     fn ui(&mut self, ui: &mut Ui) {
         Frame::canvas(ui.style()).show(ui, |ui| {
-            let (response, painter) = ui.allocate_painter(self.size, Sense::click());
+            let (response, painter) = ui.allocate_painter(self.size, Sense::click_and_drag());
             let piano_transform = RectTransform::from_to(self.rect(), response.rect);
             let piano_board = self.make_piano_board();
             let piano_notes = self.get_piano_notes();
@@ -173,14 +173,22 @@ impl View for Piano {
             // Then draw keys on top
             painter.extend(piano_keys.transform(piano_transform));
 
-            let create_shape_with_new_color = |shape: &Shape, new_color: egui::Color32| {
+            let create_click_feedback = |shape: &Shape, is_black: bool, | {
                 let corner_radius = self.transpose_if_vertical(CornerRadius {
                     nw: 0,
                     ne: 0,
                     sw: 2,
                     se: 2,
                 });
-                Shape::rect_filled(shape.visual_bounding_rect(), corner_radius, new_color)
+
+                let click_feedback_colour = if is_black {
+                    Color32::from_gray(100) // slightly lighten black key
+                } else {
+                    Color32::from_rgba_unmultiplied(0, 0, 0, ((30.0/100.0) * 255.0) as u8) // slightly darken black key but use transparent true black instead of gray so it doesn't appear on overlapping black keys
+                };
+
+                let click_feedback_shape = Shape::rect_filled(shape.visual_bounding_rect(), corner_radius, click_feedback_colour);
+                painter.add(click_feedback_shape);
             };
 
             let calculate_clicked_note = |position: Pos2| {
@@ -189,7 +197,6 @@ impl View for Piano {
                 let mut is_black = false;
                 for note in piano_notes {
                     let current_note = note.clone();
-                    info!("Transformed note Corners: {:?}", note.note.pitch_name);
                     let key = self.make_piano_key(note);
                     let transformed_key = key.transform(piano_transform);
                     let key_rect = transformed_key.visual_bounding_rect();
@@ -198,12 +205,6 @@ impl View for Piano {
                     let top_right = piano_transform.inverse().transform_pos(pos2(key_rect.max.x, key_rect.min.y));
                     let bottom_left = piano_transform.inverse().transform_pos(pos2(key_rect.min.x, key_rect.max.y));
                     let bottom_right = piano_transform.inverse().transform_pos(key_rect.max);
-                    
-                    // debugging
-                    info!("  Top-Left: {:?}", top_left);
-                    info!("  Top-Right: {:?}", top_right);
-                    info!("  Bottom-Left: {:?}", bottom_left);
-                    info!("  Bottom-Right: {:?}", bottom_right);
 
                     if position.x >= top_left.x && position.x <= top_right.x && position.y >= top_left.y && position.y <= bottom_left.y {
                         clicked_note = Some(current_note);
@@ -224,19 +225,13 @@ impl View for Piano {
                         }
                     }
                 }
-                info!("Clicked Note: {:?}", clicked_note.clone().unwrap());
-                let note_shadow = create_shape_with_new_color(&self.make_piano_key(clicked_note.clone().unwrap()).transform(piano_transform), Color32::RED);
-                // change_shape_fill_color(note_shadow, Color32::BLACK);
-                painter.add(note_shadow);
-                clicked_note
+                create_click_feedback(&self.make_piano_key(clicked_note.clone().unwrap()).transform(piano_transform), is_black);
+                clicked_note.unwrap()
             };
        
-            if response.clicked() {
+            if response.clicked() || response.hovered(){
                 if let Some(pointer_pos) = response.interact_pointer_pos() {
                     let local_pos = piano_transform.inverse().transform_pos(pointer_pos);
-
-                    info!("Clicked at local position: ({:.1}, {:.1})", local_pos.x, local_pos.y);
-
                     let clicked_note = calculate_clicked_note(local_pos);
                 }
             }
