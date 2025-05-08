@@ -1,15 +1,11 @@
-use crate::consts::{MS_PER_SECOND, NYQUIST, SAMPLE_RATE, SECONDS_PER_MINUTE};
-use crate::envelope::trivial_envelope;
+use crate::consts::{NYQUIST, SAMPLE_RATE, SECONDS_PER_MINUTE};
 use dasp_graph::Buffer;
 use ordered_float::OrderedFloat;
 use shared::consts::SEMITONE_FREQ;
-use shared::model::{AdsrEnvelope, AntiAliasingMode, Oscillator, WaveType};
-use shared::types::{Beats, Freq, Milliseconds};
-use std::cmp::min;
+use shared::model::{AntiAliasingMode, WaveType};
+use shared::types::{Beats, Freq};
 use std::collections::HashMap;
 use std::f32::consts::{PI, TAU};
-use std::iter::repeat_n;
-use std::ops::Range;
 
 const HALF_PI: f32 = 0.5 * PI;
 const RECIP_HALF_PI: f32 = HALF_PI.recip(); // 2 / PI, not 1 / TAU.
@@ -80,118 +76,14 @@ impl WaveCache {
     }
 }
 
-pub struct WaveSource {
-    pub cache: WaveCache,
-    bpm: Beats,
-}
-
-impl WaveSource {
-    pub fn new(bpm: Beats) -> Self {
-        Self {
-            cache: WaveCache::default(),
-            bpm,
-        }
-    }
-}
-
 pub struct Unison {
     pub detune_cents: f32,
     pub osc_count: usize,
 }
 
-impl WaveSource {
-    fn wave(
-        &mut self,
-        freq: Freq,
-        beats: Beats,
-        envelope: &AdsrEnvelope,
-        wave_type: WaveType,
-        anti_aliasing_mode: AntiAliasingMode,
-        detune_cents: f32,
-        start_index: i32,
-    ) -> Buffer {
-        let wave_freq = freq * detune_multiplier(detune_cents);
-        let step = wave_freq / (SAMPLE_RATE as f32);
-        let key = WaveKey {
-            kind: wave_type,
-            aa: anti_aliasing_mode,
-            freq: wave_freq.into(),
-        };
-
-        let mut vec: Vec<_> = make_range(start_index, beats, self.bpm)
-            .map(|x: i32| {
-                // Handles the case where start_index < 0.
-                // This happens when the start of a note is in the middle of a buffer that is being
-                // processed.
-                if x < 0 {
-                    return 0.0;
-                }
-                let phase = ((x as f32) * step) % 1.0;
-                let duration_ms = beats_to_ms(beats, self.bpm);
-                self.cache.get(&key, phase) * trivial_envelope(x, envelope, duration_ms)
-            })
-            .collect();
-
-        let mut buffer = Buffer::SILENT;
-        // Handles the case where the range is smaller than the output buffer.
-        // This happens when a note finishes in the middle of a buffer.
-        if vec.len() < Buffer::LEN {
-            vec.extend(repeat_n(0.0, Buffer::LEN - vec.len()));
-        }
-        buffer.copy_from_slice(&vec);
-        buffer
-    }
-
-    pub fn osc_wave(
-        &mut self,
-        freq: Freq,
-        beats: Beats,
-        config: &Oscillator,
-        env: &AdsrEnvelope,
-        start_index: i32,
-    ) -> Buffer {
-        let detunes = linspace(
-            -config.unison_detune,
-            config.unison_detune,
-            config.osc_count,
-        );
-
-        // Create the unison waves
-        let unison_waves: Vec<Buffer> = detunes
-            .iter()
-            .map(|&detune| {
-                self.wave(
-                    freq,
-                    beats,
-                    env,
-                    config.wave,
-                    AntiAliasingMode::Off, // placeholder
-                    config.osc_detune + detune,
-                    start_index,
-                )
-            })
-            .collect();
-
-        // Sum the unison waves
-        multi_sum(&unison_waves)
-    }
-}
-
 pub fn beats_to_samples(beats: Beats, bpm: Beats) -> u32 {
     let seconds = beats / bpm * SECONDS_PER_MINUTE;
     (SAMPLE_RATE as f32 * seconds) as u32
-}
-
-fn beats_to_ms(beats: Beats, bpm: Beats) -> Milliseconds {
-    beats / bpm * SECONDS_PER_MINUTE * MS_PER_SECOND
-}
-
-fn make_range(start_index: i32, beats: Beats, bpm: Beats) -> Range<i32> {
-    start_index
-        ..min(
-            beats_to_samples(beats, bpm) as i32,
-            Buffer::LEN as i32 + start_index,
-        )
 }
 
 pub fn detune_multiplier(cents: f32) -> Freq {

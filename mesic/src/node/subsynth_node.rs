@@ -3,14 +3,14 @@ use crate::SAMPLE_RATE;
 use crate::consts::CHANNEL_COUNT;
 use crate::envelope::EnvelopeGenerator;
 use crate::graph::{NoteEventType, ProcessContext};
-use crate::wave::{WaveCache, WaveKey, WaveSource, detune_multiplier, linspace};
+use crate::wave::{WaveCache, WaveKey, detune_multiplier, linspace};
 use dasp_frame::Stereo;
 use dasp_graph::{Buffer, Input, Node};
 use shared::model::{
     AntiAliasingMode, Generator, GeneratorInstance, GeneratorMeta, Oscillator, PitchName,
     SubSynthConfig,
 };
-use shared::types::{Beats, Freq, KnobPosition, Volume};
+use shared::types::{Freq, KnobPosition, Volume};
 use state::GeneratorSelector;
 
 pub struct SubSynthNode {
@@ -21,8 +21,6 @@ pub struct SubSynthNode {
 /// State persisted between buffers.
 /// Specific to this node.
 struct NodeState {
-    bpm: Beats,
-    wave_source: WaveSource,
     config: SubSynthConfig,
     meta: GeneratorMeta,
     voice: Voice,
@@ -42,8 +40,6 @@ impl Default for NodeState {
             .map(|env| EnvelopeGenerator::new(env.clone()))
             .collect();
         Self {
-            bpm: 0.0,
-            wave_source: WaveSource::new(0.0),
             config: config.clone(),
             meta: GeneratorMeta::default(),
             voice: Voice {
@@ -58,14 +54,6 @@ impl NodeState {
     // TODO: update logic is almost the same as the simple wave generator.
     // Should it be de-duplicated?
     fn update(&mut self, payload: &ProcessContext, selector: GeneratorSelector) {
-        let project = &payload.store.project;
-        let bpm = project.bpm;
-
-        if bpm != self.bpm {
-            self.bpm = bpm;
-            self.wave_source = WaveSource::new(bpm);
-        }
-
         if let GeneratorInstance {
             it: Generator::SubSynth(config),
             meta,
