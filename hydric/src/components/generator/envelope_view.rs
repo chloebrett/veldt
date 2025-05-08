@@ -102,7 +102,7 @@ impl<F: Fn(Action), G: Fn()> View for EnvelopeView<'_, F, G> {
             ui.vertical(|ui| {
                 knob(
                     ui,
-                    "Attack",
+                    "Attack (ms)",
                     envelope.attack,
                     |attack| {
                         dispatch(Action::SetChild(TypeField::Envelope(AdsrEnvelope {
@@ -116,7 +116,7 @@ impl<F: Fn(Action), G: Fn()> View for EnvelopeView<'_, F, G> {
                 );
                 knob(
                     ui,
-                    "Decay",
+                    "Decay (ms)",
                     envelope.decay,
                     |decay| {
                         dispatch(Action::SetChild(TypeField::Envelope(AdsrEnvelope {
@@ -144,7 +144,7 @@ impl<F: Fn(Action), G: Fn()> View for EnvelopeView<'_, F, G> {
                 );
                 knob(
                     ui,
-                    "Release",
+                    "Release (ms)",
                     envelope.release,
                     |release| {
                         dispatch(Action::SetChild(TypeField::Envelope(AdsrEnvelope {
