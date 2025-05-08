@@ -96,7 +96,6 @@ impl<F: Fn(Action), G: Fn()> View for SubSynthEnvelopeView<'_, F, G> {
                                     Rect::from_x_y_ranges(0.0..=1.0, 1.0..=0.0),
                                     rect,
                                 );
-                                info!("Envelope number: {}", active_env_tab);
                                 let shape = Shape::line(
                                     envelope_line(config.envelopes[active_env_tab].clone()),
                                     PathStroke::new(2.0, Color32::WHITE),
