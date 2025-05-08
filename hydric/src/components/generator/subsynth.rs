@@ -166,7 +166,7 @@ impl<G: Fn()> View for SubSynthView<'_, G> {
                 ModMatrixView::new(
                     &config.matrix,
                     vec!["ENV 1", "ENV 2", "ENV 3", "LFO 1", "LFO 2", "LFO 3"],
-                    vec!["OSC 1", "OSC 2", "OSC 3"],
+                    vec!["OSC 1", "OSC 2", "OSC 3", "LPF"],
                     gen_dispatch, // TODO: need to change this dispatch so that actions for modmatrix work, currently takes GeneratorSelector
                     on_release,
                 )
@@ -174,10 +174,11 @@ impl<G: Fn()> View for SubSynthView<'_, G> {
 
                 ui.add_space(HORIZONTAL_SPACE);
                 SubSynthLpfView::new(
-                    &config.lpf, 
-                    gen_dispatch,  // TODO: create actionreceiver for this, change the dispatch so the actions work
-                    on_release)
-                    .ui(ui);
+                    &config.lpf,
+                    gen_dispatch, // TODO: create actionreceiver for this, change the dispatch so the actions work
+                    on_release,
+                )
+                .ui(ui);
             });
         });
 

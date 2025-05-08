@@ -10,14 +10,12 @@ mod noise;
 mod oscillator;
 mod simple_wave;
 mod subsynth;
-mod subsynth_lpf;
 
 pub use alias::*;
 pub use noise::*;
 pub use oscillator::*;
 pub use simple_wave::*;
 pub use subsynth::*;
-pub use subsynth_lpf::*;
 
 #[derive(Clone, Debug, PartialEq, FromProto, IntoProto)]
 pub struct GeneratorInstance {

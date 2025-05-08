@@ -1,6 +1,5 @@
 use super::{Generator, Oscillator};
-use crate::model::generator::subsynth_lpf::SubSynthLpf;
-use crate::model::{AdsrEnvelope, LfoConfig, ModMatrix, WaveType};
+use crate::model::{AdsrEnvelope, EqConfig, EqType, LfoConfig, ModMatrix, WaveType};
 use crate::pmodel::SubSynthConfigProto;
 use crate::serialize::map_vec;
 use local_macro::IntoProto;
@@ -20,7 +19,7 @@ pub struct SubSynthConfig {
     pub matrix: ModMatrix,
 
     #[proto_optional]
-    pub lpf: SubSynthLpf,
+    pub lpf: EqConfig,
 }
 
 const BASE_OSC: Oscillator = Oscillator {
@@ -44,6 +43,13 @@ const BASE_ENV: AdsrEnvelope = AdsrEnvelope {
     release: 100.0,
 };
 
+const BASE_LPF: EqConfig = EqConfig {
+    kind: EqType::SimpleSecondOrderLowPass,
+    fc: 1000.0,
+    gain: 0.0,
+    q: 1.0,
+};
+
 impl Default for SubSynthConfig {
     fn default() -> Self {
         Self {
@@ -63,8 +69,8 @@ impl Default for SubSynthConfig {
             ],
             lfos: [BASE_LFO; 3],
             envelopes: [BASE_ENV; 3],
-            matrix: ModMatrix::new(6, 3),
-            lpf: SubSynthLpf::default(),
+            matrix: ModMatrix::new(6, 4),
+            lpf: BASE_LPF,
         }
     }
 }

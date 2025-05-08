@@ -2,17 +2,17 @@ use crate::view::View;
 use crate::widget::knob;
 use eframe::egui;
 use egui::{Color32, Ui};
-use shared::model::SubSynthLpf;
+use shared::model::EqConfig;
 use state::{Action, FloatField};
 
 pub struct SubSynthLpfView<'a, F: Fn(Action), G: Fn()> {
-    config: &'a SubSynthLpf,
+    config: &'a EqConfig,
     dispatch: F,
     on_release: G,
 }
 
 impl<'a, F: Fn(Action), G: Fn()> SubSynthLpfView<'a, F, G> {
-    pub fn new(config: &'a SubSynthLpf, dispatch: F, on_release: G) -> Self {
+    pub fn new(config: &'a EqConfig, dispatch: F, on_release: G) -> Self {
         Self {
             config,
             dispatch,
