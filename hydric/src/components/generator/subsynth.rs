@@ -173,7 +173,11 @@ impl<G: Fn()> View for SubSynthView<'_, G> {
                 .ui(ui); // must wrap in ui.vertical to stop the matrix from unnecessarily stretching vertically
 
                 ui.add_space(HORIZONTAL_SPACE);
-                SubSynthLpfView::new(&config.lpf, gen_dispatch, on_release).ui(ui);
+                SubSynthLpfView::new(
+                    &config.lpf, 
+                    gen_dispatch,  // TODO: create actionreceiver for this, change the dispatch so the actions work
+                    on_release)
+                    .ui(ui);
             });
         });
 
