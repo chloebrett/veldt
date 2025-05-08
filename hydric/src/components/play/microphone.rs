@@ -26,7 +26,7 @@ impl Microphone {
     async fn inner_start(&mut self)-> Result<(), JsValue>{
 
         // Clear previous data.
-        self.audio_bytes = Array::new();
+        self.audio_chunks = Array::new();
 
         // Setup js element to access media devices.
         let window = window().expect("No window found.");
