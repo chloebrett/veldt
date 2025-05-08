@@ -77,6 +77,9 @@ impl EnvelopeGenerator {
                     self.state = EnvelopeState::Sustain;
                 }
             }
+            EnvelopeState::Release => {
+                self.state = EnvelopeState::Attack;
+            }
             _ => {}
         }
     }
@@ -142,7 +145,6 @@ impl Iterator for EnvelopeGenerator {
 #[cfg(test)]
 mod tests {
     use super::*;
-    
 
     const FLOAT_THRES: f32 = 1e-6;
 

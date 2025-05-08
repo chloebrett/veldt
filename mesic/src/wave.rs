@@ -194,7 +194,7 @@ fn make_range(start_index: i32, beats: Beats, bpm: Beats) -> Range<i32> {
         )
 }
 
-fn detune_multiplier(cents: f32) -> Freq {
+pub fn detune_multiplier(cents: f32) -> Freq {
     if cents == 0.0 {
         return 1.0;
     }
@@ -205,7 +205,7 @@ fn detune_multiplier(cents: f32) -> Freq {
 }
 
 /// Returns a vec range with `count` evenly spaced values from `low` to `high`.
-fn linspace(low: f32, high: f32, count: u32) -> Vec<f32> {
+pub fn linspace(low: f32, high: f32, count: u32) -> Vec<f32> {
     if count == 0 {
         panic!("Tried to linspace with count == 0");
     }

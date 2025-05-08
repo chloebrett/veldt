@@ -2,7 +2,7 @@ use super::pan_multipliers;
 use crate::SAMPLE_RATE;
 use crate::envelope::EnvelopeGenerator;
 use crate::graph::{NoteEventType, ProcessContext};
-use crate::wave::{WaveCache, WaveKey};
+use crate::wave::{WaveCache, WaveKey, detune_multiplier, linspace};
 use dasp_graph::{Buffer, Input, Node};
 use shared::model::{Generator, GeneratorInstance, GeneratorMeta, PitchName, SimpleWaveConfig};
 use shared::types::Freq;
@@ -109,7 +109,11 @@ impl Node<ProcessContext> for SimpleWaveGeneratorNode {
             for note_event in events {
                 match &note_event.kind {
                     NoteEventType::On => {
-                        log::info!("Note on event! {:?}", state.config);
+                        log::info!(
+                            "Note on event! {:?} {:?}",
+                            note_event.note.note.pitch_name,
+                            state.config
+                        );
                         state.voice.eg.note_on();
                         // TODO: update config dynamically, not just when starting a new note.
                         state.voice.source = Some(SimpleWaveSource::new(
@@ -119,7 +123,11 @@ impl Node<ProcessContext> for SimpleWaveGeneratorNode {
                         ));
                     }
                     NoteEventType::Off => {
-                        log::info!("Note off event! {:?}", state.config);
+                        log::info!(
+                            "Note off event! {:?} {:?}",
+                            note_event.note.note.pitch_name,
+                            state.config
+                        );
                         // TODO: check against start/stop time too?
                         if let Some(source) = &state.voice.source {
                             if source.same_pitch(note_event.note.note.pitch_name) {
@@ -150,6 +158,7 @@ impl Node<ProcessContext> for SimpleWaveGeneratorNode {
 
 pub struct SimpleWaveSource {
     // TODO: recycle the wave cache?
+    // Currently it's re-created each time the note changes.
     cache: WaveCache,
     freq: Freq,
     config: SimpleWaveConfig,
@@ -175,18 +184,28 @@ impl Iterator for SimpleWaveSource {
     type Item = f32;
 
     fn next(&mut self) -> Option<Self::Item> {
-        // TODO: support unison again.
+        let detunes = linspace(
+            -self.config.detune_cents,
+            self.config.detune_cents,
+            self.config.osc_count,
+        );
 
-        let step = self.freq / (SAMPLE_RATE as f32);
-        let phase = ((self.sample_index as f32) * step) % 1.0;
+        let mut output = 0.0;
+
+        for detune in detunes {
+            let freq = self.freq * detune_multiplier(detune);
+            let step = freq / (SAMPLE_RATE as f32);
+            let phase = ((self.sample_index as f32) * step) % 1.0;
+
+            let key = WaveKey {
+                kind: self.config.wave,
+                aa: self.config.anti_aliasing_mode,
+                freq: self.freq.into(),
+            };
+            output += self.cache.get(&key, phase);
+        }
 
         self.sample_index += 1;
-
-        let key = WaveKey {
-            kind: self.config.wave,
-            aa: self.config.anti_aliasing_mode,
-            freq: self.freq.into(),
-        };
-        Some(self.cache.get(&key, phase))
+        Some(output)
     }
 }
