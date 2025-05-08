@@ -158,7 +158,7 @@ impl NoteTracker {
                             NoteEvent2 {
                                 kind: NoteEventType::On,
                                 sample_index: start_sample as usize,
-                                pitch_name: note.note.pitch_name.clone(),
+                                pitch_name: note.note.pitch_name,
                             }
                         });
                     }
@@ -169,7 +169,7 @@ impl NoteTracker {
                             NoteEvent2 {
                                 kind: NoteEventType::Off,
                                 sample_index: end_sample as usize,
-                                pitch_name: note.note.pitch_name.clone(),
+                                pitch_name: note.note.pitch_name,
                             }
                         });
                     }

@@ -100,10 +100,7 @@ impl Node<ProcessContext> for SimpleWaveGeneratorNode {
             // Special case: if there are both note_on and note_off events in a single sample,
             // don't process the note_off events.
             if events.iter().any(|it| it.kind == NoteEventType::On) {
-                events = events
-                    .into_iter()
-                    .filter(|it| it.kind == NoteEventType::On)
-                    .collect();
+                events.retain(|it| it.kind == NoteEventType::On);
             }
 
             for note_event in events {

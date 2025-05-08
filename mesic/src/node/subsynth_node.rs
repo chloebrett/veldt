@@ -130,10 +130,7 @@ impl Node<ProcessContext> for SubSynthNode {
             // Special case: if there are both note_on and note_off events in a single sample,
             // don't process the note_off events.
             if events.iter().any(|it| it.kind == NoteEventType::On) {
-                events = events
-                    .into_iter()
-                    .filter(|it| it.kind == NoteEventType::On)
-                    .collect();
+                events.retain(|it| it.kind == NoteEventType::On);
             }
 
             for note_event in events {
@@ -153,11 +150,7 @@ impl Node<ProcessContext> for SubSynthNode {
                             eg.note_on();
                             eg.set_envelope(env);
                             // TODO: update config dynamically, not just when starting a new note.
-                            sources.push(SubSynthWaveSource::new(
-                                note_event.pitch_name.into(),
-                                // TODO: use all oscs
-                                osc,
-                            ));
+                            sources.push(SubSynthWaveSource::new(note_event.pitch_name, osc));
                         }
                         state.voice.sources = Some(sources.try_into().unwrap());
                     }
@@ -247,10 +240,10 @@ impl Iterator for SubSynthWaveSource {
             output_mono += self.cache.get(&key, phase);
         }
 
-        let mut output_stereo = [output_mono, output_mono];
-        for channel_index in 0..CHANNEL_COUNT {
+        let mut output_stereo = [output_mono; CHANNEL_COUNT];
+        for (channel_index, out) in output_stereo.iter_mut().enumerate() {
             let pan_mult = pan_multipliers(osc.pan)[channel_index];
-            output_stereo[channel_index] *= pan_mult * osc.volume;
+            *out *= pan_mult * osc.volume;
         }
 
         self.sample_index += 1;
