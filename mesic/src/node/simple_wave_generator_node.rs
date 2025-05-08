@@ -8,11 +8,6 @@ use shared::model::{Generator, GeneratorInstance, GeneratorMeta, PitchName, Simp
 use shared::types::Freq;
 use state::GeneratorSelector;
 
-struct Voice {
-    eg: EnvelopeGenerator,
-    source: Option<SimpleWaveSource>,
-}
-
 pub struct SimpleWaveGeneratorNode {
     selector: GeneratorSelector,
     state: NodeState,
@@ -24,6 +19,11 @@ struct NodeState {
     config: SimpleWaveConfig,
     meta: GeneratorMeta,
     voice: Voice,
+}
+
+struct Voice {
+    eg: EnvelopeGenerator,
+    source: Option<SimpleWaveSource>,
 }
 
 impl Default for NodeState {
@@ -100,10 +100,7 @@ impl Node<ProcessContext> for SimpleWaveGeneratorNode {
             // Special case: if there are both note_on and note_off events in a single sample,
             // don't process the note_off events.
             if events.iter().any(|it| it.kind == NoteEventType::On) {
-                events = events
-                    .into_iter()
-                    .filter(|it| it.kind == NoteEventType::On)
-                    .collect();
+                events.retain(|it| it.kind == NoteEventType::On);
             }
 
             for note_event in events {
@@ -111,27 +108,26 @@ impl Node<ProcessContext> for SimpleWaveGeneratorNode {
                     NoteEventType::On => {
                         log::info!(
                             "Note on event! {:?} {:?}",
-                            note_event.note.note.pitch_name,
+                            note_event.pitch_name,
                             state.config
                         );
                         state.voice.eg.note_on();
                         state.voice.eg.set_envelope(state.config.envelope.clone());
                         // TODO: update config dynamically, not just when starting a new note.
                         state.voice.source = Some(SimpleWaveSource::new(
-                            // TODO: just pass pitch name?
-                            note_event.note.note.pitch_name.into(),
+                            note_event.pitch_name.into(),
                             state.config.clone(),
                         ));
                     }
                     NoteEventType::Off => {
                         log::info!(
                             "Note off event! {:?} {:?}",
-                            note_event.note.note.pitch_name,
+                            note_event.pitch_name,
                             state.config
                         );
                         // TODO: check against start/stop time too?
                         if let Some(source) = &state.voice.source {
-                            if source.same_pitch(note_event.note.note.pitch_name) {
+                            if source.same_pitch(note_event.pitch_name) {
                                 state.voice.eg.note_off();
                             }
                         }

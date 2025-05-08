@@ -12,8 +12,7 @@ pub use render_graph::*;
 pub struct ProcessContext {
     pub store: StoreData,
     pub seek_pos: Option<usize>,
-    pub notes: NoteEventsByGenerator,
-    pub note_events: Vec<Vec<NoteEvent2>>,
+    pub note_events: NoteEventsByGenerator,
 }
 
 pub type Graph = StableGraph<NodeData<BoxedNodeSend<ProcessContext>>, ()>;
