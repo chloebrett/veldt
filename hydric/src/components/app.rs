@@ -116,9 +116,14 @@ impl View for App {
         for sel in self.visible_generators() {
             let generators = &mut self.window_state.generators;
             let visible = generators.get(sel);
-            GeneratorView::new(&self.store, &sel, &self.local_state, &self.audio_state, visible, || {
-                generators.set(sel, false)
-            })
+            GeneratorView::new(
+                &self.store,
+                &sel,
+                &self.local_state,
+                &self.audio_state,
+                visible,
+                || generators.set(sel, false),
+            )
             .ui(ui);
         }
         if self.window_state.mixer.visible {

@@ -4,8 +4,6 @@ use super::{
 };
 use crossbeam_channel::{Receiver, Sender};
 use mesic::graph::RenderGraph;
-use shared::model::Note;
-use state::GeneratorSelector;
 
 /// Audio processor which runs in its own thread and communicates with the UI thread via crossbeam channels.
 pub struct AudioProcessor {

@@ -3,7 +3,7 @@ use crate::mixer::Mixer;
 use crate::wave::beats_to_samples;
 use dasp_frame::Stereo;
 use dasp_graph::Buffer;
-use shared::model::{Note, PitchName, Project};
+use shared::model::{PitchName, Project};
 use state::{Action, GeneratorSelector, Selector};
 use std::sync::mpsc::Receiver;
 
@@ -110,39 +110,40 @@ impl RenderGraph {
             self.processed_samples_count,
         );
 
-        for i in 0..self.pending_note_events.len() {
-            // TODO: mem swap this?
-            self.process_context.note_events[i].extend(self.pending_note_events[i].clone());
+        // Load any events sent from the UI by the user.
+        for (i, event) in self.pending_note_events.clone().into_iter().enumerate() {
+            self.process_context.note_events[i].extend(event);
         }
         self.pending_note_events = vec![];
     }
 
-    pub fn note_on(&mut self, generator: GeneratorSelector, pitch_name: PitchName) {
-        let delay = Buffer::LEN;
+    /// Processes a note event sent by the user.
+    /// Non-public to avoid exposing NoteEventType enum to hydric.
+    fn note_event(
+        &mut self,
+        generator: GeneratorSelector,
+        pitch_name: PitchName,
+        kind: NoteEventType,
+    ) {
         let GeneratorSelector(generator_index) = generator;
+        // Note: this pattern will become a bit inefficient if there are a lot of generators.
         while self.pending_note_events.len() <= generator_index {
             self.pending_note_events.push(vec![]);
         }
         self.pending_note_events[generator_index].push(NoteEvent {
-            kind: NoteEventType::On,
+            kind,
             sample_index: 0,
             pitch_name,
         });
         log::info!("Pending: {:?}", self.pending_note_events);
     }
 
+    pub fn note_on(&mut self, generator: GeneratorSelector, pitch_name: PitchName) {
+        self.note_event(generator, pitch_name, NoteEventType::On);
+    }
+
     pub fn note_off(&mut self, generator: GeneratorSelector, pitch_name: PitchName) {
-        let delay = Buffer::LEN;
-        let GeneratorSelector(generator_index) = generator;
-        while self.pending_note_events.len() <= generator_index {
-            self.pending_note_events.push(vec![]);
-        }
-        self.pending_note_events[generator_index].push(NoteEvent {
-            kind: NoteEventType::Off,
-            sample_index: 0,
-            pitch_name,
-        });
-        log::info!("Pending: {:?}", self.pending_note_events);
+        self.note_event(generator, pitch_name, NoteEventType::Off);
     }
 }
 
@@ -171,8 +172,6 @@ impl Iterator for RenderGraph {
         self.processed_samples_count += 1;
         output
     }
-
-    // TODO: implement size_hint or SizedIterator to make collection more efficient.
 }
 
 #[cfg(test)]
