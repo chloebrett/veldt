@@ -31,17 +31,13 @@ impl<'a, F: Fn(Action), G: Fn()> EnvelopeView<'a, F, G> {
 }
 
 fn envelope_line(envelope: &EnvelopeKey) -> Vec<Pos2> {
-    let mut points = vec![];
-    if *envelope.attack > 0.0 {
-        points.push(pos2(0.0, 0.0));
-    }
-    points.push(pos2(*envelope.attack, 1.0));
-    points.push(pos2(*envelope.attack + *envelope.decay, *envelope.sustain));
-    points.push(pos2(1.0 - *envelope.release, *envelope.sustain));
-    if *envelope.release > 0.0 {
-        points.push(pos2(1.0, 0.0));
-    }
-    points
+    vec![
+        pos2(0.0, 0.0),
+        pos2(*envelope.attack, 1.0),
+        pos2(*envelope.attack + *envelope.decay, *envelope.sustain),
+        pos2(*envelope.x_size - *envelope.release, *envelope.sustain),
+        pos2(*envelope.x_size, 0.0),
+    ]
 }
 
 #[derive(Default)]
@@ -53,6 +49,7 @@ struct EnvelopeKey {
     decay: OrderedFloat<f32>,
     sustain: OrderedFloat<f32>,
     release: OrderedFloat<f32>,
+    x_size: OrderedFloat<f32>,
 }
 
 impl From<AdsrEnvelope> for EnvelopeKey {
@@ -62,6 +59,7 @@ impl From<AdsrEnvelope> for EnvelopeKey {
             decay: OrderedFloat(other.decay),
             sustain: OrderedFloat(other.sustain),
             release: OrderedFloat(other.release),
+            x_size: OrderedFloat((other.attack + other.decay + other.release) * 1.2),
         }
     }
 }
@@ -89,8 +87,9 @@ impl<F: Fn(Action), G: Fn()> View for EnvelopeView<'_, F, G> {
                 ui.ctx().request_repaint();
                 let desired_size = vec2(200.0, 115.0);
                 let (_id, rect) = ui.allocate_space(desired_size);
+                let x_size = (envelope.attack + envelope.decay + envelope.release) * 1.2;
                 let to_screen =
-                    RectTransform::from_to(Rect::from_x_y_ranges(0.0..=1.0, 1.0..=0.0), rect);
+                    RectTransform::from_to(Rect::from_x_y_ranges(0.0..=x_size, 1.0..=0.0), rect);
 
                 let shape = ui.memory_mut(|memory| {
                     let cache = memory.caches.cache::<AdsrEnvelopeCache<'_>>();
@@ -110,8 +109,8 @@ impl<F: Fn(Action), G: Fn()> View for EnvelopeView<'_, F, G> {
                             ..envelope
                         })))
                     },
-                    0.0..=1.0,
-                    /* neutral= */ 0.2,
+                    0.0..=1000.0,
+                    /* neutral= */ 100.0,
                     on_release,
                 );
                 knob(
@@ -124,8 +123,8 @@ impl<F: Fn(Action), G: Fn()> View for EnvelopeView<'_, F, G> {
                             ..envelope
                         })))
                     },
-                    0.0..=1.0,
-                    /* neutral= */ 0.2,
+                    0.0..=1000.0,
+                    /* neutral= */ 100.0,
                     on_release,
                 );
                 knob(
@@ -152,8 +151,8 @@ impl<F: Fn(Action), G: Fn()> View for EnvelopeView<'_, F, G> {
                             ..envelope
                         })))
                     },
-                    0.0..=1.0,
-                    /* neutral= */ 0.2,
+                    0.0..=1000.0,
+                    /* neutral= */ 100.0,
                     on_release,
                 );
             });

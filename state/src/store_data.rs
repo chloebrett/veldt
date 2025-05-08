@@ -79,10 +79,10 @@ impl Default for StoreData {
                         it: Generator::SimpleWave(SimpleWaveConfig {
                             wave: WaveType::Sine,
                             envelope: AdsrEnvelope {
-                                attack: 0.1,
-                                decay: 0.1,
+                                attack: 100.0,
+                                decay: 100.0,
                                 sustain: 0.8,
-                                release: 0.1,
+                                release: 100.0,
                             },
                             osc_count: 4,
                             detune_cents: 5.0,
