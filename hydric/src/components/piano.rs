@@ -185,7 +185,11 @@ impl Piano {
         )
     }
 
-    fn calculate_clicked_note(&self, position: Pos2, piano_transform: RectTransform) -> (Option<PlacedNote>, bool) {
+    fn calculate_clicked_note(
+        &self,
+        position: Pos2,
+        piano_transform: RectTransform,
+    ) -> (Option<PlacedNote>, bool) {
         let piano_notes = self.get_piano_notes();
         let mut clicked_note: Option<_> = None;
         let mut is_black = false;
@@ -193,9 +197,11 @@ impl Piano {
             let current_note = note.clone();
             let key = self.make_piano_key(note);
             let transformed_key = key.transform(piano_transform);
-            let key_rect = piano_transform.inverse().transform_rect(transformed_key.visual_bounding_rect());
+            let key_rect = piano_transform
+                .inverse()
+                .transform_rect(transformed_key.visual_bounding_rect());
 
-            if key_rect.contains(position){
+            if key_rect.contains(position) {
                 clicked_note = Some(current_note);
                 let top_left = key_rect.min;
                 let top_right = pos2(key_rect.max.x, key_rect.min.y);
@@ -204,13 +210,17 @@ impl Piano {
                 // Check if intercepted with black note, if black note is hit then stop iterating.
                 match self.orientation {
                     PianoOrientation::Horizontal => {
-                        if top_right.x - top_left.x == BLACK_NOTE_WIDTH || bottom_right.y == BLACK_NOTE_LENGTH {
+                        if top_right.x - top_left.x == BLACK_NOTE_WIDTH
+                            || bottom_right.y == BLACK_NOTE_LENGTH
+                        {
                             is_black = true;
                             break;
                         }
                     }
                     PianoOrientation::Vertical => {
-                        if bottom_left.y - top_left.y == BLACK_NOTE_WIDTH || top_right.x == BLACK_NOTE_LENGTH {
+                        if bottom_left.y - top_left.y == BLACK_NOTE_WIDTH
+                            || top_right.x == BLACK_NOTE_LENGTH
+                        {
                             is_black = true;
                             break;
                         }
@@ -243,9 +253,7 @@ impl View for Piano {
                     let clicked_note = self.calculate_clicked_note(local_pos, piano_transform);
                     if let (Some(note), is_black) = clicked_note {
                         let clicked_note_feedback = self.create_click_feedback(
-                            &self
-                                .make_piano_key(note.clone())
-                                .transform(piano_transform),
+                            &self.make_piano_key(note.clone()).transform(piano_transform),
                             is_black,
                         );
                         painter.add(clicked_note_feedback);

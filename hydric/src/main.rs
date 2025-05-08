@@ -1,5 +1,6 @@
 mod async_state;
 mod audio_state;
+mod clipboard;
 mod components;
 mod local_state;
 mod playback;
@@ -24,6 +25,8 @@ fn main() {
     eframe::WebLogger::init(log::LevelFilter::Debug).ok();
 
     let web_options = eframe::WebOptions::default();
+
+    clipboard::clipboard_handling();
 
     wasm_bindgen_futures::spawn_local(async {
         let document = web_sys::window()
