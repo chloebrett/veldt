@@ -3,10 +3,10 @@ use wasm_bindgen_futures::JsFuture;
 use web_sys::{window, MediaRecorder, MediaStream, MediaStreamConstraints, MediaRecorderOptions, Blob, BlobEvent};
 use js_sys::Array;
 
-#[wasm_bindgen]
-pub struct Microphone {
+// This tutorial was used for the general code structure: https://web.dev/articles/media-recording-audio
+#[wasm_bindgen]pub struct Microphone {
     media_recorder: Option<MediaRecorder>,
-    audio_bytes: Array,
+    audio_chunks: Array,
     #[wasm_bindgen(skip)]
     recording_status: bool,
 }
