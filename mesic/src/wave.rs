@@ -1,11 +1,10 @@
-use crate::consts::{NYQUIST, SAMPLE_RATE, SECONDS_PER_MINUTE};
-use crate::envelope::apply_envelope;
+use crate::consts::{MS_PER_SECOND, NYQUIST, SAMPLE_RATE, SECONDS_PER_MINUTE};
+use crate::envelope::trivial_envelope;
 use dasp_graph::Buffer;
 use ordered_float::OrderedFloat;
 use shared::consts::SEMITONE_FREQ;
 use shared::model::{AdsrEnvelope, AntiAliasingMode, Oscillator, SimpleWaveConfig, WaveType};
-use shared::types::Beats;
-use shared::types::Freq;
+use shared::types::{Beats, Freq, Milliseconds};
 use std::cmp::min;
 use std::collections::HashMap;
 use std::f32::consts::{PI, TAU};
@@ -159,7 +158,8 @@ impl WaveSource {
                     return 0.0;
                 }
                 let phase = ((x as f32) * step) % 1.0;
-                self.cache.get(&key, phase) * apply_envelope(x as f32, envelope, beats, self.bpm)
+                let duration_ms = beats_to_ms(beats, self.bpm);
+                self.cache.get(&key, phase) * trivial_envelope(x, envelope, duration_ms)
             })
             .collect();
 
@@ -211,6 +211,10 @@ impl WaveSource {
 pub fn beats_to_samples(beats: Beats, bpm: Beats) -> u32 {
     let seconds = beats / bpm * SECONDS_PER_MINUTE;
     (SAMPLE_RATE as f32 * seconds) as u32
+}
+
+fn beats_to_ms(beats: Beats, bpm: Beats) -> Milliseconds {
+    beats / bpm * SECONDS_PER_MINUTE * MS_PER_SECOND
 }
 
 fn make_range(start_index: i32, beats: Beats, bpm: Beats) -> Range<i32> {

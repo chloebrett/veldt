@@ -34,10 +34,10 @@ const BASE_LFO: LfoConfig = LfoConfig {
 };
 
 const BASE_ENV: AdsrEnvelope = AdsrEnvelope {
-    attack: 0.1,
-    decay: 0.1,
+    attack: 100.0,
+    decay: 100.0,
     sustain: 0.8,
-    release: 0.1,
+    release: 100.0,
 };
 
 impl Default for SubSynthConfig {

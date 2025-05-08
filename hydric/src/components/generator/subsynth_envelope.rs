@@ -1,15 +1,14 @@
+use super::envelope_line;
 use crate::transform::Transform;
 use crate::view::View;
 use crate::widget::{TabDisplay, TabOrientation, knob};
 use crate::{GetSet, LocalState};
 use egui::{
-    Color32, Pos2, Rect, Stroke, Ui, Vec2,
+    Color32, Rect, Stroke, Ui, Vec2,
     containers::Frame,
     emath::RectTransform,
-    epaint::{PathStroke, Shape},
-    pos2, vec2,
+    epaint::{PathStroke, Shape}, vec2,
 };
-use log::info;
 use shared::model::{AdsrEnvelope, SubSynthConfig};
 use state::{Action, TypeField};
 
@@ -34,20 +33,6 @@ impl<'a, F: Fn(Action), G: Fn()> SubSynthEnvelopeView<'a, F, G> {
             local_state,
         }
     }
-}
-
-fn envelope_line(envelope: AdsrEnvelope) -> Vec<Pos2> {
-    let mut points = vec![];
-    if envelope.attack > 0.0 {
-        points.push(pos2(0.0, 0.0));
-    }
-    points.push(pos2(envelope.attack, 1.0));
-    points.push(pos2(envelope.attack + envelope.decay, envelope.sustain));
-    points.push(pos2(1.0 - envelope.release, envelope.sustain));
-    if envelope.release > 0.0 {
-        points.push(pos2(1.0, 0.0));
-    }
-    points
 }
 
 impl<F: Fn(Action), G: Fn()> View for SubSynthEnvelopeView<'_, F, G> {
@@ -92,13 +77,18 @@ impl<F: Fn(Action), G: Fn()> View for SubSynthEnvelopeView<'_, F, G> {
                                 ui.ctx().request_repaint();
                                 let desired_size = vec2(300.0, 160.0);
                                 let (_id, rect) = ui.allocate_space(desired_size);
+                                let envelope = config.envelopes[active_env_tab].clone();
+                                let x_size =
+                                    (envelope.attack + envelope.decay + envelope.release) * 1.2;
                                 let to_screen = RectTransform::from_to(
-                                    Rect::from_x_y_ranges(0.0..=1.0, 1.0..=0.0),
+                                    Rect::from_x_y_ranges(0.0..=x_size, 1.0..=0.0),
                                     rect,
                                 );
+
+                                let thickness = 2.0;
                                 let shape = Shape::line(
-                                    envelope_line(config.envelopes[active_env_tab].clone()),
-                                    PathStroke::new(2.0, Color32::WHITE),
+                                    envelope_line(&envelope, x_size),
+                                    PathStroke::new(thickness, Color32::WHITE),
                                 );
 
                                 ui.painter().add(shape.transform(to_screen));
@@ -118,8 +108,8 @@ impl<F: Fn(Action), G: Fn()> View for SubSynthEnvelopeView<'_, F, G> {
                                             },
                                         )))
                                     },
-                                    0.0..=1.0,
-                                    /* neutral= */ 0.1,
+                                    0.0..=1000.0,
+                                    /* neutral= */ 100.0,
                                     on_release,
                                 );
                                 knob(
@@ -134,8 +124,8 @@ impl<F: Fn(Action), G: Fn()> View for SubSynthEnvelopeView<'_, F, G> {
                                             },
                                         )))
                                     },
-                                    0.0..=1.0,
-                                    /* neutral= */ 0.1,
+                                    0.0..=1000.0,
+                                    /* neutral= */ 100.0,
                                     on_release,
                                 );
                                 knob(
@@ -151,7 +141,7 @@ impl<F: Fn(Action), G: Fn()> View for SubSynthEnvelopeView<'_, F, G> {
                                         )))
                                     },
                                     0.0..=1.0,
-                                    /* neutral= */ 0.8,
+                                    /* neutral= */ 0.1,
                                     on_release,
                                 );
                                 knob(
@@ -166,8 +156,8 @@ impl<F: Fn(Action), G: Fn()> View for SubSynthEnvelopeView<'_, F, G> {
                                             },
                                         )))
                                     },
-                                    0.0..=1.0,
-                                    /* neutral= */ 0.1,
+                                    0.0..=1000.0,
+                                    /* neutral= */ 100.0,
                                     on_release,
                                 );
                             });
