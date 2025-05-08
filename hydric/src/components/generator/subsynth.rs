@@ -171,13 +171,10 @@ impl<G: Fn()> View for SubSynthView<'_, G> {
                     on_release,
                 )
                 .ui(ui); // must wrap in ui.vertical to stop the matrix from unnecessarily stretching vertically
-            });
 
-            ui.add_space(HORIZONTAL_SPACE);
-
-            ui.vertical(|ui| {
+                ui.add_space(HORIZONTAL_SPACE);
                 SubSynthLpfView::new(&config.lpf, gen_dispatch, on_release).ui(ui);
-            })
+            });
         });
 
         Self::draw_piano(ui);
