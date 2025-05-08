@@ -64,6 +64,7 @@ impl Default for SubSynthConfig {
             lfos: [BASE_LFO; 3],
             envelopes: [BASE_ENV; 3],
             matrix: ModMatrix::new(6, 3),
+            lpf: SubSynthLpf::default(),
         }
     }
 }
