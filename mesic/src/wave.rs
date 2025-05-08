@@ -116,15 +116,35 @@ impl WaveSource {
         let outputs: Vec<Buffer> = detune_amounts
             .iter()
             .map(|det| {
-                self.wave(
-                    freq,
-                    beats,
-                    &config.envelope,
-                    config.wave,
-                    config.anti_aliasing_mode,
-                    *det,
-                    start_index,
-                )
+                let freq = freq * detune_multiplier(*det);
+                let step = freq / (SAMPLE_RATE as f32);
+                let key = WaveKey {
+                    kind: config.wave,
+                    aa: config.anti_aliasing_mode,
+                    freq: freq.into(),
+                };
+
+                let mut vec: Vec<_> = make_range(start_index, beats, self.bpm)
+                    .map(|x: i32| {
+                        // Handles the case where start_index < 0.
+                        // This happens when the start of a note is in the middle of a buffer that is being
+                        // processed.
+                        if x < 0 {
+                            return 0.0;
+                        }
+                        let phase = ((x as f32) * step) % 1.0;
+                        self.cache.get(&key, phase)
+                    })
+                    .collect();
+
+                let mut buffer = Buffer::SILENT;
+                // Handles the case where the range is smaller than the output buffer.
+                // This happens when a note finishes in the middle of a buffer.
+                if vec.len() < Buffer::LEN {
+                    vec.extend(repeat_n(0.0, Buffer::LEN - vec.len()));
+                }
+                buffer.copy_from_slice(&vec);
+                buffer
             })
             .collect();
 
