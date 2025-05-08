@@ -193,23 +193,14 @@ impl Piano {
             let current_note = note.clone();
             let key = self.make_piano_key(note);
             let transformed_key = key.transform(piano_transform);
-            let key_rect = transformed_key.visual_bounding_rect();
+            let key_rect = piano_transform.inverse().transform_rect(transformed_key.visual_bounding_rect());
 
-            let top_left = piano_transform.inverse().transform_pos(key_rect.min);
-            let top_right = piano_transform
-                .inverse()
-                .transform_pos(pos2(key_rect.max.x, key_rect.min.y));
-            let bottom_left = piano_transform
-                .inverse()
-                .transform_pos(pos2(key_rect.min.x, key_rect.max.y));
-            let bottom_right = piano_transform.inverse().transform_pos(key_rect.max);
-
-            if position.x >= top_left.x
-                && position.x <= top_right.x
-                && position.y >= top_left.y
-                && position.y <= bottom_left.y
-            {
+            if key_rect.contains(position){
                 clicked_note = Some(current_note);
+                let top_left = key_rect.min;
+                let top_right = pos2(key_rect.max.x, key_rect.min.y);
+                let bottom_left = pos2(key_rect.min.x, key_rect.max.y);
+                let bottom_right = key_rect.max;
                 // Check if intercepted with black note, if black note is hit then stop iterating.
                 match self.orientation {
                     PianoOrientation::Horizontal => {
@@ -229,7 +220,6 @@ impl Piano {
         }
         (clicked_note, is_black)
     }
-
 }
 
 impl View for Piano {
@@ -247,18 +237,21 @@ impl View for Piano {
             // Then draw keys on top
             painter.extend(piano_keys.transform(piano_transform));
 
-            if response.clicked() || response.hovered() {
+            if response.clicked() || response.is_pointer_button_down_on() {
                 if let Some(pointer_pos) = response.interact_pointer_pos() {
                     let local_pos = piano_transform.inverse().transform_pos(pointer_pos);
                     let clicked_note = self.calculate_clicked_note(local_pos, piano_transform);
-                    if let Some(note) = clicked_note.0 {
+                    if let (Some(note), is_black) = clicked_note {
                         let clicked_note_feedback = self.create_click_feedback(
                             &self
                                 .make_piano_key(note.clone())
                                 .transform(piano_transform),
-                            clicked_note.1,
+                            is_black,
                         );
                         painter.add(clicked_note_feedback);
+                    }
+                    if response.clicked() || response.drag_started() {
+                        info!("This is where to do something with clicked_note");
                     }
                 }
             }
