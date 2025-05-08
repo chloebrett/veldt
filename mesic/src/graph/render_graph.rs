@@ -1,4 +1,4 @@
-use super::{ProcessContext, Processor, make_processor};
+use super::{NoteTracker, ProcessContext, Processor, make_processor};
 use crate::mixer::Mixer;
 use crate::wave::beats_to_samples;
 use dasp_frame::Stereo;
@@ -99,6 +99,11 @@ impl RenderGraph {
             }
         }
     }
+
+    fn update_notes(&mut self) {
+        self.process_context.notes =
+            NoteTracker::track(&self.process_context, self.processed_samples_count);
+    }
 }
 
 impl Iterator for RenderGraph {
@@ -106,6 +111,7 @@ impl Iterator for RenderGraph {
 
     fn next(&mut self) -> Option<Self::Item> {
         self.update_store();
+        self.update_notes();
 
         if self.processed_samples_count % Buffer::LEN == 0 {
             self.mixer

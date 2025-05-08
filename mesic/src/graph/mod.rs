@@ -2,14 +2,17 @@ use dasp_graph::{BoxedNodeSend, NodeData};
 use petgraph::stable_graph::StableGraph;
 use state::StoreData;
 
+mod note_tracker;
 mod render_graph;
 
+pub use note_tracker::*;
 pub use render_graph::*;
 
 #[derive(Default)]
 pub struct ProcessContext {
     pub store: StoreData,
     pub seek_pos: Option<usize>,
+    pub notes: NoteEventsByGenerator,
 }
 
 pub type Graph = StableGraph<NodeData<BoxedNodeSend<ProcessContext>>, ()>;
