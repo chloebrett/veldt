@@ -1,10 +1,10 @@
-use super::{NoteTracker, ProcessContext, Processor, make_processor};
+use super::{NoteEvent, NoteEventType, NoteTracker, ProcessContext, Processor, make_processor};
 use crate::mixer::Mixer;
 use crate::wave::beats_to_samples;
 use dasp_frame::Stereo;
 use dasp_graph::Buffer;
-use shared::model::Project;
-use state::{Action, Selector};
+use shared::model::{PitchName, Project};
+use state::{Action, GeneratorSelector, Selector};
 use std::sync::mpsc::Receiver;
 
 /// Wraps a Mixer (which in turn wraps a Graph) to add processing/iteration, seeking, and listening
@@ -22,6 +22,9 @@ pub struct RenderGraph {
 
     // For iteration.
     processed_samples_count: usize,
+
+    // Pending note on/off events sent from UI (e.g. from interacting with piano).
+    pending_note_events: Vec<Vec<NoteEvent>>,
 }
 
 impl Default for RenderGraph {
@@ -33,6 +36,7 @@ impl Default for RenderGraph {
             process_context: ProcessContext::default(),
             rx: None,
             processed_samples_count: 0,
+            pending_note_events: vec![],
         }
     }
 }
@@ -105,6 +109,41 @@ impl RenderGraph {
             &self.process_context.store.project,
             self.processed_samples_count,
         );
+
+        // Load any events sent from the UI by the user.
+        for (i, event) in self.pending_note_events.clone().into_iter().enumerate() {
+            self.process_context.note_events[i].extend(event);
+        }
+        self.pending_note_events = vec![];
+    }
+
+    /// Processes a note event sent by the user.
+    /// Non-public to avoid exposing NoteEventType enum to hydric.
+    fn note_event(
+        &mut self,
+        generator: GeneratorSelector,
+        pitch_name: PitchName,
+        kind: NoteEventType,
+    ) {
+        let GeneratorSelector(generator_index) = generator;
+        // Note: this pattern will become a bit inefficient if there are a lot of generators.
+        while self.pending_note_events.len() <= generator_index {
+            self.pending_note_events.push(vec![]);
+        }
+        self.pending_note_events[generator_index].push(NoteEvent {
+            kind,
+            sample_index: 0,
+            pitch_name,
+        });
+        log::info!("Pending: {:?}", self.pending_note_events);
+    }
+
+    pub fn note_on(&mut self, generator: GeneratorSelector, pitch_name: PitchName) {
+        self.note_event(generator, pitch_name, NoteEventType::On);
+    }
+
+    pub fn note_off(&mut self, generator: GeneratorSelector, pitch_name: PitchName) {
+        self.note_event(generator, pitch_name, NoteEventType::Off);
     }
 }
 
@@ -133,8 +172,6 @@ impl Iterator for RenderGraph {
         self.processed_samples_count += 1;
         output
     }
-
-    // TODO: implement size_hint or SizedIterator to make collection more efficient.
 }
 
 #[cfg(test)]
