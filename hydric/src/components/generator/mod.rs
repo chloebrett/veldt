@@ -4,6 +4,7 @@ mod generators_control;
 mod simple_wave_control;
 mod simple_wave_visualiser;
 mod subsynth;
+mod subsynth_envelope;
 mod subsynth_oscillator;
 
 pub use envelope_view::*;
