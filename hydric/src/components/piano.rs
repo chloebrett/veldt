@@ -26,6 +26,9 @@ pub struct Piano {
     orientation: PianoOrientation,
 }
 
+const BLACK_NOTE_LENGTH: f32 = 0.6;
+const BLACK_NOTE_WIDTH: f32 = 1.0;
+
 impl Piano {
     pub fn new(
         max_note: PitchValue,
@@ -119,14 +122,12 @@ impl Piano {
     }
 
     fn make_black_key(&self, note: PlacedNote) -> Shape {
-        let black_note_length = 0.6;
         let note_pos = if self.orientation == PianoOrientation::Vertical {
             note.to_pos(self.range())
         } else {
             self.to_horizontal_pos(self.range(), note)
         };
-        //let note_pos = note.to_pos(self.range());
-        let note_size = vec2(1.0, black_note_length);
+        let note_size = vec2(BLACK_NOTE_WIDTH, BLACK_NOTE_LENGTH);
         let rect = self.transpose_if_vertical(Rect::from_min_size(note_pos, note_size));
 
         // Black key shape.
@@ -162,6 +163,73 @@ impl Piano {
         let x = pitch_value as f32 - range.left();
         pos2(x, y)
     }
+
+    fn create_click_feedback(&self, shape: &Shape, is_black: bool) -> Shape {
+        let corner_radius = self.transpose_if_vertical(CornerRadius {
+            nw: 0,
+            ne: 0,
+            sw: 2,
+            se: 2,
+        });
+
+        let click_feedback_colour = if is_black {
+            Color32::from_gray(100) // slightly lighten black key
+        } else {
+            Color32::from_rgba_unmultiplied(0, 0, 0, ((30.0 / 100.0) * 255.0) as u8) // slightly darken black key but use transparent true black instead of gray so it doesn't appear on overlapping black keys
+        };
+
+        Shape::rect_filled(
+            shape.visual_bounding_rect(),
+            corner_radius,
+            click_feedback_colour,
+        )
+    }
+
+    fn calculate_clicked_note(&self, position: Pos2, piano_transform: RectTransform) -> (Option<PlacedNote>, bool) {
+        let piano_notes = self.get_piano_notes();
+        let mut clicked_note: Option<_> = None;
+        let mut is_black = false;
+        for note in piano_notes {
+            let current_note = note.clone();
+            let key = self.make_piano_key(note);
+            let transformed_key = key.transform(piano_transform);
+            let key_rect = transformed_key.visual_bounding_rect();
+
+            let top_left = piano_transform.inverse().transform_pos(key_rect.min);
+            let top_right = piano_transform
+                .inverse()
+                .transform_pos(pos2(key_rect.max.x, key_rect.min.y));
+            let bottom_left = piano_transform
+                .inverse()
+                .transform_pos(pos2(key_rect.min.x, key_rect.max.y));
+            let bottom_right = piano_transform.inverse().transform_pos(key_rect.max);
+
+            if position.x >= top_left.x
+                && position.x <= top_right.x
+                && position.y >= top_left.y
+                && position.y <= bottom_left.y
+            {
+                clicked_note = Some(current_note);
+                // Check if intercepted with black note, if black note is hit then stop iterating.
+                match self.orientation {
+                    PianoOrientation::Horizontal => {
+                        if top_right.x - top_left.x == BLACK_NOTE_WIDTH || bottom_right.y == BLACK_NOTE_LENGTH {
+                            is_black = true;
+                            break;
+                        }
+                    }
+                    PianoOrientation::Vertical => {
+                        if bottom_left.y - top_left.y == BLACK_NOTE_WIDTH || top_right.x == BLACK_NOTE_LENGTH {
+                            is_black = true;
+                            break;
+                        }
+                    }
+                }
+            }
+        }
+        (clicked_note, is_black)
+    }
+
 }
 
 impl View for Piano {
@@ -179,83 +247,19 @@ impl View for Piano {
             // Then draw keys on top
             painter.extend(piano_keys.transform(piano_transform));
 
-            let create_click_feedback = |shape: &Shape, is_black: bool| {
-                let corner_radius = self.transpose_if_vertical(CornerRadius {
-                    nw: 0,
-                    ne: 0,
-                    sw: 2,
-                    se: 2,
-                });
-
-                let click_feedback_colour = if is_black {
-                    Color32::from_gray(100) // slightly lighten black key
-                } else {
-                    Color32::from_rgba_unmultiplied(0, 0, 0, ((30.0 / 100.0) * 255.0) as u8) // slightly darken black key but use transparent true black instead of gray so it doesn't appear on overlapping black keys
-                };
-
-                let click_feedback_shape = Shape::rect_filled(
-                    shape.visual_bounding_rect(),
-                    corner_radius,
-                    click_feedback_colour,
-                );
-                painter.add(click_feedback_shape);
-            };
-
-            let calculate_clicked_note = |position: Pos2| {
-                let piano_notes = self.get_piano_notes();
-                let mut clicked_note: Option<PlacedNote> = None;
-                let mut is_black = false;
-                for note in piano_notes {
-                    let current_note = note.clone();
-                    let key = self.make_piano_key(note);
-                    let transformed_key = key.transform(piano_transform);
-                    let key_rect = transformed_key.visual_bounding_rect();
-
-                    let top_left = piano_transform.inverse().transform_pos(key_rect.min);
-                    let top_right = piano_transform
-                        .inverse()
-                        .transform_pos(pos2(key_rect.max.x, key_rect.min.y));
-                    let bottom_left = piano_transform
-                        .inverse()
-                        .transform_pos(pos2(key_rect.min.x, key_rect.max.y));
-                    let bottom_right = piano_transform.inverse().transform_pos(key_rect.max);
-
-                    if position.x >= top_left.x
-                        && position.x <= top_right.x
-                        && position.y >= top_left.y
-                        && position.y <= bottom_left.y
-                    {
-                        clicked_note = Some(current_note);
-                        // Check if intercepted with black note, if black note is hit then stop iterating.
-                        match self.orientation {
-                            PianoOrientation::Horizontal => {
-                                if top_right.x - top_left.x == 1.0 || bottom_right.y == 0.6 {
-                                    is_black = true;
-                                    break;
-                                }
-                            }
-                            PianoOrientation::Vertical => {
-                                if bottom_left.y - top_left.y == 1.0 || top_right.x == 0.6 {
-                                    is_black = true;
-                                    break;
-                                }
-                            }
-                        }
-                    }
-                }
-                create_click_feedback(
-                    &self
-                        .make_piano_key(clicked_note.clone().unwrap())
-                        .transform(piano_transform),
-                    is_black,
-                );
-                clicked_note.unwrap()
-            };
-
             if response.clicked() || response.hovered() {
                 if let Some(pointer_pos) = response.interact_pointer_pos() {
                     let local_pos = piano_transform.inverse().transform_pos(pointer_pos);
-                    let clicked_note = calculate_clicked_note(local_pos);
+                    let clicked_note = self.calculate_clicked_note(local_pos, piano_transform);
+                    if let Some(note) = clicked_note.0 {
+                        let clicked_note_feedback = self.create_click_feedback(
+                            &self
+                                .make_piano_key(note.clone())
+                                .transform(piano_transform),
+                            clicked_note.1,
+                        );
+                        painter.add(clicked_note_feedback);
+                    }
                 }
             }
         });
