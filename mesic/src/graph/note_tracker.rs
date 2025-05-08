@@ -1,6 +1,6 @@
 use crate::wave::beats_to_samples;
 use dasp_graph::Buffer;
-use shared::model::{PitchName, PlacedNote, PlacementType, Project, TrackPlacement};
+use shared::model::{PitchName, PlacementType, Project, TrackPlacement};
 use shared::types::Beats;
 use std::cmp::min;
 
@@ -29,7 +29,7 @@ pub struct NoteEvent {
 pub struct NoteEvent2 {
     pub kind: NoteEventType,
     pub sample_index: usize,
-    pub note: PlacedNote,
+    pub pitch_name: PitchName,
 }
 
 #[derive(Clone, Debug, PartialEq)]
@@ -150,34 +150,26 @@ impl NoteTracker {
                         track_end_sample,
                     ) as usize;
 
-                    // Don't play notes that aren't relevant to this buffer segment.
-                    if note_start_sample > global_sample_index + Buffer::LEN
-                        || note_end_sample < global_sample_index
-                    {
-                        continue;
-                    }
-
-                    let start_sample = note_start_sample as isize - global_sample_index as isize;
-                    let end_sample = note_end_sample as isize - global_sample_index as isize;
-
                     let buf_range = 0..Buffer::LEN as isize;
 
+                    let start_sample = note_start_sample as isize - global_sample_index as isize;
                     if buf_range.contains(&start_sample) {
                         result.push({
                             NoteEvent2 {
                                 kind: NoteEventType::On,
                                 sample_index: start_sample as usize,
-                                note: note.clone(),
+                                pitch_name: note.note.pitch_name.clone(),
                             }
                         });
                     }
 
+                    let end_sample = note_end_sample as isize - global_sample_index as isize;
                     if buf_range.contains(&end_sample) {
                         result.push({
                             NoteEvent2 {
                                 kind: NoteEventType::Off,
                                 sample_index: end_sample as usize,
-                                note: note.clone(),
+                                pitch_name: note.note.pitch_name.clone(),
                             }
                         });
                     }
