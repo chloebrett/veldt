@@ -26,15 +26,12 @@ pub struct NoteTracker;
 
 impl NoteTracker {
     pub fn track(project: &Project, global_sample_index: usize) -> NoteEventsByGenerator {
-        let mut result = Vec::new();
+        let mut result: NoteEventsByGenerator = vec![vec![]];
 
         let bpm = project.bpm;
 
         // TODO: make this loop more efficient, instead of looping over generators one by one.
         for generator_index in 0..project.generators.len() {
-            result.push(Vec::new());
-
-            // TODO: use references?
             let placements: Vec<_> = project
                 .placements
                 .clone()
@@ -56,7 +53,7 @@ impl NoteTracker {
                     .unwrap_or(track.unclipped_duration());
                 let track_end_sample = beats_to_samples(track_offset + track_duration, bpm);
 
-                // TODO: use a segment tree to determine which notes are in range of the current
+                // TODO: use some kind of tree to determine which notes are in range of the current
                 // buffer, instead of always iterating over all notes.
                 // Then apply the same idea to tracks.
                 for note in &track.notes {
@@ -78,17 +75,18 @@ impl NoteTracker {
                         .clamp(0, Buffer::LEN as i32)
                         as usize;
                     let end_sample = (note_end_sample as i32 - global_sample_index as i32)
-                        .clamp(0, Buffer::LEN as i32)
-                        as usize;
+                        .clamp(0, Buffer::LEN as i32) as usize;
 
-                    result[generator_index].push(NoteEvent {
+                    let event = NoteEvent {
                         pitch_name: note.note.pitch_name,
                         samples_since_started: global_sample_index as i32
                             - note_start_sample as i32,
                         duration: note.note.beats,
                         start_sample,
                         end_sample,
-                    });
+                    };
+
+                    result[generator_index].push(event);
                 }
             }
         }
