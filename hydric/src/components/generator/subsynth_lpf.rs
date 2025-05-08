@@ -35,7 +35,7 @@ impl<F: Fn(Action), G: Fn()> View for SubSynthLpfView<'_, F, G> {
             .fill(Color32::from_gray(50))
             .stroke(egui::Stroke::new(1.0, Color32::from_gray(60)))
             .corner_radius(8.0)
-            .inner_margin(6.0);
+            .inner_margin(10.0);
 
         frame.show(ui, |ui| {
             ui.vertical(|ui| {
