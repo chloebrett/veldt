@@ -7,6 +7,7 @@ use std::cmp::min;
 // Outer index is generator index.
 pub type NoteEventsByGenerator = Vec<Vec<NoteEvent>>;
 
+#[derive(Clone)]
 pub struct NoteEvent {
     pub pitch_name: PitchName,
 
@@ -26,7 +27,7 @@ pub struct NoteTracker;
 
 impl NoteTracker {
     pub fn track(project: &Project, global_sample_index: usize) -> NoteEventsByGenerator {
-        let mut result: NoteEventsByGenerator = vec![vec![]];
+        let mut result: NoteEventsByGenerator = vec![vec![]; project.generators.len()];
 
         let bpm = project.bpm;
 
