@@ -1,10 +1,12 @@
 use crate::playback::AudioPlayer;
 use dasp_frame::Stereo;
 use mesic::graph::RenderGraph;
+use crate::components::Microphone;
 
 pub struct AudioState {
     pub audio: Vec<Stereo<f32>>,
     pub player: AudioPlayer,
+    pub mic: Microphone,
 }
 
 impl AudioState {
@@ -12,6 +14,7 @@ impl AudioState {
         Self {
             audio: vec![],
             player: AudioPlayer::new(graph),
+            mic: Microphone::new(),
         }
     }
 }

@@ -13,6 +13,7 @@ mod track_placement_view;
 mod track_roll;
 
 pub use app::*;
+pub use play::Microphone;
 use frame_history::*;
 use key_view::*;
 use mod_matrix::*;

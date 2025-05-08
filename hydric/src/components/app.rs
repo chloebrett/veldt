@@ -146,7 +146,8 @@ impl View for App {
         MicrophoneView::new(      
             &self.store,
             &mut self.async_state,
-            &mut self.window_state.microphone
+            &mut self.window_state.microphone,
+            &mut self.audio_state.mic
         ).ui(ui);
 
         SampleTreeView::new(
