@@ -102,7 +102,8 @@ impl EnvelopeGenerator {
         }
     }
 
-    fn check_state_transitions(&mut self) {
+    /// Update state if the output triggers a state change.
+    fn maybe_update_state(&mut self) {
         let output = self.last_output;
         match self.state {
             EnvelopeState::Attack if output >= 1.0 => {
@@ -141,7 +142,7 @@ impl Iterator for EnvelopeGenerator {
 
         let output = output.clamp(0.0, 1.0);
         self.last_output = output;
-        self.check_state_transitions();
+        self.maybe_update_state();
         Some(output)
     }
 }
