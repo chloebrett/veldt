@@ -1,6 +1,7 @@
+use super::super::{ModMatrixView, Piano, PianoOrientation};
+use super::subsynth_envelope::SubSynthEnvelopeView;
 use super::subsynth_lpf::SubSynthLpfView;
 use super::subsynth_oscillator::SubSynthOscillatorView;
-use crate::components::{ModMatrixView, Piano, PianoOrientation};
 use crate::view::View;
 use crate::widget::{TabDisplay, TabOrientation};
 use crate::{GetSet, LocalState};
@@ -148,6 +149,14 @@ impl<G: Fn()> View for SubSynthView<'_, G> {
             ui.add_space(HORIZONTAL_SPACE);
 
             ui.vertical(|ui| {
+                SubSynthEnvelopeView::new(
+                    &config,
+                    gen_dispatch, // TODO fix this to use the correct dispatch, currently moving knobs creates crashes
+                    on_release,
+                    self.local_state,
+                )
+                .ui(ui);
+                ui.add_space(4.0);
                 self.draw_lfos(ui);
             });
 

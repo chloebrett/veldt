@@ -5,7 +5,8 @@ use dasp_graph::{BoxedNodeSend, Buffer, Node, NodeData, node::Sum};
 use petgraph::stable_graph::NodeIndex;
 use shared::model::Project;
 use state::{
-    Action, EffectSelector, FloatField, IndexField, MoveField, Selector, StoreData, TypeField,
+    Action, EffectSelector, FloatField, GeneratorSelector, IndexField, MoveField, Selector,
+    StoreData, TypeField,
 };
 
 mod channel_info;
@@ -219,10 +220,12 @@ impl Mixer {
             },
             Selector::Generator(generator_index) => match action {
                 Action::SetIndex(IndexField::Mixer(mixer_channel)) => {
+                    let selector = GeneratorSelector(*generator_index);
+
                     // Find the channel containing this generator, then move it to the correct
                     // channel.
                     for channel in self.channels.iter_mut() {
-                        if let Some(generator) = channel.soft_delete_generator(*generator_index) {
+                        if let Some(generator) = channel.soft_delete_generator(selector) {
                             self.channels[*mixer_channel].soft_add_generator(&generator);
                             break;
                         }

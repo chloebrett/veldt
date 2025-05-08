@@ -1,4 +1,4 @@
-use super::{ProcessContext, Processor, make_processor};
+use super::{NoteTracker, ProcessContext, Processor, make_processor};
 use crate::mixer::Mixer;
 use crate::wave::beats_to_samples;
 use dasp_frame::Stereo;
@@ -95,9 +95,16 @@ impl RenderGraph {
 
                 // Also update the graph topology by listening for the appropriate actions.
                 // E.g. add/remove effect or generator.
-                self.mixer.update(&selector, &action, &store);
+                self.mixer.update(&selector, &action, store);
             }
         }
+    }
+
+    fn update_notes(&mut self) {
+        self.process_context.note_events = NoteTracker::track(
+            &self.process_context.store.project,
+            self.processed_samples_count,
+        );
     }
 }
 
@@ -105,9 +112,9 @@ impl Iterator for RenderGraph {
     type Item = Stereo<f32>;
 
     fn next(&mut self) -> Option<Self::Item> {
-        self.update_store();
-
         if self.processed_samples_count % Buffer::LEN == 0 {
+            self.update_store();
+            self.update_notes();
             self.mixer
                 .process(&mut self.processor, &self.process_context);
             self.process_context.seek_pos = None;
