@@ -264,6 +264,19 @@ impl SelectorTrait for MixerMatrixCellSelector {
     }
 }
 
+// TODO implement a selector trait for the envelopes for the generators.
+#[derive(Eq, PartialEq, Ord, PartialOrd, Copy, Clone, Debug, Hash)]
+pub struct EnvelopeSelector(
+    /* generator_index */ usize,
+    /* envelope_index */ usize,
+);
+
+impl EnvelopeSelector {
+    pub fn upcast(&self) -> GeneratorSelector {
+        GeneratorSelector(self.0)
+    }
+}
+
 // Enum version of the selector.
 // TODO: hide the visibility of this. We will still use it internally to efficiently represent a
 // generic selector.
