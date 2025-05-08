@@ -142,7 +142,7 @@ impl Iterator for EnvelopeGenerator {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use assert_float_eq::assert_float_absolute_eq;
+    
 
     const FLOAT_THRES: f32 = 1e-6;
 

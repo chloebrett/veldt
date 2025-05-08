@@ -27,11 +27,12 @@ pub struct NoteEvent {
 pub struct NoteEvent2 {
     pub kind: NoteEventType,
     pub sample_index: usize,
+    pub note: PlacedNote,
 }
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, PartialEq)]
 pub enum NoteEventType {
-    On { note: PlacedNote },
+    On,
     Off,
 }
 
@@ -161,8 +162,9 @@ impl NoteTracker {
                     if buf_range.contains(&start_sample) {
                         result.push({
                             NoteEvent2 {
-                                kind: NoteEventType::On { note: note.clone() },
+                                kind: NoteEventType::On,
                                 sample_index: start_sample as usize,
+                                note: note.clone(),
                             }
                         });
                     }
@@ -172,6 +174,7 @@ impl NoteTracker {
                             NoteEvent2 {
                                 kind: NoteEventType::Off,
                                 sample_index: end_sample as usize,
+                                note: note.clone(),
                             }
                         });
                     }

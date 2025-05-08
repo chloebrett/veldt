@@ -4,7 +4,7 @@ use crate::envelope::EnvelopeGenerator;
 use crate::graph::{NoteEventType, ProcessContext};
 use crate::wave::{WaveCache, WaveKey};
 use dasp_graph::{Buffer, Input, Node};
-use shared::model::{Generator, GeneratorInstance, GeneratorMeta, SimpleWaveConfig};
+use shared::model::{Generator, GeneratorInstance, GeneratorMeta, PitchName, SimpleWaveConfig};
 use shared::types::Freq;
 use state::GeneratorSelector;
 
@@ -91,21 +91,40 @@ impl Node<ProcessContext> for SimpleWaveGeneratorNode {
 
         // TODO: fix this, it's n^2 right now. (well, n*64).
         for i in 0..buffer.len() {
-            for note_event in &payload.note_events[generator_index] {
-                if note_event.sample_index == i {
-                    match &note_event.kind {
-                        NoteEventType::On { note } => {
-                            log::info!("Note on event! {:?}", state.config);
-                            state.voice.eg.note_on();
-                            // TODO: update config dynamically, not just when starting a new note.
-                            state.voice.source = Some(SimpleWaveSource::new(
-                                note.note.pitch_name.into(),
-                                state.config.clone(),
-                            ));
-                        }
-                        NoteEventType::Off => {
-                            log::info!("Note off event! {:?}", state.config);
-                            state.voice.eg.note_off();
+            let mut events: Vec<_> = payload.note_events[generator_index]
+                .clone()
+                .into_iter()
+                .filter(|it| it.sample_index == i)
+                .collect();
+
+            // Special case: if there are both note_on and note_off events in a single sample,
+            // don't process the note_off events.
+            if events.iter().any(|it| it.kind == NoteEventType::On) {
+                events = events
+                    .into_iter()
+                    .filter(|it| it.kind == NoteEventType::On)
+                    .collect();
+            }
+
+            for note_event in events {
+                match &note_event.kind {
+                    NoteEventType::On => {
+                        log::info!("Note on event! {:?}", state.config);
+                        state.voice.eg.note_on();
+                        // TODO: update config dynamically, not just when starting a new note.
+                        state.voice.source = Some(SimpleWaveSource::new(
+                            // TODO: just pass pitch name?
+                            note_event.note.note.pitch_name.into(),
+                            state.config.clone(),
+                        ));
+                    }
+                    NoteEventType::Off => {
+                        log::info!("Note off event! {:?}", state.config);
+                        // TODO: check against start/stop time too?
+                        if let Some(source) = &state.voice.source {
+                            if source.same_pitch(note_event.note.note.pitch_name) {
+                                state.voice.eg.note_off();
+                            }
                         }
                     }
                 }
@@ -145,6 +164,10 @@ impl SimpleWaveSource {
             config,
             sample_index: 0,
         }
+    }
+
+    pub fn same_pitch(&self, pitch: PitchName) -> bool {
+        self.freq == pitch.into()
     }
 }
 
