@@ -29,21 +29,26 @@ struct NodeState {
 }
 
 struct Voice {
-    eg: EnvelopeGenerator,
-    source: Option<SubSynthWaveSource>,
+    egs: [EnvelopeGenerator; 3],
+    sources: Option<[SubSynthWaveSource; 3]>,
 }
 
 impl Default for NodeState {
     fn default() -> Self {
         let config = SubSynthConfig::default();
+        let egs: Vec<_> = config
+            .envelopes
+            .iter()
+            .map(|env| EnvelopeGenerator::new(env.clone()))
+            .collect();
         Self {
             bpm: 0.0,
             wave_source: WaveSource::new(0.0),
             config: config.clone(),
             meta: GeneratorMeta::default(),
             voice: Voice {
-                eg: EnvelopeGenerator::new(config.envelopes[0].clone()),
-                source: None,
+                egs: [egs[0].clone(), egs[1].clone(), egs[2].clone()],
+                sources: None,
             },
         }
     }
@@ -139,18 +144,22 @@ impl Node<ProcessContext> for SubSynthNode {
                             note_event.pitch_name,
                             state.config
                         );
-                        state.voice.eg.note_on();
-                        // TODO: use all envelopes
-                        state
-                            .voice
-                            .eg
-                            .set_envelope(state.config.envelopes[0].clone());
-                        // TODO: update config dynamically, not just when starting a new note.
-                        state.voice.source = Some(SubSynthWaveSource::new(
-                            note_event.pitch_name.into(),
-                            // TODO: use all oscs
-                            state.config.oscillators[0].clone(),
-                        ));
+                        let mut sources = vec![];
+                        for i in 0..state.config.envelopes.len() {
+                            let eg = &mut state.voice.egs[i];
+                            let env = state.config.envelopes[i].clone();
+                            let osc = state.config.oscillators[i].clone();
+
+                            eg.note_on();
+                            eg.set_envelope(env);
+                            // TODO: update config dynamically, not just when starting a new note.
+                            sources.push(SubSynthWaveSource::new(
+                                note_event.pitch_name.into(),
+                                // TODO: use all oscs
+                                osc,
+                            ));
+                        }
+                        state.voice.sources = Some(sources.try_into().unwrap());
                     }
                     NoteEventType::Off => {
                         log::info!(
@@ -159,25 +168,26 @@ impl Node<ProcessContext> for SubSynthNode {
                             state.config
                         );
                         // TODO: check against start/stop time too?
-                        if let Some(source) = &state.voice.source {
-                            if source.same_pitch(note_event.pitch_name) {
-                                state.voice.eg.note_off();
+                        if let Some(sources) = &state.voice.sources {
+                            for (eg, source) in state.voice.egs.iter_mut().zip(sources.iter()) {
+                                if source.same_pitch(note_event.pitch_name) {
+                                    eg.note_off();
+                                }
                             }
                         }
                     }
                 }
             }
 
-            let amp = state.voice.eg.next().unwrap_or(0.0);
-            let wave = state
-                .voice
-                .source
-                .as_mut()
-                .map(|it| it.next().unwrap_or([0.0; 2]))
-                .unwrap_or([0.0; 2]);
+            if let Some(sources) = &mut state.voice.sources {
+                for (eg, source) in state.voice.egs.iter_mut().zip(sources.iter_mut()) {
+                    let amp = eg.next().unwrap_or(0.0);
+                    let wave = source.next().unwrap_or([0.0; 2]);
 
-            // TODO: stereo
-            buffer[i] = amp * wave[0];
+                    // TODO: stereo
+                    buffer[i] += amp * wave[0];
+                }
+            }
         }
 
         for (channel_index, out_buf) in output.iter_mut().enumerate() {
@@ -188,6 +198,7 @@ impl Node<ProcessContext> for SubSynthNode {
     }
 }
 
+#[derive(Debug)]
 pub struct SubSynthWaveSource {
     // TODO: recycle the wave cache?
     // Currently it's re-created each time the note changes.

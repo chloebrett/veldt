@@ -30,7 +30,7 @@ pub fn trivial_envelope(sample_index: i32, envelope: &AdsrEnvelope, duration: Mi
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 enum EnvelopeState {
     Off,
     Attack,
@@ -40,7 +40,7 @@ enum EnvelopeState {
     _Shutdown,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct EnvelopeGenerator {
     state: EnvelopeState,
     config: AdsrEnvelope,
