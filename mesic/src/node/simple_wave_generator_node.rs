@@ -115,6 +115,7 @@ impl Node<ProcessContext> for SimpleWaveGeneratorNode {
                             state.config
                         );
                         state.voice.eg.note_on();
+                        state.voice.eg.set_envelope(state.config.envelope.clone());
                         // TODO: update config dynamically, not just when starting a new note.
                         state.voice.source = Some(SimpleWaveSource::new(
                             // TODO: just pass pitch name?

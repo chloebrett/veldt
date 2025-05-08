@@ -117,6 +117,10 @@ impl EnvelopeGenerator {
             _ => {}
         }
     }
+
+    pub fn set_envelope(&mut self, envelope: AdsrEnvelope) {
+        self.config = envelope;
+    }
 }
 
 const SHUTDOWN_MS: f32 = 1.0;
@@ -208,8 +212,6 @@ mod tests {
     }
 
     fn assert_almost_equal(first: Vec<f32>, second: Vec<f32>) {
-        // TODO: make the errors for this more readable,
-        // and perhaps make our own macro.
         if first.len() != second.len() {
             panic!("Lengths differed! {}, {}", first.len(), second.len());
         }

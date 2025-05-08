@@ -23,6 +23,8 @@ pub struct NoteEvent {
     pub end_sample: usize,
 }
 
+/// TODO: make all generator nodes use note on/off events, so we can get rid of the original
+/// `NoteEvent` and rename this one to it.
 #[derive(Clone, Debug)]
 pub struct NoteEvent2 {
     pub kind: NoteEventType,
@@ -108,6 +110,7 @@ impl NoteTracker {
         result
     }
 
+    /// TODO: make all generator nodes use note on/off events, so we can get rid of 'NoteTracker::track' and take the '2' out of this method name.
     pub fn track2(project: &Project, global_sample_index: usize) -> Vec<Vec<NoteEvent2>> {
         let mut result: Vec<Vec<NoteEvent2>> = vec![vec![]; project.generators.len()];
 
