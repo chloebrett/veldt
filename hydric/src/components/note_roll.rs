@@ -6,7 +6,7 @@ use crate::{
     widget::{Sequencer, SequencerObject, StateWindow, default_window},
 };
 use egui::{
-    pos2, vec2, Color32, CornerRadius, Pos2, Rect, ScrollArea, Shape, Stroke, StrokeKind, Ui, Vec2
+    Color32, CornerRadius, Pos2, Rect, ScrollArea, Shape, Stroke, StrokeKind, Ui, Vec2, pos2, vec2,
 };
 use mesic::create_scale_values;
 use shared::{
@@ -136,7 +136,13 @@ impl View for NoteRoll<'_> {
                     .min_scrolled_height(200.0)
                     .show(ui, |ui| {
                         ui.horizontal(|ui| {
-                            Piano::new(max_note, min_note - 1, PianoOrientation::Vertical, Vec2::new(600.0, 50.0)).ui(ui);
+                            Piano::new(
+                                max_note,
+                                min_note - 1,
+                                PianoOrientation::Vertical,
+                                Vec2::new(600.0, 50.0),
+                            )
+                            .ui(ui);
                             ui.add(
                                 Sequencer::new(store, local_state, range)
                                     .objects(notes)

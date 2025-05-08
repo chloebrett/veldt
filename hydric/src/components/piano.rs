@@ -4,13 +4,14 @@ use crate::{
     widget::SequencerObject,
 };
 use egui::{
-    emath::RectTransform, pos2, vec2, Color32, CornerRadius, Frame, Pos2, Rect, Sense, Shape, Stroke, StrokeKind, Ui, Vec2
+    Color32, CornerRadius, Frame, Pos2, Rect, Sense, Shape, Stroke, StrokeKind, Ui, Vec2,
+    emath::RectTransform, pos2, vec2,
 };
+use log::info;
 use shared::{
     model::{Note, PlacedNote, ScaleValue},
     types::PitchValue,
 };
-use log::info;
 
 #[derive(PartialEq)]
 pub enum PianoOrientation {
@@ -26,7 +27,12 @@ pub struct Piano {
 }
 
 impl Piano {
-    pub fn new(max_note: PitchValue, min_note: PitchValue, orientation: PianoOrientation, mut size: Vec2) -> Self {
+    pub fn new(
+        max_note: PitchValue,
+        min_note: PitchValue,
+        orientation: PianoOrientation,
+        mut size: Vec2,
+    ) -> Self {
         if orientation == PianoOrientation::Vertical {
             size = size.yx();
         }
@@ -173,7 +179,7 @@ impl View for Piano {
             // Then draw keys on top
             painter.extend(piano_keys.transform(piano_transform));
 
-            let create_click_feedback = |shape: &Shape, is_black: bool, | {
+            let create_click_feedback = |shape: &Shape, is_black: bool| {
                 let corner_radius = self.transpose_if_vertical(CornerRadius {
                     nw: 0,
                     ne: 0,
@@ -184,10 +190,14 @@ impl View for Piano {
                 let click_feedback_colour = if is_black {
                     Color32::from_gray(100) // slightly lighten black key
                 } else {
-                    Color32::from_rgba_unmultiplied(0, 0, 0, ((30.0/100.0) * 255.0) as u8) // slightly darken black key but use transparent true black instead of gray so it doesn't appear on overlapping black keys
+                    Color32::from_rgba_unmultiplied(0, 0, 0, ((30.0 / 100.0) * 255.0) as u8) // slightly darken black key but use transparent true black instead of gray so it doesn't appear on overlapping black keys
                 };
 
-                let click_feedback_shape = Shape::rect_filled(shape.visual_bounding_rect(), corner_radius, click_feedback_colour);
+                let click_feedback_shape = Shape::rect_filled(
+                    shape.visual_bounding_rect(),
+                    corner_radius,
+                    click_feedback_colour,
+                );
                 painter.add(click_feedback_shape);
             };
 
@@ -202,34 +212,47 @@ impl View for Piano {
                     let key_rect = transformed_key.visual_bounding_rect();
 
                     let top_left = piano_transform.inverse().transform_pos(key_rect.min);
-                    let top_right = piano_transform.inverse().transform_pos(pos2(key_rect.max.x, key_rect.min.y));
-                    let bottom_left = piano_transform.inverse().transform_pos(pos2(key_rect.min.x, key_rect.max.y));
+                    let top_right = piano_transform
+                        .inverse()
+                        .transform_pos(pos2(key_rect.max.x, key_rect.min.y));
+                    let bottom_left = piano_transform
+                        .inverse()
+                        .transform_pos(pos2(key_rect.min.x, key_rect.max.y));
                     let bottom_right = piano_transform.inverse().transform_pos(key_rect.max);
 
-                    if position.x >= top_left.x && position.x <= top_right.x && position.y >= top_left.y && position.y <= bottom_left.y {
+                    if position.x >= top_left.x
+                        && position.x <= top_right.x
+                        && position.y >= top_left.y
+                        && position.y <= bottom_left.y
+                    {
                         clicked_note = Some(current_note);
                         // Check if intercepted with black note, if black note is hit then stop iterating.
                         match self.orientation {
                             PianoOrientation::Horizontal => {
                                 if top_right.x - top_left.x == 1.0 || bottom_right.y == 0.6 {
                                     is_black = true;
-                                    break
+                                    break;
                                 }
-                            },
+                            }
                             PianoOrientation::Vertical => {
                                 if bottom_left.y - top_left.y == 1.0 || top_right.x == 0.6 {
                                     is_black = true;
-                                    break
+                                    break;
                                 }
                             }
                         }
                     }
                 }
-                create_click_feedback(&self.make_piano_key(clicked_note.clone().unwrap()).transform(piano_transform), is_black);
+                create_click_feedback(
+                    &self
+                        .make_piano_key(clicked_note.clone().unwrap())
+                        .transform(piano_transform),
+                    is_black,
+                );
                 clicked_note.unwrap()
             };
-       
-            if response.clicked() || response.hovered(){
+
+            if response.clicked() || response.hovered() {
                 if let Some(pointer_pos) = response.interact_pointer_pos() {
                     let local_pos = piano_transform.inverse().transform_pos(pointer_pos);
                     let clicked_note = calculate_clicked_note(local_pos);

@@ -92,7 +92,13 @@ impl<'a, G: Fn()> SubSynthView<'a, G> {
             octave: 8,
         }
         .into();
-        Piano::new(max_note + 1, min_note, PianoOrientation::Horizontal, Vec2::new(1080.0, 50.0)).ui(ui);
+        Piano::new(
+            max_note + 1,
+            min_note,
+            PianoOrientation::Horizontal,
+            Vec2::new(1080.0, 50.0),
+        )
+        .ui(ui);
     }
 }
 
