@@ -72,7 +72,7 @@ impl RenderGraph {
     /// Not idempotent! Only call this on a fresh RenderGraph. (either new or call clear_nodes).
     /// This is mostly an interim method until we get action receiving working properly.
     pub fn set_from_project(&mut self, project: &Project) {
-        self.mixer = Mixer::from_project(&project);
+        self.mixer = Mixer::from_project(project);
         self.sample_count = beats_to_samples(*project.duration(), project.bpm) as usize;
     }
 
