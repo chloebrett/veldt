@@ -43,7 +43,7 @@ impl View for MixerView<'_> {
             local_state,
             ..
         } = self;
-        let mixer_sel = window_state.mixer.channel.clone();
+        let mixer_sel = window_state.mixer.channel;
         let MixerSelector(mixer_index) = mixer_sel;
         let mixer_sel_mut = &mut window_state.mixer.channel;
 
@@ -56,7 +56,7 @@ impl View for MixerView<'_> {
         let mut from_to = None;
 
         default_window("Mixer")
-            .id(format!("mixer").into())
+            .id("mixer".into())
             .default_pos(Pos2 {
                 x: 1000.0,
                 y: 150.0,

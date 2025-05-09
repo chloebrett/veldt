@@ -1,4 +1,5 @@
 use crate::{
+    playback::AudioPlayer,
     transform::{Transform, Yx},
     view::View,
     widget::SequencerObject,
@@ -7,11 +8,11 @@ use egui::{
     Color32, CornerRadius, Frame, Pos2, Rect, Sense, Shape, Stroke, StrokeKind, Ui, Vec2,
     emath::RectTransform, pos2, vec2,
 };
-use log::info;
 use shared::{
     model::{Note, PlacedNote, ScaleValue},
     types::PitchValue,
 };
+use state::GeneratorSelector;
 
 #[derive(PartialEq)]
 pub enum PianoOrientation {
@@ -19,22 +20,26 @@ pub enum PianoOrientation {
     Horizontal,
 }
 
-pub struct Piano {
+pub struct Piano<'a> {
     max_note: PitchValue,
     min_note: PitchValue,
     size: Vec2,
     orientation: PianoOrientation,
+    audio_player: Option<&'a mut AudioPlayer>,
+    generator_selector: Option<GeneratorSelector>,
 }
 
 const BLACK_NOTE_LENGTH: f32 = 0.6;
 const BLACK_NOTE_WIDTH: f32 = 1.0;
 
-impl Piano {
+impl<'a> Piano<'a> {
     pub fn new(
         max_note: PitchValue,
         min_note: PitchValue,
         orientation: PianoOrientation,
         mut size: Vec2,
+        audio_player: Option<&'a mut AudioPlayer>,
+        audio_generator: Option<GeneratorSelector>,
     ) -> Self {
         if orientation == PianoOrientation::Vertical {
             size = size.yx();
@@ -45,6 +50,8 @@ impl Piano {
             min_note,
             size,
             orientation,
+            audio_player,
+            generator_selector: audio_generator,
         }
     }
 
@@ -185,7 +192,11 @@ impl Piano {
         )
     }
 
-    fn calculate_clicked_note(&self, position: Pos2, piano_transform: RectTransform) -> (Option<PlacedNote>, bool) {
+    fn calculate_clicked_note(
+        &self,
+        position: Pos2,
+        piano_transform: RectTransform,
+    ) -> (Option<PlacedNote>, bool) {
         let piano_notes = self.get_piano_notes();
         let mut clicked_note: Option<_> = None;
         let mut is_black = false;
@@ -193,9 +204,11 @@ impl Piano {
             let current_note = note.clone();
             let key = self.make_piano_key(note);
             let transformed_key = key.transform(piano_transform);
-            let key_rect = piano_transform.inverse().transform_rect(transformed_key.visual_bounding_rect());
+            let key_rect = piano_transform
+                .inverse()
+                .transform_rect(transformed_key.visual_bounding_rect());
 
-            if key_rect.contains(position){
+            if key_rect.contains(position) {
                 clicked_note = Some(current_note);
                 let top_left = key_rect.min;
                 let top_right = pos2(key_rect.max.x, key_rect.min.y);
@@ -204,13 +217,17 @@ impl Piano {
                 // Check if intercepted with black note, if black note is hit then stop iterating.
                 match self.orientation {
                     PianoOrientation::Horizontal => {
-                        if top_right.x - top_left.x == BLACK_NOTE_WIDTH || bottom_right.y == BLACK_NOTE_LENGTH {
+                        if top_right.x - top_left.x == BLACK_NOTE_WIDTH
+                            || bottom_right.y == BLACK_NOTE_LENGTH
+                        {
                             is_black = true;
                             break;
                         }
                     }
                     PianoOrientation::Vertical => {
-                        if bottom_left.y - top_left.y == BLACK_NOTE_WIDTH || top_right.x == BLACK_NOTE_LENGTH {
+                        if bottom_left.y - top_left.y == BLACK_NOTE_WIDTH
+                            || top_right.x == BLACK_NOTE_LENGTH
+                        {
                             is_black = true;
                             break;
                         }
@@ -222,10 +239,10 @@ impl Piano {
     }
 }
 
-impl View for Piano {
+impl View for Piano<'_> {
     fn ui(&mut self, ui: &mut Ui) {
         Frame::canvas(ui.style()).show(ui, |ui| {
-            let (response, painter) = ui.allocate_painter(self.size, Sense::click_and_drag());
+            let (response, painter) = ui.allocate_painter(self.size, Sense::drag());
             let piano_transform = RectTransform::from_to(self.rect(), response.rect);
             let piano_board = self.make_piano_board();
             let piano_notes = self.get_piano_notes();
@@ -237,21 +254,33 @@ impl View for Piano {
             // Then draw keys on top
             painter.extend(piano_keys.transform(piano_transform));
 
-            if response.clicked() || response.is_pointer_button_down_on() {
-                if let Some(pointer_pos) = response.interact_pointer_pos() {
-                    let local_pos = piano_transform.inverse().transform_pos(pointer_pos);
-                    let clicked_note = self.calculate_clicked_note(local_pos, piano_transform);
-                    if let (Some(note), is_black) = clicked_note {
-                        let clicked_note_feedback = self.create_click_feedback(
-                            &self
-                                .make_piano_key(note.clone())
-                                .transform(piano_transform),
-                            is_black,
-                        );
-                        painter.add(clicked_note_feedback);
-                    }
-                    if response.clicked() || response.drag_started() {
-                        info!("This is where to do something with clicked_note");
+            let did_interact = response.drag_started()
+                || response.drag_stopped()
+                || response.is_pointer_button_down_on();
+            if !did_interact {
+                return;
+            }
+            let (Some(sel), Some(pointer_pos)) =
+                (self.generator_selector, response.interact_pointer_pos())
+            else {
+                return;
+            };
+            let local_pos = piano_transform.inverse().transform_pos(pointer_pos);
+            let (clicked_note, is_black) = self.calculate_clicked_note(local_pos, piano_transform);
+            if let Some(clicked_note) = clicked_note {
+                let clicked_note_feedback = self.create_click_feedback(
+                    &self
+                        .make_piano_key(clicked_note.clone())
+                        .transform(piano_transform),
+                    is_black,
+                );
+                painter.add(clicked_note_feedback);
+
+                if let Some(player) = self.audio_player.as_mut() {
+                    if response.drag_started() {
+                        player.send_note_on(sel, clicked_note.note.pitch_name);
+                    } else if response.drag_stopped() {
+                        player.send_note_off(sel, clicked_note.note.pitch_name);
                     }
                 }
             }

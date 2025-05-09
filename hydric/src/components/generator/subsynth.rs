@@ -1,6 +1,8 @@
 use super::super::{ModMatrixView, Piano, PianoOrientation};
 use super::subsynth_envelope::SubSynthEnvelopeView;
+use super::subsynth_lpf::SubSynthLpfView;
 use super::subsynth_oscillator::SubSynthOscillatorView;
+use crate::playback::AudioPlayer;
 use crate::view::View;
 use crate::widget::{TabDisplay, TabOrientation};
 use crate::{GetSet, LocalState};
@@ -20,6 +22,7 @@ pub struct SubSynthView<'a, G: Fn()> {
     store: &'a Store,
     local_state: &'a LocalState,
     generator_sel: &'a GeneratorSelector,
+    audio_player: &'a mut AudioPlayer,
 }
 
 impl<'a, G: Fn()> SubSynthView<'a, G> {
@@ -29,6 +32,7 @@ impl<'a, G: Fn()> SubSynthView<'a, G> {
         store: &'a Store,
         local_state: &'a LocalState,
         generator_sel: &'a GeneratorSelector,
+        audio_player: &'a mut AudioPlayer,
     ) -> Self {
         Self {
             config,
@@ -36,6 +40,7 @@ impl<'a, G: Fn()> SubSynthView<'a, G> {
             store,
             local_state,
             generator_sel,
+            audio_player,
         }
     }
 
@@ -82,7 +87,7 @@ impl<'a, G: Fn()> SubSynthView<'a, G> {
         });
     }
 
-    fn draw_piano(ui: &mut Ui) {
+    fn draw_piano(&mut self, ui: &mut Ui) {
         let min_note: PitchValue = PitchName {
             scale_value: ScaleValue::A,
             octave: 1,
@@ -93,11 +98,14 @@ impl<'a, G: Fn()> SubSynthView<'a, G> {
             octave: 8,
         }
         .into();
+
         Piano::new(
             max_note + 1,
             min_note,
             PianoOrientation::Horizontal,
-            Vec2::new(1080.0, 50.0),
+            Vec2::new(1100.0, 50.0),
+            Some(self.audio_player),
+            Some(*self.generator_sel),
         )
         .ui(ui);
     }
@@ -154,7 +162,7 @@ impl<G: Fn()> View for SubSynthView<'_, G> {
 
             ui.vertical(|ui| {
                 SubSynthEnvelopeView::new(
-                    &config,
+                    config,
                     gen_dispatch, // TODO fix this to use the correct dispatch, currently moving knobs creates crashes
                     on_release,
                     self.local_state,
@@ -170,14 +178,22 @@ impl<G: Fn()> View for SubSynthView<'_, G> {
                 ModMatrixView::new(
                     &config.matrix,
                     vec!["ENV 1", "ENV 2", "ENV 3", "LFO 1", "LFO 2", "LFO 3"],
-                    vec!["OSC 1", "OSC 2", "OSC 3"],
+                    vec!["OSC 1", "OSC 2", "OSC 3", "LPF"],
                     gen_dispatch, // TODO: need to change this dispatch so that actions for modmatrix work, currently takes GeneratorSelector
                     on_release,
                 )
                 .ui(ui); // must wrap in ui.vertical to stop the matrix from unnecessarily stretching vertically
+
+                ui.add_space(HORIZONTAL_SPACE);
+                SubSynthLpfView::new(
+                    &config.lpf,
+                    gen_dispatch, // TODO: create actionreceiver for this, change the dispatch so the actions work
+                    on_release,
+                )
+                .ui(ui);
             });
         });
 
-        Self::draw_piano(ui);
+        self.draw_piano(ui);
     }
 }

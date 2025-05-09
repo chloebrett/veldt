@@ -164,6 +164,7 @@ message SubSynthConfigProto {
   repeated LfoConfigProto lfos = 2;
   repeated AdsrEnvelopeProto envelopes = 3;
   ModMatrixProto matrix = 4;  
+  EqConfigProto lpf = 5;
 }
 
 message OscillatorProto {
