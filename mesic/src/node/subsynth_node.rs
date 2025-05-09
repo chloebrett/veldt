@@ -93,6 +93,7 @@ impl SubSynthNode {
         }
     }
 
+    // TODO: logic is repeated from EqNode slightly
     fn apply_low_pass_filter(buffer: &mut Buffer, config: EqConfig) {
         let mut filter = eq_filter(&config);
         filter.apply(buffer);
