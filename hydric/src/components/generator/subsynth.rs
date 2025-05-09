@@ -1,17 +1,13 @@
-use super::super::{ModMatrixView, Piano, PianoOrientation};
-use super::subsynth_envelope::SubSynthEnvelopeView;
-use super::subsynth_lpf::SubSynthLpfView;
-use super::subsynth_oscillator::SubSynthOscillatorView;
+use super::{SubSynthEnvelopeView, SubSynthLpfView, SubSynthOscillatorView};
+use crate::components::{ModMatrixView, Piano, PianoOrientation};
 use crate::playback::AudioPlayer;
 use crate::view::View;
-use crate::widget::{TabDisplay, TabOrientation};
+use crate::widget::{TabDisplay, TabOrientation, inner_frame, outer_frame};
 use crate::{GetSet, LocalState};
-use eframe::egui;
-use egui::{Color32, Frame, Stroke, Ui, Vec2};
+use egui::{Color32, Ui, Vec2};
 use lazy_static::lazy_static;
-use shared::model::SubSynthConfig;
 use shared::{
-    model::{PitchName, ScaleValue},
+    model::{PitchName, ScaleValue, SubSynthConfig},
     types::PitchValue,
 };
 use state::{GeneratorSelector, Store};
@@ -45,13 +41,7 @@ impl<'a, G: Fn()> SubSynthView<'a, G> {
     }
 
     fn draw_lfos(&self, ui: &mut Ui) {
-        let outer_frame = Frame::new()
-            .fill(Color32::from_rgb(50, 50, 50))
-            .stroke(Stroke::new(1.0, Color32::from_rgb(50, 50, 50)))
-            .corner_radius(8.0)
-            .inner_margin(6.0);
-
-        outer_frame.show(ui, |ui| {
+        outer_frame().show(ui, |ui| {
             let original_spacing = ui.spacing().item_spacing; // store original spacing
             ui.spacing_mut().item_spacing = Vec2::ZERO; // set spacing to zero so that the tabs and associated content actually touch each other
 
@@ -69,12 +59,7 @@ impl<'a, G: Fn()> SubSynthView<'a, G> {
                     handle_lfo_tab_click,
                 )
                 .ui(ui);
-                let inner_frame = Frame::new()
-                    .fill(Color32::from_rgb(30, 30, 30))
-                    .stroke(Stroke::new(1.0, Color32::from_rgb(30, 30, 30)))
-                    .corner_radius(8.0)
-                    .inner_margin(15.0);
-                inner_frame.show(ui, |ui| {
+                inner_frame().inner_margin(15.0).show(ui, |ui| {
                     // TODO show the actual LFO controls depending on active_lfo_tab so everything in this block can be deleted it's just a placeholder to visualise the space
                     let size = egui::Vec2::new(200.0, 180.0);
                     let (rect, _response) = ui.allocate_exact_size(size, egui::Sense::hover());
