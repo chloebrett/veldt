@@ -126,10 +126,16 @@ impl<G: Fn()> View for SubSynthView<'_, G> {
                     self.local_state,
                 )
                 .ui(ui);
+
                 ui.add_space(4.0);
+
+                let current_lfo_index = self.local_state.subsynth_lfo_tab.get();
+                let lfo_sel = gen_sel.downcast_lfo(current_lfo_index);
+                let lfo_dispatch = |action| self.store.dispatch(&lfo_sel, action);
+
                 SubSynthLfoView::new(
                     config,
-                    gen_dispatch,
+                    lfo_dispatch,
                     on_release,
                     self.local_state,
                 )

@@ -7,7 +7,7 @@ use egui::{
     containers::Frame,
 };
 use shared::model::{SubSynthConfig, WaveType};
-use state::{Action, TypeField, UintField};
+use state::{Action, TypeField, FloatField};
 use strum::IntoEnumIterator;
 
 pub struct SubSynthLfoView<'a, F: Fn(Action), G: Fn()> {
@@ -100,8 +100,8 @@ impl<F: Fn(Action), G: Fn()> View for SubSynthLfoView<'_, F, G> {
                                 ui,
                                 "Frequency",
                                 current_lfo_config.frequency as f64,
-                                |it| dispatch(Action::SetUint(UintField::OscCount, it as u32)),
-                                1..=24,
+                                |it| dispatch(Action::SetFloat(FloatField::LfoFreq, it as f32)),
+                                1..=10,
                                 on_release,
                             );
                         })
