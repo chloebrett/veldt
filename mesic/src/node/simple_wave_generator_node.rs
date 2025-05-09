@@ -199,7 +199,11 @@ impl Iterator for SimpleWaveSource {
                 aa: self.config.anti_aliasing_mode,
                 freq: self.freq.into(),
             };
-            output += self.cache.get(&key, phase);
+            if self.config.detune_cents != 0.0 {
+                output += self.cache.get(&key, phase) / self.config.osc_count.isqrt() as f32;
+            } else {
+                output += self.cache.get(&key, phase) / self.config.osc_count as f32;
+            }
         }
 
         self.sample_index += 1;
