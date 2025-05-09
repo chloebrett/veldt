@@ -95,6 +95,17 @@ impl AudioPlayer {
         self.position.samples - self.buffer_delay - output_delay
     }
 
+    // Get current position (min:sec) as a string.
+    pub fn current_time(&self) -> String {
+        let samples = self.effective_pos();
+
+        let seconds_total = samples / (SAMPLE_RATE as usize);
+        let minutes = seconds_total / 60;
+        let seconds = seconds_total % 60;
+
+        format!("{:02}:{:02}", minutes, seconds)
+    }
+
     fn send(&self, message: PlaybackMessage) {
         self.playback_tx.try_send(message).unwrap();
     }
