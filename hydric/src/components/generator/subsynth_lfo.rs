@@ -1,6 +1,6 @@
 use super::SimpleWaveVisualiser;
 use crate::view::View;
-use crate::widget::{TabDisplay, TabOrientation, knob, selectable_value, get_set, int_slider};
+use crate::widget::{TabDisplay, TabOrientation, selectable_value, get_set, int_slider};
 use crate::{GetSet, LocalState};
 use egui::{
     Color32, Stroke, Ui, Vec2,
@@ -34,7 +34,7 @@ impl<'a, F: Fn(Action), G: Fn()> SubSynthLfoView<'a, F, G> {
 }
 
 const LFO_LINE_COLOUR: Color32 = Color32::from_rgb(166, 47, 250);
-const LFO_FILL_COLOUR: Color32 = Color32::from_rgba_premultiplied(166, 47, 250, 112);
+const LFO_FILL_COLOUR: Color32 = Color32::from_rgba_premultiplied(166, 47, 250, 40);
 
 impl<F: Fn(Action), G: Fn()> View for SubSynthLfoView<'_, F, G> {
     fn ui(&mut self, ui: &mut Ui) {
@@ -92,9 +92,11 @@ impl<F: Fn(Action), G: Fn()> View for SubSynthLfoView<'_, F, G> {
 
                             ui.add_space(20.0);
 
-                            SimpleWaveVisualiser::new(current_lfo_config.wave, LFO_LINE_COLOUR, LFO_FILL_COLOUR, current_lfo_config.frequency).show(ui);
+                            SimpleWaveVisualiser::new(current_lfo_config.wave, LFO_LINE_COLOUR, LFO_FILL_COLOUR, current_lfo_config.frequency, Vec2::new(340.0, 140.0)).show(ui);
                             
                             ui.add_space(20.0);
+
+                            ui.spacing_mut().item_spacing = original_spacing; // reset ui spacing back to original
 
                             int_slider(
                                 ui,
@@ -107,7 +109,6 @@ impl<F: Fn(Action), G: Fn()> View for SubSynthLfoView<'_, F, G> {
                         })
                     })
             });
-            ui.spacing_mut().item_spacing = original_spacing; // reset ui spacing back to original
         });
     }
 }

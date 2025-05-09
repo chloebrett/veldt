@@ -5,10 +5,9 @@ use super::subsynth_lpf::SubSynthLpfView;
 use super::subsynth_oscillator::SubSynthOscillatorView;
 use crate::playback::AudioPlayer;
 use crate::view::View;
-use crate::widget::{TabDisplay, TabOrientation};
 use crate::{GetSet, LocalState};
 use eframe::egui;
-use egui::{Color32, Frame, Stroke, Ui, Vec2};
+use egui::{Color32, Ui, Vec2};
 use lazy_static::lazy_static;
 use shared::model::SubSynthConfig;
 use shared::{
