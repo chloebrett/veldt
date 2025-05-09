@@ -188,16 +188,11 @@ impl Iterator for SimpleWaveSource {
         );
 
         // Evenly spaced phases for each unison wave.
-        let phases = linspace(
-            0.0,
-            1.0,
-            self.config.osc_count as u32,
-        );
+        let phases = linspace(0.0, 1.0, self.config.osc_count as u32);
 
         let mut output = 0.0;
 
         for (i, &detune) in detunes.iter().enumerate() {
-        // for detune in detunes {
             let freq = self.freq * detune_multiplier(detune);
             let step = freq / (SAMPLE_RATE as f32);
             let phase = (phases[i] + (self.sample_index as f32) * step) % 1.0; // Lessens the initial 'pop' of sound

@@ -216,11 +216,7 @@ impl Iterator for SubSynthWaveSource {
         let detunes = linspace(-osc.unison_detune, osc.unison_detune, osc.osc_count);
 
         // Evenly spaced phases for each unison wave.
-        let phases = linspace(
-            0.0,
-            1.0,
-            osc.osc_count as u32,
-        );
+        let phases = linspace(0.0, 1.0, osc.osc_count as u32);
 
         for (i, &detune) in detunes.iter().enumerate() {
             let freq = freq * detune_multiplier(detune);

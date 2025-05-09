@@ -20,7 +20,7 @@ pub enum PianoOrientation {
     Horizontal,
 }
 
-pub struct Piano<'a>  {
+pub struct Piano<'a> {
     max_note: PitchValue,
     min_note: PitchValue,
     size: Vec2,
@@ -32,7 +32,7 @@ pub struct Piano<'a>  {
 const BLACK_NOTE_LENGTH: f32 = 0.6;
 const BLACK_NOTE_WIDTH: f32 = 1.0;
 
-impl<'a> Piano<'a>  {
+impl<'a> Piano<'a> {
     pub fn new(
         max_note: PitchValue,
         min_note: PitchValue,
