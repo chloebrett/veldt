@@ -101,12 +101,10 @@ impl AudioPlayer {
         let sample_rate = SAMPLE_RATE as usize;
 
         let seconds_total = samples / sample_rate;
-
         let minutes = seconds_total / 60;
         let seconds = seconds_total % 60;
 
-        format!("{:02}:{:02}",minutes, seconds)
-
+        format!("{:02}:{:02}", minutes, seconds)
     }
 
     fn send(&self, message: PlaybackMessage) {
