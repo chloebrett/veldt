@@ -15,7 +15,6 @@ use shared::{
 };
 use state::{GeneratorSelector, Store};
 use crate::AudioState;
-use std::sync::mpsc::{channel, Sender};
 
 pub struct SubSynthView<'a, G: Fn()> {
     config: &'a SubSynthConfig,
@@ -23,7 +22,7 @@ pub struct SubSynthView<'a, G: Fn()> {
     store: &'a Store,
     local_state: &'a LocalState,
     generator_sel: &'a GeneratorSelector,
-    audio_state: &'a mut AudioState,
+    audio_state: &'a AudioState,
 }
 
 impl<'a, G: Fn()> SubSynthView<'a, G> {
@@ -33,7 +32,7 @@ impl<'a, G: Fn()> SubSynthView<'a, G> {
         store: &'a Store,
         local_state: &'a LocalState,
         generator_sel: &'a GeneratorSelector,
-        audio_state: &'a mut AudioState,
+        audio_state: &'a AudioState,
     ) -> Self {
         Self {
             config,
@@ -88,12 +87,7 @@ impl<'a, G: Fn()> SubSynthView<'a, G> {
         });
     }
 
-    fn play_piano(&mut self, pitch: PitchName) {
-        self.audio_state.player.send_note_on(*self.generator_sel, pitch);
-        self.audio_state.player.play();
-    }
-
-    fn draw_piano(&self, ui: &mut Ui, sender: Sender<PitchName>) {
+    fn draw_piano(&self, ui: &mut Ui) {
         let min_note: PitchValue = PitchName {
             scale_value: ScaleValue::A,
             octave: 1,
@@ -110,7 +104,8 @@ impl<'a, G: Fn()> SubSynthView<'a, G> {
             min_note,
             PianoOrientation::Horizontal,
             Vec2::new(1100.0, 50.0),
-            Some(sender),
+            Some(&self.audio_state.player),
+            Some(*self.generator_sel)
         )
         .ui(ui);
     }
@@ -199,10 +194,6 @@ impl<G: Fn()> View for SubSynthView<'_, G> {
             });
         });
 
-        let (sender, receiver) = channel();
-        self.draw_piano(ui, sender);
-        while let Ok(pitch) = receiver.try_recv() {
-            self.play_piano(pitch);
-        }
+        self.draw_piano(ui);
     }
 }

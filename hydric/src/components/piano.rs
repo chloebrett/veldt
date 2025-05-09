@@ -1,18 +1,15 @@
 use crate::{
-    transform::{Transform, Yx},
-    view::View,
-    widget::SequencerObject,
+    playback::AudioPlayer, transform::{Transform, Yx}, view::View, widget::SequencerObject
 };
 use egui::{
     Color32, CornerRadius, Frame, Pos2, Rect, Sense, Shape, Stroke, StrokeKind, Ui, Vec2,
     emath::RectTransform, pos2, vec2,
 };
-use log::info;
 use shared::{
-    model::{Note, PlacedNote, ScaleValue, PitchName},
+    model::{Note, PlacedNote, ScaleValue},
     types::PitchValue,
 };
-use std::sync::mpsc::Sender;
+use state::GeneratorSelector;
 
 #[derive(PartialEq)]
 pub enum PianoOrientation {
@@ -20,24 +17,26 @@ pub enum PianoOrientation {
     Horizontal,
 }
 
-pub struct Piano {
+pub struct Piano<'a>{
     max_note: PitchValue,
     min_note: PitchValue,
     size: Vec2,
     orientation: PianoOrientation,
-    message_sender: Option<Sender<PitchName>>,
+    audio_player: Option<&'a AudioPlayer>,
+    audio_generator: Option<GeneratorSelector>,
 }
 
 const BLACK_NOTE_LENGTH: f32 = 0.6;
 const BLACK_NOTE_WIDTH: f32 = 1.0;
 
-impl Piano {
+impl<'a> Piano<'a>{
     pub fn new(
         max_note: PitchValue,
         min_note: PitchValue,
         orientation: PianoOrientation,
         mut size: Vec2,
-        message_sender: Option<Sender<PitchName>>,
+        audio_player: Option<&'a AudioPlayer>,
+        audio_generator: Option<GeneratorSelector>,
     ) -> Self {
         if orientation == PianoOrientation::Vertical {
             size = size.yx();
@@ -48,7 +47,8 @@ impl Piano {
             min_note,
             size,
             orientation,
-            message_sender
+            audio_player,
+            audio_generator,
         }
     }
 
@@ -236,7 +236,7 @@ impl Piano {
     }
 }
 
-impl View for Piano {
+impl<'a> View for Piano<'a>{
     fn ui(&mut self, ui: &mut Ui) {
         Frame::canvas(ui.style()).show(ui, |ui| {
             let (response, painter) = ui.allocate_painter(self.size, Sense::click_and_drag());
@@ -262,9 +262,7 @@ impl View for Piano {
                         );
                         painter.add(clicked_note_feedback);
                         if response.clicked() || response.drag_started() {
-                            if let Some(message_sender) = &self.message_sender {
-                                message_sender.send(clicked_note.note.pitch_name).unwrap();
-                            }
+                            self.audio_player.unwrap().send_note_on(self.audio_generator.unwrap(), clicked_note.note.pitch_name);
                         }
                     }
                 }

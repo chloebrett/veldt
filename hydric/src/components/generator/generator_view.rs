@@ -12,7 +12,7 @@ pub struct GeneratorView<'a, F: FnMut()> {
     store: &'a Store,
     selector: &'a GeneratorSelector,
     local_state: &'a LocalState,
-    audio_state: &'a mut AudioState,
+    audio_state: &'a AudioState,
     visible: bool,
     on_close: F,
 }
@@ -22,7 +22,7 @@ impl<'a, F: FnMut()> GeneratorView<'a, F> {
         store: &'a Store,
         selector: &'a GeneratorSelector,
         local_state: &'a LocalState,
-        audio_state: &'a mut AudioState,
+        audio_state: &'a AudioState,
         visible: bool,
         on_close: F,
     ) -> Self {
