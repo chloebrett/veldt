@@ -2,12 +2,14 @@ use super::pan_multipliers;
 use crate::SAMPLE_RATE;
 use crate::consts::CHANNEL_COUNT;
 use crate::envelope::EnvelopeGenerator;
+use crate::eq::eq_filter;
 use crate::graph::{NoteEventType, ProcessContext};
+use crate::node::extract_outputs;
 use crate::wave::{WaveCache, WaveKey, detune_multiplier, linspace};
 use dasp_frame::Stereo;
 use dasp_graph::{Buffer, Input, Node};
 use shared::model::{
-    AntiAliasingMode, Generator, GeneratorInstance, GeneratorMeta, Oscillator, PitchName,
+    AntiAliasingMode, EqConfig, Generator, GeneratorInstance, GeneratorMeta, Oscillator, PitchName,
     SubSynthConfig,
 };
 use shared::types::{Freq, KnobPosition, Volume};
@@ -91,18 +93,9 @@ impl SubSynthNode {
         }
     }
 
-    fn apply_low_pass_filter(
-        buffer: &mut Buffer,
-        config: EqConfig,
-    ) {
-        let filter = eq_filter(config);
-        let (out_left, out_right) = extract_outputs(buffer);
-
-        out_left.copy_from_slice(&buffer);
-        out_right.copy_from_slice(&buffer);
-
-        filter.apply(out_left);
-        filter.apply(out_right);
+    fn apply_low_pass_filter(buffer: &mut Buffer, config: EqConfig) {
+        let mut filter = eq_filter(&config);
+        filter.apply(buffer);
     }
 }
 
@@ -185,15 +178,12 @@ impl Node<ProcessContext> for SubSynthNode {
             }
         }
 
-
-
         for (channel_index, out_buf) in output.iter_mut().enumerate() {
             out_buf.copy_from_slice(&buffer);
             let meta = &self.state.meta;
             Self::apply_volume_and_pan(out_buf, channel_index, meta.volume, meta.pan);
+            Self::apply_low_pass_filter(out_buf, self.state.config.lpf.clone());
         }
-
-        Self::apply_low_pass_filter(out_buf, state.config.lpf);
     }
 }
 
