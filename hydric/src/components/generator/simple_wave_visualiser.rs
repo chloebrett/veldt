@@ -1,7 +1,7 @@
 use crate::transform::Transform;
 use egui::emath::RectTransform;
 use egui::{Color32, Pos2, Rect, Response, Sense, Shape, Stroke, Ui, Vec2, lerp, pos2};
-use mesic::wave::make_wave;
+use mesic::wave::make_basic_wave_with_frequency;
 use shared::model::{AntiAliasingMode, WaveType};
 
 // (potential) TODO: further generalise this to just WaveVisualiser so the painting logic can be resued in other components like ENV and LFO visualisers in the subsynth (might require calculating wave points outside of this component)
@@ -13,15 +13,17 @@ pub struct SimpleWaveVisualiser {
     line_color: Color32,
     fill_color: Color32,
     size: Vec2,
+    frequency: f32,
 }
 
 impl SimpleWaveVisualiser {
-    pub fn new(wave_type: WaveType, line_color: Color32, fill_color: Color32) -> Self {
+    pub fn new(wave_type: WaveType, line_color: Color32, fill_color: Color32, frequency: f32) -> Self {
         Self {
             wave_type,
             line_color,
             fill_color,
             size: Vec2::new(130.0, 74.0),
+            frequency,
         }
     }
 
@@ -68,7 +70,7 @@ impl SimpleWaveVisualiser {
             .map(|i| {
                 // This value should go from 0.0 to < 1.0 across the points because make_wave will then use (wave_input_x % 1.0) * TAU which means any int passed to it becomes 0.
                 let x = i as f32 / num_points as f32;
-                let y = make_wave(x, self.wave_type, 1.0, AntiAliasingMode::Off); // using arbitrary wave_freq since anti aliasing is off
+                let y = make_basic_wave_with_frequency(x, self.wave_type, self.frequency); // using arbitrary wave_freq since anti aliasing is off
                 pos2(x, y)
             })
             .collect()
