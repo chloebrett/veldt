@@ -1,6 +1,6 @@
 use super::{
-    AudioBuffer, AudioProcessor, EMPTY_BUFFER, PlaybackMessage, PlaybackPosition,
-    PlaybackState, PlaybackUpdate,
+    AudioBuffer, AudioProcessor, EMPTY_BUFFER, PlaybackMessage, PlaybackPosition, PlaybackState,
+    PlaybackUpdate,
 };
 use cpal::traits::{DeviceTrait, HostTrait, StreamTrait};
 use cpal::{OutputCallbackInfo, Stream};
