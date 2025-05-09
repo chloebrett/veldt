@@ -19,6 +19,5 @@ use mod_matrix::*;
 use note_roll::*;
 use note_view::*;
 use piano::*;
-pub use play::Microphone;
 use track_placement_view::*;
 use track_roll::*;

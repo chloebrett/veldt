@@ -1,5 +1,5 @@
-use crate::components::Microphone;
 use crate::playback::AudioPlayer;
+use crate::playback::Microphone;
 use dasp_frame::Stereo;
 use mesic::graph::RenderGraph;
 
