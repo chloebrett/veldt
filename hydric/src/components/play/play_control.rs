@@ -35,11 +35,11 @@ pub fn play_control(
 
     ui.horizontal(|ui| {
         if ui.button("Set audio from local + play").clicked() {
-            player.set_project(Box::new(store.get().project.clone()));
+            player.set_from_store();
             player.play();
         }
         if ui.button("Set audio from local").clicked() {
-            player.set_project(Box::new(store.get().project.clone()));
+            player.set_from_store();
         }
 
         if ui.button("Set audio from server").clicked() {

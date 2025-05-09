@@ -1,6 +1,6 @@
 use super::{
-    AudioBuffer, AudioProcessor, BUFFER_SIZE, EMPTY_BUFFER, PlaybackMessage, PlaybackPosition,
-    PlaybackState, PlaybackUpdate,
+    AudioBuffer, AudioProcessor, EMPTY_BUFFER, PlaybackMessage, PlaybackPosition, PlaybackState,
+    PlaybackUpdate,
 };
 use cpal::traits::{DeviceTrait, HostTrait, StreamTrait};
 use cpal::{OutputCallbackInfo, Stream};
@@ -9,7 +9,7 @@ use dasp_frame::Stereo;
 use log::error;
 use mesic::SAMPLE_RATE;
 use mesic::graph::RenderGraph;
-use shared::model::{PitchName, Project};
+use shared::model::PitchName;
 use state::GeneratorSelector;
 use std::sync::{Arc, Mutex};
 use wasm_thread::JoinHandle;
@@ -24,23 +24,24 @@ pub struct AudioPlayer {
     // because it has a reference to a StoreData channel receiver.
     graph: Option<RenderGraph>,
 
-    // Messages sent from processor -> player.
+    // For sending messages from processor -> player.
     audio_tx: Sender<AudioBuffer>,
     audio_rx: Receiver<AudioBuffer>,
 
-    // Messages sent from UI -> processor.
+    // For sending messages from UI -> processor.
     playback_tx: Sender<PlaybackMessage>,
     playback_rx: Receiver<PlaybackMessage>,
 
-    // Messages sent from processor -> UI.
+    // For sending messages from processor -> UI.
     update_tx: Sender<PlaybackUpdate>,
     update_rx: Receiver<PlaybackUpdate>,
 
     stream: Option<Stream>,
     processor_thread: Option<JoinHandle<()>>,
+
     pub state: PlaybackState,
-    is_looping: bool,
     pub position: PlaybackPosition,
+    is_looping: bool,
 
     // Delay from the processing end.
     // Updated by listening for events from the processing thread.
@@ -55,7 +56,11 @@ pub struct AudioPlayer {
 
 impl AudioPlayer {
     pub fn new(graph: RenderGraph) -> Self {
-        let (audio_tx, audio_rx) = crossbeam_channel::bounded(BUFFER_SIZE);
+        // This channel only ever contains zero or one messages.
+        // Each message contains BUFFER_SIZE samples.
+        let (audio_tx, audio_rx) = crossbeam_channel::bounded(1);
+
+        // Other channels are used for message passing and are unbounded.
         let (playback_tx, playback_rx) = crossbeam_channel::unbounded();
         let (update_tx, update_rx) = crossbeam_channel::unbounded();
 
@@ -110,9 +115,9 @@ impl AudioPlayer {
         self.playback_tx.try_send(message).unwrap();
     }
 
-    pub fn set_project(&mut self, project: Box<Project>) {
+    pub fn set_from_store(&mut self) {
         self.maybe_init();
-        self.send(PlaybackMessage::SetProject(project));
+        self.send(PlaybackMessage::RefreshGraph());
     }
 
     pub fn set_audio(&mut self, audio: Vec<Stereo<f32>>) {
@@ -120,11 +125,13 @@ impl AudioPlayer {
         self.send(PlaybackMessage::SetAudio(audio));
     }
 
-    pub fn send_note_on(&self, generator: GeneratorSelector, pitch_name: PitchName) {
+    pub fn send_note_on(&mut self, generator: GeneratorSelector, pitch_name: PitchName) {
+        self.maybe_init();
         self.send(PlaybackMessage::NoteOn(generator, pitch_name));
     }
 
-    pub fn send_note_off(&self, generator: GeneratorSelector, pitch_name: PitchName) {
+    pub fn send_note_off(&mut self, generator: GeneratorSelector, pitch_name: PitchName) {
+        self.maybe_init();
         self.send(PlaybackMessage::NoteOff(generator, pitch_name));
     }
 
@@ -178,7 +185,8 @@ impl AudioPlayer {
         );
 
         // Currently no way to stop a thread once it's started.
-        // Could add a "Stop"/"Terminate" state.
+        // Could add a "Stop"/"Terminate" state to have the thread exit of its own accord, if that
+        // was needed.
         self.processor_thread = Some(wasm_thread::spawn(move || {
             processor.run();
         }));
@@ -210,7 +218,7 @@ impl AudioPlayer {
                     let timestamp = info.timestamp();
                     if let Some(delay) = timestamp.playback.duration_since(&timestamp.callback) {
                         // It's fine to unlock the mutex every time here,
-                        // because the data callback is only every N=1024 samples.
+                        // because the data callback is only every BUFFER_SIZE=2048 samples.
                         *output_delay.lock().unwrap() = to_samples(delay);
                     }
 

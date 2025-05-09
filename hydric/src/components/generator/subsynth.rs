@@ -22,7 +22,7 @@ pub struct SubSynthView<'a, G: Fn()> {
     store: &'a Store,
     local_state: &'a LocalState,
     generator_sel: &'a GeneratorSelector,
-    audio_player: &'a AudioPlayer,
+    audio_player: &'a mut AudioPlayer,
 }
 
 impl<'a, G: Fn()> SubSynthView<'a, G> {
@@ -32,7 +32,7 @@ impl<'a, G: Fn()> SubSynthView<'a, G> {
         store: &'a Store,
         local_state: &'a LocalState,
         generator_sel: &'a GeneratorSelector,
-        audio_player: &'a AudioPlayer,
+        audio_player: &'a mut AudioPlayer,
     ) -> Self {
         Self {
             config,
@@ -87,7 +87,7 @@ impl<'a, G: Fn()> SubSynthView<'a, G> {
         });
     }
 
-    fn draw_piano(&self, ui: &mut Ui) {
+    fn draw_piano(&mut self, ui: &mut Ui) {
         let min_note: PitchValue = PitchName {
             scale_value: ScaleValue::A,
             octave: 1,
@@ -104,7 +104,7 @@ impl<'a, G: Fn()> SubSynthView<'a, G> {
             min_note,
             PianoOrientation::Horizontal,
             Vec2::new(1100.0, 50.0),
-            Some(&self.audio_player),
+            Some(self.audio_player),
             Some(*self.generator_sel),
         )
         .ui(ui);
@@ -162,7 +162,7 @@ impl<G: Fn()> View for SubSynthView<'_, G> {
 
             ui.vertical(|ui| {
                 SubSynthEnvelopeView::new(
-                    &config,
+                    config,
                     gen_dispatch, // TODO fix this to use the correct dispatch, currently moving knobs creates crashes
                     on_release,
                     self.local_state,

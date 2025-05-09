@@ -104,11 +104,11 @@ impl Node<ProcessContext> for SubSynthNode {
             return;
         }
 
-        let mut buffer = Buffer::SILENT;
+        let mut buffers = [Buffer::SILENT; 2];
         let GeneratorSelector(generator_index) = self.selector;
 
         // TODO: fix this, it's n^2 right now. (well, n*64).
-        for i in 0..buffer.len() {
+        for i in 0..Buffer::LEN {
             let mut events: Vec<_> = payload.note_events[generator_index]
                 .clone()
                 .into_iter()
@@ -165,14 +165,14 @@ impl Node<ProcessContext> for SubSynthNode {
                     let amp = eg.next().unwrap_or(0.0);
                     let wave = source.next().unwrap_or([0.0; 2]);
 
-                    // TODO: stereo
-                    buffer[i] += amp * wave[0];
+                    buffers[0][i] += amp * wave[0];
+                    buffers[1][i] += amp * wave[1];
                 }
             }
         }
 
         for (channel_index, out_buf) in output.iter_mut().enumerate() {
-            out_buf.copy_from_slice(&buffer);
+            out_buf.copy_from_slice(&buffers[channel_index]);
             let meta = &self.state.meta;
             Self::apply_volume_and_pan(out_buf, channel_index, meta.volume, meta.pan);
         }

@@ -1,6 +1,6 @@
 use super::SimpleWaveVisualiser;
 use crate::view::View;
-use crate::widget::{get_set, int_slider, knob, selectable_value};
+use crate::widget::{custom_knob, get_set, int_slider, knob, selectable_value};
 use eframe::egui;
 use egui::{Color32, Ui};
 use shared::model::{Oscillator, WaveType};
@@ -122,24 +122,35 @@ impl<F: Fn(Action), G: Fn()> View for SubSynthOscillatorView<'_, F, G> {
                     );
                     ui.add_space(KNOB_SPACE);
 
-                    knob(
+                    let detune_coarse = config.osc_detune as i32 / 100;
+                    let detune_fine = config.osc_detune % 100.0;
+                    custom_knob(
                         ui,
                         "Coarse",
-                        // TODO: this won't work properly with negative numbers.
-                        // E.g. -12.7 should round to -12, not -13. .floor() rounds it to -13.
-                        config.osc_detune.floor(),
-                        |it| dispatch(Action::SetFloat(FloatField::Detune, it)),
+                        detune_coarse as f32,
+                        |it| {
+                            dispatch(Action::SetFloat(
+                                FloatField::Detune,
+                                it * 100.0 + detune_fine,
+                            ))
+                        },
                         -24.0..=24.0,
                         0.0,
                         on_release,
+                        |knob| knob.with_step(1.0),
                     );
                     ui.add_space(KNOB_SPACE);
 
                     knob(
                         ui,
                         "Fine",
-                        config.osc_detune % 1.0,
-                        |it| dispatch(Action::SetFloat(FloatField::Detune, it)),
+                        detune_fine,
+                        |it| {
+                            dispatch(Action::SetFloat(
+                                FloatField::Detune,
+                                detune_coarse as f32 * 100.0 + it,
+                            ))
+                        },
                         -100.0..=100.0,
                         0.0,
                         on_release,

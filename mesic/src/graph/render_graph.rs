@@ -25,6 +25,8 @@ pub struct RenderGraph {
 
     // Pending note on/off events sent from UI (e.g. from interacting with piano).
     pending_note_events: Vec<Vec<NoteEvent>>,
+
+    pub is_playing: bool,
 }
 
 impl Default for RenderGraph {
@@ -37,6 +39,7 @@ impl Default for RenderGraph {
             rx: None,
             processed_samples_count: 0,
             pending_note_events: vec![],
+            is_playing: false,
         }
     }
 }
@@ -57,6 +60,12 @@ impl RenderGraph {
     pub fn set_from_audio(&mut self, audio: Vec<Stereo<f32>>) {
         self.mixer = Mixer::from_audio(&audio);
         self.sample_count = audio.len();
+    }
+
+    pub fn set_from_store(&mut self) {
+        self.update_store();
+        let project = self.process_context.store.project.clone();
+        self.set_from_project(&project);
     }
 
     /// Initializes the graph from a project instance.
@@ -108,6 +117,7 @@ impl RenderGraph {
         self.process_context.note_events = NoteTracker::track(
             &self.process_context.store.project,
             self.processed_samples_count,
+            /* include_on_events= */ self.is_playing,
         );
 
         // Load any events sent from the UI by the user.
@@ -159,7 +169,7 @@ impl Iterator for RenderGraph {
             self.process_context.seek_pos = None;
         }
 
-        if self.processed_samples_count >= self.sample_count {
+        if self.is_playing && (self.processed_samples_count >= self.sample_count) {
             return None;
         }
 
@@ -170,6 +180,7 @@ impl Iterator for RenderGraph {
         let output = Some([left, right]);
 
         self.processed_samples_count += 1;
+
         output
     }
 }
