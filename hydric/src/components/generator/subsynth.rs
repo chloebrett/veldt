@@ -14,6 +14,8 @@ use shared::{
     types::PitchValue,
 };
 use state::{GeneratorSelector, Store};
+use crate::AudioState;
+use std::sync::mpsc::{channel, Sender};
 
 pub struct SubSynthView<'a, G: Fn()> {
     config: &'a SubSynthConfig,
@@ -21,6 +23,7 @@ pub struct SubSynthView<'a, G: Fn()> {
     store: &'a Store,
     local_state: &'a LocalState,
     generator_sel: &'a GeneratorSelector,
+    audio_state: &'a mut AudioState,
 }
 
 impl<'a, G: Fn()> SubSynthView<'a, G> {
@@ -30,6 +33,7 @@ impl<'a, G: Fn()> SubSynthView<'a, G> {
         store: &'a Store,
         local_state: &'a LocalState,
         generator_sel: &'a GeneratorSelector,
+        audio_state: &'a mut AudioState,
     ) -> Self {
         Self {
             config,
@@ -37,6 +41,7 @@ impl<'a, G: Fn()> SubSynthView<'a, G> {
             store,
             local_state,
             generator_sel,
+            audio_state,
         }
     }
 
@@ -83,7 +88,12 @@ impl<'a, G: Fn()> SubSynthView<'a, G> {
         });
     }
 
-    fn draw_piano(ui: &mut Ui) {
+    fn play_piano(&mut self, pitch: PitchName) {
+        self.audio_state.player.send_note_on(*self.generator_sel, pitch);
+        self.audio_state.player.play();
+    }
+
+    fn draw_piano(&self, ui: &mut Ui, sender: Sender<PitchName>) {
         let min_note: PitchValue = PitchName {
             scale_value: ScaleValue::A,
             octave: 1,
@@ -94,11 +104,13 @@ impl<'a, G: Fn()> SubSynthView<'a, G> {
             octave: 8,
         }
         .into();
+
         Piano::new(
             max_note + 1,
             min_note,
             PianoOrientation::Horizontal,
-            Vec2::new(1080.0, 50.0),
+            Vec2::new(1100.0, 50.0),
+            Some(sender),
         )
         .ui(ui);
     }
@@ -187,6 +199,10 @@ impl<G: Fn()> View for SubSynthView<'_, G> {
             });
         });
 
-        Self::draw_piano(ui);
+        let (sender, receiver) = channel();
+        self.draw_piano(ui, sender);
+        while let Ok(pitch) = receiver.try_recv() {
+            self.play_piano(pitch);
+        }
     }
 }
