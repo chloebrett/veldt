@@ -200,11 +200,16 @@ impl Iterator for SimpleWaveSource {
                 freq: self.freq.into(),
             };
             if self.config.detune_cents != 0.0 {
-                output += self.cache.get(&key, phase) / self.config.osc_count.isqrt() as f32;
+                output += self.cache.get(&key, phase) / (self.config.osc_count as f32).sqrt();
             } else {
                 output += self.cache.get(&key, phase) / self.config.osc_count as f32;
             }
         }
+
+        // Adding clipping to output to prevent transient spikes.
+        // Using soft clipping
+        const CLIP_THRESHOLD: f32 = 0.8;
+        output = (output / CLIP_THRESHOLD).tanh() * CLIP_THRESHOLD;
 
         self.sample_index += 1;
         Some(output)
