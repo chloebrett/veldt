@@ -27,6 +27,8 @@ pub fn play_control(
             player.seek(0);
         }
         checkbox(ui, player.is_looping(), |it| player.set_looping(it), "Loop");
+
+        ui.label(player.current_time());
     });
 
     ui.separator();
