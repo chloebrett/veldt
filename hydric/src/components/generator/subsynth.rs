@@ -105,7 +105,7 @@ impl<'a, G: Fn()> SubSynthView<'a, G> {
             PianoOrientation::Horizontal,
             Vec2::new(1100.0, 50.0),
             Some(&self.audio_player),
-            Some(*self.generator_sel)
+            Some(*self.generator_sel),
         )
         .ui(ui);
     }
