@@ -69,6 +69,7 @@ impl<F: FnMut()> View for GeneratorView<'_, F> {
                                 self.store,
                                 self.local_state,
                                 self.selector,
+                                &self.audio_state.player,
                             )
                             .ui(ui);
                         }
