@@ -10,7 +10,7 @@ use strum::IntoEnumIterator;
 pub struct SimpleWaveView<'a, F: Fn(Action), G: Fn()> {
     selector: GeneratorSelector,
     config: &'a SimpleWaveConfig,
-    audio_state: &'a AudioState,
+    audio_state: &'a mut AudioState,
     dispatch: F,
     on_release: G,
 }
@@ -19,7 +19,7 @@ impl<'a, F: Fn(Action), G: Fn()> SimpleWaveView<'a, F, G> {
     pub fn new(
         selector: GeneratorSelector,
         config: &'a SimpleWaveConfig,
-        audio_state: &'a AudioState,
+        audio_state: &'a mut AudioState,
         dispatch: F,
         on_release: G,
     ) -> Self {

@@ -125,11 +125,13 @@ impl AudioPlayer {
         self.send(PlaybackMessage::SetAudio(audio));
     }
 
-    pub fn send_note_on(&self, generator: GeneratorSelector, pitch_name: PitchName) {
+    pub fn send_note_on(&mut self, generator: GeneratorSelector, pitch_name: PitchName) {
+        self.maybe_init();
         self.send(PlaybackMessage::NoteOn(generator, pitch_name));
     }
 
-    pub fn send_note_off(&self, generator: GeneratorSelector, pitch_name: PitchName) {
+    pub fn send_note_off(&mut self, generator: GeneratorSelector, pitch_name: PitchName) {
+        self.maybe_init();
         self.send(PlaybackMessage::NoteOff(generator, pitch_name));
     }
 
