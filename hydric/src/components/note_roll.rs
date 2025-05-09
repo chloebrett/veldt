@@ -143,7 +143,7 @@ impl View for NoteRoll<'_> {
                                 PianoOrientation::Vertical,
                                 Vec2::new(600.0, 50.0),
                                 None,
-                                None
+                                None,
                             )
                             .ui(ui);
                             ui.add(

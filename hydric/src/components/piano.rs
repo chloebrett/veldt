@@ -1,5 +1,8 @@
 use crate::{
-    playback::AudioPlayer, transform::{Transform, Yx}, view::View, widget::SequencerObject
+    playback::AudioPlayer,
+    transform::{Transform, Yx},
+    view::View,
+    widget::SequencerObject,
 };
 use egui::{
     Color32, CornerRadius, Frame, Pos2, Rect, Sense, Shape, Stroke, StrokeKind, Ui, Vec2,
@@ -17,7 +20,7 @@ pub enum PianoOrientation {
     Horizontal,
 }
 
-pub struct Piano<'a>{
+pub struct Piano<'a> {
     max_note: PitchValue,
     min_note: PitchValue,
     size: Vec2,
@@ -29,7 +32,7 @@ pub struct Piano<'a>{
 const BLACK_NOTE_LENGTH: f32 = 0.6;
 const BLACK_NOTE_WIDTH: f32 = 1.0;
 
-impl<'a> Piano<'a>{
+impl<'a> Piano<'a> {
     pub fn new(
         max_note: PitchValue,
         min_note: PitchValue,
@@ -236,10 +239,10 @@ impl<'a> Piano<'a>{
     }
 }
 
-impl<'a> View for Piano<'a>{
+impl View for Piano<'_> {
     fn ui(&mut self, ui: &mut Ui) {
         Frame::canvas(ui.style()).show(ui, |ui| {
-            let (response, painter) = ui.allocate_painter(self.size, Sense::click_and_drag());
+            let (response, painter) = ui.allocate_painter(self.size, Sense::drag());
             let piano_transform = RectTransform::from_to(self.rect(), response.rect);
             let piano_board = self.make_piano_board();
             let piano_notes = self.get_piano_notes();
@@ -251,20 +254,34 @@ impl<'a> View for Piano<'a>{
             // Then draw keys on top
             painter.extend(piano_keys.transform(piano_transform));
 
-            if response.clicked() || response.is_pointer_button_down_on() {
-                if let Some(pointer_pos) = response.interact_pointer_pos() {
-                    let local_pos = piano_transform.inverse().transform_pos(pointer_pos);
-                    let (clicked_note, is_black) = self.calculate_clicked_note(local_pos, piano_transform);
-                    if let Some(clicked_note) = clicked_note {
-                        let clicked_note_feedback = self.create_click_feedback(
-                            &self.make_piano_key(clicked_note.clone()).transform(piano_transform),
-                            is_black,
-                        );
-                        painter.add(clicked_note_feedback);
-                        if response.clicked() || response.drag_started() {
-                            self.audio_player.unwrap().send_note_on(self.generator_selector.unwrap(), clicked_note.note.pitch_name);
-                        }
-                    }
+            let did_interact = response.drag_started()
+                || response.drag_stopped()
+                || response.is_pointer_button_down_on();
+            if !did_interact {
+                return;
+            }
+            let (Some(audio_player), Some(sel), Some(pointer_pos)) = (
+                self.audio_player,
+                self.generator_selector,
+                response.interact_pointer_pos(),
+            ) else {
+                return;
+            };
+            let local_pos = piano_transform.inverse().transform_pos(pointer_pos);
+            let (clicked_note, is_black) = self.calculate_clicked_note(local_pos, piano_transform);
+            if let Some(clicked_note) = clicked_note {
+                let clicked_note_feedback = self.create_click_feedback(
+                    &self
+                        .make_piano_key(clicked_note.clone())
+                        .transform(piano_transform),
+                    is_black,
+                );
+                painter.add(clicked_note_feedback);
+
+                if response.drag_started() {
+                    audio_player.send_note_on(sel, clicked_note.note.pitch_name);
+                } else if response.drag_stopped() {
+                    audio_player.send_note_off(sel, clicked_note.note.pitch_name);
                 }
             }
         });
