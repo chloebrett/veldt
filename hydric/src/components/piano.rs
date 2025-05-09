@@ -9,9 +9,10 @@ use egui::{
 };
 use log::info;
 use shared::{
-    model::{Note, PlacedNote, ScaleValue},
+    model::{Note, PlacedNote, ScaleValue, PitchName},
     types::PitchValue,
 };
+use std::sync::mpsc::Sender;
 
 #[derive(PartialEq)]
 pub enum PianoOrientation {
@@ -24,6 +25,7 @@ pub struct Piano {
     min_note: PitchValue,
     size: Vec2,
     orientation: PianoOrientation,
+    message_sender: Option<Sender<PitchName>>,
 }
 
 const BLACK_NOTE_LENGTH: f32 = 0.6;
@@ -35,6 +37,7 @@ impl Piano {
         min_note: PitchValue,
         orientation: PianoOrientation,
         mut size: Vec2,
+        message_sender: Option<Sender<PitchName>>,
     ) -> Self {
         if orientation == PianoOrientation::Vertical {
             size = size.yx();
@@ -45,6 +48,7 @@ impl Piano {
             min_note,
             size,
             orientation,
+            message_sender
         }
     }
 
@@ -250,16 +254,18 @@ impl View for Piano {
             if response.clicked() || response.is_pointer_button_down_on() {
                 if let Some(pointer_pos) = response.interact_pointer_pos() {
                     let local_pos = piano_transform.inverse().transform_pos(pointer_pos);
-                    let clicked_note = self.calculate_clicked_note(local_pos, piano_transform);
-                    if let (Some(note), is_black) = clicked_note {
+                    let (clicked_note, is_black) = self.calculate_clicked_note(local_pos, piano_transform);
+                    if let Some(clicked_note) = clicked_note {
                         let clicked_note_feedback = self.create_click_feedback(
-                            &self.make_piano_key(note.clone()).transform(piano_transform),
+                            &self.make_piano_key(clicked_note.clone()).transform(piano_transform),
                             is_black,
                         );
                         painter.add(clicked_note_feedback);
-                    }
-                    if response.clicked() || response.drag_started() {
-                        info!("This is where to do something with clicked_note");
+                        if response.clicked() || response.drag_started() {
+                            if let Some(message_sender) = &self.message_sender {
+                                message_sender.send(clicked_note.note.pitch_name).unwrap();
+                            }
+                        }
                     }
                 }
             }

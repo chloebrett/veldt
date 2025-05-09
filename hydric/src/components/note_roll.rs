@@ -142,6 +142,7 @@ impl View for NoteRoll<'_> {
                                 min_note - 1,
                                 PianoOrientation::Vertical,
                                 Vec2::new(600.0, 50.0),
+                                None
                             )
                             .ui(ui);
                             ui.add(
