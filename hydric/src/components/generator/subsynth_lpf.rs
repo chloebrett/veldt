@@ -30,7 +30,7 @@ impl<F: Fn(Action), G: Fn()> View for SubSynthLpfView<'_, F, G> {
         } = self;
 
         let on_release = || on_release();
-        outer_frame().show(ui, |ui| {
+        outer_frame().inner_margin(10.0).show(ui, |ui| {
             ui.vertical(|ui| {
                 ui.label("Low Pass Filter");
                 ui.add_space(4.0);
