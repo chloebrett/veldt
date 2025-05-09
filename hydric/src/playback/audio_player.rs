@@ -9,7 +9,7 @@ use dasp_frame::Stereo;
 use log::error;
 use mesic::SAMPLE_RATE;
 use mesic::graph::RenderGraph;
-use shared::model::{PitchName, Project};
+use shared::model::PitchName;
 use state::GeneratorSelector;
 use std::sync::{Arc, Mutex};
 use wasm_thread::JoinHandle;
@@ -115,9 +115,9 @@ impl AudioPlayer {
         self.playback_tx.try_send(message).unwrap();
     }
 
-    pub fn set_project(&mut self, project: Box<Project>) {
+    pub fn set_from_store(&mut self) {
         self.maybe_init();
-        self.send(PlaybackMessage::SetProject(project));
+        self.send(PlaybackMessage::RefreshGraph());
     }
 
     pub fn set_audio(&mut self, audio: Vec<Stereo<f32>>) {
