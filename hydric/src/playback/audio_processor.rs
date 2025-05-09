@@ -50,10 +50,10 @@ impl AudioProcessor {
                 self.process_message(message);
             }
 
-            if self.state == PlaybackState::Play && self.audio_tx.is_empty() {
+            if (self.state == PlaybackState::Play || self.graph.has_overlay_notes()) && self.audio_tx.is_empty() {
                 self.process_chunk();
             } else {
-                sleep_ms(10);
+                sleep_ms(1);
             }
             self.update_tx
                 .try_send(PlaybackUpdate::Delay(self.audio_tx.len()))

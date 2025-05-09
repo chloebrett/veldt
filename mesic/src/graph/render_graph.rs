@@ -25,6 +25,7 @@ pub struct RenderGraph {
 
     // Pending note on/off events sent from UI (e.g. from interacting with piano).
     pending_note_events: Vec<Vec<NoteEvent>>,
+    active_overlay_notes: usize,
 }
 
 impl Default for RenderGraph {
@@ -37,6 +38,7 @@ impl Default for RenderGraph {
             rx: None,
             processed_samples_count: 0,
             pending_note_events: vec![],
+            active_overlay_notes: 0,
         }
     }
 }
@@ -117,6 +119,12 @@ impl RenderGraph {
         self.pending_note_events = vec![];
     }
 
+    /// Whether there are currently any user-input notes 'overlaid' on top of the main track.
+    /// E.g. when the user uses a piano UI in a synth.
+    pub fn has_overlay_notes(&self) -> bool {
+        self.active_overlay_notes > 0
+    }
+
     /// Processes a note event sent by the user.
     /// Non-public to avoid exposing NoteEventType enum to hydric.
     fn note_event(
@@ -140,10 +148,12 @@ impl RenderGraph {
 
     pub fn note_on(&mut self, generator: GeneratorSelector, pitch_name: PitchName) {
         self.note_event(generator, pitch_name, NoteEventType::On);
+        self.active_overlay_notes += 1;
     }
 
     pub fn note_off(&mut self, generator: GeneratorSelector, pitch_name: PitchName) {
         self.note_event(generator, pitch_name, NoteEventType::Off);
+        self.active_overlay_notes -= 1;
     }
 }
 
@@ -151,6 +161,8 @@ impl Iterator for RenderGraph {
     type Item = Stereo<f32>;
 
     fn next(&mut self) -> Option<Self::Item> {
+        let overlay = self.has_overlay_notes();
+
         if self.processed_samples_count % Buffer::LEN == 0 {
             self.update_store();
             self.update_notes();
@@ -159,7 +171,7 @@ impl Iterator for RenderGraph {
             self.process_context.seek_pos = None;
         }
 
-        if self.processed_samples_count >= self.sample_count {
+        if !overlay && (self.processed_samples_count >= self.sample_count) {
             return None;
         }
 
@@ -170,6 +182,7 @@ impl Iterator for RenderGraph {
         let output = Some([left, right]);
 
         self.processed_samples_count += 1;
+
         output
     }
 }
