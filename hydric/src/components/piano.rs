@@ -277,19 +277,10 @@ impl View for Piano<'_> {
                     is_black,
                 );
                 painter.add(clicked_note_feedback);
-                log::info!(
-                    "{:?} {} {} {} {}",
-                    response,
-                    response.drag_started(),
-                    response.drag_stopped(),
-                    response.is_pointer_button_down_on(),
-                    response.clicked()
-                );
+
                 if response.drag_started() {
-                    log::info!("Drag started");
                     audio_player.send_note_on(sel, clicked_note.note.pitch_name);
                 } else if response.drag_stopped() {
-                    log::info!("Drag stopped");
                     audio_player.send_note_off(sel, clicked_note.note.pitch_name);
                 }
             }
