@@ -98,9 +98,8 @@ impl AudioPlayer {
     // Get current position (min:sec) as a string.
     pub fn current_time(&self) -> String {
         let samples = self.effective_pos();
-        let sample_rate = SAMPLE_RATE as usize;
 
-        let seconds_total = samples / sample_rate;
+        let seconds_total = samples / (SAMPLE_RATE as usize);
         let minutes = seconds_total / 60;
         let seconds = seconds_total % 60;
 
