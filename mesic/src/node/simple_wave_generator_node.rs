@@ -206,11 +206,6 @@ impl Iterator for SimpleWaveSource {
             }
         }
 
-        // Adding clipping to output to prevent transient spikes.
-        // Using soft clipping
-        const CLIP_THRESHOLD: f32 = 0.8;
-        output = (output / CLIP_THRESHOLD).tanh() * CLIP_THRESHOLD;
-
         self.sample_index += 1;
         Some(output)
     }

@@ -225,7 +225,12 @@ impl Iterator for SubSynthWaveSource {
                 aa: AntiAliasingMode::Off,
                 freq: freq.into(),
             };
-            output_mono += self.cache.get(&key, phase);
+
+            if osc.osc_detune != 0.0 {
+                output_mono += self.cache.get(&key, phase) / (osc.osc_detune as f32).sqrt();
+            } else {
+                output_mono += self.cache.get(&key, phase) / osc.osc_detune as f32;
+            }
         }
 
         let mut output_stereo = [output_mono; CHANNEL_COUNT];
