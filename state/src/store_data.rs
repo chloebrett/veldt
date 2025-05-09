@@ -3,9 +3,9 @@ use crate::{Action, Selector, SelectorTrait, reducer};
 use ordered_float::OrderedFloat;
 use shared::model::{
     AdsrEnvelope, AntiAliasingMode, FileTreeConfig, FilenameTree, Generator, GeneratorInstance,
-    GeneratorMeta, LfoConfig, Mixer, MixerChannel, MixerMatrix, ModMatrix, Note, Oscillator,
-    PitchName, PlacedNote, Placement, PlacementType, Project, Scale, ScaleValue, SimpleWaveConfig,
-    SubSynthConfig, Track, TrackPlacement, WaveType,
+    GeneratorMeta, Mixer, MixerChannel, MixerMatrix, ModMatrix, Note, PitchName, PlacedNote,
+    Placement, PlacementType, Project, Scale, ScaleValue, SimpleWaveConfig, SubSynthConfig, Track,
+    TrackPlacement, WaveType,
 };
 use shared::types::Volume;
 
@@ -40,27 +40,6 @@ impl StoreData {
         selector.try_select(self)
     }
 }
-
-const BASE_OSC: Oscillator = Oscillator {
-    wave: WaveType::Sine,
-    volume: 1.0,
-    pan: 0.0,
-    osc_detune: 0.0,
-    osc_count: 1,
-    unison_detune: 0.0,
-};
-
-const BASE_LFO: LfoConfig = LfoConfig {
-    wave: WaveType::Sine,
-    frequency: 1.0,
-};
-
-const BASE_ENV: AdsrEnvelope = AdsrEnvelope {
-    attack: 0.1,
-    decay: 0.1,
-    sustain: 0.8,
-    release: 0.1,
-};
 
 impl Default for StoreData {
     fn default() -> Self {
@@ -100,10 +79,10 @@ impl Default for StoreData {
                         it: Generator::SimpleWave(SimpleWaveConfig {
                             wave: WaveType::Sine,
                             envelope: AdsrEnvelope {
-                                attack: 0.1,
-                                decay: 0.1,
+                                attack: 100.0,
+                                decay: 100.0,
                                 sustain: 0.8,
-                                release: 0.1,
+                                release: 100.0,
                             },
                             osc_count: 4,
                             detune_cents: 5.0,
@@ -118,25 +97,7 @@ impl Default for StoreData {
                         },
                     },
                     GeneratorInstance {
-                        it: Generator::SubSynth(SubSynthConfig {
-                            oscillators: [
-                                Oscillator {
-                                    wave: WaveType::Sine,
-                                    ..BASE_OSC
-                                },
-                                Oscillator {
-                                    wave: WaveType::Triangle,
-                                    ..BASE_OSC
-                                },
-                                Oscillator {
-                                    wave: WaveType::Square,
-                                    ..BASE_OSC
-                                },
-                            ],
-                            lfos: [BASE_LFO; 3],
-                            envelopes: [BASE_ENV; 3],
-                            matrix: ModMatrix::new(6, 3),
-                        }),
+                        it: Generator::SubSynth(SubSynthConfig::default()),
                         meta: GeneratorMeta {
                             volume: 1.0,
                             mute: false,

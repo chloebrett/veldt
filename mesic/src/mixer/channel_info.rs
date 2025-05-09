@@ -41,12 +41,7 @@ impl ChannelInfo {
             .filter(|generator| generator.meta.mixer_channel == channel_index)
             .enumerate()
             .map(|(generator_index, generator)| {
-                GeneratorInfo::new(
-                    graph,
-                    project,
-                    generator,
-                    &GeneratorSelector(generator_index),
-                )
+                GeneratorInfo::new(graph, generator, GeneratorSelector(generator_index))
             })
             .collect();
 
@@ -198,9 +193,9 @@ impl ChannelInfo {
     /// Deletes a generator from the ChannelInfo's generator list, without deleting it from the graph.
     /// This allows for a two-step process whereby a generator is soft-deleted from one
     /// ChannelInfo then added to another, by reference, without actually recreating the generator.
-    pub fn soft_delete_generator(&mut self, generator_index: usize) -> Option<GeneratorInfo> {
+    pub fn soft_delete_generator(&mut self, selector: GeneratorSelector) -> Option<GeneratorInfo> {
         for i in 0..self.generators.len() {
-            if self.generators[i].generator_index == generator_index {
+            if self.generators[i].selector == selector {
                 // Note: swap_remove used because order of the generators doesn't matter,
                 // but the performance gain of this is negligible.
                 return Some(self.generators.swap_remove(i));

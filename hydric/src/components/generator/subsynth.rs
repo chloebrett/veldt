@@ -1,5 +1,7 @@
+use super::super::{ModMatrixView, Piano, PianoOrientation};
+use super::subsynth_envelope::SubSynthEnvelopeView;
+use super::subsynth_lpf::SubSynthLpfView;
 use super::subsynth_oscillator::SubSynthOscillatorView;
-use crate::components::{ModMatrixView, Piano, PianoOrientation};
 use crate::view::View;
 use crate::widget::{TabDisplay, TabOrientation};
 use crate::{GetSet, LocalState};
@@ -92,8 +94,13 @@ impl<'a, G: Fn()> SubSynthView<'a, G> {
             octave: 8,
         }
         .into();
-        // TODO: piano is only rendering a subset of these notes.
-        Piano::new(max_note, min_note, PianoOrientation::Horizontal).ui(ui);
+        Piano::new(
+            max_note + 1,
+            min_note,
+            PianoOrientation::Horizontal,
+            Vec2::new(1080.0, 50.0),
+        )
+        .ui(ui);
     }
 }
 
@@ -147,6 +154,14 @@ impl<G: Fn()> View for SubSynthView<'_, G> {
             ui.add_space(HORIZONTAL_SPACE);
 
             ui.vertical(|ui| {
+                SubSynthEnvelopeView::new(
+                    &config,
+                    gen_dispatch, // TODO fix this to use the correct dispatch, currently moving knobs creates crashes
+                    on_release,
+                    self.local_state,
+                )
+                .ui(ui);
+                ui.add_space(4.0);
                 self.draw_lfos(ui);
             });
 
@@ -156,11 +171,19 @@ impl<G: Fn()> View for SubSynthView<'_, G> {
                 ModMatrixView::new(
                     &config.matrix,
                     vec!["ENV 1", "ENV 2", "ENV 3", "LFO 1", "LFO 2", "LFO 3"],
-                    vec!["OSC 1", "OSC 2", "OSC 3"],
+                    vec!["OSC 1", "OSC 2", "OSC 3", "LPF"],
                     gen_dispatch, // TODO: need to change this dispatch so that actions for modmatrix work, currently takes GeneratorSelector
                     on_release,
                 )
                 .ui(ui); // must wrap in ui.vertical to stop the matrix from unnecessarily stretching vertically
+
+                ui.add_space(HORIZONTAL_SPACE);
+                SubSynthLpfView::new(
+                    &config.lpf,
+                    gen_dispatch, // TODO: create actionreceiver for this, change the dispatch so the actions work
+                    on_release,
+                )
+                .ui(ui);
             });
         });
 

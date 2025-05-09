@@ -1,21 +1,32 @@
 use super::EnvelopeView;
+use crate::AudioState;
 use crate::view::View;
 use crate::widget::{get_set, int_slider, knob, selectable_value};
-use egui::Ui;
-use shared::model::{AntiAliasingMode, SimpleWaveConfig, WaveType};
-use state::{Action, FloatField, TypeField, UintField};
+use egui::{Button, Sense, Ui};
+use shared::model::{AntiAliasingMode, PitchName, ScaleValue, SimpleWaveConfig, WaveType};
+use state::{Action, FloatField, GeneratorSelector, TypeField, UintField};
 use strum::IntoEnumIterator;
 
 pub struct SimpleWaveView<'a, F: Fn(Action), G: Fn()> {
+    selector: GeneratorSelector,
     config: &'a SimpleWaveConfig,
+    audio_state: &'a AudioState,
     dispatch: F,
     on_release: G,
 }
 
 impl<'a, F: Fn(Action), G: Fn()> SimpleWaveView<'a, F, G> {
-    pub fn new(config: &'a SimpleWaveConfig, dispatch: F, on_release: G) -> Self {
+    pub fn new(
+        selector: GeneratorSelector,
+        config: &'a SimpleWaveConfig,
+        audio_state: &'a AudioState,
+        dispatch: F,
+        on_release: G,
+    ) -> Self {
         Self {
+            selector,
             config,
+            audio_state,
             dispatch,
             on_release,
         }
@@ -92,7 +103,20 @@ impl<F: Fn(Action), G: Fn()> View for SimpleWaveView<'_, F, G> {
                 );
                 self.aliasing_combo_box(ui);
             });
-            // TODO: move this to the individual generator UI.
+
+            if cfg!(feature = "extra_debug") {
+                let response = ui.add(Button::new("[debug] Send note").sense(Sense::drag()));
+                let pitch = PitchName {
+                    octave: 4,
+                    scale_value: ScaleValue::A,
+                };
+                if response.drag_started() {
+                    self.audio_state.player.send_note_on(self.selector, pitch);
+                } else if response.drag_stopped() {
+                    self.audio_state.player.send_note_off(self.selector, pitch);
+                }
+            }
+
             ui.separator();
             ui.vertical(|ui| {
                 EnvelopeView::new(&self.config.envelope, &self.dispatch, &self.on_release).ui(ui);

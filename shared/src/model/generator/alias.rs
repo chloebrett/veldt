@@ -3,7 +3,18 @@ use local_macro::{FromProto, IntoProto};
 use strum::{Display, EnumIter, EnumString};
 
 #[derive(
-    Debug, Clone, Copy, PartialEq, Eq, EnumString, Display, EnumIter, IntoProto, FromProto, Hash,
+    Debug,
+    Clone,
+    Copy,
+    PartialEq,
+    Eq,
+    EnumString,
+    Display,
+    EnumIter,
+    IntoProto,
+    FromProto,
+    Hash,
+    Default,
 )]
 pub enum AntiAliasingMode {
     // No anti-aliasing. Uses naive waves without oversampling. Produces artifacts for waves like
@@ -16,5 +27,6 @@ pub enum AntiAliasingMode {
 
     // Avoids aliasing entirely by constructing the waveform additively. This results in zero
     // aliasing but is the most computationally expensive.
+    #[default]
     Additive,
 }
