@@ -23,7 +23,7 @@ pub struct Piano<'a>{
     size: Vec2,
     orientation: PianoOrientation,
     audio_player: Option<&'a AudioPlayer>,
-    audio_generator: Option<GeneratorSelector>,
+    generator_selector: Option<GeneratorSelector>,
 }
 
 const BLACK_NOTE_LENGTH: f32 = 0.6;
@@ -48,7 +48,7 @@ impl<'a> Piano<'a>{
             size,
             orientation,
             audio_player,
-            audio_generator,
+            generator_selector: audio_generator,
         }
     }
 
@@ -262,7 +262,7 @@ impl<'a> View for Piano<'a>{
                         );
                         painter.add(clicked_note_feedback);
                         if response.clicked() || response.drag_started() {
-                            self.audio_player.unwrap().send_note_on(self.audio_generator.unwrap(), clicked_note.note.pitch_name);
+                            self.audio_player.unwrap().send_note_on(self.generator_selector.unwrap(), clicked_note.note.pitch_name);
                         }
                     }
                 }

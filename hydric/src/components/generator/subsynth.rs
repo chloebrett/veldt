@@ -2,6 +2,7 @@ use super::super::{ModMatrixView, Piano, PianoOrientation};
 use super::subsynth_envelope::SubSynthEnvelopeView;
 use super::subsynth_lpf::SubSynthLpfView;
 use super::subsynth_oscillator::SubSynthOscillatorView;
+use crate::playback::AudioPlayer;
 use crate::view::View;
 use crate::widget::{TabDisplay, TabOrientation};
 use crate::{GetSet, LocalState};
@@ -14,7 +15,6 @@ use shared::{
     types::PitchValue,
 };
 use state::{GeneratorSelector, Store};
-use crate::AudioState;
 
 pub struct SubSynthView<'a, G: Fn()> {
     config: &'a SubSynthConfig,
@@ -22,7 +22,7 @@ pub struct SubSynthView<'a, G: Fn()> {
     store: &'a Store,
     local_state: &'a LocalState,
     generator_sel: &'a GeneratorSelector,
-    audio_state: &'a AudioState,
+    audio_player: &'a AudioPlayer,
 }
 
 impl<'a, G: Fn()> SubSynthView<'a, G> {
@@ -32,7 +32,7 @@ impl<'a, G: Fn()> SubSynthView<'a, G> {
         store: &'a Store,
         local_state: &'a LocalState,
         generator_sel: &'a GeneratorSelector,
-        audio_state: &'a AudioState,
+        audio_player: &'a AudioPlayer,
     ) -> Self {
         Self {
             config,
@@ -40,7 +40,7 @@ impl<'a, G: Fn()> SubSynthView<'a, G> {
             store,
             local_state,
             generator_sel,
-            audio_state,
+            audio_player,
         }
     }
 
@@ -104,7 +104,7 @@ impl<'a, G: Fn()> SubSynthView<'a, G> {
             min_note,
             PianoOrientation::Horizontal,
             Vec2::new(1100.0, 50.0),
-            Some(&self.audio_state.player),
+            Some(&self.audio_player),
             Some(*self.generator_sel)
         )
         .ui(ui);
