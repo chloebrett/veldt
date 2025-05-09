@@ -2,7 +2,7 @@ use crate::transform::Transform;
 use egui::emath::RectTransform;
 use egui::{Color32, Pos2, Rect, Response, Sense, Shape, Stroke, Ui, Vec2, lerp, pos2};
 use mesic::wave::make_basic_wave_with_frequency;
-use shared::model::{AntiAliasingMode, WaveType};
+use shared::model::WaveType;
 
 // (potential) TODO: further generalise this to just WaveVisualiser so the painting logic can be resued in other components like ENV and LFO visualisers in the subsynth (might require calculating wave points outside of this component)
 // ideas for things to make adjustable:
@@ -17,13 +17,13 @@ pub struct SimpleWaveVisualiser {
 }
 
 impl SimpleWaveVisualiser {
-    pub fn new(wave_type: WaveType, line_color: Color32, fill_color: Color32, frequency: f32) -> Self {
+    pub fn new(wave_type: WaveType, line_color: Color32, fill_color: Color32, frequency: f32, size: Vec2) -> Self {
         Self {
             wave_type,
             line_color,
             fill_color,
-            size: Vec2::new(130.0, 74.0),
             frequency,
+            size
         }
     }
 
