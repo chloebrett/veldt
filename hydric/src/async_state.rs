@@ -14,5 +14,5 @@ pub struct AsyncState {
     pub load_sample_tree: AsyncResult<FilenameTree, ()>,
     pub export: AsyncResult<(), ()>,
     pub microphone_start: AsyncResult<(), String>,
-    pub microphone_stop:AsyncResult<Vec<u8>, String>,
+    pub microphone_stop: AsyncResult<Vec<u8>, String>,
 }

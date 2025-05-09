@@ -13,12 +13,12 @@ mod track_placement_view;
 mod track_roll;
 
 pub use app::*;
-pub use play::Microphone;
 use frame_history::*;
 use key_view::*;
 use mod_matrix::*;
 use note_roll::*;
 use note_view::*;
 use piano::*;
+pub use play::Microphone;
 use track_placement_view::*;
 use track_roll::*;
