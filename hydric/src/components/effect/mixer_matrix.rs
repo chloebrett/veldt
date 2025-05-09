@@ -37,7 +37,7 @@ impl<G: Fn()> View for MixerMatrixView<'_, G> {
             matrix,
             ref row_titles,
             ref col_titles,
-            ref store,
+            store,
             ref on_release,
         } = *self;
 
@@ -97,7 +97,7 @@ impl<G: Fn()> View for MixerMatrixView<'_, G> {
                                 // (a) the row == col (self cycle)
                                 // (b) the transpose (swap row/col) value is non-zero (direct cycle).
                                 // TODO: also consider transitive cycles!
-                                let disabled = (row == col as usize) || (transpose_value != 0.0);
+                                let disabled = (row == col) || (transpose_value != 0.0);
 
                                 ui.push_id(id, |ui| {
                                     if disabled {

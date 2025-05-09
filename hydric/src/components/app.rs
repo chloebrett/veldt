@@ -120,7 +120,7 @@ impl View for App {
                 &self.store,
                 &sel,
                 &self.local_state,
-                &self.audio_state,
+                &mut self.audio_state,
                 visible,
                 || generators.set(sel, false),
             )

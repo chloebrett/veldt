@@ -29,8 +29,7 @@ impl<F: Fn(Action), G: Fn()> View for SubSynthLpfView<'_, F, G> {
             on_release,
         } = self;
 
-        const TEXT_COLOUR: Color32 = Color32::from_gray(180);
-
+        let on_release = || on_release();
         let frame = egui::Frame::new()
             .fill(Color32::from_gray(50))
             .stroke(egui::Stroke::new(1.0, Color32::from_gray(60)))
@@ -49,7 +48,7 @@ impl<F: Fn(Action), G: Fn()> View for SubSynthLpfView<'_, F, G> {
                 |it| dispatch(Action::SetFloat(FloatField::Fc, it)),
                 20.0..=20000.0,
                 2000.0,
-                || on_release(),
+                on_release,
             );
 
             knob(
@@ -59,7 +58,7 @@ impl<F: Fn(Action), G: Fn()> View for SubSynthLpfView<'_, F, G> {
                 |it| dispatch(Action::SetFloat(FloatField::Q, it)),
                 0.1..=100.0,
                 1.0,
-                || on_release(),
+                on_release,
             );
         });
     }

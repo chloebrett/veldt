@@ -5,7 +5,7 @@ pub use audio_player::*;
 use audio_processor::*;
 
 use dasp_frame::Stereo;
-use shared::model::{PitchName, Project};
+use shared::model::PitchName;
 use state::GeneratorSelector;
 
 // Number of samples to process and send to the audio player at a time.
@@ -24,7 +24,11 @@ pub struct PlaybackPosition {
 
 // Messages that can be sent to the processor thread.
 enum PlaybackMessage {
-    SetProject(Box<Project>), // uses Box to keep enum size sane.
+    // Refreshes the graph based off the StoreData's project state.
+    // Will soon become irrelevant, as the graph will always be up to date.
+    RefreshGraph(),
+    // Sets the graph to use audio instead of the generator nodes.
+    // TODO: just use the main render graph, but add a buffer node source to it.
     SetAudio(Vec<Stereo<f32>>),
     Seek(PlaybackPosition),
     State(PlaybackState),

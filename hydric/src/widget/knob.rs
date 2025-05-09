@@ -43,6 +43,46 @@ pub fn knob<F>(
     }
 }
 
+/// Not ideal since this introduces some code repetition, but fine for now.
+/// Should move towards builder pattern in future, and maybe modify the knob itself to handle the
+/// setter.
+pub fn custom_knob(
+    ui: &mut Ui,
+    label: &str,
+    value: KnobPosition,
+    setter: impl Fn(KnobPosition),
+    range: RangeInclusive<f32>,
+    neutral: f32,
+    on_release: impl Fn(),
+    modify: impl Fn(Knob) -> Knob,
+) {
+    let min = *range.start();
+    let max = *range.end();
+    let mut temp = value.clamp(min, max);
+    let knob = Knob::new(&mut temp, min, max, neutral, KnobStyle::Wiper)
+        .with_size(20.0)
+        .with_font_size(12.0)
+        .with_stroke_width(2.0)
+        .with_colors(
+            Color32::GRAY,
+            Color32::WHITE,
+            Color32::WHITE,
+            Color32::WHITE,
+        )
+        .with_label(label, LabelPosition::Right)
+        .with_label_offset(4.0);
+    let knob = modify(knob);
+    let response = ui.add(knob);
+
+    if temp != value {
+        setter(temp.clamp(min, max));
+    }
+
+    if response.drag_stopped() || response.lost_focus() {
+        on_release();
+    }
+}
+
 pub fn knob_disabled(ui: &mut Ui, label: &str, value: KnobPosition, range: RangeInclusive<f32>) {
     let min = *range.start();
     let max = *range.end();
@@ -65,7 +105,7 @@ pub fn knob_disabled(ui: &mut Ui, label: &str, value: KnobPosition, range: Range
 
 /// Position of the label relative to the knob
 #[expect(dead_code)]
-enum LabelPosition {
+pub enum LabelPosition {
     Top,
     Bottom,
     Left,
@@ -74,7 +114,7 @@ enum LabelPosition {
 
 /// Visual style of the knob indicator
 #[expect(dead_code)]
-enum KnobStyle {
+pub enum KnobStyle {
     /// A line extending from the center to the edge
     Wiper,
     /// A dot on the edge of the knob
@@ -91,7 +131,7 @@ enum KnobStyle {
 ///     .with_label("Volume", LabelPosition::Bottom)
 ///     .with_step(0.1);
 /// ```
-struct Knob<'a> {
+pub struct Knob<'a> {
     value: &'a mut f32,
     min: f32,
     max: f32,
@@ -215,7 +255,6 @@ impl<'a> Knob<'a> {
     /// Sets the step size for value changes
     ///
     /// When set, the value will snap to discrete steps as the knob is dragged.
-    #[expect(dead_code)]
     pub fn with_step(mut self, step: f32) -> Self {
         self.step = Some(step);
         self
