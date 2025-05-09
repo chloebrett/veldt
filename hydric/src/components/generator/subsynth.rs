@@ -104,7 +104,7 @@ impl<'a, G: Fn()> SubSynthView<'a, G> {
             min_note,
             PianoOrientation::Horizontal,
             Vec2::new(1100.0, 50.0),
-            Some(&self.audio_player),
+            Some(self.audio_player),
             Some(*self.generator_sel),
         )
         .ui(ui);
@@ -162,7 +162,7 @@ impl<G: Fn()> View for SubSynthView<'_, G> {
 
             ui.vertical(|ui| {
                 SubSynthEnvelopeView::new(
-                    &config,
+                    config,
                     gen_dispatch, // TODO fix this to use the correct dispatch, currently moving knobs creates crashes
                     on_release,
                     self.local_state,

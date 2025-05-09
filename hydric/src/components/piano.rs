@@ -239,7 +239,7 @@ impl<'a> Piano<'a> {
     }
 }
 
-impl<'a> View for Piano<'a> {
+impl View for Piano<'_> {
     fn ui(&mut self, ui: &mut Ui) {
         Frame::canvas(ui.style()).show(ui, |ui| {
             let (response, painter) = ui.allocate_painter(self.size, Sense::drag());

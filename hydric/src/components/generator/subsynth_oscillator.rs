@@ -131,7 +131,7 @@ impl<F: Fn(Action), G: Fn()> View for SubSynthOscillatorView<'_, F, G> {
                         |it| {
                             dispatch(Action::SetFloat(
                                 FloatField::Detune,
-                                it as f32 * 100.0 + detune_fine,
+                                it * 100.0 + detune_fine,
                             ))
                         },
                         -24.0..=24.0,
