@@ -132,13 +132,7 @@ impl<G: Fn()> View for SubSynthView<'_, G> {
                 let lfo_sel = gen_sel.downcast_lfo(current_lfo_index);
                 let lfo_dispatch = |action| self.store.dispatch(&lfo_sel, action);
 
-                SubSynthLfoView::new(
-                    config,
-                    lfo_dispatch,
-                    on_release,
-                    self.local_state,
-                )
-                .ui(ui);
+                SubSynthLfoView::new(config, lfo_dispatch, on_release, self.local_state).ui(ui);
             });
 
             ui.add_space(HORIZONTAL_SPACE);

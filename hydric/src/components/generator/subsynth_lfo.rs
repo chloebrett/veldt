@@ -1,13 +1,10 @@
 use super::SimpleWaveVisualiser;
 use crate::view::View;
-use crate::widget::{TabDisplay, TabOrientation, selectable_value, get_set, int_slider};
+use crate::widget::{TabDisplay, TabOrientation, get_set, int_slider, selectable_value};
 use crate::{GetSet, LocalState};
-use egui::{
-    Color32, Stroke, Ui, Vec2,
-    containers::Frame,
-};
+use egui::{Color32, Stroke, Ui, Vec2, containers::Frame};
 use shared::model::{SubSynthConfig, WaveType};
-use state::{Action, TypeField, FloatField};
+use state::{Action, FloatField, TypeField};
 use strum::IntoEnumIterator;
 
 pub struct SubSynthLfoView<'a, F: Fn(Action), G: Fn()> {
@@ -74,26 +71,35 @@ impl<F: Fn(Action), G: Fn()> View for SubSynthLfoView<'_, F, G> {
                     .show(ui, |ui| {
                         ui.vertical(|ui| {
                             let current_lfo_config = &config.lfos[active_lfo_tab];
-                            
+
                             egui::ComboBox::from_label("")
-                            .selected_text(current_lfo_config.wave.to_string())
-                            .show_ui(ui, |ui| {
-                                for wave in WaveType::iter() {
-                                    selectable_value(
-                                        ui,
-                                        get_set(current_lfo_config.wave, |wave_type| {
-                                            dispatch(Action::SetChild(TypeField::Wave(wave_type)))
-                                        }),
-                                        wave,
-                                        wave.to_string(),
-                                    );
-                                }
-                            });
+                                .selected_text(current_lfo_config.wave.to_string())
+                                .show_ui(ui, |ui| {
+                                    for wave in WaveType::iter() {
+                                        selectable_value(
+                                            ui,
+                                            get_set(current_lfo_config.wave, |wave_type| {
+                                                dispatch(Action::SetChild(TypeField::Wave(
+                                                    wave_type,
+                                                )))
+                                            }),
+                                            wave,
+                                            wave.to_string(),
+                                        );
+                                    }
+                                });
 
                             ui.add_space(20.0);
 
-                            SimpleWaveVisualiser::new(current_lfo_config.wave, LFO_LINE_COLOUR, LFO_FILL_COLOUR, current_lfo_config.frequency, Vec2::new(340.0, 140.0)).show(ui);
-                            
+                            SimpleWaveVisualiser::new(
+                                current_lfo_config.wave,
+                                LFO_LINE_COLOUR,
+                                LFO_FILL_COLOUR,
+                                current_lfo_config.frequency,
+                                Vec2::new(340.0, 140.0),
+                            )
+                            .show(ui);
+
                             ui.add_space(20.0);
 
                             ui.spacing_mut().item_spacing = original_spacing; // reset ui spacing back to original

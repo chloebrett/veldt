@@ -3,8 +3,8 @@ use shared::action_proto::{
     SelectorProto, selector_proto::IndexPair, selector_proto::Kind as SelectorKind,
 };
 use shared::model::{
-    EffectInstance, GeneratorInstance, MatrixCell, MixerChannel, Oscillator, PlacedNote, Placement,
-    SubSynthConfig, Track, LfoConfig
+    EffectInstance, GeneratorInstance, LfoConfig, MatrixCell, MixerChannel, Oscillator, PlacedNote,
+    Placement, SubSynthConfig, Track,
 };
 
 // TODO: rename to just Selector when Selector enum is gone.
@@ -98,13 +98,11 @@ pub struct LfoSelector(
     /* lfo_index */ pub usize,
 );
 
-
 impl LfoSelector {
     pub fn upcast(&self) -> GeneratorSelector {
         GeneratorSelector(self.0)
     }
 }
-
 
 #[derive(Eq, PartialEq, Ord, PartialOrd, Copy, Clone, Debug, Hash)]
 pub struct MixerMatrixCellSelector(/* row */ pub usize, /* col */ pub usize);
@@ -332,10 +330,7 @@ pub enum Selector {
         /* oscillator_index */ usize,
     ),
     MixerMatrixCell(/* row */ usize, /* col */ usize),
-    Lfo(
-        /* generator_index */ usize,
-        /* lfo_index */ usize,
-    ),
+    Lfo(/* generator_index */ usize, /* lfo_index */ usize),
 }
 
 impl From<Selector> for SelectorProto {
@@ -355,9 +350,7 @@ impl From<Selector> for SelectorProto {
                 Selector::MixerMatrixCell(first, second) => {
                     SelectorKind::MixerMatrixCell(pair(first, second))
                 }
-                Selector::Lfo(first, second) => {
-                    SelectorKind::Lfo(pair(first, second))
-                }
+                Selector::Lfo(first, second) => SelectorKind::Lfo(pair(first, second)),
             }),
         }
     }
