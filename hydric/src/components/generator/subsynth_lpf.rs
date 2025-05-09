@@ -29,8 +29,6 @@ impl<F: Fn(Action), G: Fn()> View for SubSynthLpfView<'_, F, G> {
             on_release,
         } = self;
 
-        const TEXT_COLOUR: Color32 = Color32::from_gray(180);
-
         let frame = egui::Frame::new()
             .fill(Color32::from_gray(50))
             .stroke(egui::Stroke::new(1.0, Color32::from_gray(60)))

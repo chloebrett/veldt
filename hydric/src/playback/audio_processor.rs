@@ -7,9 +7,12 @@ use mesic::graph::RenderGraph;
 
 /// Audio processor which runs in its own thread and communicates with the UI thread via crossbeam channels.
 pub struct AudioProcessor {
+    // Audio processor gets one half of each of the three channels.
+    // It receives playback messages, and sends audio buffers and playback update messages.
     audio_tx: Sender<AudioBuffer>,
     playback_rx: Receiver<PlaybackMessage>,
     update_tx: Sender<PlaybackUpdate>,
+
     state: PlaybackState,
     graph: RenderGraph,
     is_looping: bool,
