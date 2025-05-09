@@ -25,7 +25,7 @@ pub struct Piano<'a> {
     min_note: PitchValue,
     size: Vec2,
     orientation: PianoOrientation,
-    audio_player: Option<&'a AudioPlayer>,
+    audio_player: Option<&'a mut AudioPlayer>,
     generator_selector: Option<GeneratorSelector>,
 }
 
@@ -38,7 +38,7 @@ impl<'a> Piano<'a> {
         min_note: PitchValue,
         orientation: PianoOrientation,
         mut size: Vec2,
-        audio_player: Option<&'a AudioPlayer>,
+        audio_player: Option<&'a mut AudioPlayer>,
         audio_generator: Option<GeneratorSelector>,
     ) -> Self {
         if orientation == PianoOrientation::Vertical {
@@ -260,11 +260,9 @@ impl View for Piano<'_> {
             if !did_interact {
                 return;
             }
-            let (Some(audio_player), Some(sel), Some(pointer_pos)) = (
-                self.audio_player,
-                self.generator_selector,
-                response.interact_pointer_pos(),
-            ) else {
+            let (Some(sel), Some(pointer_pos)) =
+                (self.generator_selector, response.interact_pointer_pos())
+            else {
                 return;
             };
             let local_pos = piano_transform.inverse().transform_pos(pointer_pos);
@@ -278,10 +276,12 @@ impl View for Piano<'_> {
                 );
                 painter.add(clicked_note_feedback);
 
-                if response.drag_started() {
-                    audio_player.send_note_on(sel, clicked_note.note.pitch_name);
-                } else if response.drag_stopped() {
-                    audio_player.send_note_off(sel, clicked_note.note.pitch_name);
+                if let Some(player) = self.audio_player.as_mut() {
+                    if response.drag_started() {
+                        player.send_note_on(sel, clicked_note.note.pitch_name);
+                    } else if response.drag_stopped() {
+                        player.send_note_off(sel, clicked_note.note.pitch_name);
+                    }
                 }
             }
         });

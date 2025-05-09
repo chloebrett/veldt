@@ -62,6 +62,12 @@ impl RenderGraph {
         self.sample_count = audio.len();
     }
 
+    pub fn set_from_store(&mut self) {
+        self.update_store();
+        let project = self.process_context.store.project.clone();
+        self.set_from_project(&project);
+    }
+
     /// Initializes the graph from a project instance.
     /// Not idempotent! Only call this on a fresh RenderGraph. (either new or call clear_nodes).
     /// This is mostly an interim method until we get action receiving working properly.
