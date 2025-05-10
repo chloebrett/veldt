@@ -61,6 +61,7 @@ impl CompressorNode {
 /// Compresses an audio sample (in the amplitude sense, not the WinRAR sense) based on the output
 /// of an amplitude detector, a compression threshold, and ratio (represented as a reciprocal).
 /// The reciprocal is used to save on division.
+/// See pg. 513ff of DAEP in C++ 
 fn compress(input: f32, detector: f32, threshold: f32, ratio_recip: f32) -> f32 {
     // TODO: use dB for threshold.
     let y_out = if detector > threshold {
