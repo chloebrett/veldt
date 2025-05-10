@@ -9,13 +9,25 @@ mod render_graph;
 pub use note_tracker::*;
 pub use render_graph::*;
 
+#[derive(PartialEq)]
+pub enum PlaybackMode {
+    // Loads notes from tracks.
+    Main,
+
+    // Plays the preview buffer.
+    // Switches back to Main and pauses once done.
+    Preview,
+}
+
 pub struct ProcessContext {
     // TODO: don't keep a whole store here.
     // Have Project handle action receiving itself,
     // and then just store a project.
     // Then, StoreData doesn't need to be Clone anymore.
     pub store: StoreData,
-    pub seek_pos: Option<usize>,
+    pub main_seek_pos: Option<usize>,
+    pub preview_seek_pos: Option<usize>,
+    pub playback_mode: PlaybackMode,
     pub note_events: NoteEventsByGenerator,
 
     // A buffer to play starting at sample 0.
@@ -27,7 +39,9 @@ impl ProcessContext {
     pub fn new(store: StoreData) -> Self {
         Self {
             store,
-            seek_pos: None,
+            main_seek_pos: None,
+            preview_seek_pos: None,
+            playback_mode: PlaybackMode::Main,
             note_events: vec![],
             preview_buffer: vec![],
         }

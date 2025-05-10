@@ -46,7 +46,7 @@ impl WaveCache {
         let phase_samples = total_samples_len as f32 * phase;
 
         if let Some(wave) = self.cache.get(key) {
-            debug_assert!(wave.buffer.len() == total_samples_len);
+            debug_assert!(wave.buffer.len() == total_samples_len + 1);
 
             let a = wave.buffer[phase_samples.floor() as usize];
             let b = wave.buffer[(phase_samples.floor() as usize) + 1];
@@ -59,7 +59,7 @@ impl WaveCache {
             .map(|x| make_wave(x as f32 / total_samples, key.kind, *key.freq, key.aa))
             .collect();
 
-        debug_assert!(buffer.len() == total_samples_len);
+        debug_assert!(buffer.len() == total_samples_len + 1);
 
         let a = buffer[phase_samples.floor() as usize];
         let b = buffer[(phase_samples.floor() as usize) + 1];
