@@ -34,14 +34,6 @@ pub fn play_control(
     ui.separator();
 
     ui.horizontal(|ui| {
-        if ui.button("Set audio from local + play").clicked() {
-            player.set_from_store();
-            player.play();
-        }
-        if ui.button("Set audio from local").clicked() {
-            player.set_from_store();
-        }
-
         if ui.button("Set audio from server").clicked() {
             let project = store.get().project.clone();
             spawn(&mut async_state.server_render, async move {

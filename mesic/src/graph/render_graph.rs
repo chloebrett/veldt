@@ -161,10 +161,7 @@ impl Iterator for RenderGraph {
 #[cfg(test)]
 mod tests {
     use crate::SAMPLE_RATE;
-    use shared::model::{
-        PitchName,
-        ScaleValue,
-    };
+    use shared::model::{PitchName, ScaleValue};
 
     use shared::types::Freq;
 

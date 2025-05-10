@@ -63,7 +63,6 @@ impl AudioProcessor {
 
     fn process_message(&mut self, message: PlaybackMessage) {
         match message {
-            PlaybackMessage::RefreshGraph() => {}
             PlaybackMessage::SetAudio(audio) => {
                 self.graph.set_audio(&audio);
             }

@@ -24,11 +24,7 @@ pub struct PlaybackPosition {
 
 // Messages that can be sent to the processor thread.
 enum PlaybackMessage {
-    // Refreshes the graph based off the StoreData's project state.
-    // Will soon become irrelevant, as the graph will always be up to date.
-    RefreshGraph(),
-    // Sets the graph to use audio instead of the generator nodes.
-    // TODO: just use the main render graph, but add a buffer node source to it.
+    // Sets some pre-rendered audio to be played by the graph.
     SetAudio(Vec<Stereo<f32>>),
     Seek(PlaybackPosition),
     State(PlaybackState),
