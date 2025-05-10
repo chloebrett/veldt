@@ -15,7 +15,7 @@ pub struct CompressorConfig {
 impl Default for CompressorConfig {
     fn default() -> Self {
         Self {
-            threshold: 0.5,
+            threshold: -10.0,
             attack_ms: 30.0,
             release_ms: 30.0,
             ratio: 1.5,
