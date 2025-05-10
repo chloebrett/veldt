@@ -109,6 +109,10 @@ impl View for TrackPlacementView<'_> {
                     store.dispatchr(Action::DeleteChild(IndexField::Placement(placement_index)));
                     self.local_state.track_placement_window.set(false);
                     self.local_state.active_track_placement.set(None);
+                    self.local_state.selected_track_placements.update(|mut it| {
+                        it.remove(&placement_index);
+                        it
+                    });
                 }
             },
         );
