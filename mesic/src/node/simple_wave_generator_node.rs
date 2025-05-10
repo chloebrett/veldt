@@ -195,7 +195,7 @@ impl Iterator for SimpleWaveSource {
         for (i, &detune) in detunes.iter().enumerate() {
             let freq = self.freq * detune_multiplier(detune);
             let step = freq / (SAMPLE_RATE as f32);
-            let phase : f32;
+            let phase: f32;
             if detune != 0.0 {
                 phase = (phases[i] + (self.sample_index as f32) * step) % 1.0; // Lessens the initial 'pop' of sound
             } else {
@@ -216,7 +216,7 @@ impl Iterator for SimpleWaveSource {
         if self.config.detune_cents > 0.0 && self.config.osc_count > 1 {
             output = (output / 0.95).tanh() * 0.95;
         }
-        
+
         self.sample_index += 1;
         Some(output)
     }

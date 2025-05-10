@@ -245,7 +245,6 @@ impl Iterator for SubSynthWaveSource {
                 // Using the same formula as above will cause destructive interference
                 phase = (self.sample_index as f32) * step % 1.0;
             }
-            
 
             let key = WaveKey {
                 kind: osc.wave,
@@ -255,7 +254,6 @@ impl Iterator for SubSynthWaveSource {
 
             output_mono += self.cache.get(&key, phase) / osc.osc_count as f32;
         }
-
 
         // Adding clipping to lessens the peaks in volume.
         if osc.unison_detune > 0.0 && osc.osc_count > 1 {

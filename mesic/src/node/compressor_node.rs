@@ -96,6 +96,7 @@ mod tests {
     use dasp_frame::Stereo;
     use shared::model::{PitchName, ScaleValue};
     use shared::types::Freq;
+    use state::StoreData;
 
     const FLOAT_THRES: f32 = 1e-5;
 
@@ -288,7 +289,8 @@ mod tests {
     // * Test more complex input signals.
 
     fn make_graph(input: Vec<Stereo<f32>>, _config: CompressorConfig) -> RenderGraph {
-        let graph = RenderGraph::from_vec(input.clone());
+        let mut graph = RenderGraph::without_rx(&StoreData::default());
+        graph.set_audio(&input);
         // TODO: we can't re-enable these tests until the mixer supports effect channels for
         // arbitrary audio.
         /*graph.add_main_effect_with_mixer(
