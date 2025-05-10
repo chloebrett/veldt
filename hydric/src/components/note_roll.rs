@@ -263,12 +263,12 @@ impl SequencerObject<PlacedNote> for PlacedNote {
         )
     }
 
-    fn set_active(&self, _ui: &mut Ui, local_state: &LocalState, index: usize) {
+    fn set_active(&self, local_state: &LocalState, index: usize) {
         local_state.note_window.set(true);
         local_state.active_note.set(Some(index));
     }
 
-    fn set_selected(_ui: &mut Ui, local_state: &LocalState, index: Option<usize>) {
+    fn set_selected(local_state: &LocalState, index: Option<usize>) {
         let Some(index) = index else {
             local_state.selected_notes.set(HashSet::default());
             return;
@@ -310,6 +310,15 @@ impl SequencerObject<PlacedNote> for PlacedNote {
         local_state: &LocalState,
         parent_index: Option<usize>,
     ) {
+        // If the active note is selected, "de-activate" it.
+        local_state.active_note.update(|mut it| {
+            it.map(|index| {
+                if local_state.selected_notes.get().contains(&index) {
+                    it = None
+                }
+            });
+            it
+        });
         store.dispatch(
             &TrackSelector(parent_index.expect("Should have been a parent index")),
             Action::DeleteChildren(MultiIndexField::PlacedNote(

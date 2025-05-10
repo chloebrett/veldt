@@ -1,7 +1,7 @@
 use crate::LocalState;
 use crate::local_state::GetSet;
 use crate::view::View;
-use crate::widget::{StateWindow, default_window, get_set, int_slider, selectable_value, slider};
+use crate::widget::{default_window, get_set, int_slider, selectable_value, slider, StateWindow};
 use egui::{Ui, pos2};
 use shared::model::ScaleValue;
 use shared::types::{Beats, Octave};
@@ -95,10 +95,6 @@ impl View for NoteView<'_> {
                     );
                     self.local_state.active_note.set(None);
                     self.local_state.note_window.set(false);
-                    self.local_state.selected_notes.update(|mut it| {
-                        it.remove(&note_index);
-                        it
-                    });
                 }
             },
         );

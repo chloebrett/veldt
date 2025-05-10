@@ -229,7 +229,7 @@ impl SequencerObject<PlacedTrack> for PlacedTrack {
         PlacementSelector(index)
     }
 
-    fn set_active(&self, _ui: &mut Ui, local_state: &LocalState, index: usize) {
+    fn set_active(&self, local_state: &LocalState, index: usize) {
         let track_placement: &TrackPlacement = (&self.placement).try_into().unwrap();
 
         local_state.note_roll_window.set(true);
@@ -240,7 +240,7 @@ impl SequencerObject<PlacedTrack> for PlacedTrack {
         local_state.active_track_placement.set(Some(index));
     }
 
-    fn set_selected(_ui: &mut Ui, local_state: &LocalState, index: Option<usize>) {
+    fn set_selected(local_state: &LocalState, index: Option<usize>) {
         let Some(index) = index else {
             local_state
                 .selected_track_placements
@@ -287,6 +287,15 @@ impl SequencerObject<PlacedTrack> for PlacedTrack {
         local_state: &LocalState,
         _parent_index: Option<usize>,
     ) {
+        // If the active placement is selected, "de-activate" it.
+        local_state.active_track_placement.update(|mut it| {
+            it.map(|index| {
+                if local_state.selected_track_placements.get().contains(&index) {
+                    it = None
+                }
+            });
+            it
+        });
         store.dispatchr(Action::DeleteChildren(MultiIndexField::Placement(
             local_state
                 .selected_track_placements
