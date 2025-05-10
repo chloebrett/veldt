@@ -18,6 +18,7 @@ use state::GeneratorSelector;
 pub struct SubSynthNode {
     selector: GeneratorSelector,
     state: NodeState,
+    cache: WaveCache,
 }
 
 /// State persisted between buffers.
@@ -53,8 +54,6 @@ impl Default for NodeState {
 }
 
 impl NodeState {
-    // TODO: update logic is almost the same as the simple wave generator.
-    // Should it be de-duplicated?
     fn update(&mut self, payload: &ProcessContext, selector: GeneratorSelector) {
         if let GeneratorInstance {
             it: Generator::SubSynth(config),
@@ -77,6 +76,7 @@ impl SubSynthNode {
         Self {
             selector,
             state: NodeState::default(),
+            cache: WaveCache::default(),
         }
     }
 
@@ -165,7 +165,7 @@ impl Node<ProcessContext> for SubSynthNode {
             if let Some(sources) = &mut state.voice.sources {
                 for (eg, source) in state.voice.egs.iter_mut().zip(sources.iter_mut()) {
                     let amp = eg.next().unwrap_or(0.0);
-                    let wave = source.next().unwrap_or([0.0; 2]);
+                    let wave = source.next(&mut self.cache);
 
                     buffers[0][i] += amp * wave[0];
                     buffers[1][i] += amp * wave[1];
@@ -183,9 +183,6 @@ impl Node<ProcessContext> for SubSynthNode {
 
 #[derive(Debug)]
 pub struct SubSynthWaveSource {
-    // TODO: recycle the wave cache?
-    // Currently it's re-created each time the note changes.
-    cache: WaveCache,
     pitch: PitchName,
     oscillator: Oscillator,
     sample_index: usize,
@@ -194,7 +191,6 @@ pub struct SubSynthWaveSource {
 impl SubSynthWaveSource {
     pub fn new(pitch: PitchName, oscillator: Oscillator) -> Self {
         Self {
-            cache: WaveCache::default(),
             pitch,
             oscillator,
             sample_index: 0,
@@ -204,35 +200,14 @@ impl SubSynthWaveSource {
     pub fn same_pitch(&self, pitch: PitchName) -> bool {
         self.pitch == pitch
     }
-}
 
-impl Iterator for SubSynthWaveSource {
-    type Item = Stereo<f32>;
-
-    fn next(&mut self) -> Option<Self::Item> {
+    fn next(&mut self, cache: &mut WaveCache) -> Stereo<f32> {
         let mut output_mono = 0.0;
         let freq: Freq = self.pitch.into();
         let osc = &self.oscillator;
         let freq = freq * detune_multiplier(osc.osc_detune);
 
         let detunes = linspace(-osc.unison_detune, osc.unison_detune, osc.osc_count);
-
-        // Evenly spaced phases for each unison wave.
-        // let phases = linspace(0.0, 1.0, osc.osc_count as u32);
-
-        // for (i, &detune) in detunes.iter().enumerate() {
-        //     let freq = freq * detune_multiplier(detune);
-        //     let step = freq / (SAMPLE_RATE as f32);
-        //     let phase = (phases[i] + (self.sample_index as f32) * step) % 1.0; // Lessens the initial 'pop' of sound
-
-        //     let key = WaveKey {
-        //         kind: osc.wave,
-        //         aa: AntiAliasingMode::Off,
-        //         freq: freq.into(),
-        //     };
-
-        //     output_mono += self.cache.get(&key, phase);
-        // }
 
         // Evenly spaced phases for each unison wave.
         let phases = linspace(0.0, 1.0, osc.osc_count + 1 as u32);
@@ -254,10 +229,10 @@ impl Iterator for SubSynthWaveSource {
                 freq: freq.into(),
             };
 
-            output_mono += self.cache.get(&key, phase) / osc.osc_count as f32;
+            output_mono += cache.get(&key, phase) / osc.osc_count as f32;
         }
 
-        // Adding clipping to lessens the peaks in volume.
+        // Add clipping to lessen the peaks in volume.
         if osc.unison_detune > 0.0 && osc.osc_count > 1 {
             output_mono = (output_mono / 0.95).tanh() * 0.95;
         }
@@ -269,6 +244,6 @@ impl Iterator for SubSynthWaveSource {
         }
 
         self.sample_index += 1;
-        Some(output_stereo)
+        output_stereo
     }
 }

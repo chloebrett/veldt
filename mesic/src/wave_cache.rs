@@ -18,6 +18,8 @@ pub struct WaveKey {
     pub freq: OrderedFloat<Freq>,
 }
 
+/// Caches a full cycle of a wave, keyed by the wave configuration, so that each wave only needs to
+/// be calculated once.
 #[derive(Default, Debug)]
 pub struct WaveCache {
     cache: HashMap<WaveKey, Wave>,
