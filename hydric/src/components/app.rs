@@ -159,7 +159,7 @@ impl View for App {
         }
 
         NoteView::new(&self.store, &self.local_state).ui(ui);
-        NoteRoll::new(&self.store, &self.local_state).ui(ui);
+        NoteRoll::new(&self.store, &self.local_state, &mut self.audio_state.player).ui(ui);
         TrackPlacementView::new(&self.store, &self.local_state).ui(ui);
 
         SampleTreeView::new(
