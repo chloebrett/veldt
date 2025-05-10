@@ -2,7 +2,6 @@ use super::{SubSynthEnvelopeView, SubSynthLpfView, SubSynthLfoView, SubSynthOsci
 use crate::components::{ModMatrixView, Piano, PianoOrientation};
 use crate::playback::AudioPlayer;
 use crate::view::View;
-use crate::widget::{TabDisplay, TabOrientation, inner_frame, outer_frame};
 use crate::{GetSet, LocalState};
 use egui::{Color32, Ui, Vec2};
 use lazy_static::lazy_static;

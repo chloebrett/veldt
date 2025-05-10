@@ -1,6 +1,6 @@
 use super::SimpleWaveVisualiser;
 use crate::view::View;
-use crate::widget::{TabDisplay, TabOrientation, get_set, slider, selectable_value};
+use crate::widget::{TabDisplay, TabOrientation, get_set, slider, selectable_value, inner_frame, outer_frame};
 use crate::{GetSet, LocalState};
 use egui::{Color32, Stroke, Ui, Vec2, containers::Frame};
 use shared::model::{SubSynthConfig, WaveType};
@@ -44,13 +44,7 @@ impl<F: Fn(Action), G: Fn()> View for SubSynthLfoView<'_, F, G> {
             self.local_state.subsynth_lfo_tab.set(index);
         };
 
-        let outer_frame = Frame::new()
-            .fill(Color32::from_gray(50))
-            .stroke(Stroke::new(1.0, Color32::from_gray(50)))
-            .corner_radius(8.0)
-            .inner_margin(6.0);
-
-        outer_frame.show(ui, |ui| {
+        outer_frame().show(ui, |ui| {
             let original_spacing = ui.spacing().item_spacing; // store original spacing
             ui.spacing_mut().item_spacing = Vec2::ZERO; // set spacing to zero so that the tabs and associated content actually touch each other
 
@@ -63,57 +57,52 @@ impl<F: Fn(Action), G: Fn()> View for SubSynthLfoView<'_, F, G> {
                 )
                 .ui(ui);
 
-                Frame::new()
-                    .fill(Color32::from_gray(30))
-                    .stroke(Stroke::new(1.0, Color32::from_gray(30)))
-                    .corner_radius(8.0)
-                    .inner_margin(15.0)
-                    .show(ui, |ui| {
-                        ui.vertical(|ui| {
-                            let current_lfo_config = &config.lfos[active_lfo_tab];
+                inner_frame().show(ui, |ui| {
+                    ui.vertical(|ui| {
+                        let current_lfo_config = &config.lfos[active_lfo_tab];
+                        
+                        egui::ComboBox::from_label("")
+                            .selected_text(current_lfo_config.wave.to_string())
+                            .show_ui(ui, |ui| {
+                                for wave in WaveType::iter() {
+                                    selectable_value(
+                                        ui,
+                                        get_set(current_lfo_config.wave, |wave_type| {
+                                            dispatch(Action::SetChild(TypeField::Wave(
+                                                wave_type,
+                                            )))
+                                        }),
+                                        wave,
+                                        wave.to_string(),
+                                    );
+                                }
+                            });
 
-                            egui::ComboBox::from_label("")
-                                .selected_text(current_lfo_config.wave.to_string())
-                                .show_ui(ui, |ui| {
-                                    for wave in WaveType::iter() {
-                                        selectable_value(
-                                            ui,
-                                            get_set(current_lfo_config.wave, |wave_type| {
-                                                dispatch(Action::SetChild(TypeField::Wave(
-                                                    wave_type,
-                                                )))
-                                            }),
-                                            wave,
-                                            wave.to_string(),
-                                        );
-                                    }
-                                });
+                        ui.add_space(20.0);
 
-                            ui.add_space(20.0);
+                        SimpleWaveVisualiser::new(
+                            current_lfo_config.wave,
+                            LFO_LINE_COLOUR,
+                            LFO_FILL_COLOUR,
+                            current_lfo_config.frequency,
+                            Vec2::new(340.0, 140.0),
+                        )
+                        .show(ui);
 
-                            SimpleWaveVisualiser::new(
-                                current_lfo_config.wave,
-                                LFO_LINE_COLOUR,
-                                LFO_FILL_COLOUR,
-                                current_lfo_config.frequency,
-                                Vec2::new(340.0, 140.0),
-                            )
-                            .show(ui);
+                        ui.add_space(20.0);
 
-                            ui.add_space(20.0);
+                        ui.spacing_mut().item_spacing = original_spacing; // reset ui spacing back to original
 
-                            ui.spacing_mut().item_spacing = original_spacing; // reset ui spacing back to original
-
-                            slider(
-                                ui,
-                                "Frequency",
-                                current_lfo_config.frequency as f64,
-                                |it| dispatch(Action::SetFloat(FloatField::LfoFreq, it as f32)),
-                                1.0..=10.0,
-                                on_release,
-                            );
-                        })
+                        slider(
+                            ui,
+                            "Frequency",
+                            current_lfo_config.frequency as f64,
+                            |it| dispatch(Action::SetFloat(FloatField::LfoFreq, it as f32)),
+                            1.0..=10.0,
+                            on_release,
+                        );
                     })
+                })
             });
         });
     }

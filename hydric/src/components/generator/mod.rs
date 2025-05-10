@@ -16,3 +16,4 @@ pub use simple_wave_visualiser::*;
 use subsynth_envelope::*;
 use subsynth_lpf::*;
 use subsynth_oscillator::*;
+use subsynth_lfo::*;
