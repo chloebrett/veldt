@@ -14,10 +14,13 @@ pub fn lhp_second_order(config: &EqConfig, low_high: LowHigh) -> SecondOrderFilt
     let beta: f32 = 0.5 * (1.0 - alpha) / (1.0 + alpha);
     let gamma = (0.5 + beta) * theta.cos();
     let a1 = match low_high {
-        LowHigh::Low => 0.5 * (0.5 + beta - gamma),
-        LowHigh::High => 0.5 * (0.5 + beta + gamma),
+        LowHigh::Low => 0.5 + beta - gamma,
+        LowHigh::High => -0.5 - beta - gamma,
     };
-    let a0 = 0.5 * a1;
+    let a0 = match low_high {
+        LowHigh::Low => 0.5 * a1,
+        LowHigh::High => 0.5 * -a1,
+    };
     let a2 = a0;
     let b1 = -2.0 * gamma;
     let b2 = 2.0 * beta;
