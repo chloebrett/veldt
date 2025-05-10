@@ -67,7 +67,7 @@ impl View for NoteView<'_> {
                 );
 
                 let duration = note.note.beats as f64;
-                // TODO Add quantisation.
+                // TODO: Add quantisation.
                 slider(
                     ui,
                     "Beats",
@@ -78,7 +78,7 @@ impl View for NoteView<'_> {
                 );
 
                 let offset = *note.offset as f64;
-                // TODO Add quantisation.
+                // TODO: Add quantisation.
                 slider(
                     ui,
                     "Offset",

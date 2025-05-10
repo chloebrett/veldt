@@ -310,14 +310,10 @@ impl SequencerObject<PlacedNote> for PlacedNote {
         local_state: &LocalState,
         parent_index: Option<usize>,
     ) {
-        // If the active note is selected, "de-activate" it.
-        local_state.active_note.update(|mut it| {
-            it.map(|index| {
-                if local_state.selected_notes.get().contains(&index) {
-                    it = None
-                }
-            });
-            it
+        local_state.active_note.update(|note| match note {
+            // If the active note is selected, "de-activate" it.
+            Some(index) if local_state.selected_notes.get().contains(&index) => None,
+            _ => note,
         });
         store.dispatch(
             &TrackSelector(parent_index.expect("Should have been a parent index")),

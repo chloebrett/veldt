@@ -287,15 +287,13 @@ impl SequencerObject<PlacedTrack> for PlacedTrack {
         local_state: &LocalState,
         _parent_index: Option<usize>,
     ) {
-        // If the active placement is selected, "de-activate" it.
-        local_state.active_track_placement.update(|mut it| {
-            it.map(|index| {
-                if local_state.selected_track_placements.get().contains(&index) {
-                    it = None
-                }
+        local_state
+            .active_track_placement
+            .update(|placement| match placement {
+                // If the active placement is selected, "de-activate" it.
+                Some(index) if local_state.selected_track_placements.get().contains(&index) => None,
+                _ => placement,
             });
-            it
-        });
         store.dispatchr(Action::DeleteChildren(MultiIndexField::Placement(
             local_state
                 .selected_track_placements
