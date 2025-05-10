@@ -46,7 +46,7 @@ impl Node<ProcessContext> for BufferNode {
             log::info!("Updated buffer in buffer node");
         }
 
-        if self.buffer.len() == 0 {
+        if self.buffer.is_empty() {
             return;
         }
 

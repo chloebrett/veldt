@@ -202,26 +202,29 @@ impl SubSynthWaveSource {
     }
 
     fn next(&mut self, cache: &mut WaveCache) -> Stereo<f32> {
-        let mut output_mono = 0.0;
-        let freq: Freq = self.pitch.into();
         let osc = &self.oscillator;
+        let freq: Freq = self.pitch.into();
         let freq = freq * detune_multiplier(osc.osc_detune);
 
-        let detunes = linspace(-osc.unison_detune, osc.unison_detune, osc.osc_count);
+        let unison = if osc.unison_detune == 0.0 {
+            1
+        } else {
+            osc.osc_count
+        };
+        let detunes = linspace(-osc.unison_detune, osc.unison_detune, unison);
 
         // Evenly spaced phases for each unison wave.
-        let phases = linspace(0.0, 1.0, osc.osc_count + 1 as u32);
+        // Use unison + 1 because phase=1 is the same as phase=0.
+        let phases = linspace(0.0, 1.0, unison + 1);
 
+        let mut output_mono = 0.0;
+        let unison_amp = (unison as f32).recip();
         for (i, &detune) in detunes.iter().enumerate() {
             let freq = freq * detune_multiplier(detune);
             let step = freq / (SAMPLE_RATE as f32);
-            let phase: f32;
-            if detune != 0.0 {
-                phase = (phases[i] + (self.sample_index as f32) * step) % 1.0; // Lessens the initial 'pop' of sound
-            } else {
-                // Using the same formula as above will cause destructive interference
-                phase = (self.sample_index as f32) * step % 1.0;
-            }
+
+            // Lessen the initial 'pop' of the sound when playing with unison.
+            let phase = (phases[i] + (self.sample_index as f32) * step) % 1.0;
 
             let key = WaveKey {
                 kind: osc.wave,
@@ -229,11 +232,11 @@ impl SubSynthWaveSource {
                 freq: freq.into(),
             };
 
-            output_mono += cache.get(&key, phase) / osc.osc_count as f32;
+            output_mono += cache.get(&key, phase) * unison_amp;
         }
 
-        // Add clipping to lessen the peaks in volume.
-        if osc.unison_detune > 0.0 && osc.osc_count > 1 {
+        // Add soft clipping to lessen the peaks in volume.
+        if unison > 1 {
             output_mono = (output_mono / 0.95).tanh() * 0.95;
         }
 

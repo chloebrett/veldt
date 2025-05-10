@@ -177,27 +177,27 @@ impl SimpleWaveSource {
     }
 
     fn next(&mut self, cache: &mut WaveCache) -> f32 {
-        let detunes = linspace(
-            -self.config.detune_cents,
-            self.config.detune_cents,
-            self.config.osc_count,
-        );
+        let detune_cents = self.config.detune_cents;
+        let unison = if detune_cents == 0.0 {
+            1
+        } else {
+            self.config.osc_count
+        };
+
+        let detunes = linspace(-detune_cents, detune_cents, unison);
 
         // Evenly spaced phases for each unison wave.
-        let phases = linspace(0.0, 1.0, self.config.osc_count + 1 as u32);
+        // Use unison + 1 because phase=1 is the same as phase=0.
+        let phases = linspace(0.0, 1.0, unison + 1);
 
         let mut output = 0.0;
-
+        let unison_amp = (unison as f32).recip();
         for (i, &detune) in detunes.iter().enumerate() {
             let freq = self.freq * detune_multiplier(detune);
             let step = freq / (SAMPLE_RATE as f32);
-            let phase: f32;
-            if detune != 0.0 {
-                phase = (phases[i] + (self.sample_index as f32) * step) % 1.0; // Lessens the initial 'pop' of sound
-            } else {
-                // Using the same formula as above will cause destructive interference (not producing sound)
-                phase = (self.sample_index as f32) * step % 1.0;
-            }
+
+            // Lessen the initial 'pop' of the sound when playing with unison.
+            let phase = (phases[i] + (self.sample_index as f32) * step) % 1.0;
 
             let key = WaveKey {
                 kind: self.config.wave,
@@ -205,7 +205,7 @@ impl SimpleWaveSource {
                 freq: self.freq.into(),
             };
 
-            output += cache.get(&key, phase) / self.config.osc_count as f32;
+            output += cache.get(&key, phase) * unison_amp;
         }
 
         // Add clipping to lessen the peaks in volume.
