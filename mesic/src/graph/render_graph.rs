@@ -51,8 +51,8 @@ impl RenderGraph {
         Self::new(store, rx)
     }
 
-    pub fn set_audio(&mut self, audio: &Vec<Stereo<f32>>) {
-        self.process_context.preview_buffer = audio.clone();
+    pub fn set_audio(&mut self, audio: &[Stereo<f32>]) {
+        self.process_context.preview_buffer = audio.to_owned();
         self.sample_count = audio.len();
     }
 

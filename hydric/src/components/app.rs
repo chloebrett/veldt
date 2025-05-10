@@ -37,7 +37,7 @@ impl Default for App {
         };
         let (tx, rx) = channel();
         let store = Store::new(broadcast, tx);
-        let graph = RenderGraph::new(&store.get(), rx);
+        let graph = RenderGraph::new(store.get(), rx);
 
         App {
             store,
