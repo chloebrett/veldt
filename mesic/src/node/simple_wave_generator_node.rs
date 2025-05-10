@@ -2,7 +2,9 @@ use super::pan_multipliers;
 use crate::SAMPLE_RATE;
 use crate::envelope::EnvelopeGenerator;
 use crate::graph::{NoteEventType, ProcessContext};
-use crate::wave::{WaveCache, WaveKey, detune_multiplier, linspace};
+use crate::maths::linspace;
+use crate::wave::detune_multiplier;
+use crate::wave_cache::{WaveCache, WaveKey};
 use dasp_graph::{Buffer, Input, Node};
 use shared::model::{Generator, GeneratorInstance, GeneratorMeta, PitchName, SimpleWaveConfig};
 use shared::types::Freq;
@@ -11,6 +13,7 @@ use state::GeneratorSelector;
 pub struct SimpleWaveGeneratorNode {
     selector: GeneratorSelector,
     state: NodeState,
+    cache: WaveCache,
 }
 
 /// State persisted between buffers.
@@ -63,6 +66,7 @@ impl SimpleWaveGeneratorNode {
         Self {
             selector,
             state: NodeState::default(),
+            cache: WaveCache::default(),
         }
     }
 
@@ -140,7 +144,7 @@ impl Node<ProcessContext> for SimpleWaveGeneratorNode {
                 .voice
                 .source
                 .as_mut()
-                .map(|it| it.next().unwrap_or(0.0))
+                .map(|it| it.next(&mut self.cache))
                 .unwrap_or(0.0);
 
             buffer[i] = amp * wave;
@@ -154,55 +158,62 @@ impl Node<ProcessContext> for SimpleWaveGeneratorNode {
 }
 
 pub struct SimpleWaveSource {
-    // TODO: recycle the wave cache?
-    // Currently it's re-created each time the note changes.
-    cache: WaveCache,
     freq: Freq,
     config: SimpleWaveConfig,
     sample_index: usize,
 }
 
 impl SimpleWaveSource {
-    pub fn new(freq: Freq, config: SimpleWaveConfig) -> Self {
+    fn new(freq: Freq, config: SimpleWaveConfig) -> Self {
         Self {
-            cache: WaveCache::default(),
             freq,
             config,
             sample_index: 0,
         }
     }
 
-    pub fn same_pitch(&self, pitch: PitchName) -> bool {
+    fn same_pitch(&self, pitch: PitchName) -> bool {
         self.freq == pitch.into()
     }
-}
 
-impl Iterator for SimpleWaveSource {
-    type Item = f32;
-
-    fn next(&mut self) -> Option<Self::Item> {
+    fn next(&mut self, cache: &mut WaveCache) -> f32 {
         let detunes = linspace(
             -self.config.detune_cents,
             self.config.detune_cents,
             self.config.osc_count,
         );
 
+        // Evenly spaced phases for each unison wave.
+        let phases = linspace(0.0, 1.0, self.config.osc_count + 1 as u32);
+
         let mut output = 0.0;
 
-        for detune in detunes {
+        for (i, &detune) in detunes.iter().enumerate() {
             let freq = self.freq * detune_multiplier(detune);
             let step = freq / (SAMPLE_RATE as f32);
-            let phase = ((self.sample_index as f32) * step) % 1.0;
+            let phase: f32;
+            if detune != 0.0 {
+                phase = (phases[i] + (self.sample_index as f32) * step) % 1.0; // Lessens the initial 'pop' of sound
+            } else {
+                // Using the same formula as above will cause destructive interference (not producing sound)
+                phase = (self.sample_index as f32) * step % 1.0;
+            }
 
             let key = WaveKey {
                 kind: self.config.wave,
                 aa: self.config.anti_aliasing_mode,
                 freq: self.freq.into(),
             };
-            output += self.cache.get(&key, phase);
+
+            output += cache.get(&key, phase) / self.config.osc_count as f32;
+        }
+
+        // Add clipping to lessen the peaks in volume.
+        if self.config.detune_cents > 0.0 && self.config.osc_count > 1 {
+            output = (output / 0.95).tanh() * 0.95;
         }
 
         self.sample_index += 1;
-        Some(output)
+        output
     }
 }

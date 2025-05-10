@@ -1,5 +1,5 @@
 use super::{extract_inputs, extract_outputs};
-use crate::consts::SAMPLE_RATE_RECIP;
+use crate::consts::RECIP_SAMPLE_RATE;
 use crate::graph::ProcessContext;
 use crate::wave::make_wave;
 use dasp_graph::{Buffer, Input, Node};
@@ -49,7 +49,7 @@ impl ModDelayNode {
             );
             let delay_samples = self.mid_depth + (self.mod_depth as f32 * lfo * 0.5) as u32;
             *x = *buffer.get(delay_samples as usize).unwrap();
-            lfo_phase += self.period * SAMPLE_RATE_RECIP;
+            lfo_phase += self.period * RECIP_SAMPLE_RATE;
         }
     }
 }
@@ -64,6 +64,6 @@ impl Node<ProcessContext> for ModDelayNode {
 
         // Increase the LFO only by one buffer length (instead of N buffer lengths if there are N
         // channels);
-        self.lfo_phase += Buffer::LEN as f32 * self.period * SAMPLE_RATE_RECIP;
+        self.lfo_phase += Buffer::LEN as f32 * self.period * RECIP_SAMPLE_RATE;
     }
 }

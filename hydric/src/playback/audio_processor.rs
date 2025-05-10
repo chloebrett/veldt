@@ -44,9 +44,6 @@ impl AudioProcessor {
             wasm_thread::current().id()
         );
 
-        self.graph.clear_nodes();
-        self.graph.set_from_store();
-
         loop {
             // Process pending messages (non-blocking).
             while let Ok(message) = self.playback_rx.try_recv() {
@@ -66,13 +63,11 @@ impl AudioProcessor {
 
     fn process_message(&mut self, message: PlaybackMessage) {
         match message {
-            PlaybackMessage::RefreshGraph() => {
-                self.graph.clear_nodes();
-                self.graph.set_from_store();
+            PlaybackMessage::RecreateMixer => {
+                self.graph.recreate_mixer();
             }
             PlaybackMessage::SetAudio(audio) => {
-                self.graph.clear_nodes();
-                self.graph.set_from_audio(audio);
+                self.graph.set_audio(&audio);
             }
             PlaybackMessage::Seek(PlaybackPosition { samples }) => {
                 log::info!("Seeking to {}", samples);

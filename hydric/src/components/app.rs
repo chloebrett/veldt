@@ -35,11 +35,12 @@ impl Default for App {
         let broadcast = |actions| {
             let _ = Promise::spawn_local(broadcast_actions(actions));
         };
-        let mut graph = RenderGraph::default();
         let (tx, rx) = channel();
-        graph.set_receiver(rx);
+        let store = Store::new(broadcast, tx);
+        let graph = RenderGraph::new(&store.get(), rx);
+
         App {
-            store: Store::new(broadcast, tx),
+            store,
             local_state: LocalState::default(),
             frame_history: FrameHistory::default(),
             async_state: AsyncState::default(),

@@ -1,17 +1,13 @@
-use super::super::{ModMatrixView, Piano, PianoOrientation};
-use super::subsynth_envelope::SubSynthEnvelopeView;
-use super::subsynth_lfo::SubSynthLfoView;
-use super::subsynth_lpf::SubSynthLpfView;
-use super::subsynth_oscillator::SubSynthOscillatorView;
+use super::{SubSynthEnvelopeView, SubSynthLpfView, SubSynthLfoView, SubSynthOscillatorView};
+use crate::components::{ModMatrixView, Piano, PianoOrientation};
 use crate::playback::AudioPlayer;
 use crate::view::View;
+use crate::widget::{TabDisplay, TabOrientation, inner_frame, outer_frame};
 use crate::{GetSet, LocalState};
-use eframe::egui;
 use egui::{Color32, Ui, Vec2};
 use lazy_static::lazy_static;
-use shared::model::SubSynthConfig;
 use shared::{
-    model::{PitchName, ScaleValue},
+    model::{PitchName, ScaleValue, SubSynthConfig},
     types::PitchValue,
 };
 use state::{GeneratorSelector, Store};

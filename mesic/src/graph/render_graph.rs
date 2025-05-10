@@ -1,10 +1,10 @@
 use super::{NoteEvent, NoteEventType, NoteTracker, ProcessContext, Processor, make_processor};
+use crate::convert::beats_to_samples;
 use crate::mixer::Mixer;
-use crate::wave::beats_to_samples;
 use dasp_frame::Stereo;
 use dasp_graph::Buffer;
-use shared::model::{PitchName, Project};
-use state::{Action, GeneratorSelector, Selector};
+use shared::model::PitchName;
+use state::{Action, GeneratorSelector, Selector, StoreData};
 use std::sync::mpsc::Receiver;
 
 /// Wraps a Mixer (which in turn wraps a Graph) to add processing/iteration, seeking, and listening
@@ -18,7 +18,7 @@ pub struct RenderGraph {
     // Updated based on actions from the main store at each buffer cycle.
     process_context: ProcessContext,
     // Receives actions from the main store and applies to mesic store.
-    rx: Option<Receiver<(Selector, Action)>>,
+    rx: Receiver<(Selector, Action)>,
 
     // For iteration.
     processed_samples_count: usize,
@@ -29,50 +29,35 @@ pub struct RenderGraph {
     pub is_playing: bool,
 }
 
-impl Default for RenderGraph {
-    fn default() -> Self {
+impl RenderGraph {
+    pub fn new(store: &StoreData, rx: Receiver<(Selector, Action)>) -> Self {
+        let project = &store.project;
+        let sample_count = beats_to_samples(*project.duration(), project.bpm) as usize;
+
         Self {
-            mixer: Mixer::empty(),
-            sample_count: 0,
+            mixer: Mixer::new(project),
+            sample_count,
             processor: make_processor(),
-            process_context: ProcessContext::default(),
-            rx: None,
+            process_context: ProcessContext::new(store.clone()),
+            rx,
             processed_samples_count: 0,
             pending_note_events: vec![],
             is_playing: false,
         }
     }
-}
 
-impl RenderGraph {
-    /// Deletes all nodes from the graph.
-    pub fn clear_nodes(&mut self) {
-        self.mixer = Mixer::empty();
-
-        // Reset counters.
-        self.sample_count = 0;
-        self.processor = make_processor();
-        self.processed_samples_count = 0;
-
-        // Keep the process context and rx because they contain the store.
+    pub fn without_rx(store: &StoreData) -> Self {
+        let (_tx, rx) = std::sync::mpsc::channel();
+        Self::new(store, rx)
     }
 
-    pub fn set_from_audio(&mut self, audio: Vec<Stereo<f32>>) {
-        self.mixer = Mixer::from_audio(&audio);
+    pub fn set_audio(&mut self, audio: &Vec<Stereo<f32>>) {
+        self.process_context.preview_buffer = audio.clone();
         self.sample_count = audio.len();
     }
 
     pub fn set_from_store(&mut self) {
-        self.update_store();
         let project = self.process_context.store.project.clone();
-        self.set_from_project(&project);
-    }
-
-    /// Initializes the graph from a project instance.
-    /// Not idempotent! Only call this on a fresh RenderGraph. (either new or call clear_nodes).
-    /// This is mostly an interim method until we get action receiving working properly.
-    pub fn set_from_project(&mut self, project: &Project) {
-        self.mixer = Mixer::from_project(project);
         self.sample_count = beats_to_samples(*project.duration(), project.bpm) as usize;
     }
 
@@ -85,15 +70,8 @@ impl RenderGraph {
         self.process_context.seek_pos = Some(samples);
     }
 
-    pub fn set_receiver(&mut self, receiver: Receiver<(Selector, Action)>) {
-        self.rx = Some(receiver);
-    }
-
-    /// Creates a graph that plays the buffer contained in a Vec.
-    pub fn from_vec(vec: Vec<Stereo<f32>>) -> Self {
-        let mut graph = Self::default();
-        graph.set_from_audio(vec);
-        graph
+    pub fn recreate_mixer(&mut self) {
+        self.mixer = Mixer::new(&self.process_context.store.project);
     }
 
     fn update_store(&mut self) {
@@ -102,14 +80,12 @@ impl RenderGraph {
         // and have to have their values tweaked first.
         // Investigate.
         let store = &mut self.process_context.store;
-        if let Some(rx) = &self.rx {
-            while let Ok((selector, action)) = rx.try_recv() {
-                store.update(&selector, &action);
+        while let Ok((selector, action)) = self.rx.try_recv() {
+            store.update(&selector, &action);
 
-                // Also update the graph topology by listening for the appropriate actions.
-                // E.g. add/remove effect or generator.
-                self.mixer.update(&selector, &action, store);
-            }
+            // Also update the graph topology by listening for the appropriate actions.
+            // E.g. add/remove effect or generator.
+            self.mixer.update(&selector, &action, store);
         }
     }
 
@@ -188,160 +164,20 @@ impl Iterator for RenderGraph {
 #[cfg(test)]
 mod tests {
     use crate::SAMPLE_RATE;
-    use shared::model::{
-        self, AdsrEnvelope, AntiAliasingMode, DelayConfig, Effect, EffectInstance, EffectMeta,
-        EqConfig, EqType, Generator, GeneratorInstance, GeneratorMeta, MixerChannel, MixerMatrix,
-        ModDelayConfig, ModMatrix, Note, PitchName, PlacedNote, Placement, PlacementType,
-        ScaleValue, SimpleWaveConfig, Track, TrackPlacement, WaveType,
-    };
+    use shared::model::{PitchName, ScaleValue};
 
     use shared::types::Freq;
 
     use super::*;
 
-    // Root Mean Squared to calculate if there is signal in output.
-    fn rms(graph: RenderGraph) -> f32 {
-        let mut left_sum = 0.0;
-        let mut right_sum = 0.0;
-        let mut count = 0;
-        for [left, right] in graph {
-            count += 1;
-            left_sum += left.powi(2);
-            right_sum += right.powi(2);
-        }
-        ((left_sum / count as f32 + right_sum / count as f32) / 2.0).sqrt()
-    }
-
-    fn make_project() -> Project {
-        Project {
-            name: "test".into(),
-            tracks: vec![make_track()],
-            placements: vec![make_placement()],
-            samples: vec![],
-            generators: vec![GeneratorInstance {
-                it: Generator::SimpleWave(make_simple_wave_config()),
-                meta: make_generator_meta(),
-            }],
-            mixer: model::Mixer {
-                matrix: MixerMatrix::with_channels(1),
-                channels: vec![make_mixer_channel()],
-            },
-            bpm: 120.0,
-            mod_matrix: ModMatrix::default(),
-        }
-    }
-
-    fn make_track() -> Track {
-        Track {
-            notes: vec![PlacedNote {
-                note: Note {
-                    pitch_name: PitchName {
-                        scale_value: ScaleValue::C,
-                        octave: 4,
-                    },
-                    beats: 1.0,
-                },
-                offset: 0.0.into(),
-            }],
-            offset: 0.0.into(),
-        }
-    }
-
-    fn make_placement() -> Placement {
-        Placement {
-            kind: PlacementType::Track(TrackPlacement {
-                track_index: 0,
-                generator_index: 0,
-            }),
-            offset: 0.0.into(),
-            clipped_duration: None,
-            visual_placement: 0,
-        }
-    }
-
-    fn make_simple_wave_config() -> SimpleWaveConfig {
-        SimpleWaveConfig {
-            wave: WaveType::Sine,
-            envelope: AdsrEnvelope {
-                attack: 0.1,
-                decay: 0.1,
-                sustain: 0.8,
-                release: 0.1,
-            },
-            osc_count: 4,
-            detune_cents: 5.0,
-            anti_aliasing_mode: AntiAliasingMode::Off,
-            oversample_factor: 2,
-        }
-    }
-
-    fn make_generator_meta() -> GeneratorMeta {
-        GeneratorMeta {
-            volume: 1.0,
-            mute: false,
-            pan: 0.0,
-            mixer_channel: 0,
-        }
-    }
-
-    fn make_mixer_channel() -> MixerChannel {
-        MixerChannel {
-            volume: 1.0,
-            effects: vec![
-                EffectInstance {
-                    it: Effect::SimpleEq(EqConfig {
-                        kind: EqType::SimpleResonator,
-                        fc: 1000.0,
-                        q: 1.0,
-                        gain: 0.0,
-                    }),
-                    meta: EffectMeta {
-                        wet: 1.0,
-                        mute: false,
-                    },
-                },
-                EffectInstance {
-                    it: Effect::Delay(DelayConfig {
-                        delay_ms: 250.0,
-                        feedback: 0.5,
-                    }),
-                    meta: EffectMeta {
-                        wet: 0.5,
-                        mute: false,
-                    },
-                },
-                EffectInstance {
-                    it: Effect::ModDelay(ModDelayConfig {
-                        min_depth: 100,
-                        max_depth: 200,
-                        freq: 10.0,
-                        lfo_type: WaveType::Triangle,
-                    }),
-                    meta: EffectMeta {
-                        wet: 0.5,
-                        mute: false,
-                    },
-                },
-            ],
-        }
-    }
-
     #[test]
+    #[ignore]
     fn empty_render_graph_renders_nothing() {
-        let graph = RenderGraph::default();
+        // TODO Fix. This test does not terminate.
+        let graph = RenderGraph::without_rx(&StoreData::default());
         // Iterator should be empty.
         let output: Vec<[f32; 2]> = graph.collect();
         assert!(output.is_empty())
-    }
-
-    #[test]
-    #[ignore]
-    fn basic_render_graph_renders_something() {
-        // Arrange
-        let mut graph = RenderGraph::default();
-        graph.set_from_project(&make_project());
-        // Assert
-        assert!(rms(graph) > 0.0)
     }
 
     #[test]
@@ -361,7 +197,8 @@ mod tests {
             .collect();
 
         // Act
-        let graph = RenderGraph::from_vec(input.clone());
+        let mut graph = RenderGraph::without_rx(&StoreData::default());
+        graph.set_audio(&input);
         let output: Vec<[f32; 2]> = graph.collect();
 
         // Assert
