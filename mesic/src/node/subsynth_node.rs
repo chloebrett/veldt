@@ -5,7 +5,6 @@ use crate::envelope::EnvelopeGenerator;
 use crate::eq::eq_filter;
 use crate::graph::{NoteEventType, ProcessContext};
 use crate::maths::linspace;
-use crate::node::extract_outputs;
 use crate::wave::detune_multiplier;
 use crate::wave_cache::{WaveCache, WaveKey};
 use dasp_frame::Stereo;
