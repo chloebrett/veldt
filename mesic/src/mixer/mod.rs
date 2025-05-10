@@ -238,8 +238,8 @@ mod tests {
     use super::*;
 
     use shared::model::{
-        AdsrEnvelope, AntiAliasingMode, DelayConfig, Effect, EffectInstance, EffectMeta, Generator,
-        GeneratorInstance, GeneratorMeta, MixerChannel, SimpleWaveConfig, WaveType,
+        DelayConfig, Effect, EffectInstance, EffectMeta, Generator,
+        GeneratorInstance, GeneratorMeta, MixerChannel, SimpleWaveConfig,
     };
     use std::collections::HashMap;
 
@@ -360,30 +360,9 @@ mod tests {
 
     // TODO: create defaults for each model object, to use in tests.
     fn some_generator() -> GeneratorInstance {
-        let config = SimpleWaveConfig {
-            wave: WaveType::Sine,
-            envelope: AdsrEnvelope {
-                attack: 0.1,
-                decay: 0.1,
-                sustain: 0.8,
-                release: 0.1,
-            },
-            osc_count: 4,
-            detune_cents: 5.0,
-            anti_aliasing_mode: AntiAliasingMode::Off,
-            oversample_factor: 2,
-        };
-
-        let meta = GeneratorMeta {
-            volume: 1.0,
-            mute: false,
-            pan: 0.0,
-            mixer_channel: 0,
-        };
-
         GeneratorInstance {
-            it: Generator::SimpleWave(config),
-            meta,
+            it: Generator::SimpleWave(SimpleWaveConfig::default()),
+            meta: GeneratorMeta::default(),
         }
     }
 

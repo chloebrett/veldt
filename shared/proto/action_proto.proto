@@ -75,6 +75,7 @@ message TypeFieldProto {
     pmodel.FileTreeConfigProto sample_tree_config = 18;
     pmodel.GeneratorInstanceProto generator = 19;
     pmodel.MixerChannelProto mixer_channel = 20;
+    pmodel.PolyphonyModeProto polyphony_mode = 21;
   }
 }
 
