@@ -113,8 +113,8 @@ impl ChannelInfo {
 
     pub fn add_edges(&self, graph: &mut Graph, edge_counter: &mut EdgeCounter) {
         for (generator_index, generator) in self.generators.iter().enumerate() {
-            // Do not add edges for muted generators.
             if !self.muted_generators.contains(&generator_index) {
+                // Do not add edges for muted generators.
                 edge_counter.add_edge(
                     graph,
                     generator.node(),
