@@ -115,6 +115,11 @@ impl AudioPlayer {
         self.playback_tx.try_send(message).unwrap();
     }
 
+    pub fn refresh_mixer(&mut self) {
+        self.maybe_init();
+        self.send(PlaybackMessage::RecreateMixer);
+    }
+
     pub fn set_audio(&mut self, audio: Vec<Stereo<f32>>) {
         self.maybe_init();
         self.send(PlaybackMessage::SetAudio(audio));

@@ -63,6 +63,9 @@ impl AudioProcessor {
 
     fn process_message(&mut self, message: PlaybackMessage) {
         match message {
+            PlaybackMessage::RecreateMixer => {
+                self.graph.recreate_mixer();
+            }
             PlaybackMessage::SetAudio(audio) => {
                 self.graph.set_audio(&audio);
             }

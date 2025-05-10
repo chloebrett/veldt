@@ -37,8 +37,8 @@ impl Default for App {
         };
         let (tx, rx) = channel();
         let store = Store::new(broadcast, tx);
-        let mut graph = RenderGraph::new(&store.get());
-        graph.set_receiver(rx);
+        let graph = RenderGraph::new(&store.get(), rx);
+
         App {
             store,
             local_state: LocalState::default(),

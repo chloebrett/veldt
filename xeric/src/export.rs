@@ -44,7 +44,7 @@ impl Export for ExportContext {
         let mut store = StoreData::default();
         store.project = project.clone();
 
-        let graph = RenderGraph::new(&store);
+        let graph = RenderGraph::without_rx(&store);
 
         let spec = WavSpec {
             channels: 2, // stereo

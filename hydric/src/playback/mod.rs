@@ -24,6 +24,10 @@ pub struct PlaybackPosition {
 
 // Messages that can be sent to the processor thread.
 enum PlaybackMessage {
+    // Recreates the audio mixer.
+    // Useful for debugging and for playback where the graph isn't perfectly dynamic (which it
+    // currently isn't, e.g. some effects don't update live).
+    RecreateMixer,
     // Sets some pre-rendered audio to be played by the graph.
     SetAudio(Vec<Stereo<f32>>),
     Seek(PlaybackPosition),

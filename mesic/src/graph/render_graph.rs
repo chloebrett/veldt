@@ -18,7 +18,7 @@ pub struct RenderGraph {
     // Updated based on actions from the main store at each buffer cycle.
     process_context: ProcessContext,
     // Receives actions from the main store and applies to mesic store.
-    rx: Option<Receiver<(Selector, Action)>>,
+    rx: Receiver<(Selector, Action)>,
 
     // For iteration.
     processed_samples_count: usize,
@@ -30,7 +30,7 @@ pub struct RenderGraph {
 }
 
 impl RenderGraph {
-    pub fn new(store: &StoreData) -> Self {
+    pub fn new(store: &StoreData, rx: Receiver<(Selector, Action)>) -> Self {
         let project = &store.project;
         let sample_count = beats_to_samples(*project.duration(), project.bpm) as usize;
 
@@ -39,11 +39,16 @@ impl RenderGraph {
             sample_count,
             processor: make_processor(),
             process_context: ProcessContext::new(store.clone()),
-            rx: None,
+            rx,
             processed_samples_count: 0,
             pending_note_events: vec![],
             is_playing: false,
         }
+    }
+
+    pub fn without_rx(store: &StoreData) -> Self {
+        let (_tx, rx) = std::sync::mpsc::channel();
+        Self::new(store, rx)
     }
 
     pub fn set_audio(&mut self, audio: &Vec<Stereo<f32>>) {
@@ -65,8 +70,8 @@ impl RenderGraph {
         self.process_context.seek_pos = Some(samples);
     }
 
-    pub fn set_receiver(&mut self, receiver: Receiver<(Selector, Action)>) {
-        self.rx = Some(receiver);
+    pub fn recreate_mixer(&mut self) {
+        self.mixer = Mixer::new(&self.process_context.store.project);
     }
 
     fn update_store(&mut self) {
@@ -75,14 +80,12 @@ impl RenderGraph {
         // and have to have their values tweaked first.
         // Investigate.
         let store = &mut self.process_context.store;
-        if let Some(rx) = &self.rx {
-            while let Ok((selector, action)) = rx.try_recv() {
-                store.update(&selector, &action);
+        while let Ok((selector, action)) = self.rx.try_recv() {
+            store.update(&selector, &action);
 
-                // Also update the graph topology by listening for the appropriate actions.
-                // E.g. add/remove effect or generator.
-                self.mixer.update(&selector, &action, store);
-            }
+            // Also update the graph topology by listening for the appropriate actions.
+            // E.g. add/remove effect or generator.
+            self.mixer.update(&selector, &action, store);
         }
     }
 

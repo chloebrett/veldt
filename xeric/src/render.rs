@@ -26,7 +26,7 @@ impl Render for RenderContext {
         let mut store = StoreData::default();
         store.project = project;
 
-        let graph = RenderGraph::new(&store);
+        let graph = RenderGraph::without_rx(&store);
 
         let audio: Vec<_> = graph.collect();
         let left = as_bytes(&audio.iter().map(|it| *it.channel(0).unwrap()).collect());
