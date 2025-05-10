@@ -1,7 +1,7 @@
 mod envelope_view;
 mod generator_view;
 mod generators_control;
-mod simple_wave_control;
+mod simple_wave;
 mod simple_wave_visualiser;
 mod subsynth;
 mod subsynth_envelope;

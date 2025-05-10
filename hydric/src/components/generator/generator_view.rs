@@ -1,4 +1,4 @@
-use super::simple_wave_control::SimpleWaveView;
+use super::simple_wave::SimpleWaveView;
 use super::subsynth::SubSynthView;
 use crate::view::View;
 use crate::widget::StateWindow;

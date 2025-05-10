@@ -19,6 +19,7 @@ use strum::{Display, EnumIter, EnumString};
 pub enum PolyphonyMode {
     Monophonic,
 
+    #[strum(to_string = "Monophonic Legato")]
     MonophonicLegato,
 
     #[default]
