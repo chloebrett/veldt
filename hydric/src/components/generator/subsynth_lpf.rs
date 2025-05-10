@@ -1,7 +1,7 @@
 use crate::view::View;
-use crate::widget::knob;
+use crate::widget::{knob, outer_frame};
 use eframe::egui;
-use egui::{Color32, Ui};
+use egui::Ui;
 use shared::model::EqConfig;
 use state::{Action, FloatField};
 
@@ -30,13 +30,7 @@ impl<F: Fn(Action), G: Fn()> View for SubSynthLpfView<'_, F, G> {
         } = self;
 
         let on_release = || on_release();
-        let frame = egui::Frame::new()
-            .fill(Color32::from_gray(50))
-            .stroke(egui::Stroke::new(1.0, Color32::from_gray(60)))
-            .corner_radius(8.0)
-            .inner_margin(10.0);
-
-        frame.show(ui, |ui| {
+        outer_frame().inner_margin(10.0).show(ui, |ui| {
             ui.vertical(|ui| {
                 ui.label("Low Pass Filter");
                 ui.add_space(4.0);

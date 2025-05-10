@@ -25,22 +25,20 @@ pub struct AmpNode {
 }
 
 impl AmpNode {
+    fn new(selector: AmpNodeSelector) -> Self {
+        Self { selector }
+    }
+
     pub fn new_main() -> Self {
-        Self {
-            selector: AmpNodeSelector::Main,
-        }
+        Self::new(AmpNodeSelector::Main)
     }
 
     pub fn new_for_channel(sel: MixerSelector) -> Self {
-        Self {
-            selector: AmpNodeSelector::Channel(sel),
-        }
+        Self::new(AmpNodeSelector::Channel(sel))
     }
 
     pub fn new_for_route(sel: MixerMatrixCellSelector) -> Self {
-        Self {
-            selector: AmpNodeSelector::Route(sel),
-        }
+        Self::new(AmpNodeSelector::Route(sel))
     }
 }
 

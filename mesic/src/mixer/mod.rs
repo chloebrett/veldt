@@ -1,6 +1,5 @@
 use crate::graph::{Graph, ProcessContext, Processor, make_graph};
 use crate::node::{AmpNode, BufferNode};
-use dasp_frame::Stereo;
 use dasp_graph::{BoxedNodeSend, Buffer, Node, NodeData, node::Sum};
 use petgraph::stable_graph::NodeIndex;
 use shared::model::Project;
@@ -62,11 +61,11 @@ pub struct Mixer {
 
     channels: Vec<ChannelInfo>,
 
-    // Buffer node, if the graph is just a single buffer.
-    main_buffer: Option<NodeIndex>,
+    // Main buffer node, for playing arbitrary audio buffers (e.g. sample preview).
+    main_buffer: NodeIndex,
 
     // Main sum node.
-    // Adds up all of the mixer channel outputs.
+    // Adds up the main_buffer with the main channel output.
     // Directs its output to the main_amp node.
     main_sum: NodeIndex,
 
@@ -75,67 +74,32 @@ pub struct Mixer {
 }
 
 impl Mixer {
-    pub fn empty() -> Self {
+    pub fn new(project: &Project) -> Self {
         let mut graph = make_graph();
-
-        let main_sum = graph.add_node(make_node(Sum));
-        let main_amp = graph.add_node(make_node(AmpNode::new_main()));
-
-        Self {
-            graph,
-            edge_counter: EdgeCounter::default(),
-            channels: vec![],
-            main_buffer: None,
-            main_sum,
-            main_amp,
-        }
-        .with_refreshed_edges()
-    }
-
-    pub fn from_project(project: &Project) -> Self {
-        let mut graph = make_graph();
-        let main_sum = graph.add_node(make_node(Sum));
 
         let channels: Vec<ChannelInfo> = (0..project.mixer.channels.len())
             .map(|channel_index| ChannelInfo::new(&mut graph, project, channel_index))
             .collect();
 
+        let main_buffer = graph.add_node(make_node(BufferNode::default()));
+        let main_sum = graph.add_node(make_node(Sum));
         let main_amp = graph.add_node(make_node(AmpNode::new_main()));
 
         Self {
             graph,
             edge_counter: EdgeCounter::default(),
             channels,
-            main_buffer: None,
+            main_buffer,
             main_sum,
             main_amp,
         }
         .with_refreshed_edges()
     }
 
-    pub fn from_audio(audio: &[Stereo<f32>]) -> Self {
-        let mut graph = make_graph();
-
-        // TODO: simply give buffers their own dedicated mixer channel,
-        // and then otherwise don't treat them differently to other generators.
-        // This way, the user can run effects on samples, etc.
-        // There is a bit more thinking to be done about how the "playing audio as a preview" idea
-        // should work anyway.
-        let buffer_node: BufferNode = audio.to_owned().into();
-        let main_buffer = graph.add_node(make_node(buffer_node));
-
-        let main_sum = graph.add_node(make_node(Sum));
-        let main_amp = graph.add_node(make_node(AmpNode::new_main()));
-
-        Self {
-            graph,
-            edge_counter: EdgeCounter::default(),
-            channels: vec![],
-            main_buffer: Some(main_buffer),
-            main_sum,
-            main_amp,
-        }
-        .with_refreshed_edges()
+    fn with_refreshed_edges(self) -> Self {
+        let mut mixer = self;
+        mixer.refresh_edges();
+        mixer
     }
 
     /// Clears all the edges in the graph and re-evaluates them based on the arrangement of nodes.
@@ -145,14 +109,12 @@ impl Mixer {
         self.graph.clear_edges();
         self.edge_counter.reset();
 
-        if let Some(main_buffer) = self.main_buffer {
-            self.edge_counter.add_edge(
-                &mut self.graph,
-                main_buffer,
-                self.main_sum,
-                EdgeKey::MainBufToMainSum,
-            );
-        }
+        self.edge_counter.add_edge(
+            &mut self.graph,
+            self.main_buffer,
+            self.main_sum,
+            EdgeKey::MainBufToMainSum,
+        );
 
         let inputs: Vec<_> = self
             .channels
@@ -163,11 +125,8 @@ impl Mixer {
         for (channel_index, channel) in self.channels.iter().enumerate() {
             channel.add_edges(&mut self.graph, &mut self.edge_counter);
 
-            // Only add the main channel to the main output.
+            // Only add the main channel to the main output sum node.
             // Other channels need to be routed via main.
-            // TODO: we don't actually need the main sum node anymore,
-            // considering that only the main channel routes to it.
-            // We can just route directly to the main amp.
             if channel_index == 0 {
                 self.edge_counter.add_edge(
                     &mut self.graph,
@@ -254,12 +213,6 @@ impl Mixer {
         }
     }
 
-    fn with_refreshed_edges(self) -> Self {
-        let mut mixer = self;
-        mixer.refresh_edges();
-        mixer
-    }
-
     /// Returns the buffers corresponding to the output node, which are filled after a processing
     /// run.
     pub fn output_buffers(&self) -> &[Buffer] {
@@ -291,20 +244,6 @@ mod tests {
     use std::collections::HashMap;
 
     #[test]
-    fn empty_mixer() {
-        let empty_project = Project::default();
-        let mixer = Mixer::from_project(&empty_project);
-
-        let mut edge_counts = HashMap::new();
-        edge_counts.insert(EdgeKey::MainSumToMainAmp, 1);
-
-        // Main sum and amp nodes (2)
-        assert_eq!(mixer.graph.node_count(), 2);
-        assert_eq!(mixer.edge_counter.counts, edge_counts);
-        assert_eq!(mixer.channels.len(), 0);
-    }
-
-    #[test]
     fn one_generator_one_effect() {
         let mut project = Project::default();
         project.generators.push(some_generator());
@@ -313,7 +252,7 @@ mod tests {
             effects: vec![some_effect()],
         });
 
-        let mixer = Mixer::from_project(&project);
+        let mixer = Mixer::new(&project);
 
         let mut edge_counts = HashMap::new();
         edge_counts.insert(EdgeKey::GenToMixIn, 1);
@@ -322,13 +261,15 @@ mod tests {
         edge_counts.insert(EdgeKey::EffToEffMix, 1);
         edge_counts.insert(EdgeKey::EffMixToMixOut, 1);
         edge_counts.insert(EdgeKey::MixOutToMainSum, 1);
+        edge_counts.insert(EdgeKey::MainBufToMainSum, 1);
         edge_counts.insert(EdgeKey::MainSumToMainAmp, 1);
 
         // Main sum and amp nodes (2) +
         // Effect and mixer nodes (2) +
         // Channel input and output nodes (2) +
-        // Generator nodes (1)
-        assert_eq!(mixer.graph.node_count(), 7);
+        // Generator nodes (1) +
+        // Buffer nodes (1).
+        assert_eq!(mixer.graph.node_count(), 8);
         for (key, count) in mixer.edge_counter.counts.iter() {
             assert_eq!(
                 Some(count),
@@ -366,7 +307,7 @@ mod tests {
             },
         ]);
 
-        let mixer = Mixer::from_project(&project);
+        let mixer = Mixer::new(&project);
 
         let mut edge_counts = HashMap::new();
         edge_counts.insert(EdgeKey::GenToMixIn, 3);
@@ -377,13 +318,15 @@ mod tests {
         edge_counts.insert(EdgeKey::EffMixToNextEffMix, 1);
         edge_counts.insert(EdgeKey::EffMixToMixOut, 2);
         edge_counts.insert(EdgeKey::MixOutToMainSum, 1);
+        edge_counts.insert(EdgeKey::MainBufToMainSum, 1);
         edge_counts.insert(EdgeKey::MainSumToMainAmp, 1);
 
         // Main sum and amp nodes (2) +
         // Effect and mixer nodes (2 * 3 effects) +
         // Channel input and output nodes (2 * 2 channels) +
-        // Generator nodes (3).
-        assert_eq!(mixer.graph.node_count(), 15);
+        // Generator nodes (3) +
+        // Buffer nodes (1).
+        assert_eq!(mixer.graph.node_count(), 16);
         for (key, count) in mixer.edge_counter.counts.iter() {
             assert_eq!(
                 Some(count),
