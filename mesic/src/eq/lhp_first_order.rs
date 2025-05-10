@@ -18,7 +18,7 @@ pub fn lhp_first_order(config: &EqConfig, low_high: LowHigh) -> FirstOrderFilter
     };
     let a1 = match low_high {
         LowHigh::Low => a0,
-        LowHigh::High => 0.5 * (-1.0 - gamma),
+        LowHigh::High => -a0,
     };
     let b1 = -gamma;
 
