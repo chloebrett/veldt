@@ -122,6 +122,7 @@ message SelectorProto {
     uint32 placement = 7;
     IndexPair oscillator = 8;
     IndexPair mixer_matrix_cell = 9;
+    IndexPair generator_effect = 10;
   }
 
   message IndexPair {

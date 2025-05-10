@@ -3,8 +3,8 @@ use shared::action_proto::{
     SelectorProto, selector_proto::IndexPair, selector_proto::Kind as SelectorKind,
 };
 use shared::model::{
-    EffectInstance, GeneratorInstance, MatrixCell, MixerChannel, Oscillator, PlacedNote, Placement,
-    SubSynthConfig, Track,
+    EffectInstance, EqConfig, GeneratorInstance, MatrixCell, MixerChannel, Oscillator, PlacedNote,
+    Placement, SubSynthConfig, Track,
 };
 
 // TODO: rename to just Selector when Selector enum is gone.
@@ -276,6 +276,26 @@ impl SelectorTrait for MixerMatrixCellSelector {
     }
 }
 
+impl SelectorTrait for GeneratorEffectSelector {
+    type Item = EqConfig;
+
+    fn try_select<'a>(&'a self, store: &'a StoreData) -> Option<&'a Self::Item> {
+        let instance = store.project.generators.get(self.0)?;
+        let subsynth: &SubSynthConfig = (&instance.it).try_into().ok()?;
+        Some(&subsynth.lpf)
+    }
+
+    fn try_select_mut<'a>(&'a self, store: &'a mut StoreData) -> Option<&'a mut Self::Item> {
+        let instance = store.project.generators.get_mut(self.0)?;
+        let subsynth: &mut SubSynthConfig = (&mut instance.it).try_into().ok()?;
+        Some(&mut subsynth.lpf)
+    }
+
+    fn as_enum(&self) -> Selector {
+        Selector::GeneratorEffect(self.0, self.1)
+    }
+}
+
 // TODO implement a selector trait for the envelopes for the generators.
 #[derive(Eq, PartialEq, Ord, PartialOrd, Copy, Clone, Debug, Hash)]
 pub struct EnvelopeSelector(
@@ -307,6 +327,10 @@ pub enum Selector {
         /* oscillator_index */ usize,
     ),
     MixerMatrixCell(/* row */ usize, /* col */ usize),
+    GeneratorEffect(
+        /* generator_index */ usize,
+        /* oscillator_index */ usize,
+    ),
 }
 
 impl From<Selector> for SelectorProto {
@@ -325,6 +349,9 @@ impl From<Selector> for SelectorProto {
                 }
                 Selector::MixerMatrixCell(first, second) => {
                     SelectorKind::MixerMatrixCell(pair(first, second))
+                }
+                Selector::GeneratorEffect(first, second) => {
+                    SelectorKind::GeneratorEffect(pair(first, second))
                 }
             }),
         }
@@ -350,6 +377,9 @@ impl From<SelectorProto> for Selector {
             }
             SelectorKind::MixerMatrixCell(IndexPair { first, second }) => {
                 Selector::MixerMatrixCell(first as usize, second as usize)
+            }
+            SelectorKind::GeneratorEffect(IndexPair { first, second }) => {
+                Selector::GeneratorEffect(first as usize, second as usize)
             }
         }
     }
