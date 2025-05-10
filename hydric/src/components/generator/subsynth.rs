@@ -169,7 +169,8 @@ impl<G: Fn()> View for SubSynthView<'_, G> {
                 )
                 .ui(ui); // must wrap in ui.vertical to stop the matrix from unnecessarily stretching vertically
 
-                let lpf_sel = EffectSelector(0, 0); // TODO: fix selector, indices are random right now
+                let lpf_index = 0;
+                let lpf_sel = gen_sel.downcast_effect(lpf_index);
                 let lpf_dispatch = |action| self.store.dispatch(&lpf_sel, action);
 
                 ui.add_space(HORIZONTAL_SPACE);
