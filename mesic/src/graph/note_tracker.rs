@@ -1,4 +1,4 @@
-use crate::wave::beats_to_samples;
+use crate::convert::beats_to_samples;
 use dasp_graph::Buffer;
 use shared::model::{PitchName, PlacementType, Project, TrackPlacement};
 use std::cmp::min;
