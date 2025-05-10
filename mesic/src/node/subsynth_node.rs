@@ -216,12 +216,36 @@ impl Iterator for SubSynthWaveSource {
         let detunes = linspace(-osc.unison_detune, osc.unison_detune, osc.osc_count);
 
         // Evenly spaced phases for each unison wave.
-        let phases = linspace(0.0, 1.0, osc.osc_count as u32);
+        // let phases = linspace(0.0, 1.0, osc.osc_count as u32);
+
+        // for (i, &detune) in detunes.iter().enumerate() {
+        //     let freq = freq * detune_multiplier(detune);
+        //     let step = freq / (SAMPLE_RATE as f32);
+        //     let phase = (phases[i] + (self.sample_index as f32) * step) % 1.0; // Lessens the initial 'pop' of sound
+
+        //     let key = WaveKey {
+        //         kind: osc.wave,
+        //         aa: AntiAliasingMode::Off,
+        //         freq: freq.into(),
+        //     };
+
+        //     output_mono += self.cache.get(&key, phase);
+        // }
+
+        // Evenly spaced phases for each unison wave.
+        let phases = linspace(0.0, 1.0, osc.osc_count + 1 as u32);
 
         for (i, &detune) in detunes.iter().enumerate() {
             let freq = freq * detune_multiplier(detune);
             let step = freq / (SAMPLE_RATE as f32);
-            let phase = (phases[i] + (self.sample_index as f32) * step) % 1.0; // Lessens the initial 'pop' of sound
+            let phase: f32;
+            if detune != 0.0 {
+                phase = (phases[i] + (self.sample_index as f32) * step) % 1.0; // Lessens the initial 'pop' of sound
+            } else {
+                // Using the same formula as above will cause destructive interference
+                phase = (self.sample_index as f32) * step % 1.0;
+            }
+            
 
             let key = WaveKey {
                 kind: osc.wave,
@@ -229,15 +253,14 @@ impl Iterator for SubSynthWaveSource {
                 freq: freq.into(),
             };
 
-            if osc.osc_detune != 0.0 {
-                output_mono += self.cache.get(&key, phase) / (osc.osc_detune as f32).sqrt();
-            } else {
-                output_mono += self.cache.get(&key, phase) / osc.osc_detune as f32;
-            }
+            output_mono += self.cache.get(&key, phase) / osc.osc_count as f32;
         }
 
+
         // Adding clipping to lessens the peaks in volume.
-        output_mono = (output_mono / 0.95).tanh() * 0.95;
+        if osc.unison_detune > 0.0 && osc.osc_count > 1 {
+            output_mono = (output_mono / 0.95).tanh() * 0.95;
+        }
 
         let mut output_stereo = [output_mono; CHANNEL_COUNT];
         for (channel_index, out) in output_stereo.iter_mut().enumerate() {
