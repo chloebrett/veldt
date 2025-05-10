@@ -1,3 +1,4 @@
+use dasp_frame::Stereo;
 use dasp_graph::{BoxedNodeSend, NodeData};
 use petgraph::stable_graph::StableGraph;
 use state::StoreData;
@@ -13,6 +14,10 @@ pub struct ProcessContext {
     pub store: StoreData,
     pub seek_pos: Option<usize>,
     pub note_events: NoteEventsByGenerator,
+
+    // A buffer to play starting at sample 0.
+    // Used for playing server-rendered audio, previewing samples, etc.
+    pub preview_buffer: Vec<Stereo<f32>>,
 }
 
 pub type Graph = StableGraph<NodeData<BoxedNodeSend<ProcessContext>>, ()>;

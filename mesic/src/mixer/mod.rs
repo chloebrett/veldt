@@ -62,11 +62,11 @@ pub struct Mixer {
 
     channels: Vec<ChannelInfo>,
 
-    // Buffer node, if the graph is just a single buffer.
-    main_buffer: Option<NodeIndex>,
+    // Main buffer node, for playing arbitrary audio buffers (e.g. sample preview).
+    main_buffer: NodeIndex,
 
     // Main sum node.
-    // Adds up all of the mixer channel outputs.
+    // Adds up the main_buffer with the main channel output.
     // Directs its output to the main_amp node.
     main_sum: NodeIndex,
 
@@ -75,9 +75,11 @@ pub struct Mixer {
 }
 
 impl Mixer {
+    // TODO: get rid of this.
     pub fn empty() -> Self {
         let mut graph = make_graph();
 
+        let main_buffer = graph.add_node(make_node(BufferNode::default()));
         let main_sum = graph.add_node(make_node(Sum));
         let main_amp = graph.add_node(make_node(AmpNode::new_main()));
 
@@ -85,7 +87,7 @@ impl Mixer {
             graph,
             edge_counter: EdgeCounter::default(),
             channels: vec![],
-            main_buffer: None,
+            main_buffer,
             main_sum,
             main_amp,
         }
@@ -100,38 +102,14 @@ impl Mixer {
             .map(|channel_index| ChannelInfo::new(&mut graph, project, channel_index))
             .collect();
 
+        let main_buffer = graph.add_node(make_node(BufferNode::default()));
         let main_amp = graph.add_node(make_node(AmpNode::new_main()));
 
         Self {
             graph,
             edge_counter: EdgeCounter::default(),
             channels,
-            main_buffer: None,
-            main_sum,
-            main_amp,
-        }
-        .with_refreshed_edges()
-    }
-
-    pub fn from_audio(audio: &[Stereo<f32>]) -> Self {
-        let mut graph = make_graph();
-
-        // TODO: simply give buffers their own dedicated mixer channel,
-        // and then otherwise don't treat them differently to other generators.
-        // This way, the user can run effects on samples, etc.
-        // There is a bit more thinking to be done about how the "playing audio as a preview" idea
-        // should work anyway.
-        let buffer_node: BufferNode = audio.to_owned().into();
-        let main_buffer = graph.add_node(make_node(buffer_node));
-
-        let main_sum = graph.add_node(make_node(Sum));
-        let main_amp = graph.add_node(make_node(AmpNode::new_main()));
-
-        Self {
-            graph,
-            edge_counter: EdgeCounter::default(),
-            channels: vec![],
-            main_buffer: Some(main_buffer),
+            main_buffer,
             main_sum,
             main_amp,
         }
@@ -145,14 +123,12 @@ impl Mixer {
         self.graph.clear_edges();
         self.edge_counter.reset();
 
-        if let Some(main_buffer) = self.main_buffer {
-            self.edge_counter.add_edge(
-                &mut self.graph,
-                main_buffer,
-                self.main_sum,
-                EdgeKey::MainBufToMainSum,
-            );
-        }
+        self.edge_counter.add_edge(
+            &mut self.graph,
+            self.main_buffer,
+            self.main_sum,
+            EdgeKey::MainBufToMainSum,
+        );
 
         let inputs: Vec<_> = self
             .channels

@@ -57,8 +57,8 @@ impl RenderGraph {
         // Keep the process context and rx because they contain the store.
     }
 
-    pub fn set_from_audio(&mut self, audio: Vec<Stereo<f32>>) {
-        self.mixer = Mixer::from_audio(&audio);
+    pub fn set_from_audio(&mut self, audio: &Vec<Stereo<f32>>) {
+        self.process_context.preview_buffer = audio.clone();
         self.sample_count = audio.len();
     }
 
@@ -90,7 +90,7 @@ impl RenderGraph {
     }
 
     /// Creates a graph that plays the buffer contained in a Vec.
-    pub fn from_vec(vec: Vec<Stereo<f32>>) -> Self {
+    pub fn from_vec(vec: &Vec<Stereo<f32>>) -> Self {
         let mut graph = Self::default();
         graph.set_from_audio(vec);
         graph

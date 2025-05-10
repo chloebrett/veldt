@@ -72,7 +72,7 @@ impl AudioProcessor {
             }
             PlaybackMessage::SetAudio(audio) => {
                 self.graph.clear_nodes();
-                self.graph.set_from_audio(audio);
+                self.graph.set_from_audio(&audio);
             }
             PlaybackMessage::Seek(PlaybackPosition { samples }) => {
                 log::info!("Seeking to {}", samples);
