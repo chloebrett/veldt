@@ -53,7 +53,8 @@ mod tests {
         model::{
             AdsrEnvelope, AntiAliasingMode, DelayConfig, Effect, EffectInstance, EffectMeta,
             EqConfig, EqType, Generator, GeneratorMeta, MixerChannel, MixerMatrix, ModDelayConfig,
-            Note, PitchName, PlacedNote, PlacementType, ScaleValue, SimpleWaveConfig, WaveType,
+            Note, PitchName, PlacedNote, PlacementType, PolyphonyMode, ScaleValue,
+            SimpleWaveConfig, WaveType,
         },
         testing::proto::proto_testing::assert_proto_round_trip,
     };
@@ -106,6 +107,8 @@ mod tests {
                     detune_cents: 5.0,
                     anti_aliasing_mode: AntiAliasingMode::Additive,
                     oversample_factor: 2,
+                    polyphony_mode: PolyphonyMode::Polyphonic,
+                    polyphony_limit: 0,
                 }),
                 meta: GeneratorMeta {
                     volume: 1.0,

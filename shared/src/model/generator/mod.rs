@@ -8,12 +8,14 @@ use local_macro::{FromProto, IntoProto};
 mod alias;
 mod noise;
 mod oscillator;
+mod polyphony;
 mod simple_wave;
 mod subsynth;
 
 pub use alias::*;
 pub use noise::*;
 pub use oscillator::*;
+pub use polyphony::*;
 pub use simple_wave::*;
 pub use subsynth::*;
 

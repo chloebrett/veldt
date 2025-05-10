@@ -4,8 +4,8 @@ use ordered_float::OrderedFloat;
 use shared::model::{
     AdsrEnvelope, AntiAliasingMode, FileTreeConfig, FilenameTree, Generator, GeneratorInstance,
     GeneratorMeta, Mixer, MixerChannel, MixerMatrix, ModMatrix, Note, PitchName, PlacedNote,
-    Placement, PlacementType, Project, Scale, ScaleValue, SimpleWaveConfig, SubSynthConfig, Track,
-    TrackPlacement, WaveType,
+    Placement, PlacementType, PolyphonyMode, Project, Scale, ScaleValue, SimpleWaveConfig,
+    SubSynthConfig, Track, TrackPlacement, WaveType,
 };
 use shared::types::Volume;
 
@@ -95,6 +95,8 @@ impl Default for StoreData {
                             detune_cents: 5.0,
                             anti_aliasing_mode: AntiAliasingMode::Off,
                             oversample_factor: 2,
+                            polyphony_mode: PolyphonyMode::Polyphonic,
+                            polyphony_limit: 2,
                         }),
                         meta: GeneratorMeta {
                             volume: 1.0,
