@@ -77,7 +77,7 @@ impl View for ToolbarView<'_> {
                         */
                         spawn(&mut self.async_state.upload_sample, async move {
                             let Some(file) = rfd::AsyncFileDialog::new()
-                                .add_filter("Sound Sample", &["wav"])
+                                .add_filter("Sound Sample", &["wav", "mp3"])
                                 .pick_file()
                                 .await
                             else {
