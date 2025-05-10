@@ -13,6 +13,7 @@ use state::GeneratorSelector;
 pub struct SimpleWaveGeneratorNode {
     selector: GeneratorSelector,
     state: NodeState,
+    cache: WaveCache,
 }
 
 /// State persisted between buffers.
@@ -65,6 +66,7 @@ impl SimpleWaveGeneratorNode {
         Self {
             selector,
             state: NodeState::default(),
+            cache: WaveCache::default(),
         }
     }
 
@@ -142,7 +144,7 @@ impl Node<ProcessContext> for SimpleWaveGeneratorNode {
                 .voice
                 .source
                 .as_mut()
-                .map(|it| it.next().unwrap_or(0.0))
+                .map(|it| it.next(&mut self.cache))
                 .unwrap_or(0.0);
 
             buffer[i] = amp * wave;
@@ -156,33 +158,25 @@ impl Node<ProcessContext> for SimpleWaveGeneratorNode {
 }
 
 pub struct SimpleWaveSource {
-    // TODO: recycle the wave cache?
-    // Currently it's re-created each time the note changes.
-    cache: WaveCache,
     freq: Freq,
     config: SimpleWaveConfig,
     sample_index: usize,
 }
 
 impl SimpleWaveSource {
-    pub fn new(freq: Freq, config: SimpleWaveConfig) -> Self {
+    fn new(freq: Freq, config: SimpleWaveConfig) -> Self {
         Self {
-            cache: WaveCache::default(),
             freq,
             config,
             sample_index: 0,
         }
     }
 
-    pub fn same_pitch(&self, pitch: PitchName) -> bool {
+    fn same_pitch(&self, pitch: PitchName) -> bool {
         self.freq == pitch.into()
     }
-}
 
-impl Iterator for SimpleWaveSource {
-    type Item = f32;
-
-    fn next(&mut self) -> Option<Self::Item> {
+    fn next(&mut self, cache: &mut WaveCache) -> f32 {
         let detunes = linspace(
             -self.config.detune_cents,
             self.config.detune_cents,
@@ -211,15 +205,15 @@ impl Iterator for SimpleWaveSource {
                 freq: self.freq.into(),
             };
 
-            output += self.cache.get(&key, phase) / self.config.osc_count as f32;
+            output += cache.get(&key, phase) / self.config.osc_count as f32;
         }
 
-        // Adding clipping to lessens the peaks in volume.
+        // Add clipping to lessen the peaks in volume.
         if self.config.detune_cents > 0.0 && self.config.osc_count > 1 {
             output = (output / 0.95).tanh() * 0.95;
         }
 
         self.sample_index += 1;
-        Some(output)
+        output
     }
 }
