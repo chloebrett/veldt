@@ -238,8 +238,8 @@ mod tests {
     use super::*;
 
     use shared::model::{
-        DelayConfig, Effect, EffectInstance, EffectMeta, Generator,
-        GeneratorInstance, GeneratorMeta, MixerChannel, SimpleWaveConfig,
+        DelayConfig, Effect, EffectInstance, EffectMeta, Generator, GeneratorInstance,
+        GeneratorMeta, MixerChannel, SimpleWaveConfig,
     };
     use std::collections::HashMap;
 
