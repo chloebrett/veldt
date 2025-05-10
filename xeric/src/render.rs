@@ -3,6 +3,7 @@ use mesic::graph::RenderGraph;
 use shared::bytes::as_bytes;
 use shared::render::render_server::Render;
 use shared::render::{RenderReply, RenderRequest};
+use state::StoreData;
 use tonic::async_trait;
 
 // This is a stateless RPC: it accepts a project and returns audio bytes of the rendered project.
@@ -20,8 +21,13 @@ impl Render for RenderContext {
             .project
             .ok_or(tonic::Status::invalid_argument("Project must be supplied"))?
             .into();
-        let mut graph = RenderGraph::default();
-        graph.set_from_project(&project);
+
+        // TODO: use the StoreData from the collab context.
+        let mut store = StoreData::default();
+        store.project = project;
+
+        let graph = RenderGraph::new(&store);
+
         let audio: Vec<_> = graph.collect();
         let left = as_bytes(&audio.iter().map(|it| *it.channel(0).unwrap()).collect());
         let right = as_bytes(&audio.iter().map(|it| *it.channel(1).unwrap()).collect());

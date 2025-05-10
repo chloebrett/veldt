@@ -3,8 +3,8 @@ use crate::mixer::Mixer;
 use crate::wave::beats_to_samples;
 use dasp_frame::Stereo;
 use dasp_graph::Buffer;
-use shared::model::{PitchName, Project};
-use state::{Action, GeneratorSelector, Selector};
+use shared::model::PitchName;
+use state::{Action, GeneratorSelector, Selector, StoreData};
 use std::sync::mpsc::Receiver;
 
 /// Wraps a Mixer (which in turn wraps a Graph) to add processing/iteration, seeking, and listening
@@ -29,32 +29,21 @@ pub struct RenderGraph {
     pub is_playing: bool,
 }
 
-impl Default for RenderGraph {
-    fn default() -> Self {
+impl RenderGraph {
+    pub fn new(store: &StoreData) -> Self {
+        let project = &store.project;
+        let sample_count = beats_to_samples(*project.duration(), project.bpm) as usize;
+
         Self {
-            mixer: Mixer::empty(),
-            sample_count: 0,
+            mixer: Mixer::new(project),
+            sample_count,
             processor: make_processor(),
-            process_context: ProcessContext::default(),
+            process_context: ProcessContext::new(store.clone()),
             rx: None,
             processed_samples_count: 0,
             pending_note_events: vec![],
             is_playing: false,
         }
-    }
-}
-
-impl RenderGraph {
-    /// Deletes all nodes from the graph.
-    pub fn clear_nodes(&mut self) {
-        self.mixer = Mixer::empty();
-
-        // Reset counters.
-        self.sample_count = 0;
-        self.processor = make_processor();
-        self.processed_samples_count = 0;
-
-        // Keep the process context and rx because they contain the store.
     }
 
     pub fn set_audio(&mut self, audio: &Vec<Stereo<f32>>) {
@@ -63,9 +52,7 @@ impl RenderGraph {
     }
 
     pub fn set_from_store(&mut self) {
-        self.update_store();
         let project = self.process_context.store.project.clone();
-        self.mixer = Mixer::from_project(&project);
         self.sample_count = beats_to_samples(*project.duration(), project.bpm) as usize;
     }
 

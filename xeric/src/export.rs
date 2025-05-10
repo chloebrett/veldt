@@ -3,6 +3,8 @@ use hound::{SampleFormat, WavSpec, WavWriter};
 use mesic::SAMPLE_RATE;
 use mesic::graph::RenderGraph;
 use shared::export::{ExportReply, ExportRequest, export_server::Export};
+use shared::model::Project;
+use state::StoreData;
 use std::env::current_dir;
 use std::fs::{File, create_dir_all};
 use std::io::{Cursor, Write};
@@ -33,13 +35,16 @@ impl Export for ExportContext {
         request: tonic::Request<ExportRequest>,
     ) -> Result<tonic::Response<ExportReply>, tonic::Status> {
         let req = request.into_inner();
-        let project = req
+        let project: Project = req
             .project
             .ok_or_else(|| tonic::Status::invalid_argument("Project must be supplied"))?
             .into();
 
-        let mut graph = RenderGraph::default();
-        graph.set_from_project(&project);
+        // TODO: use the StoreData from the collab context.
+        let mut store = StoreData::default();
+        store.project = project.clone();
+
+        let graph = RenderGraph::new(&store);
 
         let spec = WavSpec {
             channels: 2, // stereo

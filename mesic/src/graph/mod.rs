@@ -9,8 +9,11 @@ mod render_graph;
 pub use note_tracker::*;
 pub use render_graph::*;
 
-#[derive(Default)]
 pub struct ProcessContext {
+    // TODO: don't keep a whole store here.
+    // Have Project handle action receiving itself,
+    // and then just store a project.
+    // Then, StoreData doesn't need to be Clone anymore.
     pub store: StoreData,
     pub seek_pos: Option<usize>,
     pub note_events: NoteEventsByGenerator,
@@ -18,6 +21,17 @@ pub struct ProcessContext {
     // A buffer to play starting at sample 0.
     // Used for playing server-rendered audio, previewing samples, etc.
     pub preview_buffer: Vec<Stereo<f32>>,
+}
+
+impl ProcessContext {
+    pub fn new(store: StoreData) -> Self {
+        Self {
+            store,
+            seek_pos: None,
+            note_events: vec![],
+            preview_buffer: vec![],
+        }
+    }
 }
 
 pub type Graph = StableGraph<NodeData<BoxedNodeSend<ProcessContext>>, ()>;

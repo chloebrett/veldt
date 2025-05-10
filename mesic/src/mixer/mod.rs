@@ -1,6 +1,5 @@
 use crate::graph::{Graph, ProcessContext, Processor, make_graph};
 use crate::node::{AmpNode, BufferNode};
-use dasp_frame::Stereo;
 use dasp_graph::{BoxedNodeSend, Buffer, Node, NodeData, node::Sum};
 use petgraph::stable_graph::NodeIndex;
 use shared::model::Project;
@@ -75,26 +74,7 @@ pub struct Mixer {
 }
 
 impl Mixer {
-    // TODO: get rid of this.
-    pub fn empty() -> Self {
-        let mut graph = make_graph();
-
-        let main_buffer = graph.add_node(make_node(BufferNode::default()));
-        let main_sum = graph.add_node(make_node(Sum));
-        let main_amp = graph.add_node(make_node(AmpNode::new_main()));
-
-        Self {
-            graph,
-            edge_counter: EdgeCounter::default(),
-            channels: vec![],
-            main_buffer,
-            main_sum,
-            main_amp,
-        }
-        .with_refreshed_edges()
-    }
-
-    pub fn from_project(project: &Project) -> Self {
+    pub fn new(project: &Project) -> Self {
         let mut graph = make_graph();
         let main_sum = graph.add_node(make_node(Sum));
 
@@ -269,7 +249,7 @@ mod tests {
     #[test]
     fn empty_mixer() {
         let empty_project = Project::default();
-        let mixer = Mixer::from_project(&empty_project);
+        let mixer = Mixer::new(&empty_project);
 
         let mut edge_counts = HashMap::new();
         edge_counts.insert(EdgeKey::MainSumToMainAmp, 1);
@@ -289,7 +269,7 @@ mod tests {
             effects: vec![some_effect()],
         });
 
-        let mixer = Mixer::from_project(&project);
+        let mixer = Mixer::new(&project);
 
         let mut edge_counts = HashMap::new();
         edge_counts.insert(EdgeKey::GenToMixIn, 1);

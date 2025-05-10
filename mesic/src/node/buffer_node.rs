@@ -16,14 +16,16 @@ impl BufferNode {
         self.index = 0;
     }
 
-    fn process_channel(&self, out: &mut Buffer, channel_index: usize) {
+    fn process_channel(&mut self, out: &mut Buffer, channel_index: usize) {
         let start_index = self.index;
         let end_index = min(start_index + Buffer::LEN, self.buffer.len());
-        let size = end_index - start_index;
 
         if end_index <= start_index {
+            self.index = 0;
             return;
         }
+
+        let size = end_index - start_index;
 
         for i in 0..size {
             out[i] = self.buffer[start_index + i][channel_index];
@@ -42,6 +44,10 @@ impl Node<ProcessContext> for BufferNode {
         if payload.preview_buffer != self.buffer {
             self.buffer = payload.preview_buffer.clone();
             log::info!("Updated buffer in buffer node");
+        }
+
+        if self.buffer.len() == 0 {
+            return;
         }
 
         let (out_left, out_right) = extract_outputs(output);
