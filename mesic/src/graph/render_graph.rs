@@ -57,7 +57,7 @@ impl RenderGraph {
         // Keep the process context and rx because they contain the store.
     }
 
-    pub fn set_from_audio(&mut self, audio: &Vec<Stereo<f32>>) {
+    pub fn set_audio(&mut self, audio: &Vec<Stereo<f32>>) {
         self.process_context.preview_buffer = audio.clone();
         self.sample_count = audio.len();
     }
@@ -65,14 +65,7 @@ impl RenderGraph {
     pub fn set_from_store(&mut self) {
         self.update_store();
         let project = self.process_context.store.project.clone();
-        self.set_from_project(&project);
-    }
-
-    /// Initializes the graph from a project instance.
-    /// Not idempotent! Only call this on a fresh RenderGraph. (either new or call clear_nodes).
-    /// This is mostly an interim method until we get action receiving working properly.
-    pub fn set_from_project(&mut self, project: &Project) {
-        self.mixer = Mixer::from_project(project);
+        self.mixer = Mixer::from_project(&project);
         self.sample_count = beats_to_samples(*project.duration(), project.bpm) as usize;
     }
 
@@ -87,13 +80,6 @@ impl RenderGraph {
 
     pub fn set_receiver(&mut self, receiver: Receiver<(Selector, Action)>) {
         self.rx = Some(receiver);
-    }
-
-    /// Creates a graph that plays the buffer contained in a Vec.
-    pub fn from_vec(vec: &Vec<Stereo<f32>>) -> Self {
-        let mut graph = Self::default();
-        graph.set_from_audio(vec);
-        graph
     }
 
     fn update_store(&mut self) {
@@ -332,16 +318,6 @@ mod tests {
         // Iterator should be empty.
         let output: Vec<[f32; 2]> = graph.collect();
         assert!(output.is_empty())
-    }
-
-    #[test]
-    #[ignore]
-    fn basic_render_graph_renders_something() {
-        // Arrange
-        let mut graph = RenderGraph::default();
-        graph.set_from_project(&make_project());
-        // Assert
-        assert!(rms(graph) > 0.0)
     }
 
     #[test]
