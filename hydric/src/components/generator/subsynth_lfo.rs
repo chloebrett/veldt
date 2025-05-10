@@ -1,6 +1,6 @@
 use super::SimpleWaveVisualiser;
 use crate::view::View;
-use crate::widget::{TabDisplay, TabOrientation, get_set, int_slider, selectable_value};
+use crate::widget::{TabDisplay, TabOrientation, get_set, slider, selectable_value};
 use crate::{GetSet, LocalState};
 use egui::{Color32, Stroke, Ui, Vec2, containers::Frame};
 use shared::model::{SubSynthConfig, WaveType};
@@ -104,12 +104,12 @@ impl<F: Fn(Action), G: Fn()> View for SubSynthLfoView<'_, F, G> {
 
                             ui.spacing_mut().item_spacing = original_spacing; // reset ui spacing back to original
 
-                            int_slider(
+                            slider(
                                 ui,
                                 "Frequency",
                                 current_lfo_config.frequency as f64,
                                 |it| dispatch(Action::SetFloat(FloatField::LfoFreq, it as f32)),
-                                1..=10,
+                                1.0..=10.0,
                                 on_release,
                             );
                         })
