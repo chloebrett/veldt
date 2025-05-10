@@ -23,6 +23,7 @@ pub struct SimpleWaveConfig {
     #[proto_enum]
     pub polyphony_mode: PolyphonyMode,
 
+    // Note: limit of zero means unlimited polyphony.
     pub polyphony_limit: u32,
 }
 
