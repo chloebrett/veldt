@@ -1,6 +1,6 @@
 use super::{NoteEvent, NoteEventType, NoteTracker, ProcessContext, Processor, make_processor};
+use crate::convert::beats_to_samples;
 use crate::mixer::Mixer;
-use crate::wave::beats_to_samples;
 use dasp_frame::Stereo;
 use dasp_graph::Buffer;
 use shared::model::PitchName;

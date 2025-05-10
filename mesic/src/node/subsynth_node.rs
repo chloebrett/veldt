@@ -3,7 +3,9 @@ use crate::SAMPLE_RATE;
 use crate::consts::CHANNEL_COUNT;
 use crate::envelope::EnvelopeGenerator;
 use crate::graph::{NoteEventType, ProcessContext};
-use crate::wave::{WaveCache, WaveKey, detune_multiplier, linspace};
+use crate::maths::linspace;
+use crate::wave::detune_multiplier;
+use crate::wave_cache::{WaveCache, WaveKey};
 use dasp_frame::Stereo;
 use dasp_graph::{Buffer, Input, Node};
 use shared::model::{

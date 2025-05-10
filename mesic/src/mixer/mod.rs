@@ -76,13 +76,13 @@ pub struct Mixer {
 impl Mixer {
     pub fn new(project: &Project) -> Self {
         let mut graph = make_graph();
-        let main_sum = graph.add_node(make_node(Sum));
 
         let channels: Vec<ChannelInfo> = (0..project.mixer.channels.len())
             .map(|channel_index| ChannelInfo::new(&mut graph, project, channel_index))
             .collect();
 
         let main_buffer = graph.add_node(make_node(BufferNode::default()));
+        let main_sum = graph.add_node(make_node(Sum));
         let main_amp = graph.add_node(make_node(AmpNode::new_main()));
 
         Self {
@@ -94,6 +94,12 @@ impl Mixer {
             main_amp,
         }
         .with_refreshed_edges()
+    }
+
+    fn with_refreshed_edges(self) -> Self {
+        let mut mixer = self;
+        mixer.refresh_edges();
+        mixer
     }
 
     /// Clears all the edges in the graph and re-evaluates them based on the arrangement of nodes.
@@ -205,12 +211,6 @@ impl Mixer {
         if did_change {
             self.refresh_edges();
         }
-    }
-
-    fn with_refreshed_edges(self) -> Self {
-        let mut mixer = self;
-        mixer.refresh_edges();
-        mixer
     }
 
     /// Returns the buffers corresponding to the output node, which are filled after a processing
