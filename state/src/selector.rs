@@ -98,6 +98,18 @@ impl OscillatorSelector {
     }
 }
 
+#[derive(Eq, PartialEq, Ord, PartialOrd, Copy, Clone, Debug, Hash)]
+pub struct GeneratorEffectSelector(
+    /* generator_index */ pub usize,
+    /* effect_index */ pub usize,
+);
+
+impl GeneratorEffectSelector {
+    pub fn upcast(&self) -> GeneratorSelector {
+        GeneratorSelector(self.0)
+    }
+}
+
 impl SelectorTrait for RootSelector {
     type Item = StoreData;
 
