@@ -186,6 +186,7 @@ impl Mixer {
                     for channel in self.channels.iter_mut() {
                         if let Some(generator) = channel.soft_delete_generator(selector) {
                             self.channels[*mixer_channel].soft_add_generator(&generator);
+                            // TODO: Update mute information when generator is moved.
                             break;
                         }
                     }
