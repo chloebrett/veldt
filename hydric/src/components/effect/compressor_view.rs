@@ -31,7 +31,7 @@ impl<F: Fn(Action), G: Fn()> View for CompressorView<'_, F, G> {
             "Threshold",
             config.threshold,
             |it| dispatch(Action::SetFloat(FloatField::Threshold, it)),
-            -50.0..=0.0,
+            -60.0..=0.0,
             /* neutral= */ -10.0,
             &self.on_release,
         );

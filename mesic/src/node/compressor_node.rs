@@ -17,6 +17,7 @@ impl CompressorNode {
         let attack_frames = (config.attack_ms / 1000.0 * SAMPLE_RATE as f32) as usize;
         let release_frames = (config.release_ms / 1000.0 * SAMPLE_RATE as f32) as usize;
 
+        // TODO: get attack and release working.
         // TODO: consider whether this is the appropriate size for the ring buffer.
         // TODO: potentially we need two buffers with different lengths - one for tracking attack
         // and one for release.
@@ -61,7 +62,7 @@ impl CompressorNode {
 /// Compresses an audio sample (in the amplitude sense, not the WinRAR sense) based on the output
 /// of an amplitude detector, a compression threshold, and ratio (represented as a reciprocal).
 /// The reciprocal is used to save on division.
-/// See pg. 513ff of DAEP in C++ 
+/// See page 513 and following of DAEP in C++
 fn compress(input: f32, detector: f32, threshold: f32, ratio_recip: f32) -> f32 {
     // TODO: use dB for threshold.
     let y_out = if detector > threshold {
