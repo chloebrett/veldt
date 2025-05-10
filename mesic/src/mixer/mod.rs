@@ -270,7 +270,8 @@ mod tests {
         // Main sum and amp nodes (2) +
         // Effect and mixer nodes (2) +
         // Channel input and output nodes (2) +
-        // Generator nodes (1)
+        // Generator nodes (1) +
+        // Buffer nodes (1).
         assert_eq!(mixer.graph.node_count(), 8);
         for (key, count) in mixer.edge_counter.counts.iter() {
             assert_eq!(
@@ -326,7 +327,8 @@ mod tests {
         // Main sum and amp nodes (2) +
         // Effect and mixer nodes (2 * 3 effects) +
         // Channel input and output nodes (2 * 2 channels) +
-        // Generator nodes (3).
+        // Generator nodes (3) +
+        // Buffer nodes (1).
         assert_eq!(mixer.graph.node_count(), 16);
         for (key, count) in mixer.edge_counter.counts.iter() {
             assert_eq!(
