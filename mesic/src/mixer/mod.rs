@@ -191,6 +191,30 @@ impl Mixer {
                     }
                     true
                 }
+                Action::SetFloat(FloatField::Volume, 0.0)
+                | Action::SetChild(TypeField::Mute(true)) => {
+                    let selector = GeneratorSelector(*generator_index);
+                    // Find the channel containing this generator, then mute it.
+                    for channel in self.channels.iter_mut() {
+                        if channel.contains_generator(selector) {
+                            channel.mute_generator(*generator_index);
+                            break;
+                        }
+                    }
+                    true
+                }
+                Action::SetFloat(FloatField::Volume, _)
+                | Action::SetChild(TypeField::Mute(false)) => {
+                    let selector = GeneratorSelector(*generator_index);
+                    // Find the channel containing this generator, then unmute it.
+                    for channel in self.channels.iter_mut() {
+                        if channel.contains_generator(selector) {
+                            channel.unmute_generator(*generator_index);
+                            break;
+                        }
+                    }
+                    true
+                }
                 _ => false,
             },
             Selector::MixerMatrixCell(..) => match action {

@@ -1,3 +1,5 @@
+use std::collections::HashSet;
+
 use super::{EdgeCounter, EdgeKey, EffectInfo, GeneratorInfo, make_node};
 use crate::graph::Graph;
 use crate::node::AmpNode;
@@ -11,6 +13,9 @@ use state::{EffectSelector, GeneratorSelector, MixerMatrixCellSelector, MixerSel
 pub struct ChannelInfo {
     // TODO: consider using a HashSet instead.
     generators: Vec<GeneratorInfo>,
+
+    // Generators that have been muted and so should not have edges.
+    muted_generators: HashSet<usize>,
 
     // Input sum node for this mixer channel.
     // Sums together the generators.
@@ -35,12 +40,16 @@ pub struct ChannelInfo {
 
 impl ChannelInfo {
     pub fn new(graph: &mut Graph, project: &Project, channel_index: usize) -> Self {
+        let mut muted_generators = HashSet::new();
         let generators: Vec<GeneratorInfo> = project
             .generators
             .iter()
             .filter(|generator| generator.meta.mixer_channel == channel_index)
             .enumerate()
             .map(|(generator_index, generator)| {
+                if generator.meta.volume == 0.0 || generator.meta.mute {
+                    muted_generators.insert(generator_index);
+                }
                 GeneratorInfo::new(graph, generator, GeneratorSelector(generator_index))
             })
             .collect();
@@ -62,6 +71,7 @@ impl ChannelInfo {
 
         let mut partial = Self {
             generators,
+            muted_generators,
             input_node,
             effects,
             output_node,
@@ -102,13 +112,16 @@ impl ChannelInfo {
     }
 
     pub fn add_edges(&self, graph: &mut Graph, edge_counter: &mut EdgeCounter) {
-        for generator in &self.generators {
-            edge_counter.add_edge(
-                graph,
-                generator.node(),
-                self.input_node,
-                EdgeKey::GenToMixIn,
-            );
+        for (generator_index, generator) in self.generators.iter().enumerate() {
+            // Do not add edges for muted generators.
+            if !self.muted_generators.contains(&generator_index) {
+                edge_counter.add_edge(
+                    graph,
+                    generator.node(),
+                    self.input_node,
+                    EdgeKey::GenToMixIn,
+                );
+            }
         }
 
         let effects = &self.effects;
@@ -165,6 +178,20 @@ impl ChannelInfo {
         for route in self.output_routes.iter().flatten() {
             edge_counter.add_edge(graph, self.output_node, *route, EdgeKey::MixOutToRoute);
         }
+    }
+
+    pub fn contains_generator(&mut self, selector: GeneratorSelector) -> bool {
+        self.generators
+            .iter()
+            .any(|generator| generator.selector == selector)
+    }
+
+    pub fn mute_generator(&mut self, generator_index: usize) {
+        self.muted_generators.insert(generator_index);
+    }
+
+    pub fn unmute_generator(&mut self, generator_index: usize) {
+        self.muted_generators.remove(&generator_index);
     }
 
     pub fn effects_count(&self) -> usize {
