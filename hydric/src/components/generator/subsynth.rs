@@ -10,7 +10,7 @@ use shared::{
     model::{PitchName, ScaleValue, SubSynthConfig},
     types::PitchValue,
 };
-use state::{EffectSelector, GeneratorSelector, Store};
+use state::{GeneratorSelector, Store};
 
 pub struct SubSynthView<'a, G: Fn()> {
     config: &'a SubSynthConfig,
