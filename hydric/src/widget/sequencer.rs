@@ -131,10 +131,10 @@ impl<'a, T: SequencerObject<T>> Sequencer<'a, T> {
             );
             if self.select {
                 if movable_resp.interact(Sense::click()).clicked() {
-                    T::set_selected(ui, self.local_state, Some(index));
+                    T::set_selected(self.local_state, Some(index));
                 }
             } else if movable_resp.interact(Sense::click()).double_clicked() {
-                object.set_active(ui, self.local_state, index);
+                object.set_active(self.local_state, index);
             }
             if resize_resp.hovered() {
                 ui.ctx().set_cursor_icon(CursorIcon::ResizeColumn);
@@ -256,13 +256,13 @@ impl<T: SequencerObject<T>> Widget for Sequencer<'_, T> {
             // If user double clicks outside of an object remove all objects from selection.
             if select {
                 if response.interact(Sense::click()).double_clicked() {
-                    T::set_selected(ui, self.local_state, None)
+                    T::set_selected(self.local_state, None)
                 }
                 if ui.input(|input| {
                     input.key_pressed(egui::Key::Delete) || input.key_pressed(egui::Key::Backspace)
                 }) {
                     T::delete_selected(ui, store, self.local_state, self.parent_index);
-                    T::set_selected(ui, self.local_state, None);
+                    T::set_selected(self.local_state, None);
                 }
             } else if response.interact(Sense::click()).clicked() {
                 let pos = response.interact_pointer_pos().unwrap();
@@ -320,9 +320,9 @@ pub trait SequencerObject<T> {
 
     fn selector(index: usize, parent_index: Option<usize>) -> impl SelectorTrait;
 
-    fn set_active(&self, ui: &mut Ui, local_state: &LocalState, index: usize);
+    fn set_active(&self, local_state: &LocalState, index: usize);
 
-    fn set_selected(ui: &mut Ui, local_state: &LocalState, index: Option<usize>);
+    fn set_selected(local_state: &LocalState, index: Option<usize>);
 
     fn add_new(&self, store: &Store, parent_index: Option<usize>);
 
