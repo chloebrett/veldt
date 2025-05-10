@@ -162,146 +162,17 @@ impl Iterator for RenderGraph {
 mod tests {
     use crate::SAMPLE_RATE;
     use shared::model::{
-        self, AdsrEnvelope, AntiAliasingMode, DelayConfig, Effect, EffectInstance, EffectMeta,
-        EqConfig, EqType, Generator, GeneratorInstance, GeneratorMeta, MixerChannel, MixerMatrix,
-        ModDelayConfig, ModMatrix, Note, PitchName, PlacedNote, Placement, PlacementType,
-        ScaleValue, SimpleWaveConfig, Track, TrackPlacement, WaveType,
+        PitchName,
+        ScaleValue,
     };
 
     use shared::types::Freq;
 
     use super::*;
 
-    // Root Mean Squared to calculate if there is signal in output.
-    fn rms(graph: RenderGraph) -> f32 {
-        let mut left_sum = 0.0;
-        let mut right_sum = 0.0;
-        let mut count = 0;
-        for [left, right] in graph {
-            count += 1;
-            left_sum += left.powi(2);
-            right_sum += right.powi(2);
-        }
-        ((left_sum / count as f32 + right_sum / count as f32) / 2.0).sqrt()
-    }
-
-    fn make_project() -> Project {
-        Project {
-            name: "test".into(),
-            tracks: vec![make_track()],
-            placements: vec![make_placement()],
-            samples: vec![],
-            generators: vec![GeneratorInstance {
-                it: Generator::SimpleWave(make_simple_wave_config()),
-                meta: make_generator_meta(),
-            }],
-            mixer: model::Mixer {
-                matrix: MixerMatrix::with_channels(1),
-                channels: vec![make_mixer_channel()],
-            },
-            bpm: 120.0,
-            mod_matrix: ModMatrix::default(),
-        }
-    }
-
-    fn make_track() -> Track {
-        Track {
-            notes: vec![PlacedNote {
-                note: Note {
-                    pitch_name: PitchName {
-                        scale_value: ScaleValue::C,
-                        octave: 4,
-                    },
-                    beats: 1.0,
-                },
-                offset: 0.0.into(),
-            }],
-            offset: 0.0.into(),
-        }
-    }
-
-    fn make_placement() -> Placement {
-        Placement {
-            kind: PlacementType::Track(TrackPlacement {
-                track_index: 0,
-                generator_index: 0,
-            }),
-            offset: 0.0.into(),
-            clipped_duration: None,
-            visual_placement: 0,
-        }
-    }
-
-    fn make_simple_wave_config() -> SimpleWaveConfig {
-        SimpleWaveConfig {
-            wave: WaveType::Sine,
-            envelope: AdsrEnvelope {
-                attack: 0.1,
-                decay: 0.1,
-                sustain: 0.8,
-                release: 0.1,
-            },
-            osc_count: 4,
-            detune_cents: 5.0,
-            anti_aliasing_mode: AntiAliasingMode::Off,
-            oversample_factor: 2,
-        }
-    }
-
-    fn make_generator_meta() -> GeneratorMeta {
-        GeneratorMeta {
-            volume: 1.0,
-            mute: false,
-            pan: 0.0,
-            mixer_channel: 0,
-        }
-    }
-
-    fn make_mixer_channel() -> MixerChannel {
-        MixerChannel {
-            volume: 1.0,
-            effects: vec![
-                EffectInstance {
-                    it: Effect::SimpleEq(EqConfig {
-                        kind: EqType::SimpleResonator,
-                        fc: 1000.0,
-                        q: 1.0,
-                        gain: 0.0,
-                    }),
-                    meta: EffectMeta {
-                        wet: 1.0,
-                        mute: false,
-                    },
-                },
-                EffectInstance {
-                    it: Effect::Delay(DelayConfig {
-                        delay_ms: 250.0,
-                        feedback: 0.5,
-                    }),
-                    meta: EffectMeta {
-                        wet: 0.5,
-                        mute: false,
-                    },
-                },
-                EffectInstance {
-                    it: Effect::ModDelay(ModDelayConfig {
-                        min_depth: 100,
-                        max_depth: 200,
-                        freq: 10.0,
-                        lfo_type: WaveType::Triangle,
-                    }),
-                    meta: EffectMeta {
-                        wet: 0.5,
-                        mute: false,
-                    },
-                },
-            ],
-        }
-    }
-
     #[test]
     fn empty_render_graph_renders_nothing() {
-        let graph = RenderGraph::default();
+        let graph = RenderGraph::new(&StoreData::default());
         // Iterator should be empty.
         let output: Vec<[f32; 2]> = graph.collect();
         assert!(output.is_empty())
@@ -324,7 +195,8 @@ mod tests {
             .collect();
 
         // Act
-        let graph = RenderGraph::from_vec(input.clone());
+        let mut graph = RenderGraph::new(&StoreData::default());
+        graph.set_audio(&input);
         let output: Vec<[f32; 2]> = graph.collect();
 
         // Assert

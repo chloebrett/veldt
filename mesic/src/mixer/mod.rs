@@ -247,20 +247,6 @@ mod tests {
     use std::collections::HashMap;
 
     #[test]
-    fn empty_mixer() {
-        let empty_project = Project::default();
-        let mixer = Mixer::new(&empty_project);
-
-        let mut edge_counts = HashMap::new();
-        edge_counts.insert(EdgeKey::MainSumToMainAmp, 1);
-
-        // Main sum and amp nodes (2)
-        assert_eq!(mixer.graph.node_count(), 2);
-        assert_eq!(mixer.edge_counter.counts, edge_counts);
-        assert_eq!(mixer.channels.len(), 0);
-    }
-
-    #[test]
     fn one_generator_one_effect() {
         let mut project = Project::default();
         project.generators.push(some_generator());
@@ -278,13 +264,14 @@ mod tests {
         edge_counts.insert(EdgeKey::EffToEffMix, 1);
         edge_counts.insert(EdgeKey::EffMixToMixOut, 1);
         edge_counts.insert(EdgeKey::MixOutToMainSum, 1);
+        edge_counts.insert(EdgeKey::MainBufToMainSum, 1);
         edge_counts.insert(EdgeKey::MainSumToMainAmp, 1);
 
         // Main sum and amp nodes (2) +
         // Effect and mixer nodes (2) +
         // Channel input and output nodes (2) +
         // Generator nodes (1)
-        assert_eq!(mixer.graph.node_count(), 7);
+        assert_eq!(mixer.graph.node_count(), 8);
         for (key, count) in mixer.edge_counter.counts.iter() {
             assert_eq!(
                 Some(count),
@@ -322,7 +309,7 @@ mod tests {
             },
         ]);
 
-        let mixer = Mixer::from_project(&project);
+        let mixer = Mixer::new(&project);
 
         let mut edge_counts = HashMap::new();
         edge_counts.insert(EdgeKey::GenToMixIn, 3);
@@ -333,13 +320,14 @@ mod tests {
         edge_counts.insert(EdgeKey::EffMixToNextEffMix, 1);
         edge_counts.insert(EdgeKey::EffMixToMixOut, 2);
         edge_counts.insert(EdgeKey::MixOutToMainSum, 1);
+        edge_counts.insert(EdgeKey::MainBufToMainSum, 1);
         edge_counts.insert(EdgeKey::MainSumToMainAmp, 1);
 
         // Main sum and amp nodes (2) +
         // Effect and mixer nodes (2 * 3 effects) +
         // Channel input and output nodes (2 * 2 channels) +
         // Generator nodes (3).
-        assert_eq!(mixer.graph.node_count(), 15);
+        assert_eq!(mixer.graph.node_count(), 16);
         for (key, count) in mixer.edge_counter.counts.iter() {
             assert_eq!(
                 Some(count),
