@@ -172,7 +172,7 @@ mod tests {
 
     #[test]
     fn empty_render_graph_renders_nothing() {
-        let graph = RenderGraph::new(&StoreData::default());
+        let graph = RenderGraph::without_rx(&StoreData::default());
         // Iterator should be empty.
         let output: Vec<[f32; 2]> = graph.collect();
         assert!(output.is_empty())
@@ -195,7 +195,7 @@ mod tests {
             .collect();
 
         // Act
-        let mut graph = RenderGraph::new(&StoreData::default());
+        let mut graph = RenderGraph::without_rx(&StoreData::default());
         graph.set_audio(&input);
         let output: Vec<[f32; 2]> = graph.collect();
 

@@ -284,7 +284,7 @@ mod tests {
     // * Test more complex input signals.
 
     fn make_graph(input: Vec<Stereo<f32>>, _config: CompressorConfig) -> RenderGraph {
-        let mut graph = RenderGraph::new(&StoreData::default());
+        let mut graph = RenderGraph::without_rx(&StoreData::default());
         graph.set_audio(&input);
         // TODO: we can't re-enable these tests until the mixer supports effect channels for
         // arbitrary audio.
