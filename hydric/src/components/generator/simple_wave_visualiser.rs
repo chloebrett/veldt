@@ -99,27 +99,34 @@ impl SimpleWaveVisualiser {
 
             let prev = *curr_points.last().unwrap();
 
+            // if current point and prev point are the same then just skip the current point
+            if prev == *point {
+                continue;
+            }
+
             // If the current point and last in segment are on the same side of the axis
-            if prev.y.signum() == point.y.signum() {
+            if prev.y.signum() == point.y.signum() && point.y != 0.0 {
                 curr_points.push(*point); // push point as usual if line hasn't crossed x-axis
                 continue;
             }
 
             // Line crossed x-axis so calculate the intersection point on the axis.
             let diff = *point - prev;
-            if diff.y.abs() <= 1e-6 {
-                // If the y_diff.abs() is small then there is no point making a new segment yet because that means the interval is nearly horizontal.
-                // i.e. crossing won't be visible anyway
-                curr_points.push(*point);
-                continue;
-            }
 
             // Calculate the x-coordinate of the intersection point
             let t = (prev.y / diff.y).clamp(0.0, 1.0);
             let intersect = pos2(lerp(prev.x..=point.x, t), 0.0);
 
             // Add the intersection point to the current segment - this is the point that lies on the axis and marks the end of the current segment along the wave curve.
-            curr_points.push(intersect);
+            if intersect != prev {
+                curr_points.push(intersect);
+            }
+
+            // Manually close the polygon as long as it's not the first segment
+            if segments.len() != 0 {
+                let starting_point = curr_points.first().unwrap();
+                curr_points.push(*starting_point);
+            }
 
             // Save this segment.
             segments.push(curr_points);
@@ -134,21 +141,18 @@ impl SimpleWaveVisualiser {
             }
         }
 
-        // Save the last segment
-        segments.push(curr_points);
+        // Manually add the last point to the last segment and add it to the rest of the segments but onlf if there are more than two points in the last unpushed segment.
+        if curr_points.len() > 2 {
+            let prev = curr_points.last().unwrap();
+            let last_point = pos2(prev.x, 0.0);
+            if *prev != last_point {
+                curr_points.push(last_point);
+            }
+            let starting_point = curr_points.first().unwrap();
+            curr_points.push(*starting_point);
+            segments.push(curr_points);
+        }
 
         segments
-            .into_iter()
-            .filter(|it| it.len() >= 2)
-            .map(|mut segment| {
-                // Get the x-coordinates for the base of the polygon on the axis.
-                let end_x = segment.last().unwrap().x;
-
-                // Add the points on the axis to close the polygon.
-                segment.push(pos2(end_x, 0.0));
-
-                segment
-            })
-            .collect()
     }
 }
