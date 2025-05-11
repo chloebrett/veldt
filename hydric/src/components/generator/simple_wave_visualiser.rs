@@ -123,7 +123,7 @@ impl SimpleWaveVisualiser {
             }
 
             // Manually close the polygon as long as it's not the first segment
-            if segments.len() != 0 {
+            if !segments.is_empty() {
                 let starting_point = curr_points.first().unwrap();
                 curr_points.push(*starting_point);
             }

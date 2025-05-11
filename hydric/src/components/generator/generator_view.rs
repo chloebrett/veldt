@@ -3,7 +3,7 @@ use super::subsynth::SubSynthView;
 use crate::view::View;
 use crate::widget::StateWindow;
 use crate::widget::default_window;
-use crate::{AudioState, LocalState};
+use crate::{LocalState, playback::AudioPlayer};
 use egui::{Pos2, Ui};
 use shared::model::{Generator, GeneratorInstance};
 use state::{Action, GeneratorSelector, Store};
@@ -12,7 +12,7 @@ pub struct GeneratorView<'a, F: FnMut()> {
     store: &'a Store,
     selector: &'a GeneratorSelector,
     local_state: &'a LocalState,
-    audio_state: &'a mut AudioState,
+    player: &'a mut AudioPlayer,
     visible: bool,
     on_close: F,
 }
@@ -22,7 +22,7 @@ impl<'a, F: FnMut()> GeneratorView<'a, F> {
         store: &'a Store,
         selector: &'a GeneratorSelector,
         local_state: &'a LocalState,
-        audio_state: &'a mut AudioState,
+        player: &'a mut AudioPlayer,
         visible: bool,
         on_close: F,
     ) -> Self {
@@ -30,7 +30,7 @@ impl<'a, F: FnMut()> GeneratorView<'a, F> {
             store,
             selector,
             local_state,
-            audio_state,
+            player,
             visible,
             on_close,
         }
@@ -56,7 +56,7 @@ impl<F: FnMut()> View for GeneratorView<'_, F> {
                         Generator::SimpleWave(config) => SimpleWaveView::new(
                             *self.selector,
                             &config,
-                            self.audio_state,
+                            self.player,
                             dispatch,
                             on_release,
                         )
@@ -69,7 +69,7 @@ impl<F: FnMut()> View for GeneratorView<'_, F> {
                                 self.store,
                                 self.local_state,
                                 self.selector,
-                                &mut self.audio_state.player,
+                                self.player,
                             )
                             .ui(ui);
                         }

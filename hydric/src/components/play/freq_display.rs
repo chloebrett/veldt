@@ -1,4 +1,4 @@
-use crate::{AudioState, view::View};
+use crate::{playback::AudioPlayer, view::View};
 use egui::{
     Color32, Ui,
     cache::{ComputerMut, FrameCache},
@@ -14,14 +14,12 @@ use shared::serialize::map_vec;
 use std::cmp::max;
 
 pub struct FrequencyDisplay<'a> {
-    audio_state: &'a AudioState,
+    player: &'a AudioPlayer,
 }
 
 impl<'a> FrequencyDisplay<'a> {
-    pub fn new(audio_state: &'a AudioState) -> Self {
-        FrequencyDisplay {
-            audio_state,
-        }
+    pub fn new(player: &'a AudioPlayer) -> Self {
+        FrequencyDisplay { player }
     }
 
     /// Create frequency display shapes synced with playing audio.
@@ -64,7 +62,7 @@ impl ComputerMut<FrequencyDisplayKey, Vec<f32>> for FrequencyDisplayComputer {
 
 impl View for FrequencyDisplay<'_> {
     fn ui(&mut self, ui: &mut Ui) {
-        let audio = self.audio_state.player.recent_buf().iter();
+        let audio = self.player.recent_buf().iter();
 
         // Note: only visualising the left channel.
         // TODO: decide how to visualise both left and right.

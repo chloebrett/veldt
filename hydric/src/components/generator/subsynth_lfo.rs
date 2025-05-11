@@ -1,6 +1,8 @@
 use super::SimpleWaveVisualiser;
 use crate::view::View;
-use crate::widget::{TabDisplay, TabOrientation, get_set, slider, selectable_value, inner_frame, outer_frame};
+use crate::widget::{
+    TabDisplay, TabOrientation, get_set, inner_frame, outer_frame, selectable_value, slider,
+};
 use crate::{GetSet, LocalState};
 use egui::{Color32, Ui, Vec2};
 use shared::model::{SubSynthConfig, WaveType};
@@ -68,9 +70,7 @@ impl<F: Fn(Action), G: Fn()> View for SubSynthLfoView<'_, F, G> {
                                     selectable_value(
                                         ui,
                                         get_set(current_lfo_config.wave, |wave_type| {
-                                            dispatch(Action::SetChild(TypeField::Wave(
-                                                wave_type,
-                                            )))
+                                            dispatch(Action::SetChild(TypeField::Wave(wave_type)))
                                         }),
                                         wave,
                                         wave.to_string(),

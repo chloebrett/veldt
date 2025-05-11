@@ -1,5 +1,5 @@
 use super::EnvelopeView;
-use crate::AudioState;
+use crate::playback::AudioPlayer;
 use crate::view::View;
 use crate::widget::{get_set, int_slider, knob, selectable_value};
 use egui::{Button, Sense, Ui};
@@ -12,7 +12,7 @@ use strum::IntoEnumIterator;
 pub struct SimpleWaveView<'a, F: Fn(Action), G: Fn()> {
     selector: GeneratorSelector,
     config: &'a SimpleWaveConfig,
-    audio_state: &'a mut AudioState,
+    player: &'a mut AudioPlayer,
     dispatch: F,
     on_release: G,
 }
@@ -21,14 +21,14 @@ impl<'a, F: Fn(Action), G: Fn()> SimpleWaveView<'a, F, G> {
     pub fn new(
         selector: GeneratorSelector,
         config: &'a SimpleWaveConfig,
-        audio_state: &'a mut AudioState,
+        player: &'a mut AudioPlayer,
         dispatch: F,
         on_release: G,
     ) -> Self {
         Self {
             selector,
             config,
-            audio_state,
+            player,
             dispatch,
             on_release,
         }
@@ -143,9 +143,9 @@ impl<F: Fn(Action), G: Fn()> View for SimpleWaveView<'_, F, G> {
                     scale_value: ScaleValue::A,
                 };
                 if response.drag_started() {
-                    self.audio_state.player.send_note_on(self.selector, pitch);
+                    self.player.send_note_on(self.selector, pitch);
                 } else if response.drag_stopped() {
-                    self.audio_state.player.send_note_off(self.selector, pitch);
+                    self.player.send_note_off(self.selector, pitch);
                 }
             }
 
