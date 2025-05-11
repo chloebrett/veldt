@@ -9,8 +9,8 @@ use mesic::{
     fft::{fft, hann_window},
 };
 use ordered_float::OrderedFloat;
-use shared::serialize::map_vec;
 use ringbuffer::RingBuffer;
+use shared::serialize::map_vec;
 use std::cmp::max;
 
 pub struct FrequencyDisplay<'a> {
@@ -27,11 +27,7 @@ impl<'a> FrequencyDisplay<'a> {
     }
 
     /// Create frequency display shapes synced with playing audio.
-    fn render_display(
-        &self,
-        ui: &mut Ui,
-        audio: Vec<OrderedFloat<f32>>,
-    ) -> Option<Vec<f32>> {
+    fn render_display(&self, ui: &mut Ui, audio: Vec<OrderedFloat<f32>>) -> Option<Vec<f32>> {
         let frame_size = (SAMPLE_RATE / self.frame_rate) as usize;
         // Round `current_sample` so that the audio will be broken up into chunks based on
         // the visualisation frame rate.
