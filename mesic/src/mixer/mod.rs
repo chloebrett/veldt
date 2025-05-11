@@ -172,7 +172,7 @@ impl Mixer {
                 Action::AddChild(TypeField::Effect(effect)) => {
                     let selector =
                         EffectSelector(*mixer_index, self.channels[*mixer_index].effects_count());
-                    self.channels[*mixer_index].add_effect(&mut self.graph, effect, &selector);
+                    self.channels[*mixer_index].add_effect(&mut self.graph, &effect.it, &selector);
                     true
                 }
                 _ => false,
