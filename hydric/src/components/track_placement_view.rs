@@ -5,7 +5,9 @@ use egui::{Ui, pos2};
 use ordered_float::OrderedFloat;
 use shared::model::{Track, TrackPlacement};
 use shared::types::Beats;
-use state::{Action, FloatField, IndexField, PlacementSelector, Store, TrackSelector, TypeField};
+use state::{
+    Action, FloatField, IndexField, PlacementSelector, Store, TrackSelector, TypeField, UintField,
+};
 
 // TODO: rename to PlacementView if appropriate.
 pub struct TrackPlacementView<'a> {
@@ -104,6 +106,17 @@ impl View for TrackPlacementView<'_> {
                         on_release,
                     );
                 });
+
+                int_slider(
+                    ui,
+                    "Visual placement",
+                    placement.visual_placement as f64,
+                    |it| {
+                        store.dispatch(&sel, Action::SetUint(UintField::VisualPlacement, it as u32))
+                    },
+                    0..=3,
+                    on_release,
+                );
 
                 if ui.button("Delete").clicked() {
                     store.dispatchr(Action::DeleteChild(IndexField::Placement(placement_index)));

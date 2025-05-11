@@ -8,13 +8,14 @@ use egui::{
 };
 use ordered_float::OrderedFloat;
 use shared::{
-    model::{Placement, PlacementType, Track, TrackPlacement},
+    model::{Placement, PlacementType, SamplePlacement, Track, TrackPlacement},
     types::Beats,
 };
 use state::{
-    Action, FloatField, IndexField, MultiIndexField, PlacementSelector, SelectorTrait, Store,
-    TrackSelector, TypeField,
+    Action, FloatField, MultiIndexField, PlacementSelector, SelectorTrait, Store,
+    TrackSelector, TypeField, UintField,
 };
+use std::cmp::max;
 use std::collections::HashSet;
 
 pub struct TrackRoll<'a> {
@@ -40,30 +41,44 @@ impl<'a> TrackRoll<'a> {
 impl View for TrackRoll<'_> {
     fn ui(&mut self, ui: &mut Ui) {
         let store = self.store;
-        let placed_tracks: Vec<PlacedTrack> = store
-            .get()
-            .project
+        let project = &store.get().project;
+
+        // TODO: rename PlacedTrack to something encompassing both tracks and samples.
+        // They can be a single object, but just contain a tag/enum specifying which one they are.
+        let placed_tracks: Vec<PlacedTrack> = project
             .placements
             .iter()
-            .map(|placement| {
-                // TODO: handle sample placements.
-                let track_placement: &TrackPlacement = placement.try_into().unwrap();
-
-                PlacedTrack {
-                    unclipped_duration: store.get().project.tracks[track_placement.track_index]
-                        .unclipped_duration(),
+            .filter_map(|placement| match placement.kind {
+                PlacementType::Track(TrackPlacement { track_index, .. }) => Some(PlacedTrack {
+                    unclipped_duration: project.tracks[track_index].unclipped_duration(),
                     placement: placement.clone(),
-                }
+                }),
+                PlacementType::Sample(SamplePlacement { .. }) => Some(PlacedTrack {
+                    // TODO: duration in beats, not samples.
+                    unclipped_duration: 1.0.into(), //project.samples[sample_index].len() as f32,
+                    placement: placement.clone(),
+                }),
             })
             .collect();
-        let track_count = store.get().project.tracks.len();
-        let range = Rect::from_min_max(pos2(0.0, 0.0), pos2(16.0, track_count as f32));
+
+        let min_rows = 4;
+        let max_visual_placement = max(
+            project
+                .placements
+                .iter()
+                .map(|it| it.visual_placement)
+                .max()
+                .unwrap_or(0),
+            min_rows,
+        ) + 1;
+        let range = Rect::from_min_max(Pos2::ZERO, pos2(16.0, max_visual_placement as f32));
         let mut select = self.local_state.track_roll_select_enabled.get();
         if !select {
             self.local_state
                 .selected_track_placements
                 .set(HashSet::default());
         }
+
         default_window("Track Roll")
             .default_pos(pos2(30.0, 200.0))
             .resizable(true)
@@ -78,6 +93,14 @@ impl View for TrackRoll<'_> {
                             Placement::default(),
                         )));
                     }
+                    if ui.button("New sample placement").clicked() {
+                        store.dispatchr(Action::AddChild(TypeField::Placement(Placement {
+                            kind: PlacementType::Sample(SamplePlacement::default()),
+                            offset: 0.0.into(),
+                            clipped_duration: None,
+                            visual_placement: 0,
+                        })));
+                    }
                     ui.checkbox(&mut select, "Select")
                 });
                 ui.separator();
@@ -87,7 +110,7 @@ impl View for TrackRoll<'_> {
                         ui.add(
                             Sequencer::new(store, self.local_state, range)
                                 .objects(placed_tracks)
-                                .size(vec2(600.0, 100.0 * track_count as f32))
+                                .size(vec2(600.0, 100.0 * max_visual_placement as f32))
                                 .select(select)
                                 .vertical_bars(4.0, Color32::from_white_alpha(6))
                                 .vertical_bars(1.0, Color32::from_white_alpha(3))
@@ -109,10 +132,7 @@ struct PlacedTrack {
 
 impl SequencerObject<PlacedTrack> for PlacedTrack {
     fn to_pos(&self, range: Rect) -> Pos2 {
-        let track_placement: &TrackPlacement = (&self.placement).try_into().unwrap();
-
-        // TODO handling multiple channels. Currently all are at `y=0`.
-        let y = track_placement.track_index as f32;
+        let y = self.placement.visual_placement as f32;
         let x = *self.placement.offset - range.left();
         pos2(x, y)
     }
@@ -134,8 +154,7 @@ impl SequencerObject<PlacedTrack> for PlacedTrack {
     }
 
     fn y_action(&self, y: f32, _range: Rect) -> Option<Action> {
-        // TODO implement multiple tracks.
-        Some(Action::SetIndex(IndexField::Track(y as usize)))
+        Some(Action::SetUint(UintField::VisualPlacement, y as u32))
     }
 
     fn resize_action(&self, x: f32, _range: Rect) -> Option<Action> {
@@ -163,15 +182,20 @@ impl SequencerObject<PlacedTrack> for PlacedTrack {
         }
     }
 
-    fn get_active(_ui: &Ui, store: &Store, local_state: &LocalState) -> Option<PlacedTrack> {
+    fn get_active(store: &Store, local_state: &LocalState) -> Option<PlacedTrack> {
         let index = local_state.active_track_placement.get()?;
         let selector = PlacementSelector(index);
         let placement = store.select(&selector);
-        let track_placement: &TrackPlacement = placement.try_into().unwrap();
+        let track_placement: Option<&TrackPlacement> = placement.try_into().ok();
         Some(PlacedTrack {
-            unclipped_duration: store
-                .select(&TrackSelector(track_placement.track_index))
-                .unclipped_duration(),
+            // TODO: sample duration
+            unclipped_duration: track_placement
+                .map(|it| {
+                    store
+                        .select(&TrackSelector(it.track_index))
+                        .unclipped_duration()
+                })
+                .unwrap_or(1.0.into()),
             placement: placement.clone(),
         })
     }
