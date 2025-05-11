@@ -141,6 +141,7 @@ impl View for NoteRoll<'_> {
                     }
                     ui.checkbox(&mut select, "Select")
                 });
+                ui.separator();
                 ScrollArea::vertical()
                     .min_scrolled_height(200.0)
                     .show(ui, |ui| {
