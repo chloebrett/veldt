@@ -48,6 +48,10 @@ pub struct AudioPlayer {
 
     // Ring buffer with the most recently played audio.
     recent_buf: AllocRingBuffer<Stereo<f32>>,
+    // Total number of samples ever stored in recent_buf since it was created.
+    // Helps to make visual rendering more consistent.
+    // We can draw every nth sample, and have that correspond to the same samples each time.
+    recent_buf_offset: usize,
 
     stream: Option<Stream>,
     processor_thread: Option<JoinHandle<()>>,
@@ -89,6 +93,7 @@ impl AudioPlayer {
             recent_tx,
             recent_rx,
             recent_buf: AllocRingBuffer::from([[0.0; 2]; RECENT_AUDIO_SAMPLE_COUNT]),
+            recent_buf_offset: 0,
             stream: None,
             processor_thread: None,
             state: PlaybackState::Pause,
@@ -170,6 +175,10 @@ impl AudioPlayer {
         &self.recent_buf
     }
 
+    pub fn recent_buf_offset(&self) -> usize {
+        self.recent_buf_offset
+    }
+
     /// Checks for any pending updates from the processor thread and saves them locally.
     pub fn maybe_update(&mut self) {
         if !self.is_ready() {
@@ -192,6 +201,7 @@ impl AudioPlayer {
 
         while let Ok(update) = self.recent_rx.try_recv() {
             self.recent_buf.push(update);
+            self.recent_buf_offset += 1;
         }
     }
 

@@ -1,4 +1,4 @@
-use crate::{AudioState, playback::AudioPlayer, view::View};
+use crate::{AudioState, view::View};
 use egui::{
     Color32, Ui,
     cache::{ComputerMut, FrameCache},
