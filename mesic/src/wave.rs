@@ -41,6 +41,17 @@ pub fn make_wave(
     }
 }
 
+pub fn make_basic_wave_with_frequency(x: f32, wave_type: WaveType, wave_freq: Freq) -> f32 {
+    let x = (x % 1.0) * TAU;
+
+    match wave_type {
+        WaveType::Sine => (x * wave_freq).sin(),
+        WaveType::Square => square_wave(x * wave_freq),
+        WaveType::Saw => saw_wave(x * wave_freq),
+        WaveType::Triangle => triangle_wave(x * wave_freq),
+    }
+}
+
 fn square_wave(x: f32) -> f32 {
     x.sin().signum()
 }
