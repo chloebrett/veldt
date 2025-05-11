@@ -5,7 +5,8 @@ use crate::convert::beats_to_samples;
 use crate::mixer::Mixer;
 use dasp_frame::Stereo;
 use dasp_graph::Buffer;
-use shared::model::PitchName;
+use shared::model::{PitchName, Project};
+use shared::types::Beats;
 use state::{Action, GeneratorSelector, Selector, StoreData};
 use std::sync::mpsc::Receiver;
 
@@ -34,7 +35,7 @@ pub struct RenderGraph {
 impl RenderGraph {
     pub fn new(store: &StoreData, rx: Receiver<(Selector, Action)>) -> Self {
         let project = &store.project;
-        let main_playback_len = beats_to_samples(*project.duration(), project.bpm) as usize;
+        let main_playback_len = beats_to_samples(duration_ceil(project), project.bpm) as usize;
 
         Self {
             mixer: Mixer::new(project),
@@ -84,7 +85,6 @@ impl RenderGraph {
     pub fn recreate_mixer(&mut self) {
         self.update_store();
         let project = &self.process_context.store.project;
-        self.main_playback_len = beats_to_samples(*project.duration(), project.bpm) as usize;
         self.main_playback_index = 0;
         self.preview_playback_index = 0;
         self.process_context.playback_mode = PlaybackMode::Main;
@@ -104,6 +104,13 @@ impl RenderGraph {
             // E.g. add/remove effect or generator.
             self.mixer.update(&selector, &action, store);
         }
+
+        self.update_duration();
+    }
+
+    fn update_duration(&mut self) {
+        let project = &self.process_context.store.project;
+        self.main_playback_len = beats_to_samples(duration_ceil(project), project.bpm) as usize;
     }
 
     fn update_notes(&mut self) {
@@ -154,6 +161,12 @@ impl RenderGraph {
             PlaybackMode::Preview => &mut self.preview_playback_index,
         }
     }
+}
+
+fn duration_ceil(project: &Project) -> Beats {
+    let beats = project.duration();
+    const BEATS_PER_BAR: f32 = 4.0;
+    (beats / BEATS_PER_BAR).ceil() * BEATS_PER_BAR
 }
 
 impl Iterator for RenderGraph {
