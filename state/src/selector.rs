@@ -78,6 +78,13 @@ impl GeneratorSelector {
     pub fn downcast_oscillator(&self, oscillator_index: usize) -> OscillatorSelector {
         OscillatorSelector(self.0, oscillator_index)
     }
+    pub fn downcast_lfo(&self, lfo_index: usize) -> LfoSelector {
+        LfoSelector(self.0, lfo_index)
+    }
+
+    pub fn downcast_effect(&self, effect_index: usize) -> GeneratorEffectSelector {
+        GeneratorEffectSelector(self.0, effect_index)
+    }
 }
 
 #[derive(Eq, PartialEq, Ord, PartialOrd, Copy, Clone, Debug, Hash)]
