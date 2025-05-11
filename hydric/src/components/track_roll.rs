@@ -12,8 +12,8 @@ use shared::{
     types::Beats,
 };
 use state::{
-    Action, FloatField, MultiIndexField, PlacementSelector, SelectorTrait, Store,
-    TrackSelector, TypeField, UintField,
+    Action, FloatField, MultiIndexField, PlacementSelector, SelectorTrait, Store, TrackSelector,
+    TypeField, UintField,
 };
 use std::cmp::max;
 use std::collections::HashSet;
@@ -48,16 +48,16 @@ impl View for TrackRoll<'_> {
         let placed_tracks: Vec<PlacedTrack> = project
             .placements
             .iter()
-            .filter_map(|placement| match placement.kind {
-                PlacementType::Track(TrackPlacement { track_index, .. }) => Some(PlacedTrack {
+            .map(|placement| match placement.kind {
+                PlacementType::Track(TrackPlacement { track_index, .. }) => PlacedTrack {
                     unclipped_duration: project.tracks[track_index].unclipped_duration(),
                     placement: placement.clone(),
-                }),
-                PlacementType::Sample(SamplePlacement { .. }) => Some(PlacedTrack {
+                },
+                PlacementType::Sample(SamplePlacement { .. }) => PlacedTrack {
                     // TODO: duration in beats, not samples.
                     unclipped_duration: 1.0.into(), //project.samples[sample_index].len() as f32,
                     placement: placement.clone(),
-                }),
+                },
             })
             .collect();
 
@@ -70,7 +70,7 @@ impl View for TrackRoll<'_> {
                 .max()
                 .unwrap_or(0),
             min_rows,
-        ) + 1;
+        );
         let range = Rect::from_min_max(Pos2::ZERO, pos2(16.0, max_visual_placement as f32));
         let mut select = self.local_state.track_roll_select_enabled.get();
         if !select {
@@ -255,13 +255,13 @@ impl SequencerObject<PlacedTrack> for PlacedTrack {
     }
 
     fn set_active(&self, local_state: &LocalState, index: usize) {
-        let track_placement: &TrackPlacement = (&self.placement).try_into().unwrap();
+        let track_placement: Option<&TrackPlacement> = (&self.placement).try_into().ok();
 
         local_state.note_roll_window.set(true);
         local_state.track_placement_window.set(true);
         local_state
             .active_track
-            .set(Some(TrackSelector(track_placement.track_index)));
+            .set(track_placement.map(|it| TrackSelector(it.track_index)));
         local_state.active_track_placement.set(Some(index));
     }
 

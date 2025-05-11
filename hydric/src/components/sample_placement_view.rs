@@ -2,39 +2,38 @@ use crate::view::View;
 use crate::widget::{StateWindow, default_window, get_set, int_slider, selectable_value, slider};
 use crate::{GetSet, LocalState};
 use egui::{Ui, pos2};
-use ordered_float::OrderedFloat;
-use shared::model::{Track, TrackPlacement};
+use shared::model::SamplePlacement;
 use shared::types::Beats;
-use state::{
-    Action, FloatField, IndexField, PlacementSelector, Store, TrackSelector, TypeField, UintField,
-};
+use state::{Action, FloatField, IndexField, PlacementSelector, Store, TypeField, UintField};
 
-pub struct TrackPlacementView<'a> {
+pub struct SamplePlacementView<'a> {
     store: &'a Store,
     local_state: &'a LocalState,
 }
 
-impl<'a> TrackPlacementView<'a> {
+impl<'a> SamplePlacementView<'a> {
     pub fn new(store: &'a Store, local_state: &'a LocalState) -> Self {
         Self { store, local_state }
     }
 }
 
-impl View for TrackPlacementView<'_> {
+// TODO: consider combining sample_placement_view and track_placement_view?
+// They have many similar options.
+impl View for SamplePlacementView<'_> {
     fn ui(&mut self, ui: &mut Ui) {
         let store = &mut self.store;
+        // TODO: rename active_track_placement to active_placement.
         let Some(placement_index): Option<usize> = self.local_state.active_track_placement.get()
         else {
             return;
         };
         let on_release = || store.dispatchr(Action::Release);
         let placement = &store.get().project.placements[placement_index];
-        let Some(track_placement): Option<&TrackPlacement> = placement.try_into().ok() else {
+        let Some(sample_placement): Option<&SamplePlacement> = placement.try_into().ok() else {
             return;
         };
-        let tracks_length = store.get().project.tracks.len();
+        let samples_length = store.get().project.samples.len();
         let sel = PlacementSelector(placement_index);
-        let track_sel = TrackSelector(track_placement.track_index);
         let title = format!("Placement {placement_index}");
 
         let window = StateWindow(
@@ -48,30 +47,19 @@ impl View for TrackPlacementView<'_> {
             |_| self.local_state.track_placement_window.set(false),
             |ui| {
                 egui::ComboBox::from_id_salt(format!("placement_{placement_index}"))
-                    .selected_text(format!("Track {}", track_placement.track_index))
+                    .selected_text(format!("Sample {}", sample_placement.sample_index))
                     .show_ui(ui, |ui| {
-                        for track_index in 0..tracks_length {
+                        for sample_index in 0..samples_length {
                             selectable_value(
                                 ui,
-                                get_set(&track_placement.track_index, |it| {
-                                    store.dispatch(&sel, Action::SetIndex(IndexField::Track(*it)))
+                                get_set(&sample_placement.sample_index, |it| {
+                                    store.dispatch(&sel, Action::SetIndex(IndexField::Sample(*it)))
                                 }),
-                                &track_index,
-                                track_index.to_string(),
+                                &sample_index,
+                                sample_index.to_string(),
                             );
                         }
                     });
-
-                // TODO: better UI than a slider for this!
-                let max_generator_index = (store.get().project.generators.len() - 1) as i32;
-                int_slider(
-                    ui,
-                    "Generator index",
-                    track_placement.generator_index as f64,
-                    |it| store.dispatch(&sel, Action::SetIndex(IndexField::Generator(it as usize))),
-                    0..=max_generator_index,
-                    on_release,
-                );
 
                 let offset = *placement.offset as f64;
                 slider(
@@ -83,19 +71,16 @@ impl View for TrackPlacementView<'_> {
                     on_release,
                 );
 
-                let track: &Track = store.select(&track_sel);
-                let max_note_length = *(track.unclipped_duration());
-                let duration = *placement
-                    .clipped_duration
-                    .unwrap_or(OrderedFloat(max_note_length)) as f64;
+                // TODO: use real sample duration.
+                let unclipped_duration = 1.0;
                 ui.horizontal(|ui| {
                     slider(
                         ui,
                         "Clipped duration",
-                        duration,
+                        unclipped_duration,
                         |it| {
                             store.dispatch(&sel, {
-                                let clipped_duration = if it < max_note_length as f64 {
+                                let clipped_duration = if it < unclipped_duration as f64 {
                                     Some(it as Beats)
                                 } else {
                                     None
@@ -103,7 +88,7 @@ impl View for TrackPlacementView<'_> {
                                 Action::SetChild(TypeField::ClippedDuration(clipped_duration))
                             })
                         },
-                        0.0..=max_note_length as f64,
+                        0.0..=unclipped_duration as f64,
                         on_release,
                     );
                 });

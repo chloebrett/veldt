@@ -4,8 +4,8 @@ use ordered_float::OrderedFloat;
 use shared::model::{
     AdsrEnvelope, AntiAliasingMode, FileTreeConfig, FilenameTree, Generator, GeneratorInstance,
     GeneratorMeta, Mixer, MixerChannel, MixerMatrix, ModMatrix, Note, PitchName, PlacedNote,
-    Placement, PlacementType, PolyphonyMode, Project, Scale, ScaleValue,
-    SimpleWaveConfig, SubSynthConfig, Track, TrackPlacement, WaveType,
+    Placement, PlacementType, PolyphonyMode, Project, Scale, ScaleValue, SimpleWaveConfig,
+    SubSynthConfig, Track, TrackPlacement, WaveType,
 };
 use shared::types::Volume;
 
