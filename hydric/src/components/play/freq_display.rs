@@ -10,6 +10,8 @@ use mesic::{
 };
 use ordered_float::OrderedFloat;
 use shared::serialize::map_vec;
+use ringbuffer::RingBuffer;
+use std::cmp::max;
 
 pub struct FrequencyDisplay<'a> {
     audio_state: &'a AudioState,
@@ -28,17 +30,12 @@ impl<'a> FrequencyDisplay<'a> {
     fn render_display(
         &self,
         ui: &mut Ui,
-        player: &AudioPlayer,
         audio: Vec<OrderedFloat<f32>>,
     ) -> Option<Vec<f32>> {
-        let current_sample = player.effective_pos();
         let frame_size = (SAMPLE_RATE / self.frame_rate) as usize;
         // Round `current_sample` so that the audio will be broken up into chunks based on
         // the visualisation frame rate.
-        let chunk_head = current_sample / frame_size * frame_size;
-        if chunk_head + FFT_SAMPLE_SIZE >= audio.len() {
-            return None;
-        }
+        let chunk_head = max(0, audio.len() as isize - FFT_SAMPLE_SIZE as isize) as usize;
 
         // Cast as `OrderedFloat` set-length array so that the value can be cached.
         let slice: [OrderedFloat<f32>; FFT_SAMPLE_SIZE] = audio
@@ -75,17 +72,16 @@ impl ComputerMut<FrequencyDisplayKey, Vec<f32>> for FrequencyDisplayComputer {
 
 impl View for FrequencyDisplay<'_> {
     fn ui(&mut self, ui: &mut Ui) {
-        let FrequencyDisplay { audio_state, .. } = *self;
-        let audio = &self.audio_state.audio;
+        let audio = self.audio_state.player.recent_buf().iter();
 
         // Note: only visualising the left channel.
         // TODO: decide how to visualise both left and right.
-        let audio: Vec<f32> = audio.iter().map(|it| it[0]).collect();
+        let audio: Vec<f32> = audio.map(|it| it[0]).collect();
 
         // Cast as `OrderedFloat` so that values implement `Eq` required for hashing in cache.
         let ordered_audio: Vec<OrderedFloat<f32>> = map_vec(audio.to_vec());
         let mut plot_shapes = vec![];
-        if let Some(response) = self.render_display(ui, &audio_state.player, ordered_audio) {
+        if let Some(response) = self.render_display(ui, ordered_audio) {
             let freq_window = SAMPLE_RATE as f64 / FFT_SAMPLE_SIZE as f64;
             let points: PlotPoints = response
                 .into_iter()
@@ -97,6 +93,7 @@ impl View for FrequencyDisplay<'_> {
                 .collect();
             plot_shapes.push(Line::new("Response", points).color(Color32::WHITE))
         };
+        // TODO: investigate logarithmic x axis.
         Plot::new("Frequency Response")
             .view_aspect(2.0)
             .default_x_bounds(0.0, SAMPLE_RATE as f64 / 2.0)
