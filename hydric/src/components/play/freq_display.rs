@@ -12,15 +12,17 @@ use ordered_float::OrderedFloat;
 use shared::serialize::map_vec;
 
 pub struct FrequencyDisplay<'a> {
-    audio_state: &'a AudioState,
+    audio_state: Option<&'a AudioState>,
     frame_rate: i32, // The number of times per second the visualisation will be rendered.
+    frequency_points: Option<Vec<f32>>, // For charting a static frequency graph 
 }
 
 impl<'a> FrequencyDisplay<'a> {
-    pub fn new(audio_state: &'a AudioState) -> Self {
+    pub fn new(audio_state: Option<&'a AudioState>, frequency_points: Option<Vec<f32>>) -> Self {
         FrequencyDisplay {
             audio_state,
             frame_rate: 60,
+            frequency_points
         }
     }
 
@@ -28,10 +30,15 @@ impl<'a> FrequencyDisplay<'a> {
     fn render_display(
         &self,
         ui: &mut Ui,
-        player: &AudioPlayer,
+        player: Option<&AudioPlayer>,
         audio: Vec<OrderedFloat<f32>>,
     ) -> Option<Vec<f32>> {
-        let current_sample = player.effective_pos();
+        // let current_sample = player.unwrap().effective_pos();
+        let current_sample = if let Some(audio_player) = &player {
+            audio_player.effective_pos()
+        } else {
+            0
+        };
         let frame_size = (SAMPLE_RATE / self.frame_rate) as usize;
         // Round `current_sample` so that the audio will be broken up into chunks based on
         // the visualisation frame rate.
@@ -76,16 +83,39 @@ impl ComputerMut<FrequencyDisplayKey, Vec<f32>> for FrequencyDisplayComputer {
 impl View for FrequencyDisplay<'_> {
     fn ui(&mut self, ui: &mut Ui) {
         let FrequencyDisplay { audio_state, .. } = *self;
-        let audio = &self.audio_state.audio;
+        // let audio = if let Some(audio_state) = &self.audio_state {
+        //     let audio = audio_state.audio;
 
-        // Note: only visualising the left channel.
-        // TODO: decide how to visualise both left and right.
-        let audio: Vec<f32> = audio.iter().map(|it| it[0]).collect();
+        //     // Note: only visualising the left channel.
+        //     // TODO: decide how to visualise both left and right.
+        //     audio.iter().map(|it| it[0]).collect()
+        // } else {
+        //     if let Some(frequency_points) = self.frequency_points {
+        //         frequency_points
+        //     }
+        // }
+        let audio = match (&self.audio_state, &self.frequency_points) {
+            (Some(audio_state), _) => {
+                // Note: only visualising the left channel.
+                // TODO: decide how to visualise both left and right.
+                audio_state.audio.iter().map(|it| it[0]).collect()
+            },
+            (None, Some(frequency_points)) => frequency_points.clone(),
+            (None, None) => Vec::new(), // or handle this case as needed
+        };
+
 
         // Cast as `OrderedFloat` so that values implement `Eq` required for hashing in cache.
         let ordered_audio: Vec<OrderedFloat<f32>> = map_vec(audio.to_vec());
         let mut plot_shapes = vec![];
-        if let Some(response) = self.render_display(ui, &audio_state.player, ordered_audio) {
+
+        let response = if let Some(audio_state) = &audio_state {
+            self.render_display(ui, Some(&audio_state.player), ordered_audio)
+        } else {
+            self.render_display(ui, None, ordered_audio)
+        };
+        
+        if let Some(response) = response {
             let freq_window = SAMPLE_RATE as f64 / FFT_SAMPLE_SIZE as f64;
             let points: PlotPoints = response
                 .into_iter()
