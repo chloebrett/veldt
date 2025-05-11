@@ -142,10 +142,14 @@ impl<G: Fn()> View for SubSynthView<'_, G> {
                 )
                 .ui(ui); // must wrap in ui.vertical to stop the matrix from unnecessarily stretching vertically
 
+                let lpf_index = 0;
+                let lpf_sel = gen_sel.downcast_effect(lpf_index);
+                let lpf_dispatch = |action| self.store.dispatch(&lpf_sel, action);
+
                 ui.add_space(HORIZONTAL_SPACE);
                 SubSynthLpfView::new(
                     &config.lpf,
-                    gen_dispatch, // TODO: create actionreceiver for this, change the dispatch so the actions work
+                    lpf_dispatch, // TODO: create actionreceiver for this, change the dispatch so the actions work
                     on_release,
                 )
                 .ui(ui);

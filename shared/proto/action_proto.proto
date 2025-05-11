@@ -124,6 +124,7 @@ message SelectorProto {
     IndexPair oscillator = 8;
     IndexPair mixer_matrix_cell = 9;
     IndexPair lfo = 10;
+    IndexPair generator_effect = 11;
   }
 
   message IndexPair {
