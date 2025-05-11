@@ -198,7 +198,7 @@ impl Mixer {
                     // Find the channel containing this generator, then mute it.
                     for channel in self.channels.iter_mut() {
                         if channel.contains_generator(selector) {
-                            channel.mute_generator(*generator_index);
+                            channel.set_generator_muted(*generator_index, true);
                             break;
                         }
                     }
@@ -210,7 +210,7 @@ impl Mixer {
                     // Find the channel containing this generator, then unmute it.
                     for channel in self.channels.iter_mut() {
                         if channel.contains_generator(selector) {
-                            channel.unmute_generator(*generator_index);
+                            channel.set_generator_muted(*generator_index, false);
                             break;
                         }
                     }

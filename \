@@ -186,13 +186,13 @@ impl ChannelInfo {
             .any(|generator| generator.selector == selector)
     }
 
-    pub fn set_generator_muted(&mut self, generator_index: usize, mute: bool) {
+    pub fn set_generator_mute(&mut self, generator_index: usize, mute: bool) {
         if mute {
             self.muted_generators.insert(generator_index);
         } else {
             self.muted_generators.remove(&generator_index);
         }
-    }
+    } 
 
     pub fn effects_count(&self) -> usize {
         self.effects.len()
