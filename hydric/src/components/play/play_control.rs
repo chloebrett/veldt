@@ -56,6 +56,7 @@ pub fn play_control(
         },
     );
 
-    audio_vis(audio_state, ui);
+    audio_vis(audio_state, /* sample_count= */ None, ui);
+    audio_vis(audio_state, /* sample_count= */ Some(100), ui);
     FrequencyDisplay::new(audio_state).ui(ui)
 }

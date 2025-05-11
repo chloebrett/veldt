@@ -1,7 +1,7 @@
 use crate::{
-    Action, EffectSelector, GeneratorSelector, MixerMatrixCellSelector, MixerSelector,
-    NoteSelector, OscillatorSelector, PlacementSelector, RootSelector, Selector, SelectorTrait,
-    StoreData, TrackSelector, receiver::ActionReceiver,
+    Action, EffectSelector, GeneratorEffectSelector, GeneratorSelector, LfoSelector, MixerMatrixCellSelector,
+    MixerSelector, NoteSelector, OscillatorSelector, PlacementSelector, RootSelector, Selector,
+    SelectorTrait, StoreData, TrackSelector, receiver::ActionReceiver,
 };
 
 fn reducer_internal<T: SelectorTrait>(
@@ -22,8 +22,12 @@ pub fn reducer(data: &mut StoreData, selector: &Selector, action: &Action) -> Op
         Selector::Placement(a) => reducer_internal(PlacementSelector(a), data, action),
         Selector::Generator(a) => reducer_internal(GeneratorSelector(a), data, action),
         Selector::Oscillator(a, b) => reducer_internal(OscillatorSelector(a, b), data, action),
+        Selector::Lfo(a, b) => reducer_internal(LfoSelector(a, b), data, action),
         Selector::MixerMatrixCell(a, b) => {
             reducer_internal(MixerMatrixCellSelector(a, b), data, action)
+        }
+        Selector::GeneratorEffect(a, b) => {
+            reducer_internal(GeneratorEffectSelector(a, b), data, action)
         }
     }
 }

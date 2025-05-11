@@ -4,7 +4,7 @@ use crate::widget::{
     custom_knob, get_set, inner_frame, int_slider, knob, outer_frame, selectable_value,
 };
 use eframe::egui;
-use egui::{Color32, Ui};
+use egui::{Color32, Ui, Vec2};
 use shared::model::{Oscillator, WaveType};
 use state::{Action, FloatField, TypeField, UintField};
 use strum::IntoEnumIterator;
@@ -73,8 +73,13 @@ impl<F: Fn(Action), G: Fn()> View for SubSynthOscillatorView<'_, F, G> {
                             });
                     });
                     ui.add_space(10.0);
-                    let visualiser =
-                        SimpleWaveVisualiser::new(config.wave, line_colour, fill_colour);
+                    let visualiser = SimpleWaveVisualiser::new(
+                        config.wave,
+                        line_colour,
+                        fill_colour,
+                        1.0,
+                        Vec2::new(130.0, 74.0),
+                    );
 
                     visualiser.show(ui);
                 });
