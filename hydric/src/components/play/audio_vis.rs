@@ -14,7 +14,7 @@ pub fn audio_vis(audio_state: &mut AudioState, sample_count: Option<usize>, ui: 
 
     Frame::canvas(ui.style()).show(ui, |ui| {
         ui.ctx().request_repaint();
-        let (id, rect) = ui.allocate_space(canvas_size);
+        let (_id, rect) = ui.allocate_space(canvas_size);
         let to_screen =
             emath::RectTransform::from_to(Rect::from_x_y_ranges(0.0..=1.0, 1.0..=-1.0), rect);
 

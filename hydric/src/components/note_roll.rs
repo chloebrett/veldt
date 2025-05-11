@@ -160,7 +160,7 @@ impl View for NoteRoll<'_> {
                                     _ => None,
                                 })
                                 .next()
-                                .map(|it| GeneratorSelector(it));
+                                .map(GeneratorSelector);
 
                             Piano::new(
                                 max_note,

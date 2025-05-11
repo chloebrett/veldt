@@ -15,22 +15,18 @@ use std::cmp::max;
 
 pub struct FrequencyDisplay<'a> {
     audio_state: &'a AudioState,
-    frame_rate: i32, // The number of times per second the visualisation will be rendered.
 }
 
 impl<'a> FrequencyDisplay<'a> {
     pub fn new(audio_state: &'a AudioState) -> Self {
         FrequencyDisplay {
             audio_state,
-            frame_rate: 60,
         }
     }
 
     /// Create frequency display shapes synced with playing audio.
     fn render_display(&self, ui: &mut Ui, audio: Vec<OrderedFloat<f32>>) -> Option<Vec<f32>> {
-        let frame_size = (SAMPLE_RATE / self.frame_rate) as usize;
-        // Round `current_sample` so that the audio will be broken up into chunks based on
-        // the visualisation frame rate.
+        // TODO: account for frame rate.
         let chunk_head = max(0, audio.len() as isize - FFT_SAMPLE_SIZE as isize) as usize;
 
         // Cast as `OrderedFloat` set-length array so that the value can be cached.
