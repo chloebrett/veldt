@@ -2,7 +2,7 @@ use super::SimpleWaveVisualiser;
 use crate::view::View;
 use crate::widget::{TabDisplay, TabOrientation, get_set, slider, selectable_value, inner_frame, outer_frame};
 use crate::{GetSet, LocalState};
-use egui::{Color32, Stroke, Ui, Vec2, containers::Frame};
+use egui::{Color32, Ui, Vec2};
 use shared::model::{SubSynthConfig, WaveType};
 use state::{Action, FloatField, TypeField};
 use strum::IntoEnumIterator;
@@ -60,7 +60,7 @@ impl<F: Fn(Action), G: Fn()> View for SubSynthLfoView<'_, F, G> {
                 inner_frame().show(ui, |ui| {
                     ui.vertical(|ui| {
                         let current_lfo_config = &config.lfos[active_lfo_tab];
-                        
+
                         egui::ComboBox::from_label("")
                             .selected_text(current_lfo_config.wave.to_string())
                             .show_ui(ui, |ui| {
