@@ -22,6 +22,7 @@ impl BufferNode {
 
         if end_index <= start_index {
             self.index = 0;
+            *out = Buffer::SILENT;
             return;
         }
 
@@ -46,11 +47,13 @@ impl Node<ProcessContext> for BufferNode {
             log::info!("Updated buffer in buffer node");
         }
 
+        let (out_left, out_right) = extract_outputs(output);
+
         if self.buffer.is_empty() || payload.playback_mode != PlaybackMode::Preview {
+            *out_left = Buffer::SILENT;
+            *out_right = Buffer::SILENT;
             return;
         }
-
-        let (out_left, out_right) = extract_outputs(output);
 
         log::info!("Processing buffer, {} {}", self.buffer.len(), self.index);
         self.process_channel(out_left, 0);
