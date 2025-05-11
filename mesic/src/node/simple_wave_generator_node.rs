@@ -83,13 +83,6 @@ impl Node<ProcessContext> for SimpleWaveGeneratorNode {
         let state = &mut self.state;
         state.update(payload, self.selector);
 
-        // Skip generating if muted!
-        // TODO: disconnect muted generators from the graph.
-        // This should be handled from the mixer.
-        if state.meta.mute || state.meta.volume == 0.0 {
-            return;
-        }
-
         let mut buffer = Buffer::SILENT;
         let GeneratorSelector(generator_index) = self.selector;
 
