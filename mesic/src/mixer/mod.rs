@@ -186,6 +186,31 @@ impl Mixer {
                     for channel in self.channels.iter_mut() {
                         if let Some(generator) = channel.soft_delete_generator(selector) {
                             self.channels[*mixer_channel].soft_add_generator(&generator);
+                            // TODO: Update mute information when generator is moved.
+                            break;
+                        }
+                    }
+                    true
+                }
+                Action::SetFloat(FloatField::Volume, 0.0)
+                | Action::SetChild(TypeField::Mute(true)) => {
+                    let selector = GeneratorSelector(*generator_index);
+                    // Find the channel containing this generator, then mute it.
+                    for channel in self.channels.iter_mut() {
+                        if channel.contains_generator(selector) {
+                            channel.set_generator_muted(*generator_index, true);
+                            break;
+                        }
+                    }
+                    true
+                }
+                Action::SetFloat(FloatField::Volume, _)
+                | Action::SetChild(TypeField::Mute(false)) => {
+                    let selector = GeneratorSelector(*generator_index);
+                    // Find the channel containing this generator, then unmute it.
+                    for channel in self.channels.iter_mut() {
+                        if channel.contains_generator(selector) {
+                            channel.set_generator_muted(*generator_index, false);
                             break;
                         }
                     }
@@ -238,8 +263,8 @@ mod tests {
     use super::*;
 
     use shared::model::{
-        AdsrEnvelope, AntiAliasingMode, DelayConfig, Effect, EffectInstance, EffectMeta, Generator,
-        GeneratorInstance, GeneratorMeta, MixerChannel, SimpleWaveConfig, WaveType,
+        DelayConfig, Effect, EffectInstance, EffectMeta, Generator, GeneratorInstance,
+        GeneratorMeta, MixerChannel, SimpleWaveConfig,
     };
     use std::collections::HashMap;
 
@@ -360,30 +385,9 @@ mod tests {
 
     // TODO: create defaults for each model object, to use in tests.
     fn some_generator() -> GeneratorInstance {
-        let config = SimpleWaveConfig {
-            wave: WaveType::Sine,
-            envelope: AdsrEnvelope {
-                attack: 0.1,
-                decay: 0.1,
-                sustain: 0.8,
-                release: 0.1,
-            },
-            osc_count: 4,
-            detune_cents: 5.0,
-            anti_aliasing_mode: AntiAliasingMode::Off,
-            oversample_factor: 2,
-        };
-
-        let meta = GeneratorMeta {
-            volume: 1.0,
-            mute: false,
-            pan: 0.0,
-            mixer_channel: 0,
-        };
-
         GeneratorInstance {
-            it: Generator::SimpleWave(config),
-            meta,
+            it: Generator::SimpleWave(SimpleWaveConfig::default()),
+            meta: GeneratorMeta::default(),
         }
     }
 

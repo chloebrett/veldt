@@ -1,5 +1,5 @@
 use super::extract_outputs;
-use crate::graph::ProcessContext;
+use crate::graph::{PlaybackMode, ProcessContext};
 use dasp_frame::Stereo;
 use dasp_graph::{Buffer, Input, Node};
 use std::cmp::min;
@@ -35,7 +35,7 @@ impl BufferNode {
 
 impl Node<ProcessContext> for BufferNode {
     fn process(&mut self, _inputs: &[Input], output: &mut [Buffer], payload: &ProcessContext) {
-        if let Some(seek_pos) = payload.seek_pos {
+        if let Some(seek_pos) = payload.preview_seek_pos {
             self.index = seek_pos;
             log::info!("Updated from seek_pos: {}", seek_pos);
         }
@@ -46,7 +46,7 @@ impl Node<ProcessContext> for BufferNode {
             log::info!("Updated buffer in buffer node");
         }
 
-        if self.buffer.is_empty() {
+        if self.buffer.is_empty() || payload.playback_mode != PlaybackMode::Preview {
             return;
         }
 

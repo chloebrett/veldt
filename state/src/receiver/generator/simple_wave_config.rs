@@ -35,6 +35,16 @@ impl ActionReceiver for SimpleWaveConfig {
                 self.oversample_factor = *factor;
                 Action::SetUint(UintField::OversampleFactor, prev)
             }
+            Action::SetChild(TypeField::PolyphonyMode(mode)) => {
+                let prev = self.polyphony_mode;
+                self.polyphony_mode = *mode;
+                Action::SetChild(TypeField::PolyphonyMode(prev))
+            }
+            Action::SetUint(UintField::PolyphonyLimit, factor) => {
+                let prev = self.polyphony_limit;
+                self.polyphony_limit = *factor;
+                Action::SetUint(UintField::PolyphonyLimit, prev)
+            }
             _ => return None,
         })
     }

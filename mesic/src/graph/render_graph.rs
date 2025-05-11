@@ -1,4 +1,6 @@
-use super::{NoteEvent, NoteEventType, NoteTracker, ProcessContext, Processor, make_processor};
+use super::{
+    NoteEvent, NoteEventType, NoteTracker, PlaybackMode, ProcessContext, Processor, make_processor,
+};
 use crate::convert::beats_to_samples;
 use crate::mixer::Mixer;
 use dasp_frame::Stereo;
@@ -11,7 +13,6 @@ use std::sync::mpsc::Receiver;
 /// for updates to the Store.
 pub struct RenderGraph {
     mixer: Mixer,
-    sample_count: usize,
     processor: Processor,
 
     // Contains a copy of the project.
@@ -20,29 +21,31 @@ pub struct RenderGraph {
     // Receives actions from the main store and applies to mesic store.
     rx: Receiver<(Selector, Action)>,
 
-    // For iteration.
-    processed_samples_count: usize,
-
     // Pending note on/off events sent from UI (e.g. from interacting with piano).
     pending_note_events: Vec<Vec<NoteEvent>>,
 
-    pub is_playing: bool,
+    // Playback state.
+    main_playback_len: usize,
+    main_playback_index: usize,
+    preview_playback_len: usize,
+    preview_playback_index: usize,
 }
 
 impl RenderGraph {
     pub fn new(store: &StoreData, rx: Receiver<(Selector, Action)>) -> Self {
         let project = &store.project;
-        let sample_count = beats_to_samples(*project.duration(), project.bpm) as usize;
+        let main_playback_len = beats_to_samples(*project.duration(), project.bpm) as usize;
 
         Self {
             mixer: Mixer::new(project),
-            sample_count,
             processor: make_processor(),
             process_context: ProcessContext::new(store.clone()),
             rx,
-            processed_samples_count: 0,
             pending_note_events: vec![],
-            is_playing: false,
+            main_playback_len,
+            main_playback_index: 0,
+            preview_playback_len: 0,
+            preview_playback_index: 0,
         }
     }
 
@@ -53,25 +56,39 @@ impl RenderGraph {
 
     pub fn set_audio(&mut self, audio: &[Stereo<f32>]) {
         self.process_context.preview_buffer = audio.to_owned();
-        self.sample_count = audio.len();
-    }
-
-    pub fn set_from_store(&mut self) {
-        let project = self.process_context.store.project.clone();
-        self.sample_count = beats_to_samples(*project.duration(), project.bpm) as usize;
+        self.preview_playback_len = audio.len();
+        self.preview_playback_index = 0;
+        self.process_context.playback_mode = PlaybackMode::Preview;
     }
 
     pub fn pos(&self) -> usize {
-        self.processed_samples_count
+        match self.process_context.playback_mode {
+            PlaybackMode::Main => self.main_playback_index,
+            PlaybackMode::Preview => self.preview_playback_index,
+        }
     }
 
     pub fn seek(&mut self, samples: usize) {
-        self.processed_samples_count = samples;
-        self.process_context.seek_pos = Some(samples);
+        match self.process_context.playback_mode {
+            PlaybackMode::Main => {
+                self.main_playback_index = samples;
+                self.process_context.main_seek_pos = Some(samples);
+            }
+            PlaybackMode::Preview => {
+                self.preview_playback_index = samples;
+                self.process_context.preview_seek_pos = Some(samples);
+            }
+        }
     }
 
     pub fn recreate_mixer(&mut self) {
-        self.mixer = Mixer::new(&self.process_context.store.project);
+        self.update_store();
+        let project = &self.process_context.store.project;
+        self.main_playback_len = beats_to_samples(*project.duration(), project.bpm) as usize;
+        self.main_playback_index = 0;
+        self.preview_playback_index = 0;
+        self.process_context.playback_mode = PlaybackMode::Main;
+        self.mixer = Mixer::new(project);
     }
 
     fn update_store(&mut self) {
@@ -92,8 +109,7 @@ impl RenderGraph {
     fn update_notes(&mut self) {
         self.process_context.note_events = NoteTracker::track(
             &self.process_context.store.project,
-            self.processed_samples_count,
-            /* include_on_events= */ self.is_playing,
+            self.main_playback_index,
         );
 
         // Load any events sent from the UI by the user.
@@ -131,31 +147,51 @@ impl RenderGraph {
     pub fn note_off(&mut self, generator: GeneratorSelector, pitch_name: PitchName) {
         self.note_event(generator, pitch_name, NoteEventType::Off);
     }
+
+    fn pos_mut(&mut self) -> &mut usize {
+        match self.process_context.playback_mode {
+            PlaybackMode::Main => &mut self.main_playback_index,
+            PlaybackMode::Preview => &mut self.preview_playback_index,
+        }
+    }
 }
 
 impl Iterator for RenderGraph {
     type Item = Stereo<f32>;
 
     fn next(&mut self) -> Option<Self::Item> {
-        if self.processed_samples_count % Buffer::LEN == 0 {
+        let index = self.pos();
+
+        if index % Buffer::LEN == 0 {
             self.update_store();
             self.update_notes();
             self.mixer
                 .process(&mut self.processor, &self.process_context);
-            self.process_context.seek_pos = None;
+            self.process_context.main_seek_pos = None;
+            self.process_context.preview_seek_pos = None;
         }
 
-        if self.is_playing && (self.processed_samples_count >= self.sample_count) {
-            return None;
+        match self.process_context.playback_mode {
+            PlaybackMode::Main => {
+                if index >= self.main_playback_len {
+                    return None;
+                }
+            }
+            PlaybackMode::Preview => {
+                if index >= self.preview_playback_len {
+                    self.process_context.playback_mode = PlaybackMode::Main;
+                    return None;
+                }
+            }
         }
 
         let buffers = &self.mixer.output_buffers();
 
-        let left = buffers[0][self.processed_samples_count % Buffer::LEN];
-        let right = buffers[1][self.processed_samples_count % Buffer::LEN];
+        let left = buffers[0][index % Buffer::LEN];
+        let right = buffers[1][index % Buffer::LEN];
         let output = Some([left, right]);
 
-        self.processed_samples_count += 1;
+        *self.pos_mut() += 1;
 
         output
     }

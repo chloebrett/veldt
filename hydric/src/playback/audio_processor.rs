@@ -50,7 +50,7 @@ impl AudioProcessor {
                 self.process_message(message);
             }
 
-            if self.audio_tx.is_empty() {
+            if self.state == PlaybackState::Play && self.audio_tx.is_empty() {
                 self.process_chunk();
             } else {
                 sleep_ms(10);
@@ -79,7 +79,7 @@ impl AudioProcessor {
                     state,
                     wasm_thread::current().id()
                 );
-                self.set_state(state);
+                self.state = state;
             }
             PlaybackMessage::Loop(is_looping) => {
                 self.is_looping = is_looping;
@@ -111,7 +111,7 @@ impl AudioProcessor {
                 }
                 None => {
                     // No more audio, so finish.
-                    self.set_state(PlaybackState::Finished);
+                    self.state = PlaybackState::Finished;
                     self.update_tx
                         .try_send(PlaybackUpdate::State(self.state))
                         .unwrap();
@@ -130,11 +130,6 @@ impl AudioProcessor {
                 .unwrap();
             log::info!("Sent a buffer of samples.");
         }
-    }
-
-    fn set_state(&mut self, state: PlaybackState) {
-        self.state = state;
-        self.graph.is_playing = state == PlaybackState::Play;
     }
 }
 

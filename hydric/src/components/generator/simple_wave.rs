@@ -3,7 +3,9 @@ use crate::AudioState;
 use crate::view::View;
 use crate::widget::{get_set, int_slider, knob, selectable_value};
 use egui::{Button, Sense, Ui};
-use shared::model::{AntiAliasingMode, PitchName, ScaleValue, SimpleWaveConfig, WaveType};
+use shared::model::{
+    AntiAliasingMode, PitchName, PolyphonyMode, ScaleValue, SimpleWaveConfig, WaveType,
+};
 use state::{Action, FloatField, GeneratorSelector, TypeField, UintField};
 use strum::IntoEnumIterator;
 
@@ -77,6 +79,35 @@ impl<'a, F: Fn(Action), G: Fn()> SimpleWaveView<'a, F, G> {
             );
         }
     }
+
+    fn polyphony_combo_box(&self, ui: &mut Ui) {
+        egui::ComboBox::from_label("Polyphony mode")
+            .selected_text(self.config.polyphony_mode.to_string())
+            .show_ui(ui, |ui| {
+                for mode in PolyphonyMode::iter() {
+                    selectable_value(
+                        ui,
+                        get_set(self.config.polyphony_mode, |it| {
+                            (self.dispatch)(Action::SetChild(TypeField::PolyphonyMode(it)))
+                        }),
+                        mode,
+                        mode.to_string(),
+                    );
+                }
+            });
+
+        // Only show polyphony limit if in polyphonic mode.
+        if let PolyphonyMode::Polyphonic = self.config.polyphony_mode {
+            int_slider(
+                ui,
+                "Polyphony limit",
+                self.config.polyphony_limit as f64,
+                |it| (self.dispatch)(Action::SetUint(UintField::PolyphonyLimit, it as u32)),
+                0..=8,
+                &self.on_release,
+            );
+        }
+    }
 }
 
 impl<F: Fn(Action), G: Fn()> View for SimpleWaveView<'_, F, G> {
@@ -102,6 +133,7 @@ impl<F: Fn(Action), G: Fn()> View for SimpleWaveView<'_, F, G> {
                     &self.on_release,
                 );
                 self.aliasing_combo_box(ui);
+                self.polyphony_combo_box(ui);
             });
 
             if cfg!(feature = "extra_debug") {
