@@ -2206,6 +2206,7 @@ dependencies = [
  "ordered-float 5.0.0",
  "poll-promise",
  "rfd",
+ "ringbuffer",
  "shared",
  "state",
  "strum 0.27.1",
