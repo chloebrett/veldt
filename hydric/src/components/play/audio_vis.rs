@@ -1,13 +1,10 @@
-use crate::AudioState;
+use crate::playback::AudioPlayer;
 use crate::transform::Transform;
-use egui::{
-    Color32, Rect, Ui, containers::Frame, emath, epaint, epaint::PathStroke, pos2,
-    vec2,
-};
+use egui::{Color32, Rect, Ui, containers::Frame, emath, epaint, epaint::PathStroke, pos2, vec2};
 use ringbuffer::RingBuffer;
 
-pub fn audio_vis(audio_state: &mut AudioState, sample_count: Option<usize>, ui: &mut Ui) {
-    let audio_len = audio_state.player.recent_buf().len();
+pub fn audio_vis(player: &mut AudioPlayer, sample_count: Option<usize>, ui: &mut Ui) {
+    let audio_len = player.recent_buf().len();
 
     let canvas_size = vec2(500.0, 100.0);
     let sample_count = sample_count.unwrap_or(audio_len);
@@ -18,8 +15,7 @@ pub fn audio_vis(audio_state: &mut AudioState, sample_count: Option<usize>, ui: 
         let to_screen =
             emath::RectTransform::from_to(Rect::from_x_y_ranges(0.0..=1.0, 1.0..=-1.0), rect);
 
-        let buf: Vec<_> = audio_state
-            .player
+        let buf: Vec<_> = player
             .recent_buf()
             .iter()
             .skip(audio_len - sample_count)
@@ -44,7 +40,7 @@ pub fn audio_vis(audio_state: &mut AudioState, sample_count: Option<usize>, ui: 
             let skip = (sample_count as f32 / canvas_size.x / fidelity) as usize;
 
             // For more consistent drawing.
-            let offset = audio_state.player.recent_buf_offset() % skip;
+            let offset = player.recent_buf_offset() % skip;
 
             (0..(canvas_size.x * fidelity) as usize)
                 .map(|i| {

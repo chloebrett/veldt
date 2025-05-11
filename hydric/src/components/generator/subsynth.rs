@@ -1,4 +1,4 @@
-use super::{SubSynthEnvelopeView, SubSynthLpfView, SubSynthLfoView, SubSynthOscillatorView};
+use super::{SubSynthEnvelopeView, SubSynthLfoView, SubSynthLpfView, SubSynthOscillatorView};
 use crate::components::{ModMatrixView, Piano, PianoOrientation};
 use crate::playback::AudioPlayer;
 use crate::view::View;
