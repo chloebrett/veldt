@@ -5,11 +5,11 @@ use egui::{
 };
 use mesic::level::find_audio_level;
 
-use crate::playback::PlaybackState;
 use crate::transform::Transform;
 
 use crate::audio_state::AudioState;
 
+/// Widget for rendering audio level in dB.
 pub struct AudioLevel<'a> {
     audio_state: &'a AudioState,
     min_level: f32,
@@ -52,12 +52,11 @@ impl Widget for AudioLevel<'_> {
             size,
         } = self;
         let range = Rect::from_min_max(pos2(0.0, max_level), pos2(1.0, min_level));
-        let (left_level, right_level) = match audio_state.player.state {
-            // TODO: This does not receive any audio.
-            PlaybackState::Play if !audio_state.audio.is_empty() => {
-                find_audio_level(audio_state.audio.to_vec())
-            }
-            _ => (min_level, min_level),
+        // Get the level of audio channels.
+        let (left_level, right_level) = if audio_state.audio.is_empty() {
+            (min_level, min_level)
+        } else {
+            find_audio_level(audio_state.audio.to_vec())
         };
         let InnerResponse { inner: _, response } = Frame::canvas(ui.style()).show(ui, |ui| {
             let (response, painter) = ui.allocate_painter(size, Sense::all());
