@@ -1,6 +1,8 @@
 use super::{MixerMatrixView, effect_name};
 use crate::GetSet;
 use crate::WindowState;
+use crate::audio_state::AudioState;
+use crate::components::AudioLevel;
 use crate::local_state::LocalState;
 use crate::view::View;
 use crate::widget::int_slider;
@@ -19,6 +21,7 @@ pub struct MixerView<'a> {
     window_state: &'a mut WindowState,
     store: &'a Store,
     local_state: &'a LocalState,
+    audio_state: &'a AudioState,
 }
 
 impl<'a> MixerView<'a> {
@@ -26,11 +29,13 @@ impl<'a> MixerView<'a> {
         window_state: &'a mut WindowState,
         store: &'a Store,
         local_state: &'a LocalState,
+        audio_state: &'a AudioState,
     ) -> Self {
         Self {
             window_state,
             store,
             local_state,
+            audio_state,
         }
     }
 }
@@ -41,6 +46,7 @@ impl View for MixerView<'_> {
             window_state,
             store,
             local_state,
+            audio_state,
             ..
         } = self;
         let mixer_sel = window_state.mixer.channel;
@@ -122,49 +128,56 @@ impl View for MixerView<'_> {
                 });
 
                 ui.separator();
-                ui.with_layout(Layout::default(), |ui| {
-                    // Set background to transparent to avoid a lightened background caused by drag
-                    // and drop.
-                    ui.visuals_mut().widgets.inactive.bg_fill = Color32::TRANSPARENT;
-                    ui.dnd_drop_zone::<EffectLocation, ()>(Frame::default(), |ui| {
-                        for effect_index in 0..mixer.effects.len() {
-                            let effect_sel = mixer_sel.downcast_effect(effect_index);
-                            let effect_window = &mut window_state.effects;
-                            let dispatch_effect =
-                                |action: Action| store.dispatch(&effect_sel, action);
-                            // TODO Determine if this is the best way to do this.
-                            // There seems to be no way to render an object once then pass the
-                            // response into the `dnd_drag_zone` if `edit_state` is true.
-                            let mut render_effect_widget = |ui: &mut Ui| {
-                                ui.add_enabled(
-                                    !edit_state,
-                                    EffectWidget::new(
-                                        &mixer.effects[effect_index],
-                                        effect_sel,
-                                        effect_window,
-                                        dispatch_effect,
-                                        on_release,
-                                    ),
-                                )
-                            };
-                            if edit_state {
-                                let id = egui::Id::new(("effect_config", effect_index));
-                                let response = ui
-                                    .dnd_drag_source(
-                                        id,
-                                        EffectLocation::Index(effect_index),
-                                        &mut render_effect_widget,
-                                    )
-                                    .response;
-                                // Update `from_to` if an object has been dragged and
-                                // released.
-                                if let Some(new_from_to) = handle_drag(ui, response, effect_index) {
-                                    from_to = Some(new_from_to)
-                                };
-                            } else {
-                                render_effect_widget(ui);
-                            }
-                        }
+                ui.horizontal(|ui| {
+                    AudioLevel::new(audio_state).ui(ui);
+                    ui.vertical(|ui| {
+                        ui.with_layout(Layout::default(), |ui| {
+                            // Set background to transparent to avoid a lightened background caused by drag
+                            // and drop.
+                            ui.visuals_mut().widgets.inactive.bg_fill = Color32::TRANSPARENT;
+                            ui.dnd_drop_zone::<EffectLocation, ()>(Frame::default(), |ui| {
+                                for effect_index in 0..mixer.effects.len() {
+                                    let effect_sel = mixer_sel.downcast_effect(effect_index);
+                                    let effect_window = &mut window_state.effects;
+                                    let dispatch_effect =
+                                        |action: Action| store.dispatch(&effect_sel, action);
+                                    // TODO Determine if this is the best way to do this.
+                                    // There seems to be no way to render an object once then pass the
+                                    // response into the `dnd_drag_zone` if `edit_state` is true.
+                                    let mut render_effect_widget = |ui: &mut Ui| {
+                                        ui.add_enabled(
+                                            !edit_state,
+                                            EffectWidget::new(
+                                                &mixer.effects[effect_index],
+                                                effect_sel,
+                                                effect_window,
+                                                dispatch_effect,
+                                                on_release,
+                                            ),
+                                        )
+                                    };
+                                    if edit_state {
+                                        let id = egui::Id::new(("effect_config", effect_index));
+                                        let response = ui
+                                            .dnd_drag_source(
+                                                id,
+                                                EffectLocation::Index(effect_index),
+                                                &mut render_effect_widget,
+                                            )
+                                            .response;
+                                        // Update `from_to` if an object has been dragged and
+                                        // released.
+                                        if let Some(new_from_to) =
+                                            handle_drag(ui, response, effect_index)
+                                        {
+                                            from_to = Some(new_from_to)
+                                        };
+                                    } else {
+                                        render_effect_widget(ui);
+                                    }
+                                }
+                            });
+                        });
                     });
                 });
                 if edit_state {
