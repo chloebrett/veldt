@@ -40,6 +40,15 @@ impl CompressorNode {
             *x = pre_gain * self.config.gain
         }
     }
+
+    fn update_config(&mut self, config: CompressorConfig) {
+        let attack_frames = (config.attack_ms / 1000.0 * SAMPLE_RATE as f32) as usize;
+        let release_frames = (config.release_ms / 1000.0 * SAMPLE_RATE as f32) as usize;
+
+        let detector = make_detector(attack_frames, release_frames);
+        self.detectors = [detector.clone(), detector.clone()];
+        self.config = config.clone();
+    }
 }
 
 #[inline]
@@ -70,11 +79,9 @@ impl Node<ProcessContext> for CompressorNode {
             ..
         }) = &payload.store.try_select(&self.selector)
         {
-            let attack_frames = (config.attack_ms / 1000.0 * SAMPLE_RATE as f32) as usize;
-            let release_frames = (config.release_ms / 1000.0 * SAMPLE_RATE as f32) as usize;
-
-            let detector = make_detector(attack_frames, release_frames);
-            self.detectors = [detector.clone(), detector.clone()];
+            if *config != self.config {
+                self.update_config(config.clone());
+            }
         }
 
         let (left_out, right_out) = extract_outputs(output);
