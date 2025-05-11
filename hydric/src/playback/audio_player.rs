@@ -9,10 +9,14 @@ use dasp_frame::Stereo;
 use log::error;
 use mesic::SAMPLE_RATE;
 use mesic::graph::RenderGraph;
+use ringbuffer::{AllocRingBuffer, RingBuffer};
 use shared::model::PitchName;
 use state::GeneratorSelector;
 use std::sync::{Arc, Mutex};
 use wasm_thread::JoinHandle;
+
+const RECENT_AUDIO_SECONDS: f32 = 5.0;
+const RECENT_AUDIO_SAMPLE_COUNT: usize = (RECENT_AUDIO_SECONDS * SAMPLE_RATE as f32) as usize;
 
 pub struct AudioPlayer {
     // The render graph, if we haven't given it to the processing thread yet.
@@ -35,6 +39,15 @@ pub struct AudioPlayer {
     // For sending messages from processor -> UI.
     update_tx: Sender<PlaybackUpdate>,
     update_rx: Receiver<PlaybackUpdate>,
+
+    // For sending recently played/processed audio messages from processor -> UI, for visualising.
+    // TODO: consider sending more than one sample at a time.
+    // 44100 samples/sec / 60fps = approx 700 samples/frame.
+    recent_tx: Sender<Stereo<f32>>,
+    recent_rx: Receiver<Stereo<f32>>,
+
+    // Ring buffer with the most recently played audio.
+    recent_buf: AllocRingBuffer<Stereo<f32>>,
 
     stream: Option<Stream>,
     processor_thread: Option<JoinHandle<()>>,
@@ -63,6 +76,7 @@ impl AudioPlayer {
         // Other channels are used for message passing and are unbounded.
         let (playback_tx, playback_rx) = crossbeam_channel::unbounded();
         let (update_tx, update_rx) = crossbeam_channel::unbounded();
+        let (recent_tx, recent_rx) = crossbeam_channel::unbounded();
 
         Self {
             graph: Some(graph),
@@ -72,6 +86,9 @@ impl AudioPlayer {
             playback_rx,
             update_tx,
             update_rx,
+            recent_tx,
+            recent_rx,
+            recent_buf: AllocRingBuffer::from([[0.0; 2]; RECENT_AUDIO_SAMPLE_COUNT]),
             stream: None,
             processor_thread: None,
             state: PlaybackState::Pause,
@@ -149,6 +166,10 @@ impl AudioPlayer {
         }
     }
 
+    pub fn recent_buf(&self) -> &AllocRingBuffer<Stereo<f32>> {
+        &self.recent_buf
+    }
+
     /// Checks for any pending updates from the processor thread and saves them locally.
     pub fn maybe_update(&mut self) {
         if !self.is_ready() {
@@ -168,6 +189,10 @@ impl AudioPlayer {
                 }
             }
         }
+
+        while let Ok(update) = self.recent_rx.try_recv() {
+            self.recent_buf.push(update);
+        }
     }
 
     pub fn init_processor(&mut self) {
@@ -180,6 +205,7 @@ impl AudioPlayer {
             self.audio_tx.clone(),
             self.playback_rx.clone(),
             self.update_tx.clone(),
+            self.recent_tx.clone(),
             self.is_looping,
             self.graph.take().expect("Expected a render graph!"),
         );
