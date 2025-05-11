@@ -212,7 +212,7 @@ impl<'a, T: SequencerObject<T>> Sequencer<'a, T> {
         let mut action_dispatched = false;
         if let Some(drag_pos) = drag_pos {
             let scaled_pos = drag_pos.transform(to_sequencer.inverse()).clamp(
-                pos2(response.rect.transform(to_sequencer.inverse()).left(), 0.0),
+                pos2(object.to_rect(self.range).left(), 0.0),
                 self.range.size().to_pos2(),
             );
             if let Some(action) = object.resize_action(self.quantise(scaled_pos.x), self.range) {

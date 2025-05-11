@@ -186,6 +186,31 @@ impl Mixer {
                     for channel in self.channels.iter_mut() {
                         if let Some(generator) = channel.soft_delete_generator(selector) {
                             self.channels[*mixer_channel].soft_add_generator(&generator);
+                            // TODO: Update mute information when generator is moved.
+                            break;
+                        }
+                    }
+                    true
+                }
+                Action::SetFloat(FloatField::Volume, 0.0)
+                | Action::SetChild(TypeField::Mute(true)) => {
+                    let selector = GeneratorSelector(*generator_index);
+                    // Find the channel containing this generator, then mute it.
+                    for channel in self.channels.iter_mut() {
+                        if channel.contains_generator(selector) {
+                            channel.set_generator_muted(*generator_index, true);
+                            break;
+                        }
+                    }
+                    true
+                }
+                Action::SetFloat(FloatField::Volume, _)
+                | Action::SetChild(TypeField::Mute(false)) => {
+                    let selector = GeneratorSelector(*generator_index);
+                    // Find the channel containing this generator, then unmute it.
+                    for channel in self.channels.iter_mut() {
+                        if channel.contains_generator(selector) {
+                            channel.set_generator_muted(*generator_index, false);
                             break;
                         }
                     }

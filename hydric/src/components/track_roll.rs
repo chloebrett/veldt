@@ -80,6 +80,7 @@ impl View for TrackRoll<'_> {
                     }
                     ui.checkbox(&mut select, "Select")
                 });
+                ui.separator();
                 ScrollArea::vertical()
                     .min_scrolled_height(400.0)
                     .show(ui, |ui| {

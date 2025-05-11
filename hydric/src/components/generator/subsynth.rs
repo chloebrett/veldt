@@ -1,8 +1,7 @@
-use super::{SubSynthEnvelopeView, SubSynthLpfView, SubSynthOscillatorView};
+use super::{SubSynthEnvelopeView, SubSynthLpfView, SubSynthLfoView, SubSynthOscillatorView};
 use crate::components::{ModMatrixView, Piano, PianoOrientation};
 use crate::playback::AudioPlayer;
 use crate::view::View;
-use crate::widget::{TabDisplay, TabOrientation, inner_frame, outer_frame};
 use crate::{GetSet, LocalState};
 use egui::{Color32, Ui, Vec2};
 use lazy_static::lazy_static;
@@ -38,38 +37,6 @@ impl<'a, G: Fn()> SubSynthView<'a, G> {
             generator_sel,
             audio_player,
         }
-    }
-
-    fn draw_lfos(&self, ui: &mut Ui) {
-        outer_frame().show(ui, |ui| {
-            let original_spacing = ui.spacing().item_spacing; // store original spacing
-            ui.spacing_mut().item_spacing = Vec2::ZERO; // set spacing to zero so that the tabs and associated content actually touch each other
-
-            ui.horizontal(|ui| {
-                // TODO move to separate lfo file
-                let active_lfo_tab = self.local_state.subsynth_lfo_tab.get();
-                let handle_lfo_tab_click = |index| {
-                    self.local_state.subsynth_lfo_tab.set(index);
-                };
-
-                TabDisplay::new(
-                    active_lfo_tab,
-                    vec!["LFO 1", "LFO 2", "LFO 3"],
-                    TabOrientation::Left,
-                    handle_lfo_tab_click,
-                )
-                .ui(ui);
-                inner_frame().inner_margin(15.0).show(ui, |ui| {
-                    // TODO show the actual LFO controls depending on active_lfo_tab so everything in this block can be deleted it's just a placeholder to visualise the space
-                    let size = egui::Vec2::new(200.0, 180.0);
-                    let (rect, _response) = ui.allocate_exact_size(size, egui::Sense::hover());
-                    let painter = ui.painter_at(rect);
-                    let rect_shape = egui::Shape::rect_filled(rect, 5.0, Color32::RED);
-                    painter.add(rect_shape);
-                })
-            });
-            ui.spacing_mut().item_spacing = original_spacing; // reset ui spacing back to original
-        });
     }
 
     fn draw_piano(&mut self, ui: &mut Ui) {
@@ -153,8 +120,14 @@ impl<G: Fn()> View for SubSynthView<'_, G> {
                     self.local_state,
                 )
                 .ui(ui);
+
                 ui.add_space(4.0);
-                self.draw_lfos(ui);
+
+                let current_lfo_index = self.local_state.subsynth_lfo_tab.get();
+                let lfo_sel = gen_sel.downcast_lfo(current_lfo_index);
+                let lfo_dispatch = |action| self.store.dispatch(&lfo_sel, action);
+
+                SubSynthLfoView::new(config, lfo_dispatch, on_release, self.local_state).ui(ui);
             });
 
             ui.add_space(HORIZONTAL_SPACE);
