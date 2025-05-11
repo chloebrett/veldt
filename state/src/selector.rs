@@ -3,8 +3,8 @@ use shared::action_proto::{
     SelectorProto, selector_proto::IndexPair, selector_proto::Kind as SelectorKind,
 };
 use shared::model::{
-    EffectInstance, GeneratorInstance, LfoConfig, EqConfig, MatrixCell, MixerChannel, Oscillator, PlacedNote,
-    Placement, SubSynthConfig, Track,
+    EffectInstance, EqConfig, GeneratorInstance, LfoConfig, MatrixCell, MixerChannel, Oscillator,
+    PlacedNote, Placement, SubSynthConfig, Track,
 };
 
 // TODO: rename to just Selector when Selector enum is gone.

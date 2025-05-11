@@ -3,7 +3,7 @@ use crate::promise::{poll, spawn};
 use crate::rpc::render as server_render;
 use crate::view::View;
 use crate::widget::checkbox;
-use crate::{AsyncState, AudioState};
+use crate::{AsyncState, playback::AudioPlayer};
 use dasp_frame::Stereo;
 use egui::Ui;
 use state::Store;
@@ -11,10 +11,9 @@ use state::Store;
 pub fn play_control(
     store: &Store,
     async_state: &mut AsyncState,
-    audio_state: &mut AudioState,
+    player: &mut AudioPlayer,
     ui: &mut Ui,
 ) {
-    let player = &mut audio_state.player;
     ui.horizontal(|ui| {
         if ui.button("▶").clicked() {
             player.play();
@@ -55,7 +54,7 @@ pub fn play_control(
         },
     );
 
-    audio_vis(audio_state, /* sample_count= */ None, ui);
-    audio_vis(audio_state, /* sample_count= */ Some(100), ui);
-    FrequencyDisplay::new(audio_state).ui(ui)
+    audio_vis(player, /* sample_count= */ None, ui);
+    audio_vis(player, /* sample_count= */ Some(100), ui);
+    FrequencyDisplay::new(player).ui(ui)
 }
