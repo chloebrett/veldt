@@ -3,7 +3,7 @@ use crate::graph::Graph;
 use crate::node::AmpNode;
 use dasp_graph::node::Sum;
 use petgraph::stable_graph::NodeIndex;
-use shared::model::{EffectInstance, MatrixCell, Project};
+use shared::model::{Effect, MatrixCell, Project};
 use state::{EffectSelector, GeneratorSelector, MixerMatrixCellSelector, MixerSelector, move_elem};
 
 /// Describes a mixer channel from the viewpoint of the graph.
@@ -52,7 +52,11 @@ impl ChannelInfo {
             .iter()
             .enumerate()
             .map(|(effect_index, effect)| {
-                EffectInfo::new(graph, effect, &EffectSelector(channel_index, effect_index))
+                EffectInfo::new(
+                    graph,
+                    &effect.it,
+                    &EffectSelector(channel_index, effect_index),
+                )
             })
             .collect();
 
@@ -180,12 +184,7 @@ impl ChannelInfo {
         effect.remove_from(graph);
     }
 
-    pub fn add_effect(
-        &mut self,
-        graph: &mut Graph,
-        effect: &EffectInstance,
-        selector: &EffectSelector,
-    ) {
+    pub fn add_effect(&mut self, graph: &mut Graph, effect: &Effect, selector: &EffectSelector) {
         // EffectInfo::new handles adding nodes to the graph.
         self.effects.push(EffectInfo::new(graph, effect, selector));
     }
