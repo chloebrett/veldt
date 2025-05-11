@@ -51,8 +51,7 @@ pub fn play_control(
     poll(
         &mut async_state.server_render,
         |audio: &Vec<Stereo<f32>>| {
-            audio_state.audio = audio.to_vec();
-            player.set_audio(audio_state.audio.clone());
+            player.set_audio(audio.clone());
         },
     );
 
