@@ -1,4 +1,6 @@
-use super::{NoteEvent, NoteEventType, NoteTracker, ProcessContext, Processor, make_processor, PlaybackMode};
+use super::{
+    NoteEvent, NoteEventType, NoteTracker, PlaybackMode, ProcessContext, Processor, make_processor,
+};
 use crate::convert::beats_to_samples;
 use crate::mixer::Mixer;
 use dasp_frame::Stereo;
