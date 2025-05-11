@@ -54,8 +54,8 @@ impl View for TrackRoll<'_> {
                     placement: placement.clone(),
                 },
                 PlacementType::Sample(SamplePlacement { .. }) => PlacedTrack {
-                    // TODO: duration in beats, not samples.
-                    unclipped_duration: 1.0.into(), //project.samples[sample_index].len() as f32,
+                    // TODO: use real sample duration.
+                    unclipped_duration: 1.0.into(),
                     placement: placement.clone(),
                 },
             })
