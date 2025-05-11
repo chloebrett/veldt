@@ -23,7 +23,7 @@ impl EffectInfo {
             Effect::SimpleEq(config) => make_node(EqNode::new(*sel, config.clone())),
             Effect::Delay(config) => make_node(DelayNode::new(*sel, config.clone())),
             Effect::Compressor(config) => make_node(CompressorNode::new(config.clone())),
-            Effect::ModDelay(config) => make_node(ModDelayNode::new(config.clone())),
+            Effect::ModDelay(_) => make_node(ModDelayNode::new(*sel)),
         };
 
         let wet_dry_node = make_node(WetDryNode::new(*sel, effect.meta.clone()));
