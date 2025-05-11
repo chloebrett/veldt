@@ -1,7 +1,7 @@
 mod consts;
 mod convert;
 mod envelope;
-mod eq;
+pub mod eq;
 pub mod fft;
 pub mod graph;
 mod maths;

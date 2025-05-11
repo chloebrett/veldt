@@ -5,6 +5,8 @@ use shared::model::EqConfig;
 use shared::model::EqType;
 use state::{Action, FloatField, TypeField};
 use strum::IntoEnumIterator;
+use crate::components::play::FrequencyDisplay;
+use mesic::eq::get_eq_filter_coeffs;
 
 pub struct EqView<'a, F: Fn(Action), G: Fn()> {
     config: &'a EqConfig,
@@ -20,6 +22,10 @@ impl<'a, F: Fn(Action), G: Fn()> EqView<'a, F, G> {
             on_release,
         }
     }
+
+    fn calculate_eq_points(self) {
+        let biquad_coeffs = get_eq_filter_coeffs(self.config);
+    }
 }
 
 impl<F: Fn(Action), G: Fn()> View for EqView<'_, F, G> {
@@ -27,36 +33,37 @@ impl<F: Fn(Action), G: Fn()> View for EqView<'_, F, G> {
         let Self {
             config, dispatch, ..
         } = self;
-
-        knob(
-            ui,
-            "Freq",
-            config.fc,
-            |it| dispatch(Action::SetFloat(FloatField::Fc, it)),
-            20.0..=20000.0, // TODO: logarithmic
-            /* neutral= */ 2000.0,
-            &self.on_release,
-        );
-
-        knob(
-            ui,
-            "Q",
-            config.q,
-            |it| dispatch(Action::SetFloat(FloatField::Q, it)),
-            0.1..=100.0, // TODO: logarithmic
-            /* neutral= */ 1.0,
-            &self.on_release,
-        );
-
-        knob(
-            ui,
-            "Gain",
-            config.gain,
-            |it| dispatch(Action::SetFloat(FloatField::Gain, it)),
-            -60.0..=60.0,
-            /* neutral= */ 0.0,
-            &self.on_release,
-        );
+        ui.horizontal(|ui| {
+            knob(
+                ui,
+                "Freq",
+                config.fc,
+                |it| dispatch(Action::SetFloat(FloatField::Fc, it)),
+                20.0..=20000.0, // TODO: logarithmic
+                /* neutral= */ 2000.0,
+                &self.on_release,
+            );
+    
+            knob(
+                ui,
+                "Q",
+                config.q,
+                |it| dispatch(Action::SetFloat(FloatField::Q, it)),
+                0.1..=100.0, // TODO: logarithmic
+                /* neutral= */ 1.0,
+                &self.on_release,
+            );
+    
+            knob(
+                ui,
+                "Gain",
+                config.gain,
+                |it| dispatch(Action::SetFloat(FloatField::Gain, it)),
+                -60.0..=60.0,
+                /* neutral= */ 0.0,
+                &self.on_release,
+            );
+        });
 
         let eq_type = config.kind.clone();
         egui::ComboBox::from_label("EQ type")
@@ -73,5 +80,7 @@ impl<F: Fn(Action), G: Fn()> View for EqView<'_, F, G> {
                     );
                 }
             });
+
+        FrequencyDisplay::new(None, None).ui(ui); // TODO change frequency points
     }
 }
