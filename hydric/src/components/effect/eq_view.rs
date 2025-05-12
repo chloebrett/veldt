@@ -6,7 +6,7 @@ use shared::model::EqType;
 use state::{Action, FloatField, TypeField};
 use strum::IntoEnumIterator;
 use crate::components::play::FrequencyDisplay;
-use mesic::eq::get_eq_filter_coeffs;
+use mesic::eq::{get_eq_filter_coeffs, calculate_frequency_response, FrequencyResponsePoint};
 
 pub struct EqView<'a, F: Fn(Action), G: Fn()> {
     config: &'a EqConfig,
@@ -23,8 +23,10 @@ impl<'a, F: Fn(Action), G: Fn()> EqView<'a, F, G> {
         }
     }
 
-    fn calculate_eq_points(self) {
-        let biquad_coeffs = get_eq_filter_coeffs(self.config);
+    fn calculate_eq_points(&self, config: EqConfig) -> Vec<FrequencyResponsePoint> {
+        let biquad_coeffs = get_eq_filter_coeffs(&config);
+        let eq_response_points: Vec<FrequencyResponsePoint> = calculate_frequency_response(&biquad_coeffs.unwrap(), 250, 20.0, 200000.0);
+        eq_response_points
     }
 }
 
@@ -80,7 +82,8 @@ impl<F: Fn(Action), G: Fn()> View for EqView<'_, F, G> {
                     );
                 }
             });
-
-        FrequencyDisplay::new(None, None).ui(ui); // TODO change frequency points
+        
+        let frequency_points = self.calculate_eq_points(self.config.clone());
+        FrequencyDisplay::new(None, Some(frequency_points)).ui(ui);
     }
 }

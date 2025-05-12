@@ -5,8 +5,7 @@ use egui::{
 };
 use egui_plot::{Line, Plot, PlotPoints};
 use mesic::{
-    FFT_SAMPLE_SIZE, SAMPLE_RATE,
-    fft::{fft, hann_window},
+    eq::FrequencyResponsePoint, fft::{fft, hann_window}, FFT_SAMPLE_SIZE, SAMPLE_RATE
 };
 use ordered_float::OrderedFloat;
 use shared::serialize::map_vec;
@@ -14,11 +13,11 @@ use shared::serialize::map_vec;
 pub struct FrequencyDisplay<'a> {
     audio_state: Option<&'a AudioState>,
     frame_rate: i32, // The number of times per second the visualisation will be rendered.
-    frequency_points: Option<Vec<f32>>, // For charting a static frequency graph 
+    frequency_points: Option<Vec<FrequencyResponsePoint>>, // For charting a static frequency graph 
 }
 
 impl<'a> FrequencyDisplay<'a> {
-    pub fn new(audio_state: Option<&'a AudioState>, frequency_points: Option<Vec<f32>>) -> Self {
+    pub fn new(audio_state: Option<&'a AudioState>, frequency_points: Option<Vec<FrequencyResponsePoint>>) -> Self {
         FrequencyDisplay {
             audio_state,
             frame_rate: 60,
@@ -83,25 +82,14 @@ impl ComputerMut<FrequencyDisplayKey, Vec<f32>> for FrequencyDisplayComputer {
 impl View for FrequencyDisplay<'_> {
     fn ui(&mut self, ui: &mut Ui) {
         let FrequencyDisplay { audio_state, .. } = *self;
-        // let audio = if let Some(audio_state) = &self.audio_state {
-        //     let audio = audio_state.audio;
+        let audio: Vec<f32> = if let Some(audio_state) = &self.audio_state {
+            let audio = &audio_state.audio;
 
-        //     // Note: only visualising the left channel.
-        //     // TODO: decide how to visualise both left and right.
-        //     audio.iter().map(|it| it[0]).collect()
-        // } else {
-        //     if let Some(frequency_points) = self.frequency_points {
-        //         frequency_points
-        //     }
-        // }
-        let audio = match (&self.audio_state, &self.frequency_points) {
-            (Some(audio_state), _) => {
-                // Note: only visualising the left channel.
-                // TODO: decide how to visualise both left and right.
-                audio_state.audio.iter().map(|it| it[0]).collect()
-            },
-            (None, Some(frequency_points)) => frequency_points.clone(),
-            (None, None) => Vec::new(), // or handle this case as needed
+            // Note: only visualising the left channel.
+            // TODO: decide how to visualise both left and right.
+            audio.iter().map(|it| it[0]).collect()
+        } else {
+            Vec::new()
         };
 
 
@@ -112,7 +100,7 @@ impl View for FrequencyDisplay<'_> {
         let response = if let Some(audio_state) = &audio_state {
             self.render_display(ui, Some(&audio_state.player), ordered_audio)
         } else {
-            self.render_display(ui, None, ordered_audio)
+            None
         };
         
         if let Some(response) = response {
@@ -126,6 +114,15 @@ impl View for FrequencyDisplay<'_> {
                 .map(|(index, it)| [freq_window * index as f64, it.log10() as f64])
                 .collect();
             plot_shapes.push(Line::new("Response", points).color(Color32::WHITE))
+        } else {
+            if let Some(points) = self.frequency_points.clone() {
+                let eq_plot_points: PlotPoints = points
+                    .into_iter()
+                    .map(|point| [point.frequency as f64, point.gain_db as f64])
+                    .collect();
+                plot_shapes.push(Line::new("Response", eq_plot_points).color(Color32::WHITE));
+            }
+
         };
         Plot::new("Frequency Response")
             .view_aspect(2.0)
