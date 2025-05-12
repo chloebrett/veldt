@@ -57,5 +57,5 @@ pub fn play_control(
     );
 
     audio_vis(audio_state, ui);
-    FrequencyDisplay::new(Some(audio_state), None).ui(ui)
+    FrequencyDisplay::new(Some(audio_state), None, [-10.0, 5.0]).ui(ui)
 }

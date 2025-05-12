@@ -13,15 +13,17 @@ use shared::serialize::map_vec;
 pub struct FrequencyDisplay<'a> {
     audio_state: Option<&'a AudioState>,
     frame_rate: i32, // The number of times per second the visualisation will be rendered.
-    frequency_points: Option<Vec<FrequencyResponsePoint>>, // For charting a static frequency graph 
+    frequency_points: Option<Vec<FrequencyResponsePoint>>, // For charting a 'static' frequency response graph 
+    y_bounds: [f64; 2], // min y bound, max y bound
 }
 
 impl<'a> FrequencyDisplay<'a> {
-    pub fn new(audio_state: Option<&'a AudioState>, frequency_points: Option<Vec<FrequencyResponsePoint>>) -> Self {
+    pub fn new(audio_state: Option<&'a AudioState>, frequency_points: Option<Vec<FrequencyResponsePoint>>, y_bounds: [f64; 2]) -> Self {
         FrequencyDisplay {
             audio_state,
             frame_rate: 60,
-            frequency_points
+            frequency_points,
+            y_bounds
         }
     }
 
@@ -29,15 +31,11 @@ impl<'a> FrequencyDisplay<'a> {
     fn render_display(
         &self,
         ui: &mut Ui,
-        player: Option<&AudioPlayer>,
+        player: &AudioPlayer,
         audio: Vec<OrderedFloat<f32>>,
     ) -> Option<Vec<f32>> {
         // let current_sample = player.unwrap().effective_pos();
-        let current_sample = if let Some(audio_player) = &player {
-            audio_player.effective_pos()
-        } else {
-            0
-        };
+        let current_sample = player.effective_pos();
         let frame_size = (SAMPLE_RATE / self.frame_rate) as usize;
         // Round `current_sample` so that the audio will be broken up into chunks based on
         // the visualisation frame rate.
@@ -98,7 +96,7 @@ impl View for FrequencyDisplay<'_> {
         let mut plot_shapes = vec![];
 
         let response = if let Some(audio_state) = &audio_state {
-            self.render_display(ui, Some(&audio_state.player), ordered_audio)
+            self.render_display(ui, &audio_state.player, ordered_audio)
         } else {
             None
         };
@@ -127,7 +125,7 @@ impl View for FrequencyDisplay<'_> {
         Plot::new("Frequency Response")
             .view_aspect(2.0)
             .default_x_bounds(0.0, SAMPLE_RATE as f64 / 2.0)
-            .default_y_bounds(-10.0, 5.0)
+            .default_y_bounds(self.y_bounds[0], self.y_bounds[1])
             .allow_drag(false)
             .x_axis_label("Frequency (Hz)")
             .y_axis_label("Response (dB)")

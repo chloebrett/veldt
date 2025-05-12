@@ -23,8 +23,8 @@ impl<'a, F: Fn(Action), G: Fn()> EqView<'a, F, G> {
         }
     }
 
-    fn calculate_eq_points(&self, config: EqConfig) -> Vec<FrequencyResponsePoint> {
-        let biquad_coeffs = get_eq_filter_coeffs(&config);
+    fn calculate_eq_points(&self) -> Vec<FrequencyResponsePoint> {
+        let biquad_coeffs = get_eq_filter_coeffs(self.config);
         let eq_response_points: Vec<FrequencyResponsePoint> = calculate_frequency_response(&biquad_coeffs.unwrap(), 250, 20.0, 200000.0);
         eq_response_points
     }
@@ -83,7 +83,7 @@ impl<F: Fn(Action), G: Fn()> View for EqView<'_, F, G> {
                 }
             });
         
-        let frequency_points = self.calculate_eq_points(self.config.clone());
-        FrequencyDisplay::new(None, Some(frequency_points)).ui(ui);
+        let frequency_points = self.calculate_eq_points();
+        FrequencyDisplay::new(None, Some(frequency_points), [-15.0, 15.0]).ui(ui);
     }
 }
