@@ -3,24 +3,25 @@ use egui::{
     Color32, CornerRadius, Frame, Rect, Response, Sense, Shape, Ui, Vec2, Widget,
     emath::RectTransform, pos2, vec2,
 };
-use mesic::level::find_audio_level;
+use mesic::level::calc_audio_level;
 
+use crate::playback::AudioPlayer;
 use crate::transform::Transform;
 
-use crate::audio_state::AudioState;
+use ringbuffer::RingBuffer;
 
 /// Widget for rendering audio level in dB.
 pub struct AudioLevel<'a> {
-    audio_state: &'a AudioState,
+    player: &'a AudioPlayer,
     min_level: f32,
     max_level: f32,
     size: Vec2,
 }
 
 impl<'a> AudioLevel<'a> {
-    pub fn new(audio_state: &'a AudioState) -> Self {
+    pub fn new(player: &'a AudioPlayer) -> Self {
         Self {
-            audio_state,
+            player,
             min_level: -60.0,
             max_level: 20.0,
             size: vec2(20.0, 150.0),
@@ -46,18 +47,15 @@ impl<'a> AudioLevel<'a> {
 impl Widget for AudioLevel<'_> {
     fn ui(self, ui: &mut Ui) -> Response {
         let AudioLevel {
-            audio_state,
+            player,
             min_level,
             max_level,
             size,
         } = self;
         let range = Rect::from_min_max(pos2(0.0, max_level), pos2(1.0, min_level));
         // Get the level of audio channels.
-        let (left_level, right_level) = if audio_state.audio.is_empty() {
-            (min_level, min_level)
-        } else {
-            find_audio_level(audio_state.audio.to_vec())
-        };
+        let audio: Vec<[f32; 2]> = player.recent_buf().iter().map(|it| *it).collect();
+        let (left_level, right_level) = calc_audio_level(audio.as_slice());
         let InnerResponse { inner: _, response } = Frame::canvas(ui.style()).show(ui, |ui| {
             let (response, painter) = ui.allocate_painter(size, Sense::all());
             let level_shapes = self.create_level_shapes(range, left_level, right_level);

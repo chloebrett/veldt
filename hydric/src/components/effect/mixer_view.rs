@@ -1,9 +1,9 @@
 use super::{MixerMatrixView, effect_name};
 use crate::GetSet;
 use crate::WindowState;
-use crate::audio_state::AudioState;
 use crate::components::AudioLevel;
 use crate::local_state::LocalState;
+use crate::playback::AudioPlayer;
 use crate::view::View;
 use crate::widget::int_slider;
 use crate::widget::{default_window, knob};
@@ -21,7 +21,7 @@ pub struct MixerView<'a> {
     window_state: &'a mut WindowState,
     store: &'a Store,
     local_state: &'a LocalState,
-    audio_state: &'a AudioState,
+    player: &'a AudioPlayer,
 }
 
 impl<'a> MixerView<'a> {
@@ -29,13 +29,13 @@ impl<'a> MixerView<'a> {
         window_state: &'a mut WindowState,
         store: &'a Store,
         local_state: &'a LocalState,
-        audio_state: &'a AudioState,
+        player: &'a AudioPlayer,
     ) -> Self {
         Self {
             window_state,
             store,
             local_state,
-            audio_state,
+            player,
         }
     }
 }
@@ -46,7 +46,7 @@ impl View for MixerView<'_> {
             window_state,
             store,
             local_state,
-            audio_state,
+            player,
             ..
         } = self;
         let mixer_sel = window_state.mixer.channel;
@@ -129,7 +129,7 @@ impl View for MixerView<'_> {
 
                 ui.separator();
                 ui.horizontal(|ui| {
-                    AudioLevel::new(audio_state).ui(ui);
+                    AudioLevel::new(player).ui(ui);
                     ui.vertical(|ui| {
                         ui.with_layout(Layout::default(), |ui| {
                             // Set background to transparent to avoid a lightened background caused by drag

@@ -132,7 +132,7 @@ impl View for App {
                 &mut self.window_state,
                 &self.store,
                 &self.local_state,
-                &self.audio_state,
+                &self.player,
             )
             .ui(ui);
         }
