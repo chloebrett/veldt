@@ -14,7 +14,7 @@ fn detect_log_rms(audio: &[f32]) -> f32 {
     for value in audio.iter() {
         rms.next(*value);
     }
-    rms.current().log10()
+    20.0 * rms.current().log10()
 }
 
 /// Calculate the audio level of stereo audio in dB.
