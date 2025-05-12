@@ -1,13 +1,14 @@
 use crate::view::View;
 use crate::widget::{get_set, knob, selectable_value};
-use egui::Ui;
+use egui::{Color32, Ui};
+use egui_plot::{Line, Plot, PlotPoints};
+use mesic::SAMPLE_RATE;
+use mesic::eq::eq_display::{FrequencyResponsePoint, calculate_frequency_response};
+use mesic::eq::get_eq_filter_coeffs;
 use shared::model::EqConfig;
 use shared::model::EqType;
 use state::{Action, FloatField, TypeField};
 use strum::IntoEnumIterator;
-use crate::components::play::FrequencyDisplay;
-use mesic::eq::{get_eq_filter_coeffs, calculate_frequency_response, FrequencyResponsePoint};
-use mesic::SAMPLE_RATE;
 
 pub struct EqView<'a, F: Fn(Action), G: Fn()> {
     config: &'a EqConfig,
@@ -26,7 +27,11 @@ impl<'a, F: Fn(Action), G: Fn()> EqView<'a, F, G> {
 
     fn calculate_eq_points(&self) -> Vec<FrequencyResponsePoint> {
         let biquad_coeffs = get_eq_filter_coeffs(self.config);
-        let eq_response_points: Vec<FrequencyResponsePoint> = calculate_frequency_response(&biquad_coeffs.unwrap(), 250, 20.0, SAMPLE_RATE as f32 / 2.0);
+        let num_points = 250;
+        let min_freq = 20.0;
+        let max_freq = SAMPLE_RATE as f32 / 2.0;
+        let eq_response_points: Vec<FrequencyResponsePoint> =
+            calculate_frequency_response(&biquad_coeffs.unwrap(), num_points, min_freq, max_freq);
         eq_response_points
     }
 }
@@ -46,7 +51,7 @@ impl<F: Fn(Action), G: Fn()> View for EqView<'_, F, G> {
                 /* neutral= */ 2000.0,
                 &self.on_release,
             );
-    
+
             knob(
                 ui,
                 "Q",
@@ -56,7 +61,7 @@ impl<F: Fn(Action), G: Fn()> View for EqView<'_, F, G> {
                 /* neutral= */ 1.0,
                 &self.on_release,
             );
-    
+
             knob(
                 ui,
                 "Gain",
@@ -67,6 +72,8 @@ impl<F: Fn(Action), G: Fn()> View for EqView<'_, F, G> {
                 &self.on_release,
             );
         });
+
+        ui.add_space(5.0);
 
         let eq_type = config.kind.clone();
         egui::ComboBox::from_label("EQ type")
@@ -83,8 +90,28 @@ impl<F: Fn(Action), G: Fn()> View for EqView<'_, F, G> {
                     );
                 }
             });
-        
+
+        ui.add_space(5.0);
+
         let frequency_points = self.calculate_eq_points();
-        FrequencyDisplay::new(None, Some(frequency_points), [-15.0, 15.0]).ui(ui);
+        let mut plot_shapes = vec![];
+        let eq_plot_points: PlotPoints = frequency_points
+            .into_iter()
+            .map(|point| [point.frequency as f64, point.gain as f64])
+            .collect();
+        plot_shapes.push(Line::new("Response", eq_plot_points).color(Color32::WHITE));
+
+        Plot::new("Frequency Response")
+            .view_aspect(2.0)
+            .default_x_bounds(0.0, SAMPLE_RATE as f64 / 2.0)
+            .default_y_bounds(-20.0, 20.0)
+            .allow_drag(false)
+            .x_axis_label("Frequency (Hz)")
+            .y_axis_label("Response (dB)")
+            .show(ui, |plot_ui| {
+                for shape in plot_shapes {
+                    plot_ui.line(shape)
+                }
+            });
     }
 }

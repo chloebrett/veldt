@@ -5,7 +5,8 @@ use egui::{
 };
 use egui_plot::{Line, Plot, PlotPoints};
 use mesic::{
-    eq::FrequencyResponsePoint, fft::{fft, hann_window}, FFT_SAMPLE_SIZE, SAMPLE_RATE
+    FFT_SAMPLE_SIZE, SAMPLE_RATE,
+    fft::{fft, hann_window},
 };
 use ordered_float::OrderedFloat;
 use ringbuffer::RingBuffer;
@@ -13,18 +14,12 @@ use shared::serialize::map_vec;
 use std::cmp::max;
 
 pub struct FrequencyDisplay<'a> {
-    player: Option<&'a AudioPlayer>,
-    frequency_points: Option<Vec<FrequencyResponsePoint>>, // For charting a 'static' frequency response graph 
-    y_bounds: [f64; 2], // min y bound, max y bound
+    player: &'a AudioPlayer,
 }
 
 impl<'a> FrequencyDisplay<'a> {
-    pub fn new(player: Option<&'a AudioPlayer>, frequency_points: Option<Vec<FrequencyResponsePoint>>, y_bounds: [f64; 2]) -> Self {
-        FrequencyDisplay {
-            player,
-            frequency_points,
-            y_bounds
-        }
+    pub fn new(player: &'a AudioPlayer) -> Self {
+        FrequencyDisplay { player }
     }
 
     /// Create frequency display shapes synced with playing audio.
@@ -67,26 +62,16 @@ impl ComputerMut<FrequencyDisplayKey, Vec<f32>> for FrequencyDisplayComputer {
 
 impl View for FrequencyDisplay<'_> {
     fn ui(&mut self, ui: &mut Ui) {
-        let audio = if let Some(player) = self.player{
-            let stereo_audio = player.recent_buf().iter();
-            // Note: only visualising the left channel.
-            // TODO: decide how to visualise both left and right.
-            stereo_audio.map(|it| it[0]).collect()
-        } else {
-            Vec::new()
-        };
+        let audio = self.player.recent_buf().iter();
+
+        // Note: only visualising the left channel.
+        // TODO: decide how to visualise both left and right.
+        let audio: Vec<f32> = audio.map(|it| it[0]).collect();
 
         // Cast as `OrderedFloat` so that values implement `Eq` required for hashing in cache.
         let ordered_audio: Vec<OrderedFloat<f32>> = map_vec(audio.to_vec());
         let mut plot_shapes = vec![];
-
-        let response = if let Some(_player) = &self.player {
-            self.render_display(ui, ordered_audio)
-        } else {
-            None
-        };
-        
-        if let Some(response) = response {
+        if let Some(response) = self.render_display(ui, ordered_audio) {
             let freq_window = SAMPLE_RATE as f64 / FFT_SAMPLE_SIZE as f64;
             let points: PlotPoints = response
                 .into_iter()
@@ -97,20 +82,12 @@ impl View for FrequencyDisplay<'_> {
                 .map(|(index, it)| [freq_window * index as f64, it.log10() as f64])
                 .collect();
             plot_shapes.push(Line::new("Response", points).color(Color32::WHITE))
-        } else {
-            if let Some(points) = self.frequency_points.clone() {
-                let eq_plot_points: PlotPoints = points
-                    .into_iter()
-                    .map(|point| [point.frequency as f64, point.gain_db as f64])
-                    .collect();
-                plot_shapes.push(Line::new("Response", eq_plot_points).color(Color32::WHITE));
-            }
         };
         // TODO: investigate logarithmic x axis.
         Plot::new("Frequency Response")
             .view_aspect(2.0)
             .default_x_bounds(0.0, SAMPLE_RATE as f64 / 2.0)
-            .default_y_bounds(self.y_bounds[0], self.y_bounds[1])
+            .default_y_bounds(-10.0, 5.0)
             .allow_drag(false)
             .x_axis_label("Frequency (Hz)")
             .y_axis_label("Response (dB)")

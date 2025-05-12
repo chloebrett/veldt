@@ -1,4 +1,4 @@
-mod consts;
+pub mod consts;
 mod convert;
 mod envelope;
 pub mod eq;
