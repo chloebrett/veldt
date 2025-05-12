@@ -1,5 +1,5 @@
 use super::{
-    KeyView, NoteRoll, NoteView, TrackPlacementView, TrackRoll,
+    KeyView, NoteRoll, NoteView, SamplePlacementView, TrackPlacementView, TrackRoll,
     effect::{EffectView, MixerView},
     generator::{GeneratorView, generators_control},
     menu::MenuBar,
@@ -10,7 +10,7 @@ use crate::promise::spawn;
 use crate::rpc::broadcast_actions;
 use crate::rpc::load_project_list;
 use crate::view::View;
-use crate::{AsyncState, AudioState, LocalState, WindowState};
+use crate::{AsyncState, LocalState, WindowState, playback::AudioPlayer};
 use egui::{ScrollArea, Ui, scroll_area::ScrollBarVisibility};
 use mesic::graph::RenderGraph;
 use poll_promise::Promise;
@@ -26,7 +26,7 @@ pub struct App {
     pub local_state: LocalState,
     pub frame_history: FrameHistory,
     pub async_state: AsyncState,
-    pub audio_state: AudioState,
+    pub player: AudioPlayer,
     pub window_state: WindowState,
 }
 
@@ -44,7 +44,7 @@ impl Default for App {
             local_state: LocalState::default(),
             frame_history: FrameHistory::default(),
             async_state: AsyncState::default(),
-            audio_state: AudioState::new(graph),
+            player: AudioPlayer::new(graph),
             window_state: WindowState::default(),
         }
     }
@@ -83,7 +83,7 @@ impl eframe::App for App {
         self.frame_history
             .on_new_frame(ctx.input(|i| i.time), frame.info().cpu_usage);
 
-        self.audio_state.player.maybe_update();
+        self.player.maybe_update();
 
         egui::TopBottomPanel::top("veldt_menu").show(ctx, |ui| {
             MenuBar::new(
@@ -121,7 +121,7 @@ impl View for App {
                 &self.store,
                 &sel,
                 &self.local_state,
-                &mut self.audio_state,
+                &mut self.player,
                 visible,
                 || generators.set(sel, false),
             )
@@ -131,12 +131,7 @@ impl View for App {
             MixerView::new(&mut self.window_state, &self.store, &self.local_state).ui(ui);
         }
 
-        ToolbarView::new(
-            &mut self.store,
-            &mut self.async_state,
-            &mut self.audio_state,
-        )
-        .ui(ui);
+        ToolbarView::new(&mut self.store, &mut self.async_state, &mut self.player).ui(ui);
 
         for effect_selector in self.visible_effects() {
             let dispatch = |action| self.store.dispatch(&effect_selector, action);
@@ -159,8 +154,9 @@ impl View for App {
         }
 
         NoteView::new(&self.store, &self.local_state).ui(ui);
-        NoteRoll::new(&self.store, &self.local_state, &mut self.audio_state.player).ui(ui);
+        NoteRoll::new(&self.store, &self.local_state, &mut self.player).ui(ui);
         TrackPlacementView::new(&self.store, &self.local_state).ui(ui);
+        SamplePlacementView::new(&self.store, &self.local_state).ui(ui);
 
         SampleTreeView::new(
             &self.store,

@@ -14,6 +14,6 @@ pub use generator_view::*;
 pub use generators_control::*;
 pub use simple_wave_visualiser::*;
 use subsynth_envelope::*;
+use subsynth_lfo::*;
 use subsynth_lpf::*;
 use subsynth_oscillator::*;
-use subsynth_lfo::*;

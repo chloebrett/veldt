@@ -1,13 +1,13 @@
 use crate::promise::{poll, spawn};
 use crate::rpc::interleave_stereo;
 use crate::rpc::load_sample;
-use crate::{AsyncState, AudioState};
+use crate::{AsyncState, playback::AudioPlayer};
 use egui::{Button, Ui};
 use state::{Action, Store, TypeField};
 
 pub fn sample_control(
     store: &Store,
-    audio_state: &mut AudioState,
+    player: &mut AudioPlayer,
     async_state: &mut AsyncState,
     ui: &mut Ui,
 ) {
@@ -20,8 +20,7 @@ pub fn sample_control(
     {
         let sample = store.get().project.samples[0].clone();
         let sample = interleave_stereo(sample.left, sample.right);
-        audio_state.audio = sample.clone();
-        audio_state.player.set_audio(sample);
+        player.set_audio(sample);
     }
 
     if ui.button("Load sample").clicked() {
