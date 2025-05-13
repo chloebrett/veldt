@@ -2,8 +2,7 @@ use crate::widget::knob;
 use crate::{transform::Transform, view::View};
 use egui::Color32;
 use egui::{
-    Frame, Rect, Response, Sense, Shape, Stroke, Ui, Vec2, Widget,
-    emath::RectTransform, pos2, vec2,
+    Frame, Rect, Response, Sense, Shape, Stroke, Ui, Vec2, Widget, emath::RectTransform, pos2, vec2,
 };
 use shared::model::CompressorConfig;
 use state::{Action, FloatField};
