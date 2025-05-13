@@ -1,8 +1,8 @@
-use egui::InnerResponse;
 use egui::{
     Color32, CornerRadius, Frame, Rect, Response, Sense, Shape, Ui, Vec2, Widget,
     emath::RectTransform, pos2, vec2,
 };
+use egui::{InnerResponse, Rangef};
 use mesic::level::calc_audio_level;
 
 use crate::playback::AudioPlayer;
@@ -23,7 +23,7 @@ impl<'a> AudioLevel<'a> {
         Self {
             player,
             min_level: -60.0,
-            max_level: 20.0,
+            max_level: 6.0,
             size: vec2(20.0, 150.0),
         }
     }
@@ -31,16 +31,31 @@ impl<'a> AudioLevel<'a> {
     fn create_level_shapes(&self, range: Rect, left_level: f32, right_level: f32) -> Shape {
         // Padding on either side of the level line.
         let padding = 0.1;
-        let left_rect = Rect::from_min_max(
-            pos2(range.left() + padding, left_level),
-            pos2((range.size().x - padding) * 0.5, range.bottom()),
+        let left_rect = Rect::from_x_y_ranges(
+            Rangef {
+                min: range.left() + padding,
+                max: (range.size().x - padding) * 0.5,
+            },
+            Rangef {
+                min: left_level,
+                max: range.bottom(),
+            },
         );
-        let right_rect = Rect::from_min_max(
-            pos2((range.size().x + padding) * 0.5, right_level),
-            pos2(range.right() - padding, range.bottom()),
+        let right_rect = Rect::from_x_y_ranges(
+            Rangef {
+                min: (range.size().x + padding) * 0.5,
+                max: range.right() - padding,
+            },
+            Rangef {
+                min: right_level,
+                max: range.bottom(),
+            },
         );
-        let level_shape = |rect| Shape::rect_filled(rect, CornerRadius::same(0), Color32::WHITE);
-        Shape::Vec(vec![level_shape(left_rect), level_shape(right_rect)])
+        let level_shape: Vec<_> = vec![left_rect, right_rect]
+            .into_iter()
+            .map(|rect| Shape::rect_filled(rect, CornerRadius::ZERO, Color32::WHITE))
+            .collect();
+        Shape::Vec(level_shape)
     }
 }
 
