@@ -97,9 +97,7 @@ impl Widget for CompressorDisplay<'_> {
         // TODO: Add live level to show compression.
         let CompressorConfig {
             threshold, ratio, ..
-        } = config;
-        let threshold = *threshold;
-        let ratio = *ratio;
+        } = *config;
         let max_db = 0.0;
         let min_db = -60.0;
         let InnerResponse { inner: _, response } = Frame::canvas(ui.style()).show(ui, |ui| {
