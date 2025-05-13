@@ -1,6 +1,6 @@
 use super::{extract_inputs, extract_outputs};
-use crate::consts::SAMPLE_RATE;
 use crate::graph::ProcessContext;
+use crate::{consts::SAMPLE_RATE, to_db};
 use dasp_graph::{Buffer, Input, Node};
 use shared::model::{CompressorConfig, Effect, EffectInstance};
 use state::EffectSelector;
@@ -31,7 +31,7 @@ impl CompressorNode {
 
         out_buf.copy_from_slice(in_buf);
         for x in out_buf.iter_mut() {
-            let db_rms = 20.0 * self.detectors[channel_index].next(*x).log10();
+            let db_rms = to_db(self.detectors[channel_index].next(*x));
 
             // TODO: also support using the compressor as a downward expander.
             let pre_gain = compress(*x, db_rms, threshold, ratio_recip);
@@ -57,7 +57,6 @@ impl CompressorNode {
 /// The reciprocal is used to save on division.
 /// See page 513 and following of DAEP in C++
 fn compress(input: f32, detector: f32, threshold: f32, ratio_recip: f32) -> f32 {
-    // TODO: use dB for threshold.
     let y_out = if detector > threshold {
         // Apply the compression ratio.
         // The output vs input graph looks like the blue diagram in this article:

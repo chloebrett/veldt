@@ -20,3 +20,8 @@ pub fn interleave_stereo(left: Vec<f32>, right: Vec<f32>) -> Vec<Stereo<f32>> {
 pub fn split_stereo_audio(stereo_audio: &[[f32; 2]]) -> (Vec<f32>, Vec<f32>) {
     stereo_audio.iter().map(|it| (it[0], it[1])).unzip()
 }
+
+/// Convert linear sound power level to decibels (dB) (e.g. RMS).
+pub fn to_db(input: f32) -> f32 {
+    20.0 * input.log10()
+}
