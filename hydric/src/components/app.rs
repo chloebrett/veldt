@@ -128,7 +128,13 @@ impl View for App {
             .ui(ui);
         }
         if self.window_state.mixer.visible {
-            MixerView::new(&mut self.window_state, &self.store, &self.local_state).ui(ui);
+            MixerView::new(
+                &mut self.window_state,
+                &self.store,
+                &self.local_state,
+                &self.player,
+            )
+            .ui(ui);
         }
 
         ToolbarView::new(&mut self.store, &mut self.async_state, &mut self.player).ui(ui);

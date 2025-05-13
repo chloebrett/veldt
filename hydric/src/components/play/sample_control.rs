@@ -1,8 +1,8 @@
 use crate::promise::{poll, spawn};
-use crate::rpc::interleave_stereo;
 use crate::rpc::load_sample;
 use crate::{AsyncState, playback::AudioPlayer};
 use egui::{Button, Ui};
+use mesic::interleave_stereo;
 use state::{Action, Store, TypeField};
 
 pub fn sample_control(
