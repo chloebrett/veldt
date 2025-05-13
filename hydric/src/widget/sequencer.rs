@@ -275,7 +275,7 @@ impl<T: SequencerObject<T>> Widget for Sequencer<'_, T> {
             painter.extend(self.background_shapes.clone().transform(to_screen));
             painter.add(self.object_shapes().transform(to_screen));
 
-            if let Some(object) = T::get_active(ui, self.store, self.local_state) {
+            if let Some(object) = T::get_active(self.store, self.local_state) {
                 painter.add(object.active_shape(range).transform(to_screen));
             }
 
@@ -310,7 +310,7 @@ pub trait SequencerObject<T> {
 
     fn shape(&self, range: Rect) -> Shape;
 
-    fn get_active(ui: &Ui, store: &Store, local_state: &LocalState) -> Option<T>;
+    fn get_active(store: &Store, local_state: &LocalState) -> Option<T>;
 
     fn active_shape(&self, range: Rect) -> Shape;
 

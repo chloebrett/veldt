@@ -31,10 +31,10 @@ impl CompressorNode {
 
         out_buf.copy_from_slice(in_buf);
         for x in out_buf.iter_mut() {
-            let log_rms = self.detectors[channel_index].next(*x).log10();
+            let db_rms = 20.0 * self.detectors[channel_index].next(*x).log10();
 
             // TODO: also support using the compressor as a downward expander.
-            let pre_gain = compress(*x, log_rms, threshold, ratio_recip);
+            let pre_gain = compress(*x, db_rms, threshold, ratio_recip);
 
             // TODO: use dB for makeup gain.
             *x = pre_gain * self.config.gain
