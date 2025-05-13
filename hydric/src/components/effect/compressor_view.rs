@@ -101,7 +101,7 @@ impl Widget for CompressorDisplay<'_> {
         let max_db = 0.0;
         let min_db = -60.0;
         let InnerResponse { inner: _, response } = Frame::canvas(ui.style()).show(ui, |ui| {
-            let (response, painter) = ui.allocate_painter(size, Sense::focusable_noninteractive());
+            let (response, painter) = ui.allocate_painter(size, Sense::click());
             let range = Rect::from_min_max(pos2(min_db, max_db), pos2(max_db, min_db));
             let to_screen = RectTransform::from_to(range, response.rect);
             // Level pre compression under threshold.
