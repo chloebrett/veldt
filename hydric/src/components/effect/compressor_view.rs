@@ -2,7 +2,7 @@ use crate::widget::knob;
 use crate::{transform::Transform, view::View};
 use egui::Color32;
 use egui::{
-    Frame, InnerResponse, Rect, Response, Sense, Shape, Stroke, Ui, Vec2, Widget,
+    Frame, Rect, Response, Sense, Shape, Stroke, Ui, Vec2, Widget,
     emath::RectTransform, pos2, vec2,
 };
 use shared::model::CompressorConfig;
@@ -100,19 +100,20 @@ impl Widget for CompressorDisplay<'_> {
         } = *config;
         let max_db = 0.0;
         let min_db = -60.0;
-        let InnerResponse { inner: _, response } = Frame::canvas(ui.style()).show(ui, |ui| {
-            let (response, painter) = ui.allocate_painter(size, Sense::click());
-            let range = Rect::from_min_max(pos2(min_db, max_db), pos2(max_db, min_db));
-            let to_screen = RectTransform::from_to(range, response.rect);
-            // Level pre compression under threshold.
-            let min = pos2(min_db, min_db);
-            let knee = pos2(threshold, threshold);
-            // Level post compression over threshold.
-            let max = pos2(max_db, threshold + (max_db - threshold) / ratio);
-            let line = Shape::line(vec![min, knee, max], Stroke::new(1.0, Color32::WHITE));
-            painter.add(line.transform(to_screen));
-            response
-        });
-        response
+        Frame::canvas(ui.style())
+            .show(ui, |ui| {
+                let (response, painter) = ui.allocate_painter(size, Sense::click());
+                let range = Rect::from_min_max(pos2(min_db, max_db), pos2(max_db, min_db));
+                let to_screen = RectTransform::from_to(range, response.rect);
+                // Level pre compression under threshold.
+                let min = pos2(min_db, min_db);
+                let knee = pos2(threshold, threshold);
+                // Level post compression over threshold.
+                let max = pos2(max_db, threshold + (max_db - threshold) / ratio);
+                let line = Shape::line(vec![min, knee, max], Stroke::new(1.0, Color32::WHITE));
+                painter.add(line.transform(to_screen));
+                response
+            })
+            .response
     }
 }
