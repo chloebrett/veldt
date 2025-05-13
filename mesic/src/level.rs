@@ -1,7 +1,7 @@
 use dasp_ring_buffer::Fixed;
 use dasp_rms::Rms;
 
-use crate::split_stereo_audio;
+use crate::{split_stereo_audio, to_db};
 
 const RMS_WINDOW: usize = 64;
 
@@ -13,7 +13,7 @@ fn detect_log_rms(audio: &[f32]) -> f32 {
     for value in audio.iter() {
         rms.next(*value);
     }
-    20.0 * rms.current().log10()
+    to_db(rms.current())
 }
 
 /// Calculate the audio level of stereo audio in dB.
