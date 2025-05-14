@@ -66,6 +66,8 @@ pub struct BiquadCoefficients {
     pub a2: f32,
     pub b1: f32,
     pub b2: f32,
+    pub wet: f32,
+    pub dry: f32,
 }
 
 /// This function gets just the biquad coefficients of each EQ filter which is needed for visualising the EQ wave.
@@ -101,12 +103,19 @@ pub fn get_eq_filter_coeffs(config: &EqConfig) -> Option<BiquadCoefficients> {
                 _ => unreachable!("Handled in outer match"),
             };
             let coeffs_config = filter.config;
+            let (wet, dry) = if let Some(mix) = filter.mix {
+                (mix.wet, mix.dry)
+            } else {
+                (1.0, 0.0) // if absent assume wet = 1.0 and dry = 0.0
+            };
             Some(BiquadCoefficients {
                 a0: coeffs_config.a0,
                 a1: coeffs_config.a1,
                 a2: coeffs_config.a2,
                 b1: coeffs_config.b1,
                 b2: coeffs_config.b2,
+                wet,
+                dry
             })
         }
         EqType::SimpleFirstOrderLowPass
@@ -125,12 +134,19 @@ pub fn get_eq_filter_coeffs(config: &EqConfig) -> Option<BiquadCoefficients> {
                 _ => unreachable!("Handled in outer match"),
             };
             let coeffs_config = filter.config;
+            let (wet, dry) = if let Some(mix) = filter.mix {
+                (mix.wet, mix.dry)
+            } else {
+                (1.0, 0.0) // if absent assume wet = 1.0 and dry = 0.0
+            };
             Some(BiquadCoefficients {
                 a0: coeffs_config.a0,
                 a1: coeffs_config.a1,
                 a2: 0.0, // Set a2 to zero for first order filters
                 b1: coeffs_config.b1,
                 b2: 0.0, // Set b2 to zero for first order filters
+                wet,
+                dry
             })
         }
     }

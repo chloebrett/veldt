@@ -12,10 +12,12 @@ pub struct FrequencyResponsePoint {
 // Essentially only need the magnitude of the H(z) formula as it represents the gain which is what gets plotted:
 // H(z) = (a0 + a1*z^-1 + a2*z^-2)/(b0 + b1*z^-1 + b2*z^-2)
 // To get the frequency response H(z) needs to be evaluated on the unit circle which means z needs to be replaced with e^(j*w*T)
-// j is just i as in the imaginary number, w is the angualar frequency which is 2*pi*frequency, T is sampling period (1/SAMPLE_RATE)
+// j is just i as in the imaginary number, w is the angular frequency which is 2*pi*frequency, T is sampling period (1/SAMPLE_RATE)
 // Computing H(e^(j*w*T)) directly is kind of messy so expand everything using Euler which will make it easier to get the numbers
-// needed to calculate the magnitude which is all we're interested in anyway. See all the maths working here:
-// https://drive.google.com/drive/folders/1flyEcv6HdQu_zPauZ6WSmkOsGYMAaVzx
+// needed to calculate the magnitude which is all we're interested in anyway. See all the maths working in the assets/calculations
+// directory, the file is called: calculations_for_eq_frequency_response.png. Note, there is a small difference as the calculations
+// do not consider wet/dry: To find the gain with wet/dry calculate the magnitude of this complex number:
+// H_overall = (dry + wet * the real part of H(e^(j*w*T))) + j(wet * the imaginary part of H(e^(j*w*T)))
 pub fn calculate_frequency_response(
     coeffs: &BiquadCoefficients,
     num_points: usize,
@@ -55,16 +57,21 @@ pub fn calculate_frequency_response(
         let denominator_magnitude_sq =
             real_denominator * real_denominator + imaginary_denominator * imaginary_denominator;
 
-        // To avoid accidentally dividing by zero just set magnitude to zero if the denominator magnitude is somehow zero or lower
-        let magnitude = if denominator_magnitude_sq <= 0.0 {
-            0.0
-        } else {
-            let numerator_magnitude = (real_numerator * real_numerator
-                + imaginary_numerator * imaginary_numerator)
-                .sqrt();
-            let denominator_magnitude = denominator_magnitude_sq.sqrt();
-            numerator_magnitude / denominator_magnitude
-        };
+        // Calculate the real part of H(e^(j*w*T))
+        let real_h_filter = (real_numerator * real_denominator + imaginary_numerator * imaginary_denominator) / denominator_magnitude_sq;
+
+        // Calculate the imaginary part of H(e^(j*w*T))
+        let imaginary_h_filter = (imaginary_numerator * real_denominator - real_numerator * imaginary_denominator) / denominator_magnitude_sq;
+
+        let dry_amount = coeffs.dry;
+        let wet_amount = coeffs.wet;
+
+        // Calculate the real and imaginary of H_overall as described above in the function doc
+        let real_h_overall = dry_amount + wet_amount * real_h_filter;
+        let imaginary_h_overall = wet_amount * imaginary_h_filter;
+
+        // Calcuate the magnitude of H_overall
+        let magnitude = (real_h_overall * real_h_overall + imaginary_h_overall * imaginary_h_overall).sqrt();
 
         // Convert magnitude to decibels
         let gain = if magnitude > 0.0 {
