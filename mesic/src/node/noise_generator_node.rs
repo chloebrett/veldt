@@ -1,20 +1,12 @@
-use super::pan_multipliers;
-use crate::SAMPLE_RATE;
-use crate::envelope::EnvelopeGenerator;
-use crate::graph::{NoteEventType, ProcessContext};
-use crate::maths::linspace;
-use crate::wave::detune_multiplier;
-use crate::wave_cache::{WaveCache, WaveKey};
-use crate::rng::generate_white_noise;
+use crate::graph::ProcessContext;
+use crate::rng::generate_random_number;
 use dasp_graph::{Buffer, Input, Node};
-use shared::model::{Generator, GeneratorInstance, GeneratorMeta, PitchName, NoiseConfig};
-use shared::types::Freq;
+use shared::model::{Generator, GeneratorInstance, GeneratorMeta, NoiseConfig, NoiseType};
 use state::GeneratorSelector;
 
 pub struct NoiseGeneratorNode {
     selector: GeneratorSelector,
     state: NodeState,
-    cache: WaveCache,
 }
 
 /// State persisted between buffers.
@@ -37,7 +29,7 @@ impl Default for NodeState {
 impl NodeState {
     fn update(&mut self, payload: &ProcessContext, selector: GeneratorSelector) {
         if let GeneratorInstance {
-            it: Generator::NoiseConfig(config),
+            it: Generator::Noise(config),
             meta,
             ..
         } = &payload.store.select(&selector)
@@ -60,15 +52,15 @@ impl NoiseGeneratorNode {
         }
     }
 
-    fn apply_volume(state: &NodeState, buffer: &mut Buffer, channel_index: usize) {
+    fn apply_volume(state: &NodeState, buffer: &mut Buffer) {
         for x in buffer.iter_mut() {
             *x *= state.meta.volume;
         }
     }
 
-    fn generate_noise_sample(&self) -> f64 {
-        match self.state.config.kind {
-            NoiseType::White => generate_white_noise(),
+    fn generate_noise_sample(kind: NoiseType) -> f32 {
+        match kind {
+            NoiseType::White => generate_random_number(),
             NoiseType::Pink => todo!(),
             NoiseType::Brown => todo!(),
         }
@@ -81,15 +73,17 @@ impl Node<ProcessContext> for NoiseGeneratorNode {
         state.update(payload, self.selector);
 
         let mut buffer = Buffer::SILENT;
-        let GeneratorSelector(generator_index) = self.selector;
+        let GeneratorSelector(_generator_index) = self.selector;
+
+        let kind = state.config.kind;
 
         for i in 0..buffer.len() {
-            buffer[i] = self.generate_noise_sample();
+            buffer[i] = Self::generate_noise_sample(kind);
         }
 
-        for (channel_index, out_buf) in output.iter_mut().enumerate() {
+        for out_buf in output.iter_mut() {
             out_buf.copy_from_slice(&buffer);
-            Self::apply_volume(state, out_buf, channel_index);
+            Self::apply_volume(state, out_buf);
         }
     }
 }

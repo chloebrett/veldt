@@ -2742,14 +2742,18 @@ dependencies = [
  "dasp_ring_buffer",
  "dasp_rms",
  "dasp_slice",
+ "getrandom 0.2.16",
  "lazy_static",
  "log",
  "ordered-float 5.0.0",
  "petgraph 0.5.1",
+ "rand 0.8.5",
  "ringbuffer",
  "rustfft",
  "shared",
  "state",
+ "wasm-bindgen",
+ "wasm-bindgen-futures",
 ]
 
 [[package]]

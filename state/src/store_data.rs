@@ -117,7 +117,7 @@ impl Default for StoreData {
                     GeneratorInstance {
                         it: Generator::Noise(NoiseConfig::default()),
                         meta: GeneratorMeta {
-                            volume: 1.0,
+                            volume: 0.0,
                             mute: false,
                             pan: 0.0,
                             mixer_channel: 2,
