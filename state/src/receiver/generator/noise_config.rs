@@ -1,13 +1,13 @@
 use crate::receiver::ActionReceiver;
-use crate::{Action, FloatField, TypeField, UintField};
+use crate::{Action, TypeField};
 use shared::model::NoiseConfig;
 
 impl ActionReceiver for NoiseConfig {
     fn apply(&mut self, action: &Action) -> Option<Action> {
         Some(match action {
             Action::SetChild(TypeField::NoiseType(noise)) => {
-                let prev = self.kind;
-                self.kind = *noise;
+                let prev = self.kind.clone();
+                self.kind = noise.clone();
                 Action::SetChild(TypeField::NoiseType(prev))
             }
             _ => return None,

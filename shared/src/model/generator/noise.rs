@@ -1,3 +1,4 @@
+use crate::model::NoiseType::White;
 use crate::pmodel::{NoiseConfigProto, NoiseTypeProto};
 use local_macro::{FromProto, IntoProto};
 
@@ -12,4 +13,10 @@ pub enum NoiseType {
     White,
     Brown,
     Pink,
+}
+
+impl Default for NoiseConfig {
+    fn default() -> Self {
+        Self { kind: White }
+    }
 }
