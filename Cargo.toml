@@ -7,5 +7,6 @@ members = [
     "hydric",
     "vendor/cpal",
     "experimental/threads",
+    "experimental/rng",
 ]
 resolver = "2"  # Helps with consistent dependency resolution
