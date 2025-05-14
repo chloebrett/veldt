@@ -71,6 +71,8 @@ pub struct AudioPlayer {
     // for the AudioContext).
     output_delay: Arc<Mutex<usize>>,
 
+    // Root Mean Square of most recent window in audio.
+    // Read with `level()`
     rms: dasp_rms::Rms<Stereo<f32>, [Stereo<f32>; RMS_BUFFER_SAMPLES]>,
 }
 
