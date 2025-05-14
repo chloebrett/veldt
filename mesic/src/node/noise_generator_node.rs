@@ -44,6 +44,12 @@ impl NodeState {
     }
 }
 
+fn generate_white_noise() -> f32 {
+    let min = -1.0;
+    let max = 1.0;
+    generate_random_number_in_range(min, max)
+}
+
 impl NoiseGeneratorNode {
     pub fn new(selector: GeneratorSelector) -> Self {
         Self {
@@ -60,7 +66,7 @@ impl NoiseGeneratorNode {
 
     fn generate_noise_sample(kind: NoiseType) -> f32 {
         match kind {
-            NoiseType::White => generate_random_number_in_range(-1.0, 1.0),
+            NoiseType::White => generate_white_noise(),
             NoiseType::Pink => todo!(),
             NoiseType::Brown => todo!(),
         }
