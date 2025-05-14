@@ -325,7 +325,7 @@ impl AudioPlayer {
         self.send(PlaybackMessage::Seek(self.position));
     }
 
-    pub fn audio_level(&self) -> [f32; 2] {
+    pub fn level(&self) -> [f32; 2] {
         let [left, right] = self.rms.current();
         [to_db(left), to_db(right)]
     }

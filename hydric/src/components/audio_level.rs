@@ -66,7 +66,7 @@ impl Widget for AudioLevel<'_> {
         } = self;
         let range = Rect::from_min_max(pos2(0.0, max_level), pos2(1.0, min_level));
         // Get the level of audio channels.
-        let [left_level, right_level] = player.audio_level();
+        let [left_level, right_level] = player.level();
         let InnerResponse { inner: _, response } = Frame::canvas(ui.style()).show(ui, |ui| {
             let (response, painter) = ui.allocate_painter(size, Sense::all());
             let level_shapes = self.create_level_shapes(range, left_level, right_level);
