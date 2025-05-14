@@ -1,6 +1,7 @@
 use crate::model::NoiseType::White;
 use crate::pmodel::{NoiseConfigProto, NoiseTypeProto};
 use local_macro::{FromProto, IntoProto};
+use strum::{Display, EnumIter};
 
 #[derive(Clone, Debug, PartialEq, FromProto, IntoProto)]
 pub struct NoiseConfig {
@@ -8,7 +9,7 @@ pub struct NoiseConfig {
     pub kind: NoiseType,
 }
 
-#[derive(Clone, Debug, PartialEq, FromProto, IntoProto)]
+#[derive(Clone, Copy, Debug, Display, EnumIter, PartialEq, FromProto, IntoProto)]
 pub enum NoiseType {
     White,
     Brown,
