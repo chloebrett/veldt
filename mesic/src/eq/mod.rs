@@ -115,7 +115,7 @@ pub fn get_eq_filter_coeffs(config: &EqConfig) -> Option<BiquadCoefficients> {
                 b1: coeffs_config.b1,
                 b2: coeffs_config.b2,
                 wet,
-                dry
+                dry,
             })
         }
         EqType::SimpleFirstOrderLowPass
@@ -146,7 +146,7 @@ pub fn get_eq_filter_coeffs(config: &EqConfig) -> Option<BiquadCoefficients> {
                 b1: coeffs_config.b1,
                 b2: 0.0, // Set b2 to zero for first order filters
                 wet,
-                dry
+                dry,
             })
         }
     }

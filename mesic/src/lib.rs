@@ -4,7 +4,6 @@ mod envelope;
 pub mod eq;
 pub mod fft;
 pub mod graph;
-pub mod level;
 mod maths;
 mod mixer;
 mod node;
