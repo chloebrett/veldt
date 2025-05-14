@@ -1,5 +1,5 @@
 use crate::graph::ProcessContext;
-use crate::rng::generate_random_number;
+use crate::rng::generate_random_number_in_range;
 use dasp_graph::{Buffer, Input, Node};
 use shared::model::{Generator, GeneratorInstance, GeneratorMeta, NoiseConfig, NoiseType};
 use state::GeneratorSelector;
@@ -60,7 +60,7 @@ impl NoiseGeneratorNode {
 
     fn generate_noise_sample(kind: NoiseType) -> f32 {
         match kind {
-            NoiseType::White => generate_random_number(),
+            NoiseType::White => generate_random_number_in_range(-1.0, 1.0),
             NoiseType::Pink => todo!(),
             NoiseType::Brown => todo!(),
         }
