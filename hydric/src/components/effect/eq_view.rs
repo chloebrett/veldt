@@ -123,19 +123,21 @@ impl<F: Fn(Action), G: Fn()> View for EqView<'_, F, G> {
                 }
             });
 
-        ui.add_space(5.0);
-
         let frequency_points = self.calculate_eq_points();
 
         // for displaying chart on 'log scale'
-        let (rect, _response) = ui.allocate_exact_size(Vec2::new(300.0, 60.0), Sense::empty());
+        // TODO: switch to plot with log x axis when implemented OR add grid lines, prevent overflow, add axis labels
+        ui.label("Frequency - Response plot on logged x-axis");
+        ui.add_space(50.0);
+        let (rect, _response) = ui.allocate_exact_size(Vec2::new(300.0, 80.0), Sense::empty());
         let logged_freq_response_shape = self.draw_logarithmic_response(frequency_points.clone(), rect);
         let painter = ui.painter();
         painter.add(logged_freq_response_shape);
 
-        ui.add_space(10.0);
+        ui.add_space(50.0);
 
         // for displaying chart on plot
+        ui.label("Frequency - Response plot on linear x-axis");
         let mut plot_shapes = vec![];
         let eq_plot_points: PlotPoints = frequency_points
             .into_iter()
