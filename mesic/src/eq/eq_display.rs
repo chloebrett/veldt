@@ -1,5 +1,6 @@
 use crate::consts::RECIP_SAMPLE_RATE;
 use crate::eq::BiquadCoefficients;
+use crate::convert::to_db;
 use std::f32::consts::TAU;
 
 #[derive(Debug, Clone, Copy)]
@@ -75,7 +76,7 @@ pub fn calculate_frequency_response(
 
         // Convert magnitude to decibels
         let gain = if magnitude > 0.0 {
-            20.0 * magnitude.log10()
+            to_db(magnitude)
         } else {
             -60.0 // if magnitude is zero then just set the gain_db to something very low
         };
