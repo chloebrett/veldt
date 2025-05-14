@@ -7,7 +7,7 @@ use state::{Action, GeneratorSelector, TypeField};
 use strum::IntoEnumIterator;
 
 pub struct NoiseView<'a, F: Fn(Action), G: Fn()> {
-    selector: GeneratorSelector, // NOTE: could be used in the future for configuration/multiple noise generators
+    selector: GeneratorSelector, 
     config: &'a NoiseConfig,
     player: &'a mut AudioPlayer,
     dispatch: F,
