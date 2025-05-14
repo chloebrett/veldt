@@ -1,6 +1,6 @@
 use crate::consts::RECIP_SAMPLE_RATE;
-use crate::eq::BiquadCoefficients;
 use crate::convert::to_db;
+use crate::eq::BiquadCoefficients;
 use std::f32::consts::TAU;
 
 #[derive(Debug, Clone, Copy)]
@@ -59,10 +59,14 @@ pub fn calculate_frequency_response(
             real_denominator * real_denominator + imaginary_denominator * imaginary_denominator;
 
         // Calculate the real part of H(e^(j*w*T))
-        let real_h_filter = (real_numerator * real_denominator + imaginary_numerator * imaginary_denominator) / denominator_magnitude_sq;
+        let real_h_filter = (real_numerator * real_denominator
+            + imaginary_numerator * imaginary_denominator)
+            / denominator_magnitude_sq;
 
         // Calculate the imaginary part of H(e^(j*w*T))
-        let imaginary_h_filter = (imaginary_numerator * real_denominator - real_numerator * imaginary_denominator) / denominator_magnitude_sq;
+        let imaginary_h_filter = (imaginary_numerator * real_denominator
+            - real_numerator * imaginary_denominator)
+            / denominator_magnitude_sq;
 
         let dry_amount = coeffs.dry;
         let wet_amount = coeffs.wet;
@@ -72,7 +76,8 @@ pub fn calculate_frequency_response(
         let imaginary_h_overall = wet_amount * imaginary_h_filter;
 
         // Calcuate the magnitude of H_overall
-        let magnitude = (real_h_overall * real_h_overall + imaginary_h_overall * imaginary_h_overall).sqrt();
+        let magnitude =
+            (real_h_overall * real_h_overall + imaginary_h_overall * imaginary_h_overall).sqrt();
 
         // Convert magnitude to decibels
         let gain = if magnitude > 0.0 {
