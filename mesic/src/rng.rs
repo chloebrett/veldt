@@ -1,5 +1,5 @@
 use rand::Rng;
-use wasm_bindgen::prelude::wasm_bindgen;  // Needs to be kept for compiling for WASM
+use wasm_bindgen::prelude::wasm_bindgen; // Needs to be kept for compiling for WASM
 
 #[cfg(target_arch = "wasm32")]
 use wasm_bindgen::prelude::*;
