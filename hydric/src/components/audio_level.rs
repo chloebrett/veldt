@@ -3,12 +3,9 @@ use egui::{
     emath::RectTransform, pos2, vec2,
 };
 use egui::{InnerResponse, Rangef};
-use mesic::level::calc_audio_level;
 
 use crate::playback::AudioPlayer;
 use crate::transform::Transform;
-
-use ringbuffer::RingBuffer;
 
 /// Widget for rendering audio level in dB.
 pub struct AudioLevel<'a> {
@@ -68,11 +65,8 @@ impl Widget for AudioLevel<'_> {
             size,
         } = self;
         let range = Rect::from_min_max(pos2(0.0, max_level), pos2(1.0, min_level));
-        // Take last 64 samples from audio.
-        let audio: Vec<[f32; 2]> = player.recent_buf().iter().map(|it| *it).collect();
-        let window = &audio[audio.len() - 64..];
         // Get the level of audio channels.
-        let (left_level, right_level) = calc_audio_level(window);
+        let [left_level, right_level] = player.audio_level();
         let InnerResponse { inner: _, response } = Frame::canvas(ui.style()).show(ui, |ui| {
             let (response, painter) = ui.allocate_painter(size, Sense::all());
             let level_shapes = self.create_level_shapes(range, left_level, right_level);
