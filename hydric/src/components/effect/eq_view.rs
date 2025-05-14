@@ -1,6 +1,6 @@
 use crate::view::View;
 use crate::widget::{get_set, knob, selectable_value};
-use egui::{pos2, Color32, Sense, Rect, Shape, Stroke, Ui, Vec2};
+use egui::{Color32, Rect, Sense, Shape, Stroke, Ui, Vec2, pos2};
 use egui_plot::{Line, Plot, PlotPoints};
 use mesic::consts::NYQUIST;
 use mesic::eq::eq_display::{FrequencyResponsePoint, calculate_frequency_response};
@@ -38,7 +38,11 @@ impl<'a, F: Fn(Action), G: Fn()> EqView<'a, F, G> {
         eq_response_points
     }
 
-    fn draw_logarithmic_response(&self, frequency_points: Vec<FrequencyResponsePoint>, plot_rect: Rect) -> Shape {
+    fn draw_logarithmic_response(
+        &self,
+        frequency_points: Vec<FrequencyResponsePoint>,
+        plot_rect: Rect,
+    ) -> Shape {
         let plot_x_min = plot_rect.left_top().x;
         let plot_y_min = plot_rect.left_top().y;
         let plot_x_max = plot_rect.right_bottom().x;
@@ -46,25 +50,24 @@ impl<'a, F: Fn(Action), G: Fn()> EqView<'a, F, G> {
 
         let log_min_freq = MIN_FREQ.log10();
         let log_max_freq = MAX_FREQ.log10();
-        let eq_points= frequency_points
+        let eq_points = frequency_points
             .into_iter()
             .map(|point| {
                 // x position calculations
                 let log_current_freq = point.frequency.log10();
-                let normalised_freq_pos = (log_current_freq - log_min_freq) / (log_max_freq - log_min_freq);
-                let x_position = plot_x_min + normalised_freq_pos * (plot_x_max - plot_x_min); 
-                
+                let normalised_freq_pos =
+                    (log_current_freq - log_min_freq) / (log_max_freq - log_min_freq);
+                let x_position = plot_x_min + normalised_freq_pos * (plot_x_max - plot_x_min);
+
                 // y position calculations
-                let normalised_gain_pos = (point.gain - MIN_GAIN as f32) / (MAX_GAIN as f32 - MIN_GAIN as f32);
+                let normalised_gain_pos =
+                    (point.gain - MIN_GAIN as f32) / (MAX_GAIN as f32 - MIN_GAIN as f32);
                 let y_position = plot_y_max - normalised_gain_pos * (plot_y_max - plot_y_min);
                 pos2(x_position, y_position)
             })
             .collect();
-        
-        Shape::line(
-            eq_points,
-            Stroke::new(1.0, Color32::WHITE),
-        )
+
+        Shape::line(eq_points, Stroke::new(1.0, Color32::WHITE))
     }
 }
 
@@ -130,7 +133,8 @@ impl<F: Fn(Action), G: Fn()> View for EqView<'_, F, G> {
         ui.label("Frequency - Response plot on logged x-axis");
         ui.add_space(50.0);
         let (rect, _response) = ui.allocate_exact_size(Vec2::new(300.0, 80.0), Sense::empty());
-        let logged_freq_response_shape = self.draw_logarithmic_response(frequency_points.clone(), rect);
+        let logged_freq_response_shape =
+            self.draw_logarithmic_response(frequency_points.clone(), rect);
         let painter = ui.painter();
         painter.add(logged_freq_response_shape);
 

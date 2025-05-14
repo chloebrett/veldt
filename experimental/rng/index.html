@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Random Number Generator</title>
+</head>
+<body>
+    <button id="generate">Generate Random Number</button>
+    <p id="output"></p>
+
+    <script type="module">
+        import init, { generate_random_number, generate_random_number_in_range } from './pkg/rng.js';
+
+        async function run() {
+            await init();
+
+            document.getElementById('generate').addEventListener('click', () => {
+                const randomNumber = generate_random_number();
+                document.getElementById('output').textContent = `Random number: ${randomNumber}`;
+            });
+        }
+
+        run();
+    </script>
+</body>
+</html>
