@@ -1,6 +1,6 @@
 use super::make_node;
 use crate::graph::Graph;
-use crate::node::{SimpleWaveGeneratorNode, SubSynthNode};
+use crate::node::{SimpleWaveGeneratorNode, StingrayNode};
 use petgraph::stable_graph::NodeIndex;
 use shared::model::{Generator, GeneratorInstance};
 use state::GeneratorSelector;
@@ -21,7 +21,7 @@ impl GeneratorInfo {
     ) -> Self {
         let node = match &generator.it {
             Generator::SimpleWave(..) => make_node(SimpleWaveGeneratorNode::new(selector)),
-            Generator::SubSynth(..) => make_node(SubSynthNode::new(selector)),
+            Generator::Stingray(..) => make_node(StingrayNode::new(selector)),
             _ => {
                 // TODO: support adding other types of generators to the graph.
                 panic!("Not yet implemented.")

@@ -1,5 +1,5 @@
 use crate::pmodel::{
-    GeneratorInstanceProto, GeneratorMetaProto, NoiseProto, SimpleWaveProto, SubSynthProto,
+    GeneratorInstanceProto, GeneratorMetaProto, NoiseProto, SimpleWaveProto, StingrayProto,
     generator_instance_proto::It as GeneratorProto,
 };
 use crate::types::{KnobPosition, Volume};
@@ -10,14 +10,14 @@ mod noise;
 mod oscillator;
 mod polyphony;
 mod simple_wave;
-mod subsynth;
+mod stingray;
 
 pub use alias::*;
 pub use noise::*;
 pub use oscillator::*;
 pub use polyphony::*;
 pub use simple_wave::*;
-pub use subsynth::*;
+pub use stingray::*;
 
 #[derive(Clone, Debug, PartialEq, FromProto, IntoProto)]
 pub struct GeneratorInstance {
@@ -37,7 +37,7 @@ impl From<Generator> for GeneratorProto {
             Generator::Noise(config) => Self::Noise(NoiseProto {
                 config: Some(config.into()),
             }),
-            Generator::SubSynth(config) => Self::SubSynth(SubSynthProto {
+            Generator::Stingray(config) => Self::Stingray(StingrayProto {
                 config: Some(config.into()),
             }),
         }
@@ -49,7 +49,7 @@ impl From<GeneratorProto> for Generator {
         match item {
             GeneratorProto::SimpleWave(config) => Self::SimpleWave(config.config.unwrap().into()),
             GeneratorProto::Noise(config) => Self::Noise(config.config.unwrap().into()),
-            GeneratorProto::SubSynth(config) => Self::SubSynth(config.config.unwrap().into()),
+            GeneratorProto::Stingray(config) => Self::Stingray(config.config.unwrap().into()),
         }
     }
 }
@@ -58,7 +58,7 @@ impl From<GeneratorProto> for Generator {
 pub enum Generator {
     SimpleWave(SimpleWaveConfig),
     Noise(NoiseConfig),
-    SubSynth(SubSynthConfig),
+    Stingray(StingrayConfig),
 }
 
 #[derive(Clone, Debug, PartialEq, FromProto, IntoProto)]

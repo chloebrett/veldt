@@ -4,7 +4,7 @@ use shared::action_proto::{
 };
 use shared::model::{
     EffectInstance, EqConfig, GeneratorInstance, LfoConfig, MatrixCell, MixerChannel, Oscillator,
-    PlacedNote, Placement, SubSynthConfig, Track,
+    PlacedNote, Placement, StingrayConfig, Track,
 };
 
 // TODO: rename to just Selector when Selector enum is gone.
@@ -264,14 +264,14 @@ impl SelectorTrait for OscillatorSelector {
 
     fn try_select<'a>(&'a self, store: &'a StoreData) -> Option<&'a Self::Item> {
         let instance = store.project.generators.get(self.0)?;
-        let subsynth: &SubSynthConfig = (&instance.it).try_into().ok()?;
-        subsynth.oscillators.get(self.1)
+        let stingray: &StingrayConfig = (&instance.it).try_into().ok()?;
+        stingray.oscillators.get(self.1)
     }
 
     fn try_select_mut<'a>(&'a self, store: &'a mut StoreData) -> Option<&'a mut Self::Item> {
         let instance = store.project.generators.get_mut(self.0)?;
-        let subsynth: &mut SubSynthConfig = (&mut instance.it).try_into().ok()?;
-        subsynth.oscillators.get_mut(self.1)
+        let stingray: &mut StingrayConfig = (&mut instance.it).try_into().ok()?;
+        stingray.oscillators.get_mut(self.1)
     }
 
     fn as_enum(&self) -> Selector {
@@ -284,14 +284,14 @@ impl SelectorTrait for LfoSelector {
 
     fn try_select<'a>(&'a self, store: &'a StoreData) -> Option<&'a Self::Item> {
         let instance = store.project.generators.get(self.0)?;
-        let subsynth: &SubSynthConfig = (&instance.it).try_into().ok()?;
-        subsynth.lfos.get(self.1)
+        let stingray: &StingrayConfig = (&instance.it).try_into().ok()?;
+        stingray.lfos.get(self.1)
     }
 
     fn try_select_mut<'a>(&'a self, store: &'a mut StoreData) -> Option<&'a mut Self::Item> {
         let instance = store.project.generators.get_mut(self.0)?;
-        let subsynth: &mut SubSynthConfig = (&mut instance.it).try_into().ok()?;
-        subsynth.lfos.get_mut(self.1)
+        let stingray: &mut StingrayConfig = (&mut instance.it).try_into().ok()?;
+        stingray.lfos.get_mut(self.1)
     }
 
     fn as_enum(&self) -> Selector {
@@ -318,17 +318,17 @@ impl SelectorTrait for MixerMatrixCellSelector {
 impl SelectorTrait for GeneratorEffectSelector {
     type Item = EqConfig;
 
-    // NOTE: in theory, can support multiple generator effects, but for now we only have subsynth LPF
+    // NOTE: in theory, can support multiple generator effects, but for now we only have stingray LPF
     fn try_select<'a>(&'a self, store: &'a StoreData) -> Option<&'a Self::Item> {
         let instance = store.project.generators.get(self.0)?;
-        let subsynth: &SubSynthConfig = (&instance.it).try_into().ok()?;
-        Some(&subsynth.lpf)
+        let stingray: &StingrayConfig = (&instance.it).try_into().ok()?;
+        Some(&stingray.lpf)
     }
 
     fn try_select_mut<'a>(&'a self, store: &'a mut StoreData) -> Option<&'a mut Self::Item> {
         let instance = store.project.generators.get_mut(self.0)?;
-        let subsynth: &mut SubSynthConfig = (&mut instance.it).try_into().ok()?;
-        Some(&mut subsynth.lpf)
+        let stingray: &mut StingrayConfig = (&mut instance.it).try_into().ok()?;
+        Some(&mut stingray.lpf)
     }
 
     fn as_enum(&self) -> Selector {

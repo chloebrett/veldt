@@ -5,13 +5,13 @@ use egui::Ui;
 use shared::model::EqConfig;
 use state::{Action, FloatField};
 
-pub struct SubSynthLpfView<'a, F: Fn(Action), G: Fn()> {
+pub struct StingrayLpfView<'a, F: Fn(Action), G: Fn()> {
     config: &'a EqConfig,
     dispatch: F,
     on_release: G,
 }
 
-impl<'a, F: Fn(Action), G: Fn()> SubSynthLpfView<'a, F, G> {
+impl<'a, F: Fn(Action), G: Fn()> StingrayLpfView<'a, F, G> {
     pub fn new(config: &'a EqConfig, dispatch: F, on_release: G) -> Self {
         Self {
             config,
@@ -21,7 +21,7 @@ impl<'a, F: Fn(Action), G: Fn()> SubSynthLpfView<'a, F, G> {
     }
 }
 
-impl<F: Fn(Action), G: Fn()> View for SubSynthLpfView<'_, F, G> {
+impl<F: Fn(Action), G: Fn()> View for StingrayLpfView<'_, F, G> {
     fn ui(&mut self, ui: &mut Ui) {
         let Self {
             config,

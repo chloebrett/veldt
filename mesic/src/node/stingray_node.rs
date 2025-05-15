@@ -11,12 +11,12 @@ use dasp_frame::Stereo;
 use dasp_graph::{Buffer, Input, Node};
 use shared::model::{
     AntiAliasingMode, EqConfig, Generator, GeneratorInstance, GeneratorMeta, Oscillator, PitchName,
-    SubSynthConfig,
+    StingrayConfig,
 };
 use shared::types::{Freq, KnobPosition, Volume};
 use state::GeneratorSelector;
 
-pub struct SubSynthNode {
+pub struct StingrayNode {
     selector: GeneratorSelector,
     state: NodeState,
     cache: WaveCache,
@@ -25,19 +25,19 @@ pub struct SubSynthNode {
 /// State persisted between buffers.
 /// Specific to this node.
 struct NodeState {
-    config: SubSynthConfig,
+    config: StingrayConfig,
     meta: GeneratorMeta,
     voice: Voice,
 }
 
 struct Voice {
     egs: [EnvelopeGenerator; 3],
-    sources: Option<[SubSynthWaveSource; 3]>,
+    sources: Option<[StingrayWaveSource; 3]>,
 }
 
 impl Default for NodeState {
     fn default() -> Self {
-        let config = SubSynthConfig::default();
+        let config = StingrayConfig::default();
         let egs: Vec<_> = config
             .envelopes
             .iter()
@@ -57,7 +57,7 @@ impl Default for NodeState {
 impl NodeState {
     fn update(&mut self, payload: &ProcessContext, selector: GeneratorSelector) {
         if let GeneratorInstance {
-            it: Generator::SubSynth(config),
+            it: Generator::Stingray(config),
             meta,
             ..
         } = &payload.store.select(&selector)
@@ -72,7 +72,7 @@ impl NodeState {
     }
 }
 
-impl SubSynthNode {
+impl StingrayNode {
     pub fn new(selector: GeneratorSelector) -> Self {
         Self {
             selector,
@@ -81,7 +81,7 @@ impl SubSynthNode {
         }
     }
 
-    // TODO: this logic is similar and shared with subsynth and simple wave, probably should move
+    // TODO: this logic is similar and shared with stingray and simple wave, probably should move
     fn apply_volume_and_pan(
         buffer: &mut Buffer,
         channel_index: usize,
@@ -101,7 +101,7 @@ impl SubSynthNode {
     }
 }
 
-impl Node<ProcessContext> for SubSynthNode {
+impl Node<ProcessContext> for StingrayNode {
     fn process(&mut self, _inputs: &[Input], output: &mut [Buffer], payload: &ProcessContext) {
         let state = &mut self.state;
         state.update(payload, self.selector);
@@ -140,7 +140,7 @@ impl Node<ProcessContext> for SubSynthNode {
                             eg.note_on();
                             eg.set_envelope(env);
                             // TODO: update config dynamically, not just when starting a new note.
-                            sources.push(SubSynthWaveSource::new(note_event.pitch_name, osc));
+                            sources.push(StingrayWaveSource::new(note_event.pitch_name, osc));
                         }
                         state.voice.sources = Some(sources.try_into().unwrap());
                     }
@@ -183,13 +183,13 @@ impl Node<ProcessContext> for SubSynthNode {
 }
 
 #[derive(Debug)]
-pub struct SubSynthWaveSource {
+pub struct StingrayWaveSource {
     pitch: PitchName,
     oscillator: Oscillator,
     sample_index: usize,
 }
 
-impl SubSynthWaveSource {
+impl StingrayWaveSource {
     pub fn new(pitch: PitchName, oscillator: Oscillator) -> Self {
         Self {
             pitch,

@@ -11,7 +11,7 @@ impl ActionReceiver for GeneratorInstance {
         match &mut self.it {
             Generator::SimpleWave(config) => config.apply(action),
             Generator::Noise(_) => todo!(),
-            Generator::SubSynth(_) => todo!(),
+            Generator::Stingray(_) => todo!(),
         }
     }
 }
