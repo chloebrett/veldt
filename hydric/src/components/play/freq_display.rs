@@ -7,6 +7,7 @@ use egui_plot::{Line, Plot, PlotPoints};
 use mesic::{
     FFT_SAMPLE_SIZE, SAMPLE_RATE,
     fft::{fft, hann_window},
+    to_db,
 };
 use ordered_float::OrderedFloat;
 use ringbuffer::RingBuffer;
@@ -79,7 +80,7 @@ impl View for FrequencyDisplay<'_> {
                 // Only keep first half of results.
                 .filter(|(index, _it)| *index < FFT_SAMPLE_SIZE / 2)
                 // Take log of values to make dB.
-                .map(|(index, it)| [freq_window * index as f64, it.log10() as f64])
+                .map(|(index, it)| [freq_window * index as f64, to_db(it) as f64])
                 .collect();
             plot_shapes.push(Line::new("Response", points).color(Color32::WHITE))
         };
@@ -87,7 +88,7 @@ impl View for FrequencyDisplay<'_> {
         Plot::new("Frequency Response")
             .view_aspect(2.0)
             .default_x_bounds(0.0, SAMPLE_RATE as f64 / 2.0)
-            .default_y_bounds(-10.0, 5.0)
+            .default_y_bounds(-60.0, 6.0)
             .allow_drag(false)
             .x_axis_label("Frequency (Hz)")
             .y_axis_label("Response (dB)")

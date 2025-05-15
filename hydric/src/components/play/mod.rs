@@ -5,6 +5,6 @@ mod sample_control;
 mod sample_tree_view;
 mod toolbar_view;
 
-use freq_display::*;
+pub use freq_display::*;
 pub use sample_tree_view::*;
 pub use toolbar_view::*;

@@ -1,4 +1,5 @@
 use crate::SAMPLE_RATE;
+use crate::maths::lerp;
 use crate::wave::make_wave;
 use ordered_float::OrderedFloat;
 use shared::model::{AntiAliasingMode, WaveType};
@@ -23,10 +24,6 @@ pub struct WaveKey {
 #[derive(Default, Debug)]
 pub struct WaveCache {
     cache: HashMap<WaveKey, Wave>,
-}
-
-fn lerp(a: f32, b: f32, t: f32) -> f32 {
-    a * (1.0 - t) + b * t
 }
 
 // Multiplier on the lookup table size.

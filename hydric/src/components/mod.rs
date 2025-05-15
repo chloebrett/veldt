@@ -1,4 +1,5 @@
 mod app;
+mod audio_level;
 mod effect;
 mod frame_history;
 mod generator;
@@ -14,6 +15,7 @@ mod track_placement_view;
 mod track_roll;
 
 pub use app::*;
+use audio_level::*;
 use frame_history::*;
 use key_view::*;
 use mod_matrix::*;

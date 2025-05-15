@@ -20,8 +20,8 @@ pub struct Mix {
 /// Because these are set to zero, we can simply use primitive ints instead of a ring buffer, and
 /// save an allocation.
 pub struct FirstOrderFilter {
-    config: FirstOrderFilterConfig,
-    mix: Option<Mix>, // if absent, assumed as wet = 1.0 and dry = 0.0.
+    pub config: FirstOrderFilterConfig,
+    pub mix: Option<Mix>, // if absent, assumed as wet = 1.0 and dry = 0.0.
 
     x_buffer: f32, // effectively a ring buffer with length 1.
     y_buffer: f32, // same as above.
@@ -85,8 +85,8 @@ impl ApplyFilter for FirstOrderFilter {
 ///
 /// In order to produce y0, the current output.
 pub struct SecondOrderFilter {
-    config: SecondOrderFilterConfig,
-    mix: Option<Mix>,
+    pub config: SecondOrderFilterConfig,
+    pub mix: Option<Mix>,
 
     x_buffer: AllocRingBuffer<f32>,
     y_buffer: AllocRingBuffer<f32>,

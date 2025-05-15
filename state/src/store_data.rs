@@ -3,9 +3,9 @@ use crate::{Action, Selector, SelectorTrait, reducer};
 use ordered_float::OrderedFloat;
 use shared::model::{
     AdsrEnvelope, AntiAliasingMode, FileTreeConfig, FilenameTree, Generator, GeneratorInstance,
-    GeneratorMeta, Mixer, MixerChannel, MixerMatrix, ModMatrix, Note, PitchName, PlacedNote,
-    Placement, PlacementType, PolyphonyMode, Project, Scale, ScaleValue, SimpleWaveConfig,
-    StingrayConfig, Track, TrackPlacement, WaveType,
+    GeneratorMeta, Mixer, MixerChannel, MixerMatrix, ModMatrix, NoiseConfig, Note, PitchName,
+    PlacedNote, Placement, PlacementType, PolyphonyMode, Project, Scale, ScaleValue,
+    SimpleWaveConfig, StingrayConfig, Track, TrackPlacement, WaveType,
 };
 use shared::types::Volume;
 
@@ -107,6 +107,15 @@ impl Default for StoreData {
                     },
                     GeneratorInstance {
                         it: Generator::Stingray(StingrayConfig::default()),
+                        meta: GeneratorMeta {
+                            volume: 1.0,
+                            mute: false,
+                            pan: 0.0,
+                            mixer_channel: 2,
+                        },
+                    },
+                    GeneratorInstance {
+                        it: Generator::Noise(NoiseConfig::default()),
                         meta: GeneratorMeta {
                             volume: 1.0,
                             mute: false,
