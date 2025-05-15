@@ -2,7 +2,9 @@ use super::pan_multipliers;
 use crate::SAMPLE_RATE;
 use crate::envelope::EnvelopeGenerator;
 use crate::graph::{NoteEventType, ProcessContext};
-use crate::wave::{WaveCache, WaveKey, detune_multiplier, linspace};
+use crate::maths::linspace;
+use crate::wave::detune_multiplier;
+use crate::wave_cache::{WaveCache, WaveKey};
 use dasp_graph::{Buffer, Input, Node};
 use shared::model::{Generator, GeneratorInstance, GeneratorMeta, PitchName, SimpleWaveConfig};
 use shared::types::Freq;
@@ -11,6 +13,7 @@ use state::GeneratorSelector;
 pub struct SimpleWaveGeneratorNode {
     selector: GeneratorSelector,
     state: NodeState,
+    cache: WaveCache,
 }
 
 /// State persisted between buffers.
@@ -63,6 +66,7 @@ impl SimpleWaveGeneratorNode {
         Self {
             selector,
             state: NodeState::default(),
+            cache: WaveCache::default(),
         }
     }
 
@@ -78,13 +82,6 @@ impl Node<ProcessContext> for SimpleWaveGeneratorNode {
     fn process(&mut self, _inputs: &[Input], output: &mut [Buffer], payload: &ProcessContext) {
         let state = &mut self.state;
         state.update(payload, self.selector);
-
-        // Skip generating if muted!
-        // TODO: disconnect muted generators from the graph.
-        // This should be handled from the mixer.
-        if state.meta.mute || state.meta.volume == 0.0 {
-            return;
-        }
 
         let mut buffer = Buffer::SILENT;
         let GeneratorSelector(generator_index) = self.selector;
@@ -140,7 +137,7 @@ impl Node<ProcessContext> for SimpleWaveGeneratorNode {
                 .voice
                 .source
                 .as_mut()
-                .map(|it| it.next().unwrap_or(0.0))
+                .map(|it| it.next(&mut self.cache))
                 .unwrap_or(0.0);
 
             buffer[i] = amp * wave;
@@ -154,55 +151,62 @@ impl Node<ProcessContext> for SimpleWaveGeneratorNode {
 }
 
 pub struct SimpleWaveSource {
-    // TODO: recycle the wave cache?
-    // Currently it's re-created each time the note changes.
-    cache: WaveCache,
     freq: Freq,
     config: SimpleWaveConfig,
     sample_index: usize,
 }
 
 impl SimpleWaveSource {
-    pub fn new(freq: Freq, config: SimpleWaveConfig) -> Self {
+    fn new(freq: Freq, config: SimpleWaveConfig) -> Self {
         Self {
-            cache: WaveCache::default(),
             freq,
             config,
             sample_index: 0,
         }
     }
 
-    pub fn same_pitch(&self, pitch: PitchName) -> bool {
+    fn same_pitch(&self, pitch: PitchName) -> bool {
         self.freq == pitch.into()
     }
-}
 
-impl Iterator for SimpleWaveSource {
-    type Item = f32;
+    fn next(&mut self, cache: &mut WaveCache) -> f32 {
+        let detune_cents = self.config.detune_cents;
+        let unison = if detune_cents == 0.0 {
+            1
+        } else {
+            self.config.osc_count
+        };
 
-    fn next(&mut self) -> Option<Self::Item> {
-        let detunes = linspace(
-            -self.config.detune_cents,
-            self.config.detune_cents,
-            self.config.osc_count,
-        );
+        let detunes = linspace(-detune_cents, detune_cents, unison);
+
+        // Evenly spaced phases for each unison wave.
+        // Use unison + 1 because phase=1 is the same as phase=0.
+        let phases = linspace(0.0, 1.0, unison + 1);
 
         let mut output = 0.0;
-
-        for detune in detunes {
+        let unison_amp = (unison as f32).recip();
+        for (i, &detune) in detunes.iter().enumerate() {
             let freq = self.freq * detune_multiplier(detune);
             let step = freq / (SAMPLE_RATE as f32);
-            let phase = ((self.sample_index as f32) * step) % 1.0;
+
+            // Lessen the initial 'pop' of the sound when playing with unison.
+            let phase = (phases[i] + (self.sample_index as f32) * step) % 1.0;
 
             let key = WaveKey {
                 kind: self.config.wave,
                 aa: self.config.anti_aliasing_mode,
                 freq: self.freq.into(),
             };
-            output += self.cache.get(&key, phase);
+
+            output += cache.get(&key, phase) * unison_amp;
+        }
+
+        // Add clipping to lessen the peaks in volume.
+        if self.config.detune_cents > 0.0 && self.config.osc_count > 1 {
+            output = (output / 0.95).tanh() * 0.95;
         }
 
         self.sample_index += 1;
-        Some(output)
+        output
     }
 }

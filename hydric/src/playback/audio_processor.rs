@@ -3,6 +3,7 @@ use super::{
     PlaybackUpdate,
 };
 use crossbeam_channel::{Receiver, Sender};
+use dasp_frame::Stereo;
 use mesic::graph::RenderGraph;
 
 /// Audio processor which runs in its own thread and communicates with the UI thread via crossbeam channels.
@@ -12,6 +13,7 @@ pub struct AudioProcessor {
     audio_tx: Sender<AudioBuffer>,
     playback_rx: Receiver<PlaybackMessage>,
     update_tx: Sender<PlaybackUpdate>,
+    recent_tx: Sender<Stereo<f32>>,
 
     state: PlaybackState,
     graph: RenderGraph,
@@ -24,6 +26,7 @@ impl AudioProcessor {
         audio_tx: Sender<AudioBuffer>,
         playback_rx: Receiver<PlaybackMessage>,
         update_tx: Sender<PlaybackUpdate>,
+        recent_tx: Sender<Stereo<f32>>,
         is_looping: bool,
         graph: RenderGraph,
     ) -> Self {
@@ -31,6 +34,7 @@ impl AudioProcessor {
             audio_tx,
             playback_rx,
             update_tx,
+            recent_tx,
             is_looping,
             state: PlaybackState::Pause,
             graph,
@@ -44,16 +48,13 @@ impl AudioProcessor {
             wasm_thread::current().id()
         );
 
-        self.graph.clear_nodes();
-        self.graph.set_from_store();
-
         loop {
             // Process pending messages (non-blocking).
             while let Ok(message) = self.playback_rx.try_recv() {
                 self.process_message(message);
             }
 
-            if self.audio_tx.is_empty() {
+            if self.state == PlaybackState::Play && self.audio_tx.is_empty() {
                 self.process_chunk();
             } else {
                 sleep_ms(10);
@@ -66,13 +67,11 @@ impl AudioProcessor {
 
     fn process_message(&mut self, message: PlaybackMessage) {
         match message {
-            PlaybackMessage::RefreshGraph() => {
-                self.graph.clear_nodes();
-                self.graph.set_from_store();
+            PlaybackMessage::RecreateMixer => {
+                self.graph.recreate_mixer();
             }
             PlaybackMessage::SetAudio(audio) => {
-                self.graph.clear_nodes();
-                self.graph.set_from_audio(audio);
+                self.graph.set_audio(&audio);
             }
             PlaybackMessage::Seek(PlaybackPosition { samples }) => {
                 log::info!("Seeking to {}", samples);
@@ -84,7 +83,7 @@ impl AudioProcessor {
                     state,
                     wasm_thread::current().id()
                 );
-                self.set_state(state);
+                self.state = state;
             }
             PlaybackMessage::Loop(is_looping) => {
                 self.is_looping = is_looping;
@@ -112,11 +111,12 @@ impl AudioProcessor {
             match next {
                 Some(value) => {
                     self.buffer[i] = value;
+                    self.recent_tx.try_send(value).unwrap();
                     got_samples = true;
                 }
                 None => {
                     // No more audio, so finish.
-                    self.set_state(PlaybackState::Finished);
+                    self.state = PlaybackState::Finished;
                     self.update_tx
                         .try_send(PlaybackUpdate::State(self.state))
                         .unwrap();
@@ -135,11 +135,6 @@ impl AudioProcessor {
                 .unwrap();
             log::info!("Sent a buffer of samples.");
         }
-    }
-
-    fn set_state(&mut self, state: PlaybackState) {
-        self.state = state;
-        self.graph.is_playing = state == PlaybackState::Play;
     }
 }
 

@@ -3,18 +3,25 @@ use crate::{Action, Selector, SelectorTrait, reducer};
 use ordered_float::OrderedFloat;
 use shared::model::{
     AdsrEnvelope, AntiAliasingMode, FileTreeConfig, FilenameTree, Generator, GeneratorInstance,
-    GeneratorMeta, Mixer, MixerChannel, MixerMatrix, ModMatrix, Note, PitchName, PlacedNote,
-    Placement, PlacementType, Project, Scale, ScaleValue, SimpleWaveConfig, SubSynthConfig, Track,
-    TrackPlacement, WaveType,
+    GeneratorMeta, Mixer, MixerChannel, MixerMatrix, ModMatrix, NoiseConfig, Note, PitchName,
+    PlacedNote, Placement, PlacementType, PolyphonyMode, Project, Scale, ScaleValue,
+    SimpleWaveConfig, SubSynthConfig, Track, TrackPlacement, WaveType,
 };
 use shared::types::Volume;
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct StoreData {
     pub project: Project,
+    // TODO: stop using a main volume here.
+    // Instead use the mixer 0 (main mixer channel) volume to control the overall volume.
+    // Need to route samples through the mixer 0 output amp as well then.
+    // Then we don't have to send any more of the StoreData (the rest isn't rendering-related) to
+    // mesic.
+    pub volume: Volume,
+
+    // Non-rendering-related below:
     pub key: ScaleValue,
     pub scale: Scale,
-    pub volume: Volume,
     pub sample_tree: Option<FilenameTree>,
     pub sample_tree_config: FileTreeConfig,
     pub project_list: Vec<String>,
@@ -88,6 +95,8 @@ impl Default for StoreData {
                             detune_cents: 5.0,
                             anti_aliasing_mode: AntiAliasingMode::Off,
                             oversample_factor: 2,
+                            polyphony_mode: PolyphonyMode::Polyphonic,
+                            polyphony_limit: 2,
                         }),
                         meta: GeneratorMeta {
                             volume: 1.0,
@@ -98,6 +107,15 @@ impl Default for StoreData {
                     },
                     GeneratorInstance {
                         it: Generator::SubSynth(SubSynthConfig::default()),
+                        meta: GeneratorMeta {
+                            volume: 1.0,
+                            mute: false,
+                            pan: 0.0,
+                            mixer_channel: 2,
+                        },
+                    },
+                    GeneratorInstance {
+                        it: Generator::Noise(NoiseConfig::default()),
                         meta: GeneratorMeta {
                             volume: 1.0,
                             mute: false,

@@ -31,7 +31,9 @@ lazy_static = "1.5.0"
 wasm_thread = "0.3.3"
 crossbeam-channel = "0.5.15"
 futures = "0.3.31"
-web-sys = { version = "0.3", features = ["HtmlTextAreaElement", "HtmlInputElement", "Clipboard"] }
+ringbuffer = "0.15.0"
+dasp_rms = "0.11.0"
+dasp_ring_buffer = "0.11.0"
 
 [features]
 # Displays some extra debug information in the UI.

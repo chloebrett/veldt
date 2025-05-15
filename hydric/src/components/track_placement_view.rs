@@ -5,9 +5,10 @@ use egui::{Ui, pos2};
 use ordered_float::OrderedFloat;
 use shared::model::{Track, TrackPlacement};
 use shared::types::Beats;
-use state::{Action, FloatField, IndexField, PlacementSelector, Store, TrackSelector, TypeField};
+use state::{
+    Action, FloatField, IndexField, PlacementSelector, Store, TrackSelector, TypeField, UintField,
+};
 
-// TODO: rename to PlacementView if appropriate.
 pub struct TrackPlacementView<'a> {
     store: &'a Store,
     local_state: &'a LocalState,
@@ -28,7 +29,9 @@ impl View for TrackPlacementView<'_> {
         };
         let on_release = || store.dispatchr(Action::Release);
         let placement = &store.get().project.placements[placement_index];
-        let track_placement: &TrackPlacement = placement.try_into().unwrap();
+        let Some(track_placement): Option<&TrackPlacement> = placement.try_into().ok() else {
+            return;
+        };
         let tracks_length = store.get().project.tracks.len();
         let sel = PlacementSelector(placement_index);
         let track_sel = TrackSelector(track_placement.track_index);
@@ -105,10 +108,25 @@ impl View for TrackPlacementView<'_> {
                     );
                 });
 
+                int_slider(
+                    ui,
+                    "Visual placement",
+                    placement.visual_placement as f64,
+                    |it| {
+                        store.dispatch(&sel, Action::SetUint(UintField::VisualPlacement, it as u32))
+                    },
+                    0..=3,
+                    on_release,
+                );
+
                 if ui.button("Delete").clicked() {
                     store.dispatchr(Action::DeleteChild(IndexField::Placement(placement_index)));
                     self.local_state.track_placement_window.set(false);
                     self.local_state.active_track_placement.set(None);
+                    self.local_state.selected_track_placements.update(|mut it| {
+                        it.remove(&placement_index);
+                        it
+                    });
                 }
             },
         );

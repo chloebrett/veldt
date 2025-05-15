@@ -202,6 +202,17 @@ message SimpleWaveConfigProto {
   AntiAliasingModeProto anti_aliasing_mode = 5;
 
   uint32 oversample_factor = 6;
+
+  PolyphonyModeProto polyphony_mode = 7;
+
+  uint32 polyphony_limit = 8;
+}
+
+enum PolyphonyModeProto {
+  UnknownPolyphonyMode = 0;
+  MonophonicPolyphonyMode = 1;
+  MonophonicLegatoPolyphonyMode = 2;
+  PolyphonicPolyphonyMode = 3;
 }
 
 message EffectMetaProto {

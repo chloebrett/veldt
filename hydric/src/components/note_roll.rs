@@ -1,6 +1,7 @@
 use super::{Piano, PianoOrientation};
 use crate::{
     GetSet, LocalState,
+    playback::AudioPlayer,
     transform::Yx,
     view::View,
     widget::{Sequencer, SequencerObject, StateWindow, default_window},
@@ -10,18 +11,19 @@ use egui::{
 };
 use mesic::create_scale_values;
 use shared::{
-    model::{Note, PitchName, PlacedNote, Scale, ScaleValue},
+    model::{Note, PitchName, PlacedNote, PlacementType, Scale, ScaleValue},
     types::PitchValue,
 };
 use state::{
-    Action, FloatField, MultiIndexField, NoteSelector, SelectorTrait, Store, TrackSelector,
-    TypeField,
+    Action, FloatField, GeneratorSelector, MultiIndexField, NoteSelector, SelectorTrait, Store,
+    TrackSelector, TypeField,
 };
 use std::collections::HashSet;
 
 pub struct NoteRoll<'a> {
     store: &'a Store,
     local_state: &'a LocalState,
+    audio_player: &'a mut AudioPlayer,
     min_note: PitchValue,
     max_note: PitchValue,
     offset: f32,
@@ -29,10 +31,15 @@ pub struct NoteRoll<'a> {
 }
 
 impl<'a> NoteRoll<'a> {
-    pub fn new(store: &'a Store, local_state: &'a LocalState) -> Self {
+    pub fn new(
+        store: &'a Store,
+        local_state: &'a LocalState,
+        audio_player: &'a mut AudioPlayer,
+    ) -> Self {
         Self {
             store,
             local_state,
+            audio_player,
             min_note: PitchName {
                 scale_value: ScaleValue::A,
                 octave: 1,
@@ -48,7 +55,7 @@ impl<'a> NoteRoll<'a> {
         }
     }
 
-    fn make_white_note_pattern(&self, max_note: i32) -> impl Fn(i32) -> bool {
+    fn make_white_note_pattern(&self, max_note: i32) -> impl Fn(i32) -> bool + use<> {
         // Return a pattern for Background Rects to display white notes.
         // Account for max note changing.
         let c_value: PitchValue = ScaleValue::C.into();
@@ -86,6 +93,7 @@ impl View for NoteRoll<'_> {
         let Some(track_sel) = self.local_state.active_track.get() else {
             return;
         };
+
         let default_note = PlacedNote {
             note: Note {
                 pitch_name: PitchName {
@@ -133,17 +141,35 @@ impl View for NoteRoll<'_> {
                     }
                     ui.checkbox(&mut select, "Select")
                 });
+                ui.separator();
                 ScrollArea::vertical()
                     .min_scrolled_height(200.0)
                     .show(ui, |ui| {
                         ui.horizontal(|ui| {
+                            // TODO: use the correct generator for the track placement that
+                            // actually opened this UI - not just the first track placement we can
+                            // find that matches this track.
+                            let gen_sel = store
+                                .get()
+                                .project
+                                .placements
+                                .iter()
+                                .filter_map(|placement| match &placement.kind {
+                                    PlacementType::Track(it) if it.track_index == track_sel.0 => {
+                                        Some(it.generator_index)
+                                    }
+                                    _ => None,
+                                })
+                                .next()
+                                .map(GeneratorSelector);
+
                             Piano::new(
                                 max_note,
                                 min_note - 1,
                                 PianoOrientation::Vertical,
                                 Vec2::new(600.0, 50.0),
-                                None,
-                                None,
+                                Some(self.audio_player),
+                                gen_sel,
                             )
                             .ui(ui);
                             ui.add(
@@ -201,7 +227,7 @@ impl SequencerObject<PlacedNote> for PlacedNote {
         Shape::rect_filled(self.to_rect(range), CornerRadius::same(1), Color32::WHITE)
     }
 
-    fn get_active(_ui: &Ui, store: &Store, local_state: &LocalState) -> Option<PlacedNote> {
+    fn get_active(store: &Store, local_state: &LocalState) -> Option<PlacedNote> {
         let track_sel = local_state.active_track.get()?;
         local_state.active_note.get().map(|note_index| {
             let sel: NoteSelector = track_sel.downcast_note(note_index);
@@ -263,12 +289,12 @@ impl SequencerObject<PlacedNote> for PlacedNote {
         )
     }
 
-    fn set_active(&self, _ui: &mut Ui, local_state: &LocalState, index: usize) {
+    fn set_active(&self, local_state: &LocalState, index: usize) {
         local_state.note_window.set(true);
         local_state.active_note.set(Some(index));
     }
 
-    fn set_selected(_ui: &mut Ui, local_state: &LocalState, index: Option<usize>) {
+    fn set_selected(local_state: &LocalState, index: Option<usize>) {
         let Some(index) = index else {
             local_state.selected_notes.set(HashSet::default());
             return;
@@ -310,6 +336,11 @@ impl SequencerObject<PlacedNote> for PlacedNote {
         local_state: &LocalState,
         parent_index: Option<usize>,
     ) {
+        local_state.active_note.update(|note| match note {
+            // If the active note is selected, "de-activate" it.
+            Some(index) if local_state.selected_notes.get().contains(&index) => None,
+            _ => note,
+        });
         store.dispatch(
             &TrackSelector(parent_index.expect("Should have been a parent index")),
             Action::DeleteChildren(MultiIndexField::PlacedNote(

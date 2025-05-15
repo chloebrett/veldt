@@ -1,9 +1,11 @@
+use std::collections::HashSet;
+
 use super::{EdgeCounter, EdgeKey, EffectInfo, GeneratorInfo, make_node};
 use crate::graph::Graph;
 use crate::node::AmpNode;
 use dasp_graph::node::Sum;
 use petgraph::stable_graph::NodeIndex;
-use shared::model::{EffectInstance, MatrixCell, Project};
+use shared::model::{Effect, MatrixCell, Project};
 use state::{EffectSelector, GeneratorSelector, MixerMatrixCellSelector, MixerSelector, move_elem};
 
 /// Describes a mixer channel from the viewpoint of the graph.
@@ -11,6 +13,9 @@ use state::{EffectSelector, GeneratorSelector, MixerMatrixCellSelector, MixerSel
 pub struct ChannelInfo {
     // TODO: consider using a HashSet instead.
     generators: Vec<GeneratorInfo>,
+
+    // Generators that have been muted and so should not have edges.
+    muted_generators: HashSet<usize>,
 
     // Input sum node for this mixer channel.
     // Sums together the generators.
@@ -35,12 +40,16 @@ pub struct ChannelInfo {
 
 impl ChannelInfo {
     pub fn new(graph: &mut Graph, project: &Project, channel_index: usize) -> Self {
+        let mut muted_generators = HashSet::new();
         let generators: Vec<GeneratorInfo> = project
             .generators
             .iter()
             .filter(|generator| generator.meta.mixer_channel == channel_index)
             .enumerate()
             .map(|(generator_index, generator)| {
+                if generator.meta.volume == 0.0 || generator.meta.mute {
+                    muted_generators.insert(generator_index);
+                }
                 GeneratorInfo::new(graph, generator, GeneratorSelector(generator_index))
             })
             .collect();
@@ -52,7 +61,11 @@ impl ChannelInfo {
             .iter()
             .enumerate()
             .map(|(effect_index, effect)| {
-                EffectInfo::new(graph, effect, &EffectSelector(channel_index, effect_index))
+                EffectInfo::new(
+                    graph,
+                    &effect.it,
+                    &EffectSelector(channel_index, effect_index),
+                )
             })
             .collect();
 
@@ -62,6 +75,7 @@ impl ChannelInfo {
 
         let mut partial = Self {
             generators,
+            muted_generators,
             input_node,
             effects,
             output_node,
@@ -102,13 +116,16 @@ impl ChannelInfo {
     }
 
     pub fn add_edges(&self, graph: &mut Graph, edge_counter: &mut EdgeCounter) {
-        for generator in &self.generators {
-            edge_counter.add_edge(
-                graph,
-                generator.node(),
-                self.input_node,
-                EdgeKey::GenToMixIn,
-            );
+        for (generator_index, generator) in self.generators.iter().enumerate() {
+            if !self.muted_generators.contains(&generator_index) {
+                // Do not add edges for muted generators.
+                edge_counter.add_edge(
+                    graph,
+                    generator.node(),
+                    self.input_node,
+                    EdgeKey::GenToMixIn,
+                );
+            }
         }
 
         let effects = &self.effects;
@@ -167,6 +184,20 @@ impl ChannelInfo {
         }
     }
 
+    pub fn contains_generator(&mut self, selector: GeneratorSelector) -> bool {
+        self.generators
+            .iter()
+            .any(|generator| generator.selector == selector)
+    }
+
+    pub fn set_generator_muted(&mut self, generator_index: usize, mute: bool) {
+        if mute {
+            self.muted_generators.insert(generator_index);
+        } else {
+            self.muted_generators.remove(&generator_index);
+        }
+    }
+
     pub fn effects_count(&self) -> usize {
         self.effects.len()
     }
@@ -180,12 +211,7 @@ impl ChannelInfo {
         effect.remove_from(graph);
     }
 
-    pub fn add_effect(
-        &mut self,
-        graph: &mut Graph,
-        effect: &EffectInstance,
-        selector: &EffectSelector,
-    ) {
+    pub fn add_effect(&mut self, graph: &mut Graph, effect: &Effect, selector: &EffectSelector) {
         // EffectInfo::new handles adding nodes to the graph.
         self.effects.push(EffectInfo::new(graph, effect, selector));
     }

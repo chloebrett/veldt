@@ -1,7 +1,7 @@
 use crate::LocalState;
 use crate::local_state::GetSet;
 use crate::view::View;
-use crate::widget::{StateWindow, default_window, get_set, int_slider, selectable_value};
+use crate::widget::{StateWindow, default_window, get_set, int_slider, selectable_value, slider};
 use egui::{Ui, pos2};
 use shared::model::ScaleValue;
 use shared::types::{Beats, Octave};
@@ -67,24 +67,24 @@ impl View for NoteView<'_> {
                 );
 
                 let duration = note.note.beats as f64;
-                // TODO: use a float slider, but with quantisation.
-                int_slider(
+                // TODO: Add quantisation.
+                slider(
                     ui,
                     "Beats",
                     duration,
                     |it| store.dispatch(&sel, Action::SetFloat(FloatField::Duration, it as Beats)),
-                    0..=10,
+                    0.0..=10.0,
                     on_release,
                 );
 
                 let offset = *note.offset as f64;
-                // TODO: use a float slider, but with quantisation.
-                int_slider(
+                // TODO: Add quantisation.
+                slider(
                     ui,
                     "Offset",
                     offset,
                     |it| store.dispatch(&sel, Action::SetFloat(FloatField::Offset, it as Beats)),
-                    0..=16,
+                    0.0..=16.0,
                     on_release,
                 );
 
@@ -95,6 +95,10 @@ impl View for NoteView<'_> {
                     );
                     self.local_state.active_note.set(None);
                     self.local_state.note_window.set(false);
+                    self.local_state.selected_notes.update(|mut it| {
+                        it.remove(&note_index);
+                        it
+                    });
                 }
             },
         );

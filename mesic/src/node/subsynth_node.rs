@@ -2,12 +2,15 @@ use super::pan_multipliers;
 use crate::SAMPLE_RATE;
 use crate::consts::CHANNEL_COUNT;
 use crate::envelope::EnvelopeGenerator;
+use crate::eq::eq_filter;
 use crate::graph::{NoteEventType, ProcessContext};
-use crate::wave::{WaveCache, WaveKey, detune_multiplier, linspace};
+use crate::maths::linspace;
+use crate::wave::detune_multiplier;
+use crate::wave_cache::{WaveCache, WaveKey};
 use dasp_frame::Stereo;
 use dasp_graph::{Buffer, Input, Node};
 use shared::model::{
-    AntiAliasingMode, Generator, GeneratorInstance, GeneratorMeta, Oscillator, PitchName,
+    AntiAliasingMode, EqConfig, Generator, GeneratorInstance, GeneratorMeta, Oscillator, PitchName,
     SubSynthConfig,
 };
 use shared::types::{Freq, KnobPosition, Volume};
@@ -16,6 +19,7 @@ use state::GeneratorSelector;
 pub struct SubSynthNode {
     selector: GeneratorSelector,
     state: NodeState,
+    cache: WaveCache,
 }
 
 /// State persisted between buffers.
@@ -51,8 +55,6 @@ impl Default for NodeState {
 }
 
 impl NodeState {
-    // TODO: update logic is almost the same as the simple wave generator.
-    // Should it be de-duplicated?
     fn update(&mut self, payload: &ProcessContext, selector: GeneratorSelector) {
         if let GeneratorInstance {
             it: Generator::SubSynth(config),
@@ -75,6 +77,7 @@ impl SubSynthNode {
         Self {
             selector,
             state: NodeState::default(),
+            cache: WaveCache::default(),
         }
     }
 
@@ -90,19 +93,18 @@ impl SubSynthNode {
             *x *= pan_mult * volume;
         }
     }
+
+    // TODO: logic is repeated from EqNode slightly
+    fn apply_low_pass_filter(buffer: &mut Buffer, config: EqConfig) {
+        let mut filter = eq_filter(&config);
+        filter.apply(buffer);
+    }
 }
 
 impl Node<ProcessContext> for SubSynthNode {
     fn process(&mut self, _inputs: &[Input], output: &mut [Buffer], payload: &ProcessContext) {
         let state = &mut self.state;
         state.update(payload, self.selector);
-
-        // Skip generating if muted!
-        // TODO: disconnect muted generators from the graph.
-        // This should be handled from the mixer.
-        if state.meta.mute || state.meta.volume == 0.0 {
-            return;
-        }
 
         let mut buffers = [Buffer::SILENT; 2];
         let GeneratorSelector(generator_index) = self.selector;
@@ -163,7 +165,7 @@ impl Node<ProcessContext> for SubSynthNode {
             if let Some(sources) = &mut state.voice.sources {
                 for (eg, source) in state.voice.egs.iter_mut().zip(sources.iter_mut()) {
                     let amp = eg.next().unwrap_or(0.0);
-                    let wave = source.next().unwrap_or([0.0; 2]);
+                    let wave = source.next(&mut self.cache);
 
                     buffers[0][i] += amp * wave[0];
                     buffers[1][i] += amp * wave[1];
@@ -175,15 +177,13 @@ impl Node<ProcessContext> for SubSynthNode {
             out_buf.copy_from_slice(&buffers[channel_index]);
             let meta = &self.state.meta;
             Self::apply_volume_and_pan(out_buf, channel_index, meta.volume, meta.pan);
+            Self::apply_low_pass_filter(out_buf, self.state.config.lpf.clone());
         }
     }
 }
 
 #[derive(Debug)]
 pub struct SubSynthWaveSource {
-    // TODO: recycle the wave cache?
-    // Currently it's re-created each time the note changes.
-    cache: WaveCache,
     pitch: PitchName,
     oscillator: Oscillator,
     sample_index: usize,
@@ -192,7 +192,6 @@ pub struct SubSynthWaveSource {
 impl SubSynthWaveSource {
     pub fn new(pitch: PitchName, oscillator: Oscillator) -> Self {
         Self {
-            cache: WaveCache::default(),
             pitch,
             oscillator,
             sample_index: 0,
@@ -202,30 +201,44 @@ impl SubSynthWaveSource {
     pub fn same_pitch(&self, pitch: PitchName) -> bool {
         self.pitch == pitch
     }
-}
 
-impl Iterator for SubSynthWaveSource {
-    type Item = Stereo<f32>;
-
-    fn next(&mut self) -> Option<Self::Item> {
-        let mut output_mono = 0.0;
-        let freq: Freq = self.pitch.into();
+    fn next(&mut self, cache: &mut WaveCache) -> Stereo<f32> {
         let osc = &self.oscillator;
+        let freq: Freq = self.pitch.into();
         let freq = freq * detune_multiplier(osc.osc_detune);
 
-        let detunes = linspace(-osc.unison_detune, osc.unison_detune, osc.osc_count);
+        let unison = if osc.unison_detune == 0.0 {
+            1
+        } else {
+            osc.osc_count
+        };
+        let detunes = linspace(-osc.unison_detune, osc.unison_detune, unison);
 
-        for detune in detunes {
+        // Evenly spaced phases for each unison wave.
+        // Use unison + 1 because phase=1 is the same as phase=0.
+        let phases = linspace(0.0, 1.0, unison + 1);
+
+        let mut output_mono = 0.0;
+        let unison_amp = (unison as f32).recip();
+        for (i, &detune) in detunes.iter().enumerate() {
             let freq = freq * detune_multiplier(detune);
             let step = freq / (SAMPLE_RATE as f32);
-            let phase = ((self.sample_index as f32) * step) % 1.0;
+
+            // Lessen the initial 'pop' of the sound when playing with unison.
+            let phase = (phases[i] + (self.sample_index as f32) * step) % 1.0;
 
             let key = WaveKey {
                 kind: osc.wave,
                 aa: AntiAliasingMode::Off,
                 freq: freq.into(),
             };
-            output_mono += self.cache.get(&key, phase);
+
+            output_mono += cache.get(&key, phase) * unison_amp;
+        }
+
+        // Add soft clipping to lessen the peaks in volume.
+        if unison > 1 {
+            output_mono = (output_mono / 0.95).tanh() * 0.95;
         }
 
         let mut output_stereo = [output_mono; CHANNEL_COUNT];
@@ -235,6 +248,6 @@ impl Iterator for SubSynthWaveSource {
         }
 
         self.sample_index += 1;
-        Some(output_stereo)
+        output_stereo
     }
 }

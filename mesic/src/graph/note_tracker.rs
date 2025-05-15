@@ -1,4 +1,4 @@
-use crate::wave::beats_to_samples;
+use crate::convert::beats_to_samples;
 use dasp_graph::Buffer;
 use shared::model::{PitchName, PlacementType, Project, TrackPlacement};
 use std::cmp::min;
@@ -23,11 +23,7 @@ pub enum NoteEventType {
 pub struct NoteTracker;
 
 impl NoteTracker {
-    pub fn track(
-        project: &Project,
-        global_sample_index: usize,
-        include_on_events: bool,
-    ) -> NoteEventsByGenerator {
+    pub fn track(project: &Project, global_sample_index: usize) -> NoteEventsByGenerator {
         let mut result: NoteEventsByGenerator = vec![vec![]; project.generators.len()];
 
         let bpm = project.bpm;
@@ -68,18 +64,15 @@ impl NoteTracker {
 
                     let buf_range = 0..Buffer::LEN as isize;
 
-                    if include_on_events {
-                        let start_sample =
-                            note_start_sample as isize - global_sample_index as isize;
-                        if buf_range.contains(&start_sample) {
-                            result.push({
-                                NoteEvent {
-                                    kind: NoteEventType::On,
-                                    sample_index: start_sample as usize,
-                                    pitch_name: note.note.pitch_name,
-                                }
-                            });
-                        }
+                    let start_sample = note_start_sample as isize - global_sample_index as isize;
+                    if buf_range.contains(&start_sample) {
+                        result.push({
+                            NoteEvent {
+                                kind: NoteEventType::On,
+                                sample_index: start_sample as usize,
+                                pitch_name: note.note.pitch_name,
+                            }
+                        });
                     }
 
                     let end_sample = note_end_sample as isize - global_sample_index as isize;

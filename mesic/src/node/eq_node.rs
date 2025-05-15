@@ -13,7 +13,8 @@ pub struct EqNode {
 }
 
 impl EqNode {
-    pub fn new(selector: EffectSelector, config: EqConfig) -> Self {
+    pub fn new(selector: EffectSelector) -> Self {
+        let config = EqConfig::default();
         EqNode {
             selector,
             config: config.clone(),

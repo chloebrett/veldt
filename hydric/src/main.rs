@@ -1,5 +1,4 @@
 mod async_state;
-mod audio_state;
 mod components;
 mod local_state;
 mod playback;
@@ -12,7 +11,6 @@ mod window_state;
 
 use crate::components::App;
 use async_state::*;
-use audio_state::*;
 use eframe::web_sys;
 use local_state::*;
 use window_state::*;
