@@ -1,4 +1,5 @@
 use dasp_frame::Stereo;
+use mesic::interleave_stereo;
 use shared::bytes::as_floats;
 use shared::consts::XERIC_URL;
 use shared::model::Project;
@@ -23,11 +24,4 @@ pub async fn render(project: Project) -> Result<Vec<Stereo<f32>>, ()> {
     // TODO: consider if we should just send the Vec<f32> directly over the wire
     // instead of serializing to bytes first?
     Ok(interleave_stereo(as_floats(&left), as_floats(&right)))
-}
-
-pub fn interleave_stereo(left: Vec<f32>, right: Vec<f32>) -> Vec<Stereo<f32>> {
-    left.iter()
-        .zip(right.iter())
-        .map(|(left, right)| [*left, *right])
-        .collect()
 }

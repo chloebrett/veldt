@@ -161,7 +161,7 @@ impl View for NoteRoll<'_> {
                                     _ => None,
                                 })
                                 .next()
-                                .map(|it| GeneratorSelector(it));
+                                .map(GeneratorSelector);
 
                             Piano::new(
                                 max_note,
@@ -227,7 +227,7 @@ impl SequencerObject<PlacedNote> for PlacedNote {
         Shape::rect_filled(self.to_rect(range), CornerRadius::same(1), Color32::WHITE)
     }
 
-    fn get_active(_ui: &Ui, store: &Store, local_state: &LocalState) -> Option<PlacedNote> {
+    fn get_active(store: &Store, local_state: &LocalState) -> Option<PlacedNote> {
         let track_sel = local_state.active_track.get()?;
         local_state.active_note.get().map(|note_index| {
             let sel: NoteSelector = track_sel.downcast_note(note_index);

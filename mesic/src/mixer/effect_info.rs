@@ -2,7 +2,7 @@ use super::{EdgeCounter, EdgeKey, make_node};
 use crate::graph::Graph;
 use crate::node::{CompressorNode, DelayNode, EqNode, ModDelayNode, WetDryNode};
 use petgraph::stable_graph::NodeIndex;
-use shared::model::{Effect, EffectInstance};
+use shared::model::Effect;
 use state::EffectSelector;
 
 /// Describes an effect + wet/dry mixer from the viewpoint of the graph.
@@ -18,15 +18,15 @@ pub struct EffectInfo {
 }
 
 impl EffectInfo {
-    pub fn new(graph: &mut Graph, effect: &EffectInstance, sel: &EffectSelector) -> Self {
-        let effect_node = match &effect.it {
-            Effect::SimpleEq(config) => make_node(EqNode::new(*sel, config.clone())),
-            Effect::Delay(config) => make_node(DelayNode::new(*sel, config.clone())),
-            Effect::Compressor(config) => make_node(CompressorNode::new(config.clone())),
-            Effect::ModDelay(config) => make_node(ModDelayNode::new(config.clone())),
+    pub fn new(graph: &mut Graph, effect: &Effect, sel: &EffectSelector) -> Self {
+        let effect_node = match &effect {
+            Effect::SimpleEq(_) => make_node(EqNode::new(*sel)),
+            Effect::Delay(_) => make_node(DelayNode::new(*sel)),
+            Effect::Compressor(_) => make_node(CompressorNode::new(*sel)),
+            Effect::ModDelay(_) => make_node(ModDelayNode::new(*sel)),
         };
 
-        let wet_dry_node = make_node(WetDryNode::new(*sel, effect.meta.clone()));
+        let wet_dry_node = make_node(WetDryNode::new(*sel));
 
         let effect_node = graph.add_node(effect_node);
         let wet_dry_node = graph.add_node(wet_dry_node);

@@ -54,7 +54,7 @@ impl<'a> TryFrom<&'a Placement> for &'a TrackPlacement {
     }
 }
 
-#[derive(Clone, Debug, PartialEq, Eq, FromProto, IntoProto)]
+#[derive(Clone, Debug, PartialEq, Eq, FromProto, IntoProto, Default)]
 pub struct SamplePlacement {
     /// TODO: use a more stable ID instead of the index.
     #[proto_type_u32]

@@ -1,41 +1,25 @@
 use super::{extract_inputs, extract_outputs};
-use crate::consts::SAMPLE_RATE;
 use crate::graph::ProcessContext;
+use crate::{consts::SAMPLE_RATE, to_db};
 use dasp_graph::{Buffer, Input, Node};
-use shared::model::CompressorConfig;
-use std::iter::repeat_n;
+use shared::model::{CompressorConfig, Effect, EffectInstance};
+use state::EffectSelector;
 
 pub type EnvelopeDetector = dasp_envelope::Detector<f32, dasp_rms::Rms<f32, Vec<f32>>>;
 
 pub struct CompressorNode {
+    selector: EffectSelector,
     config: CompressorConfig,
     detectors: [EnvelopeDetector; 2],
 }
 
 impl CompressorNode {
-    pub fn new(config: CompressorConfig) -> Self {
-        let attack_frames = (config.attack_ms / 1000.0 * SAMPLE_RATE as f32) as usize;
-        let release_frames = (config.release_ms / 1000.0 * SAMPLE_RATE as f32) as usize;
-
-        // TODO: get attack and release working.
-        // TODO: consider whether this is the appropriate size for the ring buffer.
-        // TODO: potentially we need two buffers with different lengths - one for tracking attack
-        // and one for release.
-        // Note: needs at least one frame or the ring buffer panics.
-        let ring_buffer_frames = 64;
-
-        // TODO: de-duplicate this logic, which is also repeated in graph.rs for creating delay
-        // nodes.
-        let mut vec = Vec::with_capacity(ring_buffer_frames);
-        vec.extend(repeat_n(0.0, ring_buffer_frames));
-
-        let buffer = dasp_ring_buffer::Fixed::from(vec);
-        let rms = dasp_rms::Rms::new(buffer);
-        let detector =
-            dasp_envelope::Detector::new(rms, attack_frames as f32, release_frames as f32);
+    pub fn new(selector: EffectSelector) -> Self {
+        let detector = make_detector(/* attack_frames= */ 1, /* release_frames= */ 1);
 
         Self {
-            config,
+            selector,
+            config: CompressorConfig::default(),
             // TODO: should we have two detectors, or just one that averages the inputs?
             detectors: [detector.clone(), detector.clone()],
         }
@@ -47,14 +31,23 @@ impl CompressorNode {
 
         out_buf.copy_from_slice(in_buf);
         for x in out_buf.iter_mut() {
-            let log_rms = self.detectors[channel_index].next(*x).log10();
+            let db_rms = to_db(self.detectors[channel_index].next(*x));
 
             // TODO: also support using the compressor as a downward expander.
-            let pre_gain = compress(*x, log_rms, threshold, ratio_recip);
+            let pre_gain = compress(*x, db_rms, threshold, ratio_recip);
 
             // TODO: use dB for makeup gain.
             *x = pre_gain * self.config.gain
         }
+    }
+
+    fn update_config(&mut self, config: CompressorConfig) {
+        let attack_frames = (config.attack_ms / 1000.0 * SAMPLE_RATE as f32) as usize;
+        let release_frames = (config.release_ms / 1000.0 * SAMPLE_RATE as f32) as usize;
+
+        let detector = make_detector(attack_frames, release_frames);
+        self.detectors = [detector.clone(), detector.clone()];
+        self.config = config.clone();
     }
 }
 
@@ -64,7 +57,6 @@ impl CompressorNode {
 /// The reciprocal is used to save on division.
 /// See page 513 and following of DAEP in C++
 fn compress(input: f32, detector: f32, threshold: f32, ratio_recip: f32) -> f32 {
-    // TODO: use dB for threshold.
     let y_out = if detector > threshold {
         // Apply the compression ratio.
         // The output vs input graph looks like the blue diagram in this article:
@@ -79,13 +71,40 @@ fn compress(input: f32, detector: f32, threshold: f32, ratio_recip: f32) -> f32 
 }
 
 impl Node<ProcessContext> for CompressorNode {
-    fn process(&mut self, inputs: &[Input], output: &mut [Buffer], _payload: &ProcessContext) {
+    fn process(&mut self, inputs: &[Input], output: &mut [Buffer], payload: &ProcessContext) {
+        // Apply changes from the store.
+        if let Some(EffectInstance {
+            it: Effect::Compressor(config),
+            ..
+        }) = &payload.store.try_select(&self.selector)
+        {
+            if *config != self.config {
+                self.update_config(config.clone());
+            }
+        }
+
         let (left_out, right_out) = extract_outputs(output);
         let (left_in, right_in) = extract_inputs(inputs)[0];
 
         self.apply(left_out, left_in, /* channel_index= */ 0);
         self.apply(right_out, right_in, /* channel_index= */ 1);
     }
+}
+
+fn make_detector(
+    attack_frames: usize,
+    release_frames: usize,
+) -> dasp_envelope::Detector<f32, dasp_rms::Rms<f32, Vec<f32>>> {
+    // TODO: get attack and release working.
+    // TODO: consider whether this is the appropriate size for the ring buffer.
+    // TODO: potentially we need two buffers with different lengths - one for tracking attack
+    // and one for release.
+    // Note: needs at least one frame or the ring buffer panics.
+    let ring_buffer_frames = 64;
+
+    let buffer = dasp_ring_buffer::Fixed::from(vec![0.0; ring_buffer_frames]);
+    let rms = dasp_rms::Rms::new(buffer);
+    dasp_envelope::Detector::new(rms, attack_frames as f32, release_frames as f32)
 }
 
 #[cfg(test)]

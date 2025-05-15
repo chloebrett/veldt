@@ -20,14 +20,13 @@ fn ms_to_samples(ms: f32) -> usize {
 }
 
 impl DelayNode {
-    pub fn new(selector: EffectSelector, config: DelayConfig) -> Self {
-        let delay_samples = ms_to_samples(config.delay_ms);
-        let buffer = GrowableAllocRingBuffer::with_capacity(delay_samples);
+    pub fn new(selector: EffectSelector) -> Self {
+        let buffer = GrowableAllocRingBuffer::new();
         Self {
             selector,
             buffers: [buffer.clone(), buffer.clone()],
-            delay_samples,
-            config,
+            delay_samples: 0,
+            config: DelayConfig::default(),
         }
     }
 
@@ -35,7 +34,7 @@ impl DelayNode {
         for (i, out) in out_buf.iter_mut().enumerate() {
             let buffer = &mut self.buffers[channel_index];
             *out = if buffer.len() >= self.delay_samples {
-                buffer.pop_front().unwrap()
+                buffer.pop_front().unwrap_or(0.0)
             } else {
                 0.0
             };

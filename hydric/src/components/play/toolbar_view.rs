@@ -2,7 +2,7 @@ use crate::promise::spawn;
 use crate::rpc::upload_sample;
 use crate::view::View;
 use crate::widget::{default_window, knob, slider};
-use crate::{AsyncState, AudioState};
+use crate::{AsyncState, playback::AudioPlayer};
 use egui::{Pos2, Ui};
 use log::{error, info};
 use shared::types::Beats;
@@ -13,19 +13,19 @@ use super::{play_control::*, sample_control::*};
 pub struct ToolbarView<'a> {
     store: &'a mut Store,
     async_state: &'a mut AsyncState,
-    audio_state: &'a mut AudioState,
+    player: &'a mut AudioPlayer,
 }
 
 impl<'a> ToolbarView<'a> {
     pub fn new(
         store: &'a mut Store,
         async_state: &'a mut AsyncState,
-        audio_state: &'a mut AudioState,
+        player: &'a mut AudioPlayer,
     ) -> Self {
         ToolbarView {
             store,
             async_state,
-            audio_state,
+            player,
         }
     }
 }
@@ -65,11 +65,11 @@ impl View for ToolbarView<'_> {
                     );
                 });
                 ui.separator();
-                play_control(self.store, self.async_state, self.audio_state, ui);
+                play_control(self.store, self.async_state, self.player, ui);
                 ui.separator();
 
                 ui.horizontal(|ui| {
-                    sample_control(self.store, self.audio_state, self.async_state, ui);
+                    sample_control(self.store, self.player, self.async_state, ui);
                     if ui.button("Upload Sample").clicked() {
                         /*
                         In future it is worth considering extending the async_state expected result to handle
