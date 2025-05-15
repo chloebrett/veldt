@@ -1,11 +1,12 @@
 use shared::action_proto::{TypeFieldProto, type_field_proto::Kind as TypeFieldKind};
 use shared::model::{
     AdsrEnvelope, AntiAliasingMode, EffectInstance, EqType, FileTreeConfig, FilenameTree,
-    GeneratorInstance, MixerChannel, PitchName, PlacedNote, Placement, PolyphonyMode, Project,
-    Sample, Scale, ScaleValue, Track, WaveType,
+    GeneratorInstance, MixerChannel, NoiseType, PitchName, PlacedNote, Placement, PolyphonyMode,
+    Project, Sample, Scale, ScaleValue, Track, WaveType,
 };
 use shared::pmodel::{
-    AntiAliasingModeProto, EqTypeProto, PolyphonyModeProto, ScaleProto, WaveTypeProto,
+    AntiAliasingModeProto, EqTypeProto, NoiseTypeProto, PolyphonyModeProto, ScaleProto,
+    WaveTypeProto,
 };
 
 /// Fields of various types.
@@ -37,6 +38,7 @@ pub enum TypeField {
     Generator(GeneratorInstance),
     MixerChannel(MixerChannel),
     PolyphonyMode(PolyphonyMode),
+    NoiseType(NoiseType),
 
     // Note: if we end up with more bools/primitives, make dedicated types for them so that we
     // don't have to keep expanding the proto.
@@ -77,6 +79,9 @@ impl From<TypeFieldProto> for TypeField {
             // don't have to keep expanding the proto.
             TypeFieldKind::Mute(it) => TypeField::Mute(it),
             TypeFieldKind::Octave(it) => TypeField::Octave(it),
+            TypeFieldKind::NoiseType(it) => {
+                TypeField::NoiseType(NoiseTypeProto::try_from(it).unwrap().into())
+            }
         }
     }
 }
@@ -119,6 +124,9 @@ impl From<TypeField> for TypeFieldProto {
                 // don't have to keep expanding the proto.
                 TypeField::Mute(it) => TypeFieldKind::Mute(it),
                 TypeField::Octave(it) => TypeFieldKind::Octave(it),
+                TypeField::NoiseType(it) => {
+                    TypeFieldKind::NoiseType(NoiseTypeProto::from(it).into())
+                }
             }),
         }
     }
