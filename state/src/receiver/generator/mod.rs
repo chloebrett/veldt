@@ -1,3 +1,4 @@
+mod adsr_envelope_config;
 mod generator_instance;
 mod generator_meta;
 mod lfo_config;

@@ -10,8 +10,8 @@ use egui::{
     epaint::{PathStroke, Shape},
     vec2,
 };
-use shared::model::{AdsrEnvelope, SubSynthConfig};
-use state::{Action, TypeField};
+use shared::model::SubSynthConfig;
+use state::{Action, FloatField};
 
 pub struct SubSynthEnvelopeView<'a, F: Fn(Action), G: Fn()> {
     config: &'a SubSynthConfig,
@@ -91,10 +91,7 @@ impl<F: Fn(Action), G: Fn()> View for SubSynthEnvelopeView<'_, F, G> {
                                 "A",
                                 config.envelopes[active_env_tab].attack,
                                 |attack| {
-                                    dispatch(Action::SetChild(TypeField::Envelope(AdsrEnvelope {
-                                        attack,
-                                        ..config.envelopes[active_env_tab]
-                                    })))
+                                    dispatch(Action::SetFloat(FloatField::AdsrAttack, attack));
                                 },
                                 0.0..=1000.0,
                                 /* neutral= */ 100.0,
@@ -105,10 +102,7 @@ impl<F: Fn(Action), G: Fn()> View for SubSynthEnvelopeView<'_, F, G> {
                                 "D",
                                 config.envelopes[active_env_tab].decay,
                                 |decay| {
-                                    dispatch(Action::SetChild(TypeField::Envelope(AdsrEnvelope {
-                                        decay,
-                                        ..config.envelopes[active_env_tab]
-                                    })))
+                                    dispatch(Action::SetFloat(FloatField::AdsrDecay, decay));
                                 },
                                 0.0..=1000.0,
                                 /* neutral= */ 100.0,
@@ -119,13 +113,10 @@ impl<F: Fn(Action), G: Fn()> View for SubSynthEnvelopeView<'_, F, G> {
                                 "S",
                                 config.envelopes[active_env_tab].sustain,
                                 |sustain| {
-                                    dispatch(Action::SetChild(TypeField::Envelope(AdsrEnvelope {
-                                        sustain,
-                                        ..config.envelopes[active_env_tab]
-                                    })))
+                                    dispatch(Action::SetFloat(FloatField::AdsrSustain, sustain));
                                 },
                                 0.0..=1.0,
-                                /* neutral= */ 0.1,
+                                /* neutral= */ 0.8,
                                 on_release,
                             );
                             knob(
@@ -133,10 +124,7 @@ impl<F: Fn(Action), G: Fn()> View for SubSynthEnvelopeView<'_, F, G> {
                                 "R",
                                 config.envelopes[active_env_tab].release,
                                 |release| {
-                                    dispatch(Action::SetChild(TypeField::Envelope(AdsrEnvelope {
-                                        release,
-                                        ..config.envelopes[active_env_tab]
-                                    })))
+                                    dispatch(Action::SetFloat(FloatField::AdsrRelease, release));
                                 },
                                 0.0..=1000.0,
                                 /* neutral= */ 100.0,
