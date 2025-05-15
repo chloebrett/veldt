@@ -1,4 +1,4 @@
-use crate::graph::ProcessContext;
+use crate::graph::{NoteEventType, ProcessContext};
 use crate::rng::generate_random_number_in_range;
 use dasp_graph::{Buffer, Input, Node};
 use shared::model::{Generator, GeneratorInstance, GeneratorMeta, NoiseConfig, NoiseType};
@@ -14,6 +14,7 @@ pub struct NoiseGeneratorNode {
 struct NodeState {
     config: NoiseConfig,
     meta: GeneratorMeta,
+    playing: bool,
 }
 
 impl Default for NodeState {
@@ -22,6 +23,7 @@ impl Default for NodeState {
         Self {
             config: config.clone(),
             meta: GeneratorMeta::default(),
+            playing: false,
         }
     }
 }
@@ -76,15 +78,35 @@ impl NoiseGeneratorNode {
 impl Node<ProcessContext> for NoiseGeneratorNode {
     fn process(&mut self, _inputs: &[Input], output: &mut [Buffer], payload: &ProcessContext) {
         let state = &mut self.state;
+        let kind = state.config.kind;
         state.update(payload, self.selector);
 
         let mut buffer = Buffer::SILENT;
-        let GeneratorSelector(_generator_index) = self.selector;
-
-        let kind = state.config.kind;
+        let GeneratorSelector(generator_index) = self.selector;
 
         for i in 0..buffer.len() {
-            buffer[i] = Self::generate_noise_sample(kind);
+            let mut events: Vec<_> = payload.note_events[generator_index]
+                .clone()
+                .into_iter()
+                .filter(|it| it.sample_index == i)
+                .collect();
+
+            // Special case: if there are both note_on and note_off events in a single sample,
+            // don't process the note_off events.
+            if events.iter().any(|it| it.kind == NoteEventType::On) {
+                events.retain(|it| it.kind == NoteEventType::On);
+            }
+
+            for note_event in events {
+                match note_event.kind {
+                    NoteEventType::On => state.playing = true,
+                    NoteEventType::Off => state.playing = false,
+                }
+            }
+
+            if state.playing {
+                buffer[i] = Self::generate_noise_sample(kind);
+            }
         }
 
         for out_buf in output.iter_mut() {
