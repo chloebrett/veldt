@@ -6,6 +6,7 @@ use web_sys::{
     window,
 };
 
+
 // This tutorial was used for the general code structure: https://web.dev/articles/media-recording-audio
 #[wasm_bindgen]
 pub struct Microphone {
