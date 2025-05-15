@@ -7,8 +7,8 @@ use cpal::{OutputCallbackInfo, Stream};
 use crossbeam_channel::{Receiver, Sender};
 use dasp_frame::Stereo;
 use log::error;
-use mesic::SAMPLE_RATE;
 use mesic::graph::RenderGraph;
+use mesic::{SAMPLE_RATE, to_db};
 use ringbuffer::{AllocRingBuffer, RingBuffer};
 use shared::model::PitchName;
 use state::GeneratorSelector;
@@ -17,6 +17,7 @@ use wasm_thread::JoinHandle;
 
 const RECENT_AUDIO_SECONDS: f32 = 5.0;
 const RECENT_AUDIO_SAMPLE_COUNT: usize = (RECENT_AUDIO_SECONDS * SAMPLE_RATE as f32) as usize;
+const RMS_BUFFER_SAMPLES: usize = 1024;
 
 pub struct AudioPlayer {
     // The render graph, if we haven't given it to the processing thread yet.
@@ -69,18 +70,22 @@ pub struct AudioPlayer {
     // Needs to be a mutex because it's written from a static JS callback (the data callback
     // for the AudioContext).
     output_delay: Arc<Mutex<usize>>,
+
+    // Root Mean Square of most recent window in audio.
+    // Read with `level()`
+    rms: dasp_rms::Rms<Stereo<f32>, [Stereo<f32>; RMS_BUFFER_SAMPLES]>,
 }
 
 impl AudioPlayer {
     pub fn new(graph: RenderGraph) -> Self {
-        // This channel only ever contains zero or one messages.
-        // Each message contains BUFFER_SIZE samples.
+        // This channel only ever contains zero or one messages. Each message contains BUFFER_SIZE samples.
         let (audio_tx, audio_rx) = crossbeam_channel::bounded(1);
 
         // Other channels are used for message passing and are unbounded.
         let (playback_tx, playback_rx) = crossbeam_channel::unbounded();
         let (update_tx, update_rx) = crossbeam_channel::unbounded();
         let (recent_tx, recent_rx) = crossbeam_channel::unbounded();
+        let rms_buffer = dasp_ring_buffer::Fixed::from([[0f32; 2]; RMS_BUFFER_SAMPLES]);
 
         Self {
             graph: Some(graph),
@@ -101,6 +106,7 @@ impl AudioPlayer {
             position: PlaybackPosition { samples: 0 },
             buffer_delay: 0,
             output_delay: Arc::new(Mutex::new(0)),
+            rms: dasp_rms::Rms::new(rms_buffer),
         }
     }
 
@@ -200,6 +206,7 @@ impl AudioPlayer {
         }
 
         while let Ok(update) = self.recent_rx.try_recv() {
+            self.rms.next(update);
             self.recent_buf.push(update);
             self.recent_buf_offset += 1;
         }
@@ -318,6 +325,11 @@ impl AudioPlayer {
     pub fn seek(&mut self, samples: usize) {
         self.position = PlaybackPosition { samples };
         self.send(PlaybackMessage::Seek(self.position));
+    }
+
+    pub fn level(&self) -> [f32; 2] {
+        let [left, right] = self.rms.current();
+        [to_db(left), to_db(right)]
     }
 }
 
