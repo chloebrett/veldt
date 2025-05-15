@@ -13,4 +13,5 @@ mod wave_cache;
 
 pub use consts::{FFT_SAMPLE_SIZE, SAMPLE_RATE};
 pub use convert::*;
+pub use maths::{ilerp, lerp};
 pub use scale::create_scale_values;

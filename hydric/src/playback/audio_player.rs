@@ -17,7 +17,7 @@ use wasm_thread::JoinHandle;
 
 const RECENT_AUDIO_SECONDS: f32 = 5.0;
 const RECENT_AUDIO_SAMPLE_COUNT: usize = (RECENT_AUDIO_SECONDS * SAMPLE_RATE as f32) as usize;
-const RMS_BUFFER_SAMPLES: usize = 64;
+const RMS_BUFFER_SAMPLES: usize = 1024; // SAMPLE_RATE / 60 (for readings at 60fps).
 
 pub struct AudioPlayer {
     // The render graph, if we haven't given it to the processing thread yet.
