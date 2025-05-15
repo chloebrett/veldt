@@ -8,12 +8,14 @@ use local_macro::{FromProto, IntoProto};
 mod alias;
 mod noise;
 mod oscillator;
+mod polyphony;
 mod simple_wave;
 mod subsynth;
 
 pub use alias::*;
 pub use noise::*;
 pub use oscillator::*;
+pub use polyphony::*;
 pub use simple_wave::*;
 pub use subsynth::*;
 
@@ -69,4 +71,15 @@ pub struct GeneratorMeta {
 
     #[proto_type_u32]
     pub mixer_channel: usize,
+}
+
+impl Default for GeneratorMeta {
+    fn default() -> Self {
+        Self {
+            volume: 1.0,
+            mute: false,
+            pan: 0.0,
+            mixer_channel: 0,
+        }
+    }
 }

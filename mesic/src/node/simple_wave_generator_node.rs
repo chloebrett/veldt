@@ -1,129 +1,212 @@
 use super::pan_multipliers;
-use crate::graph::ProcessContext;
-use crate::wave::{WaveSource, beats_to_samples};
+use crate::SAMPLE_RATE;
+use crate::envelope::EnvelopeGenerator;
+use crate::graph::{NoteEventType, ProcessContext};
+use crate::maths::linspace;
+use crate::wave::detune_multiplier;
+use crate::wave_cache::{WaveCache, WaveKey};
 use dasp_graph::{Buffer, Input, Node};
-use shared::model::{
-    Generator, GeneratorInstance, GeneratorMeta, Placement, SimpleWaveConfig, Track, TrackPlacement,
-};
-use shared::types::Beats;
+use shared::model::{Generator, GeneratorInstance, GeneratorMeta, PitchName, SimpleWaveConfig};
+use shared::types::Freq;
 use state::GeneratorSelector;
-use std::cmp::min;
 
 pub struct SimpleWaveGeneratorNode {
-    wave_source: WaveSource,
+    selector: GeneratorSelector,
+    state: NodeState,
+    cache: WaveCache,
+}
+
+/// State persisted between buffers.
+/// Specific to this node.
+struct NodeState {
     config: SimpleWaveConfig,
     meta: GeneratorMeta,
-    selector: GeneratorSelector,
-    sample_index: u32, // the sample that playback is currently up to.
-    placements: Vec<Placement>,
-    tracks: Vec<Track>,
-    bpm: Beats,
+    voice: Voice,
+}
+
+struct Voice {
+    eg: EnvelopeGenerator,
+    source: Option<SimpleWaveSource>,
+}
+
+impl Default for NodeState {
+    fn default() -> Self {
+        let config = SimpleWaveConfig::default();
+        Self {
+            config: config.clone(),
+            meta: GeneratorMeta::default(),
+            voice: Voice {
+                eg: EnvelopeGenerator::new(config.envelope.clone()),
+                source: None,
+            },
+        }
+    }
+}
+
+impl NodeState {
+    fn update(&mut self, payload: &ProcessContext, selector: GeneratorSelector) {
+        if let GeneratorInstance {
+            it: Generator::SimpleWave(config),
+            meta,
+            ..
+        } = &payload.store.select(&selector)
+        {
+            if self.config != *config {
+                self.config = config.clone();
+            }
+            if self.meta != *meta {
+                self.meta = meta.clone();
+            }
+        }
+    }
 }
 
 impl SimpleWaveGeneratorNode {
-    pub fn new(
-        config: SimpleWaveConfig,
-        meta: GeneratorMeta,
-        selector: GeneratorSelector,
-        placements: Vec<Placement>,
-        tracks: Vec<Track>,
-        bpm: Beats,
-    ) -> Self {
+    pub fn new(selector: GeneratorSelector) -> Self {
         Self {
-            config,
-            wave_source: WaveSource::new(bpm),
-            meta,
             selector,
-            placements,
-            tracks,
-            bpm,
-            sample_index: 0,
+            state: NodeState::default(),
+            cache: WaveCache::default(),
         }
     }
 
-    fn apply_volume_and_pan(&self, buffer: &mut Buffer, channel_index: usize) {
-        let pan_mult = pan_multipliers(self.meta.pan)[channel_index];
+    fn apply_volume_and_pan(state: &NodeState, buffer: &mut Buffer, channel_index: usize) {
+        let pan_mult = pan_multipliers(state.meta.pan)[channel_index];
         for x in buffer.iter_mut() {
-            *x *= pan_mult * self.meta.volume;
+            *x *= pan_mult * state.meta.volume;
         }
     }
 }
 
 impl Node<ProcessContext> for SimpleWaveGeneratorNode {
-    // TODO: a lot of this processing logic is generic and should be shared with
-    // other generator types. How?
     fn process(&mut self, _inputs: &[Input], output: &mut [Buffer], payload: &ProcessContext) {
-        if let Some(seek_pos) = payload.seek_pos {
-            self.sample_index = seek_pos as u32;
-        }
-
-        // Apply any applicable changes from the store.
-        if let GeneratorInstance {
-            it: Generator::SimpleWave(config),
-            meta,
-            ..
-        } = &payload.store.select(&self.selector)
-        {
-            if *config != self.config {
-                self.config = config.clone();
-            }
-            if *meta != self.meta {
-                self.meta = meta.clone();
-            }
-        }
-
-        // Skip generating if muted!
-        // TODO: disconnect muted generators from the graph.
-        if self.meta.mute || self.meta.volume == 0.0 {
-            return;
-        }
+        let state = &mut self.state;
+        state.update(payload, self.selector);
 
         let mut buffer = Buffer::SILENT;
-        for placement in &self.placements {
-            let &Ok(&TrackPlacement { track_index, .. }) = &placement.try_into() else {
-                continue;
-            };
-            let track = &self.tracks[track_index];
-            let track_offset = *placement.offset;
-            let track_duration = *placement
-                .clipped_duration
-                .unwrap_or(track.unclipped_duration());
-            let track_end_sample = beats_to_samples(track_offset + track_duration, self.bpm);
+        let GeneratorSelector(generator_index) = self.selector;
 
-            // TODO: use a segment tree to determine which notes are in range of the current
-            // buffer, instead of always iterating over all notes.
-            // Then apply the same idea to tracks.
-            for note in &track.notes {
-                let offset = track_offset + *note.offset;
-                let note_start_sample = min(beats_to_samples(offset, self.bpm), track_end_sample);
-                let note_end_sample = min(
-                    beats_to_samples(offset + note.note.beats, self.bpm),
-                    track_end_sample,
-                );
+        // TODO: fix this, it's n^2 right now. (well, n*64).
+        for i in 0..buffer.len() {
+            let mut events: Vec<_> = payload.note_events[generator_index]
+                .clone()
+                .into_iter()
+                .filter(|it| it.sample_index == i)
+                .collect();
 
-                // Don't play notes that aren't relevant to this buffer segment.
-                if note_start_sample > self.sample_index + Buffer::LEN as u32
-                    || note_end_sample < self.sample_index
-                {
-                    continue;
-                }
-
-                dasp_slice::add_in_place(
-                    &mut buffer,
-                    &self.wave_source.unison_wave(
-                        note.note.pitch_name.into(),
-                        note.note.beats,
-                        &self.config,
-                        self.sample_index as i32 - note_start_sample as i32,
-                    ),
-                );
+            // Special case: if there are both note_on and note_off events in a single sample,
+            // don't process the note_off events.
+            if events.iter().any(|it| it.kind == NoteEventType::On) {
+                events.retain(|it| it.kind == NoteEventType::On);
             }
+
+            for note_event in events {
+                match &note_event.kind {
+                    NoteEventType::On => {
+                        log::info!(
+                            "Note on event! {:?} {:?}",
+                            note_event.pitch_name,
+                            state.config
+                        );
+                        state.voice.eg.note_on();
+                        state.voice.eg.set_envelope(state.config.envelope.clone());
+                        // TODO: update config dynamically, not just when starting a new note.
+                        state.voice.source = Some(SimpleWaveSource::new(
+                            note_event.pitch_name.into(),
+                            state.config.clone(),
+                        ));
+                    }
+                    NoteEventType::Off => {
+                        log::info!(
+                            "Note off event! {:?} {:?}",
+                            note_event.pitch_name,
+                            state.config
+                        );
+                        // TODO: check against start/stop time too?
+                        if let Some(source) = &state.voice.source {
+                            if source.same_pitch(note_event.pitch_name) {
+                                state.voice.eg.note_off();
+                            }
+                        }
+                    }
+                }
+            }
+
+            let amp = state.voice.eg.next().unwrap_or(0.0);
+            let wave = state
+                .voice
+                .source
+                .as_mut()
+                .map(|it| it.next(&mut self.cache))
+                .unwrap_or(0.0);
+
+            buffer[i] = amp * wave;
         }
 
         for (channel_index, out_buf) in output.iter_mut().enumerate() {
             out_buf.copy_from_slice(&buffer);
-            self.apply_volume_and_pan(out_buf, channel_index);
+            Self::apply_volume_and_pan(state, out_buf, channel_index);
         }
-        self.sample_index += Buffer::LEN as u32;
+    }
+}
+
+pub struct SimpleWaveSource {
+    freq: Freq,
+    config: SimpleWaveConfig,
+    sample_index: usize,
+}
+
+impl SimpleWaveSource {
+    fn new(freq: Freq, config: SimpleWaveConfig) -> Self {
+        Self {
+            freq,
+            config,
+            sample_index: 0,
+        }
+    }
+
+    fn same_pitch(&self, pitch: PitchName) -> bool {
+        self.freq == pitch.into()
+    }
+
+    fn next(&mut self, cache: &mut WaveCache) -> f32 {
+        let detune_cents = self.config.detune_cents;
+        let unison = if detune_cents == 0.0 {
+            1
+        } else {
+            self.config.osc_count
+        };
+
+        let detunes = linspace(-detune_cents, detune_cents, unison);
+
+        // Evenly spaced phases for each unison wave.
+        // Use unison + 1 because phase=1 is the same as phase=0.
+        let phases = linspace(0.0, 1.0, unison + 1);
+
+        let mut output = 0.0;
+        let unison_amp = (unison as f32).recip();
+        for (i, &detune) in detunes.iter().enumerate() {
+            let freq = self.freq * detune_multiplier(detune);
+            let step = freq / (SAMPLE_RATE as f32);
+
+            // Lessen the initial 'pop' of the sound when playing with unison.
+            let phase = (phases[i] + (self.sample_index as f32) * step) % 1.0;
+
+            let key = WaveKey {
+                kind: self.config.wave,
+                aa: self.config.anti_aliasing_mode,
+                freq: self.freq.into(),
+            };
+
+            output += cache.get(&key, phase) * unison_amp;
+        }
+
+        // Add clipping to lessen the peaks in volume.
+        if self.config.detune_cents > 0.0 && self.config.osc_count > 1 {
+            output = (output / 0.95).tanh() * 0.95;
+        }
+
+        self.sample_index += 1;
+        output
     }
 }

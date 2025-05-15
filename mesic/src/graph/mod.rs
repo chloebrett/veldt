@@ -1,15 +1,51 @@
+use dasp_frame::Stereo;
 use dasp_graph::{BoxedNodeSend, NodeData};
 use petgraph::stable_graph::StableGraph;
 use state::StoreData;
 
+mod note_tracker;
 mod render_graph;
 
+pub use note_tracker::*;
 pub use render_graph::*;
 
-#[derive(Default)]
+#[derive(PartialEq)]
+pub enum PlaybackMode {
+    // Loads notes from tracks.
+    Main,
+
+    // Plays the preview buffer.
+    // Switches back to Main and pauses once done.
+    Preview,
+}
+
 pub struct ProcessContext {
+    // TODO: don't keep a whole store here.
+    // Have Project handle action receiving itself,
+    // and then just store a project.
+    // Then, StoreData doesn't need to be Clone anymore.
     pub store: StoreData,
-    pub seek_pos: Option<usize>,
+    pub main_seek_pos: Option<usize>,
+    pub preview_seek_pos: Option<usize>,
+    pub playback_mode: PlaybackMode,
+    pub note_events: NoteEventsByGenerator,
+
+    // A buffer to play starting at sample 0.
+    // Used for playing server-rendered audio, previewing samples, etc.
+    pub preview_buffer: Vec<Stereo<f32>>,
+}
+
+impl ProcessContext {
+    pub fn new(store: StoreData) -> Self {
+        Self {
+            store,
+            main_seek_pos: None,
+            preview_seek_pos: None,
+            playback_mode: PlaybackMode::Main,
+            note_events: vec![],
+            preview_buffer: vec![],
+        }
+    }
 }
 
 pub type Graph = StableGraph<NodeData<BoxedNodeSend<ProcessContext>>, ()>;

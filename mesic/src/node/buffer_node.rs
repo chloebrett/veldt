@@ -1,10 +1,11 @@
 use super::extract_outputs;
-use crate::graph::ProcessContext;
+use crate::graph::{PlaybackMode, ProcessContext};
 use dasp_frame::Stereo;
 use dasp_graph::{Buffer, Input, Node};
 use std::cmp::min;
 
 // Note containing a buffer which it outputs.
+#[derive(Default)]
 pub struct BufferNode {
     buffer: Vec<Stereo<f32>>,
     index: usize,
@@ -15,14 +16,17 @@ impl BufferNode {
         self.index = 0;
     }
 
-    fn process_channel(&self, out: &mut Buffer, channel_index: usize) {
+    fn process_channel(&mut self, out: &mut Buffer, channel_index: usize) {
         let start_index = self.index;
         let end_index = min(start_index + Buffer::LEN, self.buffer.len());
-        let size = end_index - start_index;
 
         if end_index <= start_index {
+            self.index = 0;
+            *out = Buffer::SILENT;
             return;
         }
+
+        let size = end_index - start_index;
 
         for i in 0..size {
             out[i] = self.buffer[start_index + i][channel_index];
@@ -30,24 +34,28 @@ impl BufferNode {
     }
 }
 
-impl From<Vec<Stereo<f32>>> for BufferNode {
-    fn from(item: Vec<Stereo<f32>>) -> Self {
-        Self {
-            buffer: item,
-            index: 0,
-        }
-    }
-}
-
 impl Node<ProcessContext> for BufferNode {
     fn process(&mut self, _inputs: &[Input], output: &mut [Buffer], payload: &ProcessContext) {
-        if let Some(seek_pos) = payload.seek_pos {
+        if let Some(seek_pos) = payload.preview_seek_pos {
             self.index = seek_pos;
             log::info!("Updated from seek_pos: {}", seek_pos);
+        }
+        // TODO: support playing samples back on arbitrary channels
+        // and in arbitrary positions - not just a single main buffer.
+        if payload.preview_buffer != self.buffer {
+            self.buffer = payload.preview_buffer.clone();
+            log::info!("Updated buffer in buffer node");
         }
 
         let (out_left, out_right) = extract_outputs(output);
 
+        if self.buffer.is_empty() || payload.playback_mode != PlaybackMode::Preview {
+            *out_left = Buffer::SILENT;
+            *out_right = Buffer::SILENT;
+            return;
+        }
+
+        log::info!("Processing buffer, {} {}", self.buffer.len(), self.index);
         self.process_channel(out_left, 0);
         self.process_channel(out_right, 1);
 

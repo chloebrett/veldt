@@ -1,8 +1,10 @@
 use super::SimpleWaveVisualiser;
 use crate::view::View;
-use crate::widget::{get_set, int_slider, knob, selectable_value};
+use crate::widget::{
+    custom_knob, get_set, inner_frame, int_slider, knob, outer_frame, selectable_value,
+};
 use eframe::egui;
-use egui::{Color32, Ui};
+use egui::{Color32, Ui, Vec2};
 use shared::model::{Oscillator, WaveType};
 use state::{Action, FloatField, TypeField, UintField};
 use strum::IntoEnumIterator;
@@ -52,11 +54,7 @@ impl<F: Fn(Action), G: Fn()> View for SubSynthOscillatorView<'_, F, G> {
         ) where
             F: Fn(Action),
         {
-            let osc_selection_frame = egui::Frame::new()
-                .fill(Color32::from_gray(30))
-                .corner_radius(8.0)
-                .inner_margin(10.0);
-            osc_selection_frame.show(ui, |ui| {
+            inner_frame().show(ui, |ui| {
                 ui.vertical(|ui| {
                     ui.horizontal(|ui| {
                         egui::ComboBox::from_label("")
@@ -75,8 +73,13 @@ impl<F: Fn(Action), G: Fn()> View for SubSynthOscillatorView<'_, F, G> {
                             });
                     });
                     ui.add_space(10.0);
-                    let visualiser =
-                        SimpleWaveVisualiser::new(config.wave, line_colour, fill_colour);
+                    let visualiser = SimpleWaveVisualiser::new(
+                        config.wave,
+                        line_colour,
+                        fill_colour,
+                        1.0,
+                        Vec2::new(130.0, 74.0),
+                    );
 
                     visualiser.show(ui);
                 });
@@ -92,13 +95,8 @@ impl<F: Fn(Action), G: Fn()> View for SubSynthOscillatorView<'_, F, G> {
             F: Fn(Action),
             G: Fn(),
         {
-            let four_knob_frame = egui::Frame::new()
-                .fill(Color32::from_rgb(30, 30, 30))
-                .corner_radius(8.0)
-                .inner_margin(10.0);
-
             const KNOB_SPACE: f32 = 2.0;
-            four_knob_frame.show(ui, |ui| {
+            inner_frame().show(ui, |ui| {
                 ui.vertical(|ui| {
                     knob(
                         ui,
@@ -122,24 +120,35 @@ impl<F: Fn(Action), G: Fn()> View for SubSynthOscillatorView<'_, F, G> {
                     );
                     ui.add_space(KNOB_SPACE);
 
-                    knob(
+                    let detune_coarse = config.osc_detune as i32 / 100;
+                    let detune_fine = config.osc_detune % 100.0;
+                    custom_knob(
                         ui,
                         "Coarse",
-                        // TODO: this won't work properly with negative numbers.
-                        // E.g. -12.7 should round to -12, not -13. .floor() rounds it to -13.
-                        config.osc_detune.floor(),
-                        |it| dispatch(Action::SetFloat(FloatField::Detune, it)),
+                        detune_coarse as f32,
+                        |it| {
+                            dispatch(Action::SetFloat(
+                                FloatField::Detune,
+                                it * 100.0 + detune_fine,
+                            ))
+                        },
                         -24.0..=24.0,
                         0.0,
                         on_release,
+                        |knob| knob.with_step(1.0),
                     );
                     ui.add_space(KNOB_SPACE);
 
                     knob(
                         ui,
                         "Fine",
-                        config.osc_detune % 1.0,
-                        |it| dispatch(Action::SetFloat(FloatField::Detune, it)),
+                        detune_fine,
+                        |it| {
+                            dispatch(Action::SetFloat(
+                                FloatField::Detune,
+                                detune_coarse as f32 * 100.0 + it,
+                            ))
+                        },
                         -100.0..=100.0,
                         0.0,
                         on_release,
@@ -157,11 +166,7 @@ impl<F: Fn(Action), G: Fn()> View for SubSynthOscillatorView<'_, F, G> {
             F: Fn(Action),
             G: Fn(),
         {
-            let stacking_frame = egui::Frame::new()
-                .fill(Color32::from_gray(30))
-                .corner_radius(8.0)
-                .inner_margin(10.0);
-            stacking_frame.show(ui, |ui| {
+            inner_frame().show(ui, |ui| {
                 ui.vertical(|ui| {
                     ui.label("Stacking");
                     ui.add_space(4.0);
@@ -187,13 +192,7 @@ impl<F: Fn(Action), G: Fn()> View for SubSynthOscillatorView<'_, F, G> {
             });
         }
 
-        let frame = egui::Frame::new()
-            .fill(Color32::from_rgb(50, 50, 50))
-            .stroke(egui::Stroke::new(1.0, Color32::from_rgb(60, 60, 60)))
-            .corner_radius(8.0)
-            .inner_margin(6.0);
-
-        frame.show(ui, |ui| {
+        outer_frame().show(ui, |ui| {
             ui.horizontal(|ui| {
                 draw_wave_selection(ui, config, dispatch, line_colour, fill_colour);
 

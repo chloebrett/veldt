@@ -1,7 +1,7 @@
 use egui::Pos2;
 use state::TrackSelector;
 use std::cell::RefCell;
-use std::collections::BTreeSet;
+use std::collections::HashSet;
 use std::rc::Rc;
 
 type RcOption<T> = Rc<RefCell<Option<T>>>;
@@ -12,8 +12,8 @@ pub struct LocalState {
     pub active_note: RcOption<usize>,
     pub active_track_placement: RcOption<usize>,
 
-    pub selected_notes: Rc<RefCell<BTreeSet<usize>>>,
-    pub selected_track_placements: Rc<RefCell<BTreeSet<usize>>>,
+    pub selected_notes: Rc<RefCell<HashSet<usize>>>,
+    pub selected_track_placements: Rc<RefCell<HashSet<usize>>>,
 
     pub mixer_edit_state: Rc<RefCell<bool>>,
 
@@ -23,6 +23,9 @@ pub struct LocalState {
 
     pub drag_cursor_delta: RcOption<Pos2>,
 
+    // TODO: in the instance of multiple subsynths, both env and lfo should be in a HashSet
+    // with the generator id as the key
+    pub subsynth_env_tab: Rc<RefCell<usize>>,
     pub subsynth_lfo_tab: Rc<RefCell<usize>>,
 
     pub track_roll_select_enabled: Rc<RefCell<bool>>,

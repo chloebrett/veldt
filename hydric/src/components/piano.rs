@@ -1,16 +1,18 @@
 use crate::{
+    playback::AudioPlayer,
     transform::{Transform, Yx},
     view::View,
     widget::SequencerObject,
 };
 use egui::{
     Color32, CornerRadius, Frame, Pos2, Rect, Sense, Shape, Stroke, StrokeKind, Ui, Vec2,
-    emath::RectTransform, vec2,
+    emath::RectTransform, pos2, vec2,
 };
 use shared::{
     model::{Note, PlacedNote, ScaleValue},
     types::PitchValue,
 };
+use state::GeneratorSelector;
 
 #[derive(PartialEq)]
 pub enum PianoOrientation {
@@ -18,16 +20,27 @@ pub enum PianoOrientation {
     Horizontal,
 }
 
-pub struct Piano {
+pub struct Piano<'a> {
     max_note: PitchValue,
     min_note: PitchValue,
     size: Vec2,
     orientation: PianoOrientation,
+    audio_player: Option<&'a mut AudioPlayer>,
+    generator_selector: Option<GeneratorSelector>,
 }
 
-impl Piano {
-    pub fn new(max_note: PitchValue, min_note: PitchValue, orientation: PianoOrientation) -> Self {
-        let mut size = vec2(600.0, 50.0);
+const BLACK_NOTE_LENGTH: f32 = 0.6;
+const BLACK_NOTE_WIDTH: f32 = 1.0;
+
+impl<'a> Piano<'a> {
+    pub fn new(
+        max_note: PitchValue,
+        min_note: PitchValue,
+        orientation: PianoOrientation,
+        mut size: Vec2,
+        audio_player: Option<&'a mut AudioPlayer>,
+        audio_generator: Option<GeneratorSelector>,
+    ) -> Self {
         if orientation == PianoOrientation::Vertical {
             size = size.yx();
         }
@@ -37,6 +50,8 @@ impl Piano {
             min_note,
             size,
             orientation,
+            audio_player,
+            generator_selector: audio_generator,
         }
     }
 
@@ -70,22 +85,38 @@ impl Piano {
         // As a result white notes C, D, and E are slightly larger, spread out
         // over 5 background notes and F, G, A, and B slight smaller spread out
         // over 7.
-        let (offset, note_size) = match note.note.pitch_name.scale_value {
-            ScaleValue::C => (-2.0 / 3.0, 5.0 / 3.0),
-            ScaleValue::D => (-1.0 / 3.0, 5.0 / 3.0),
-            ScaleValue::E => (0.0, 5.0 / 3.0),
-            ScaleValue::F => (-3.0 / 4.0, 7.0 / 4.0),
-            ScaleValue::G => (-1.0 / 2.0, 7.0 / 4.0),
-            ScaleValue::A => (-1.0 / 4.0, 7.0 / 4.0),
-            ScaleValue::B => (0.0, 7.0 / 4.0),
-            // return black key note as regular size and offset
-            _ => return self.make_black_key(note),
+        let (offset, note_size) = if self.orientation == PianoOrientation::Vertical {
+            match note.note.pitch_name.scale_value {
+                ScaleValue::C => (-2.0 / 3.0, 5.0 / 3.0),
+                ScaleValue::D => (-1.0 / 3.0, 5.0 / 3.0),
+                ScaleValue::E => (0.0, 5.0 / 3.0),
+                ScaleValue::F => (-3.0 / 4.0, 7.0 / 4.0),
+                ScaleValue::G => (-1.0 / 2.0, 7.0 / 4.0),
+                ScaleValue::A => (-1.0 / 4.0, 7.0 / 4.0),
+                ScaleValue::B => (0.0, 7.0 / 4.0),
+                _ => return self.make_black_key(note),
+            }
+        } else {
+            match note.note.pitch_name.scale_value {
+                ScaleValue::C => (0.0, 5.0 / 3.0),
+                ScaleValue::D => (-1.0 / 3.0, 5.0 / 3.0),
+                ScaleValue::E => (-2.0 / 3.0, 5.0 / 3.0),
+                ScaleValue::F => (0.0, 7.0 / 4.0),
+                ScaleValue::G => (-1.0 / 4.0, 7.0 / 4.0),
+                ScaleValue::A => (-1.0 / 2.0, 7.0 / 4.0),
+                ScaleValue::B => (-3.0 / 4.0, 7.0 / 4.0),
+                _ => return self.make_black_key(note),
+            }
         };
         self.make_white_key(note, offset, note_size)
     }
 
     fn make_white_key(&self, note: PlacedNote, offset: f32, note_size: f32) -> Shape {
-        let note_pos = note.to_pos(self.range()) + vec2(offset, 0.0);
+        let note_pos = if self.orientation == PianoOrientation::Vertical {
+            note.to_pos(self.range()) + vec2(offset, 0.0)
+        } else {
+            self.to_horizontal_pos(self.range(), note) + vec2(offset, 0.0)
+        };
         let size = vec2(note_size, 1.0);
         let rect = Rect::from_min_size(note_pos, size);
 
@@ -98,9 +129,12 @@ impl Piano {
     }
 
     fn make_black_key(&self, note: PlacedNote) -> Shape {
-        let black_note_length = 0.6;
-        let note_pos = note.to_pos(self.range());
-        let note_size = vec2(1.0, black_note_length);
+        let note_pos = if self.orientation == PianoOrientation::Vertical {
+            note.to_pos(self.range())
+        } else {
+            self.to_horizontal_pos(self.range(), note)
+        };
+        let note_size = vec2(BLACK_NOTE_WIDTH, BLACK_NOTE_LENGTH);
         let rect = self.transpose_if_vertical(Rect::from_min_size(note_pos, note_size));
 
         // Black key shape.
@@ -128,21 +162,128 @@ impl Piano {
             PianoOrientation::Vertical => object.yx(),
         }
     }
+
+    fn to_horizontal_pos(&self, range: Rect, note: PlacedNote) -> Pos2 {
+        let offset: f32 = note.offset.into();
+        let y = offset - range.top();
+        let pitch_value: PitchValue = note.note.pitch_name.into();
+        let x = pitch_value as f32 - range.left();
+        pos2(x, y)
+    }
+
+    fn create_click_feedback(&self, shape: &Shape, is_black: bool) -> Shape {
+        let corner_radius = self.transpose_if_vertical(CornerRadius {
+            nw: 0,
+            ne: 0,
+            sw: 2,
+            se: 2,
+        });
+
+        let click_feedback_colour = if is_black {
+            Color32::from_gray(100) // slightly lighten black key
+        } else {
+            Color32::from_rgba_unmultiplied(0, 0, 0, ((30.0 / 100.0) * 255.0) as u8) // slightly darken black key but use transparent true black instead of gray so it doesn't appear on overlapping black keys
+        };
+
+        Shape::rect_filled(
+            shape.visual_bounding_rect(),
+            corner_radius,
+            click_feedback_colour,
+        )
+    }
+
+    fn calculate_clicked_note(
+        &self,
+        position: Pos2,
+        piano_transform: RectTransform,
+    ) -> (Option<PlacedNote>, bool) {
+        let piano_notes = self.get_piano_notes();
+        let mut clicked_note: Option<_> = None;
+        let mut is_black = false;
+        for note in piano_notes {
+            let current_note = note.clone();
+            let key = self.make_piano_key(note);
+            let transformed_key = key.transform(piano_transform);
+            let key_rect = piano_transform
+                .inverse()
+                .transform_rect(transformed_key.visual_bounding_rect());
+
+            if key_rect.contains(position) {
+                clicked_note = Some(current_note);
+                let top_left = key_rect.min;
+                let top_right = pos2(key_rect.max.x, key_rect.min.y);
+                let bottom_left = pos2(key_rect.min.x, key_rect.max.y);
+                let bottom_right = key_rect.max;
+                // Check if intercepted with black note, if black note is hit then stop iterating.
+                match self.orientation {
+                    PianoOrientation::Horizontal => {
+                        if top_right.x - top_left.x == BLACK_NOTE_WIDTH
+                            || bottom_right.y == BLACK_NOTE_LENGTH
+                        {
+                            is_black = true;
+                            break;
+                        }
+                    }
+                    PianoOrientation::Vertical => {
+                        if bottom_left.y - top_left.y == BLACK_NOTE_WIDTH
+                            || top_right.x == BLACK_NOTE_LENGTH
+                        {
+                            is_black = true;
+                            break;
+                        }
+                    }
+                }
+            }
+        }
+        (clicked_note, is_black)
+    }
 }
 
-impl View for Piano {
+impl View for Piano<'_> {
     fn ui(&mut self, ui: &mut Ui) {
         Frame::canvas(ui.style()).show(ui, |ui| {
-            let (response, painter) = ui.allocate_painter(self.size, Sense::hover());
+            let (response, painter) = ui.allocate_painter(self.size, Sense::drag());
             let piano_transform = RectTransform::from_to(self.rect(), response.rect);
             let piano_board = self.make_piano_board();
-            let piano_keys = self.make_all_piano_keys(self.get_piano_notes());
+            let piano_notes = self.get_piano_notes();
+            let piano_keys = self.make_all_piano_keys(piano_notes);
 
             // Draw piano board first
             painter.extend(vec![piano_board].transform(piano_transform));
 
             // Then draw keys on top
             painter.extend(piano_keys.transform(piano_transform));
+
+            let did_interact = response.drag_started()
+                || response.drag_stopped()
+                || response.is_pointer_button_down_on();
+            if !did_interact {
+                return;
+            }
+            let (Some(sel), Some(pointer_pos)) =
+                (self.generator_selector, response.interact_pointer_pos())
+            else {
+                return;
+            };
+            let local_pos = piano_transform.inverse().transform_pos(pointer_pos);
+            let (clicked_note, is_black) = self.calculate_clicked_note(local_pos, piano_transform);
+            if let Some(clicked_note) = clicked_note {
+                let clicked_note_feedback = self.create_click_feedback(
+                    &self
+                        .make_piano_key(clicked_note.clone())
+                        .transform(piano_transform),
+                    is_black,
+                );
+                painter.add(clicked_note_feedback);
+
+                if let Some(player) = self.audio_player.as_mut() {
+                    if response.drag_started() {
+                        player.send_note_on(sel, clicked_note.note.pitch_name);
+                    } else if response.drag_stopped() {
+                        player.send_note_off(sel, clicked_note.note.pitch_name);
+                    }
+                }
+            }
         });
 
         if cfg!(feature = "extra_debug") {

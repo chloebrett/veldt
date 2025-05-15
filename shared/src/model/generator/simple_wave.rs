@@ -1,5 +1,5 @@
 use super::AntiAliasingMode;
-use crate::model::{AdsrEnvelope, WaveType};
+use crate::model::{AdsrEnvelope, PolyphonyMode, WaveType};
 use crate::pmodel::SimpleWaveConfigProto;
 use local_macro::{FromProto, IntoProto};
 
@@ -19,4 +19,25 @@ pub struct SimpleWaveConfig {
     pub anti_aliasing_mode: AntiAliasingMode,
 
     pub oversample_factor: u32,
+
+    #[proto_enum]
+    pub polyphony_mode: PolyphonyMode,
+
+    // Note: limit of zero means unlimited polyphony.
+    pub polyphony_limit: u32,
+}
+
+impl Default for SimpleWaveConfig {
+    fn default() -> Self {
+        Self {
+            wave: WaveType::Sine,
+            envelope: AdsrEnvelope::default(),
+            osc_count: 1,
+            detune_cents: 0.0,
+            anti_aliasing_mode: AntiAliasingMode::default(),
+            oversample_factor: 1,
+            polyphony_mode: PolyphonyMode::Polyphonic,
+            polyphony_limit: 0,
+        }
+    }
 }

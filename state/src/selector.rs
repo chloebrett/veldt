@@ -3,8 +3,8 @@ use shared::action_proto::{
     SelectorProto, selector_proto::IndexPair, selector_proto::Kind as SelectorKind,
 };
 use shared::model::{
-    EffectInstance, GeneratorInstance, MatrixCell, MixerChannel, Oscillator, PlacedNote, Placement,
-    SubSynthConfig, Track,
+    EffectInstance, EqConfig, GeneratorInstance, LfoConfig, MatrixCell, MixerChannel, Oscillator,
+    PlacedNote, Placement, SubSynthConfig, Track,
 };
 
 // TODO: rename to just Selector when Selector enum is gone.
@@ -78,6 +78,13 @@ impl GeneratorSelector {
     pub fn downcast_oscillator(&self, oscillator_index: usize) -> OscillatorSelector {
         OscillatorSelector(self.0, oscillator_index)
     }
+    pub fn downcast_lfo(&self, lfo_index: usize) -> LfoSelector {
+        LfoSelector(self.0, lfo_index)
+    }
+
+    pub fn downcast_effect(&self, effect_index: usize) -> GeneratorEffectSelector {
+        GeneratorEffectSelector(self.0, effect_index)
+    }
 }
 
 #[derive(Eq, PartialEq, Ord, PartialOrd, Copy, Clone, Debug, Hash)]
@@ -90,9 +97,33 @@ pub struct OscillatorSelector(
 );
 
 #[derive(Eq, PartialEq, Ord, PartialOrd, Copy, Clone, Debug, Hash)]
+pub struct LfoSelector(
+    /* generator_index */ pub usize,
+    /* lfo_index */ pub usize,
+);
+
+impl LfoSelector {
+    pub fn upcast(&self) -> GeneratorSelector {
+        GeneratorSelector(self.0)
+    }
+}
+
+#[derive(Eq, PartialEq, Ord, PartialOrd, Copy, Clone, Debug, Hash)]
 pub struct MixerMatrixCellSelector(/* row */ pub usize, /* col */ pub usize);
 
 impl OscillatorSelector {
+    pub fn upcast(&self) -> GeneratorSelector {
+        GeneratorSelector(self.0)
+    }
+}
+
+#[derive(Eq, PartialEq, Ord, PartialOrd, Copy, Clone, Debug, Hash)]
+pub struct GeneratorEffectSelector(
+    /* generator_index */ pub usize,
+    /* effect_index */ pub usize,
+);
+
+impl GeneratorEffectSelector {
     pub fn upcast(&self) -> GeneratorSelector {
         GeneratorSelector(self.0)
     }
@@ -248,6 +279,26 @@ impl SelectorTrait for OscillatorSelector {
     }
 }
 
+impl SelectorTrait for LfoSelector {
+    type Item = LfoConfig;
+
+    fn try_select<'a>(&'a self, store: &'a StoreData) -> Option<&'a Self::Item> {
+        let instance = store.project.generators.get(self.0)?;
+        let subsynth: &SubSynthConfig = (&instance.it).try_into().ok()?;
+        subsynth.lfos.get(self.1)
+    }
+
+    fn try_select_mut<'a>(&'a self, store: &'a mut StoreData) -> Option<&'a mut Self::Item> {
+        let instance = store.project.generators.get_mut(self.0)?;
+        let subsynth: &mut SubSynthConfig = (&mut instance.it).try_into().ok()?;
+        subsynth.lfos.get_mut(self.1)
+    }
+
+    fn as_enum(&self) -> Selector {
+        Selector::Lfo(self.0, self.1)
+    }
+}
+
 impl SelectorTrait for MixerMatrixCellSelector {
     type Item = MatrixCell;
 
@@ -261,6 +312,40 @@ impl SelectorTrait for MixerMatrixCellSelector {
 
     fn as_enum(&self) -> Selector {
         Selector::MixerMatrixCell(self.0, self.1)
+    }
+}
+
+impl SelectorTrait for GeneratorEffectSelector {
+    type Item = EqConfig;
+
+    // NOTE: in theory, can support multiple generator effects, but for now we only have subsynth LPF
+    fn try_select<'a>(&'a self, store: &'a StoreData) -> Option<&'a Self::Item> {
+        let instance = store.project.generators.get(self.0)?;
+        let subsynth: &SubSynthConfig = (&instance.it).try_into().ok()?;
+        Some(&subsynth.lpf)
+    }
+
+    fn try_select_mut<'a>(&'a self, store: &'a mut StoreData) -> Option<&'a mut Self::Item> {
+        let instance = store.project.generators.get_mut(self.0)?;
+        let subsynth: &mut SubSynthConfig = (&mut instance.it).try_into().ok()?;
+        Some(&mut subsynth.lpf)
+    }
+
+    fn as_enum(&self) -> Selector {
+        Selector::GeneratorEffect(self.0, self.1)
+    }
+}
+
+// TODO implement a selector trait for the envelopes for the generators.
+#[derive(Eq, PartialEq, Ord, PartialOrd, Copy, Clone, Debug, Hash)]
+pub struct EnvelopeSelector(
+    /* generator_index */ usize,
+    /* envelope_index */ usize,
+);
+
+impl EnvelopeSelector {
+    pub fn upcast(&self) -> GeneratorSelector {
+        GeneratorSelector(self.0)
     }
 }
 
@@ -282,6 +367,11 @@ pub enum Selector {
         /* oscillator_index */ usize,
     ),
     MixerMatrixCell(/* row */ usize, /* col */ usize),
+    Lfo(/* generator_index */ usize, /* lfo_index */ usize),
+    GeneratorEffect(
+        /* generator_index */ usize,
+        /* oscillator_index */ usize,
+    ),
 }
 
 impl From<Selector> for SelectorProto {
@@ -300,6 +390,10 @@ impl From<Selector> for SelectorProto {
                 }
                 Selector::MixerMatrixCell(first, second) => {
                     SelectorKind::MixerMatrixCell(pair(first, second))
+                }
+                Selector::Lfo(first, second) => SelectorKind::Lfo(pair(first, second)),
+                Selector::GeneratorEffect(first, second) => {
+                    SelectorKind::GeneratorEffect(pair(first, second))
                 }
             }),
         }
@@ -325,6 +419,12 @@ impl From<SelectorProto> for Selector {
             }
             SelectorKind::MixerMatrixCell(IndexPair { first, second }) => {
                 Selector::MixerMatrixCell(first as usize, second as usize)
+            }
+            SelectorKind::Lfo(IndexPair { first, second }) => {
+                Selector::Lfo(first as usize, second as usize)
+            }
+            SelectorKind::GeneratorEffect(IndexPair { first, second }) => {
+                Selector::GeneratorEffect(first as usize, second as usize)
             }
         }
     }

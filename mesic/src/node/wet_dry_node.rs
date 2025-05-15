@@ -16,10 +16,10 @@ pub struct WetDryNode {
 }
 
 impl WetDryNode {
-    pub fn new(selector: EffectSelector, meta: EffectMeta) -> Self {
+    pub fn new(selector: EffectSelector) -> Self {
         Self {
             selector,
-            meta: meta.clone(),
+            meta: EffectMeta::default(),
         }
     }
 

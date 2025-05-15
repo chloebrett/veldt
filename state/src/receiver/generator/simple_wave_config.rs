@@ -21,24 +21,8 @@ impl ActionReceiver for SimpleWaveConfig {
                 Action::SetFloat(FloatField::Detune, prev)
             }
             Action::SetChild(TypeField::Envelope(envelope)) => {
-                let mut envelope = envelope.clone();
-                let headroom = 1.0 - envelope.attack - envelope.decay - envelope.release;
-                let max_attack = headroom + envelope.attack;
-                let max_decay = headroom + envelope.decay;
-                let max_release = headroom + envelope.release;
-
-                if envelope.attack > max_attack {
-                    envelope.attack = max_attack;
-                }
-                if envelope.decay > max_decay {
-                    envelope.decay = max_decay;
-                }
-                if envelope.release > max_release {
-                    envelope.release = max_release;
-                }
-
                 let prev = self.envelope.clone();
-                self.envelope = envelope;
+                self.envelope = envelope.clone();
                 Action::SetChild(TypeField::Envelope(prev))
             }
             Action::SetChild(TypeField::AntiAliasingMode(mode)) => {
@@ -50,6 +34,16 @@ impl ActionReceiver for SimpleWaveConfig {
                 let prev = self.oversample_factor;
                 self.oversample_factor = *factor;
                 Action::SetUint(UintField::OversampleFactor, prev)
+            }
+            Action::SetChild(TypeField::PolyphonyMode(mode)) => {
+                let prev = self.polyphony_mode;
+                self.polyphony_mode = *mode;
+                Action::SetChild(TypeField::PolyphonyMode(prev))
+            }
+            Action::SetUint(UintField::PolyphonyLimit, factor) => {
+                let prev = self.polyphony_limit;
+                self.polyphony_limit = *factor;
+                Action::SetUint(UintField::PolyphonyLimit, prev)
             }
             _ => return None,
         })
