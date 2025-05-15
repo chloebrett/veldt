@@ -21,9 +21,7 @@ ringbuffer = "0.15.0"
 rustfft = { version = "6.3.0", features = ["wasm_simd"] }
 shared = { path = "../shared" }
 state = { version = "0.1.0", path = "../state" }
-wasm-bindgen = "0.2.100"
 rand = "0.8"
-wasm-bindgen-futures = "0.4.50"
 
 [dependencies.getrandom]
 version = "0.2"

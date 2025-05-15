@@ -1,6 +1,6 @@
 use crate::graph::{NoteEventType, ProcessContext};
-use crate::rng::generate_random_number_in_range;
 use dasp_graph::{Buffer, Input, Node};
+use rand::Rng;
 use shared::model::{Generator, GeneratorInstance, GeneratorMeta, NoiseConfig, NoiseType};
 use state::GeneratorSelector;
 
@@ -46,12 +46,6 @@ impl NodeState {
     }
 }
 
-fn generate_white_noise() -> f32 {
-    let min = -1.0;
-    let max = 1.0;
-    generate_random_number_in_range(min, max)
-}
-
 impl NoiseGeneratorNode {
     pub fn new(selector: GeneratorSelector) -> Self {
         Self {
@@ -66,9 +60,9 @@ impl NoiseGeneratorNode {
         }
     }
 
-    fn generate_noise_sample(kind: NoiseType) -> f32 {
+    fn generate_noise_sample(rng: &mut impl Rng, kind: NoiseType) -> f32 {
         match kind {
-            NoiseType::White => generate_white_noise(),
+            NoiseType::White => generate_white_noise(rng),
             NoiseType::Pink => todo!(),
             NoiseType::Brown => todo!(),
         }
@@ -82,6 +76,7 @@ impl Node<ProcessContext> for NoiseGeneratorNode {
         state.update(payload, self.selector);
 
         let mut buffer = Buffer::SILENT;
+        let mut rng = rand::thread_rng();
         let GeneratorSelector(generator_index) = self.selector;
 
         for i in 0..buffer.len() {
@@ -105,7 +100,7 @@ impl Node<ProcessContext> for NoiseGeneratorNode {
             }
 
             if state.playing {
-                buffer[i] = Self::generate_noise_sample(kind);
+                buffer[i] = Self::generate_noise_sample(&mut rng, kind);
             }
         }
 
@@ -114,4 +109,15 @@ impl Node<ProcessContext> for NoiseGeneratorNode {
             Self::apply_volume(state, out_buf);
         }
     }
+}
+
+// Generates random number between [min, max]
+pub fn generate_random_number_in_range(rng: &mut impl Rng, min: f32, max: f32) -> f32 {
+    rng.gen_range(min..=max)
+}
+
+fn generate_white_noise(rng: &mut impl Rng) -> f32 {
+    let min = -1.0;
+    let max = 1.0;
+    generate_random_number_in_range(rng, min, max)
 }
