@@ -1,13 +1,10 @@
 use std::f32;
 
-use egui::text::Fonts;
-use egui::{
-    Align2, FontDefinitions, FontId, FontSelection, InnerResponse, Rangef, RichText, WidgetText,
-};
 use egui::{
     Color32, CornerRadius, Frame, Rect, Response, Sense, Shape, Ui, Vec2, Widget,
     emath::RectTransform, pos2, vec2,
 };
+use egui::{InnerResponse, Rangef};
 
 use crate::playback::AudioPlayer;
 use crate::transform::Transform;
@@ -25,7 +22,7 @@ impl<'a> AudioLevel<'a> {
         Self {
             player,
             min_level: -60.0,
-            max_level: 2.0,
+            max_level: 6.0,
             size: vec2(20.0, 150.0),
         }
     }
@@ -93,18 +90,6 @@ impl<'a> AudioLevel<'a> {
         })
         .collect();
         Shape::Vec(shapes)
-    }
-
-    fn create_increment_text(&self, to_screen: RectTransform, range: Rect) -> Shape {
-        let fonts = Fonts::new(1.0, 100, FontDefinitions::default());
-        Shape::text(
-            &fonts,
-            range.left_center().transform(to_screen),
-            Align2::CENTER_TOP,
-            "*",
-            FontId::default(),
-            Color32::WHITE,
-        )
     }
 }
 
