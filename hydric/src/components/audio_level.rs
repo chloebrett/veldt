@@ -32,7 +32,7 @@ impl<'a> AudioLevel<'a> {
         let bottom_padding = 10.0;
         let padded_y_size =
             (range.size().y.abs() - (top_padding + bottom_padding)) / range.size().y.abs();
-        // marker at that appears at peak of level.
+        // marker appears at peak of level.
         // marker will be twice this height.
         let marker_height = 0.5;
         let left_channel = |level, min_value| {
@@ -106,6 +106,7 @@ impl Widget for AudioLevel<'_> {
             let (response, painter) = ui.allocate_painter(size, Sense::all());
             let level_shapes = self.create_level_shapes(range, left_level, right_level);
             let to_screen = RectTransform::from_to(range, response.rect);
+            // Add background shape.
             painter.add(Shape::rect_filled(
                 response.rect,
                 CornerRadius::same(0),
