@@ -2,42 +2,43 @@ use crate::view::View;
 use crate::widget::{TextRotation, for_each_with_separator, knob, text_rotator};
 use eframe::egui;
 use egui::{Color32, Ui};
-use shared::model::ModMatrix;
-use state::{Action, FloatField};
+use shared::model::{MatrixCell, ModMatrix};
+use state::{Action, FloatField, MixerMatrixCellSelector, Store};
+use log::info;
 
-pub struct ModMatrixView<'a, F: Fn(Action), G: Fn()> {
+pub struct ModMatrixView<'a, G: Fn()> {
     matrix: &'a ModMatrix,
     row_titles: Vec<&'a str>,
     col_titles: Vec<&'a str>,
-    dispatch: F,
+    store: &'a Store,
     on_release: G,
 }
 
-impl<'a, F: Fn(Action), G: Fn()> ModMatrixView<'a, F, G> {
+impl<'a, G: Fn()> ModMatrixView<'a, G> {
     pub fn new(
         matrix: &'a ModMatrix,
         row_titles: Vec<&'a str>,
         col_titles: Vec<&'a str>,
-        dispatch: F,
+        store: &'a Store,
         on_release: G,
     ) -> Self {
         ModMatrixView {
             matrix,
             row_titles,
             col_titles,
-            dispatch,
+            store,
             on_release,
         }
     }
 }
 
-impl<F: Fn(Action), G: Fn()> View for ModMatrixView<'_, F, G> {
+impl<'a, G: Fn()> View for ModMatrixView<'_, G> {
     fn ui(&mut self, ui: &mut Ui) {
         let Self {
             matrix,
             ref row_titles,
             ref col_titles,
-            ref dispatch,
+            ref store,
             ref on_release,
         } = *self;
 
@@ -76,14 +77,19 @@ impl<F: Fn(Action), G: Fn()> View for ModMatrixView<'_, F, G> {
                                 TextRotation::Anticlockwise90,
                                 TEXT_COLOUR,
                             );
-                            for col in 0..matrix.cols {
+                            for col in 0..matrix.cols as usize {
                                 let id = format!("{:?}", (row, col));
                                 ui.push_id(id, |ui| {
+                                    let cell_sel = MixerMatrixCellSelector(row, col);
+                                    info!("cell_sel: {:?}", cell_sel);
+                                    let cell_dispatch = |action| {
+                                        self.store.dispatch(&cell_sel, action);
+                                    };
                                     knob(
                                         ui,
                                         "",
                                         0.0,
-                                        |it| dispatch(Action::SetFloat(FloatField::ModFactor, it)), // TODO need a selector for each knob
+                                        |it| cell_dispatch(Action::SetFloat(FloatField::ModFactor, it)),
                                         -1.0..=1.0,
                                         0.0,
                                         on_release,
