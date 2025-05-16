@@ -2229,7 +2229,6 @@ dependencies = [
  "wasm-bindgen",
  "wasm-bindgen-futures",
  "wasm_thread",
- "web-sys",
 ]
 
 [[package]]

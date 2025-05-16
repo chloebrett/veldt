@@ -65,19 +65,17 @@ impl View for SampleTreeView<'_> {
                 let config = &self.store.get().sample_tree_config;
                 let search = config.search.clone();
 
-                let mut search_observer = string_observer(
-                    get_set(search.clone(), |search| {
-                        self.store
-                            .dispatchr(Action::SetChild(TypeField::SampleTreeConfig(
-                                FileTreeConfig {
-                                    search,
-                                    ..config.clone()
-                                },
-                            )));
-                    }),
-                    search.clone(),
-                );
-                ui.text_edit_singleline(&mut search_observer);
+                let mut search = config.search.clone();
+                let response = ui.text_edit_singleline(&mut search);
+                if response.changed() {
+                    self.store
+                        .dispatchr(Action::SetChild(TypeField::SampleTreeConfig(
+                            FileTreeConfig {
+                                search,
+                                ..config.clone()
+                            },
+                        )));
+                }
 
                 let mut reload = false;
                 if ui.button("Search").clicked() {
