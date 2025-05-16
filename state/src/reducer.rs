@@ -31,5 +31,8 @@ pub fn reducer(data: &mut StoreData, selector: &Selector, action: &Action) -> Op
             reducer_internal(GeneratorEffectSelector(a, b), data, action)
         }
         Selector::Envelope(a, b) => reducer_internal(EnvelopeSelector(a, b), data, action),
+        Selector::ModMatrixCell(a, b) => {
+            reducer_internal(MixerMatrixCellSelector(a, b), data, action)
+        }
     }
 }

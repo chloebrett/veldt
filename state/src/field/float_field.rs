@@ -26,5 +26,4 @@ pub enum FloatField {
     AdsrDecay,
     AdsrSustain,
     AdsrRelease,
-    MixerMatrixCell
 }

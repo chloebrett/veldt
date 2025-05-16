@@ -3,7 +3,7 @@ use crate::widget::{TextRotation, for_each_with_separator, knob, text_rotator};
 use eframe::egui;
 use egui::{Color32, Ui};
 use shared::model::{MatrixCell, ModMatrix};
-use state::{Action, FloatField, MixerMatrixCellSelector, Store};
+use state::{Action, FloatField, ModMatrixCellSelector, Store};
 use log::info;
 
 pub struct ModMatrixView<'a, G: Fn()> {
@@ -79,17 +79,16 @@ impl<'a, G: Fn()> View for ModMatrixView<'_, G> {
                             );
                             for col in 0..matrix.cols as usize {
                                 let id = format!("{:?}", (row, col));
+                                let sel = ModMatrixCellSelector(row, col);
+
                                 ui.push_id(id, |ui| {
-                                    let cell_sel = MixerMatrixCellSelector(row, col);
-                                    info!("cell_sel: {:?}", cell_sel);
-                                    let cell_dispatch = |action| {
-                                        self.store.dispatch(&cell_sel, action);
-                                    };
                                     knob(
                                         ui,
                                         "",
                                         0.0,
-                                        |it| cell_dispatch(Action::SetFloat(FloatField::ModFactor, it)),
+                                        |it| {
+                                            store.dispatch(&sel, Action::SetFloat(FloatField::ModFactor, it));
+                                        },
                                         -1.0..=1.0,
                                         0.0,
                                         on_release,

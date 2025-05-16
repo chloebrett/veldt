@@ -38,7 +38,7 @@ pub struct MixerMatrix {
 /// TODO: consider implementing Deref/DerefMut.
 /// TODO: also consider whether this should contain OrderedFloat. I think it isn't necessary.
 #[derive(Copy, Clone, PartialEq, Debug)]
-pub struct MatrixCell(f32);
+pub struct MatrixCell(pub f32);
 
 impl MatrixCell {
     pub fn set(&mut self, value: f32) {

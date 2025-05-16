@@ -127,6 +127,7 @@ message SelectorProto {
     IndexPair lfo = 10;
     IndexPair generator_effect = 11;
     IndexPair envelope = 12;
+    IndexPair mod_matrix_cell = 13;
   }
 
   message IndexPair {
