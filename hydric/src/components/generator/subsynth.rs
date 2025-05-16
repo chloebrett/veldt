@@ -149,7 +149,7 @@ impl<G: Fn()> View for SubSynthView<'_, G> {
                 ui.add_space(HORIZONTAL_SPACE);
                 SubSynthLpfView::new(
                     &config.lpf,
-                    lpf_dispatch, // TODO: create actionreceiver for this, change the dispatch so the actions work
+                    lpf_dispatch,
                     on_release,
                 )
                 .ui(ui);
