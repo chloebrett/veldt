@@ -4,7 +4,8 @@ use shared::action_proto::{
     SelectorProto, selector_proto::IndexPair, selector_proto::Kind as SelectorKind,
 };
 use shared::model::{
-    AdsrEnvelope, EffectInstance, EqConfig, GeneratorInstance, LfoConfig, MatrixCell, MixerChannel, Oscillator, PlacedNote, Placement, SubSynthConfig, Track
+    AdsrEnvelope, EffectInstance, EqConfig, GeneratorInstance, LfoConfig, MatrixCell, MixerChannel,
+    Oscillator, PlacedNote, Placement, SubSynthConfig, Track,
 };
 
 // TODO: rename to just Selector when Selector enum is gone.
@@ -374,15 +375,12 @@ impl SelectorTrait for EnvelopeSelector {
 }
 
 #[derive(Eq, PartialEq, Ord, PartialOrd, Copy, Clone, Debug, Hash)]
-pub struct ModMatrixCellSelector (
+pub struct ModMatrixCellSelector(
     /* generator_index */ pub usize,
-    /* row */ pub usize, 
-    /* col */ pub usize
+    /* row */ pub usize,
+    /* col */ pub usize,
 );
 
-// TODO: find a way to select the mod matrix cell based on generator index
-// Index pair in proto only has 2 ints, therefore cannot store the generator index.
-// Link to mod matrix cell selector
 impl ModMatrixCellSelector {
     pub fn upcast(&self) -> GeneratorSelector {
         GeneratorSelector(self.0)
@@ -438,7 +436,7 @@ pub enum Selector {
     ),
     ModMatrixCell(
         /* generator_index */ usize,
-        /* row */ usize, 
+        /* row */ usize,
         /* col */ usize,
     ),
 }
@@ -465,7 +463,9 @@ impl From<Selector> for SelectorProto {
                     SelectorKind::GeneratorEffect(pair(first, second))
                 }
                 Selector::Envelope(first, second) => SelectorKind::Envelope(pair(first, second)),
-                Selector::ModMatrixCell(first, second, third) => SelectorKind::ModMatrixCell(trio(first, second, third)),
+                Selector::ModMatrixCell(first, second, third) => {
+                    SelectorKind::ModMatrixCell(trio(first, second, third))
+                }
             }),
         }
     }
@@ -499,8 +499,12 @@ impl From<SelectorProto> for Selector {
             }
             SelectorKind::Envelope(IndexPair { first, second }) => {
                 Selector::Envelope(first as usize, second as usize)
-            },
-            SelectorKind::ModMatrixCell(IndexTrio { first, second , third}) => Selector::ModMatrixCell(first as usize, second as usize, third as usize),
+            }
+            SelectorKind::ModMatrixCell(IndexTrio {
+                first,
+                second,
+                third,
+            }) => Selector::ModMatrixCell(first as usize, second as usize, third as usize),
         }
     }
 }
@@ -518,4 +522,4 @@ fn trio(first: usize, second: usize, third: usize) -> IndexTrio {
         second: second as u32,
         third: third as u32,
     }
-} 
+}

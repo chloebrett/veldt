@@ -3,7 +3,7 @@ use crate::widget::{TextRotation, for_each_with_separator, knob, text_rotator};
 use eframe::egui;
 use egui::{Color32, Ui};
 use shared::model::{MatrixCell, ModMatrix};
-use state::{Action, FloatField, ModMatrixCellSelector, Store, GeneratorSelector};
+use state::{Action, FloatField, GeneratorSelector, Store};
 
 pub struct ModMatrixView<'a, G: Fn()> {
     matrix: &'a ModMatrix,
@@ -92,7 +92,10 @@ impl<'a, G: Fn()> View for ModMatrixView<'_, G> {
                                         "",
                                         value,
                                         |it| {
-                                            store.dispatch(&cell_sel, Action::SetFloat(FloatField::ModFactor, it));
+                                            store.dispatch(
+                                                &cell_sel,
+                                                Action::SetFloat(FloatField::ModFactor, it),
+                                            );
                                         },
                                         0.0..=1.0,
                                         0.0,
