@@ -137,6 +137,7 @@ impl<G: Fn()> View for SubSynthView<'_, G> {
                     vec!["ENV 1", "ENV 2", "ENV 3", "LFO 1", "LFO 2", "LFO 3"],
                     vec!["OSC 1", "OSC 2", "OSC 3", "LPF"],
                     self.store,
+                    gen_sel,
                     on_release,
                 )
                 .ui(ui); // must wrap in ui.vertical to stop the matrix from unnecessarily stretching vertically

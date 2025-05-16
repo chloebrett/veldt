@@ -1,4 +1,5 @@
 use crate::{StoreData, receiver::ActionReceiver};
+use shared::action_proto::selector_proto::IndexTrio;
 use shared::action_proto::{
     SelectorProto, selector_proto::IndexPair, selector_proto::Kind as SelectorKind,
 };
@@ -87,7 +88,7 @@ impl GeneratorSelector {
         GeneratorEffectSelector(self.0, effect_index)
     }
     pub fn downcast_mod_matrix_cell(&self, row: usize, col: usize) -> ModMatrixCellSelector {
-        ModMatrixCellSelector(row, col)
+        ModMatrixCellSelector(self.0, row, col)
     }
 }
 
@@ -374,10 +375,14 @@ impl SelectorTrait for EnvelopeSelector {
 
 #[derive(Eq, PartialEq, Ord, PartialOrd, Copy, Clone, Debug, Hash)]
 pub struct ModMatrixCellSelector (
+    /* generator_index */ pub usize,
     /* row */ pub usize, 
     /* col */ pub usize
 );
 
+// TODO: find a way to select the mod matrix cell based on generator index
+// Index pair in proto only has 2 ints, therefore cannot store the generator index.
+// Link to mod matrix cell selector
 impl ModMatrixCellSelector {
     pub fn upcast(&self) -> GeneratorSelector {
         GeneratorSelector(self.0)
@@ -390,17 +395,17 @@ impl SelectorTrait for ModMatrixCellSelector {
     fn try_select<'a>(&'a self, store: &'a StoreData) -> Option<&'a Self::Item> {
         let instance = store.project.generators.get(self.0)?;
         let subsynth: &SubSynthConfig = (&instance.it).try_into().ok()?;
-        subsynth.matrix.get(self.0, self.1)
+        subsynth.matrix.get(self.1, self.2)
     }
 
     fn try_select_mut<'a>(&'a self, store: &'a mut StoreData) -> Option<&'a mut Self::Item> {
         let instance = store.project.generators.get_mut(self.0)?;
         let subsynth: &mut SubSynthConfig = (&mut instance.it).try_into().ok()?;
-        subsynth.matrix.get_mut(self.0, self.1)
+        subsynth.matrix.get_mut(self.1, self.2)
     }
 
     fn as_enum(&self) -> Selector {
-        Selector::ModMatrixCell(self.0, self.1)
+        Selector::ModMatrixCell(self.0, self.1, self.2)
     }
 }
 
@@ -432,6 +437,7 @@ pub enum Selector {
         /* oscillator_index */ usize,
     ),
     ModMatrixCell(
+        /* generator_index */ usize,
         /* row */ usize, 
         /* col */ usize,
     ),
@@ -459,7 +465,7 @@ impl From<Selector> for SelectorProto {
                     SelectorKind::GeneratorEffect(pair(first, second))
                 }
                 Selector::Envelope(first, second) => SelectorKind::Envelope(pair(first, second)),
-                Selector::ModMatrixCell(first, second) => SelectorKind::ModMatrixCell(pair(first, second)),
+                Selector::ModMatrixCell(first, second, third) => SelectorKind::ModMatrixCell(trio(first, second, third)),
             }),
         }
     }
@@ -494,7 +500,7 @@ impl From<SelectorProto> for Selector {
             SelectorKind::Envelope(IndexPair { first, second }) => {
                 Selector::Envelope(first as usize, second as usize)
             },
-            SelectorKind::ModMatrixCell(IndexPair { first, second }) => Selector::ModMatrixCell(first as usize, second as usize),
+            SelectorKind::ModMatrixCell(IndexTrio { first, second , third}) => Selector::ModMatrixCell(first as usize, second as usize, third as usize),
         }
     }
 }
@@ -505,3 +511,11 @@ fn pair(first: usize, second: usize) -> IndexPair {
         second: second as u32,
     }
 }
+
+fn trio(first: usize, second: usize, third: usize) -> IndexTrio {
+    IndexTrio {
+        first: first as u32,
+        second: second as u32,
+        third: third as u32,
+    }
+} 

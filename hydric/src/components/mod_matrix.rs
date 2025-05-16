@@ -3,14 +3,14 @@ use crate::widget::{TextRotation, for_each_with_separator, knob, text_rotator};
 use eframe::egui;
 use egui::{Color32, Ui};
 use shared::model::{MatrixCell, ModMatrix};
-use state::{Action, FloatField, ModMatrixCellSelector, Store};
-use log::info;
+use state::{Action, FloatField, ModMatrixCellSelector, Store, GeneratorSelector};
 
 pub struct ModMatrixView<'a, G: Fn()> {
     matrix: &'a ModMatrix,
     row_titles: Vec<&'a str>,
     col_titles: Vec<&'a str>,
     store: &'a Store,
+    generator_sel: &'a GeneratorSelector,
     on_release: G,
 }
 
@@ -20,6 +20,7 @@ impl<'a, G: Fn()> ModMatrixView<'a, G> {
         row_titles: Vec<&'a str>,
         col_titles: Vec<&'a str>,
         store: &'a Store,
+        generator_sel: &'a GeneratorSelector,
         on_release: G,
     ) -> Self {
         ModMatrixView {
@@ -27,6 +28,7 @@ impl<'a, G: Fn()> ModMatrixView<'a, G> {
             row_titles,
             col_titles,
             store,
+            generator_sel,
             on_release,
         }
     }
@@ -39,6 +41,7 @@ impl<'a, G: Fn()> View for ModMatrixView<'_, G> {
             ref row_titles,
             ref col_titles,
             ref store,
+            ref generator_sel,
             ref on_release,
         } = *self;
 
@@ -79,17 +82,19 @@ impl<'a, G: Fn()> View for ModMatrixView<'_, G> {
                             );
                             for col in 0..matrix.cols as usize {
                                 let id = format!("{:?}", (row, col));
-                                let sel = ModMatrixCellSelector(row, col);
+                                let cell_sel = generator_sel.downcast_mod_matrix_cell(row, col);
+                                let value: &MatrixCell = store.select(&cell_sel);
+                                let value = value.0;
 
                                 ui.push_id(id, |ui| {
                                     knob(
                                         ui,
                                         "",
-                                        0.0,
+                                        value,
                                         |it| {
-                                            store.dispatch(&sel, Action::SetFloat(FloatField::ModFactor, it));
+                                            store.dispatch(&cell_sel, Action::SetFloat(FloatField::ModFactor, it));
                                         },
-                                        -1.0..=1.0,
+                                        0.0..=1.0,
                                         0.0,
                                         on_release,
                                     );
