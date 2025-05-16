@@ -26,7 +26,7 @@ impl<'a> AudioLevel<'a> {
             player,
             min_level: -60.0,
             max_level: 2.0,
-            size: vec2(40.0, 150.0),
+            size: vec2(20.0, 150.0),
         }
     }
 
@@ -37,12 +37,14 @@ impl<'a> AudioLevel<'a> {
         let bottom_padding = 10.0;
         let padded_y_size =
             (range.size().y.abs() - (top_padding + bottom_padding)) / range.size().y.abs();
-        log::debug!("{:?}", padded_y_size);
+        // marker at that appears at peak of level.
+        // marker will be twice this height.
+        let marker_height = 0.5;
         let left_channel = |level, min_value| {
             Rect::from_x_y_ranges(
                 Rangef {
-                    min: range.left() + side_padding,
-                    max: range.size().x + (range.size().x - side_padding) * 0.5,
+                    min: side_padding,
+                    max: (range.size().x - side_padding) * 0.5,
                 },
                 Rangef {
                     min: level * padded_y_size - top_padding,
@@ -53,7 +55,7 @@ impl<'a> AudioLevel<'a> {
         let right_channel = |level, min_value| {
             Rect::from_x_y_ranges(
                 Rangef {
-                    min: range.size().x + (range.size().x + side_padding) * 0.5,
+                    min: (range.size().x + side_padding) * 0.5,
                     max: range.right() - side_padding,
                 },
                 Rangef {
@@ -62,24 +64,35 @@ impl<'a> AudioLevel<'a> {
                 },
             )
         };
-        let left_level_rect = left_channel(left_level, range.bottom());
+
+        // Shaped behind level for each channel.
         let left_background_rect = left_channel(range.top(), range.bottom());
-        let right_level_rect = right_channel(right_level, range.bottom());
         let right_background_rect = right_channel(range.top(), range.bottom());
-        let left_marker = left_channel(left_level + 0.5, left_level - 0.5);
-        let right_marker = right_channel(right_level + 0.5, right_level - 0.5);
-        let level_shape = |rect| Shape::rect_filled(rect, CornerRadius::same(0), Color32::WHITE);
-        let background_shape =
-            |rect| Shape::rect_filled(rect, CornerRadius::same(0), Color32::from_black_alpha(64));
-        let marker_shape = |rect| Shape::rect_filled(rect, CornerRadius::same(0), Color32::BLACK);
-        Shape::Vec(vec![
-            background_shape(left_background_rect),
-            background_shape(right_background_rect),
-            level_shape(left_level_rect),
-            level_shape(right_level_rect),
-            marker_shape(left_marker),
-            marker_shape(right_marker),
-        ])
+        // Level of each channel.
+        let left_level_rect = left_channel(left_level, range.bottom());
+        let right_level_rect = right_channel(right_level, range.bottom());
+        // Marker at peak of level.
+        let left_marker = left_channel(left_level + marker_height, left_level - marker_height);
+        let right_marker = right_channel(right_level + marker_height, right_level - marker_height);
+
+        let shapes: Vec<_> = [
+            [left_background_rect, left_level_rect, left_marker],
+            [right_background_rect, right_level_rect, right_marker],
+        ]
+        .into_iter()
+        .flat_map(|[background, level, marker]| {
+            vec![
+                Shape::rect_filled(
+                    background,
+                    CornerRadius::same(0),
+                    Color32::from_black_alpha(64),
+                ),
+                Shape::rect_filled(level, CornerRadius::same(0), Color32::WHITE),
+                Shape::rect_filled(marker, CornerRadius::same(0), Color32::BLACK),
+            ]
+        })
+        .collect();
+        Shape::Vec(shapes)
     }
 
     fn create_increment_text(&self, to_screen: RectTransform, range: Rect) -> Shape {
@@ -108,21 +121,14 @@ impl Widget for AudioLevel<'_> {
         let [left_level, right_level] = player.level();
         let InnerResponse { inner: _, response } = Frame::canvas(ui.style()).show(ui, |ui| {
             let (response, painter) = ui.allocate_painter(size, Sense::all());
-            let number_level_divide = range.size().x * 0.5;
-            let (number_range, level_range) = (
-                range.with_max_x(number_level_divide),
-                range.with_min_x(number_level_divide),
-            );
-            let level_shapes = self.create_level_shapes(level_range, left_level, right_level);
+            let level_shapes = self.create_level_shapes(range, left_level, right_level);
             let to_screen = RectTransform::from_to(range, response.rect);
-            let text_shape = self.create_increment_text(to_screen, number_range);
             painter.add(Shape::rect_filled(
                 response.rect,
                 CornerRadius::same(0),
                 Color32::from_white_alpha(16),
             ));
             painter.add(level_shapes.transform(to_screen));
-            painter.add(text_shape);
         });
         response
     }
