@@ -1,0 +1,123 @@
+use crate::graph::{NoteEventType, ProcessContext};
+use dasp_graph::{Buffer, Input, Node};
+use rand::Rng;
+use shared::model::{Generator, GeneratorInstance, GeneratorMeta, NoiseConfig, NoiseType};
+use state::GeneratorSelector;
+
+pub struct NoiseGeneratorNode {
+    selector: GeneratorSelector,
+    state: NodeState,
+}
+
+/// State persisted between buffers.
+/// Specific to this node.
+struct NodeState {
+    config: NoiseConfig,
+    meta: GeneratorMeta,
+    playing: bool,
+}
+
+impl Default for NodeState {
+    fn default() -> Self {
+        let config = NoiseConfig::default();
+        Self {
+            config: config.clone(),
+            meta: GeneratorMeta::default(),
+            playing: false,
+        }
+    }
+}
+
+impl NodeState {
+    fn update(&mut self, payload: &ProcessContext, selector: GeneratorSelector) {
+        if let GeneratorInstance {
+            it: Generator::Noise(config),
+            meta,
+            ..
+        } = &payload.store.select(&selector)
+        {
+            if self.config != *config {
+                self.config = config.clone();
+            }
+            if self.meta != *meta {
+                self.meta = meta.clone();
+            }
+        }
+    }
+}
+
+impl NoiseGeneratorNode {
+    pub fn new(selector: GeneratorSelector) -> Self {
+        Self {
+            selector,
+            state: NodeState::default(),
+        }
+    }
+
+    fn apply_volume(state: &NodeState, buffer: &mut Buffer) {
+        for x in buffer.iter_mut() {
+            *x *= state.meta.volume;
+        }
+    }
+
+    fn generate_noise_sample(rng: &mut impl Rng, kind: NoiseType) -> f32 {
+        match kind {
+            NoiseType::White => generate_white_noise(rng),
+            NoiseType::Pink => todo!(),
+            NoiseType::Brown => todo!(),
+        }
+    }
+}
+
+impl Node<ProcessContext> for NoiseGeneratorNode {
+    fn process(&mut self, _inputs: &[Input], output: &mut [Buffer], payload: &ProcessContext) {
+        let state = &mut self.state;
+        let kind = state.config.kind;
+        state.update(payload, self.selector);
+
+        let mut buffer = Buffer::SILENT;
+        let mut rng = rand::thread_rng();
+        let GeneratorSelector(generator_index) = self.selector;
+
+        for i in 0..buffer.len() {
+            let mut events: Vec<_> = payload.note_events[generator_index]
+                .clone()
+                .into_iter()
+                .filter(|it| it.sample_index == i)
+                .collect();
+
+            // Special case: if there are both note_on and note_off events in a single sample,
+            // don't process the note_off events.
+            if events.iter().any(|it| it.kind == NoteEventType::On) {
+                events.retain(|it| it.kind == NoteEventType::On);
+            }
+
+            for note_event in events {
+                match note_event.kind {
+                    NoteEventType::On => state.playing = true,
+                    NoteEventType::Off => state.playing = false,
+                }
+            }
+
+            if state.playing {
+                buffer[i] = Self::generate_noise_sample(&mut rng, kind);
+            }
+        }
+
+        for out_buf in output.iter_mut() {
+            out_buf.copy_from_slice(&buffer);
+            Self::apply_volume(state, out_buf);
+        }
+    }
+}
+
+// Generates random number between [min, max]
+pub fn generate_random_number_in_range(rng: &mut impl Rng, min: f32, max: f32) -> f32 {
+    rng.gen_range(min..=max)
+}
+
+fn generate_white_noise(rng: &mut impl Rng) -> f32 {
+    let min = -1.0;
+    let max = 1.0;
+    generate_random_number_in_range(rng, min, max)
+}

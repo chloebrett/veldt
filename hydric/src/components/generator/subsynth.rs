@@ -113,13 +113,12 @@ impl<G: Fn()> View for SubSynthView<'_, G> {
             ui.add_space(HORIZONTAL_SPACE);
 
             ui.vertical(|ui| {
-                SubSynthEnvelopeView::new(
-                    config,
-                    gen_dispatch, // TODO fix this to use the correct dispatch, currently moving knobs creates crashes
-                    on_release,
-                    self.local_state,
-                )
-                .ui(ui);
+                let current_env_index = self.local_state.subsynth_env_tab.get();
+                let env_sel = gen_sel.downcast_envelope(current_env_index);
+                let env_dispatch = |action| self.store.dispatch(&env_sel, action);
+
+                SubSynthEnvelopeView::new(config, env_dispatch, on_release, self.local_state)
+                    .ui(ui);
 
                 ui.add_space(4.0);
 

@@ -76,6 +76,7 @@ message TypeFieldProto {
     pmodel.GeneratorInstanceProto generator = 19;
     pmodel.MixerChannelProto mixer_channel = 20;
     pmodel.PolyphonyModeProto polyphony_mode = 21;
+    pmodel.NoiseTypeProto noise_type = 22;
   }
 }
 
@@ -125,6 +126,7 @@ message SelectorProto {
     IndexPair mixer_matrix_cell = 9;
     IndexPair lfo = 10;
     IndexPair generator_effect = 11;
+    IndexPair envelope = 12;
   }
 
   message IndexPair {

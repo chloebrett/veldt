@@ -1,3 +1,4 @@
+use super::noise::NoiseView;
 use super::simple_wave::SimpleWaveView;
 use super::subsynth::SubSynthView;
 use crate::view::View;
@@ -61,7 +62,14 @@ impl<F: FnMut()> View for GeneratorView<'_, F> {
                             on_release,
                         )
                         .ui(ui),
-                        Generator::Noise(_) => todo!(),
+                        Generator::Noise(config) => NoiseView::new(
+                            *self.selector,
+                            &config,
+                            self.player,
+                            dispatch,
+                            on_release,
+                        )
+                        .ui(ui),
                         Generator::SubSynth(config) => {
                             SubSynthView::new(
                                 &config,
