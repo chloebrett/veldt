@@ -26,14 +26,14 @@ impl<'a> AudioLevel<'a> {
     }
 
     fn create_level_shapes(&self, range: Rect, left_level: f32, right_level: f32) -> Shape {
-        // padding around level line.
+        // Padding around level line.
         let side_padding = 0.1;
         let top_padding = 5.0;
         let bottom_padding = 10.0;
         let padded_y_size =
             (range.size().y.abs() - (top_padding + bottom_padding)) / range.size().y.abs();
-        // marker appears at peak of level.
-        // marker will be twice this height.
+        // Marker appears at peak of level.
+        // Marker will be twice this height.
         let marker_height = 0.5;
         let left_channel = |level, min_value| {
             Rect::from_x_y_ranges(
@@ -60,7 +60,7 @@ impl<'a> AudioLevel<'a> {
             )
         };
 
-        // Shaped behind level for each channel.
+        // Shape behind level for each channel.
         let left_background_rect = left_channel(range.top(), range.bottom());
         let right_background_rect = right_channel(range.top(), range.bottom());
         // Level of each channel.
