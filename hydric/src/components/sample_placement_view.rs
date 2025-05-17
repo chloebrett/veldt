@@ -80,7 +80,7 @@ impl View for SamplePlacementView<'_> {
                         unclipped_duration,
                         |it| {
                             store.dispatch(&sel, {
-                                let clipped_duration = if it < unclipped_duration as f64 {
+                                let clipped_duration = if it < unclipped_duration {
                                     Some(it as Beats)
                                 } else {
                                     None
@@ -88,7 +88,7 @@ impl View for SamplePlacementView<'_> {
                                 Action::SetChild(TypeField::ClippedDuration(clipped_duration))
                             })
                         },
-                        0.0..=unclipped_duration as f64,
+                        0.0..=unclipped_duration,
                         on_release,
                     );
                 });

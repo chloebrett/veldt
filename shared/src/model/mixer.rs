@@ -2,6 +2,7 @@ use crate::model::EffectInstance;
 use crate::pmodel::*;
 use crate::types::Volume;
 use local_macro::{FromProto, IntoProto};
+use std::ops::Deref;
 
 #[derive(Default, Clone, Debug, PartialEq, FromProto, IntoProto)]
 pub struct Mixer {
@@ -35,7 +36,6 @@ pub struct MixerMatrix {
 }
 
 /// NewType wrapper so that we can implement ActionReceiver for this type.
-/// TODO: consider implementing Deref/DerefMut.
 /// TODO: also consider whether this should contain OrderedFloat. I think it isn't necessary.
 #[derive(Copy, Clone, PartialEq, Debug)]
 pub struct MatrixCell(f32);
@@ -43,6 +43,18 @@ pub struct MatrixCell(f32);
 impl MatrixCell {
     pub fn set(&mut self, value: f32) {
         self.0 = value;
+    }
+
+    pub fn new(value: f32) -> Self {
+        MatrixCell(value)
+    }
+}
+
+impl Deref for MatrixCell {
+    type Target = f32;
+
+    fn deref(&self) -> &Self::Target {
+        &self.0
     }
 }
 

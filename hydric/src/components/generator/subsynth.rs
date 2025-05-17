@@ -89,7 +89,6 @@ impl<G: Fn()> View for SubSynthView<'_, G> {
         let config = self.config;
         let on_release = &self.on_release;
         let gen_sel = self.generator_sel;
-        let gen_dispatch = |action| self.store.dispatch(gen_sel, action); // TODO: fix this for the mod_matrix
 
         ui.horizontal(|ui| {
             ui.vertical(|ui| {
@@ -136,7 +135,8 @@ impl<G: Fn()> View for SubSynthView<'_, G> {
                     &config.matrix,
                     vec!["ENV 1", "ENV 2", "ENV 3", "LFO 1", "LFO 2", "LFO 3"],
                     vec!["OSC 1", "OSC 2", "OSC 3", "LPF"],
-                    gen_dispatch, // TODO: need to change this dispatch so that actions for modmatrix work, currently takes GeneratorSelector
+                    self.store,
+                    gen_sel,
                     on_release,
                 )
                 .ui(ui); // must wrap in ui.vertical to stop the matrix from unnecessarily stretching vertically
@@ -146,12 +146,7 @@ impl<G: Fn()> View for SubSynthView<'_, G> {
                 let lpf_dispatch = |action| self.store.dispatch(&lpf_sel, action);
 
                 ui.add_space(HORIZONTAL_SPACE);
-                SubSynthLpfView::new(
-                    &config.lpf,
-                    lpf_dispatch, // TODO: create actionreceiver for this, change the dispatch so the actions work
-                    on_release,
-                )
-                .ui(ui);
+                SubSynthLpfView::new(&config.lpf, lpf_dispatch, on_release).ui(ui);
             });
         });
 

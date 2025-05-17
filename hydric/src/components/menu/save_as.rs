@@ -1,10 +1,6 @@
 use state::{Action, TypeField};
 
-use crate::{
-    WindowState,
-    view::View,
-    widget::{default_window, get_set, string_observer},
-};
+use crate::{WindowState, view::View, widget::default_window};
 use egui::{Ui, pos2};
 
 pub struct SaveAs<'a, F: Fn(Action), G: FnMut()> {
@@ -43,13 +39,11 @@ impl<F: Fn(Action), G: FnMut()> View for SaveAs<'_, F, G> {
             .default_pos(pos2(screen_size.x / 2.0, screen_size.y / 2.0))
             .open(&mut window_state.save)
             .show(ui.ctx(), |ui| {
-                let mut name_observer = string_observer(
-                    get_set(name.clone(), |it| {
-                        dispatch(Action::SetChild(TypeField::ProjectName(it)))
-                    }),
-                    name.clone(),
-                );
-                ui.text_edit_singleline(&mut name_observer);
+                let mut temp_name = name.clone();
+                let response = ui.text_edit_singleline(&mut temp_name);
+                if response.changed() {
+                    dispatch(Action::SetChild(TypeField::ProjectName(temp_name)));
+                }
 
                 if ui.button("Save").clicked() {
                     on_click()

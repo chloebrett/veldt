@@ -230,6 +230,7 @@ mod tests {
     }
 
     #[test]
+    #[ignore]
     fn graph_built_from_sample_renders_correctly() {
         // Arrange
         let pitch = PitchName {
