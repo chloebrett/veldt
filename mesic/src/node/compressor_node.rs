@@ -57,6 +57,11 @@ impl CompressorNode {
 /// The reciprocal is used to save on division.
 /// See page 513 and following of DAEP in C++
 fn compress(input: f32, detector: f32, threshold: f32, ratio_recip: f32) -> f32 {
+    if detector == f32::NEG_INFINITY {
+        // Subtracting one `NEG_INFINITY` from another will cause a `NaN`.
+        // Input should be compressed by 0dB gain.
+        return input;
+    };
     let y_out = if detector > threshold {
         // Apply the compression ratio.
         // The output vs input graph looks like the blue diagram in this article:

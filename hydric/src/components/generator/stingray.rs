@@ -89,7 +89,6 @@ impl<G: Fn()> View for StingrayView<'_, G> {
         let config = self.config;
         let on_release = &self.on_release;
         let gen_sel = self.generator_sel;
-        let gen_dispatch = |action| self.store.dispatch(gen_sel, action); // TODO: fix this for the mod_matrix
 
         ui.horizontal(|ui| {
             ui.vertical(|ui| {
@@ -113,13 +112,12 @@ impl<G: Fn()> View for StingrayView<'_, G> {
             ui.add_space(HORIZONTAL_SPACE);
 
             ui.vertical(|ui| {
-                StingrayEnvelopeView::new(
-                    config,
-                    gen_dispatch, // TODO fix this to use the correct dispatch, currently moving knobs creates crashes
-                    on_release,
-                    self.local_state,
-                )
-                .ui(ui);
+                let current_env_index = self.local_state.stingray_env_tab.get();
+                let env_sel = gen_sel.downcast_envelope(current_env_index);
+                let env_dispatch = |action| self.store.dispatch(&env_sel, action);
+
+                StingrayEnvelopeView::new(config, env_dispatch, on_release, self.local_state)
+                    .ui(ui);
 
                 ui.add_space(4.0);
 
@@ -137,7 +135,8 @@ impl<G: Fn()> View for StingrayView<'_, G> {
                     &config.matrix,
                     vec!["ENV 1", "ENV 2", "ENV 3", "LFO 1", "LFO 2", "LFO 3"],
                     vec!["OSC 1", "OSC 2", "OSC 3", "LPF"],
-                    gen_dispatch, // TODO: need to change this dispatch so that actions for modmatrix work, currently takes GeneratorSelector
+                    self.store,
+                    gen_sel,
                     on_release,
                 )
                 .ui(ui); // must wrap in ui.vertical to stop the matrix from unnecessarily stretching vertically
@@ -147,12 +146,7 @@ impl<G: Fn()> View for StingrayView<'_, G> {
                 let lpf_dispatch = |action| self.store.dispatch(&lpf_sel, action);
 
                 ui.add_space(HORIZONTAL_SPACE);
-                StingrayLpfView::new(
-                    &config.lpf,
-                    lpf_dispatch, // TODO: create actionreceiver for this, change the dispatch so the actions work
-                    on_release,
-                )
-                .ui(ui);
+                StingrayLpfView::new(&config.lpf, lpf_dispatch, on_release).ui(ui);
             });
         });
 

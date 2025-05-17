@@ -22,4 +22,8 @@ pub enum FloatField {
     LfoFreq,
     Feedback,
     ModFactor,
+    AdsrAttack,
+    AdsrDecay,
+    AdsrSustain,
+    AdsrRelease,
 }

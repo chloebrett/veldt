@@ -2,42 +2,46 @@ use crate::view::View;
 use crate::widget::{TextRotation, for_each_with_separator, knob, text_rotator};
 use eframe::egui;
 use egui::{Color32, Ui};
-use shared::model::ModMatrix;
-use state::{Action, FloatField};
+use shared::model::{MatrixCell, ModMatrix};
+use state::{Action, FloatField, GeneratorSelector, Store};
 
-pub struct ModMatrixView<'a, F: Fn(Action), G: Fn()> {
+pub struct ModMatrixView<'a, G: Fn()> {
     matrix: &'a ModMatrix,
     row_titles: Vec<&'a str>,
     col_titles: Vec<&'a str>,
-    dispatch: F,
+    store: &'a Store,
+    generator_sel: &'a GeneratorSelector,
     on_release: G,
 }
 
-impl<'a, F: Fn(Action), G: Fn()> ModMatrixView<'a, F, G> {
+impl<'a, G: Fn()> ModMatrixView<'a, G> {
     pub fn new(
         matrix: &'a ModMatrix,
         row_titles: Vec<&'a str>,
         col_titles: Vec<&'a str>,
-        dispatch: F,
+        store: &'a Store,
+        generator_sel: &'a GeneratorSelector,
         on_release: G,
     ) -> Self {
         ModMatrixView {
             matrix,
             row_titles,
             col_titles,
-            dispatch,
+            store,
+            generator_sel,
             on_release,
         }
     }
 }
 
-impl<F: Fn(Action), G: Fn()> View for ModMatrixView<'_, F, G> {
+impl<G: Fn()> View for ModMatrixView<'_, G> {
     fn ui(&mut self, ui: &mut Ui) {
         let Self {
             matrix,
             ref row_titles,
             ref col_titles,
-            ref dispatch,
+            store,
+            generator_sel,
             ref on_release,
         } = *self;
 
@@ -76,15 +80,24 @@ impl<F: Fn(Action), G: Fn()> View for ModMatrixView<'_, F, G> {
                                 TextRotation::Anticlockwise90,
                                 TEXT_COLOUR,
                             );
-                            for col in 0..matrix.cols {
+                            for col in 0..matrix.cols as usize {
                                 let id = format!("{:?}", (row, col));
+                                let cell_sel = generator_sel.downcast_mod_matrix_cell(row, col);
+                                let value: &MatrixCell = store.select(&cell_sel);
+                                let value = **value;
+
                                 ui.push_id(id, |ui| {
                                     knob(
                                         ui,
                                         "",
-                                        0.0,
-                                        |it| dispatch(Action::SetFloat(FloatField::ModFactor, it)), // TODO need a selector for each knob
-                                        -1.0..=1.0,
+                                        value,
+                                        |it| {
+                                            store.dispatch(
+                                                &cell_sel,
+                                                Action::SetFloat(FloatField::ModFactor, it),
+                                            );
+                                        },
+                                        0.0..=1.0,
                                         0.0,
                                         on_release,
                                     );

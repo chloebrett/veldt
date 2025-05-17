@@ -62,14 +62,7 @@ impl<F: FnMut()> View for GeneratorView<'_, F> {
                             on_release,
                         )
                         .ui(ui),
-                        Generator::Noise(config) => NoiseView::new(
-                            *self.selector,
-                            &config,
-                            self.player,
-                            dispatch,
-                            on_release,
-                        )
-                        .ui(ui),
+                        Generator::Noise(config) => NoiseView::new(&config, dispatch).ui(ui),
                         Generator::Stingray(config) => {
                             StingrayView::new(
                                 &config,

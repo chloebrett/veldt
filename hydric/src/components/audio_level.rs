@@ -25,34 +25,68 @@ impl<'a> AudioLevel<'a> {
         }
     }
 
-    fn create_level_shapes(&self, range: Rect, left_level: f32, right_level: f32) -> Shape {
-        // Padding on either side of the level line.
-        let padding = 0.1;
-        let left_rect = Rect::from_x_y_ranges(
-            Rangef {
-                min: range.left() + padding,
-                max: (range.size().x - padding) * 0.5,
-            },
-            Rangef {
-                min: left_level,
-                max: range.bottom(),
-            },
+    fn create_channel_shape(
+        &self,
+        range: Rect,
+        level: f32,
+        left_padding: f32,
+        right_padding: f32,
+    ) -> Shape {
+        // Padding around channel shapes.
+        let top_padding = 5.0;
+        let bottom_padding = 10.0;
+        let padded_y_size =
+            (range.size().y.abs() - (top_padding + bottom_padding)) / range.size().y.abs();
+        // Marker will be twice this height.
+        let marker_height = 0.5;
+        let channel_rect = |top, bottom| {
+            Rect::from_x_y_ranges(
+                Rangef {
+                    min: range.left() + left_padding,
+                    max: range.right() - right_padding,
+                },
+                Rangef {
+                    min: top * padded_y_size - top_padding,
+                    max: bottom * padded_y_size - top_padding,
+                },
+            )
+        };
+        Shape::Vec(vec![
+            // Background of channel.
+            Shape::rect_filled(
+                channel_rect(range.top(), range.bottom()),
+                CornerRadius::same(0),
+                Color32::from_black_alpha(64),
+            ),
+            // Level of channel.
+            Shape::rect_filled(
+                channel_rect(level, range.bottom()),
+                CornerRadius::same(0),
+                Color32::WHITE,
+            ),
+            // Peak marker.
+            Shape::rect_filled(
+                channel_rect(level - marker_height, level + marker_height),
+                CornerRadius::same(0),
+                Color32::BLACK,
+            ),
+        ])
+    }
+
+    fn create_level_shape(&self, range: Rect, left_level: f32, right_level: f32) -> Shape {
+        // Divide range for left and right channels.
+        let split_range_size = range.size() * vec2(0.5, 1.0);
+        let left_range = Rect::from_min_size(range.left_top(), split_range_size);
+        let right_range = Rect::from_min_size(
+            range.left_top() + vec2(split_range_size.x, 0.0),
+            split_range_size,
         );
-        let right_rect = Rect::from_x_y_ranges(
-            Rangef {
-                min: (range.size().x + padding) * 0.5,
-                max: range.right() - padding,
-            },
-            Rangef {
-                min: right_level,
-                max: range.bottom(),
-            },
-        );
-        let level_shape: Vec<_> = vec![left_rect, right_rect]
-            .into_iter()
-            .map(|rect| Shape::rect_filled(rect, CornerRadius::ZERO, Color32::WHITE))
-            .collect();
-        Shape::Vec(level_shape)
+        // Padding on left and right of channels.
+        let padding = 0.2;
+        Shape::Vec(vec![
+            self.create_channel_shape(left_range, left_level, padding, padding * 0.5),
+            self.create_channel_shape(right_range, right_level, padding * 0.5, padding),
+        ])
     }
 }
 
@@ -69,9 +103,15 @@ impl Widget for AudioLevel<'_> {
         let [left_level, right_level] = player.level();
         let InnerResponse { inner: _, response } = Frame::canvas(ui.style()).show(ui, |ui| {
             let (response, painter) = ui.allocate_painter(size, Sense::all());
-            let level_shapes = self.create_level_shapes(range, left_level, right_level);
+            let level_shapes = self.create_level_shape(range, left_level, right_level);
             let to_screen = RectTransform::from_to(range, response.rect);
-            painter.add(level_shapes.transform(to_screen))
+            // Add background shape.
+            painter.add(Shape::rect_filled(
+                response.rect,
+                CornerRadius::same(0),
+                Color32::from_white_alpha(16),
+            ));
+            painter.add(level_shapes.transform(to_screen));
         });
         response
     }
