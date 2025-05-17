@@ -1,4 +1,4 @@
-use super::{SubSynthEnvelopeView, SubSynthLfoView, SubSynthLpfView, SubSynthOscillatorView};
+use super::{StingrayEnvelopeView, StingrayLfoView, StingrayLpfView, StingrayOscillatorView};
 use crate::components::{ModMatrixView, Piano, PianoOrientation};
 use crate::playback::AudioPlayer;
 use crate::view::View;
@@ -6,13 +6,13 @@ use crate::{GetSet, LocalState};
 use egui::{Color32, Ui, Vec2};
 use lazy_static::lazy_static;
 use shared::{
-    model::{PitchName, ScaleValue, SubSynthConfig},
+    model::{PitchName, ScaleValue, StingrayConfig},
     types::PitchValue,
 };
 use state::{GeneratorSelector, Store};
 
-pub struct SubSynthView<'a, G: Fn()> {
-    config: &'a SubSynthConfig,
+pub struct StingrayView<'a, G: Fn()> {
+    config: &'a StingrayConfig,
     on_release: G,
     store: &'a Store,
     local_state: &'a LocalState,
@@ -20,9 +20,9 @@ pub struct SubSynthView<'a, G: Fn()> {
     audio_player: &'a mut AudioPlayer,
 }
 
-impl<'a, G: Fn()> SubSynthView<'a, G> {
+impl<'a, G: Fn()> StingrayView<'a, G> {
     pub fn new(
-        config: &'a SubSynthConfig,
+        config: &'a StingrayConfig,
         on_release: G,
         store: &'a Store,
         local_state: &'a LocalState,
@@ -84,7 +84,7 @@ lazy_static! {
     pub static ref FILL_COLOURS: [Color32; 3] = [*GREEN_FILL, *PINK_FILL, *ORANGE_FILL];
 }
 
-impl<G: Fn()> View for SubSynthView<'_, G> {
+impl<G: Fn()> View for StingrayView<'_, G> {
     fn ui(&mut self, ui: &mut Ui) {
         let config = self.config;
         let on_release = &self.on_release;
@@ -96,7 +96,7 @@ impl<G: Fn()> View for SubSynthView<'_, G> {
                     let osc_sel = gen_sel.downcast_oscillator(oscillator_id);
                     let osc_dispatch = |action| self.store.dispatch(&osc_sel, action);
                     ui.push_id(oscillator_id, |ui| {
-                        SubSynthOscillatorView::new(
+                        StingrayOscillatorView::new(
                             &config.oscillators[oscillator_id],
                             &osc_dispatch,
                             &on_release,
@@ -112,20 +112,20 @@ impl<G: Fn()> View for SubSynthView<'_, G> {
             ui.add_space(HORIZONTAL_SPACE);
 
             ui.vertical(|ui| {
-                let current_env_index = self.local_state.subsynth_env_tab.get();
+                let current_env_index = self.local_state.stingray_env_tab.get();
                 let env_sel = gen_sel.downcast_envelope(current_env_index);
                 let env_dispatch = |action| self.store.dispatch(&env_sel, action);
 
-                SubSynthEnvelopeView::new(config, env_dispatch, on_release, self.local_state)
+                StingrayEnvelopeView::new(config, env_dispatch, on_release, self.local_state)
                     .ui(ui);
 
                 ui.add_space(4.0);
 
-                let current_lfo_index = self.local_state.subsynth_lfo_tab.get();
+                let current_lfo_index = self.local_state.stingray_lfo_tab.get();
                 let lfo_sel = gen_sel.downcast_lfo(current_lfo_index);
                 let lfo_dispatch = |action| self.store.dispatch(&lfo_sel, action);
 
-                SubSynthLfoView::new(config, lfo_dispatch, on_release, self.local_state).ui(ui);
+                StingrayLfoView::new(config, lfo_dispatch, on_release, self.local_state).ui(ui);
             });
 
             ui.add_space(HORIZONTAL_SPACE);
@@ -146,7 +146,7 @@ impl<G: Fn()> View for SubSynthView<'_, G> {
                 let lpf_dispatch = |action| self.store.dispatch(&lpf_sel, action);
 
                 ui.add_space(HORIZONTAL_SPACE);
-                SubSynthLpfView::new(&config.lpf, lpf_dispatch, on_release).ui(ui);
+                StingrayLpfView::new(&config.lpf, lpf_dispatch, on_release).ui(ui);
             });
         });
 

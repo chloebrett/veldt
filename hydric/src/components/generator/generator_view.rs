@@ -1,6 +1,6 @@
 use super::noise::NoiseView;
 use super::simple_wave::SimpleWaveView;
-use super::subsynth::SubSynthView;
+use super::stingray::StingrayView;
 use crate::view::View;
 use crate::widget::StateWindow;
 use crate::widget::default_window;
@@ -63,8 +63,8 @@ impl<F: FnMut()> View for GeneratorView<'_, F> {
                         )
                         .ui(ui),
                         Generator::Noise(config) => NoiseView::new(&config, dispatch).ui(ui),
-                        Generator::SubSynth(config) => {
-                            SubSynthView::new(
+                        Generator::Stingray(config) => {
+                            StingrayView::new(
                                 &config,
                                 on_release,
                                 self.store,
@@ -84,6 +84,6 @@ pub fn generator_name(instance: &GeneratorInstance) -> &str {
     match &instance.it {
         Generator::SimpleWave(_) => "Simple Wave Generator",
         Generator::Noise(_) => "Noise Generator",
-        Generator::SubSynth(_) => "Subtractive Synth",
+        Generator::Stingray(_) => "Stingray (Subtractive Synth)",
     }
 }

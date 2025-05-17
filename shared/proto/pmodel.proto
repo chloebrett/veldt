@@ -136,7 +136,7 @@ message GeneratorInstanceProto {
 
     NoiseProto noise = 4;
 
-    SubSynthProto sub_synth = 5;
+    StingrayProto stingray = 5;
   };
 }
 
@@ -155,11 +155,11 @@ enum NoiseTypeProto {
   PinkNoiseType = 3;
 }
 
-message SubSynthProto {
-  SubSynthConfigProto config = 1;
+message StingrayProto {
+  StingrayConfigProto config = 1;
 }
 
-message SubSynthConfigProto {
+message StingrayConfigProto {
   repeated OscillatorProto oscillators = 1; 
   repeated LfoConfigProto lfos = 2;
   repeated AdsrEnvelopeProto envelopes = 3;

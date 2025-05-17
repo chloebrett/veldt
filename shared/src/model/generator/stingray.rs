@@ -1,11 +1,11 @@
 use super::{Generator, Oscillator};
 use crate::model::{AdsrEnvelope, EqConfig, EqType, LfoConfig, ModMatrix, WaveType};
-use crate::pmodel::SubSynthConfigProto;
+use crate::pmodel::StingrayConfigProto;
 use crate::serialize::map_vec;
 use local_macro::IntoProto;
 
 #[derive(Clone, Debug, PartialEq, IntoProto)]
-pub struct SubSynthConfig {
+pub struct StingrayConfig {
     #[proto_repeated]
     pub oscillators: [Oscillator; 3],
 
@@ -50,7 +50,7 @@ const BASE_LPF: EqConfig = EqConfig {
     q: 1.0,
 };
 
-impl Default for SubSynthConfig {
+impl Default for StingrayConfig {
     fn default() -> Self {
         Self {
             oscillators: [
@@ -75,31 +75,31 @@ impl Default for SubSynthConfig {
     }
 }
 
-impl<'a> TryFrom<&'a Generator> for &'a SubSynthConfig {
+impl<'a> TryFrom<&'a Generator> for &'a StingrayConfig {
     type Error = ();
 
     fn try_from(item: &'a Generator) -> Result<Self, ()> {
         match item {
-            Generator::SubSynth(it) => Ok(it),
+            Generator::Stingray(it) => Ok(it),
             _ => Err(()),
         }
     }
 }
 
-impl<'a> TryFrom<&'a mut Generator> for &'a mut SubSynthConfig {
+impl<'a> TryFrom<&'a mut Generator> for &'a mut StingrayConfig {
     type Error = ();
 
     fn try_from(item: &'a mut Generator) -> Result<Self, ()> {
         match item {
-            Generator::SubSynth(it) => Ok(it),
+            Generator::Stingray(it) => Ok(it),
             _ => Err(()),
         }
     }
 }
 
-impl From<SubSynthConfigProto> for SubSynthConfig {
-    fn from(proto: SubSynthConfigProto) -> Self {
-        let SubSynthConfigProto {
+impl From<StingrayConfigProto> for StingrayConfig {
+    fn from(proto: StingrayConfigProto) -> Self {
+        let StingrayConfigProto {
             oscillators,
             envelopes,
             lfos,
@@ -107,7 +107,7 @@ impl From<SubSynthConfigProto> for SubSynthConfig {
             lpf,
         } = proto;
 
-        SubSynthConfig {
+        StingrayConfig {
             oscillators: map_vec(oscillators)
                 .try_into()
                 .expect("Expected 3 oscillators!"),

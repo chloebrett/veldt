@@ -9,7 +9,7 @@ mod eq_node;
 mod mod_delay_node;
 mod noise_generator_node;
 mod simple_wave_generator_node;
-mod subsynth_node;
+mod stingray_node;
 mod wet_dry_node;
 
 pub use amp_node::*;
@@ -20,7 +20,7 @@ pub use eq_node::*;
 pub use mod_delay_node::*;
 pub use noise_generator_node::*;
 pub use simple_wave_generator_node::*;
-pub use subsynth_node::*;
+pub use stingray_node::*;
 pub use wet_dry_node::*;
 
 /// Extracts left/right outputs from an outputs slice.

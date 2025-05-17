@@ -5,7 +5,7 @@ use shared::model::{
     AdsrEnvelope, AntiAliasingMode, FileTreeConfig, FilenameTree, Generator, GeneratorInstance,
     GeneratorMeta, Mixer, MixerChannel, MixerMatrix, ModMatrix, NoiseConfig, Note, PitchName,
     PlacedNote, Placement, PlacementType, PolyphonyMode, Project, Scale, ScaleValue,
-    SimpleWaveConfig, SubSynthConfig, Track, TrackPlacement, WaveType,
+    SimpleWaveConfig, StingrayConfig, Track, TrackPlacement, WaveType,
 };
 use shared::types::Volume;
 
@@ -106,7 +106,7 @@ impl Default for StoreData {
                         },
                     },
                     GeneratorInstance {
-                        it: Generator::SubSynth(SubSynthConfig::default()),
+                        it: Generator::Stingray(StingrayConfig::default()),
                         meta: GeneratorMeta {
                             volume: 1.0,
                             mute: false,

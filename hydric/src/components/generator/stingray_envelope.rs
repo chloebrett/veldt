@@ -10,19 +10,19 @@ use egui::{
     epaint::{PathStroke, Shape},
     vec2,
 };
-use shared::model::SubSynthConfig;
+use shared::model::StingrayConfig;
 use state::{Action, FloatField};
 
-pub struct SubSynthEnvelopeView<'a, F: Fn(Action), G: Fn()> {
-    config: &'a SubSynthConfig,
+pub struct StingrayEnvelopeView<'a, F: Fn(Action), G: Fn()> {
+    config: &'a StingrayConfig,
     dispatch: F,
     on_release: G,
     local_state: &'a LocalState,
 }
 
-impl<'a, F: Fn(Action), G: Fn()> SubSynthEnvelopeView<'a, F, G> {
+impl<'a, F: Fn(Action), G: Fn()> StingrayEnvelopeView<'a, F, G> {
     pub fn new(
-        config: &'a SubSynthConfig,
+        config: &'a StingrayConfig,
         dispatch: F,
         on_release: G,
         local_state: &'a LocalState,
@@ -36,16 +36,16 @@ impl<'a, F: Fn(Action), G: Fn()> SubSynthEnvelopeView<'a, F, G> {
     }
 }
 
-impl<F: Fn(Action), G: Fn()> View for SubSynthEnvelopeView<'_, F, G> {
+impl<F: Fn(Action), G: Fn()> View for StingrayEnvelopeView<'_, F, G> {
     fn ui(&mut self, ui: &mut Ui) {
         let config = self.config.clone();
         let dispatch = &self.dispatch;
         let on_release = &self.on_release;
 
         let handle_env_tab_click = |index| {
-            self.local_state.subsynth_env_tab.set(index);
+            self.local_state.stingray_env_tab.set(index);
         };
-        let active_env_tab = self.local_state.subsynth_env_tab.get();
+        let active_env_tab = self.local_state.stingray_env_tab.get();
 
         outer_frame().show(ui, |ui| {
             let original_spacing = ui.spacing().item_spacing; // store original spacing
