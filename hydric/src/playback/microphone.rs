@@ -5,12 +5,13 @@ use web_sys::{
     Blob, BlobEvent, MediaRecorder, MediaRecorderOptions, MediaStream, MediaStreamConstraints,
     window,
 };
-
+use futures::FutureExt;
+use std::sync::{Arc, Mutex};
 
 // This tutorial was used for the general code structure: https://web.dev/articles/media-recording-audio
 #[wasm_bindgen]
 pub struct Microphone {
-    media_recorder: Option<MediaRecorder>,
+    media_recorder: Arc<Mutex<Option<MediaRecorder>>>,
     audio_chunks: Array,
     #[wasm_bindgen(skip)]
     recording_status: bool,
@@ -21,13 +22,21 @@ impl Microphone {
     #[wasm_bindgen(constructor)]
     pub fn new() -> Self {
         Self {
-            media_recorder: None,
+            media_recorder: Arc::new(Mutex::new(None)),
             audio_chunks: Array::new(),
             recording_status: false,
         }
     }
 
-    async fn inner_start(&mut self) -> Result<(), JsValue> {
+    //fn get_permissions() {
+    //     //issue because needs static lifetime
+    //     //instead use arc mutex, cloneable value, take ownership make changes and update initial var
+    //     //wrap mutex in arc, which implements send allowing cloning
+    //     do_something.then(|stream| *obj.lock().unwrap() = stream)
+        //let stream = MediaStream::from(stream); //convert to MediaStream object
+    //}
+
+    fn inner_start(&mut self) -> Result<(), JsValue> {
         // Clear previous data.
         self.audio_chunks = Array::new();
 
@@ -47,41 +56,47 @@ impl Microphone {
 
         // Get media devices.
         let promise = media_devices.get_user_media_with_constraints(&constraints)?;
-        let stream = JsFuture::from(promise).await?;
-        let stream = MediaStream::from(stream); //convert to MediaStream object
+        JsFuture::from(promise).then(|result| {
+            match result {
+                Ok(stream) => {
+                            let stream = MediaStream::from(stream); //convert to MediaStream object
 
-        // I think there is good browser support for wav? If not we can use webm.
-        let options = MediaRecorderOptions::new();
-        options.set_mime_type("audio/wav");
+                            // I think there is good browser support for wav? If not we can use webm.
+                            let options = MediaRecorderOptions::new();
+                            options.set_mime_type("audio/wav");
 
-        let media_recorder =
-            MediaRecorder::new_with_media_stream_and_media_recorder_options(&stream, &options)?;
+                            let media_recorder =
+                                MediaRecorder::new_with_media_stream_and_media_recorder_options(&stream, &options);
 
-        // We now add listener to continuously grab audio from mic.
-        let audio_chunks = self.audio_chunks.clone();
-        let on_data_available = Closure::wrap(Box::new(move |e: BlobEvent| {
-            // Only store if there is actually data.
-            let data = e
-                .data()
-                .expect("Should be fine so long as we have a valid blob.");
-            if data.size() > 0.0 {
-                audio_chunks.push(&data);
+                            // We now add listener to continuously grab audio from mic.
+                            let audio_chunks = self.audio_chunks.clone();
+                            let on_data_available = Closure::wrap(Box::new(move |e: BlobEvent| {
+                                // Only store if there is actually data.
+                                let data = e
+                                    .data()
+                                    .expect("Should be fine so long as we have a valid blob.");
+                                if data.size() > 0.0 {
+                                    audio_chunks.push(&data);
+                                }
+                            }) as Box<dyn FnMut(_)>);
+
+                            media_recorder.expect("IDK").set_ondataavailable(on_data_available.as_ref().unchecked_ref());
+                            on_data_available.forget();
+
+                            media_recorder.expect("REASON").start();
+                            *self.media_recorder.lock().unwrap() = Some(media_recorder.expect("REASON"));
+                            self.recording_status = true;
+
+                            futures::future::ready(Ok(()))
+                },
+                Err(e) => futures::future::ready(Err(e)),
             }
-        }) as Box<dyn FnMut(_)>);
-
-        media_recorder.set_ondataavailable(Some(on_data_available.as_ref().unchecked_ref()));
-        on_data_available.forget();
-
-        media_recorder.start()?;
-        self.media_recorder = Some(media_recorder);
-        self.recording_status = true;
-
-        Ok(())
+        })
     }
 
     async fn inner_stop(&mut self) -> Result<Vec<u8>, JsValue> {
         // Only can run if we are actively recording.
-        if let Some(recorder) = &self.media_recorder {
+        if let Some(recorder) = *self.media_recorder.lock().unwrap() {
             recorder.stop()?;
 
             // Convert recorded chunks to bytes.
@@ -96,7 +111,7 @@ impl Microphone {
             js_array.copy_to(&mut bytes);
 
             // Clean up.
-            self.media_recorder = None;
+            *self.media_recorder.lock().unwrap() = None;
             self.recording_status = false;
 
             Ok(bytes)

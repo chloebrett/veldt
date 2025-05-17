@@ -43,15 +43,15 @@ impl View for MicrophoneView<'_> {
                 // Issue here is with self reference to mic. While mic instance now lives in audio_state in app, we can
                 // still only pass it in as an input to MicrophoneView::new(). Which still requires the use of self
                 if ui.button("Record").clicked() {
-                    spawn(&mut self.async_state.microphone_start, async move {
-                        self.mic.start().await
-                    });
+                    // spawn(&mut self.async_state.microphone_start, async move {
+                    //     self.mic.start().await
+                    // });
                 }
 
                 if ui.button("Stop").clicked() {
-                    spawn(&mut self.async_state.microphone_stop, async move {
-                        self.mic.stop().await
-                    });
+                    // spawn(&mut self.async_state.microphone_stop, async move {
+                    //     self.mic.stop().await
+                    // });
                 }
 
                 // If we have stopped, extract the recording.
@@ -77,12 +77,12 @@ impl View for MicrophoneView<'_> {
                         let file_name = "recording.wav".to_string(); //Need a way to get custom url
                         let data = data.clone();
 
-                        spawn(&mut self.async_state.upload_sample, async move {
-                            upload_sample(file_name, data).await.map_err(|e| {
-                                error!("Upload failed: {}", e);
-                                ()
-                            })
-                        });
+                        // spawn(&mut self.async_state.upload_sample, async move {
+                        //     upload_sample(file_name, data).await.map_err(|e| {
+                        //         error!("Upload failed: {}", e);
+                        //         ()
+                        //     })
+                        // });
                     }
                 }
             });
