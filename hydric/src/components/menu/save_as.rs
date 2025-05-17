@@ -1,10 +1,6 @@
 use state::{Action, TypeField};
 
-use crate::{
-    WindowState,
-    view::View,
-    widget::{default_window, get_set, string_observer},
-};
+use crate::{WindowState, view::View, widget::default_window};
 use egui::{Ui, pos2};
 
 pub struct SaveAs<'a, F: Fn(Action), G: FnMut()> {

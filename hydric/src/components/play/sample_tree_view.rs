@@ -2,7 +2,7 @@ use crate::AsyncState;
 use crate::promise::{poll, spawn};
 use crate::rpc::load_sample_tree;
 use crate::view::View;
-use crate::widget::{checkbox, default_window, get_set, string_observer};
+use crate::widget::{checkbox, default_window};
 use egui::{Pos2, ScrollArea, Ui};
 use egui_ltreeview::{TreeView, TreeViewBuilder};
 use shared::model::{FileTreeConfig, FilenameTree};
@@ -63,7 +63,6 @@ impl View for SampleTreeView<'_> {
             .default_pos(Pos2 { x: 600.0, y: 20.0 })
             .show(ui.ctx(), |ui| {
                 let config = &self.store.get().sample_tree_config;
-                let search = config.search.clone();
 
                 let mut search = config.search.clone();
                 let response = ui.text_edit_singleline(&mut search);
