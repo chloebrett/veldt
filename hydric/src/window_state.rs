@@ -1,7 +1,106 @@
+use egui::{Pos2, pos2, vec2};
 use state::{EffectSelector, GeneratorSelector, MixerSelector};
 use std::cmp::{Eq, Ord};
-use std::collections::HashSet;
+use std::collections::{HashMap, HashSet};
 use std::hash::Hash;
+use strum::EnumIter;
+use strum::IntoEnumIterator;
+
+struct WindowData {
+    visible: bool,
+    pos: Pos2,
+}
+
+impl WindowData {
+    pub fn default_from_window(window: Window) -> Self {
+        let pos = match window {
+            Window::Mixer => pos2(1000.0, 150.0),
+            Window::Effect(index) => {
+                pos2(1000.0, 150.0) + vec2(50.0 * index as f32, 50.0 * index as f32)
+            }
+            Window::GeneratorList => pos2(1100.0, 20.0),
+            Window::Generator(..) => pos2(1000.0, 150.0),
+            Window::Save => pos2(150.0, 150.0),
+            Window::Scale => pos2(50.0, 200.0),
+            Window::TrackRoll => pos2(30.0, 200.0),
+            Window::SampleTree => pos2(600.0, 20.0),
+        };
+        Self {
+            visible: false,
+            pos,
+        }
+    }
+}
+
+#[derive(Hash, Copy, Clone, EnumIter, PartialEq, Eq)]
+pub enum Window {
+    Mixer,
+    Effect(usize),
+    GeneratorList,
+    Generator(usize),
+    Scale,
+    SampleTree,
+    TrackRoll,
+    Save,
+}
+
+pub struct WindowStates(HashMap<Window, WindowData>);
+
+impl WindowStates {
+    pub fn get_visible(&self, window: Window) -> bool {
+        self.0
+            .get(&window)
+            .expect("Windows should have been initialised.")
+            .visible
+    }
+
+    pub fn set_visible(&mut self, window: Window, visible: bool) {
+        self.0
+            .get_mut(&window)
+            .expect("Windows should have been initialised.")
+            .visible = visible;
+    }
+
+    pub fn get_mut_visible(&mut self, window: Window) -> &mut bool {
+        &mut self
+            .0
+            .get_mut(&window)
+            .expect("Windows should have been initialised.")
+            .visible
+    }
+
+    pub fn get_pos(&self, window: Window) -> Pos2 {
+        self.0
+            .get(&window)
+            .expect("Windows should have been initialised.")
+            .pos
+    }
+
+    pub fn set_pos(&mut self, window: Window, pos: Pos2) {
+        self.0
+            .get_mut(&window)
+            .expect("Windows should have been initialised.")
+            .pos = pos
+    }
+
+    pub fn get_mut_pos(&mut self, window: Window) -> &mut Pos2 {
+        &mut self
+            .0
+            .get_mut(&window)
+            .expect("Windows should have been initialised.")
+            .pos
+    }
+}
+
+impl Default for WindowStates {
+    fn default() -> Self {
+        let mut windows = HashMap::new();
+        for window in Window::iter() {
+            windows.insert(window, WindowData::default_from_window(window));
+        }
+        Self(windows)
+    }
+}
 
 pub struct MixerWindowState {
     pub visible: bool,

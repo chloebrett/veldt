@@ -4,7 +4,7 @@ use shared::bytes::as_bytes;
 use shared::render::render_server::Render;
 use shared::render::{RenderReply, RenderRequest};
 use state::StoreData;
-use tonic::{async_trait, Status, Response, Request};
+use tonic::{Request, Response, Status, async_trait};
 
 // This is a stateless RPC: it accepts a project and returns audio bytes of the rendered project.
 pub struct RenderContext;

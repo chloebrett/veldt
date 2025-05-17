@@ -2,7 +2,7 @@ use crate::load_sample::sample_dir_path;
 use log::info;
 use shared::upload::{UploadChunkRequest, UploadSampleReply, upload_server::Upload};
 use tokio::io::AsyncWriteExt;
-use tonic::{async_trait, Status, Response, Request, Streaming};
+use tonic::{Request, Response, Status, Streaming, async_trait};
 
 pub struct UploadContext;
 

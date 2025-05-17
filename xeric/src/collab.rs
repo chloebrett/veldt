@@ -6,7 +6,7 @@ use shared::serialize::map_vec;
 use state::{ReversibleAction, Store};
 use std::marker::Send;
 use std::sync::{Arc, Mutex, mpsc::channel};
-use tonic::{async_trait, Status, Response, Request};
+use tonic::{Request, Response, Status, async_trait};
 
 /// Context for collaborative editing.
 /// So far, just contains a state store which is updated when the client broadcasts actions.
