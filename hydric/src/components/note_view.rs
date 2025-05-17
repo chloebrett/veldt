@@ -5,9 +5,7 @@ use crate::widget::{StateWindow, default_window, get_set, int_slider, selectable
 use egui::{Ui, pos2};
 use shared::model::ScaleValue;
 use shared::types::{Beats, Octave};
-use state::{
-    Action, FloatField, IndexField, Store, TrackSelector, TypeField,
-};
+use state::{Action, FloatField, IndexField, Store, TrackSelector, TypeField};
 use strum::IntoEnumIterator;
 
 pub struct NoteView<'a> {
