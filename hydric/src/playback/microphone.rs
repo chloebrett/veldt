@@ -69,48 +69,17 @@ impl Microphone {
         let stream_ref = Arc::clone(&self.stream);
         log::info!("Requested permissions");
 
-        let future = JsFuture::from(promise).then(move |result| {
-            match result {
-                Ok(stream) => {
-                    log::info!("Received permissions");
-                    let stream = MediaStream::from(stream);
-                    let mut stream_ref = stream_ref.lock().unwrap();
-                    *stream_ref = Some(stream.clone());
-                    log::info!("Set stream: {:?}", stream.clone());
+        let future = JsFuture::from(promise).then(move |result| match result {
+            Ok(stream) => {
+                log::info!("Received permissions");
+                let stream = MediaStream::from(stream);
+                let mut stream_ref = stream_ref.lock().unwrap();
+                *stream_ref = Some(stream.clone());
+                log::info!("Set stream: {:?}", stream.clone());
 
-                    /*
-
-                    // I think there is good browser support for wav? If not we can use webm.
-                    let options = MediaRecorderOptions::new();
-                    options.set_mime_type("audio/wav");
-
-                    let media_recorder =
-                        MediaRecorder::new_with_media_stream_and_media_recorder_options(&stream, &options);
-
-                    // We now add listener to continuously grab audio from mic.
-                    let audio_chunks = self.audio_chunks.clone();
-                    let on_data_available = Closure::wrap(Box::new(move |e: BlobEvent| {
-                        // Only store if there is actually data.
-                        let data = e
-                            .data()
-                            .expect("Should be fine so long as we have a valid blob.");
-                        if data.size() > 0.0 {
-                            audio_chunks.push(&data);
-                        }
-                    }) as Box<dyn FnMut(_)>);
-
-                    media_recorder.expect("IDK").set_ondataavailable(on_data_available.as_ref().unchecked_ref());
-                    on_data_available.forget();
-
-                    media_recorder.expect("REASON").start();
-                    *self.media_recorder.lock().unwrap() = Some(media_recorder.expect("REASON"));
-                    self.recording_status = true;
-                    */
-
-                    futures::future::ready(())
-                }
-                Err(e) => futures::future::ready(()),
+                futures::future::ready(())
             }
+            Err(e) => futures::future::ready(()),
         });
 
         spawn_local(future);
@@ -118,7 +87,36 @@ impl Microphone {
         Ok(())
     }
 
-    pub fn start(&mut self) {}
+    pub fn start(&mut self) {
+        // I think there is good browser support for wav? If not we can use webm.
+        let options = MediaRecorderOptions::new();
+        options.set_mime_type("audio/wav");
+
+        let stream = self.stream.lock().unwrap().take().expect("Expected get_permissions() to have succeeded.");
+        let media_recorder =
+            MediaRecorder::new_with_media_stream_and_media_recorder_options(&stream, &options);
+
+        /*
+        // We now add listener to continuously grab audio from mic.
+        let audio_chunks = self.audio_chunks.clone();
+        let on_data_available = Closure::wrap(Box::new(move |e: BlobEvent| {
+            // Only store if there is actually data.
+            let data = e
+                .data()
+                .expect("Should be fine so long as we have a valid blob.");
+            if data.size() > 0.0 {
+                audio_chunks.push(&data);
+            }
+        }) as Box<dyn FnMut(_)>);
+
+        media_recorder.expect("IDK").set_ondataavailable(on_data_available.as_ref().unchecked_ref());
+        on_data_available.forget();
+
+        media_recorder.expect("REASON").start();
+        *self.media_recorder.lock().unwrap() = Some(media_recorder.expect("REASON"));
+        self.recording_status = true;
+        */
+    }
 
     pub fn stop(&mut self) {}
 
