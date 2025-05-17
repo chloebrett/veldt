@@ -1,34 +1,18 @@
-use crate::playback::AudioPlayer;
 use crate::view::View;
 use crate::widget::{get_set, selectable_value};
 use egui::Ui;
 use shared::model::{NoiseConfig, NoiseType};
-use state::{Action, GeneratorSelector, TypeField};
+use state::{Action, TypeField};
 use strum::IntoEnumIterator;
 
-pub struct NoiseView<'a, F: Fn(Action), G: Fn()> {
-    selector: GeneratorSelector,
+pub struct NoiseView<'a, F: Fn(Action)> {
     config: &'a NoiseConfig,
-    player: &'a mut AudioPlayer,
     dispatch: F,
-    on_release: G,
 }
 
-impl<'a, F: Fn(Action), G: Fn()> NoiseView<'a, F, G> {
-    pub fn new(
-        selector: GeneratorSelector,
-        config: &'a NoiseConfig,
-        player: &'a mut AudioPlayer,
-        dispatch: F,
-        on_release: G,
-    ) -> Self {
-        Self {
-            selector,
-            config,
-            player,
-            dispatch,
-            on_release,
-        }
+impl<'a, F: Fn(Action)> NoiseView<'a, F> {
+    pub fn new(config: &'a NoiseConfig, dispatch: F) -> Self {
+        Self { config, dispatch }
     }
 
     fn noise_combo_box(&self, ui: &mut Ui) {
@@ -49,7 +33,7 @@ impl<'a, F: Fn(Action), G: Fn()> NoiseView<'a, F, G> {
     }
 }
 
-impl<F: Fn(Action), G: Fn()> View for NoiseView<'_, F, G> {
+impl<F: Fn(Action)> View for NoiseView<'_, F> {
     fn ui(&mut self, ui: &mut Ui) {
         ui.horizontal(|ui| {
             ui.vertical(|ui| {
