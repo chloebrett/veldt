@@ -2,7 +2,7 @@ use crate::{
     GetSet, LocalState,
     view::View,
     widget::{Sequencer, SequencerObject, default_window},
-    window_state::{Window, WindowState2},
+    window_state::{WindowKind, WindowState2},
 };
 use egui::{
     Color32, CornerRadius, Pos2, Rect, ScrollArea, Shape, Stroke, StrokeKind, Ui, pos2, vec2,
@@ -81,9 +81,9 @@ impl View for TrackRoll<'_> {
         }
 
         default_window("Track Roll")
-            .default_pos(self.window_state.get_pos(Window::TrackRoll))
+            .default_pos(self.window_state.get_pos(WindowKind::TrackRoll))
             .resizable(true)
-            .open(self.window_state.get_mut_visible(Window::TrackRoll))
+            .open(self.window_state.get_mut_visible(WindowKind::TrackRoll))
             .show(ui.ctx(), |ui| {
                 ui.horizontal(|ui| {
                     if ui.button("New track").clicked() {

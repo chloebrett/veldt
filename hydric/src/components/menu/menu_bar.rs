@@ -3,7 +3,7 @@ use crate::{
     promise::{poll, spawn},
     rpc::{export, load_project, load_project_list, save_project},
     view::View,
-    window_state::{Window, WindowState2},
+    window_state::{WindowKind, WindowState2},
 };
 use egui::{Button, Ui, menu::bar};
 use state::{Action, Store, TypeField};
@@ -133,7 +133,7 @@ impl View for MenuBar<'_> {
                 button_with_tick("Samples", &mut self.window_state.sample_tree);
                 button_with_tick(
                     "Track Roll",
-                    self.window_state2.get_mut_visible(Window::TrackRoll),
+                    self.window_state2.get_mut_visible(WindowKind::TrackRoll),
                 );
             });
             ui.menu_button("Effects", |ui| {
@@ -168,7 +168,7 @@ impl View for MenuBar<'_> {
             effect_response.on_hover_ui(|ui| {
                 ui.label("Effects/Mixers");
             });
-            let track_visible = self.window_state2.get_mut_visible(Window::TrackRoll);
+            let track_visible = self.window_state2.get_mut_visible(WindowKind::TrackRoll);
             let track_response = ui.add(Button::new("📄").selected(*track_visible));
             if track_response.clicked() {
                 *track_visible = !*track_visible;
