@@ -2,7 +2,7 @@ use crate::load_sample::sample_dir_path;
 use log::info;
 use shared::upload::{UploadChunkRequest, UploadSampleReply, upload_server::Upload};
 use tokio::io::AsyncWriteExt;
-use tonic::async_trait;
+use tonic::{async_trait, Status, Response, Request, Streaming};
 
 pub struct UploadContext;
 
@@ -10,8 +10,8 @@ pub struct UploadContext;
 impl Upload for UploadContext {
     async fn upload_sample(
         self: &Self,
-        request: tonic::Request<tonic::Streaming<UploadChunkRequest>>,
-    ) -> Result<tonic::Response<UploadSampleReply>, tonic::Status> {
+        request: Request<Streaming<UploadChunkRequest>>,
+    ) -> Result<Response<UploadSampleReply>, Status> {
         let mut stream = request.into_inner();
         let mut file = None;
 
@@ -53,7 +53,7 @@ impl Upload for UploadContext {
             );
         }
 
-        Ok(tonic::Response::new(UploadSampleReply {
+        Ok(Response::new(UploadSampleReply {
             success: true,
             message: "File uploaded successfully".into(),
         }))

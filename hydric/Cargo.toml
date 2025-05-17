@@ -7,10 +7,10 @@ edition = "2024"
 shared = { path = "../shared" }
 state = { path = "../state" }
 mesic = { path = "../mesic" }
-tonic-web-wasm-client = "0.6.1"
+tonic-web-wasm-client = "0.7.0"
 wasm-bindgen = "0.2.100"
-egui = "0.31"
-eframe = { version = "0.31", default-features = false, features = [
+egui = "0.31.1"
+eframe = { version = "0.31.1", default-features = false, features = [
     "default_fonts", # Embed the default egui fonts.
     "glow",          # Use the glow rendering backend. Alternative: "wgpu".
 ] }
@@ -22,7 +22,7 @@ poll-promise = { version = "0.3.0", features = ["web"] }
 ordered-float = "5.0.0"
 dasp_signal = "0.11.0"
 dasp_frame = "0.11.0"
-ecolor = "0.31.0"
+ecolor = "0.31.1"
 egui_ltreeview = "0.2.0"
 egui_plot = "0.32.1"
 async-std = "1.13.1"
@@ -43,3 +43,9 @@ web-sys = { version = "0.3.77", features = [
     "BlobEvent",
 ] }
 js-sys = "0.3.77"
+ringbuffer = "0.15.0"
+dasp_rms = "0.11.0"
+dasp_ring_buffer = "0.11.0"
+[features]
+# Displays some extra debug information in the UI.
+extra_debug = []

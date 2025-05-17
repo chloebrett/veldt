@@ -8,4 +8,6 @@ pub enum UintField {
     OversampleFactor,
     MinDepth,
     MaxDepth,
+    PolyphonyLimit,
+    VisualPlacement,
 }

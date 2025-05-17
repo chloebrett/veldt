@@ -1,6 +1,8 @@
 use crate::receiver::ActionReceiver;
-use crate::{Action, FloatField, IndexField, TypeField};
+use crate::{Action, FloatField, IndexField, MultiIndexField, MultiTypeField, TypeField};
 use shared::model::Project;
+
+use super::delete_elems;
 
 impl ActionReceiver for Project {
     fn apply(&mut self, action: &Action) -> Option<Action> {
@@ -46,6 +48,16 @@ impl ActionReceiver for Project {
                     .clone();
                 self.tracks.remove(*index);
                 Action::AddChild(TypeField::Track(prev))
+            }
+            Action::DeleteChildren(MultiIndexField::Placement(indexes)) => {
+                let prev = self.placements.clone();
+                delete_elems(&mut self.placements, indexes.clone());
+                Action::SetChildren(MultiTypeField::Placement(prev))
+            }
+            Action::SetChildren(MultiTypeField::Placement(placements)) => {
+                let prev = self.placements.clone();
+                self.placements = placements.to_vec();
+                Action::SetChildren(MultiTypeField::Placement(prev))
             }
             _ => return None,
         })

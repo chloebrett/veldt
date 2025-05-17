@@ -1,6 +1,9 @@
-use crate::view::View;
 use crate::widget::knob;
-use egui::Ui;
+use crate::{transform::Transform, view::View};
+use egui::Color32;
+use egui::{
+    Frame, Rect, Response, Sense, Shape, Stroke, Ui, Vec2, Widget, emath::RectTransform, pos2, vec2,
+};
 use shared::model::CompressorConfig;
 use state::{Action, FloatField};
 
@@ -25,45 +28,91 @@ impl<F: Fn(Action), G: Fn()> View for CompressorView<'_, F, G> {
         let Self {
             config, dispatch, ..
         } = self;
+        ui.horizontal(|ui| {
+            ui.add(CompressorDisplay::new(config));
+            ui.vertical(|ui| {
+                knob(
+                    ui,
+                    "Threshold",
+                    config.threshold,
+                    |it| dispatch(Action::SetFloat(FloatField::Threshold, it)),
+                    -60.0..=0.0,
+                    /* neutral= */ -10.0,
+                    &self.on_release,
+                );
+                knob(
+                    ui,
+                    "Ratio",
+                    config.ratio,
+                    |it| dispatch(Action::SetFloat(FloatField::Ratio, it)),
+                    1.0..=100.0, // TODO: logarithmic
+                    /* neutral= */ 3.0,
+                    &self.on_release,
+                );
+            });
+            ui.vertical(|ui| {
+                knob(
+                    ui,
+                    "Attack (ms)",
+                    config.attack_ms,
+                    |it| dispatch(Action::SetFloat(FloatField::AttackMs, it)),
+                    0.0..=1000.0,
+                    /* neutral= */ 100.0,
+                    &self.on_release,
+                );
+                knob(
+                    ui,
+                    "Release (ms)",
+                    config.release_ms,
+                    |it| dispatch(Action::SetFloat(FloatField::ReleaseMs, it)),
+                    0.0..=1000.0,
+                    /* neutral= */ 100.0,
+                    &self.on_release,
+                );
+            });
+        });
+    }
+}
 
-        knob(
-            ui,
-            "Threshold",
-            config.threshold,
-            |it| dispatch(Action::SetFloat(FloatField::Threshold, it)),
-            0.0..=1.0,
-            /* neutral= */ 0.5,
-            &self.on_release,
-        );
+struct CompressorDisplay<'a> {
+    size: Vec2,
+    config: &'a CompressorConfig,
+}
 
-        knob(
-            ui,
-            "Attack (ms)",
-            config.attack_ms,
-            |it| dispatch(Action::SetFloat(FloatField::AttackMs, it)),
-            0.0..=1000.0,
-            /* neutral= */ 100.0,
-            &self.on_release,
-        );
+impl<'a> CompressorDisplay<'a> {
+    pub fn new(config: &'a CompressorConfig) -> Self {
+        Self {
+            size: vec2(50.0, 50.0),
+            config,
+        }
+    }
+}
 
-        knob(
-            ui,
-            "Release (ms)",
-            config.release_ms,
-            |it| dispatch(Action::SetFloat(FloatField::ReleaseMs, it)),
-            0.0..=1000.0,
-            /* neutral= */ 100.0,
-            &self.on_release,
-        );
-
-        knob(
-            ui,
-            "Ratio",
-            config.ratio,
-            |it| dispatch(Action::SetFloat(FloatField::Ratio, it)),
-            1.0..=100.0, // TODO: logarithmic
-            /* neutral= */ 3.0,
-            &self.on_release,
-        );
+/// A widget to display the "curve" of the compressor.
+impl Widget for CompressorDisplay<'_> {
+    fn ui(self, ui: &mut Ui) -> Response {
+        let CompressorDisplay { size, config } = self;
+        // TODO: Add gain and knee when implemented.
+        // TODO: Add live level to show compression.
+        let CompressorConfig {
+            threshold, ratio, ..
+        } = *config;
+        let max_db = 0.0;
+        let min_db = -60.0;
+        Frame::canvas(ui.style())
+            .show(ui, |ui| {
+                let (response, painter) = ui.allocate_painter(size, Sense::click());
+                let range = Rect::from_min_max(pos2(min_db, max_db), pos2(max_db, min_db));
+                let to_screen = RectTransform::from_to(range, response.rect);
+                // Level pre compression under threshold.
+                let min = pos2(min_db, min_db);
+                let knee = pos2(threshold, threshold);
+                // Level post compression over threshold.
+                let max = pos2(max_db, threshold + (max_db - threshold) / ratio);
+                let line = Shape::line(vec![min, knee, max], Stroke::new(1.0, Color32::WHITE));
+                painter.add(line.transform(to_screen));
+                response
+            })
+            .response
     }
 }

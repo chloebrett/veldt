@@ -5,10 +5,10 @@ edition = "2024"
 
 [dependencies]
 shared = { path = "../shared" }
-tonic = "0.12.3"
+tonic = "0.13.1"
 tokio = { version = "1.44.2", features = ["fs", "io-util", "rt-multi-thread"] }
 anyhow = "1.0.95"
-tonic-web = "0.12.3"
+tonic-web = "0.13.1"
 state = { path = "../state" }
 tower = "0.5.2"
 tower-http = { version = "0.6.2", features = ["cors"] }

@@ -8,5 +8,6 @@ mod toolbar_view;
 
 use freq_display::*;
 pub use microphone_view::*;
+pub use freq_display::*;
 pub use sample_tree_view::*;
 pub use toolbar_view::*;

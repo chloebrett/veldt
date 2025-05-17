@@ -1,16 +1,10 @@
-use crate::bytes::{as_bytes, as_floats};
-use crate::model::{
-    EffectInstance, GeneratorInstance, ModMatrix, Placement, Track, TrackPlacement,
-};
+use crate::model::{GeneratorInstance, Mixer, ModMatrix, Placement, Sample, Track, TrackPlacement};
 use crate::pmodel::*;
 use crate::types::Beats;
 use local_macro::{FromProto, IntoProto};
 use ordered_float::OrderedFloat;
 
-pub type TrackId = u32;
-type _SampleId = usize;
-
-#[derive(Clone, Debug, PartialEq, FromProto, IntoProto)]
+#[derive(Clone, Debug, PartialEq, FromProto, IntoProto, Default)]
 pub struct Project {
     pub name: String,
 
@@ -27,8 +21,8 @@ pub struct Project {
     #[proto_repeated]
     pub generators: Vec<GeneratorInstance>,
 
-    #[proto_repeated]
-    pub mixer: Vec<MixerChannel>,
+    #[proto_optional]
+    pub mixer: Mixer,
 
     pub bpm: Beats,
 
@@ -53,46 +47,14 @@ impl Project {
     }
 }
 
-#[derive(Clone, Debug, PartialEq)]
-pub struct Sample {
-    pub left: Vec<f32>,
-    pub right: Vec<f32>,
-    pub sample_rate: f32,
-}
-
-impl From<SampleProto> for Sample {
-    fn from(item: SampleProto) -> Self {
-        Self {
-            left: as_floats(&item.left),
-            right: as_floats(&item.right),
-            sample_rate: item.sample_rate,
-        }
-    }
-}
-
-impl From<Sample> for SampleProto {
-    fn from(item: Sample) -> Self {
-        Self {
-            left: as_bytes(&item.left),
-            right: as_bytes(&item.right),
-            sample_rate: item.sample_rate,
-        }
-    }
-}
-
-#[derive(Clone, Debug, PartialEq, FromProto, IntoProto)]
-pub struct MixerChannel {
-    #[proto_repeated]
-    pub effects: Vec<EffectInstance>,
-}
-
 #[cfg(test)]
 mod tests {
     use crate::{
         model::{
-            AdsrEnvelope, AntiAliasingMode, DelayConfig, Effect, EffectMeta, EqConfig, EqType,
-            Generator, GeneratorMeta, ModDelayConfig, Note, PitchName, PlacedNote, PlacementType,
-            ScaleValue, SimpleWaveConfig, WaveType,
+            AdsrEnvelope, AntiAliasingMode, DelayConfig, Effect, EffectInstance, EffectMeta,
+            EqConfig, EqType, Generator, GeneratorMeta, MixerChannel, MixerMatrix, ModDelayConfig,
+            Note, PitchName, PlacedNote, PlacementType, PolyphonyMode, ScaleValue,
+            SimpleWaveConfig, WaveType,
         },
         testing::proto::proto_testing::assert_proto_round_trip,
     };
@@ -143,53 +105,60 @@ mod tests {
                     },
                     osc_count: 4,
                     detune_cents: 5.0,
-                    anti_aliasing_mode: AntiAliasingMode::Off,
+                    anti_aliasing_mode: AntiAliasingMode::Additive,
                     oversample_factor: 2,
+                    polyphony_mode: PolyphonyMode::Polyphonic,
+                    polyphony_limit: 0,
                 }),
                 meta: GeneratorMeta {
                     volume: 1.0,
                     mute: false,
                     pan: 0.0,
+                    mixer_channel: 0,
                 },
             }],
-            mixer: vec![MixerChannel {
-                effects: vec![
-                    EffectInstance {
-                        it: Effect::SimpleEq(EqConfig {
-                            kind: EqType::SimpleResonator,
-                            fc: 1000.0,
-                            q: 1.0,
-                            gain: 0.0,
-                        }),
-                        meta: EffectMeta {
-                            wet: 1.0,
-                            mute: false,
+            mixer: Mixer {
+                matrix: MixerMatrix::with_channels(3),
+                channels: vec![MixerChannel {
+                    volume: 1.0,
+                    effects: vec![
+                        EffectInstance {
+                            it: Effect::SimpleEq(EqConfig {
+                                kind: EqType::SimpleResonator,
+                                fc: 1000.0,
+                                q: 1.0,
+                                gain: 0.0,
+                            }),
+                            meta: EffectMeta {
+                                wet: 1.0,
+                                mute: false,
+                            },
                         },
-                    },
-                    EffectInstance {
-                        it: Effect::Delay(DelayConfig {
-                            delay_ms: 250.0,
-                            feedback: 0.5,
-                        }),
-                        meta: EffectMeta {
-                            wet: 0.5,
-                            mute: false,
+                        EffectInstance {
+                            it: Effect::Delay(DelayConfig {
+                                delay_ms: 250.0,
+                                feedback: 0.5,
+                            }),
+                            meta: EffectMeta {
+                                wet: 0.5,
+                                mute: false,
+                            },
                         },
-                    },
-                    EffectInstance {
-                        it: Effect::ModDelay(ModDelayConfig {
-                            min_depth: 100,
-                            max_depth: 200,
-                            freq: 10.0,
-                            lfo_type: WaveType::Triangle,
-                        }),
-                        meta: EffectMeta {
-                            wet: 0.5,
-                            mute: false,
+                        EffectInstance {
+                            it: Effect::ModDelay(ModDelayConfig {
+                                min_depth: 100,
+                                max_depth: 200,
+                                freq: 10.0,
+                                lfo_type: WaveType::Triangle,
+                            }),
+                            meta: EffectMeta {
+                                wet: 0.5,
+                                mute: false,
+                            },
                         },
-                    },
-                ],
-            }],
+                    ],
+                }],
+            },
             bpm: 120.0,
             mod_matrix: ModMatrix::default(),
         };

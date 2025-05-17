@@ -4,11 +4,22 @@ use local_macro::{FromProto, IntoProto};
 
 #[derive(Clone, Debug, PartialEq, FromProto, IntoProto)]
 pub struct AdsrEnvelope {
-    pub attack: Beats,
+    pub attack: Milliseconds,
 
-    pub decay: Beats,
+    pub decay: Milliseconds,
 
     pub sustain: Volume,
 
-    pub release: Beats,
+    pub release: Milliseconds,
+}
+
+impl Default for AdsrEnvelope {
+    fn default() -> Self {
+        Self {
+            attack: 100.0,
+            decay: 100.0,
+            sustain: 0.8,
+            release: 100.0,
+        }
+    }
 }
