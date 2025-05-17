@@ -1,7 +1,12 @@
 use js_sys::Array;
 use std::sync::{Arc, Mutex};
 use wasm_bindgen::prelude::*;
-use web_sys::MediaRecorder;
+use wasm_bindgen_futures::JsFuture;
+use web_sys::{
+    Blob, BlobEvent, MediaRecorder, MediaRecorderOptions, MediaStream, MediaStreamConstraints,
+    window,
+};
+use futures::FutureExt;
 
 // This tutorial was used for the general code structure: https://web.dev/articles/media-recording-audio
 #[wasm_bindgen]
@@ -32,26 +37,26 @@ impl Microphone {
     //}
 
     fn inner_start(&mut self) {
-        /*
         // Clear previous data.
         self.audio_chunks = Array::new();
-
+        
         // Setup js element to access media devices.
         let window = window().expect("No window found.");
         let media_devices = window
-            .navigator()
-            .media_devices()
-            .expect("Media_devices is not supported.");
-
+        .navigator()
+        .media_devices()
+        .expect("Media_devices is not supported.");
+    
         /*
         We can request different things for media devices to capture, as such we need a constraint
         To specify audio only.
         */
         let constraints = MediaStreamConstraints::new();
         constraints.set_audio(&JsValue::from(true));
-
+        
         // Get media devices.
-        let promise = media_devices.get_user_media_with_constraints(&constraints)?;
+        let promise = media_devices.get_user_media_with_constraints(&constraints);
+        /*
         JsFuture::from(promise).then(|result| {
             match result {
                 Ok(stream) => {
