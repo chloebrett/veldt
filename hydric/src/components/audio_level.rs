@@ -26,13 +26,12 @@ impl<'a> AudioLevel<'a> {
     }
 
     fn create_channel_shape(&self, range: Rect, level: f32) -> Shape {
-        // Padding around level line.
+        // Padding around channel shapes.
         let side_padding = 0.2;
         let top_padding = 5.0;
         let bottom_padding = 10.0;
         let padded_y_size =
             (range.size().y.abs() - (top_padding + bottom_padding)) / range.size().y.abs();
-        // Marker appears at peak of level.
         // Marker will be twice this height.
         let marker_height = 0.5;
         let channel_rect = |top, bottom| {
@@ -60,7 +59,7 @@ impl<'a> AudioLevel<'a> {
                 CornerRadius::same(0),
                 Color32::WHITE,
             ),
-            // Peak  marker
+            // Peak marker.
             Shape::rect_filled(
                 channel_rect(level - marker_height, level + marker_height),
                 CornerRadius::same(0),
