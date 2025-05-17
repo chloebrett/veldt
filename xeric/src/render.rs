@@ -4,7 +4,7 @@ use shared::bytes::as_bytes;
 use shared::render::render_server::Render;
 use shared::render::{RenderReply, RenderRequest};
 use state::StoreData;
-use tonic::async_trait;
+use tonic::{async_trait, Status, Response, Request};
 
 // This is a stateless RPC: it accepts a project and returns audio bytes of the rendered project.
 pub struct RenderContext;
@@ -14,12 +14,12 @@ impl Render for RenderContext {
     /// Renders a project and returns audio bytes.
     async fn render(
         &self,
-        request: tonic::Request<RenderRequest>,
-    ) -> Result<tonic::Response<RenderReply>, tonic::Status> {
+        request: Request<RenderRequest>,
+    ) -> Result<Response<RenderReply>, Status> {
         let project = request
             .into_inner()
             .project
-            .ok_or(tonic::Status::invalid_argument("Project must be supplied"))?
+            .ok_or(Status::invalid_argument("Project must be supplied"))?
             .into();
 
         // TODO: use the StoreData from the collab context.
@@ -34,6 +34,6 @@ impl Render for RenderContext {
         let left = as_bytes(&audio.iter().map(|it| *it.channel(0).unwrap()).collect());
         let right = as_bytes(&audio.iter().map(|it| *it.channel(1).unwrap()).collect());
 
-        Ok(tonic::Response::new(RenderReply { left, right }))
+        Ok(Response::new(RenderReply { left, right }))
     }
 }
