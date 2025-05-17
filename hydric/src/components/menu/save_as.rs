@@ -45,11 +45,10 @@ impl<F: Fn(Action), G: FnMut()> View for SaveAs<'_, F, G> {
             .show(ui.ctx(), |ui| {
                 let mut temp_name = name.clone();
                 let response = ui.text_edit_singleline(&mut temp_name);
-
                 if response.changed() {
                     dispatch(Action::SetChild(TypeField::ProjectName(temp_name)));
                 }
-
+                
                 if ui.button("Save").clicked() {
                     on_click()
                 }
