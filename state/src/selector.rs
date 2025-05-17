@@ -359,14 +359,14 @@ impl SelectorTrait for EnvelopeSelector {
 
     fn try_select<'a>(&'a self, store: &'a StoreData) -> Option<&'a Self::Item> {
         let instance = store.project.generators.get(self.0)?;
-        let subsynth: &SubSynthConfig = (&instance.it).try_into().ok()?;
-        subsynth.envelopes.get(self.1)
+        let stingray: &StingrayConfig = (&instance.it).try_into().ok()?;
+        stingray.envelopes.get(self.1)
     }
 
     fn try_select_mut<'a>(&'a self, store: &'a mut StoreData) -> Option<&'a mut Self::Item> {
         let instance = store.project.generators.get_mut(self.0)?;
-        let subsynth: &mut SubSynthConfig = (&mut instance.it).try_into().ok()?;
-        subsynth.envelopes.get_mut(self.1)
+        let stingray: &mut StingrayConfig = (&mut instance.it).try_into().ok()?;
+        stingray.envelopes.get_mut(self.1)
     }
 
     fn as_enum(&self) -> Selector {
@@ -392,14 +392,14 @@ impl SelectorTrait for ModMatrixCellSelector {
 
     fn try_select<'a>(&'a self, store: &'a StoreData) -> Option<&'a Self::Item> {
         let instance = store.project.generators.get(self.0)?;
-        let subsynth: &SubSynthConfig = (&instance.it).try_into().ok()?;
-        subsynth.matrix.get(self.1, self.2)
+        let stingray: &StingrayConfig = (&instance.it).try_into().ok()?;
+        stingray.matrix.get(self.1, self.2)
     }
 
     fn try_select_mut<'a>(&'a self, store: &'a mut StoreData) -> Option<&'a mut Self::Item> {
         let instance = store.project.generators.get_mut(self.0)?;
-        let subsynth: &mut SubSynthConfig = (&mut instance.it).try_into().ok()?;
-        subsynth.matrix.get_mut(self.1, self.2)
+        let stingray: &mut StingrayConfig = (&mut instance.it).try_into().ok()?;
+        stingray.matrix.get_mut(self.1, self.2)
     }
 
     fn as_enum(&self) -> Selector {
