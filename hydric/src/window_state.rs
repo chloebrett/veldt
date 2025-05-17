@@ -6,34 +6,8 @@ use std::hash::Hash;
 use strum::EnumIter;
 use strum::IntoEnumIterator;
 
-struct WindowData {
-    visible: bool,
-    pos: Pos2,
-}
-
-impl WindowData {
-    pub fn default_from_window(window: Window) -> Self {
-        let pos = match window {
-            Window::Mixer => pos2(1000.0, 150.0),
-            Window::Effect(index) => {
-                pos2(1000.0, 150.0) + vec2(50.0 * index as f32, 50.0 * index as f32)
-            }
-            Window::GeneratorList => pos2(1100.0, 20.0),
-            Window::Generator(..) => pos2(1000.0, 150.0),
-            Window::Save => pos2(150.0, 150.0),
-            Window::Scale => pos2(50.0, 200.0),
-            Window::TrackRoll => pos2(30.0, 200.0),
-            Window::SampleTree => pos2(600.0, 20.0),
-        };
-        Self {
-            visible: false,
-            pos,
-        }
-    }
-}
-
 #[derive(Hash, Copy, Clone, EnumIter, PartialEq, Eq)]
-pub enum Window {
+pub enum WindowKind {
     Mixer,
     Effect(usize),
     GeneratorList,
@@ -44,10 +18,46 @@ pub enum Window {
     Save,
 }
 
-pub struct WindowState2(HashMap<Window, WindowData>);
+struct WindowData {
+    visible: bool,
+    pos: Pos2,
+}
+
+impl WindowData {
+    pub fn default_from_window(window: WindowKind) -> Self {
+        let pos = match window {
+            WindowKind::Mixer => pos2(1000.0, 150.0),
+            WindowKind::Effect(index) => {
+                pos2(1000.0, 150.0) + vec2(50.0 * index as f32, 50.0 * index as f32)
+            }
+            WindowKind::GeneratorList => pos2(1100.0, 20.0),
+            WindowKind::Generator(..) => pos2(1000.0, 150.0),
+            WindowKind::Save => pos2(150.0, 150.0),
+            WindowKind::Scale => pos2(50.0, 200.0),
+            WindowKind::TrackRoll => pos2(30.0, 200.0),
+            WindowKind::SampleTree => pos2(600.0, 20.0),
+        };
+        Self {
+            visible: false,
+            pos,
+        }
+    }
+}
+
+pub struct WindowState2(HashMap<WindowKind, WindowData>);
+
+impl Default for WindowState2 {
+    fn default() -> Self {
+        let mut windows = HashMap::new();
+        for window in WindowKind::iter() {
+            windows.insert(window, WindowData::default_from_window(window));
+        }
+        Self(windows)
+    }
+}
 
 impl WindowState2 {
-    pub fn get_mut_visible(&mut self, window: Window) -> &mut bool {
+    pub fn get_mut_visible(&mut self, window: WindowKind) -> &mut bool {
         &mut self
             .0
             .get_mut(&window)
@@ -55,21 +65,11 @@ impl WindowState2 {
             .visible
     }
 
-    pub fn get_pos(&self, window: Window) -> Pos2 {
+    pub fn get_pos(&self, window: WindowKind) -> Pos2 {
         self.0
             .get(&window)
             .expect("Windows should have been initialised.")
             .pos
-    }
-}
-
-impl Default for WindowState2 {
-    fn default() -> Self {
-        let mut windows = HashMap::new();
-        for window in Window::iter() {
-            windows.insert(window, WindowData::default_from_window(window));
-        }
-        Self(windows)
     }
 }
 
