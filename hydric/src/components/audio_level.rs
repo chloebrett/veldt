@@ -2,7 +2,7 @@ use egui::{
     Color32, CornerRadius, Frame, Rect, Response, Sense, Shape, Ui, Vec2, Widget,
     emath::RectTransform, pos2, vec2,
 };
-use egui::{InnerResponse, Pos2, Rangef};
+use egui::{InnerResponse, Rangef};
 
 use crate::playback::AudioPlayer;
 use crate::transform::Transform;
