@@ -84,7 +84,7 @@ impl<'a, G: Fn()> View for ModMatrixView<'_, G> {
                                 let id = format!("{:?}", (row, col));
                                 let cell_sel = generator_sel.downcast_mod_matrix_cell(row, col);
                                 let value: &MatrixCell = store.select(&cell_sel);
-                                let value = value.0;
+                                let value = value.deref();
 
                                 ui.push_id(id, |ui| {
                                     knob(

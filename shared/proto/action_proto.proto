@@ -127,7 +127,7 @@ message SelectorProto {
     IndexPair lfo = 10;
     IndexPair generator_effect = 11;
     IndexPair envelope = 12;
-    IndexTrio mod_matrix_cell = 13;
+    IndexTriple mod_matrix_cell = 13;
   }
 
   message IndexPair {
@@ -135,7 +135,7 @@ message SelectorProto {
     uint32 second = 2;
   }
 
-  message IndexTrio {
+  message IndexTriple {
     uint32 first = 1;
     uint32 second = 2;
     uint32 third = 3;

@@ -1,5 +1,5 @@
 use crate::{StoreData, receiver::ActionReceiver};
-use shared::action_proto::selector_proto::IndexTrio;
+use shared::action_proto::selector_proto::IndexTriple;
 use shared::action_proto::{
     SelectorProto, selector_proto::IndexPair, selector_proto::Kind as SelectorKind,
 };
@@ -464,7 +464,7 @@ impl From<Selector> for SelectorProto {
                 }
                 Selector::Envelope(first, second) => SelectorKind::Envelope(pair(first, second)),
                 Selector::ModMatrixCell(first, second, third) => {
-                    SelectorKind::ModMatrixCell(trio(first, second, third))
+                    SelectorKind::ModMatrixCell(triple(first, second, third))
                 }
             }),
         }
@@ -500,7 +500,7 @@ impl From<SelectorProto> for Selector {
             SelectorKind::Envelope(IndexPair { first, second }) => {
                 Selector::Envelope(first as usize, second as usize)
             }
-            SelectorKind::ModMatrixCell(IndexTrio {
+            SelectorKind::ModMatrixCell(IndexTriple {
                 first,
                 second,
                 third,
@@ -516,8 +516,8 @@ fn pair(first: usize, second: usize) -> IndexPair {
     }
 }
 
-fn trio(first: usize, second: usize, third: usize) -> IndexTrio {
-    IndexTrio {
+fn triple(first: usize, second: usize, third: usize) -> IndexTriple {
+    IndexTriple {
         first: first as u32,
         second: second as u32,
         third: third as u32,

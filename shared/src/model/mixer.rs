@@ -35,14 +35,25 @@ pub struct MixerMatrix {
 }
 
 /// NewType wrapper so that we can implement ActionReceiver for this type.
-/// TODO: consider implementing Deref/DerefMut.
 /// TODO: also consider whether this should contain OrderedFloat. I think it isn't necessary.
 #[derive(Copy, Clone, PartialEq, Debug)]
-pub struct MatrixCell(pub f32);
+pub struct MatrixCell(f32);
 
 impl MatrixCell {
     pub fn set(&mut self, value: f32) {
         self.0 = value;
+    }
+
+    pub fn deref(&self) -> f32 {
+        self.0
+    }
+
+    pub fn deref_mut(&mut self) -> &mut f32 {
+        &mut self.0
+    }
+
+    pub fn new(value: f32) -> Self {
+        MatrixCell(value)
     }
 }
 

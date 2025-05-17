@@ -20,7 +20,7 @@ impl ModMatrix {
         ModMatrix {
             rows: num_rows,
             cols: num_cols,
-            matrix: vec![MatrixCell(0.0); num_rows as usize * num_cols as usize],
+            matrix: vec![MatrixCell::new(0.0); num_rows as usize * num_cols as usize],
         }
     }
 
