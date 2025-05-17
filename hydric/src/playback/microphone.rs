@@ -1,3 +1,4 @@
+use crossbeam_channel::{Receiver, Sender};
 use dasp_frame::Mono;
 use futures::FutureExt;
 use js_sys::Array;
@@ -9,12 +10,11 @@ use web_sys::{
     Blob, BlobEvent, MediaRecorder, MediaRecorderOptions, MediaStream, MediaStreamConstraints,
     window,
 };
-use crossbeam_channel::{Receiver, Sender};
 
 // This tutorial was used for the general code structure: https://web.dev/articles/media-recording-audio
 pub struct Microphone {
     stream: Arc<Mutex<Option<MediaStream>>>,
-    media_recorder: Arc<Mutex<Option<MediaRecorder>>>,
+    media_recorder: Option<MediaRecorder>,
     audio_chunks: Vec<Blob>,
     recording_status: bool,
     recording: Option<Mono<f32>>,
@@ -28,7 +28,7 @@ impl Microphone {
 
         Self {
             stream: Arc::new(Mutex::new(None)),
-            media_recorder: Arc::new(Mutex::new(None)),
+            media_recorder: None,
             audio_chunks: vec![],
             recording_status: false,
             recording: None,
@@ -58,7 +58,9 @@ impl Microphone {
     }
 
     pub fn update(&mut self) {
+        log::info!("Tried update");
         while let Ok(blob) = self.rx.try_recv() {
+            log::info!("Got update");
             self.audio_chunks.push(blob);
         }
     }
@@ -104,7 +106,7 @@ impl Microphone {
     pub fn start(&mut self) {
         // I think there is good browser support for wav? If not we can use webm.
         let options = MediaRecorderOptions::new();
-        options.set_mime_type("audio/wav");
+        options.set_mime_type("audio/webm");
 
         // We now add listener to continuously grab audio from mic.
         let tx = self.tx.clone();
@@ -113,21 +115,36 @@ impl Microphone {
             let data = e
                 .data()
                 .expect("Should be fine so long as we have a valid blob.");
+            log::info!("Got data");
             if data.size() > 0.0 {
+                log::info!("Got data > 0");
                 tx.try_send(data).unwrap();
             }
         }) as Box<dyn FnMut(_)>);
 
-        let stream = self.stream.lock().unwrap().take().expect("Expected get_permissions() to have succeeded.");
+        let stream = self
+            .stream
+            .lock()
+            .unwrap()
+            .take()
+            .expect("Expected get_permissions() to have succeeded.");
         let media_recorder =
-            MediaRecorder::new_with_media_stream_and_media_recorder_options(&stream, &options).unwrap();
-        
+            MediaRecorder::new_with_media_stream_and_media_recorder_options(&stream, &options)
+                .unwrap();
+
         let callback = on_data_available.as_ref().dyn_ref();
         media_recorder.set_ondataavailable(callback);
-        //on_data_available.forget();
+        on_data_available.forget();
 
-        media_recorder.start();
-        *self.media_recorder.lock().unwrap() = Some(media_recorder);
+        let err_fn = Closure::wrap(Box::new(move |err: JsValue| {
+            log::error!("an error occurred on mic stream: {:?}", err)
+        }) as Box<dyn FnMut(_)>);
+        let err_fn = err_fn.as_ref().dyn_ref();
+        media_recorder.set_onerror(err_fn);
+
+        let callback_interval = 100;
+        media_recorder.start_with_time_slice(callback_interval).unwrap();
+        self.media_recorder = Some(media_recorder);
         self.recording_status = true;
     }
 
