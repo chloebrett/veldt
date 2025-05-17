@@ -25,9 +25,14 @@ impl<'a> AudioLevel<'a> {
         }
     }
 
-    fn create_channel_shape(&self, range: Rect, level: f32) -> Shape {
+    fn create_channel_shape(
+        &self,
+        range: Rect,
+        level: f32,
+        left_padding: f32,
+        right_padding: f32,
+    ) -> Shape {
         // Padding around channel shapes.
-        let side_padding = 0.2;
         let top_padding = 5.0;
         let bottom_padding = 10.0;
         let padded_y_size =
@@ -37,8 +42,8 @@ impl<'a> AudioLevel<'a> {
         let channel_rect = |top, bottom| {
             Rect::from_x_y_ranges(
                 Rangef {
-                    min: range.left() + side_padding,
-                    max: range.right() - side_padding,
+                    min: range.left() + left_padding,
+                    max: range.right() - right_padding,
                 },
                 Rangef {
                     min: top * padded_y_size - top_padding,
@@ -76,9 +81,11 @@ impl<'a> AudioLevel<'a> {
             range.left_top() + vec2(split_range_size.x, 0.0),
             split_range_size,
         );
+        // Padding on left and right of channels.
+        let padding = 0.2;
         Shape::Vec(vec![
-            self.create_channel_shape(left_range, left_level),
-            self.create_channel_shape(right_range, right_level),
+            self.create_channel_shape(left_range, left_level, padding, padding * 0.5),
+            self.create_channel_shape(right_range, right_level, padding * 0.5, padding),
         ])
     }
 }
