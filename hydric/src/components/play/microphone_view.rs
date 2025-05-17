@@ -3,7 +3,6 @@ use crate::playback::Microphone;
 use crate::view::View;
 use crate::widget::default_window;
 use egui::{Pos2, Ui};
-use log::error;
 use state::Store;
 
 pub struct MicrophoneView<'a> {
@@ -48,11 +47,19 @@ impl View for MicrophoneView<'_> {
                     self.mic.start();
                 }
 
+                if ui.button("Convert 1").clicked() {
+                    self.mic.convert_audio_1();
+                }
+
                 if ui.button("Stop").clicked() {
                     self.mic.stop();
                 }
 
                 ui.label(format!("Blob count: {}", self.mic.blob_count()));
+                ui.label(format!(
+                    "Intermediate data len: {}",
+                    self.mic.intermediate_len()
+                ));
 
                 if let Some(recording) = self.mic.recording() {
                     ui.label(format!("Recording exists: {}", recording.len()));

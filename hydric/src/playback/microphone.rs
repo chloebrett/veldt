@@ -16,6 +16,7 @@ pub struct Microphone {
     stream: Arc<Mutex<Option<MediaStream>>>,
     media_recorder: Option<MediaRecorder>,
     audio_chunks: Vec<Blob>,
+    intermediate_data: Arc<Mutex<Vec<u8>>>,
     recording_status: bool,
     recording: Option<Mono<f32>>,
     tx: Sender<Blob>,
@@ -30,6 +31,7 @@ impl Microphone {
             stream: Arc::new(Mutex::new(None)),
             media_recorder: None,
             audio_chunks: vec![],
+            intermediate_data: Arc::new(Mutex::new(vec![])),
             recording_status: false,
             recording: None,
             tx,
@@ -39,6 +41,10 @@ impl Microphone {
 
     pub fn blob_count(&self) -> usize {
         self.audio_chunks.len()
+    }
+
+    pub fn intermediate_len(&self) -> usize {
+        self.intermediate_data.lock().unwrap().len()
     }
 
     pub fn recording(&self) -> Option<Mono<f32>> {
@@ -106,7 +112,7 @@ impl Microphone {
     pub fn start(&mut self) {
         // I think there is good browser support for wav? If not we can use webm.
         let options = MediaRecorderOptions::new();
-        options.set_mime_type("audio/webm");
+        options.set_mime_type("audio/ogg");
 
         // We now add listener to continuously grab audio from mic.
         let tx = self.tx.clone();
@@ -134,6 +140,9 @@ impl Microphone {
 
         let callback = on_data_available.as_ref().dyn_ref();
         media_recorder.set_ondataavailable(callback);
+
+        // Don't drop the closure.
+        // TODO: make this not be a memory leak. Store a refrence to the closure on the mic object?
         on_data_available.forget();
 
         let err_fn = Closure::wrap(Box::new(move |err: JsValue| {
@@ -143,12 +152,44 @@ impl Microphone {
         media_recorder.set_onerror(err_fn);
 
         let callback_interval = 100;
-        media_recorder.start_with_time_slice(callback_interval).unwrap();
+        media_recorder
+            .start_with_time_slice(callback_interval)
+            .unwrap();
         self.media_recorder = Some(media_recorder);
         self.recording_status = true;
     }
 
-    pub fn stop(&mut self) {}
+    pub fn stop(&mut self) {
+        self.media_recorder.as_ref().unwrap().stop().unwrap();
+    }
+
+    pub fn convert_audio_1(&mut self) -> Result<(), JsValue> {
+        let array = Array::new();
+        for chunk in &self.audio_chunks {
+            array.push(&chunk);
+        }
+
+        // Convert recorded chunks to bytes.
+        let blob = Blob::new_with_blob_sequence(&array)?;
+
+        let array_buffer_promise: js_sys::Promise = blob.array_buffer();
+        let future = JsFuture::from(array_buffer_promise);
+        let intermediate = Arc::clone(&self.intermediate_data);
+        let array_buffer_future = future.then(move |response| {
+            let mut intermediate_ref = intermediate.lock().unwrap();
+
+            // Convert to Vec<u8> for UploadSample method.
+            let js_array = js_sys::Uint8Array::new(&response.unwrap());
+            let mut bytes = vec![0; js_array.length() as usize];
+            js_array.copy_to(&mut bytes);
+
+            *intermediate_ref = bytes;
+            futures::future::ready(())
+        });
+
+        spawn_local(array_buffer_future);
+        Ok(())
+    }
 
     async fn inner_stop(&mut self) {
         /*
