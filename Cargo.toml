@@ -5,7 +5,10 @@ members = [
     "xeric",
     "mesic",
     "hydric",
+    "local_macro",
     "vendor/cpal",
+    "vendor/dasp_graph",
     "experimental/threads",
+    "experimental/rng",
 ]
-resolver = "2"  # Helps with consistent dependency resolution
+resolver = "3"

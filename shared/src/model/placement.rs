@@ -4,7 +4,7 @@ use local_macro::{FromProto, IntoProto};
 use ordered_float::OrderedFloat;
 use std::cmp::Ordering;
 
-#[derive(Clone, Debug, PartialEq, Eq)]
+#[derive(Clone, Debug, PartialEq, Eq, Default)]
 pub struct Placement {
     pub kind: PlacementType,
 
@@ -25,7 +25,13 @@ pub enum PlacementType {
     Sample(SamplePlacement),
 }
 
-#[derive(Clone, Debug, PartialEq, Eq, FromProto, IntoProto)]
+impl Default for PlacementType {
+    fn default() -> Self {
+        PlacementType::Track(TrackPlacement::default())
+    }
+}
+
+#[derive(Clone, Debug, PartialEq, Eq, FromProto, IntoProto, Default)]
 pub struct TrackPlacement {
     /// TODO: use a more stable ID instead of the index.
     #[proto_type_u32]
@@ -48,7 +54,7 @@ impl<'a> TryFrom<&'a Placement> for &'a TrackPlacement {
     }
 }
 
-#[derive(Clone, Debug, PartialEq, Eq, FromProto, IntoProto)]
+#[derive(Clone, Debug, PartialEq, Eq, FromProto, IntoProto, Default)]
 pub struct SamplePlacement {
     /// TODO: use a more stable ID instead of the index.
     #[proto_type_u32]

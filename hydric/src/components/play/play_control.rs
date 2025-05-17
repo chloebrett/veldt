@@ -3,7 +3,7 @@ use crate::promise::{poll, spawn};
 use crate::rpc::render as server_render;
 use crate::view::View;
 use crate::widget::checkbox;
-use crate::{AsyncState, AudioState};
+use crate::{AsyncState, playback::AudioPlayer};
 use dasp_frame::Stereo;
 use egui::Ui;
 use state::Store;
@@ -11,10 +11,9 @@ use state::Store;
 pub fn play_control(
     store: &Store,
     async_state: &mut AsyncState,
-    audio_state: &mut AudioState,
+    player: &mut AudioPlayer,
     ui: &mut Ui,
 ) {
-    let player = &mut audio_state.player;
     ui.horizontal(|ui| {
         if ui.button("▶").clicked() {
             player.play();
@@ -27,19 +26,17 @@ pub fn play_control(
             player.seek(0);
         }
         checkbox(ui, player.is_looping(), |it| player.set_looping(it), "Loop");
+
+        ui.label(player.current_time());
     });
 
     ui.separator();
 
     ui.horizontal(|ui| {
-        if ui.button("Set audio from local + play").clicked() {
-            player.set_project(Box::new(store.get().project.clone()));
-            player.play();
+        // TODO: create a debug options dropdown in the main menu and put this there.
+        if ui.button("Recreate mixer (for debug)").clicked() {
+            player.refresh_mixer();
         }
-        if ui.button("Set audio from local").clicked() {
-            player.set_project(Box::new(store.get().project.clone()));
-        }
-
         if ui.button("Set audio from server").clicked() {
             let project = store.get().project.clone();
             spawn(&mut async_state.server_render, async move {
@@ -53,11 +50,11 @@ pub fn play_control(
     poll(
         &mut async_state.server_render,
         |audio: &Vec<Stereo<f32>>| {
-            audio_state.audio = audio.to_vec();
-            player.set_audio(audio_state.audio.clone());
+            player.set_audio(audio.clone());
         },
     );
 
-    audio_vis(audio_state, ui);
-    FrequencyDisplay::new(audio_state).ui(ui)
+    audio_vis(player, /* sample_count= */ None, ui);
+    audio_vis(player, /* sample_count= */ Some(100), ui);
+    FrequencyDisplay::new(player).ui(ui)
 }

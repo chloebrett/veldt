@@ -3,11 +3,13 @@ use hound::{SampleFormat, WavSpec, WavWriter};
 use mesic::SAMPLE_RATE;
 use mesic::graph::RenderGraph;
 use shared::export::{ExportReply, ExportRequest, export_server::Export};
+use shared::model::Project;
+use state::StoreData;
 use std::env::current_dir;
 use std::fs::{File, create_dir_all};
 use std::io::{Cursor, Write};
 use std::path::PathBuf;
-use tonic::async_trait;
+use tonic::{Request, Response, Status, async_trait};
 
 // Exports project to .wav
 pub struct ExportContext;
@@ -30,19 +32,24 @@ fn wav_dir_path() -> PathBuf {
 impl Export for ExportContext {
     async fn export(
         &self,
-        request: tonic::Request<ExportRequest>,
-    ) -> Result<tonic::Response<ExportReply>, tonic::Status> {
+        request: Request<ExportRequest>,
+    ) -> Result<Response<ExportReply>, Status> {
         let req = request.into_inner();
-        let project = req
+        let project: Project = req
             .project
-            .ok_or_else(|| tonic::Status::invalid_argument("Project must be supplied"))?
+            .ok_or(Status::invalid_argument("Project must be supplied"))?
             .into();
 
-        let mut graph = RenderGraph::default();
-        graph.set_from_project(&project);
+        // TODO: use the StoreData from the collab context.
+        let store = StoreData {
+            project: project.clone(),
+            ..StoreData::default()
+        };
+
+        let graph = RenderGraph::without_rx(&store);
 
         let spec = WavSpec {
-            channels: 1, // mono
+            channels: 2, // stereo
             sample_rate: SAMPLE_RATE as u32,
             bits_per_sample: 16,
             sample_format: SampleFormat::Int,
@@ -54,13 +61,16 @@ impl Export for ExportContext {
                 .map_err(|e| tonic::Status::invalid_argument(format!("{}", e)))?;
 
             for frame in graph {
-                let sample = *frame.channel(0).unwrap(); // mono
-                let sample_i16 =
-                    (sample * i16::MAX as f32).clamp(i16::MIN as f32, i16::MAX as f32) as i16;
+                for channel in 0..2 {
+                    let sample = *frame.channel(channel).unwrap();
 
-                writer
-                    .write_sample(sample_i16)
-                    .map_err(|e| tonic::Status::invalid_argument(format!("{}", e)))?;
+                    let sample_i16 =
+                        (sample * i16::MAX as f32).clamp(i16::MIN as f32, i16::MAX as f32) as i16;
+
+                    writer
+                        .write_sample(sample_i16)
+                        .map_err(|e| tonic::Status::invalid_argument(format!("{}", e)))?;
+                }
             }
 
             writer

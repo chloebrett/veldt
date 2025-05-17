@@ -1,16 +1,17 @@
 use super::{
-    KeyView, NoteRoll, NoteView, TrackPlacementView, TrackRoll,
+    KeyView, NoteRoll, NoteView, SamplePlacementView, TrackPlacementView, TrackRoll,
     effect::{EffectView, MixerView},
     generator::{GeneratorView, generators_control},
     menu::MenuBar,
     play::{MicrophoneView, SampleTreeView, ToolbarView},
 };
 use crate::components::FrameHistory;
+use crate::playback::Microphone;
 use crate::promise::spawn;
 use crate::rpc::broadcast_actions;
 use crate::rpc::load_project_list;
 use crate::view::View;
-use crate::{AsyncState, AudioState, WindowState};
+use crate::{AsyncState, LocalState, WindowState, playback::AudioPlayer};
 use egui::{ScrollArea, Ui, scroll_area::ScrollBarVisibility};
 use mesic::graph::RenderGraph;
 use poll_promise::Promise;
@@ -18,10 +19,16 @@ use state::{Action, EffectSelector, GeneratorSelector, Store};
 use std::sync::mpsc::channel;
 
 pub struct App {
+    // State used for rendering audio and/or by other users.
+    // Example: knob positions.
     pub store: Store,
+    // State only used for rendering local UIs.
+    // Example: selected notes in the note roll.
+    pub local_state: LocalState,
     pub frame_history: FrameHistory,
     pub async_state: AsyncState,
-    pub audio_state: AudioState,
+    pub player: AudioPlayer,
+    pub mic: Microphone,
     pub window_state: WindowState,
 }
 
@@ -30,14 +37,17 @@ impl Default for App {
         let broadcast = |actions| {
             let _ = Promise::spawn_local(broadcast_actions(actions));
         };
-        let mut graph = RenderGraph::default();
         let (tx, rx) = channel();
-        graph.set_receiver(rx);
+        let store = Store::new(broadcast, tx);
+        let graph = RenderGraph::new(store.get(), rx);
+
         App {
-            store: Store::new(broadcast, tx),
+            store,
+            local_state: LocalState::default(),
             frame_history: FrameHistory::default(),
             async_state: AsyncState::default(),
-            audio_state: AudioState::new(graph),
+            player: AudioPlayer::new(graph),
+            mic: Microphone::new(),
             window_state: WindowState::default(),
         }
     }
@@ -76,7 +86,7 @@ impl eframe::App for App {
         self.frame_history
             .on_new_frame(ctx.input(|i| i.time), frame.info().cpu_usage);
 
-        self.audio_state.player.maybe_update();
+        self.player.maybe_update();
 
         egui::TopBottomPanel::top("veldt_menu").show(ctx, |ui| {
             MenuBar::new(
@@ -110,21 +120,30 @@ impl View for App {
         for sel in self.visible_generators() {
             let generators = &mut self.window_state.generators;
             let visible = generators.get(sel);
-            GeneratorView::new(&self.store, &sel, visible, || generators.set(sel, false)).ui(ui);
+            GeneratorView::new(
+                &self.store,
+                &sel,
+                &self.local_state,
+                &mut self.player,
+                visible,
+                || generators.set(sel, false),
+            )
+            .ui(ui);
         }
         if self.window_state.mixer.visible {
-            MixerView::new(&mut self.window_state, &self.store).ui(ui);
+            MixerView::new(
+                &mut self.window_state,
+                &self.store,
+                &self.local_state,
+                &self.player,
+            )
+            .ui(ui);
         }
 
-        ToolbarView::new(
-            &mut self.store,
-            &mut self.async_state,
-            &mut self.audio_state,
-        )
-        .ui(ui);
+        ToolbarView::new(&mut self.store, &mut self.async_state, &mut self.player).ui(ui);
 
         for effect_selector in self.visible_effects() {
-            let dispatch = |action| self.store.dispatch2(&effect_selector, action);
+            let dispatch = |action| self.store.dispatch(&effect_selector, action);
             let on_release = || self.store.dispatchr(Action::Release);
             if let Some(mut it) = EffectView::new(
                 &self.store,
@@ -143,15 +162,16 @@ impl View for App {
             KeyView::new(dispatch, &mut self.window_state.scale, key, scale).ui(ui);
         }
 
-        NoteView::new(&self.store).ui(ui);
-        NoteRoll::new(&self.store).ui(ui);
-        TrackPlacementView::new(&self.store).ui(ui);
+        NoteView::new(&self.store, &self.local_state).ui(ui);
+        NoteRoll::new(&self.store, &self.local_state, &mut self.player).ui(ui);
+        TrackPlacementView::new(&self.store, &self.local_state).ui(ui);
+        SamplePlacementView::new(&self.store, &self.local_state).ui(ui);
 
         MicrophoneView::new(
             &self.store,
             &mut self.async_state,
             &mut self.window_state.microphone,
-            &mut self.audio_state.mic,
+            &mut self.mic,
         )
         .ui(ui);
 
@@ -161,6 +181,6 @@ impl View for App {
             &mut self.window_state.sample_tree,
         )
         .ui(ui);
-        TrackRoll::new(&self.store, &mut self.window_state).ui(ui);
+        TrackRoll::new(&self.store, &mut self.window_state, &self.local_state).ui(ui);
     }
 }

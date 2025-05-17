@@ -11,7 +11,7 @@ use std::ffi::OsStr;
 use std::fs::{ReadDir, read_dir};
 use std::io::Error;
 use std::path::{Path, PathBuf};
-use tonic::async_trait;
+use tonic::{Request, Response, Status, async_trait};
 
 const _PCM_MAX_I16: i16 = 0x7FFF; // 2^15 - 1
 const PCM_MAX_I24: i32 = 0x7FFFFF; // 2^23 - 1
@@ -117,8 +117,8 @@ impl LoadSample for LoadSampleContext {
     /// Throws an error if the file does not exist. Panics if reading it fails.
     async fn load_sample(
         self: &Self,
-        request: tonic::Request<LoadSampleRequest>,
-    ) -> Result<tonic::Response<LoadSampleReply>, tonic::Status> {
+        request: Request<LoadSampleRequest>,
+    ) -> Result<Response<LoadSampleReply>, Status> {
         let LoadSampleRequest { filename } = request.into_inner();
 
         let mut file_path = sample_dir_path();
@@ -142,15 +142,15 @@ impl LoadSample for LoadSampleContext {
             right,
             sample_rate: reader.spec().sample_rate as f32,
         };
-        Ok(tonic::Response::new(LoadSampleReply {
+        Ok(Response::new(LoadSampleReply {
             sample: Some(sample.into()),
         }))
     }
 
     async fn load_sample_tree(
         self: &Self,
-        request: tonic::Request<LoadSampleTreeRequest>,
-    ) -> Result<tonic::Response<LoadSampleTreeReply>, tonic::Status> {
+        request: Request<LoadSampleTreeRequest>,
+    ) -> Result<Response<LoadSampleTreeReply>, Status> {
         let LoadSampleTreeRequest { config } = request.into_inner();
         let config: FileTreeConfig = config.unwrap().into();
 

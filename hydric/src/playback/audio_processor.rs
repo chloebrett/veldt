@@ -3,13 +3,18 @@ use super::{
     PlaybackUpdate,
 };
 use crossbeam_channel::{Receiver, Sender};
+use dasp_frame::Stereo;
 use mesic::graph::RenderGraph;
 
 /// Audio processor which runs in its own thread and communicates with the UI thread via crossbeam channels.
 pub struct AudioProcessor {
+    // Audio processor gets one half of each of the three channels.
+    // It receives playback messages, and sends audio buffers and playback update messages.
     audio_tx: Sender<AudioBuffer>,
     playback_rx: Receiver<PlaybackMessage>,
     update_tx: Sender<PlaybackUpdate>,
+    recent_tx: Sender<Stereo<f32>>,
+
     state: PlaybackState,
     graph: RenderGraph,
     is_looping: bool,
@@ -21,6 +26,7 @@ impl AudioProcessor {
         audio_tx: Sender<AudioBuffer>,
         playback_rx: Receiver<PlaybackMessage>,
         update_tx: Sender<PlaybackUpdate>,
+        recent_tx: Sender<Stereo<f32>>,
         is_looping: bool,
         graph: RenderGraph,
     ) -> Self {
@@ -28,6 +34,7 @@ impl AudioProcessor {
             audio_tx,
             playback_rx,
             update_tx,
+            recent_tx,
             is_looping,
             state: PlaybackState::Pause,
             graph,
@@ -60,13 +67,11 @@ impl AudioProcessor {
 
     fn process_message(&mut self, message: PlaybackMessage) {
         match message {
-            PlaybackMessage::SetProject(project) => {
-                self.graph.clear_nodes();
-                self.graph.set_from_project(&project);
+            PlaybackMessage::RecreateMixer => {
+                self.graph.recreate_mixer();
             }
             PlaybackMessage::SetAudio(audio) => {
-                self.graph.clear_nodes();
-                self.graph.set_from_audio(audio);
+                self.graph.set_audio(&audio);
             }
             PlaybackMessage::Seek(PlaybackPosition { samples }) => {
                 log::info!("Seeking to {}", samples);
@@ -82,6 +87,12 @@ impl AudioProcessor {
             }
             PlaybackMessage::Loop(is_looping) => {
                 self.is_looping = is_looping;
+            }
+            PlaybackMessage::NoteOn(generator, pitch_name) => {
+                self.graph.note_on(generator, pitch_name);
+            }
+            PlaybackMessage::NoteOff(generator, pitch_name) => {
+                self.graph.note_off(generator, pitch_name);
             }
         }
     }
@@ -100,6 +111,7 @@ impl AudioProcessor {
             match next {
                 Some(value) => {
                     self.buffer[i] = value;
+                    self.recent_tx.try_send(value).unwrap();
                     got_samples = true;
                 }
                 None => {

@@ -1,9 +1,13 @@
 use shared::action_proto::{TypeFieldProto, type_field_proto::Kind as TypeFieldKind};
 use shared::model::{
     AdsrEnvelope, AntiAliasingMode, EffectInstance, EqType, FileTreeConfig, FilenameTree,
-    PitchName, PlacedNote, Placement, Project, Sample, Scale, ScaleValue, Track, WaveType,
+    GeneratorInstance, MixerChannel, NoiseType, PitchName, PlacedNote, Placement, PolyphonyMode,
+    Project, Sample, Scale, ScaleValue, Track, WaveType,
 };
-use shared::pmodel::{AntiAliasingModeProto, EqTypeProto, ScaleProto, WaveTypeProto};
+use shared::pmodel::{
+    AntiAliasingModeProto, EqTypeProto, NoiseTypeProto, PolyphonyModeProto, ScaleProto,
+    WaveTypeProto,
+};
 
 /// Fields of various types.
 /// Used to distinguish *which* field of this type is being referred to,
@@ -31,6 +35,10 @@ pub enum TypeField {
     EqType(EqType),
     ClippedDuration(Option<f32>),
     SampleTreeConfig(FileTreeConfig),
+    Generator(GeneratorInstance),
+    MixerChannel(MixerChannel),
+    PolyphonyMode(PolyphonyMode),
+    NoiseType(NoiseType),
 
     // Note: if we end up with more bools/primitives, make dedicated types for them so that we
     // don't have to keep expanding the proto.
@@ -62,11 +70,18 @@ impl From<TypeFieldProto> for TypeField {
             TypeFieldKind::ClippedDuration(it) => TypeField::ClippedDuration(it.into()),
             TypeFieldKind::SampleTree(it) => TypeField::SampleTree(it.into()),
             TypeFieldKind::SampleTreeConfig(it) => TypeField::SampleTreeConfig(it.into()),
-
+            TypeFieldKind::Generator(it) => TypeField::Generator(it.into()),
+            TypeFieldKind::MixerChannel(it) => TypeField::MixerChannel(it.into()),
+            TypeFieldKind::PolyphonyMode(it) => {
+                TypeField::PolyphonyMode(PolyphonyModeProto::try_from(it).unwrap().into())
+            }
             // Note: if we end up with more bools/primitives, make dedicated types for them so that we
             // don't have to keep expanding the proto.
             TypeFieldKind::Mute(it) => TypeField::Mute(it),
             TypeFieldKind::Octave(it) => TypeField::Octave(it),
+            TypeFieldKind::NoiseType(it) => {
+                TypeField::NoiseType(NoiseTypeProto::try_from(it).unwrap().into())
+            }
         }
     }
 }
@@ -99,11 +114,19 @@ impl From<TypeField> for TypeFieldProto {
                 TypeField::EqType(it) => TypeFieldKind::EqType(EqTypeProto::from(it).into()),
                 TypeField::ClippedDuration(it) => TypeFieldKind::ClippedDuration(it.into()),
                 TypeField::SampleTreeConfig(it) => TypeFieldKind::SampleTreeConfig(it.into()),
+                TypeField::Generator(it) => TypeFieldKind::Generator(it.into()),
+                TypeField::MixerChannel(it) => TypeFieldKind::MixerChannel(it.into()),
+                TypeField::PolyphonyMode(it) => {
+                    TypeFieldKind::PolyphonyMode(PolyphonyModeProto::from(it).into())
+                }
 
                 // Note: if we end up with more bools/primitives, make dedicated types for them so that we
                 // don't have to keep expanding the proto.
                 TypeField::Mute(it) => TypeFieldKind::Mute(it),
                 TypeField::Octave(it) => TypeFieldKind::Octave(it),
+                TypeField::NoiseType(it) => {
+                    TypeFieldKind::NoiseType(NoiseTypeProto::from(it).into())
+                }
             }),
         }
     }

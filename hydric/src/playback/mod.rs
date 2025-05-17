@@ -7,7 +7,8 @@ use audio_processor::*;
 pub use microphone::*;
 
 use dasp_frame::Stereo;
-use shared::model::Project;
+use shared::model::PitchName;
+use state::GeneratorSelector;
 
 // Number of samples to process and send to the audio player at a time.
 // This matches the value configured in CPAL.
@@ -25,11 +26,17 @@ pub struct PlaybackPosition {
 
 // Messages that can be sent to the processor thread.
 enum PlaybackMessage {
-    SetProject(Box<Project>), // uses Box to keep enum size sane.
+    // Recreates the audio mixer.
+    // Useful for debugging and for playback where the graph isn't perfectly dynamic (which it
+    // currently isn't, e.g. some effects don't update live).
+    RecreateMixer,
+    // Sets some pre-rendered audio to be played by the graph.
     SetAudio(Vec<Stereo<f32>>),
     Seek(PlaybackPosition),
     State(PlaybackState),
     Loop(bool),
+    NoteOn(GeneratorSelector, PitchName),
+    NoteOff(GeneratorSelector, PitchName),
 }
 
 // Messages that can be received from the processor thread.

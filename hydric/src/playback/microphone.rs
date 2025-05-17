@@ -1,12 +1,7 @@
 use js_sys::Array;
-use wasm_bindgen::prelude::*;
-use wasm_bindgen_futures::JsFuture;
-use web_sys::{
-    Blob, BlobEvent, MediaRecorder, MediaRecorderOptions, MediaStream, MediaStreamConstraints,
-    window,
-};
-use futures::FutureExt;
 use std::sync::{Arc, Mutex};
+use wasm_bindgen::prelude::*;
+use web_sys::MediaRecorder;
 
 // This tutorial was used for the general code structure: https://web.dev/articles/media-recording-audio
 #[wasm_bindgen]
@@ -33,10 +28,11 @@ impl Microphone {
     //     //instead use arc mutex, cloneable value, take ownership make changes and update initial var
     //     //wrap mutex in arc, which implements send allowing cloning
     //     do_something.then(|stream| *obj.lock().unwrap() = stream)
-        //let stream = MediaStream::from(stream); //convert to MediaStream object
+    //let stream = MediaStream::from(stream); //convert to MediaStream object
     //}
 
-    fn inner_start(&mut self) -> Result<(), JsValue> {
+    fn inner_start(&mut self) {
+        /*
         // Clear previous data.
         self.audio_chunks = Array::new();
 
@@ -92,9 +88,11 @@ impl Microphone {
                 Err(e) => futures::future::ready(Err(e)),
             }
         })
+        */
     }
 
-    async fn inner_stop(&mut self) -> Result<Vec<u8>, JsValue> {
+    async fn inner_stop(&mut self) {
+        /*
         // Only can run if we are actively recording.
         if let Some(recorder) = *self.media_recorder.lock().unwrap() {
             recorder.stop()?;
@@ -118,20 +116,24 @@ impl Microphone {
         } else {
             Err(JsValue::from_str("No active recording."))
         }
+        */
     }
 
     /*
     Wrappers to avoid non thread safe JSValue, also I didnt want to mess with your Promise::spawn.
     Looks a bit ugly tho, mb better solution available.
     */
-    pub async fn stop(&mut self) -> Result<Vec<u8>, String> {
-        let result = self.inner_stop().await;
+    pub async fn stop(&mut self) {
+        /*let result = self.inner_stop().await;
         result.map_err(|e| e.as_string().unwrap_or("Unknown error".into()))
+        */
     }
 
-    pub async fn start(&mut self) -> Result<(), String> {
+    pub async fn start(&mut self) {
+        /*
         let result = self.inner_start().await;
         result.map_err(|e| e.as_string().unwrap_or("Unknown error".into()))
+        */
     }
 
     pub fn is_recording(&self) -> bool {

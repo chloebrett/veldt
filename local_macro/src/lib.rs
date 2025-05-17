@@ -1,6 +1,6 @@
 use proc_macro::TokenStream;
 use quote::{format_ident, quote};
-use syn::{DeriveInput, Fields, Ident, Type, Field, parse_macro_input};
+use syn::{DeriveInput, Field, Fields, Ident, Type, parse_macro_input};
 
 enum Tag {
     AsType {
@@ -57,7 +57,13 @@ fn extract_tag(field: &Field) -> Tag {
 
 #[proc_macro_derive(
     FromProto,
-    attributes(proto_type_u8, proto_type_u32, proto_optional, proto_enum, proto_repeated)
+    attributes(
+        proto_type_u8,
+        proto_type_u32,
+        proto_optional,
+        proto_enum,
+        proto_repeated
+    )
 )]
 pub fn derive_from_proto(input: TokenStream) -> TokenStream {
     let input = parse_macro_input!(input as DeriveInput);
@@ -130,7 +136,13 @@ pub fn derive_from_proto(input: TokenStream) -> TokenStream {
 
 #[proc_macro_derive(
     IntoProto,
-    attributes(proto_type_u8, proto_type_u32, proto_optional, proto_enum, proto_repeated)
+    attributes(
+        proto_type_u8,
+        proto_type_u32,
+        proto_optional,
+        proto_enum,
+        proto_repeated
+    )
 )]
 pub fn derive_into_proto(input: TokenStream) -> TokenStream {
     let input = parse_macro_input!(input as DeriveInput);

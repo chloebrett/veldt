@@ -1,8 +1,8 @@
 use crate::receiver::ActionReceiver;
 use crate::{Action, FloatField, TypeField, UintField};
-use shared::model::OscillatorConfig;
+use shared::model::Oscillator;
 
-impl ActionReceiver for OscillatorConfig {
+impl ActionReceiver for Oscillator {
     fn apply(&mut self, action: &Action) -> Option<Action> {
         Some(match action {
             Action::SetChild(TypeField::Wave(wave)) => {
