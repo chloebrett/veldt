@@ -6,6 +6,8 @@ use std::hash::Hash;
 use strum::EnumIter;
 use strum::IntoEnumIterator;
 
+/// Windows variants that will appear on the UI.
+// TODO: Move all windows to WindowKind
 #[derive(Hash, Copy, Clone, EnumIter, PartialEq, Eq)]
 pub enum WindowKind {
     Mixer,
@@ -18,6 +20,7 @@ pub enum WindowKind {
     Save,
 }
 
+/// Information about a window needed to render on the UI.
 struct WindowData {
     visible: bool,
     pos: Pos2,
