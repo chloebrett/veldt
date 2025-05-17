@@ -9,25 +9,36 @@ use web_sys::{
     Blob, BlobEvent, MediaRecorder, MediaRecorderOptions, MediaStream, MediaStreamConstraints,
     window,
 };
+use crossbeam_channel::{Receiver, Sender};
 
 // This tutorial was used for the general code structure: https://web.dev/articles/media-recording-audio
 pub struct Microphone {
     stream: Arc<Mutex<Option<MediaStream>>>,
     media_recorder: Arc<Mutex<Option<MediaRecorder>>>,
-    audio_chunks: Array,
+    audio_chunks: Vec<Blob>,
     recording_status: bool,
     recording: Option<Mono<f32>>,
+    tx: Sender<Blob>,
+    rx: Receiver<Blob>,
 }
 
 impl Microphone {
     pub fn new() -> Self {
+        let (tx, rx) = crossbeam_channel::unbounded();
+
         Self {
             stream: Arc::new(Mutex::new(None)),
             media_recorder: Arc::new(Mutex::new(None)),
-            audio_chunks: Array::new(),
+            audio_chunks: vec![],
             recording_status: false,
             recording: None,
+            tx,
+            rx,
         }
+    }
+
+    pub fn blob_count(&self) -> usize {
+        self.audio_chunks.len()
     }
 
     pub fn recording(&self) -> Option<Mono<f32>> {
@@ -46,10 +57,13 @@ impl Microphone {
         self.stream.lock().unwrap().is_some()
     }
 
-    pub fn get_permissions(&mut self) -> Result<(), JsValue> {
-        // Clear previous data.
-        self.audio_chunks = Array::new();
+    pub fn update(&mut self) {
+        while let Ok(blob) = self.rx.try_recv() {
+            self.audio_chunks.push(blob);
+        }
+    }
 
+    pub fn get_permissions(&mut self) -> Result<(), JsValue> {
         // Setup js element to access media devices.
         let window = window().expect("No window found.");
         let media_devices = window
@@ -92,30 +106,29 @@ impl Microphone {
         let options = MediaRecorderOptions::new();
         options.set_mime_type("audio/wav");
 
-        let stream = self.stream.lock().unwrap().take().expect("Expected get_permissions() to have succeeded.");
-        let media_recorder =
-            MediaRecorder::new_with_media_stream_and_media_recorder_options(&stream, &options);
-
-        /*
         // We now add listener to continuously grab audio from mic.
-        let audio_chunks = self.audio_chunks.clone();
+        let tx = self.tx.clone();
         let on_data_available = Closure::wrap(Box::new(move |e: BlobEvent| {
             // Only store if there is actually data.
             let data = e
                 .data()
                 .expect("Should be fine so long as we have a valid blob.");
             if data.size() > 0.0 {
-                audio_chunks.push(&data);
+                tx.try_send(data).unwrap();
             }
         }) as Box<dyn FnMut(_)>);
 
-        media_recorder.expect("IDK").set_ondataavailable(on_data_available.as_ref().unchecked_ref());
-        on_data_available.forget();
+        let stream = self.stream.lock().unwrap().take().expect("Expected get_permissions() to have succeeded.");
+        let media_recorder =
+            MediaRecorder::new_with_media_stream_and_media_recorder_options(&stream, &options).unwrap();
+        
+        let callback = on_data_available.as_ref().dyn_ref();
+        media_recorder.set_ondataavailable(callback);
+        //on_data_available.forget();
 
-        media_recorder.expect("REASON").start();
-        *self.media_recorder.lock().unwrap() = Some(media_recorder.expect("REASON"));
+        media_recorder.start();
+        *self.media_recorder.lock().unwrap() = Some(media_recorder);
         self.recording_status = true;
-        */
     }
 
     pub fn stop(&mut self) {}

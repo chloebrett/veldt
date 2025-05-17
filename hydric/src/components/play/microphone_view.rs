@@ -52,6 +52,8 @@ impl View for MicrophoneView<'_> {
                     self.mic.stop();
                 }
 
+                ui.label(format!("Blob count: {}", self.mic.blob_count()));
+
                 if let Some(recording) = self.mic.recording() {
                     ui.label(format!("Recording exists: {}", recording.len()));
                 }
