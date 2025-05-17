@@ -2,6 +2,7 @@ use crate::model::EffectInstance;
 use crate::pmodel::*;
 use crate::types::Volume;
 use local_macro::{FromProto, IntoProto};
+use std::ops::Deref;
 
 #[derive(Default, Clone, Debug, PartialEq, FromProto, IntoProto)]
 pub struct Mixer {
@@ -44,16 +45,16 @@ impl MatrixCell {
         self.0 = value;
     }
 
-    pub fn deref(&self) -> f32 {
-        self.0
-    }
-
-    pub fn deref_mut(&mut self) -> &mut f32 {
-        &mut self.0
-    }
-
     pub fn new(value: f32) -> Self {
         MatrixCell(value)
+    }
+}
+
+impl Deref for MatrixCell {
+    type Target = f32;
+
+    fn deref(&self) -> &Self::Target {
+        &self.0
     }
 }
 

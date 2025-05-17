@@ -34,14 +34,14 @@ impl<'a, G: Fn()> ModMatrixView<'a, G> {
     }
 }
 
-impl<'a, G: Fn()> View for ModMatrixView<'_, G> {
+impl<G: Fn()> View for ModMatrixView<'_, G> {
     fn ui(&mut self, ui: &mut Ui) {
         let Self {
             matrix,
             ref row_titles,
             ref col_titles,
-            ref store,
-            ref generator_sel,
+            store,
+            generator_sel,
             ref on_release,
         } = *self;
 
@@ -84,7 +84,7 @@ impl<'a, G: Fn()> View for ModMatrixView<'_, G> {
                                 let id = format!("{:?}", (row, col));
                                 let cell_sel = generator_sel.downcast_mod_matrix_cell(row, col);
                                 let value: &MatrixCell = store.select(&cell_sel);
-                                let value = value.deref();
+                                let value = **value;
 
                                 ui.push_id(id, |ui| {
                                     knob(

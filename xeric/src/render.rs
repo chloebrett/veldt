@@ -23,8 +23,10 @@ impl Render for RenderContext {
             .into();
 
         // TODO: use the StoreData from the collab context.
-        let mut store = StoreData::default();
-        store.project = project;
+        let store = StoreData {
+            project,
+            ..StoreData::default()
+        };
 
         let graph = RenderGraph::without_rx(&store);
 

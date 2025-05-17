@@ -89,7 +89,7 @@ impl<G: Fn()> View for SubSynthView<'_, G> {
         let config = self.config;
         let on_release = &self.on_release;
         let gen_sel = self.generator_sel;
-        
+
         ui.horizontal(|ui| {
             ui.vertical(|ui| {
                 for oscillator_id in 0..3 {

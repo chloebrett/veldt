@@ -41,8 +41,10 @@ impl Export for ExportContext {
             .into();
 
         // TODO: use the StoreData from the collab context.
-        let mut store = StoreData::default();
-        store.project = project.clone();
+        let store = StoreData {
+            project: project.clone(),
+            ..StoreData::default()
+        };
 
         let graph = RenderGraph::without_rx(&store);
 
