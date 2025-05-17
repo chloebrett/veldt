@@ -48,7 +48,7 @@ impl<F: Fn(Action), G: FnMut()> View for SaveAs<'_, F, G> {
                 if response.changed() {
                     dispatch(Action::SetChild(TypeField::ProjectName(temp_name)));
                 }
-                
+
                 if ui.button("Save").clicked() {
                     on_click()
                 }
