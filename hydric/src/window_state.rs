@@ -44,23 +44,9 @@ pub enum Window {
     Save,
 }
 
-pub struct WindowStates(HashMap<Window, WindowData>);
+pub struct WindowState2(HashMap<Window, WindowData>);
 
-impl WindowStates {
-    pub fn get_visible(&self, window: Window) -> bool {
-        self.0
-            .get(&window)
-            .expect("Windows should have been initialised.")
-            .visible
-    }
-
-    pub fn set_visible(&mut self, window: Window, visible: bool) {
-        self.0
-            .get_mut(&window)
-            .expect("Windows should have been initialised.")
-            .visible = visible;
-    }
-
+impl WindowState2 {
     pub fn get_mut_visible(&mut self, window: Window) -> &mut bool {
         &mut self
             .0
@@ -75,24 +61,9 @@ impl WindowStates {
             .expect("Windows should have been initialised.")
             .pos
     }
-
-    pub fn set_pos(&mut self, window: Window, pos: Pos2) {
-        self.0
-            .get_mut(&window)
-            .expect("Windows should have been initialised.")
-            .pos = pos
-    }
-
-    pub fn get_mut_pos(&mut self, window: Window) -> &mut Pos2 {
-        &mut self
-            .0
-            .get_mut(&window)
-            .expect("Windows should have been initialised.")
-            .pos
-    }
 }
 
-impl Default for WindowStates {
+impl Default for WindowState2 {
     fn default() -> Self {
         let mut windows = HashMap::new();
         for window in Window::iter() {
@@ -116,7 +87,6 @@ pub struct WindowState {
     pub generators: WindowStateField<GeneratorSelector>,
     pub scale: bool,
     pub sample_tree: bool,
-    pub track_roll: bool,
     pub save: bool,
 }
 
@@ -132,7 +102,6 @@ impl Default for WindowState {
             generators: WindowStateField(HashSet::new()),
             scale: false,
             sample_tree: false,
-            track_roll: false,
             save: false,
         }
     }

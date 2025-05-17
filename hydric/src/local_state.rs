@@ -4,8 +4,6 @@ use std::cell::RefCell;
 use std::collections::HashSet;
 use std::rc::Rc;
 
-use crate::window_state::WindowStates;
-
 type RcOption<T> = Rc<RefCell<Option<T>>>;
 
 #[derive(Default)]
@@ -32,7 +30,6 @@ pub struct LocalState {
 
     pub track_roll_select_enabled: Rc<RefCell<bool>>,
     pub note_roll_select_enabled: Rc<RefCell<bool>>,
-    pub window_state2: WindowStates,
 }
 
 pub trait GetSet<T: Clone> {
