@@ -11,7 +11,7 @@ use std::ffi::OsStr;
 use std::fs::{ReadDir, read_dir};
 use std::io::Error;
 use std::path::{Path, PathBuf};
-use tonic::{async_trait, Status, Response, Request};
+use tonic::{Request, Response, Status, async_trait};
 
 const _PCM_MAX_I16: i16 = 0x7FFF; // 2^15 - 1
 const PCM_MAX_I24: i32 = 0x7FFFFF; // 2^23 - 1

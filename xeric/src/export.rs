@@ -9,7 +9,7 @@ use std::env::current_dir;
 use std::fs::{File, create_dir_all};
 use std::io::{Cursor, Write};
 use std::path::PathBuf;
-use tonic::{async_trait, Status, Response, Request};
+use tonic::{Request, Response, Status, async_trait};
 
 // Exports project to .wav
 pub struct ExportContext;

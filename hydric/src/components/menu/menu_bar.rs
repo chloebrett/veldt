@@ -3,6 +3,7 @@ use crate::{
     promise::{poll, spawn},
     rpc::{export, load_project, load_project_list, save_project},
     view::View,
+    window_state::{WindowKind, WindowState2},
 };
 use egui::{Button, Ui, menu::bar};
 use state::{Action, Store, TypeField};
@@ -12,6 +13,7 @@ use super::{effect::EffectMenuOptions, save_as::SaveAs};
 pub struct MenuBar<'a> {
     store: &'a mut Store,
     window_state: &'a mut WindowState,
+    window_state2: &'a mut WindowState2,
     async_state: &'a mut AsyncState,
 }
 
@@ -19,11 +21,13 @@ impl<'a> MenuBar<'a> {
     pub fn new(
         store: &'a mut Store,
         window_state: &'a mut WindowState,
+        window_state2: &'a mut WindowState2,
         async_state: &'a mut AsyncState,
     ) -> Self {
         Self {
             store,
             window_state,
+            window_state2,
             async_state,
         }
     }
@@ -127,7 +131,10 @@ impl View for MenuBar<'_> {
                 button_with_tick("Generators", &mut self.window_state.generator_list);
                 button_with_tick("Scale", &mut self.window_state.scale);
                 button_with_tick("Samples", &mut self.window_state.sample_tree);
-                button_with_tick("Track Roll", &mut self.window_state.track_roll);
+                button_with_tick(
+                    "Track Roll",
+                    self.window_state2.get_mut_visible(WindowKind::TrackRoll),
+                );
             });
             ui.menu_button("Effects", |ui| {
                 EffectMenuOptions::new(self.store, self.window_state).ui(ui);
@@ -161,9 +168,10 @@ impl View for MenuBar<'_> {
             effect_response.on_hover_ui(|ui| {
                 ui.label("Effects/Mixers");
             });
-            let track_response = ui.add(Button::new("📄").selected(self.window_state.track_roll));
+            let track_visible = self.window_state2.get_mut_visible(WindowKind::TrackRoll);
+            let track_response = ui.add(Button::new("📄").selected(*track_visible));
             if track_response.clicked() {
-                self.window_state.track_roll ^= true;
+                *track_visible = !*track_visible;
             }
             track_response.on_hover_ui(|ui| {
                 ui.label("Track Roll");
