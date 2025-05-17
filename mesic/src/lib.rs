@@ -8,6 +8,7 @@ mod maths;
 mod mixer;
 mod node;
 mod scale;
+mod testing;
 pub mod wave;
 mod wave_cache;
 
