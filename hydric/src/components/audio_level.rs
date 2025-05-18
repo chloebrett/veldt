@@ -101,7 +101,7 @@ impl Widget for AudioLevel<'_> {
             size,
         } = self;
         let range = Rect::from_min_max(pos2(0.0, max_level), pos2(1.0, min_level));
-        // Get the level of audio channels.
+        // Get the level and peak of audio channels.
         let level = player.level();
         let peak = player.peak();
         let InnerResponse { inner: _, response } = Frame::canvas(ui.style()).show(ui, |ui| {
