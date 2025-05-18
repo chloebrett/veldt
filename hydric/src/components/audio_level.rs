@@ -29,6 +29,7 @@ impl<'a> AudioLevel<'a> {
         &self,
         range: Rect,
         level: f32,
+        peak: f32,
         left_padding: f32,
         right_padding: f32,
     ) -> Shape {
@@ -39,15 +40,15 @@ impl<'a> AudioLevel<'a> {
             (range.size().y.abs() - (top_padding + bottom_padding)) / range.size().y.abs();
         // Marker will be twice this height.
         let marker_height = 0.5;
-        let channel_rect = |top, bottom| {
+        let channel_rect = |top: f32, bottom: f32| {
             Rect::from_x_y_ranges(
                 Rangef {
                     min: range.left() + left_padding,
                     max: range.right() - right_padding,
                 },
                 Rangef {
-                    min: top * padded_y_size - top_padding,
-                    max: bottom * padded_y_size - top_padding,
+                    min: top.clamp(range.bottom(), range.top()) * padded_y_size - top_padding,
+                    max: bottom.clamp(range.bottom(), range.top()) * padded_y_size - top_padding,
                 },
             )
         };
@@ -66,14 +67,21 @@ impl<'a> AudioLevel<'a> {
             ),
             // Peak marker.
             Shape::rect_filled(
-                channel_rect(level - marker_height, level + marker_height),
+                channel_rect(peak + marker_height, peak - marker_height),
                 CornerRadius::same(0),
                 Color32::BLACK,
             ),
         ])
     }
 
-    fn create_level_shape(&self, range: Rect, left_level: f32, right_level: f32) -> Shape {
+    fn create_level_shape(
+        &self,
+        range: Rect,
+        left_level: f32,
+        right_level: f32,
+        left_peak: f32,
+        right_peak: f32,
+    ) -> Shape {
         // Divide range for left and right channels.
         let split_range_size = range.size() * vec2(0.5, 1.0);
         let left_range = Rect::from_min_size(range.left_top(), split_range_size);
@@ -84,8 +92,8 @@ impl<'a> AudioLevel<'a> {
         // Padding on left and right of channels.
         let padding = 0.2;
         Shape::Vec(vec![
-            self.create_channel_shape(left_range, left_level, padding, padding * 0.5),
-            self.create_channel_shape(right_range, right_level, padding * 0.5, padding),
+            self.create_channel_shape(left_range, left_level, left_peak, padding, padding * 0.5),
+            self.create_channel_shape(right_range, right_level, right_peak, padding * 0.5, padding),
         ])
     }
 }
@@ -101,9 +109,12 @@ impl Widget for AudioLevel<'_> {
         let range = Rect::from_min_max(pos2(0.0, max_level), pos2(1.0, min_level));
         // Get the level of audio channels.
         let [left_level, right_level] = player.level();
+        let [left_peak, right_peak] = player.peak();
         let InnerResponse { inner: _, response } = Frame::canvas(ui.style()).show(ui, |ui| {
             let (response, painter) = ui.allocate_painter(size, Sense::all());
-            let level_shapes = self.create_level_shape(range, left_level, right_level);
+            let level_shapes =
+                self.create_level_shape(range, left_level, right_level, left_peak, right_peak);
+            log::debug!("{:?}", level_shapes);
             let to_screen = RectTransform::from_to(range, response.rect);
             // Add background shape.
             painter.add(Shape::rect_filled(

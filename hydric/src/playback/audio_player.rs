@@ -5,6 +5,8 @@ use super::{
 use cpal::traits::{DeviceTrait, HostTrait, StreamTrait};
 use cpal::{OutputCallbackInfo, Stream};
 use crossbeam_channel::{Receiver, Sender};
+use dasp_envelope::Detector;
+use dasp_envelope::detect::Peak;
 use dasp_frame::Stereo;
 use log::error;
 use mesic::graph::RenderGraph;
@@ -18,6 +20,8 @@ use wasm_thread::JoinHandle;
 const RECENT_AUDIO_SECONDS: f32 = 5.0;
 const RECENT_AUDIO_SAMPLE_COUNT: usize = (RECENT_AUDIO_SECONDS * SAMPLE_RATE as f32) as usize;
 const RMS_BUFFER_SAMPLES: usize = 1024;
+const PEAK_AUDIO_SECONDS: f32 = 1.0;
+const PEAK_RELEASE_SAMPLES: usize = (PEAK_AUDIO_SECONDS * SAMPLE_RATE as f32) as usize;
 
 pub struct AudioPlayer {
     // The render graph, if we haven't given it to the processing thread yet.
@@ -74,6 +78,12 @@ pub struct AudioPlayer {
     // Root Mean Square of most recent window in audio.
     // Read with `level()`
     rms: dasp_rms::Rms<Stereo<f32>, [Stereo<f32>; RMS_BUFFER_SAMPLES]>,
+
+    // Detector to keep track of recent peaks in audio.
+    peak_detector: Detector<Stereo<f32>, Peak>,
+    // Peak RMS from most recent window in audio.
+    // Read with peak()
+    peak: Stereo<f32>,
 }
 
 impl AudioPlayer {
@@ -107,6 +117,8 @@ impl AudioPlayer {
             buffer_delay: 0,
             output_delay: Arc::new(Mutex::new(0)),
             rms: dasp_rms::Rms::new(rms_buffer),
+            peak_detector: Detector::peak(/*attack_frames*/ 0.0, PEAK_RELEASE_SAMPLES as f32),
+            peak: Stereo::default(),
         }
     }
 
@@ -206,7 +218,8 @@ impl AudioPlayer {
         }
 
         while let Ok(update) = self.recent_rx.try_recv() {
-            self.rms.next(update);
+            let next = self.rms.next(update);
+            self.peak = self.peak_detector.next(next);
             self.recent_buf.push(update);
             self.recent_buf_offset += 1;
         }
@@ -327,8 +340,13 @@ impl AudioPlayer {
         self.send(PlaybackMessage::Seek(self.position));
     }
 
-    pub fn level(&self) -> [f32; 2] {
+    pub fn level(&self) -> Stereo<f32> {
         let [left, right] = self.rms.current();
+        [to_db(left), to_db(right)]
+    }
+
+    pub fn peak(&self) -> Stereo<f32> {
+        let [left, right] = self.peak;
         [to_db(left), to_db(right)]
     }
 }
