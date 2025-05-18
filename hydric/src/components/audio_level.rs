@@ -1,3 +1,4 @@
+use dasp_frame::Stereo;
 use egui::{
     Color32, CornerRadius, Frame, Rect, Response, Sense, Shape, Ui, Vec2, Widget,
     emath::RectTransform, pos2, vec2,
@@ -74,14 +75,7 @@ impl<'a> AudioLevel<'a> {
         ])
     }
 
-    fn create_level_shape(
-        &self,
-        range: Rect,
-        left_level: f32,
-        right_level: f32,
-        left_peak: f32,
-        right_peak: f32,
-    ) -> Shape {
+    fn create_level_shape(&self, range: Rect, level: Stereo<f32>, peak: Stereo<f32>) -> Shape {
         // Divide range for left and right channels.
         let split_range_size = range.size() * vec2(0.5, 1.0);
         let left_range = Rect::from_min_size(range.left_top(), split_range_size);
@@ -92,8 +86,8 @@ impl<'a> AudioLevel<'a> {
         // Padding on left and right of channels.
         let padding = 0.2;
         Shape::Vec(vec![
-            self.create_channel_shape(left_range, left_level, left_peak, padding, padding * 0.5),
-            self.create_channel_shape(right_range, right_level, right_peak, padding * 0.5, padding),
+            self.create_channel_shape(left_range, level[0], peak[0], padding, padding * 0.5),
+            self.create_channel_shape(right_range, level[0], peak[0], padding * 0.5, padding),
         ])
     }
 }
@@ -108,12 +102,11 @@ impl Widget for AudioLevel<'_> {
         } = self;
         let range = Rect::from_min_max(pos2(0.0, max_level), pos2(1.0, min_level));
         // Get the level of audio channels.
-        let [left_level, right_level] = player.level();
-        let [left_peak, right_peak] = player.peak();
+        let level = player.level();
+        let peak = player.peak();
         let InnerResponse { inner: _, response } = Frame::canvas(ui.style()).show(ui, |ui| {
             let (response, painter) = ui.allocate_painter(size, Sense::all());
-            let level_shapes =
-                self.create_level_shape(range, left_level, right_level, left_peak, right_peak);
+            let level_shapes = self.create_level_shape(range, level, peak);
             log::debug!("{:?}", level_shapes);
             let to_screen = RectTransform::from_to(range, response.rect);
             // Add background shape.
