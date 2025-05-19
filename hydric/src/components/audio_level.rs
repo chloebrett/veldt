@@ -107,7 +107,6 @@ impl Widget for AudioLevel<'_> {
         let InnerResponse { inner: _, response } = Frame::canvas(ui.style()).show(ui, |ui| {
             let (response, painter) = ui.allocate_painter(size, Sense::all());
             let level_shapes = self.create_level_shape(range, level, peak);
-            log::debug!("{:?}", level_shapes);
             let to_screen = RectTransform::from_to(range, response.rect);
             // Add background shape.
             painter.add(Shape::rect_filled(
