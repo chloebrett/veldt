@@ -307,12 +307,7 @@ impl SequencerObject<PlacedTrack> for PlacedTrack {
         }
     }
 
-    fn delete_selected(
-        _ui: &mut Ui,
-        store: &Store,
-        local_state: &LocalState,
-        _parent_index: Option<usize>,
-    ) {
+    fn delete_selected(store: &Store, local_state: &LocalState, _parent_index: Option<usize>) {
         local_state
             .active_track_placement
             .update(|placement| match placement {
