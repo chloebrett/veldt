@@ -86,19 +86,19 @@ impl View for FrequencyDisplay<'_> {
                 .filter(|(index, _it)| *index < FFT_SAMPLE_SIZE / 2)
                 .map(|(_, it)| it as f32)
                 .collect();
-            // Pass reponses to the peak detector.
+            // Pass responses to the peak detector.
             // Responses must be in linear as log10(0.0) will produce NaNs.
             let peak_responses = peak.next(responses.clone().try_into().unwrap());
             let points: PlotPoints = responses
                 .into_iter()
                 .enumerate()
-                // Convert resopnses to dB.
+                // Convert responses to dB.
                 .map(|(index, it)| [freq_window * index as f64, to_db(it) as f64])
                 .collect();
             let peak_points: PlotPoints = peak_responses
                 .into_iter()
                 .enumerate()
-                // Convert resopnses to dB.
+                // Convert responses to dB.
                 .map(|(index, it)| [freq_window * index as f64, to_db(it) as f64])
                 .collect();
 

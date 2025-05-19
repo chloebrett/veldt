@@ -1,3 +1,7 @@
+mod fft_detector;
+
+pub use fft_detector::*;
+
 use rustfft::{
     Fft, FftDirection,
     algorithm::Radix4,
@@ -20,27 +24,6 @@ pub fn fft(signal: Vec<f32>) -> Vec<f32> {
         .iter()
         .map(|value| value.abs() / signal_length as f32)
         .collect()
-}
-
-/// Group FFT results into bins based on frequency log2 value.
-/// This makes responses more readable with higher resolution on lower frequencies.
-// TODO improve this implementation so that it calculates the log exponent needed to create bin
-// sizes that perfect fill up the response space.
-pub fn make_log_buckets(response: Vec<f32>, bins: usize) -> Vec<f32> {
-    // Halve response as FFT can only discern signal responses for `signal.len()/2` windows.
-    let positive_response = response[0..response.len() / 2].to_vec();
-    let mut output = vec![0f32; bins];
-    for (index, value) in positive_response.iter().enumerate() {
-        // Add 2 to index so that 0th and 1st response are grouped together.
-        // Subtract 1 from bin to start at bin index == 0.
-        let bin = ((index + 2).ilog2() - 1) as usize;
-        if bin < bins {
-            output[bin] += value
-        } else {
-            break;
-        }
-    }
-    output
 }
 
 /// A filter to improve the results of FFT when applied before transformation.
