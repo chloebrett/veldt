@@ -205,7 +205,7 @@ impl<'a, T: SequencerObject<T>> Sequencer<'a, T> {
         to_sequencer: RectTransform,
         edit_object: &impl Fn(usize, Action),
     ) -> bool {
-        let object = self.objects[index];
+        let object = &self.objects[index];
         let drag_pos = response.interact_pointer_pos();
         if let Some(drag_pos) = drag_pos {
             let scaled_pos = drag_pos.transform(to_sequencer.inverse()).clamp(
