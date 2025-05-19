@@ -10,6 +10,8 @@ pub enum FloatField {
     Duration,
     Pan,
     Detune,
+    UnisonDetune,
+    OscillatorDetune,
     DelayMs,
     Wet,
     Fc,
