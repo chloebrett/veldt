@@ -1,5 +1,5 @@
 use super::{
-    KeyView, NoteRoll, NoteView, SamplePlacementView, TrackPlacementView, TrackRoll,
+    KeyView, NoteRoll, NoteView, PlacementView, TrackRoll,
     effect::{EffectView, MixerView},
     generator::{GeneratorView, generators_control},
     menu::MenuBar,
@@ -164,8 +164,7 @@ impl View for App {
 
         NoteView::new(&self.store, &self.local_state).ui(ui);
         NoteRoll::new(&self.store, &self.local_state, &mut self.player).ui(ui);
-        TrackPlacementView::new(&self.store, &self.local_state).ui(ui);
-        SamplePlacementView::new(&self.store, &self.local_state).ui(ui);
+        PlacementView::new(&self.store, &self.local_state).ui(ui);
 
         SampleTreeView::new(
             &self.store,

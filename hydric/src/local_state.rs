@@ -10,16 +10,16 @@ type RcOption<T> = Rc<RefCell<Option<T>>>;
 pub struct LocalState {
     pub active_track: RcOption<TrackSelector>,
     pub active_note: RcOption<usize>,
-    pub active_track_placement: RcOption<usize>,
+    pub active_placement: RcOption<usize>,
 
     pub selected_notes: Rc<RefCell<HashSet<usize>>>,
-    pub selected_track_placements: Rc<RefCell<HashSet<usize>>>,
+    pub selected_placements: Rc<RefCell<HashSet<usize>>>,
 
     pub mixer_edit_state: Rc<RefCell<bool>>,
 
     pub note_window: Rc<RefCell<bool>>,
     pub note_roll_window: Rc<RefCell<bool>>,
-    pub track_placement_window: Rc<RefCell<bool>>,
+    pub placement_window: Rc<RefCell<bool>>,
 
     pub drag_cursor_delta: RcOption<Pos2>,
 
