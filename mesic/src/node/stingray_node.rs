@@ -2,7 +2,7 @@ use super::pan_multipliers;
 use crate::SAMPLE_RATE;
 use crate::consts::CHANNEL_COUNT;
 use crate::envelope::EnvelopeGenerator;
-use crate::eq::eq_filter;
+use crate::eq::{ApplyFilter, eq_filter};
 use crate::graph::{NoteEventType, ProcessContext};
 use crate::maths::linspace;
 use crate::wave::detune_multiplier;
@@ -10,7 +10,7 @@ use crate::wave_cache::{WaveCache, WaveKey};
 use dasp_frame::Stereo;
 use dasp_graph::{Buffer, Input, Node};
 use shared::model::{
-    AntiAliasingMode, EqConfig, Generator, GeneratorInstance, GeneratorMeta, Oscillator, PitchName,
+    AntiAliasingMode, Generator, GeneratorInstance, GeneratorMeta, Oscillator, PitchName,
     StingrayConfig,
 };
 use shared::types::{Freq, KnobPosition, Volume};
@@ -28,6 +28,8 @@ struct NodeState {
     config: StingrayConfig,
     meta: GeneratorMeta,
     voice: Voice,
+    filter_left: Box<dyn ApplyFilter + Send>,
+    filter_right: Box<dyn ApplyFilter + Send>,
 }
 
 struct Voice {
@@ -50,6 +52,8 @@ impl Default for NodeState {
                 egs: [egs[0].clone(), egs[1].clone(), egs[2].clone()],
                 sources: None,
             },
+            filter_left: eq_filter(&config.lpf),
+            filter_right: eq_filter(&config.lpf),
         }
     }
 }
@@ -63,6 +67,15 @@ impl NodeState {
         } = &payload.store.select(&selector)
         {
             if self.config != *config {
+                if self.config.lpf != config.lpf {
+                    // TODO: don't re-create the whole filter, just update
+                    // the coefficients. Keep the ring buffer as is.
+                    // ApplyFilter should have an update() method that takes some kind of config
+                    // object.
+                    self.filter_left = eq_filter(&config.lpf);
+                    self.filter_right = eq_filter(&config.lpf);
+                }
+
                 self.config = config.clone();
             }
             if self.meta != *meta {
@@ -92,12 +105,6 @@ impl StingrayNode {
         for x in buffer.iter_mut() {
             *x *= pan_mult * volume;
         }
-    }
-
-    // TODO: logic is repeated from EqNode slightly
-    fn apply_low_pass_filter(buffer: &mut Buffer, config: EqConfig) {
-        let mut filter = eq_filter(&config);
-        filter.apply(buffer);
     }
 }
 
@@ -177,8 +184,10 @@ impl Node<ProcessContext> for StingrayNode {
             out_buf.copy_from_slice(&buffers[channel_index]);
             let meta = &self.state.meta;
             Self::apply_volume_and_pan(out_buf, channel_index, meta.volume, meta.pan);
-            Self::apply_low_pass_filter(out_buf, self.state.config.lpf.clone());
         }
+
+        self.state.filter_left.apply(&mut output[0]);
+        self.state.filter_right.apply(&mut output[1]);
     }
 }
 
@@ -229,7 +238,8 @@ impl StingrayWaveSource {
 
             let key = WaveKey {
                 kind: osc.wave,
-                aa: AntiAliasingMode::Off,
+                // Always use additive anti-aliasing, it sounds much better for square/saw waves.
+                aa: AntiAliasingMode::Additive,
                 freq: freq.into(),
             };
 

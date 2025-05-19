@@ -128,7 +128,7 @@ impl<F: Fn(Action), G: Fn()> View for StingrayOscillatorView<'_, F, G> {
                         detune_coarse as f32,
                         |it| {
                             dispatch(Action::SetFloat(
-                                FloatField::Detune,
+                                FloatField::OscillatorDetune,
                                 it * 100.0 + detune_fine,
                             ))
                         },
@@ -145,7 +145,7 @@ impl<F: Fn(Action), G: Fn()> View for StingrayOscillatorView<'_, F, G> {
                         detune_fine,
                         |it| {
                             dispatch(Action::SetFloat(
-                                FloatField::Detune,
+                                FloatField::OscillatorDetune,
                                 detune_coarse as f32 * 100.0 + it,
                             ))
                         },
@@ -183,7 +183,7 @@ impl<F: Fn(Action), G: Fn()> View for StingrayOscillatorView<'_, F, G> {
                         ui,
                         "Unison Detune",
                         config.unison_detune,
-                        |it| dispatch(Action::SetFloat(FloatField::Detune, it)),
+                        |it| dispatch(Action::SetFloat(FloatField::UnisonDetune, it)),
                         0.0..=100.0,
                         0.0,
                         on_release,
