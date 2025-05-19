@@ -108,6 +108,7 @@ impl<'a> AudioLevel<'a> {
         let (left_range, right_range) = range.split_left_right_at_fraction(0.5);
         // Padding on left and right of channels.
         let padding = 0.2 * range.size().x;
+        // Add L and R labels to channels.
         let left_label = self.create_channel_label(
             ui,
             to_screen,
@@ -137,8 +138,8 @@ impl<'a> AudioLevel<'a> {
         let (text_range, line_range) = range.split_left_right_at_fraction(0.85);
         let shapes: Vec<Shape> = (range.bottom() as i32..range.top() as i32)
             .step_by(10)
-            .map(|it| {
-                let text: WidgetText = format!("{it}").into();
+            .map(|level| {
+                let text: WidgetText = format!("{level}").into();
                 let galley = text.into_galley_impl(
                     ui.ctx(),
                     ui.style(),
@@ -148,19 +149,16 @@ impl<'a> AudioLevel<'a> {
                 );
                 // Offset pos so text appears wtih value in middle.
                 // TODO: Understand this better so it can be properly aligned.
-                // 0.66 is what makes it look like the centre but why?
-                let half_galley_height = galley.rect.transform(to_screen.inverse()).size().y * 0.66;
-                let text_pos = pos2(
-                    text_range.left() + left_padding,
-                    it as f32 - half_galley_height,
-                );
+                // 0.66 * galley rect height is what makes it look like the centre but why?
+                let offset = galley.rect.transform(to_screen.inverse()).size().y.abs() * 0.66;
+                let text_pos = pos2(text_range.left() + left_padding, level as f32 + offset);
                 Shape::Vec(vec![
                     TextShape::new(text_pos, galley, ui.visuals().text_color()).into(),
                     // Line to indicate level in line with text.
                     Shape::line(
                         vec![
-                            pos2(line_range.left(), it as f32),
-                            pos2(line_range.right() - right_padding, it as f32),
+                            pos2(line_range.left(), level as f32),
+                            pos2(line_range.right() - right_padding, level as f32),
                         ],
                         Stroke::new(1.0, Color32::from_white_alpha(32)),
                     ),
@@ -205,7 +203,7 @@ impl Widget for AudioLevel<'_> {
             painter.add(Shape::rect_filled(
                 response.rect,
                 CornerRadius::same(0),
-                Color32::from_white_alpha(8),
+                Color32::from_white_alpha(4),
             ));
             painter.add(
                 text_shapes
