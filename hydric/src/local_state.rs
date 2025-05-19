@@ -32,7 +32,7 @@ pub struct LocalState {
     pub track_roll_select_enabled: Rc<RefCell<bool>>,
     pub note_roll_select_enabled: Rc<RefCell<bool>>,
 
-    pub peak_frequency_response: Rc<RefCell<FftDetector>>,
+    pub peak_frequency_response: Rc<RefCell<FftDetector<f32>>>,
 }
 
 pub trait GetSet<T: Clone> {
