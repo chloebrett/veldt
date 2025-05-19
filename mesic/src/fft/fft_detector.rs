@@ -7,6 +7,9 @@ use crate::{FFT_SAMPLE_SIZE, consts::FFT_PEAK_RELEASE_FRAMES};
 
 const HALF_FFT_SAMPLE_SIZE: usize = FFT_SAMPLE_SIZE / 2;
 
+/// Keep track of max FFT response from signal.
+/// Extension of `dasp_envelope::Detector` for detecting over any size arrays.
+/// `Detector` limits max frame length to [S; 32].
 pub struct FftDetector<F: Frame> {
     detectors: [Detector<F, Peak>; HALF_FFT_SAMPLE_SIZE],
 }
