@@ -6,6 +6,7 @@ pub const NYQUIST: i32 = SAMPLE_RATE / 2;
 pub const SECONDS_PER_MINUTE: f32 = 60.0;
 pub const MS_PER_SECOND: f32 = 1000.0;
 pub const FFT_SAMPLE_SIZE: usize = 1024;
+pub const FFT_PEAK_RELEASE_FRAMES: f32 = 200.0;
 pub const CHANNEL_COUNT: usize = 2;
 
 pub const RECIP_PI: f32 = PI.recip();

@@ -1,4 +1,5 @@
 use egui::Pos2;
+use mesic::FftDetector;
 use state::TrackSelector;
 use std::cell::RefCell;
 use std::collections::HashSet;
@@ -30,6 +31,8 @@ pub struct LocalState {
 
     pub track_roll_select_enabled: Rc<RefCell<bool>>,
     pub note_roll_select_enabled: Rc<RefCell<bool>>,
+
+    pub peak_frequency_response: Rc<RefCell<FftDetector>>,
 }
 
 pub trait GetSet<T: Clone> {

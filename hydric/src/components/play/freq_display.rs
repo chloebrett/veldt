@@ -1,4 +1,4 @@
-use crate::{playback::AudioPlayer, view::View};
+use crate::{local_state::LocalState, playback::AudioPlayer, view::View};
 use egui::{
     Color32, Ui,
     cache::{ComputerMut, FrameCache},
@@ -16,11 +16,15 @@ use std::cmp::max;
 
 pub struct FrequencyDisplay<'a> {
     player: &'a AudioPlayer,
+    local_state: &'a LocalState,
 }
 
 impl<'a> FrequencyDisplay<'a> {
-    pub fn new(player: &'a AudioPlayer) -> Self {
-        FrequencyDisplay { player }
+    pub fn new(player: &'a AudioPlayer, local_state: &'a LocalState) -> Self {
+        FrequencyDisplay {
+            player,
+            local_state,
+        }
     }
 
     /// Create frequency display shapes synced with playing audio.
@@ -64,6 +68,7 @@ impl ComputerMut<FrequencyDisplayKey, Vec<f32>> for FrequencyDisplayComputer {
 impl View for FrequencyDisplay<'_> {
     fn ui(&mut self, ui: &mut Ui) {
         let audio = self.player.recent_buf().iter();
+        let mut peak = self.local_state.peak_frequency_response.borrow_mut();
 
         // Note: only visualising the left channel.
         // TODO: decide how to visualise both left and right.
@@ -74,15 +79,32 @@ impl View for FrequencyDisplay<'_> {
         let mut plot_shapes = vec![];
         if let Some(response) = self.render_display(ui, ordered_audio) {
             let freq_window = SAMPLE_RATE as f64 / FFT_SAMPLE_SIZE as f64;
-            let points: PlotPoints = response
+            let responses: Vec<f32> = response
                 .into_iter()
                 .enumerate()
                 // Only keep first half of results.
                 .filter(|(index, _it)| *index < FFT_SAMPLE_SIZE / 2)
-                // Take log of values to make dB.
+                .map(|(_, it)| it as f32)
+                .collect();
+            // Pass reponses to the peak detector.
+            // Responses must be in linear as log10(0.0) will produce NaNs.
+            let peak_responses = peak.next(responses.clone().try_into().unwrap());
+            let points: PlotPoints = responses
+                .into_iter()
+                .enumerate()
+                // Convert resopnses to dB.
                 .map(|(index, it)| [freq_window * index as f64, to_db(it) as f64])
                 .collect();
-            plot_shapes.push(Line::new("Response", points).color(Color32::WHITE))
+            let peak_points: PlotPoints = peak_responses
+                .into_iter()
+                .enumerate()
+                // Convert resopnses to dB.
+                .map(|(index, it)| [freq_window * index as f64, to_db(it) as f64])
+                .collect();
+
+            plot_shapes
+                .push(Line::new("Response", peak_points).color(Color32::from_white_alpha(16)));
+            plot_shapes.push(Line::new("Response", points).color(Color32::WHITE));
         };
         // TODO: investigate logarithmic x axis.
         Plot::new("Frequency Response")
