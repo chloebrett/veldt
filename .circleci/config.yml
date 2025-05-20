@@ -5,6 +5,7 @@ jobs:
   test-rust:
     docker:
       - image: cimg/rust:1.87.0
+    resource_class: small
     steps:
       - checkout
       - restore_cache:
