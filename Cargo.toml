@@ -11,4 +11,4 @@ members = [
     "experimental/threads",
     "experimental/rng",
 ]
-resolver = "2"
+resolver = "3"

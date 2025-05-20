@@ -10,27 +10,25 @@ jobs:
       - restore_cache:
           key: cargo-{{ checksum "Cargo.lock" }}
       - run:
-          command: cargo test
+          name: check-format
+          command: cargo fmt --check
+      - run:
+          name: test-shared
+          command: cargo test -p shared
+      - run:
+          name: test-mesic
+          command: cargo test -p mesic
+      - run:
+          name: test-state
+          command: cargo test -p state
+      - run:
+          name: test-xeric
+          command: cargo test -p xeric
       - save_cache:
           key: cargo-{{ checksum "Cargo.lock" }}
           paths:
             - ~/.cargo
-  deploy:
-    # This is an example deploy job, not actually used by the workflow
-    docker:
-      - image: cimg/base:stable
-    steps:
-      # Replace this with steps to deploy to users
-      - run:
-          name: deploy
-          command: '#e.g. ./deploy.sh'
-      - run:
-          name: found github actions config
-          command: ':'
 workflows:
   build-and-test:
     jobs:
       - test-rust
-    # - deploy:
-    #     requires:
-    #       - test-rust
