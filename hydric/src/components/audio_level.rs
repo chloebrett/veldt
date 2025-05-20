@@ -27,8 +27,9 @@ impl<'a> AudioLevel<'a> {
         }
     }
 
-    /// Convert a level from dB to between 0-1 using on a peicewise function.
+    /// Convert a level from dB to a [0, 1] using a peicewise function.
     /// Spreads out dB closer to 0 and condenses smaller dB.
+    /// Function is continuous but uses different gradients over different ranges.
     /// 0 is top of the level, 1 is the bottom.
     // TODO: Can this be better generalised?
     fn convert_level(&self, level: f32) -> f32 {
