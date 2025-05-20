@@ -21,9 +21,31 @@ impl<'a> AudioLevel<'a> {
     pub fn new(player: &'a AudioPlayer) -> Self {
         Self {
             player,
-            min_level: -60.0,
-            max_level: 6.0,
+            min_level: -100.0,
+            max_level: 10.0,
             size: vec2(50.0, 200.0),
+        }
+    }
+
+    /// Convert a level from dB to between 0-1 based on a peicewise function.
+    /// Spreads out dB closer to 0 and condenses smaller dB.
+    /// 0 is top of the level, 1 is the bottom.
+    // TODO: Can this be better generalised?
+    fn convert_level(&self, level: f32) -> f32 {
+        if level < -100.0 {
+            // Smaller signals clipped at bottom of level.
+            1.0
+        } else if level < -50.0 {
+            (300.0 - level) / 400.0
+        } else if level < -30.0 {
+            (90.0 - level) / 160.0
+        } else if level < -10.0 {
+            (30.0 - level) / 80.0
+        } else if level < 10.0 {
+            (10.0 - level) / 40.0
+        } else {
+            // Larger signals clipped at top of level.
+            0.0
         }
     }
 
@@ -35,7 +57,7 @@ impl<'a> AudioLevel<'a> {
         right_padding: f32,
     ) -> Shape {
         // Marker will be twice this height.
-        let marker_height = 0.5;
+        let marker_height = 0.01;
         let channel_rect = |top, bottom| {
             Rect::from_x_y_ranges(
                 Rangef {
@@ -112,13 +134,13 @@ impl<'a> AudioLevel<'a> {
         let left_label = self.create_channel_label(
             ui,
             to_screen,
-            left_range.center_bottom() + vec2(padding * 0.25, -2.5),
+            left_range.center_bottom() + vec2(padding * 0.25, 0.05),
             "L".into(),
         );
         let right_label = self.create_channel_label(
             ui,
             to_screen,
-            right_range.center_bottom() + vec2(0.0 - padding * 0.25, -2.5),
+            right_range.center_bottom() + vec2(0.0 - padding * 0.25, 0.05),
             "R".into(),
         );
         Shape::Vec(vec![
@@ -136,14 +158,17 @@ impl<'a> AudioLevel<'a> {
         let right_padding = 0.0;
         // Divide range for text and level line.
         let (text_range, line_range) = range.split_left_right_at_fraction(0.85);
-        let label_step = 10;
-        let shapes: Vec<Shape> = (range.bottom() as i32..=range.top() as i32)
-            .filter(|&level| level % label_step == 0 || level == range.top() as i32)
-            .map(|level| {
-                let text: WidgetText = if level > 0 {
-                    format!("+{level}").into()
+        let text_markers = [self.max_level as i32, 5, 0, -5, -10, -20, -30, -50, -100];
+        let shapes: Vec<_> = text_markers
+            .iter()
+            .map(|&marker| {
+                let level = self.convert_level(marker as f32) as f32;
+                let text: WidgetText = if marker > 0 {
+                    format!("+{marker}").into()
+                } else if marker == -100 {
+                    "-∞".into()
                 } else {
-                    format!("{level}").into()
+                    format!("{marker}").into()
                 };
                 let galley = text.into_galley_impl(
                     ui.ctx(),
@@ -156,7 +181,7 @@ impl<'a> AudioLevel<'a> {
                 // TODO: Understand this better so it can be properly aligned.
                 // 0.66 * galley rect height is what makes it look like the centre but why?
                 let offset = galley.rect.transform(to_screen.inverse()).size().y.abs() * 0.66;
-                let text_pos = pos2(text_range.left() + left_padding, level as f32 + offset);
+                let text_pos = pos2(text_range.left() + left_padding, level as f32 - offset);
                 Shape::Vec(vec![
                     TextShape::new(text_pos, galley, ui.visuals().text_color()).into(),
                     // Line to indicate level in line with text.
@@ -182,19 +207,26 @@ impl Widget for AudioLevel<'_> {
             max_level,
             size,
         } = self;
-        let range = Rect::from_min_max(pos2(0.0, max_level), pos2(1.0, min_level));
+        let range = Rect::from_min_max(
+            // Convert max and min level to set y-range to [0, 1].
+            pos2(0.0, self.convert_level(max_level)),
+            pos2(1.0, self.convert_level(min_level)),
+        );
         // Aesthetic padding around channel shapes top and bottom.
-        let top_padding = 5.0;
-        let bottom_padding = 10.0;
+        let top_padding = 0.05;
+        let bottom_padding = 0.1;
         let padding_transform = RectTransform::from_to(
             range,
             Rect::from_min_max(
-                pos2(range.left(), range.top() - top_padding),
-                pos2(range.right(), range.bottom() + bottom_padding),
+                pos2(range.left(), range.top() + top_padding),
+                pos2(range.right(), range.bottom() - bottom_padding),
             ),
         );
         // Get the level of audio channels.
         let [left_level, right_level] = player.level();
+        // Convert levels to [0, 1] range.
+        let left_level = self.convert_level(left_level);
+        let right_level = self.convert_level(right_level);
         let InnerResponse { inner: _, response } = Frame::canvas(ui.style()).show(ui, |ui| {
             let (response, painter) = ui.allocate_painter(size, Sense::all());
             let to_screen = RectTransform::from_to(range, response.rect);
