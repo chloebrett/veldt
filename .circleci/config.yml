@@ -13,12 +13,72 @@ jobs:
       - run:
           name: check-format
           command: cargo fmt --check
+
+        # Restore all caches
+      - restore_cache:
+          keys:
+            - cargo-deps-{{ checksum "Cargo.lock" }}
+            - sys-deps-{{ checksum ".circleci/install-deps.sh" }}
+            - wasm-tools-v0.2.87
+            - rustup-components-{{ checksum ".circleci/setup-rust.sh" }}
+      
+      # Install Rust components
+      - run:
+          name: Install nightly rustfmt
+          command: |
+            if [ ! -d ~/.rustup/toolchains/nightly-x86_64-unknown-linux-gnu ]; then
+              rustup toolchain install nightly --component rustfmt --no-self-update
+              rustup set profile minimal
+            fi
+      
+      # Install system dependencies (protobuf)
+      - run:
+          name: Install system dependencies
+          command: |
+            if ! command -v protoc &> /dev/null; then
+              sudo apt-get update
+              sudo apt-get install -y protobuf-compiler
+              sudo apt-get clean
+            fi
+      
+      # Install wasm-bindgen-cli
+      - run:
+          name: Install wasm tools
+          command: |
+            if ! command -v wasm-bindgen &> /dev/null || \
+               [ "$(wasm-bindgen --version | cut -d' ' -f2)" != "0.2.87" ]; then
+              cargo install wasm-bindgen-cli --version 0.2.87 --locked
+            fi
+      
+      # Save all caches
+      - save_cache:
+          key: rustup-components-{{ checksum ".circleci/setup-rust.sh" }}
+          paths:
+            - ~/.rustup/toolchains/nightly-x86_64-unknown-linux-gnu
+            - ~/.rustup/settings.toml
+      
+      - save_cache:
+          key: sys-deps-{{ checksum ".circleci/install-deps.sh" }}
+          paths:
+            - /usr/bin/protoc
+            - /usr/include/google/protobuf
+      
+      - save_cache:
+          key: wasm-tools-v0.2.87
+          paths:
+            - /usr/local/cargo/bin/wasm-bindgen*
+            - /usr/local/cargo/.crates*
+      
+      - save_cache:
+          key: cargo-deps-{{ checksum "Cargo.lock" }}
+          paths:
+            - /usr/local/cargo/registry
+            - /usr/local/cargo/git
+            - target
+
       - run:
           name: test-shared
-          command: |
-            sudo apt-get update
-            sudo apt-get install -y protobuf-compiler
-            cargo test -p shared
+          command: cargo test -p shared
       - run:
           name: test-mesic
           command: cargo test -p mesic
@@ -32,7 +92,6 @@ jobs:
           name: verify-hydric-build
           command: |
             rustup component add --toolchain nightly-x86_64-unknown-linux-gnu rustfmt
-            cargo install wasm-bindgen-cli
             ./hydric/build.py
       - save_cache:
           key: cargo-{{ checksum "Cargo.lock" }}
