@@ -51,7 +51,7 @@ jobs:
       
       # Save all caches
       - save_cache:
-          key: rustup-components-{{ checksum ".circleci/setup-rust.sh" }}
+          key: rustup-components-{{ checksum "Cargo.lock" }}
           paths:
             - ~/.rustup/toolchains/nightly-x86_64-unknown-linux-gnu
             - ~/.rustup/settings.toml
