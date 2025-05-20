@@ -90,9 +90,7 @@ jobs:
           command: cargo test -p xeric
       - run:
           name: verify-hydric-build
-          command: |
-            rustup component add --toolchain nightly-x86_64-unknown-linux-gnu rustfmt
-            ./hydric/build.py
+          command: ./hydric/build.py
       - save_cache:
           key: cargo-{{ checksum "Cargo.lock" }}
           paths:
