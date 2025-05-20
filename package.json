@@ -13,7 +13,7 @@
     "f": "cargo fmt",
     "fix": "cargo fix -p hydric --target=wasm32-unknown-unknown; cargo fix -p mesic; cargo fix -p shared; cargo fix -p state; cargo fix -p xeric",
     "l": "yarn hl; yarn ml; yarn sl; yarn stl; yarn xl",
-    "p": "./.husky/pre-commit",
+    "p": "yarn husky",
     "r": "yarn concurrently 'yarn xr' 'yarn hr'",
     "t": "yarn mt; yarn st; yarn stt; yarn xt",
     "hb": "python3 ./hydric/build.py",
