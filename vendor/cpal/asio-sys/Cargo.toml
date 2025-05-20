@@ -1,7 +1,7 @@
 [package]
 name = "asio-sys"
 version = "0.2.2"
-edition = "2024"
+edition = "2021"
 authors = ["Tom Gowan <tomrgowan@gmail.com>"]
 description = "Low-level interface and binding generation for the steinberg ASIO SDK."
 repository = "https://github.com/RustAudio/cpal/"
