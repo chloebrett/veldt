@@ -85,7 +85,7 @@ impl<'a> AudioLevel<'a> {
             TextStyle::Small.into(),
             Align::Center,
         );
-        // Offset pos so text appears wtih value in middle.
+        // Offset pos so text appears with value in middle.
         // Galley size is in actual size units and is not scaled by to_screen transform.
         // Inverse transform size to get offset ammount.
         let half_galley_size = vec2(
@@ -136,8 +136,9 @@ impl<'a> AudioLevel<'a> {
         let right_padding = 0.0;
         // Divide range for text and level line.
         let (text_range, line_range) = range.split_left_right_at_fraction(0.85);
-        let shapes: Vec<Shape> = (range.bottom() as i32..range.top() as i32)
-            .step_by(10)
+        let label_step = 10;
+        let shapes: Vec<Shape> = (range.bottom() as i32..=range.top() as i32)
+            .filter(|&level| level % label_step == 0 || level == range.top() as i32)
             .map(|level| {
                 let text: WidgetText = format!("{level}").into();
                 let galley = text.into_galley_impl(
