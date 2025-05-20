@@ -27,7 +27,7 @@ impl<'a> AudioLevel<'a> {
         }
     }
 
-    /// Convert a level from dB to between 0-1 based on a peicewise function.
+    /// Convert a level from dB to between 0-1 using on a peicewise function.
     /// Spreads out dB closer to 0 and condenses smaller dB.
     /// 0 is top of the level, 1 is the bottom.
     // TODO: Can this be better generalised?
