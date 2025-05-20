@@ -37,12 +37,16 @@ impl<'a> AudioLevel<'a> {
             // Smaller signals clipped at bottom of level.
             1.0
         } else if level < -50.0 {
+            // 1.0 to 0.875
             (300.0 - level) / 400.0
         } else if level < -30.0 {
+            // 0.875 to 0.75
             (90.0 - level) / 160.0
         } else if level < -10.0 {
+            // 0.75 to 0.5
             (30.0 - level) / 80.0
         } else if level < 10.0 {
+            // 0.5 to 0.0
             (10.0 - level) / 40.0
         } else {
             // Larger signals clipped at top of level.
