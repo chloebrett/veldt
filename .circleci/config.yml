@@ -10,6 +10,13 @@ jobs:
       - restore_cache:
           key: cargo-{{ checksum "Cargo.lock" }}
       - run:
+          name: install-deps
+          command: |
+            sudo apt-get update
+            sudo apt-get install -y protobuf-compiler
+            rustup component add --toolchain nightly-x86_64-unknown-linux-gnu rustfmt
+            cargo install wasm-bindgen-cli
+      - run:
           name: check-format
           command: cargo fmt --check
       - run:
@@ -24,6 +31,9 @@ jobs:
       - run:
           name: test-xeric
           command: cargo test -p xeric
+      - run:
+          name: verify-hydric-build
+          command: ./hydric/build.py
       - save_cache:
           key: cargo-{{ checksum "Cargo.lock" }}
           paths:
