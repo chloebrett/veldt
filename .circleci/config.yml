@@ -18,9 +18,9 @@ jobs:
       - restore_cache:
           keys:
             - cargo-deps-{{ checksum "Cargo.lock" }}
-            - sys-deps-{{ checksum ".circleci/install-deps.sh" }}
+            - sys-deps-{{ checksum "Cargo.lock" }}
             - wasm-tools-v0.2.87
-            - rustup-components-{{ checksum ".circleci/setup-rust.sh" }}
+            - rustup-components-{{ checksum "Cargo.lock" }}
       
       # Install Rust components
       - run:
@@ -58,7 +58,7 @@ jobs:
             - ~/.rustup/settings.toml
       
       - save_cache:
-          key: sys-deps-{{ checksum ".circleci/install-deps.sh" }}
+          key: sys-deps-{{ checksum "Cargo.lock" }}
           paths:
             - /usr/bin/protoc
             - /usr/include/google/protobuf
