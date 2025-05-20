@@ -140,7 +140,11 @@ impl<'a> AudioLevel<'a> {
         let shapes: Vec<Shape> = (range.bottom() as i32..=range.top() as i32)
             .filter(|&level| level % label_step == 0 || level == range.top() as i32)
             .map(|level| {
-                let text: WidgetText = format!("{level}").into();
+                let text: WidgetText = if level > 0 {
+                    format!("+{level}").into()
+                } else {
+                    format!("{level}").into()
+                };
                 let galley = text.into_galley_impl(
                     ui.ctx(),
                     ui.style(),
