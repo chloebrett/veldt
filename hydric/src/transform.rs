@@ -1,6 +1,7 @@
 use egui::{
-    CornerRadius, Pos2, Rect, Shape, Vec2, emath::RectTransform, epaint::PathShape,
-    epaint::RectShape,
+    CornerRadius, Pos2, Rect, Shape, Vec2,
+    emath::RectTransform,
+    epaint::{PathShape, RectShape, TextShape},
 };
 
 pub trait Transform<T> {
@@ -26,6 +27,10 @@ impl Transform<Self> for Shape {
             Shape::Vec(shapes) => {
                 Shape::Vec(shapes.iter().map(|shape| shape.transform(rect)).collect())
             }
+            Shape::Text(text_shape) => Shape::Text(TextShape {
+                pos: text_shape.pos.transform(rect),
+                ..text_shape.clone()
+            }),
             _ => panic!("Shape not implemented."),
         }
     }
