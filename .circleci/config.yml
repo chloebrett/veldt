@@ -45,9 +45,8 @@ jobs:
       - run:
           name: Install wasm tools
           command: |
-            if ! command -v wasm-bindgen &> /dev/null || \
-               [ "$(wasm-bindgen --version | cut -d' ' -f2)" != "0.2.87" ]; then
-              cargo install wasm-bindgen-cli --version 0.2.87 --locked
+            if ! command -v wasm-bindgen &> /dev/null; then
+              cargo install wasm-bindgen-cli
             fi
       
       # Save all caches
