@@ -1,5 +1,4 @@
 use poll_promise::Promise;
-use std::future::Future;
 
 // Async states represent outgoing requests that may or may not have finished.
 // The Option<Promise<Result<..., ()>>> format is for the following reasons:
