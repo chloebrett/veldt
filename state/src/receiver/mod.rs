@@ -8,6 +8,7 @@ mod mixer_channel;
 mod note;
 mod placement;
 mod project;
+mod sample;
 mod store_data;
 mod track;
 
