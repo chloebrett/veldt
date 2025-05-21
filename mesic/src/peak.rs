@@ -7,8 +7,9 @@ use std::collections::VecDeque;
 ///   - Remove all elements that are now outside of the window.
 ///   - Remove all elements less than the new entry in value.
 ///   - Return the highest value.
+///
 /// This keeps the deque sorted and set to only the buffer giving
-/// effeciently returning the max value.
+/// efficiently returning the max value.
 #[derive(Clone, Debug)]
 pub struct PeakDetector {
     deque: VecDeque<(usize, OrderedFloat<f32>)>,
