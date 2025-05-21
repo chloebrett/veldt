@@ -19,7 +19,7 @@ static PROJECT_DIR_NAME: &str = "projects";
 
 fn assets_dir_path() -> PathBuf {
     let mut file_path = current_dir().unwrap();
-    file_path.pop(); // pop '/xeric'
+    // Note: no need to pop '/xeric', as we assume we are running from the veldt dir.
     file_path.push("assets");
     file_path
 }

@@ -106,9 +106,6 @@ impl StereoPeakDetector {
 
 #[cfg(test)]
 mod test {
-    use dasp_rms::Rms;
-
-    use crate::{SAMPLE_RATE, consts::RECIP_SAMPLE_RATE};
 
     use super::PeakDetector;
 
