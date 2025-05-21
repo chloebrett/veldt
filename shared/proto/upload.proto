@@ -12,11 +12,6 @@ message UploadChunkRequest {
     uint32 total_chunks = 4;
 }
 
-message UploadReply {
-    bool success = 1;
-    string message = 2;
-}
-
 message UploadSampleReply {
     bool success = 1;
 }
