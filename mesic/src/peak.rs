@@ -33,7 +33,7 @@ impl PeakDetector {
         let next_index = self.next_index;
         let value = OrderedFloat(value);
         // Remove values no longer in the buffer.
-        // Am elemenet will only stay in the buffer long enough to go out of range if its value is
+        // An elemenet will only stay in the buffer long enough to require removal if its value is
         // the max value.
         // Therefore we only need to check the max value element (back of queue).
         if !deque.is_empty() && deque.back().unwrap().0 == next_index {
