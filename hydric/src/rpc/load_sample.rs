@@ -14,7 +14,7 @@ pub async fn load_sample(filename: String) -> Result<Sample, tonic::Status> {
     result.map(|it| it.into_inner().sample.unwrap().into())
 }
 
-pub async fn load_sample_tree(config: FileTreeConfig) -> Result<FilenameTree, ()> {
+pub async fn load_sample_tree(config: FileTreeConfig) -> Result<FilenameTree, tonic::Status> {
     let client = Client::new(XERIC_URL.to_string());
     let mut grpc = LoadSampleClient::new(client);
 
@@ -24,7 +24,5 @@ pub async fn load_sample_tree(config: FileTreeConfig) -> Result<FilenameTree, ()
         })
         .await;
 
-    result
-        .map(|it| it.into_inner().tree.unwrap().into())
-        .map_err(|_| ())
+    result.map(|it| it.into_inner().tree.unwrap().into())
 }

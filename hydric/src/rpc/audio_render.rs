@@ -6,7 +6,7 @@ use shared::model::Project;
 use shared::render::{RenderRequest, render_client::RenderClient};
 use tonic_web_wasm_client::Client;
 
-pub async fn render(project: Project) -> Result<Vec<Stereo<f32>>, ()> {
+pub async fn render(project: Project) -> Result<Vec<Stereo<f32>>, tonic::Status> {
     let client = Client::new(XERIC_URL.to_string());
     let mut grpc = RenderClient::new(client);
 
@@ -14,8 +14,7 @@ pub async fn render(project: Project) -> Result<Vec<Stereo<f32>>, ()> {
         .render(RenderRequest {
             project: Some(project.into()),
         })
-        .await
-        .map_err(|_| ())?;
+        .await?;
 
     let result = result.into_inner().clone();
     let left = result.left;
