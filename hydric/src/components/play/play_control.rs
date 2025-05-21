@@ -38,10 +38,6 @@ pub fn play_control(
     ui.separator();
 
     ui.horizontal(|ui| {
-        // TODO: create a debug options dropdown in the main menu and put this there.
-        if ui.button("Recreate mixer (for debug)").clicked() {
-            player.refresh_mixer();
-        }
         if ui.button("Set audio from server").clicked() {
             let project = store.get().project.clone();
             spawn(&mut async_state.server_render, async move {
