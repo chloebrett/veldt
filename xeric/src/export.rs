@@ -9,7 +9,7 @@ use std::env::current_dir;
 use std::fs::{File, create_dir_all};
 use std::io::{Cursor, Write};
 use std::path::PathBuf;
-use tonic::async_trait;
+use tonic::{Request, Response, Status, async_trait};
 
 // Exports project to .wav
 pub struct ExportContext;
@@ -32,17 +32,19 @@ fn wav_dir_path() -> PathBuf {
 impl Export for ExportContext {
     async fn export(
         &self,
-        request: tonic::Request<ExportRequest>,
-    ) -> Result<tonic::Response<ExportReply>, tonic::Status> {
+        request: Request<ExportRequest>,
+    ) -> Result<Response<ExportReply>, Status> {
         let req = request.into_inner();
         let project: Project = req
             .project
-            .ok_or_else(|| tonic::Status::invalid_argument("Project must be supplied"))?
+            .ok_or(Status::invalid_argument("Project must be supplied"))?
             .into();
 
         // TODO: use the StoreData from the collab context.
-        let mut store = StoreData::default();
-        store.project = project.clone();
+        let store = StoreData {
+            project: project.clone(),
+            ..StoreData::default()
+        };
 
         let graph = RenderGraph::without_rx(&store);
 

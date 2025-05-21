@@ -2,7 +2,7 @@ use super::pan_multipliers;
 use crate::SAMPLE_RATE;
 use crate::consts::CHANNEL_COUNT;
 use crate::envelope::EnvelopeGenerator;
-use crate::eq::eq_filter;
+use crate::eq::{ApplyFilter, eq_filter};
 use crate::graph::{NoteEventType, ProcessContext};
 use crate::maths::linspace;
 use crate::wave::detune_multiplier;
@@ -10,13 +10,13 @@ use crate::wave_cache::{WaveCache, WaveKey};
 use dasp_frame::Stereo;
 use dasp_graph::{Buffer, Input, Node};
 use shared::model::{
-    AntiAliasingMode, EqConfig, Generator, GeneratorInstance, GeneratorMeta, Oscillator, PitchName,
-    SubSynthConfig,
+    AntiAliasingMode, Generator, GeneratorInstance, GeneratorMeta, Oscillator, PitchName,
+    StingrayConfig,
 };
 use shared::types::{Freq, KnobPosition, Volume};
 use state::GeneratorSelector;
 
-pub struct SubSynthNode {
+pub struct StingrayNode {
     selector: GeneratorSelector,
     state: NodeState,
     cache: WaveCache,
@@ -25,19 +25,21 @@ pub struct SubSynthNode {
 /// State persisted between buffers.
 /// Specific to this node.
 struct NodeState {
-    config: SubSynthConfig,
+    config: StingrayConfig,
     meta: GeneratorMeta,
     voice: Voice,
+    filter_left: Box<dyn ApplyFilter + Send>,
+    filter_right: Box<dyn ApplyFilter + Send>,
 }
 
 struct Voice {
     egs: [EnvelopeGenerator; 3],
-    sources: Option<[SubSynthWaveSource; 3]>,
+    sources: Option<[StingrayWaveSource; 3]>,
 }
 
 impl Default for NodeState {
     fn default() -> Self {
-        let config = SubSynthConfig::default();
+        let config = StingrayConfig::default();
         let egs: Vec<_> = config
             .envelopes
             .iter()
@@ -50,6 +52,8 @@ impl Default for NodeState {
                 egs: [egs[0].clone(), egs[1].clone(), egs[2].clone()],
                 sources: None,
             },
+            filter_left: eq_filter(&config.lpf),
+            filter_right: eq_filter(&config.lpf),
         }
     }
 }
@@ -57,12 +61,21 @@ impl Default for NodeState {
 impl NodeState {
     fn update(&mut self, payload: &ProcessContext, selector: GeneratorSelector) {
         if let GeneratorInstance {
-            it: Generator::SubSynth(config),
+            it: Generator::Stingray(config),
             meta,
             ..
         } = &payload.store.select(&selector)
         {
             if self.config != *config {
+                if self.config.lpf != config.lpf {
+                    // TODO: don't re-create the whole filter, just update
+                    // the coefficients. Keep the ring buffer as is.
+                    // ApplyFilter should have an update() method that takes some kind of config
+                    // object.
+                    self.filter_left = eq_filter(&config.lpf);
+                    self.filter_right = eq_filter(&config.lpf);
+                }
+
                 self.config = config.clone();
             }
             if self.meta != *meta {
@@ -72,7 +85,7 @@ impl NodeState {
     }
 }
 
-impl SubSynthNode {
+impl StingrayNode {
     pub fn new(selector: GeneratorSelector) -> Self {
         Self {
             selector,
@@ -81,7 +94,7 @@ impl SubSynthNode {
         }
     }
 
-    // TODO: this logic is similar and shared with subsynth and simple wave, probably should move
+    // TODO: this logic is similar and shared with stingray and simple wave, probably should move
     fn apply_volume_and_pan(
         buffer: &mut Buffer,
         channel_index: usize,
@@ -93,15 +106,9 @@ impl SubSynthNode {
             *x *= pan_mult * volume;
         }
     }
-
-    // TODO: logic is repeated from EqNode slightly
-    fn apply_low_pass_filter(buffer: &mut Buffer, config: EqConfig) {
-        let mut filter = eq_filter(&config);
-        filter.apply(buffer);
-    }
 }
 
-impl Node<ProcessContext> for SubSynthNode {
+impl Node<ProcessContext> for StingrayNode {
     fn process(&mut self, _inputs: &[Input], output: &mut [Buffer], payload: &ProcessContext) {
         let state = &mut self.state;
         state.update(payload, self.selector);
@@ -140,7 +147,7 @@ impl Node<ProcessContext> for SubSynthNode {
                             eg.note_on();
                             eg.set_envelope(env);
                             // TODO: update config dynamically, not just when starting a new note.
-                            sources.push(SubSynthWaveSource::new(note_event.pitch_name, osc));
+                            sources.push(StingrayWaveSource::new(note_event.pitch_name, osc));
                         }
                         state.voice.sources = Some(sources.try_into().unwrap());
                     }
@@ -177,19 +184,21 @@ impl Node<ProcessContext> for SubSynthNode {
             out_buf.copy_from_slice(&buffers[channel_index]);
             let meta = &self.state.meta;
             Self::apply_volume_and_pan(out_buf, channel_index, meta.volume, meta.pan);
-            Self::apply_low_pass_filter(out_buf, self.state.config.lpf.clone());
         }
+
+        self.state.filter_left.apply(&mut output[0]);
+        self.state.filter_right.apply(&mut output[1]);
     }
 }
 
 #[derive(Debug)]
-pub struct SubSynthWaveSource {
+pub struct StingrayWaveSource {
     pitch: PitchName,
     oscillator: Oscillator,
     sample_index: usize,
 }
 
-impl SubSynthWaveSource {
+impl StingrayWaveSource {
     pub fn new(pitch: PitchName, oscillator: Oscillator) -> Self {
         Self {
             pitch,
@@ -229,7 +238,8 @@ impl SubSynthWaveSource {
 
             let key = WaveKey {
                 kind: osc.wave,
-                aa: AntiAliasingMode::Off,
+                // Always use additive anti-aliasing, it sounds much better for square/saw waves.
+                aa: AntiAliasingMode::Additive,
                 freq: freq.into(),
             };
 

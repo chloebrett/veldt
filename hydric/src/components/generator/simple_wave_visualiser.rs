@@ -4,7 +4,7 @@ use egui::{Color32, Pos2, Rect, Response, Sense, Shape, Stroke, Ui, Vec2, lerp, 
 use mesic::wave::make_basic_wave_with_frequency;
 use shared::model::WaveType;
 
-// (potential) TODO: further generalise this to just WaveVisualiser so the painting logic can be resued in other components like ENV and LFO visualisers in the subsynth (might require calculating wave points outside of this component)
+// (potential) TODO: further generalise this to just WaveVisualiser so the painting logic can be resued in other components like ENV and LFO visualisers in stingray (might require calculating wave points outside of this component)
 // ideas for things to make adjustable:
 // make the 'x-axis' positioning flexible so the semi transparent painting of the area under the plotted line can change where it starts
 // num points for larger visualisation components

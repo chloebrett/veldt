@@ -10,7 +10,7 @@ use std::fs::{File, create_dir};
 use std::fs::{ReadDir, read_dir};
 use std::io::{Read, Write};
 use std::path::PathBuf;
-use tonic::async_trait;
+use tonic::{Request, Response, Status, async_trait};
 
 // Stateless: we just save projects to files and don't keep anything in memory.
 pub struct SaveLoadContext;
@@ -59,8 +59,8 @@ impl SaveLoad for SaveLoadContext {
     /// Saves a project to server memory by name.
     async fn save_project(
         self: &Self,
-        request: tonic::Request<SaveProjectRequest>,
-    ) -> Result<tonic::Response<SaveProjectReply>, tonic::Status> {
+        request: Request<SaveProjectRequest>,
+    ) -> Result<Response<SaveProjectReply>, Status> {
         let SaveProjectRequest { name, project } = request.into_inner();
         let mut project_bytes = vec![];
 
@@ -86,8 +86,8 @@ impl SaveLoad for SaveLoadContext {
     /// actual project.
     async fn load_project_list(
         self: &Self,
-        _request: tonic::Request<LoadProjectListRequest>,
-    ) -> Result<tonic::Response<LoadProjectListReply>, tonic::Status> {
+        _request: Request<LoadProjectListRequest>,
+    ) -> Result<Response<LoadProjectListReply>, Status> {
         let dir_contents: ReadDir = read_dir(project_dir_path())?;
         let mut list: Vec<String> = vec![];
 
@@ -105,8 +105,8 @@ impl SaveLoad for SaveLoadContext {
     /// Loads a project by name. If it doesn't exist in the server memory, returns an error.
     async fn load_project(
         self: &Self,
-        request: tonic::Request<LoadProjectRequest>,
-    ) -> Result<tonic::Response<LoadProjectReply>, tonic::Status> {
+        request: Request<LoadProjectRequest>,
+    ) -> Result<Response<LoadProjectReply>, Status> {
         let name = request.into_inner().name;
 
         let file_path = project_file_path(name.clone());

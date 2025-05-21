@@ -9,7 +9,7 @@ use shared::model::{Oscillator, WaveType};
 use state::{Action, FloatField, TypeField, UintField};
 use strum::IntoEnumIterator;
 
-pub struct SubSynthOscillatorView<'a, F: Fn(Action), G: Fn()> {
+pub struct StingrayOscillatorView<'a, F: Fn(Action), G: Fn()> {
     config: &'a Oscillator,
     dispatch: F,
     on_release: G,
@@ -17,7 +17,7 @@ pub struct SubSynthOscillatorView<'a, F: Fn(Action), G: Fn()> {
     fill_colour: Color32,
 }
 
-impl<'a, F: Fn(Action), G: Fn()> SubSynthOscillatorView<'a, F, G> {
+impl<'a, F: Fn(Action), G: Fn()> StingrayOscillatorView<'a, F, G> {
     pub fn new(
         config: &'a Oscillator,
         dispatch: F,
@@ -35,7 +35,7 @@ impl<'a, F: Fn(Action), G: Fn()> SubSynthOscillatorView<'a, F, G> {
     }
 }
 
-impl<F: Fn(Action), G: Fn()> View for SubSynthOscillatorView<'_, F, G> {
+impl<F: Fn(Action), G: Fn()> View for StingrayOscillatorView<'_, F, G> {
     fn ui(&mut self, ui: &mut Ui) {
         let Self {
             config,
@@ -128,7 +128,7 @@ impl<F: Fn(Action), G: Fn()> View for SubSynthOscillatorView<'_, F, G> {
                         detune_coarse as f32,
                         |it| {
                             dispatch(Action::SetFloat(
-                                FloatField::Detune,
+                                FloatField::OscillatorDetune,
                                 it * 100.0 + detune_fine,
                             ))
                         },
@@ -145,7 +145,7 @@ impl<F: Fn(Action), G: Fn()> View for SubSynthOscillatorView<'_, F, G> {
                         detune_fine,
                         |it| {
                             dispatch(Action::SetFloat(
-                                FloatField::Detune,
+                                FloatField::OscillatorDetune,
                                 detune_coarse as f32 * 100.0 + it,
                             ))
                         },
@@ -183,7 +183,7 @@ impl<F: Fn(Action), G: Fn()> View for SubSynthOscillatorView<'_, F, G> {
                         ui,
                         "Unison Detune",
                         config.unison_detune,
-                        |it| dispatch(Action::SetFloat(FloatField::Detune, it)),
+                        |it| dispatch(Action::SetFloat(FloatField::UnisonDetune, it)),
                         0.0..=100.0,
                         0.0,
                         on_release,

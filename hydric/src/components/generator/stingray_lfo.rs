@@ -5,20 +5,20 @@ use crate::widget::{
 };
 use crate::{GetSet, LocalState};
 use egui::{Color32, Ui, Vec2};
-use shared::model::{SubSynthConfig, WaveType};
+use shared::model::{StingrayConfig, WaveType};
 use state::{Action, FloatField, TypeField};
 use strum::IntoEnumIterator;
 
-pub struct SubSynthLfoView<'a, F: Fn(Action), G: Fn()> {
-    config: &'a SubSynthConfig,
+pub struct StingrayLfoView<'a, F: Fn(Action), G: Fn()> {
+    config: &'a StingrayConfig,
     dispatch: F,
     on_release: G,
     local_state: &'a LocalState,
 }
 
-impl<'a, F: Fn(Action), G: Fn()> SubSynthLfoView<'a, F, G> {
+impl<'a, F: Fn(Action), G: Fn()> StingrayLfoView<'a, F, G> {
     pub fn new(
-        config: &'a SubSynthConfig,
+        config: &'a StingrayConfig,
         dispatch: F,
         on_release: G,
         local_state: &'a LocalState,
@@ -35,15 +35,15 @@ impl<'a, F: Fn(Action), G: Fn()> SubSynthLfoView<'a, F, G> {
 const LFO_LINE_COLOUR: Color32 = Color32::from_rgb(166, 47, 250);
 const LFO_FILL_COLOUR: Color32 = Color32::from_rgba_premultiplied(166, 47, 250, 40);
 
-impl<F: Fn(Action), G: Fn()> View for SubSynthLfoView<'_, F, G> {
+impl<F: Fn(Action), G: Fn()> View for StingrayLfoView<'_, F, G> {
     fn ui(&mut self, ui: &mut Ui) {
         let config = self.config.clone();
         let dispatch = &self.dispatch;
         let on_release = &self.on_release;
 
-        let active_lfo_tab = self.local_state.subsynth_lfo_tab.get();
+        let active_lfo_tab = self.local_state.stingray_lfo_tab.get();
         let handle_lfo_tab_click = |index| {
-            self.local_state.subsynth_lfo_tab.set(index);
+            self.local_state.stingray_lfo_tab.set(index);
         };
 
         outer_frame().show(ui, |ui| {

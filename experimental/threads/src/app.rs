@@ -1,7 +1,7 @@
-use crate::{AudioPlayer, FrameHistory};
-use egui::{Ui, Color32, pos2, Pos2, Rect, vec2, Frame};
-use epaint::PathStroke;
 use crate::frame_history::View;
+use crate::{AudioPlayer, FrameHistory};
+use egui::{Color32, Frame, Pos2, Rect, Ui, pos2, vec2};
+use epaint::PathStroke;
 
 pub struct App {
     pub player: AudioPlayer,
@@ -56,9 +56,9 @@ impl eframe::App for App {
 
             expensive_ui(ui, self.expensiveness);
 
-                    ui.with_layout(egui::Layout::bottom_up(egui::Align::LEFT), |ui| {
-                        self.frame_history.ui(ui);
-                    });
+            ui.with_layout(egui::Layout::bottom_up(egui::Align::LEFT), |ui| {
+                self.frame_history.ui(ui);
+            });
         });
     }
 }
@@ -99,7 +99,7 @@ fn expensive_ui(ui: &mut Ui, count: u32) {
             let thickness = 10.0 / mode as f32;
             shapes.push(epaint::Shape::line(
                 points,
-                    PathStroke::new(thickness, color)
+                PathStroke::new(thickness, color),
             ));
         }
 

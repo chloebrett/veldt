@@ -1,7 +1,80 @@
+use egui::{Pos2, pos2, vec2};
 use state::{EffectSelector, GeneratorSelector, MixerSelector};
 use std::cmp::{Eq, Ord};
-use std::collections::HashSet;
+use std::collections::{HashMap, HashSet};
 use std::hash::Hash;
+use strum::EnumIter;
+use strum::IntoEnumIterator;
+
+/// Windows variants that will appear on the UI.
+// TODO: Move all windows to WindowKind
+#[derive(Hash, Copy, Clone, EnumIter, PartialEq, Eq)]
+pub enum WindowKind {
+    Mixer,
+    Effect(usize),
+    GeneratorList,
+    Generator(usize),
+    Scale,
+    SampleTree,
+    TrackRoll,
+    Save,
+}
+
+/// Information about a window needed to render on the UI.
+struct WindowData {
+    visible: bool,
+    pos: Pos2,
+}
+
+impl WindowData {
+    pub fn default_from_window(window: WindowKind) -> Self {
+        let pos = match window {
+            WindowKind::Mixer => pos2(1000.0, 150.0),
+            WindowKind::Effect(index) => {
+                pos2(1000.0, 150.0) + vec2(50.0 * index as f32, 50.0 * index as f32)
+            }
+            WindowKind::GeneratorList => pos2(1100.0, 20.0),
+            WindowKind::Generator(..) => pos2(1000.0, 150.0),
+            WindowKind::Save => pos2(150.0, 150.0),
+            WindowKind::Scale => pos2(50.0, 200.0),
+            WindowKind::TrackRoll => pos2(30.0, 200.0),
+            WindowKind::SampleTree => pos2(600.0, 20.0),
+        };
+        Self {
+            visible: false,
+            pos,
+        }
+    }
+}
+
+pub struct WindowState2(HashMap<WindowKind, WindowData>);
+
+impl Default for WindowState2 {
+    fn default() -> Self {
+        let mut windows = HashMap::new();
+        for window in WindowKind::iter() {
+            windows.insert(window, WindowData::default_from_window(window));
+        }
+        Self(windows)
+    }
+}
+
+impl WindowState2 {
+    pub fn get_mut_visible(&mut self, window: WindowKind) -> &mut bool {
+        &mut self
+            .0
+            .get_mut(&window)
+            .expect("Windows should have been initialised.")
+            .visible
+    }
+
+    pub fn get_pos(&self, window: WindowKind) -> Pos2 {
+        self.0
+            .get(&window)
+            .expect("Windows should have been initialised.")
+            .pos
+    }
+}
 
 pub struct MixerWindowState {
     pub visible: bool,
@@ -17,7 +90,6 @@ pub struct WindowState {
     pub generators: WindowStateField<GeneratorSelector>,
     pub scale: bool,
     pub sample_tree: bool,
-    pub track_roll: bool,
     pub save: bool,
 }
 
@@ -33,7 +105,6 @@ impl Default for WindowState {
             generators: WindowStateField(HashSet::new()),
             scale: false,
             sample_tree: false,
-            track_roll: false,
             save: false,
         }
     }

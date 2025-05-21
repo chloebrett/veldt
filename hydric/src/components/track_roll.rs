@@ -1,7 +1,8 @@
 use crate::{
-    GetSet, LocalState, WindowState,
+    GetSet, LocalState,
     view::View,
     widget::{Sequencer, SequencerObject, default_window},
+    window_state::{WindowKind, WindowState2},
 };
 use egui::{
     Color32, CornerRadius, Pos2, Rect, ScrollArea, Shape, Stroke, StrokeKind, Ui, pos2, vec2,
@@ -20,14 +21,14 @@ use std::collections::HashSet;
 
 pub struct TrackRoll<'a> {
     store: &'a Store,
-    window_state: &'a mut WindowState,
+    window_state: &'a mut WindowState2,
     local_state: &'a LocalState,
 }
 
 impl<'a> TrackRoll<'a> {
     pub fn new(
         store: &'a Store,
-        window_state: &'a mut WindowState,
+        window_state: &'a mut WindowState2,
         local_state: &'a LocalState,
     ) -> Self {
         Self {
@@ -80,9 +81,9 @@ impl View for TrackRoll<'_> {
         }
 
         default_window("Track Roll")
-            .default_pos(pos2(30.0, 200.0))
+            .default_pos(self.window_state.get_pos(WindowKind::TrackRoll))
             .resizable(true)
-            .open(&mut self.window_state.track_roll)
+            .open(self.window_state.get_mut_visible(WindowKind::TrackRoll))
             .show(ui.ctx(), |ui| {
                 ui.horizontal(|ui| {
                     if ui.button("New track").clicked() {
@@ -306,12 +307,7 @@ impl SequencerObject<PlacedTrack> for PlacedTrack {
         }
     }
 
-    fn delete_selected(
-        _ui: &mut Ui,
-        store: &Store,
-        local_state: &LocalState,
-        _parent_index: Option<usize>,
-    ) {
+    fn delete_selected(store: &Store, local_state: &LocalState, _parent_index: Option<usize>) {
         local_state
             .active_track_placement
             .update(|placement| match placement {

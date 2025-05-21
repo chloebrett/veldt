@@ -10,6 +10,8 @@ pub enum FloatField {
     Duration,
     Pan,
     Detune,
+    UnisonDetune,
+    OscillatorDetune,
     DelayMs,
     Wet,
     Fc,
@@ -22,4 +24,8 @@ pub enum FloatField {
     LfoFreq,
     Feedback,
     ModFactor,
+    AdsrAttack,
+    AdsrDecay,
+    AdsrSustain,
+    AdsrRelease,
 }

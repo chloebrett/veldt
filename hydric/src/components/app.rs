@@ -5,12 +5,12 @@ use super::{
     menu::MenuBar,
     play::{SampleTreeView, ToolbarView},
 };
-use crate::components::FrameHistory;
 use crate::promise::spawn;
 use crate::rpc::broadcast_actions;
 use crate::rpc::load_project_list;
 use crate::view::View;
 use crate::{AsyncState, LocalState, WindowState, playback::AudioPlayer};
+use crate::{components::FrameHistory, window_state::WindowState2};
 use egui::{ScrollArea, Ui, scroll_area::ScrollBarVisibility};
 use mesic::graph::RenderGraph;
 use poll_promise::Promise;
@@ -28,6 +28,7 @@ pub struct App {
     pub async_state: AsyncState,
     pub player: AudioPlayer,
     pub window_state: WindowState,
+    pub window_state2: WindowState2,
 }
 
 impl Default for App {
@@ -46,6 +47,7 @@ impl Default for App {
             async_state: AsyncState::default(),
             player: AudioPlayer::new(graph),
             window_state: WindowState::default(),
+            window_state2: WindowState2::default(),
         }
     }
 }
@@ -89,6 +91,7 @@ impl eframe::App for App {
             MenuBar::new(
                 &mut self.store,
                 &mut self.window_state,
+                &mut self.window_state2,
                 &mut self.async_state,
             )
             .ui(ui);
@@ -170,6 +173,6 @@ impl View for App {
             &mut self.window_state.sample_tree,
         )
         .ui(ui);
-        TrackRoll::new(&self.store, &mut self.window_state, &self.local_state).ui(ui);
+        TrackRoll::new(&self.store, &mut self.window_state2, &self.local_state).ui(ui);
     }
 }

@@ -215,21 +215,22 @@ mod tests {
     use crate::SAMPLE_RATE;
     use shared::model::{PitchName, ScaleValue};
 
+    use crate::testing::store::empty_store_data;
     use shared::types::Freq;
 
     use super::*;
 
     #[test]
-    #[ignore]
     fn empty_render_graph_renders_nothing() {
         // TODO Fix. This test does not terminate.
-        let graph = RenderGraph::without_rx(&StoreData::default());
+        let graph = RenderGraph::without_rx(&empty_store_data());
         // Iterator should be empty.
         let output: Vec<[f32; 2]> = graph.collect();
         assert!(output.is_empty())
     }
 
     #[test]
+    #[ignore]
     fn graph_built_from_sample_renders_correctly() {
         // Arrange
         let pitch = PitchName {
@@ -246,7 +247,7 @@ mod tests {
             .collect();
 
         // Act
-        let mut graph = RenderGraph::without_rx(&StoreData::default());
+        let mut graph = RenderGraph::without_rx(&empty_store_data());
         graph.set_audio(&input);
         let output: Vec<[f32; 2]> = graph.collect();
 

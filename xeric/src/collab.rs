@@ -6,7 +6,7 @@ use shared::serialize::map_vec;
 use state::{ReversibleAction, Store};
 use std::marker::Send;
 use std::sync::{Arc, Mutex, mpsc::channel};
-use tonic::async_trait;
+use tonic::{Request, Response, Status, async_trait};
 
 /// Context for collaborative editing.
 /// So far, just contains a state store which is updated when the client broadcasts actions.
@@ -36,8 +36,8 @@ impl CollabContext {
 impl BroadcastActions for CollabContext {
     async fn broadcast_actions(
         &self,
-        request: tonic::Request<BroadcastActionsRequest>,
-    ) -> Result<tonic::Response<BroadcastActionsReply>, tonic::Status> {
+        request: Request<BroadcastActionsRequest>,
+    ) -> Result<Response<BroadcastActionsReply>, Status> {
         let actions: Vec<ReversibleAction> = map_vec(request.into_inner().actions);
 
         for action in actions {
