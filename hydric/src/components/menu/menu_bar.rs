@@ -1,5 +1,6 @@
 use crate::{
     AsyncState, WindowState,
+    playback::AudioPlayer,
     promise::{poll, spawn},
     rpc::{export, load_project, load_project_list, save_project},
     view::View,
@@ -12,6 +13,7 @@ use super::{effect::EffectMenuOptions, save_as::SaveAs};
 
 pub struct MenuBar<'a> {
     store: &'a mut Store,
+    player: &'a mut AudioPlayer,
     window_state: &'a mut WindowState,
     window_state2: &'a mut WindowState2,
     async_state: &'a mut AsyncState,
@@ -20,12 +22,14 @@ pub struct MenuBar<'a> {
 impl<'a> MenuBar<'a> {
     pub fn new(
         store: &'a mut Store,
+        player: &'a mut AudioPlayer,
         window_state: &'a mut WindowState,
         window_state2: &'a mut WindowState2,
         async_state: &'a mut AsyncState,
     ) -> Self {
         Self {
             store,
+            player,
             window_state,
             window_state2,
             async_state,
@@ -139,12 +143,12 @@ impl View for MenuBar<'_> {
             ui.menu_button("Effects", |ui| {
                 EffectMenuOptions::new(self.store, self.window_state).ui(ui);
             });
-            ui.menu_button(
-                "Generators",
-                |ui| {
-                    if ui.button("Add generator").clicked() {}
-                },
-            );
+            // TODO: create an "add generator" dropdown similar to the effects one.
+            ui.menu_button("Debug", |ui| {
+                if ui.button("Recreate mixer").clicked() {
+                    self.player.refresh_mixer();
+                }
+            });
             let sample_response = ui.add(Button::new("📂").selected(self.window_state.sample_tree));
             if sample_response.clicked() {
                 self.window_state.sample_tree ^= true;

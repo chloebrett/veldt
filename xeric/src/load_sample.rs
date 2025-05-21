@@ -142,6 +142,7 @@ impl LoadSample for LoadSampleContext {
             right,
             sample_rate: reader.spec().sample_rate as f32,
         };
+        info!("Loaded sample.");
         Ok(Response::new(LoadSampleReply {
             sample: Some(sample.into()),
         }))

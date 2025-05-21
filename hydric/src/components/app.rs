@@ -90,6 +90,7 @@ impl eframe::App for App {
         egui::TopBottomPanel::top("veldt_menu").show(ctx, |ui| {
             MenuBar::new(
                 &mut self.store,
+                &mut self.player,
                 &mut self.window_state,
                 &mut self.window_state2,
                 &mut self.async_state,
