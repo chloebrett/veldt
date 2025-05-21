@@ -123,7 +123,6 @@ impl LoadSample for LoadSampleContext {
 
         let mut file_path = sample_dir_path();
         file_path.push(filename.clone());
-        info!("Loading sample from path: {}", file_path.clone().display());
 
         let mut reader = hound::WavReader::open(file_path).map_err(|_| {
             tonic::Status::invalid_argument(format!("File {} could not be read.", filename))
@@ -167,11 +166,15 @@ impl LoadSample for LoadSampleContext {
 
 #[cfg(test)]
 mod tests {
+    use std::env;
+
     use super::*;
 
     #[tokio::test]
     async fn load_sample() {
         // ARRANGE
+        // Move into root directory.
+        env::set_current_dir(Path::new("../")).unwrap();
         let my_load_sample = LoadSampleContext;
         let sample_name = "89 BPM F# Minor.wav";
         let load_request = tonic::Request::new(LoadSampleRequest {
@@ -189,6 +192,8 @@ mod tests {
     #[tokio::test]
     async fn load_invalid_file_name_fails() {
         // ARRANGE
+        // Move into root directory.
+        env::set_current_dir(Path::new("../")).unwrap();
         let my_load_sample = LoadSampleContext;
         let sample_name = "test.wav";
         let load_request = tonic::Request::new(LoadSampleRequest {
