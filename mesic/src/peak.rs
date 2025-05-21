@@ -2,6 +2,13 @@ use dasp_frame::Stereo;
 use ordered_float::OrderedFloat;
 use std::collections::VecDeque;
 
+/// Data structure to keep track of the max value over a ring buffer.
+/// Extension of a deque but for a new entry it will:
+///   - Remove all elements that are now outside of the window.
+///   - Remove all elements less than the new entry in value.
+///   - Return the highest value.
+/// This keeps the deque sorted and set to only the buffer giving
+/// effeciently returning the max value.
 #[derive(Clone, Debug)]
 pub struct PeakDetector {
     deque: VecDeque<(usize, OrderedFloat<f32>)>,
@@ -18,12 +25,13 @@ impl PeakDetector {
         }
     }
 
+    /// Add new element to buffer and return highest value.
     pub fn next(&mut self, value: f32) -> f32 {
         let deque = &mut self.deque;
         let buffer_size = self.buffer_size;
         let next_index = self.next_index;
         let value = OrderedFloat(value);
-        // Remove values no longer in the buffer size.
+        // Remove values no longer in the buffer.
         // Am elemenet will only stay in the buffer long enough to go out of range if its value is
         // the max value.
         // Therefore we only need to check the max value element (back of queue).
@@ -41,23 +49,26 @@ impl PeakDetector {
             // Add element to queue from left.
             // Remove all elements with a value less than or equal to this entry.
             // This is okay as this value is larger and newer.
-            // This also keeps the queue sorted.
+            // This also keeps the queue sorted and only retaining relevant elements..
             while value >= deque.front().unwrap().1 {
                 deque.pop_front();
             }
             deque.push_front((next_index, value));
         }
-        // Move next index in ring buffer.
+        // Update next index in ring buffer.
         self.next_index = (next_index + 1) % buffer_size;
         // Return max value.
         *deque.back().unwrap().1
     }
 
+    /// Get current max value in buffer.
     pub fn current(&self) -> f32 {
         *self.deque.back().unwrap_or(&(0, OrderedFloat(0.0))).1
     }
 }
 
+/// An extension of `PeakDetector` for stereo audio.
+#[derive(Debug, Clone)]
 pub struct StereoPeakDetector(PeakDetector, PeakDetector);
 
 impl StereoPeakDetector {
