@@ -249,13 +249,19 @@ impl<'a, F: Fn(f32), G: Fn()> AudioLevel<'a, F, G> {
         // Create label to indicate level.
         let level_text =
             self.create_channel_label(ui, to_screen, range.center_bottom() + vec2(0.0, 0.03), text);
-        let knob_rect = Rect::from_center_size(pos2(range.center().x, level), vec2(range.size().x - side_padding, knob_height));
+        let knob_rect = Rect::from_center_size(
+            pos2(range.center().x, level),
+            vec2(range.size().x - side_padding, knob_height),
+        );
         // Handle the dragging of the fader.
         self.handle_fader_drag(ui, &knob_rect, response, to_screen, padding_transform);
         Shape::Vec(vec![
             // Background knob slides on.
             Shape::rect_filled(
-                Rect::from_center_size(range.center(), vec2(range.size().x - side_padding * 2.0, range.size().y)),
+                Rect::from_center_size(
+                    range.center(),
+                    vec2(range.size().x - side_padding * 2.0, range.size().y),
+                ),
                 CornerRadius::ZERO,
                 Color32::from_white_alpha(8),
             ),
