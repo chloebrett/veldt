@@ -75,7 +75,7 @@ pub struct AudioPlayer {
 
     // Root Mean Square of most recent window in audio.
     // Read with `level()`
-    // Uses f64 for higher precision to reduce float poitn errors.
+    // Uses f64 for higher precision to reduce floating point errors.
     rms: dasp_rms::Rms<Stereo<f64>, [Stereo<f64>; RMS_BUFFER_SAMPLES]>,
 
     // Peak audio from recent window.
