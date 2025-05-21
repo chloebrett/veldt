@@ -12,7 +12,7 @@ use dasp_frame::Stereo;
 use dasp_graph::{Buffer, Input, Node};
 use shared::model::{
     AntiAliasingMode, Generator, GeneratorInstance, GeneratorMeta, Oscillator, PitchName,
-    StingrayConfig,
+    StingrayConfig, AdsrEnvelope,
 };
 use shared::types::{Freq, KnobPosition, Volume};
 use state::GeneratorSelector;
@@ -76,7 +76,6 @@ impl NodeState {
                     self.filter_left = eq_filter(&config.lpf);
                     self.filter_right = eq_filter(&config.lpf);
                 }
-
                 self.config = config.clone();
             }
             if self.meta != *meta {
@@ -148,8 +147,41 @@ impl Node<ProcessContext> for StingrayNode {
                         );
                         let mut sources = vec![];
                         for i in 0..state.config.envelopes.len() {
+                            let mut attack = 0.0;
+                            let mut decay = 0.0; 
+                            let mut sustain = 0.0;
+                            let mut release = 0.0;
+                            let mut count = 0;
+
+                            for j in 0..state.config.envelopes.len() {
+                                let cell: f32 = mod_matrix.get(j, i).map_or(0.0, |cell_ref| (*cell_ref).into());
+
+                                if cell == 0.0 {
+                                    continue;
+                                }
+
+                                count += 1;
+                                let env = state.config.envelopes[i].clone();
+                                attack += cell * env.attack;
+                                decay += cell * env.decay;
+                                sustain += cell * env.sustain;
+                                release += cell * env.release;
+                            }
+
+                            if count > 0 {
+                                attack /= count as f32;
+                                decay /= count as f32;
+                                sustain /= count as f32;
+                                release /= count as f32;
+                            }                 
+
+                            let env = AdsrEnvelope {
+                                attack: attack,
+                                decay: decay,
+                                sustain: sustain,
+                                release: release,
+                            };
                             let eg = &mut state.voice.egs[i];
-                            let env = state.config.envelopes[i].clone();
                             let osc = state.config.oscillators[i].clone();
 
                             eg.note_on();
