@@ -86,6 +86,7 @@ impl<'a, F: Fn(f32), G: Fn()> AudioLevel<'a, F, G> {
         &self,
         range: Rect,
         level: f32,
+        peak: f32,
         left_padding: f32,
         right_padding: f32,
     ) -> Shape {
@@ -118,7 +119,7 @@ impl<'a, F: Fn(f32), G: Fn()> AudioLevel<'a, F, G> {
             ),
             // Peak marker.
             Shape::rect_filled(
-                channel_rect(level - marker_height, level + marker_height),
+                channel_rect(peak - marker_height, peak + marker_height),
                 CornerRadius::same(0),
                 Color32::BLACK,
             ),
@@ -156,8 +157,8 @@ impl<'a, F: Fn(f32), G: Fn()> AudioLevel<'a, F, G> {
         ui: &mut Ui,
         to_screen: RectTransform,
         range: Rect,
-        left_level: f32,
-        right_level: f32,
+        levels: [f32; 2],
+        peaks: [f32; 2],
     ) -> Shape {
         // Divide range for left and right channels.
         let (left_range, right_range) = range.split_left_right_at_fraction(0.5);
@@ -177,8 +178,8 @@ impl<'a, F: Fn(f32), G: Fn()> AudioLevel<'a, F, G> {
             "R".into(),
         );
         Shape::Vec(vec![
-            self.create_channel_shape(left_range, left_level, padding, padding * 0.5),
-            self.create_channel_shape(right_range, right_level, padding * 0.5, padding),
+            self.create_channel_shape(left_range, levels[0], peaks[0], padding, padding * 0.5),
+            self.create_channel_shape(right_range, levels[1], peaks[1], padding * 0.5, padding),
             left_label,
             right_label,
         ])
@@ -338,8 +339,17 @@ impl<F: Fn(f32), G: Fn()> Widget for AudioLevel<'_, F, G> {
         // Get the level of audio channels.
         let [left_level, right_level] = player.level();
         // Convert levels to [0, 1] range.
-        let left_level = self.convert_level(left_level);
-        let right_level = self.convert_level(right_level);
+        let levels = [
+            self.convert_level(left_level),
+            self.convert_level(right_level),
+        ];
+        // Get the peak of audio channels.
+        let [left_peak, right_peak] = player.peak();
+        // Convert peaks to [0, 1] range.
+        let peaks = [
+            self.convert_level(left_peak),
+            self.convert_level(right_peak),
+        ];
         Frame::canvas(ui.style())
             .show(ui, |ui| {
                 let (response, painter) = ui.allocate_painter(size, Sense::all());
@@ -357,7 +367,7 @@ impl<F: Fn(f32), G: Fn()> Widget for AudioLevel<'_, F, G> {
                 );
                 let text_shapes = self.create_text_shape(ui, to_screen, text_range);
                 let level_shapes =
-                    self.create_level_shape(ui, to_screen, level_range, left_level, right_level);
+                    self.create_level_shape(ui, to_screen, level_range, levels, peaks);
                 // Add background shape.
                 painter.add(Shape::rect_filled(
                     response.rect,

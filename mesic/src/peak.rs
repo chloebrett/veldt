@@ -1,0 +1,131 @@
+use dasp_frame::Stereo;
+use ordered_float::OrderedFloat;
+use std::collections::VecDeque;
+
+#[derive(Clone, Debug)]
+pub struct PeakDetector {
+    deque: VecDeque<(usize, OrderedFloat<f32>)>,
+    buffer_size: usize,
+    next_index: usize,
+}
+
+impl PeakDetector {
+    pub fn new(buffer_size: usize) -> Self {
+        Self {
+            buffer_size,
+            deque: VecDeque::default(),
+            next_index: 0,
+        }
+    }
+
+    pub fn next(&mut self, value: f32) -> f32 {
+        let deque = &mut self.deque;
+        let buffer_size = self.buffer_size;
+        let next_index = self.next_index;
+        let value = OrderedFloat(value);
+        // Remove values no longer in the buffer size.
+        // Am elemenet will only stay in the buffer long enough to go out of range if its value is
+        // the max value.
+        // Therefore we only need to check the max value element (back of queue).
+        if !deque.is_empty() && deque.back().unwrap().0 == next_index {
+            deque.pop_back();
+        }
+        if deque.is_empty() {
+            deque.push_back((next_index, value));
+        } else if deque.back().unwrap().1 <= value {
+            // New value is larger than max value.
+            // Remove all other elements.
+            deque.clear();
+            deque.push_back((next_index, value));
+        } else {
+            // Add element to queue from left.
+            // Remove all elements with a value less than or equal to this entry.
+            // This is okay as this value is larger and newer.
+            // This also keeps the queue sorted.
+            while value >= deque.front().unwrap().1 {
+                deque.pop_front();
+            }
+            deque.push_front((next_index, value));
+        }
+        // Move next index in ring buffer.
+        self.next_index = (next_index + 1) % buffer_size;
+        // Return max value.
+        *deque.back().unwrap().1
+    }
+
+    pub fn current(&self) -> f32 {
+        *self.deque.back().unwrap_or(&(0, OrderedFloat(0.0))).1
+    }
+}
+
+pub struct StereoPeakDetector(PeakDetector, PeakDetector);
+
+impl StereoPeakDetector {
+    pub fn new(buffer_size: usize) -> Self {
+        Self(
+            PeakDetector::new(buffer_size),
+            PeakDetector::new(buffer_size),
+        )
+    }
+
+    pub fn next(&mut self, frame: Stereo<f32>) -> [f32; 2] {
+        [self.0.next(frame[0]), self.1.next(frame[1])]
+    }
+
+    pub fn current(&self) -> [f32; 2] {
+        [self.0.current(), self.1.current()]
+    }
+}
+
+#[cfg(test)]
+mod test {
+    use super::PeakDetector;
+
+    #[test]
+    fn tracks_max_ascending_list() {
+        let array = [0.0, 0.1, 0.2, 0.3, 0.4, 0.5];
+        let mut detector = PeakDetector::new(10);
+        for value in array {
+            let next = detector.next(value);
+            assert_eq!(next, value)
+        }
+    }
+
+    #[test]
+    fn tracks_max_descending_list() {
+        let array = [0.5, 0.4, 0.3, 0.2, 0.1];
+        let mut detector = PeakDetector::new(10);
+        for value in array {
+            let next = detector.next(value);
+            assert_eq!(next, array[0])
+        }
+    }
+
+    #[test]
+    fn max_outside_of_buffer_is_removed() {
+        let array = [0.5, 0.4, 0.3, 0.2, 0.1];
+        let mut detector = PeakDetector::new(4);
+        for value in array {
+            detector.next(value);
+        }
+        let expected = array[1];
+        assert_eq!(detector.current(), expected)
+    }
+
+    #[test]
+    fn new_max_is_detected() {
+        let array = [0.5, 0.0, 0.1, 0.0, 0.8];
+        let mut detector = PeakDetector::new(10);
+        for value in array {
+            detector.next(value);
+        }
+        let expected = array[4];
+        assert_eq!(detector.current(), expected);
+    }
+
+    #[test]
+    fn empty_buffer_returns_0() {
+        let detector = PeakDetector::new(10);
+        assert_eq!(detector.current(), 0.0);
+    }
+}
