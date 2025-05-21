@@ -135,6 +135,8 @@ impl<'a, T: SequencerObject<T>> Sequencer<'a, T> {
                 }
             } else if movable_resp.interact(Sense::click()).double_clicked() {
                 object.set_active(self.local_state, index);
+            } else if movable_resp.interact(Sense::click()).clicked_by(egui::PointerButton::Secondary) {
+                object.set_active(self.local_state, index);
             }
             if resize_resp.hovered() {
                 ui.ctx().set_cursor_icon(CursorIcon::ResizeColumn);
