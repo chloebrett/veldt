@@ -3,7 +3,7 @@ use crate::promise::{poll, spawn};
 use crate::rpc::load_sample_tree;
 use crate::view::View;
 use crate::widget::{checkbox, default_window};
-use egui::{Pos2, ScrollArea, Ui};
+use egui::{Checkbox, Pos2, ScrollArea, Ui};
 use egui_ltreeview::{TreeView, TreeViewBuilder};
 use shared::model::{FileTreeConfig, FilenameTree};
 use state::{Action, Store, TypeField};
@@ -83,6 +83,7 @@ impl View for SampleTreeView<'_> {
 
                 checkbox(
                     ui,
+                    |value| Checkbox::new(value, "Show non-audio files"),
                     config.show_non_audio,
                     |show_non_audio| {
                         self.store
@@ -94,11 +95,11 @@ impl View for SampleTreeView<'_> {
                             )));
                         reload = true;
                     },
-                    "Show non-audio files",
                 );
 
                 checkbox(
                     ui,
+                    |value| Checkbox::new(value, "Show hidden files"),
                     config.show_hidden,
                     |show_hidden| {
                         self.store
@@ -110,7 +111,6 @@ impl View for SampleTreeView<'_> {
                             )));
                         reload = true;
                     },
-                    "Show hidden files",
                 );
 
                 // TODO: show a loading spinner.

@@ -5,7 +5,7 @@ use crate::view::View;
 use crate::widget::checkbox;
 use crate::{AsyncState, playback::AudioPlayer};
 use dasp_frame::Stereo;
-use egui::Ui;
+use egui::{Checkbox, Ui};
 use state::Store;
 
 pub fn play_control(
@@ -25,7 +25,12 @@ pub fn play_control(
             player.pause();
             player.seek(0);
         }
-        checkbox(ui, player.is_looping(), |it| player.set_looping(it), "Loop");
+        checkbox(
+            ui,
+            |value| Checkbox::new(value, "Loop"),
+            player.is_looping(),
+            |it| player.set_looping(it),
+        );
 
         ui.label(player.current_time());
     });
