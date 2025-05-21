@@ -167,3 +167,32 @@ mod test {
         assert_eq!(detector.current(), 0.0);
     }
 }
+
+    #[ignore]
+    #[test]
+    fn rms_retains_precision() {
+        const WINDOW_SIZE: usize = 1024;
+        let rms_buffer = dasp_ring_buffer::Fixed::from([0f32; WINDOW_SIZE]);
+        let mut window = rms_buffer.clone();
+        let mut rms: Rms<f32, [f32; WINDOW_SIZE]> = Rms::new(rms_buffer);
+        let values: Vec<_> = (0..SAMPLE_RATE)
+            .map(|it| {
+                let a = 0.5 * ((it as f32 / SAMPLE_RATE as f32) * 400.0).sin();
+                a
+            })
+            .collect();
+
+        for value in values {
+            window.push(value);
+            let squared_sum: f32 =
+                window.iter().map(|it| it.powi(2)).sum::<f32>() / WINDOW_SIZE as f32;
+            let next_squared = rms.next_squared(value);
+            assert_eq!(next_squared, squared_sum);
+        }
+        for _ in 0..SAMPLE_RATE {
+            window.push(0.0);
+            rms.next(0.0);
+        }
+        let squared_sum: f32 = window.iter().map(|it| it.powi(2)).sum::<f32>() / WINDOW_SIZE as f32;
+        assert_ne!(rms.current(), squared_sum);
+    }
