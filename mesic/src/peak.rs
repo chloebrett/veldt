@@ -2,6 +2,12 @@ use dasp_frame::Stereo;
 use ordered_float::OrderedFloat;
 use std::collections::VecDeque;
 
+#[derive(Clone, Debug, Default)]
+struct BufferElement {
+    index: usize,
+    value: OrderedFloat<f32>,
+}
+
 /// Data structure to keep track of the max value over a ring buffer.
 /// Extension of a deque but for a new entry it will:
 ///   - Remove all elements that are now outside of the window.
@@ -12,7 +18,7 @@ use std::collections::VecDeque;
 /// efficiently returning the max value.
 #[derive(Clone, Debug)]
 pub struct PeakDetector {
-    deque: VecDeque<(usize, OrderedFloat<f32>)>,
+    deque: VecDeque<BufferElement>,
     buffer_size: usize,
     next_index: usize,
 }
@@ -36,35 +42,44 @@ impl PeakDetector {
         // An element will only stay in the buffer long enough to require removal if its value is
         // the max value.
         // Therefore we only need to check the max value element (back of queue).
-        if !deque.is_empty() && deque.back().unwrap().0 == next_index {
+        if deque.back().map(|it| it.index) == Some(next_index) {
             deque.pop_back();
         }
         if deque.is_empty() {
-            deque.push_back((next_index, value));
-        } else if deque.back().unwrap().1 <= value {
+            deque.push_back(BufferElement {
+                index: next_index,
+                value,
+            });
+        } else if deque.back().unwrap().value <= value {
             // New value is larger than max value.
             // Remove all other elements.
             deque.clear();
-            deque.push_back((next_index, value));
+            deque.push_back(BufferElement {
+                index: next_index,
+                value,
+            });
         } else {
             // Add element to queue from left.
             // Remove all elements with a value less than or equal to this entry.
             // This is okay as this value is larger and newer.
-            // This also keeps the queue sorted and only retaining relevant elements..
-            while value >= deque.front().unwrap().1 {
+            // This also keeps the queue sorted and only retaining relevant elements.
+            while value >= deque.front().unwrap().value {
                 deque.pop_front();
             }
-            deque.push_front((next_index, value));
+            deque.push_front(BufferElement {
+                index: next_index,
+                value,
+            });
         }
         // Update next index in ring buffer.
         self.next_index = (next_index + 1) % buffer_size;
         // Return max value.
-        *deque.back().unwrap().1
+        *deque.back().unwrap().value
     }
 
     /// Get current max value in buffer.
     pub fn current(&self) -> f32 {
-        *self.deque.back().unwrap_or(&(0, OrderedFloat(0.0))).1
+        *self.deque.back().unwrap_or(&BufferElement::default()).value
     }
 }
 
@@ -91,26 +106,26 @@ impl StereoPeakDetector {
 
 #[cfg(test)]
 mod test {
+    use dasp_rms::Rms;
+
+    use crate::{SAMPLE_RATE, consts::RECIP_SAMPLE_RATE};
+
     use super::PeakDetector;
 
     #[test]
     fn tracks_max_ascending_list() {
         let array = [0.0, 0.1, 0.2, 0.3, 0.4, 0.5];
         let mut detector = PeakDetector::new(10);
-        for value in array {
-            let next = detector.next(value);
-            assert_eq!(next, value)
-        }
+        let detected_maxes = array.map(|it| detector.next(it));
+        assert_eq!(detected_maxes, array);
     }
 
     #[test]
     fn tracks_max_descending_list() {
         let array = [0.5, 0.4, 0.3, 0.2, 0.1];
         let mut detector = PeakDetector::new(10);
-        for value in array {
-            let next = detector.next(value);
-            assert_eq!(next, array[0])
-        }
+        let detected_maxes = array.map(|it| detector.next(it));
+        assert_eq!(detected_maxes, [0.5; 5])
     }
 
     #[test]
@@ -120,7 +135,18 @@ mod test {
         for value in array {
             detector.next(value);
         }
-        let expected = array[1];
+        let expected = 0.4;
+        assert_eq!(detector.current(), expected)
+    }
+
+    #[test]
+    fn detector_handles_array_larger_than_buffer() {
+        let array = [0.8, 0.1, 0.3, 0.2, 0.1, 0.6, 0.2];
+        let mut detector = PeakDetector::new(4);
+        for value in array {
+            detector.next(value);
+        }
+        let expected = 0.6;
         assert_eq!(detector.current(), expected)
     }
 
@@ -131,7 +157,7 @@ mod test {
         for value in array {
             detector.next(value);
         }
-        let expected = array[4];
+        let expected = 0.8;
         assert_eq!(detector.current(), expected);
     }
 

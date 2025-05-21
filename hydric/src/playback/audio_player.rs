@@ -335,6 +335,7 @@ impl AudioPlayer {
     }
 
     pub fn level(&self) -> [f32; 2] {
+        log::debug!("{:?}", self.rms.current());
         let [left, right] = self.rms.current();
         [to_db(left), to_db(right)]
     }
