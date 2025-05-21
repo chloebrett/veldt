@@ -11,8 +11,8 @@ use crate::wave_cache::{WaveCache, WaveKey};
 use dasp_frame::Stereo;
 use dasp_graph::{Buffer, Input, Node};
 use shared::model::{
-    AntiAliasingMode, Generator, GeneratorInstance, GeneratorMeta, Oscillator, PitchName,
-    StingrayConfig, AdsrEnvelope,
+    AdsrEnvelope, AntiAliasingMode, Generator, GeneratorInstance, GeneratorMeta, Oscillator,
+    PitchName, StingrayConfig,
 };
 use shared::types::{Freq, KnobPosition, Volume};
 use state::GeneratorSelector;
@@ -148,13 +148,15 @@ impl Node<ProcessContext> for StingrayNode {
                         let mut sources = vec![];
                         for i in 0..state.config.envelopes.len() {
                             let mut attack = 0.0;
-                            let mut decay = 0.0; 
+                            let mut decay = 0.0;
                             let mut sustain = 0.0;
                             let mut release = 0.0;
                             let mut count = 0;
 
                             for j in 0..state.config.envelopes.len() {
-                                let cell: f32 = mod_matrix.get(j, i).map_or(0.0, |cell_ref| (*cell_ref).into());
+                                let cell: f32 = mod_matrix
+                                    .get(j, i)
+                                    .map_or(0.0, |cell_ref| (*cell_ref).into());
 
                                 if cell == 0.0 {
                                     continue;
@@ -173,7 +175,7 @@ impl Node<ProcessContext> for StingrayNode {
                                 decay /= count as f32;
                                 sustain /= count as f32;
                                 release /= count as f32;
-                            }                 
+                            }
 
                             let env = AdsrEnvelope {
                                 attack: attack,
