@@ -25,3 +25,7 @@ pub fn split_stereo_audio(stereo_audio: &[[f32; 2]]) -> (Vec<f32>, Vec<f32>) {
 pub fn to_db(input: f32) -> f32 {
     20.0 * input.log10()
 }
+
+pub fn from_db(input: f32) -> f32 {
+    10f32.powf(input / 20.0)
+}
