@@ -330,7 +330,11 @@ fn handle_drag(
         };
         let insert_index = if index == effect_index {
             // Object is dragging onto itself.
-            ui.painter().hline(rect.x_range(), rect.center().y, stroke);
+            ui.painter().add(Shape::rect_filled(
+                rect,
+                CornerRadius::ZERO,
+                Color32::WHITE.gamma_multiply(0.25),
+            ));
             effect_index
         } else if pointer.y < rect.center().y {
             // Object is dragging to above shape.
