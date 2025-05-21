@@ -123,6 +123,7 @@ impl LoadSample for LoadSampleContext {
 
         let mut file_path = sample_dir_path();
         file_path.push(filename.clone());
+        info!("Loading sample from path: {}", file_path.clone().display());
 
         let mut reader = hound::WavReader::open(file_path).map_err(|_| {
             tonic::Status::invalid_argument(format!("File {} could not be read.", filename))
