@@ -8,7 +8,7 @@ use crossbeam_channel::{Receiver, Sender};
 use dasp_frame::Stereo;
 use log::error;
 use mesic::graph::RenderGraph;
-use mesic::{SAMPLE_RATE, to_db};
+use mesic::{SAMPLE_RATE, StereoPeakDetector, to_db};
 use ringbuffer::{AllocRingBuffer, RingBuffer};
 use shared::model::PitchName;
 use state::GeneratorSelector;
@@ -18,6 +18,8 @@ use wasm_thread::JoinHandle;
 const RECENT_AUDIO_SECONDS: f32 = 5.0;
 const RECENT_AUDIO_SAMPLE_COUNT: usize = (RECENT_AUDIO_SECONDS * SAMPLE_RATE as f32) as usize;
 const RMS_BUFFER_SAMPLES: usize = 1024;
+const PEAK_BUFFER_SECOND: f32 = 1.0;
+const PEAK_BUFFER_SAMPLES: usize = (PEAK_BUFFER_SECOND * SAMPLE_RATE as f32) as usize;
 
 pub struct AudioPlayer {
     // The render graph, if we haven't given it to the processing thread yet.
@@ -74,6 +76,9 @@ pub struct AudioPlayer {
     // Root Mean Square of most recent window in audio.
     // Read with `level()`
     rms: dasp_rms::Rms<Stereo<f32>, [Stereo<f32>; RMS_BUFFER_SAMPLES]>,
+
+    // Peak audio from recent window.
+    peak: StereoPeakDetector,
 }
 
 impl AudioPlayer {
@@ -107,6 +112,7 @@ impl AudioPlayer {
             buffer_delay: 0,
             output_delay: Arc::new(Mutex::new(0)),
             rms: dasp_rms::Rms::new(rms_buffer),
+            peak: StereoPeakDetector::new(PEAK_BUFFER_SAMPLES),
         }
     }
 
@@ -206,7 +212,8 @@ impl AudioPlayer {
         }
 
         while let Ok(update) = self.recent_rx.try_recv() {
-            self.rms.next(update);
+            let next = self.rms.next(update);
+            self.peak.next(next);
             self.recent_buf.push(update);
             self.recent_buf_offset += 1;
         }
@@ -328,7 +335,13 @@ impl AudioPlayer {
     }
 
     pub fn level(&self) -> [f32; 2] {
+        log::debug!("{:?}", self.rms.current());
         let [left, right] = self.rms.current();
+        [to_db(left), to_db(right)]
+    }
+
+    pub fn peak(&self) -> [f32; 2] {
+        let [left, right] = self.peak.current();
         [to_db(left), to_db(right)]
     }
 }
