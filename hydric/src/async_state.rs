@@ -9,7 +9,7 @@ pub struct AsyncState {
     pub save_project: AsyncResult<(), ()>,
     pub project_list: AsyncResult<Vec<String>, ()>,
     pub load_project: AsyncResult<Project, ()>,
-    pub load_sample: AsyncResult<Sample, ()>,
+    pub load_sample: AsyncResult<Sample, tonic::Status>,
     pub upload_sample: AsyncResult<(), ()>,
     pub load_sample_tree: AsyncResult<FilenameTree, ()>,
     pub export: AsyncResult<(), ()>,
