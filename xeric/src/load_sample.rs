@@ -33,7 +33,7 @@ pub struct LoadSampleContext;
 
 pub fn sample_dir_path() -> PathBuf {
     let mut file_path = current_dir().unwrap();
-    file_path.pop(); // pop '/xeric'
+    // Note: no need to pop '/xeric', as we assume we are running from the veldt dir.
     file_path.push("assets");
     file_path.push("samples");
     file_path
@@ -128,6 +128,7 @@ impl LoadSample for LoadSampleContext {
         let mut reader = hound::WavReader::open(file_path).map_err(|_| {
             tonic::Status::invalid_argument(format!("File {} could not be read.", filename))
         })?;
+        info!("Load sample 1");
         let chunks = reader.samples::<i32>().chunks(2);
         let (left, right) = chunks
             .into_iter()
@@ -137,6 +138,7 @@ impl LoadSample for LoadSampleContext {
                 (left, right)
             })
             .unzip();
+        info!("Load sample 2");
         let sample = Sample {
             left,
             right,
