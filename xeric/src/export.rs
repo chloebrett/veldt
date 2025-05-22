@@ -23,7 +23,7 @@ fn wav_file_path(name: &str) -> PathBuf {
 
 fn wav_dir_path() -> PathBuf {
     let mut dir_path = current_dir().unwrap();
-    dir_path.pop(); // pop '/xeric'
+    // Note: no need to pop '/xeric', as we assume we are running from the veldt dir.
     dir_path.push("wav");
     dir_path
 }

@@ -53,9 +53,6 @@ impl Upload for UploadContext {
             );
         }
 
-        Ok(Response::new(UploadSampleReply {
-            success: true,
-            message: "File uploaded successfully".into(),
-        }))
+        Ok(Response::new(UploadSampleReply { success: true }))
     }
 }
