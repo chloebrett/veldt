@@ -106,6 +106,41 @@ impl StingrayNode {
             *x *= pan_mult * volume;
         }
     }
+
+    fn update_envelope(
+        osc_index: usize,
+        envelopes: &[AdsrEnvelope],
+        matrix: &dyn Fn(usize, usize) -> Option<f32>,
+    ) -> AdsrEnvelope {
+        let mut total = AdsrEnvelope {
+            attack: 0.0,
+            decay: 0.0,
+            sustain: 0.0,
+            release: 0.0,
+        };
+        let mut count = 0;
+
+        for (j, env) in envelopes.iter().enumerate() {
+            let weight = matrix(j, osc_index).unwrap_or(0.0);
+            if weight != 0.0 {
+                count += 1;
+                total.attack += weight * env.attack;
+                total.decay += weight * env.decay;
+                total.sustain += weight * env.sustain;
+                total.release += weight * env.release;
+            }
+        }
+
+        if count > 0 {
+            let divisor = count as f32;
+            total.attack /= divisor;
+            total.decay /= divisor;
+            total.sustain /= divisor;
+            total.release /= divisor;
+        }
+
+        total
+    }
 }
 
 impl Node<ProcessContext> for StingrayNode {
@@ -146,48 +181,17 @@ impl Node<ProcessContext> for StingrayNode {
                             state.config
                         );
                         let mut sources = vec![];
+                        
                         for i in 0..state.config.envelopes.len() {
-                            let mut attack = 0.0;
-                            let mut decay = 0.0;
-                            let mut sustain = 0.0;
-                            let mut release = 0.0;
-                            let mut count = 0;
-
-                            for j in 0..state.config.envelopes.len() {
-                                let cell: f32 = mod_matrix
-                                    .get(j, i)
-                                    .map_or(0.0, |cell_ref| (*cell_ref).into());
-
-                                if cell == 0.0 {
-                                    continue;
-                                }
-
-                                count += 1;
-                                let env = state.config.envelopes[i].clone();
-                                attack += cell * env.attack;
-                                decay += cell * env.decay;
-                                sustain += cell * env.sustain;
-                                release += cell * env.release;
-                            }
-
-                            if count > 0 {
-                                attack /= count as f32;
-                                decay /= count as f32;
-                                sustain /= count as f32;
-                                release /= count as f32;
-                            }
-
-                            let env = AdsrEnvelope {
-                                attack: attack,
-                                decay: decay,
-                                sustain: sustain,
-                                release: release,
-                            };
+                            let env = Self::update_envelope(i, envelopes, &|j, i| {
+                                mod_matrix.get(j, i).map(|x| (*x).into())
+                            });
                             let eg = &mut state.voice.egs[i];
                             let osc = state.config.oscillators[i].clone();
 
                             eg.note_on();
                             eg.set_envelope(env);
+                            
                             // TODO: update config dynamically, not just when starting a new note.
                             sources.push(StingrayWaveSource::new(note_event.pitch_name, osc));
                         }
