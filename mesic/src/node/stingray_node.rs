@@ -163,7 +163,9 @@ impl Node<ProcessContext> for StingrayNode {
         let lpf_col = 3;
         let mut lpf_mod = 0.0;
         for i in 0..state.config.envelopes.len() {
-            let cell: f32 = mod_matrix.get(i, lpf_col).map_or(0.0, |cell_ref| (*cell_ref).into());
+            let cell: f32 = mod_matrix
+                .get(i, lpf_col)
+                .map_or(0.0, |cell_ref| (*cell_ref).into());
 
             if cell == 0.0 {
                 continue;
