@@ -9,6 +9,7 @@ use egui::{Button, Ui, menu::bar};
 use state::{Action, Store, TypeField};
 
 use super::{effect::EffectMenuOptions, save_as::SaveAs};
+use super::{generator::GeneratorMenuOptions};
 
 pub struct MenuBar<'a> {
     store: &'a mut Store,
@@ -139,12 +140,9 @@ impl View for MenuBar<'_> {
             ui.menu_button("Effects", |ui| {
                 EffectMenuOptions::new(self.store, self.window_state).ui(ui);
             });
-            ui.menu_button(
-                "Generators",
-                |ui| {
-                    if ui.button("Add generator").clicked() {}
-                },
-            );
+            ui.menu_button("Generators", |ui| {
+                GeneratorMenuOptions::new(self.store, self.window_state).ui(ui);
+            });
             let sample_response = ui.add(Button::new("📂").selected(self.window_state.sample_tree));
             if sample_response.clicked() {
                 self.window_state.sample_tree ^= true;
