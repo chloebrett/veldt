@@ -176,7 +176,7 @@ impl Node<ProcessContext> for StingrayNode {
                             state.config
                         );
                         let mut sources = vec![];
-                        
+
                         for i in 0..state.config.envelopes.len() {
                             let env = Self::update_envelope(i, envelopes, &|j, i| {
                                 mod_matrix.get(j, i).map(|x| (*x).into())
@@ -186,7 +186,7 @@ impl Node<ProcessContext> for StingrayNode {
 
                             eg.note_on();
                             eg.set_envelope(env);
-                            
+
                             // TODO: update config dynamically, not just when starting a new note.
                             sources.push(StingrayWaveSource::new(note_event.pitch_name, osc));
                         }
