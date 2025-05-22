@@ -68,6 +68,12 @@ impl Transform<Self> for Vec<Pos2> {
     }
 }
 
+impl Transform<Self> for Vec2 {
+    fn transform(&self, rect: RectTransform) -> Self {
+        (rect * self.to_pos2()).to_vec2()
+    }
+}
+
 /// Transposes a 2D object, replacing x values with y values and vice versa.
 pub trait Yx {
     fn yx(&self) -> Self;

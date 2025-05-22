@@ -1,6 +1,6 @@
 use egui::epaint::TextShape;
 use egui::text::TextWrapping;
-use egui::{Align, Pos2, Rangef, Stroke, TextStyle, WidgetText};
+use egui::{Align, Modifiers, Pos2, Rangef, Stroke, TextStyle, WidgetText};
 use egui::{
     Color32, CornerRadius, Frame, Rect, Response, Sense, Shape, Ui, Vec2, Widget,
     emath::RectTransform, pos2, vec2,
@@ -254,6 +254,8 @@ impl<'a, F: Fn(f32), G: Fn()> AudioLevel<'a, F, G> {
             pos2(range.center().x, level),
             vec2(range.size().x - side_padding, knob_height),
         );
+        // Handle double click setting fader to 0 dB.
+        self.handle_fader_click(ui, &range, response, to_screen, padding_transform);
         // Handle the dragging of the fader.
         self.handle_fader_drag(ui, &knob_rect, response, to_screen, padding_transform);
         Shape::Vec(vec![
@@ -273,6 +275,25 @@ impl<'a, F: Fn(f32), G: Fn()> AudioLevel<'a, F, G> {
         ])
     }
 
+    fn handle_fader_click(
+        &self,
+        ui: &mut Ui,
+        rect: &Rect,
+        response: &Response,
+        to_screen: RectTransform,
+        padding_transform: RectTransform,
+    ) {
+        let fader_id = response.id.with("fader_area");
+        let fader_response = ui.interact(
+            rect.transform(padding_transform).transform(to_screen),
+            fader_id,
+            Sense::click(),
+        );
+        if fader_response.double_clicked() {
+            (self.dispatch)(0.0)
+        }
+    }
+
     fn handle_fader_drag(
         &self,
         ui: &mut Ui,
@@ -287,18 +308,23 @@ impl<'a, F: Fn(f32), G: Fn()> AudioLevel<'a, F, G> {
             fader_id,
             Sense::drag(),
         );
-        let drag_pos = fader_response.interact_pointer_pos();
-        if let Some(drag_pos) = drag_pos {
-            let next_level = drag_pos
+        if fader_response.dragged() {
+            let delta = fader_response.drag_delta();
+            let next_rect = if ui.input(|input| {
+                input.modifiers.contains(Modifiers::CTRL)
+                    || input.modifiers.contains(egui::Modifiers::SHIFT)
+            }) {
+                // Reduce the move delta.
+                fader_response.rect.center() + delta * vec2(0.0, 0.2)
+            } else {
+                fader_response.rect.center() + delta
+            };
+            let next_level = next_rect
                 .transform(to_screen.inverse())
                 .transform(padding_transform.inverse())
                 .y
                 .clamp(0.0, 1.0);
-            let mut next_db = self.inv_convert_level(next_level);
-            // Snap values close values to 0.
-            if next_db.abs() < 0.5 {
-                next_db = 0.0
-            }
+            let next_db = self.inv_convert_level(next_level);
             (self.dispatch)(next_db);
         }
         if fader_response.lost_focus() || fader_response.drag_stopped() {
