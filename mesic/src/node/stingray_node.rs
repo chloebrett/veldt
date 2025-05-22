@@ -158,6 +158,25 @@ impl Node<ProcessContext> for StingrayNode {
             }
         }
 
+        // Update frequency cut-off for LPF
+        let lpf_freq = &state.config.lpf.fc;
+        let lpf_col = 3;
+        let mut lpf_mod = 0.0;
+        for i in 0..state.config.envelopes.len() {
+            let cell: f32 = mod_matrix.get(i, lpf_col).map_or(0.0, |cell_ref| (*cell_ref).into());
+
+            if cell == 0.0 {
+                continue;
+            }
+
+            let eg = &state.voice.egs[i];
+            let env_val = eg.get_last_output();
+            lpf_mod += cell * env_val;
+        }
+
+        let mod_freq = (lpf_freq + lpf_mod).clamp(20.0, SAMPLE_RATE as f32 / 2.0);
+        state.config.lpf.fc = mod_freq;
+
         // TODO: fix this, it's n^2 right now. (well, n*64).
         for i in 0..Buffer::LEN {
             let mut events: Vec<_> = payload.note_events[generator_index]

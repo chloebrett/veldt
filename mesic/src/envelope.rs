@@ -93,6 +93,10 @@ impl EnvelopeGenerator {
     pub fn set_envelope(&mut self, envelope: AdsrEnvelope) {
         self.config = envelope;
     }
+
+    pub fn get_last_output(&self) -> f32 {
+        self.last_output
+    }
 }
 
 const SHUTDOWN_MS: f32 = 1.0;
