@@ -112,7 +112,7 @@ impl StingrayNode {
         envelopes: &[AdsrEnvelope],
         matrix: &dyn Fn(usize, usize) -> Option<f32>,
     ) -> AdsrEnvelope {
-        let mut total = AdsrEnvelope {
+        let mut new_env = AdsrEnvelope {
             attack: 0.0,
             decay: 0.0,
             sustain: 0.0,
@@ -124,22 +124,22 @@ impl StingrayNode {
             let weight = matrix(j, osc_index).unwrap_or(0.0);
             if weight != 0.0 {
                 count += 1;
-                total.attack += weight * env.attack;
-                total.decay += weight * env.decay;
-                total.sustain += weight * env.sustain;
-                total.release += weight * env.release;
+                new_env.attack += weight * env.attack;
+                new_env.decay += weight * env.decay;
+                new_env.sustain += weight * env.sustain;
+                new_env.release += weight * env.release;
             }
         }
 
         if count > 0 {
             let divisor = count as f32;
-            total.attack /= divisor;
-            total.decay /= divisor;
-            total.sustain /= divisor;
-            total.release /= divisor;
+            new_env.attack /= divisor;
+            new_env.decay /= divisor;
+            new_env.sustain /= divisor;
+            new_env.release /= divisor;
         }
 
-        total
+        new_env
     }
 }
 
