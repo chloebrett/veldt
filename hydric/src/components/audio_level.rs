@@ -254,7 +254,7 @@ impl<'a, F: Fn(f32), G: Fn()> AudioLevel<'a, F, G> {
             pos2(range.center().x, level),
             vec2(range.size().x - side_padding, knob_height),
         );
-        // Handle double click setting fader to 0 dB.
+        // Double-click anywhere on fader sets fader to 0 dB.
         self.handle_fader_click(ui, &range, response, to_screen, padding_transform);
         // Handle the dragging of the fader.
         self.handle_fader_drag(ui, &knob_rect, response, to_screen, padding_transform);
