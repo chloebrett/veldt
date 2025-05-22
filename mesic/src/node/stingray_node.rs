@@ -184,19 +184,20 @@ impl Node<ProcessContext> for StingrayNode {
             }
 
             if let Some(sources) = &mut state.voice.sources {
-                // for (eg, source) in state.voice.egs.iter_mut().zip(sources.iter_mut()) {
-                //     let mut lfo_value = state.voice.lfos[0].next();
-                //     lfo_value = lfo_value * 0.5 + 0.5; // Normalize to 0..1
-                //     let amp = eg.next().unwrap_or(0.0);
-                //     let wave = source.next(&mut self.cache, lfo_value);
-
-                //     buffers[0][i] += amp * wave[0];
-                //     buffers[1][i] += amp * wave[1];
-                // }
                 for j in 0..state.voice.egs.len() {
                     let eg = &mut state.voice.egs[j];
                     let source = &mut sources[j];
-                    let mut lfo_value = state.voice.lfos[j].next();
+                    let mut lfo_value = 0.0;
+                    // Access the column for this oscillator in the matrix
+                    for k in 0..state.config.lfos.len() {
+                        // Get matrix value for this oscillator and LFO
+                        let matrix_value: f32 = state.config.matrix.get(k + 3, j).map_or(0.0, |cell_ref| (*cell_ref).into());
+                        // Get the LFO value
+                        lfo_value += state.voice.lfos[k].next() * matrix_value;
+                    }
+                    // Average the sum of the LFO values for this oscillator
+                    lfo_value /= state.config.lfos.len() as f32;
+
                     lfo_value = lfo_value * 0.5 + 0.5; // Normalize to 0..1
                     let amp = eg.next().unwrap_or(0.0);
                     let wave = source.next(&mut self.cache, lfo_value);
