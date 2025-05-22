@@ -1,7 +1,6 @@
 use crate::consts::SAMPLE_RATE;
 use shared::model::{LfoConfig, AntiAliasingMode};
 use crate::wave::make_wave;
-use std::f32::consts::TAU;
 
 #[derive(Clone, Debug, PartialEq)]
 pub struct Lfo {
@@ -23,7 +22,7 @@ impl Lfo {
 
         let sample_rate = SAMPLE_RATE as f32;
         let period = sample_rate / frequency;
-        let phase = (self.sample_index as f32 / period);
+        let phase = self.sample_index as f32 / period;
 
         self.sample_index += 1;
         self.sample_index = self.sample_index % (sample_rate as usize);
@@ -34,5 +33,10 @@ impl Lfo {
             frequency,
             AntiAliasingMode::Off, // Surely the freq is low enough to not need Anti Aliasing
         )
+    }
+
+    pub fn set_lfo(&mut self, config: LfoConfig) {
+        self.config = config;
+        self.sample_index += 1 % (SAMPLE_RATE as usize);
     }
 }

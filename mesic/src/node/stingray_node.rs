@@ -10,9 +10,10 @@ use crate::wave::detune_multiplier;
 use crate::wave_cache::{WaveCache, WaveKey};
 use dasp_frame::Stereo;
 use dasp_graph::{Buffer, Input, Node};
+use log::info;
 use shared::model::{
-    AntiAliasingMode, Generator, GeneratorInstance, GeneratorMeta, Oscillator,
-    PitchName, StingrayConfig
+    AntiAliasingMode, Generator, GeneratorInstance, GeneratorMeta, Oscillator, PitchName,
+    StingrayConfig,
 };
 use shared::types::{Freq, KnobPosition, Volume};
 use state::GeneratorSelector;
@@ -58,11 +59,7 @@ impl Default for NodeState {
             voice: Voice {
                 egs: [egs[0].clone(), egs[1].clone(), egs[2].clone()],
                 sources: None,
-                lfos: [
-                    lfos[0].clone(),
-                    lfos[1].clone(),
-                    lfos[2].clone(),
-                ],
+                lfos: [lfos[0].clone(), lfos[1].clone(), lfos[2].clone()],
             },
             filter_left: eq_filter(&config.lpf),
             filter_right: eq_filter(&config.lpf),
@@ -128,6 +125,11 @@ impl Node<ProcessContext> for StingrayNode {
         let mut buffers = [Buffer::SILENT; 2];
         let GeneratorSelector(generator_index) = self.selector;
 
+        for i in 0..state.voice.lfos.len() {
+            state.voice.lfos[i].set_lfo(state.config.lfos[i].clone());
+            info!("LFO: {:?}", state.voice.lfos[i].config);
+        }
+
         // TODO: fix this, it's n^2 right now. (well, n*64).
         for i in 0..Buffer::LEN {
             let mut events: Vec<_> = payload.note_events[generator_index]
@@ -182,8 +184,19 @@ impl Node<ProcessContext> for StingrayNode {
             }
 
             if let Some(sources) = &mut state.voice.sources {
-                for (eg, source) in state.voice.egs.iter_mut().zip(sources.iter_mut()) {
-                    let mut lfo_value = state.voice.lfos[0].next();
+                // for (eg, source) in state.voice.egs.iter_mut().zip(sources.iter_mut()) {
+                //     let mut lfo_value = state.voice.lfos[0].next();
+                //     lfo_value = lfo_value * 0.5 + 0.5; // Normalize to 0..1
+                //     let amp = eg.next().unwrap_or(0.0);
+                //     let wave = source.next(&mut self.cache, lfo_value);
+
+                //     buffers[0][i] += amp * wave[0];
+                //     buffers[1][i] += amp * wave[1];
+                // }
+                for j in 0..state.voice.egs.len() {
+                    let eg = &mut state.voice.egs[j];
+                    let source = &mut sources[j];
+                    let mut lfo_value = state.voice.lfos[j].next();
                     lfo_value = lfo_value * 0.5 + 0.5; // Normalize to 0..1
                     let amp = eg.next().unwrap_or(0.0);
                     let wave = source.next(&mut self.cache, lfo_value);
