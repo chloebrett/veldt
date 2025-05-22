@@ -158,11 +158,19 @@ impl Node<ProcessContext> for StingrayNode {
             }
         }
 
-        // Update frequency cut-off for LPF
+        // Update frequency cut-off for LPF and envelopes
+        let mut new_envs = Vec::new();
         let lpf_freq = &state.config.lpf.fc;
         let lpf_col = 3;
         let mut lpf_mod = 0.0;
         for i in 0..state.config.envelopes.len() {
+            // Update each envelope for each oscillator
+            let env = Self::update_envelope(i, envelopes, &|j, i| {
+                mod_matrix.get(j, i).map(|x| (*x).into())
+            });
+            new_envs.push(env);
+
+            // Update LPF cutoff based on envelope
             let cell: f32 = mod_matrix
                 .get(i, lpf_col)
                 .map_or(0.0, |cell_ref| (*cell_ref).into());
@@ -204,9 +212,7 @@ impl Node<ProcessContext> for StingrayNode {
                         let mut sources = vec![];
 
                         for i in 0..state.config.envelopes.len() {
-                            let env = Self::update_envelope(i, envelopes, &|j, i| {
-                                mod_matrix.get(j, i).map(|x| (*x).into())
-                            });
+                            let env = new_envs[i].clone();
                             let eg = &mut state.voice.egs[i];
                             let osc = state.config.oscillators[i].clone();
 
