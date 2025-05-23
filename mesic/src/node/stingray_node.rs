@@ -191,7 +191,11 @@ impl Node<ProcessContext> for StingrayNode {
                     // Access the column for this oscillator in the matrix
                     for k in 0..state.config.lfos.len() {
                         // Get matrix value for this oscillator and LFO
-                        let matrix_value: f32 = state.config.matrix.get(k + 3, j).map_or(0.0, |cell_ref| (*cell_ref).into());
+                        let matrix_value: f32 = state
+                            .config
+                            .matrix
+                            .get(k + 3, j)
+                            .map_or(0.0, |cell_ref| (*cell_ref).into());
                         // Get the LFO value
                         lfo_value += state.voice.lfos[k].next() * matrix_value;
                     }
