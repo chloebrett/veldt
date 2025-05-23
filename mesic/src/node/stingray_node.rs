@@ -12,7 +12,6 @@ use crate::wave::detune_multiplier;
 use crate::wave_cache::{WaveCache, WaveKey};
 use dasp_frame::Stereo;
 use dasp_graph::{Buffer, Input, Node};
-use log::info;
 use shared::model::{
     AntiAliasingMode, Generator, GeneratorInstance, GeneratorMeta, Oscillator, PitchName,
     StingrayConfig,
@@ -191,9 +190,7 @@ impl Node<ProcessContext> for StingrayNode {
             }
 
             if let Some(sources) = &mut state.voice.sources {
-                for j in 0..state.voice.egs.len() {
-                    let eg = &mut state.voice.egs[j];
-                    let source = &mut sources[j];
+                for ((eg, source), j) in state.voice.egs.iter_mut().zip(sources.iter_mut()).zip(0..) {
                     let mut lfo_value = 0.0;
                     // Access the column for this oscillator in the matrix
                     for k in 0..state.config.lfos.len() {
