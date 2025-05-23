@@ -139,9 +139,11 @@ impl<'a, T: SequencerObject<T>> Sequencer<'a, T> {
             if resize_resp.hovered() {
                 ui.ctx().set_cursor_icon(CursorIcon::ResizeColumn);
             }
-            let release = self.move_object(ui, index, movable_resp, to_sequencer, &edit_object)
+            let release = self.move_object(index, movable_resp, to_sequencer, &edit_object)
                 || self.resize_object(index, resize_resp, to_sequencer, &edit_object);
             if release {
+                // TODO: fix release dispatch for move actions.
+                // Compaction doesn't work properly because we have separate x and y actions.
                 on_release();
                 self.local_state.drag_cursor_delta.set(None);
             }
@@ -154,7 +156,6 @@ impl<'a, T: SequencerObject<T>> Sequencer<'a, T> {
 
     fn move_object(
         &self,
-        _ui: &mut Ui,
         index: usize,
         response: Response,
         to_sequencer: RectTransform,
@@ -163,7 +164,6 @@ impl<'a, T: SequencerObject<T>> Sequencer<'a, T> {
         let object = self.objects.get(index).expect("Should have got object.");
         let drag_pos = response.interact_pointer_pos();
         let drag_delta = response.drag_delta();
-        let mut action_dispatched = false;
         if let Some(drag_pos) = drag_pos {
             // Keep track of the delta between object and cursor position at drag start.
             if response.interact(Sense::drag()).drag_started() {
@@ -186,18 +186,16 @@ impl<'a, T: SequencerObject<T>> Sequencer<'a, T> {
             if drag_delta.y != 0.0 {
                 if let Some(action) = object.y_action(scaled_pos.y, self.range) {
                     edit_object(index, action);
-                    action_dispatched = true;
                 };
             }
             if drag_delta.x != 0.0 {
                 if let Some(action) = object.x_action(self.quantise(scaled_pos.x), self.range) {
                     edit_object(index, action);
-                    action_dispatched = true;
                 };
             }
         }
         // Return true when interaction completed.
-        action_dispatched && (response.lost_focus() || response.drag_stopped())
+        response.lost_focus() || response.drag_stopped()
     }
 
     fn resize_object(
@@ -207,9 +205,8 @@ impl<'a, T: SequencerObject<T>> Sequencer<'a, T> {
         to_sequencer: RectTransform,
         edit_object: &impl Fn(usize, Action),
     ) -> bool {
-        let object = self.objects.get(index).expect("Should have gotten object.");
+        let object = &self.objects[index];
         let drag_pos = response.interact_pointer_pos();
-        let mut action_dispatched = false;
         if let Some(drag_pos) = drag_pos {
             let scaled_pos = drag_pos.transform(to_sequencer.inverse()).clamp(
                 pos2(object.to_rect(self.range).left(), 0.0),
@@ -217,11 +214,10 @@ impl<'a, T: SequencerObject<T>> Sequencer<'a, T> {
             );
             if let Some(action) = object.resize_action(self.quantise(scaled_pos.x), self.range) {
                 edit_object(index, action);
-                action_dispatched = true;
             };
         }
         // Return true when interaction completed.
-        action_dispatched && (response.lost_focus() || response.drag_stopped())
+        response.lost_focus() || response.drag_stopped()
     }
 
     fn object_shapes(&self) -> Shape {
@@ -261,7 +257,7 @@ impl<T: SequencerObject<T>> Widget for Sequencer<'_, T> {
                 if ui.input(|input| {
                     input.key_pressed(egui::Key::Delete) || input.key_pressed(egui::Key::Backspace)
                 }) {
-                    T::delete_selected(ui, store, self.local_state, self.parent_index);
+                    T::delete_selected(store, self.local_state, self.parent_index);
                     T::set_selected(self.local_state, None);
                 }
             } else if response.interact(Sense::click()).clicked() {
@@ -279,7 +275,7 @@ impl<T: SequencerObject<T>> Widget for Sequencer<'_, T> {
                 painter.add(object.active_shape(range).transform(to_screen));
             }
 
-            let objects = T::get_selected(ui, self.store, self.local_state);
+            let objects = T::get_selected(self.store, self.local_state);
             if !objects.is_empty() {
                 painter.extend(
                     objects
@@ -314,7 +310,7 @@ pub trait SequencerObject<T> {
 
     fn active_shape(&self, range: Rect) -> Shape;
 
-    fn get_selected(ui: &Ui, store: &Store, local_state: &LocalState) -> Vec<T>;
+    fn get_selected(store: &Store, local_state: &LocalState) -> Vec<T>;
 
     fn selected_shape(&self, range: Rect) -> Shape;
 
@@ -326,10 +322,5 @@ pub trait SequencerObject<T> {
 
     fn add_new(&self, store: &Store, parent_index: Option<usize>);
 
-    fn delete_selected(
-        ui: &mut Ui,
-        store: &Store,
-        local_state: &LocalState,
-        parent_index: Option<usize>,
-    );
+    fn delete_selected(store: &Store, local_state: &LocalState, parent_index: Option<usize>);
 }

@@ -163,6 +163,7 @@ impl RenderGraph {
     }
 }
 
+// TODO: account for sample placements.
 fn duration_ceil(project: &Project) -> Beats {
     let beats = project.duration();
     const BEATS_PER_BAR: f32 = 4.0;
@@ -174,6 +175,7 @@ impl Iterator for RenderGraph {
 
     fn next(&mut self) -> Option<Self::Item> {
         let index = self.pos();
+        self.process_context.playback_pos = index;
 
         if index % Buffer::LEN == 0 {
             self.update_store();

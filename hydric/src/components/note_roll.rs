@@ -251,7 +251,7 @@ impl SequencerObject<PlacedNote> for PlacedNote {
         ])
     }
 
-    fn get_selected(_ui: &Ui, store: &Store, local_state: &LocalState) -> Vec<PlacedNote> {
+    fn get_selected(store: &Store, local_state: &LocalState) -> Vec<PlacedNote> {
         let Some(track_sel) = local_state.active_track.get() else {
             return vec![];
         };
@@ -330,12 +330,7 @@ impl SequencerObject<PlacedNote> for PlacedNote {
         }
     }
 
-    fn delete_selected(
-        _ui: &mut Ui,
-        store: &Store,
-        local_state: &LocalState,
-        parent_index: Option<usize>,
-    ) {
+    fn delete_selected(store: &Store, local_state: &LocalState, parent_index: Option<usize>) {
         local_state.active_note.update(|note| match note {
             // If the active note is selected, "de-activate" it.
             Some(index) if local_state.selected_notes.get().contains(&index) => None,

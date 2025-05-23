@@ -1,4 +1,5 @@
 use crate::Action;
+use std::cmp::min;
 
 mod effect;
 mod generator;
@@ -7,6 +8,7 @@ mod mixer_channel;
 mod note;
 mod placement;
 mod project;
+mod sample;
 mod store_data;
 mod track;
 
@@ -18,15 +20,11 @@ pub trait ActionReceiver {
     fn apply(&mut self, action: &Action) -> Option<Action>;
 }
 
+/// Moves an element in a vector to a particular index.
+/// Other elements move around it accordingly.
 pub fn move_elem<T: Clone>(vec: &mut Vec<T>, from_index: usize, to_index: usize) {
-    vec.insert(to_index, vec[from_index].clone());
-    if from_index > to_index {
-        // Inserted value has increased original index of value by 1
-        vec.remove(from_index + 1);
-    } else if from_index <= to_index {
-        // Inserted value has not changed original index of value
-        vec.remove(from_index);
-    };
+    let elem = vec.remove(min(from_index, vec.len() - 1));
+    vec.insert(min(to_index, vec.len()), elem);
 }
 
 pub fn delete_elems<T: Clone>(vec: &mut Vec<T>, indexes: Vec<usize>) {
@@ -35,5 +33,20 @@ pub fn delete_elems<T: Clone>(vec: &mut Vec<T>, indexes: Vec<usize>) {
     // Delete indexes in reverse so that indexes not yet removed are not changed during operation.
     for index in indexes.iter().rev() {
         vec.remove(*index);
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn move_elem_simple() {
+        let mut v = vec![10, 11, 12, 13];
+
+        move_elem(&mut v, 1, 3);
+
+        // 11 (index 1) has moved to index 3.
+        assert_eq!(v, vec![10, 12, 13, 11]);
     }
 }

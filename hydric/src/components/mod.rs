@@ -9,9 +9,8 @@ mod mod_matrix;
 mod note_roll;
 mod note_view;
 mod piano;
+mod placement_view;
 mod play;
-mod sample_placement_view;
-mod track_placement_view;
 mod track_roll;
 
 pub use app::*;
@@ -22,6 +21,5 @@ use mod_matrix::*;
 use note_roll::*;
 use note_view::*;
 use piano::*;
-use sample_placement_view::*;
-use track_placement_view::*;
+use placement_view::*;
 use track_roll::*;

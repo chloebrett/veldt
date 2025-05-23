@@ -11,6 +11,8 @@ use crate::window_state::WindowStateField;
 use egui::CornerRadius;
 use egui::Shape;
 use egui::{Button, Color32, Frame, InnerResponse, Layout, Pos2, Response, Stroke, Ui, Widget};
+use mesic::from_db;
+use mesic::to_db;
 use shared::model::{Effect, EffectInstance, EffectMeta};
 use state::{
     Action, EffectSelector, FloatField, IndexField, MixerSelector, MoveField, Store, TypeField,
@@ -115,21 +117,14 @@ impl View for MixerView<'_> {
                         &format!("Channel {mixer_index}")
                     };
                     ui.heading(heading);
-
-                    knob(
-                        ui,
-                        "Volume",
-                        mixer.volume,
-                        |it| dispatch_mixer(Action::SetFloat(FloatField::Volume, it)),
-                        0.0..=1.0,
-                        /* neutral= */ 1.0,
-                        on_release,
-                    );
                 });
 
                 ui.separator();
                 ui.horizontal(|ui| {
-                    AudioLevel::new(player).ui(ui);
+                    let dispatch_volume =
+                        |it| dispatch_mixer(Action::SetFloat(FloatField::Volume, from_db(it)));
+                    AudioLevel::new(player, to_db(mixer.volume), dispatch_volume, on_release)
+                        .ui(ui);
                     ui.vertical(|ui| {
                         ui.with_layout(Layout::default(), |ui| {
                             // Set background to transparent to avoid a lightened background caused by drag
@@ -335,7 +330,11 @@ fn handle_drag(
         };
         let insert_index = if index == effect_index {
             // Object is dragging onto itself.
-            ui.painter().hline(rect.x_range(), rect.center().y, stroke);
+            ui.painter().add(Shape::rect_filled(
+                rect,
+                CornerRadius::ZERO,
+                Color32::WHITE.gamma_multiply(0.25),
+            ));
             effect_index
         } else if pointer.y < rect.center().y {
             // Object is dragging to above shape.

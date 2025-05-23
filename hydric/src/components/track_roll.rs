@@ -1,33 +1,35 @@
 use crate::{
-    GetSet, LocalState, WindowState,
+    GetSet, LocalState,
     view::View,
     widget::{Sequencer, SequencerObject, default_window},
+    window_state::{WindowKind, WindowState2},
 };
 use egui::{
     Color32, CornerRadius, Pos2, Rect, ScrollArea, Shape, Stroke, StrokeKind, Ui, pos2, vec2,
 };
+use mesic::samples_to_beats;
 use ordered_float::OrderedFloat;
 use shared::{
     model::{Placement, PlacementType, SamplePlacement, Track, TrackPlacement},
     types::Beats,
 };
 use state::{
-    Action, FloatField, MultiIndexField, PlacementSelector, SelectorTrait, Store, TrackSelector,
-    TypeField, UintField,
+    Action, FloatField, MultiIndexField, PlacementSelector, SampleSelector, SelectorTrait, Store,
+    TrackSelector, TypeField, UintField,
 };
 use std::cmp::max;
 use std::collections::HashSet;
 
 pub struct TrackRoll<'a> {
     store: &'a Store,
-    window_state: &'a mut WindowState,
+    window_state: &'a mut WindowState2,
     local_state: &'a LocalState,
 }
 
 impl<'a> TrackRoll<'a> {
     pub fn new(
         store: &'a Store,
-        window_state: &'a mut WindowState,
+        window_state: &'a mut WindowState2,
         local_state: &'a LocalState,
     ) -> Self {
         Self {
@@ -53,11 +55,21 @@ impl View for TrackRoll<'_> {
                     unclipped_duration: project.tracks[track_index].unclipped_duration(),
                     placement: placement.clone(),
                 },
-                PlacementType::Sample(SamplePlacement { .. }) => PlacedTrack {
-                    // TODO: use real sample duration.
-                    unclipped_duration: 1.0.into(),
-                    placement: placement.clone(),
-                },
+                PlacementType::Sample(SamplePlacement { sample_index }) => {
+                    let duration = store
+                        .try_select(&SampleSelector(sample_index))
+                        .map(|sample| {
+                            samples_to_beats(
+                                max(sample.left.len(), sample.right.len()),
+                                store.get().project.bpm,
+                            )
+                        })
+                        .unwrap_or(1.0);
+                    PlacedTrack {
+                        unclipped_duration: duration.into(),
+                        placement: placement.clone(),
+                    }
+                }
             })
             .collect();
 
@@ -74,15 +86,13 @@ impl View for TrackRoll<'_> {
         let range = Rect::from_min_max(Pos2::ZERO, pos2(16.0, max_visual_placement as f32));
         let mut select = self.local_state.track_roll_select_enabled.get();
         if !select {
-            self.local_state
-                .selected_track_placements
-                .set(HashSet::default());
+            self.local_state.selected_placements.set(HashSet::default());
         }
 
         default_window("Track Roll")
-            .default_pos(pos2(30.0, 200.0))
+            .default_pos(self.window_state.get_pos(WindowKind::TrackRoll))
             .resizable(true)
-            .open(&mut self.window_state.track_roll)
+            .open(self.window_state.get_mut_visible(WindowKind::TrackRoll))
             .show(ui.ctx(), |ui| {
                 ui.horizontal(|ui| {
                     if ui.button("New track").clicked() {
@@ -183,7 +193,7 @@ impl SequencerObject<PlacedTrack> for PlacedTrack {
     }
 
     fn get_active(store: &Store, local_state: &LocalState) -> Option<PlacedTrack> {
-        let index = local_state.active_track_placement.get()?;
+        let index = local_state.active_placement.get()?;
         let selector = PlacementSelector(index);
         let placement = store.select(&selector);
         let track_placement: Option<&TrackPlacement> = placement.try_into().ok();
@@ -215,10 +225,9 @@ impl SequencerObject<PlacedTrack> for PlacedTrack {
         ])
     }
 
-    // TODO: remove all these unused _ui params.
-    fn get_selected(_ui: &Ui, store: &Store, local_state: &LocalState) -> Vec<PlacedTrack> {
+    fn get_selected(store: &Store, local_state: &LocalState) -> Vec<PlacedTrack> {
         local_state
-            .selected_track_placements
+            .selected_placements
             .get()
             .into_iter()
             .map(|index| {
@@ -258,22 +267,20 @@ impl SequencerObject<PlacedTrack> for PlacedTrack {
         let track_placement: Option<&TrackPlacement> = (&self.placement).try_into().ok();
 
         local_state.note_roll_window.set(true);
-        local_state.track_placement_window.set(true);
+        local_state.placement_window.set(true);
         local_state
             .active_track
             .set(track_placement.map(|it| TrackSelector(it.track_index)));
-        local_state.active_track_placement.set(Some(index));
+        local_state.active_placement.set(Some(index));
     }
 
     fn set_selected(local_state: &LocalState, index: Option<usize>) {
         let Some(index) = index else {
-            local_state
-                .selected_track_placements
-                .set(HashSet::default());
+            local_state.selected_placements.set(HashSet::default());
             return;
         };
 
-        local_state.selected_track_placements.update(|mut it| {
+        local_state.selected_placements.update(|mut it| {
             if it.contains(&index) {
                 it.remove(&index);
             } else {
@@ -306,25 +313,16 @@ impl SequencerObject<PlacedTrack> for PlacedTrack {
         }
     }
 
-    fn delete_selected(
-        _ui: &mut Ui,
-        store: &Store,
-        local_state: &LocalState,
-        _parent_index: Option<usize>,
-    ) {
+    fn delete_selected(store: &Store, local_state: &LocalState, _parent_index: Option<usize>) {
         local_state
-            .active_track_placement
+            .active_placement
             .update(|placement| match placement {
                 // If the active placement is selected, "de-activate" it.
-                Some(index) if local_state.selected_track_placements.get().contains(&index) => None,
+                Some(index) if local_state.selected_placements.get().contains(&index) => None,
                 _ => placement,
             });
         store.dispatchr(Action::DeleteChildren(MultiIndexField::Placement(
-            local_state
-                .selected_track_placements
-                .get()
-                .into_iter()
-                .collect(),
+            local_state.selected_placements.get().into_iter().collect(),
         )));
     }
 }

@@ -1,17 +1,17 @@
 use super::{
-    KeyView, NoteRoll, NoteView, SamplePlacementView, TrackPlacementView, TrackRoll,
+    KeyView, NoteRoll, NoteView, PlacementView, TrackRoll,
     effect::{EffectView, MixerView},
     generator::{GeneratorView, generators_control},
     menu::MenuBar,
     play::{MicrophoneView, SampleTreeView, ToolbarView},
 };
-use crate::components::FrameHistory;
-use crate::playback::Microphone;
 use crate::promise::spawn;
 use crate::rpc::broadcast_actions;
 use crate::rpc::load_project_list;
 use crate::view::View;
 use crate::{AsyncState, LocalState, WindowState, playback::AudioPlayer};
+use crate::playback::Microphone;
+use crate::{components::FrameHistory, window_state::WindowState2};
 use egui::{ScrollArea, Ui, scroll_area::ScrollBarVisibility};
 use mesic::graph::RenderGraph;
 use poll_promise::Promise;
@@ -30,6 +30,7 @@ pub struct App {
     pub player: AudioPlayer,
     pub mic: Microphone,
     pub window_state: WindowState,
+    pub window_state2: WindowState2,
 }
 
 impl Default for App {
@@ -49,6 +50,7 @@ impl Default for App {
             player: AudioPlayer::new(graph),
             mic: Microphone::new(),
             window_state: WindowState::default(),
+            window_state2: WindowState2::default(),
         }
     }
 }
@@ -92,7 +94,9 @@ impl eframe::App for App {
         egui::TopBottomPanel::top("veldt_menu").show(ctx, |ui| {
             MenuBar::new(
                 &mut self.store,
+                &mut self.player,
                 &mut self.window_state,
+                &mut self.window_state2,
                 &mut self.async_state,
             )
             .ui(ui);
@@ -165,8 +169,6 @@ impl View for App {
 
         NoteView::new(&self.store, &self.local_state).ui(ui);
         NoteRoll::new(&self.store, &self.local_state, &mut self.player).ui(ui);
-        TrackPlacementView::new(&self.store, &self.local_state).ui(ui);
-        SamplePlacementView::new(&self.store, &self.local_state).ui(ui);
 
         MicrophoneView::new(
             &self.store,
@@ -175,6 +177,7 @@ impl View for App {
             &mut self.mic,
         )
         .ui(ui);
+        PlacementView::new(&self.store, &self.local_state).ui(ui);
 
         SampleTreeView::new(
             &self.store,
@@ -182,6 +185,6 @@ impl View for App {
             &mut self.window_state.sample_tree,
         )
         .ui(ui);
-        TrackRoll::new(&self.store, &mut self.window_state, &self.local_state).ui(ui);
+        TrackRoll::new(&self.store, &mut self.window_state2, &self.local_state).ui(ui);
     }
 }

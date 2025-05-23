@@ -2207,6 +2207,7 @@ dependencies = [
  "shared",
  "state",
  "strum 0.27.1",
+ "tonic",
  "tonic-web-wasm-client",
  "wasm-bindgen",
  "wasm-bindgen-futures",

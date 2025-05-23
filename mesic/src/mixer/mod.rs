@@ -12,11 +12,13 @@ mod channel_info;
 mod edge_counter;
 mod effect_info;
 mod generator_info;
+mod sample_placement_info;
 
 use channel_info::*;
 use edge_counter::*;
 use effect_info::*;
 use generator_info::*;
+use sample_placement_info::*;
 
 /// The mixer is responsible for creating, storing and manipulating mixer channels,
 /// and the effects and generators they contain.
@@ -218,6 +220,10 @@ impl Mixer {
                 }
                 _ => false,
             },
+            Selector::Placement(..) => {
+                // TODO: handle adding, deleting and updating nodes when sample placements change.
+                false
+            }
             Selector::MixerMatrixCell(..) => match action {
                 // If the matrix changes, reset the routes for each node, then refresh the edges.
                 // NOTE: in future, consider what happens if the size of the matrix changes too.
