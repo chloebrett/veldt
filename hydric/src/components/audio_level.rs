@@ -9,6 +9,8 @@ use egui::{
 use crate::playback::AudioPlayer;
 use crate::transform::Transform;
 
+const FADER_FINE_DRAG_RATIO: f32 = 0.2;
+
 /// Widget for rendering audio level in dB.
 pub struct AudioLevel<'a, F: Fn(f32), G: Fn()> {
     player: &'a AudioPlayer,
@@ -315,7 +317,7 @@ impl<'a, F: Fn(f32), G: Fn()> AudioLevel<'a, F, G> {
                     || input.modifiers.contains(egui::Modifiers::SHIFT)
             }) {
                 // Reduce the move delta.
-                fader_response.rect.center() + delta * vec2(0.0, 0.2)
+                fader_response.rect.center() + delta * vec2(0.0, FADER_FINE_DRAG_RATIO)
             } else {
                 fader_response.rect.center() + delta
             };
