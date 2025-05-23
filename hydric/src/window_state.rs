@@ -52,7 +52,10 @@ impl WindowData {
 }
 
 #[derive(Debug, Clone)]
-pub struct WindowState2(HashMap<WindowKind, Rc<RefCell<WindowData>>>);
+pub struct WindowState2 {
+    windows: HashMap<WindowKind, Rc<RefCell<WindowData>>>,
+    visible_effects: Rc<RefCell<HashSet<EffectSelector>>>,
+}
 
 impl Default for WindowState2 {
     fn default() -> Self {
@@ -63,20 +66,20 @@ impl Default for WindowState2 {
                 Rc::new(RefCell::new(WindowData::default_from_window(window))),
             );
         }
-        Self(windows)
+        Self {windows, visible_effects: Rc::new(RefCell::new(HashSet::new()))} 
     }
 }
 
 impl WindowState2 {
-    pub fn update_from_store(&mut self, store: &Store, local_state: &LocalState) {
+    pub fn update(&mut self, store: &Store, local_state: &LocalState) {
         // Add any new effects from active mixer.
         if let Some(mixer_sel) = local_state.active_mixer_chanel.get() {
             let mixer = store.select(&mixer_sel);
             for effect_index in 0..mixer.effects.len() {
                 let effect_sel = mixer_sel.downcast_effect(effect_index);
                 let window = WindowKind::Effect(effect_sel);
-                if !self.0.contains_key(&window) {
-                    self.0.insert(
+                if !self.windows.contains_key(&window) {
+                    self.windows.insert(
                         window,
                         Rc::new(RefCell::new(WindowData::default_from_window(window))),
                     );
@@ -87,7 +90,7 @@ impl WindowState2 {
     }
 
     pub fn get_visible(&self, window: WindowKind) -> bool {
-        self.0
+        self.windows
             .get(&window)
             .expect("Windows should have been initialised.")
             .get()
@@ -95,7 +98,19 @@ impl WindowState2 {
     }
 
     pub fn set_visible(&self, window: WindowKind, open: bool) {
-        self.0
+        // Keep track of open effect windows.
+        if let WindowKind::Effect(effect_sel) = window {
+            self.visible_effects.update(|mut it| {
+                if open {
+                    it.insert(effect_sel);
+                } else {
+                    it.remove(&effect_sel);
+                }
+                it
+            })
+        }
+
+        self.windows
             .get(&window)
             .expect("Windows should have been initialised.")
             .update(|mut it| {
@@ -105,11 +120,15 @@ impl WindowState2 {
     }
 
     pub fn get_pos(&self, window: WindowKind) -> Pos2 {
-        self.0
+        self.windows
             .get(&window)
             .expect("Windows should have been initialised.")
             .get()
             .pos
+    }
+
+    pub fn visible_effect(&self) -> Vec<EffectSelector> {
+        self.visible_effects.get().into_iter().collect()
     }
 }
 

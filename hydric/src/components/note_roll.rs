@@ -251,7 +251,7 @@ impl SequencerObject<PlacedNote> for PlacedNote {
         ])
     }
 
-    fn get_selected(_ui: &Ui, store: &Store, local_state: &LocalState) -> Vec<PlacedNote> {
+    fn get_selected(store: &Store, local_state: &LocalState) -> Vec<PlacedNote> {
         let Some(track_sel) = local_state.active_track.get() else {
             return vec![];
         };

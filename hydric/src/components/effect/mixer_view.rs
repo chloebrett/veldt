@@ -151,7 +151,6 @@ impl View for MixerView<'_> {
                                         ui.add_enabled(
                                             !edit_state,
                                             EffectWidget::new(
-                                                local_state,
                                                 &mixer.effects[effect_index],
                                                 effect_sel,
                                                 window_state,
@@ -248,7 +247,6 @@ impl View for MixerView<'_> {
 /// A widget to display and edit basic effect controls in the MixerView
 /// Being a widget that returns a `Response` makes it easier to drag and drop.
 struct EffectWidget<'a, F: Fn(Action), G: Fn()> {
-    local_state: &'a LocalState,
     effect: &'a EffectInstance,
     window_state: &'a WindowState2,
     effect_sel: EffectSelector,
@@ -258,7 +256,6 @@ struct EffectWidget<'a, F: Fn(Action), G: Fn()> {
 
 impl<'a, F: Fn(Action), G: Fn()> EffectWidget<'a, F, G> {
     fn new(
-        local_state: &'a LocalState,
         effect: &'a EffectInstance,
         effect_sel: EffectSelector,
         window_state: &'a WindowState2,
@@ -267,7 +264,6 @@ impl<'a, F: Fn(Action), G: Fn()> EffectWidget<'a, F, G> {
     ) -> Self {
         Self {
             effect,
-            local_state,
             window_state,
             effect_sel,
             dispatch,
@@ -280,7 +276,6 @@ impl<F: Fn(Action), G: Fn()> Widget for EffectWidget<'_, F, G> {
     fn ui(self, ui: &mut Ui) -> Response {
         let Self {
             effect,
-            local_state,
             window_state,
             effect_sel,
             dispatch,
@@ -305,10 +300,6 @@ impl<F: Fn(Action), G: Fn()> Widget for EffectWidget<'_, F, G> {
             );
 
             if ui.add(Button::new(text).selected(show)).clicked() {
-                local_state.visible_effects.update(|mut it| {
-                    it.push(effect_sel);
-                    it
-                });
                 window_state.set_visible(WindowKind::Effect(effect_sel), !show)
             }
         });

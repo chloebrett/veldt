@@ -1,5 +1,5 @@
 use egui::Pos2;
-use state::{EffectSelector, MixerSelector, TrackSelector};
+use state::{MixerSelector, TrackSelector};
 use std::cell::RefCell;
 use std::collections::HashSet;
 use std::rc::Rc;
@@ -12,8 +12,6 @@ pub struct LocalState {
     pub active_note: RcOption<usize>,
     pub active_placement: RcOption<usize>,
     pub active_mixer_chanel: RcOption<MixerSelector>,
-
-    pub visible_effects: Rc<RefCell<Vec<EffectSelector>>>,
 
     pub selected_notes: Rc<RefCell<HashSet<usize>>>,
     pub selected_placements: Rc<RefCell<HashSet<usize>>>,

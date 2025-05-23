@@ -10,7 +10,7 @@ use crate::rpc::load_project_list;
 use crate::view::View;
 use crate::{AsyncState, LocalState, WindowState, playback::AudioPlayer};
 use crate::{components::FrameHistory, window_state::WindowState2};
-use crate::{local_state::GetSet, promise::spawn, window_state::WindowKind};
+use crate::{promise::spawn, window_state::WindowKind};
 use egui::{ScrollArea, Ui, scroll_area::ScrollBarVisibility};
 use mesic::graph::RenderGraph;
 use poll_promise::Promise;
@@ -72,7 +72,7 @@ impl App {
     }
 
     fn visible_effects(&self) -> Vec<EffectSelector> {
-        self.local_state.visible_effects.get()
+        self.window_state2.visible_effect()
     }
 }
 
@@ -88,7 +88,7 @@ impl eframe::App for App {
         self.player.maybe_update();
 
         self.window_state2
-            .update_from_store(&self.store, &self.local_state);
+            .update(&self.store, &self.local_state);
 
         egui::TopBottomPanel::top("veldt_menu").show(ctx, |ui| {
             MenuBar::new(
