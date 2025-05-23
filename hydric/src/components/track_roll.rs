@@ -7,14 +7,15 @@ use crate::{
 use egui::{
     Color32, CornerRadius, Pos2, Rect, ScrollArea, Shape, Stroke, StrokeKind, Ui, pos2, vec2,
 };
+use mesic::samples_to_beats;
 use ordered_float::OrderedFloat;
 use shared::{
     model::{Placement, PlacementType, SamplePlacement, Track, TrackPlacement},
     types::Beats,
 };
 use state::{
-    Action, FloatField, MultiIndexField, PlacementSelector, SelectorTrait, Store, TrackSelector,
-    TypeField, UintField,
+    Action, FloatField, MultiIndexField, PlacementSelector, SampleSelector, SelectorTrait, Store,
+    TrackSelector, TypeField, UintField,
 };
 use std::cmp::max;
 use std::collections::HashSet;
@@ -54,11 +55,21 @@ impl View for TrackRoll<'_> {
                     unclipped_duration: project.tracks[track_index].unclipped_duration(),
                     placement: placement.clone(),
                 },
-                PlacementType::Sample(SamplePlacement { .. }) => PlacedTrack {
-                    // TODO: use real sample duration.
-                    unclipped_duration: 1.0.into(),
-                    placement: placement.clone(),
-                },
+                PlacementType::Sample(SamplePlacement { sample_index }) => {
+                    let duration = store
+                        .try_select(&SampleSelector(sample_index))
+                        .map(|sample| {
+                            samples_to_beats(
+                                max(sample.left.len(), sample.right.len()),
+                                store.get().project.bpm,
+                            )
+                        })
+                        .unwrap_or(1.0);
+                    PlacedTrack {
+                        unclipped_duration: duration.into(),
+                        placement: placement.clone(),
+                    }
+                }
             })
             .collect();
 

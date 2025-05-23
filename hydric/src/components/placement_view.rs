@@ -106,7 +106,6 @@ impl<'a> PlacementView<'a> {
             .clipped_duration
             .unwrap_or(OrderedFloat(max_duration));
         Self::duration_ui(ui, sel, duration, max_duration, store);
-        log::info!("max_duration: {}, {}", max_duration, duration);
     }
 
     fn duration_ui(
