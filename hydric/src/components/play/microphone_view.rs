@@ -51,23 +51,23 @@ impl View for MicrophoneView<'_> {
                 //     self.mic.convert_audio_1();
                 // }
 
-                if ui.button("Stop").clicked() {
+                if ui.button("Stop Recording").clicked() {
                     self.mic.stop();
                 }
 
-                if ui.button("Play mic Audio").clicked() {
-                    let _ = self.mic.play_mic_audio();
-                }
+                ui.horizontal(|ui| {
+                    if ui.button("Play mic Audio").clicked() {
+                        let _ = self.mic.play_mic_audio();
+                    }
 
-                ui.label(format!("Blob count: {}", self.mic.blob_count()));
-                ui.label(format!(
-                    "Intermediate data len: {}",
-                    self.mic.intermediate_len()
-                ));
+                    if ui.button("pause").clicked() {
+                        let _ = self.mic.pause_mic_audio();
+                    }
 
-                if let Some(recording) = self.mic.recording() {
-                    ui.label(format!("Recording exists: {}", recording.len()));
-                }
+                    if ui.button("stop").clicked() {
+                        let _ = self.mic.stop_mic_audio();
+                    }
+                });
             });
     }
 }

@@ -5,12 +5,12 @@ use super::{
     menu::MenuBar,
     play::{MicrophoneView, SampleTreeView, ToolbarView},
 };
+use crate::playback::Microphone;
 use crate::promise::spawn;
 use crate::rpc::broadcast_actions;
 use crate::rpc::load_project_list;
 use crate::view::View;
 use crate::{AsyncState, LocalState, WindowState, playback::AudioPlayer};
-use crate::playback::Microphone;
 use crate::{components::FrameHistory, window_state::WindowState2};
 use egui::{ScrollArea, Ui, scroll_area::ScrollBarVisibility};
 use mesic::graph::RenderGraph;
