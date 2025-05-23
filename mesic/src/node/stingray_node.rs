@@ -10,7 +10,6 @@ use crate::wave::detune_multiplier;
 use crate::wave_cache::{WaveCache, WaveKey};
 use dasp_frame::Stereo;
 use dasp_graph::{Buffer, Input, Node};
-use log::info;
 use shared::model::{
     AntiAliasingMode, Generator, GeneratorInstance, GeneratorMeta, Oscillator, PitchName,
     StingrayConfig,
@@ -84,6 +83,11 @@ impl NodeState {
                     self.filter_left = eq_filter(&config.lpf);
                     self.filter_right = eq_filter(&config.lpf);
                 }
+                if self.config.lfos != config.lfos {
+                    for (i, lfo) in self.voice.lfos.iter_mut().enumerate() {
+                        lfo.set_lfo(config.lfos[i].clone());
+                    }
+                }
 
                 self.config = config.clone();
             }
@@ -124,11 +128,6 @@ impl Node<ProcessContext> for StingrayNode {
 
         let mut buffers = [Buffer::SILENT; 2];
         let GeneratorSelector(generator_index) = self.selector;
-
-        for i in 0..state.voice.lfos.len() {
-            state.voice.lfos[i].set_lfo(state.config.lfos[i].clone());
-            info!("LFO: {:?}", state.voice.lfos[i].config);
-        }
 
         // TODO: fix this, it's n^2 right now. (well, n*64).
         for i in 0..Buffer::LEN {
@@ -287,7 +286,6 @@ impl StingrayWaveSource {
         // Currently only used for volume modulation.
         let lfo_amp = (lfo_value + 1.0) / 2.0;
         output_mono *= lfo_amp;
-        // output_mono *= lfo_value;
 
         let mut output_stereo = [output_mono; CHANNEL_COUNT];
         for (channel_index, out) in output_stereo.iter_mut().enumerate() {

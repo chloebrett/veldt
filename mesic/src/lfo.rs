@@ -36,6 +36,5 @@ impl Lfo {
 
     pub fn set_lfo(&mut self, config: LfoConfig) {
         self.config = config;
-        self.sample_index += 1 % (SAMPLE_RATE as usize);
     }
 }
