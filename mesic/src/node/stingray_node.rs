@@ -1,3 +1,5 @@
+use std::vec;
+
 use super::pan_multipliers;
 use crate::SAMPLE_RATE;
 use crate::consts::CHANNEL_COUNT;
@@ -10,6 +12,7 @@ use crate::wave::detune_multiplier;
 use crate::wave_cache::{WaveCache, WaveKey};
 use dasp_frame::Stereo;
 use dasp_graph::{Buffer, Input, Node};
+use log::info;
 use shared::model::{
     AntiAliasingMode, Generator, GeneratorInstance, GeneratorMeta, Oscillator, PitchName,
     StingrayConfig,
@@ -143,6 +146,11 @@ impl Node<ProcessContext> for StingrayNode {
                 events.retain(|it| it.kind == NoteEventType::On);
             }
 
+            let mut lfo_values = [0.0; 3];
+            for (i, lfo) in state.voice.lfos.iter_mut().enumerate() {
+                lfo_values[i] = lfo.next();
+            }
+
             for note_event in events {
                 match &note_event.kind {
                     NoteEventType::On => {
@@ -196,12 +204,11 @@ impl Node<ProcessContext> for StingrayNode {
                             .get(k + 3, j)
                             .map_or(0.0, |cell_ref| (*cell_ref).into());
                         // Get the LFO value
-                        lfo_value += state.voice.lfos[k].next() * matrix_value;
+                        lfo_value += lfo_values[k] * matrix_value;
                     }
-                    // Average the sum of the LFO values for this oscillator
                     lfo_value /= state.config.lfos.len() as f32;
-
                     lfo_value = lfo_value * 0.5 + 0.5; // Normalize to 0..1
+
                     let amp = eg.next().unwrap_or(0.0);
                     let wave = source.next(&mut self.cache, lfo_value);
 
