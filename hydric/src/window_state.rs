@@ -1,6 +1,6 @@
-use crate::local_state::GetSet;
+use crate::local_state::{GetSet, LocalState};
 use egui::{Pos2, pos2, vec2};
-use state::{EffectSelector, GeneratorSelector, MixerSelector};
+use state::{EffectSelector, GeneratorSelector, Store};
 use std::cell::RefCell;
 use std::cmp::{Eq, Ord};
 use std::collections::{HashMap, HashSet};
@@ -11,7 +11,7 @@ use strum::IntoEnumIterator;
 
 /// Windows variants that will appear on the UI.
 // TODO: Move all windows to WindowKind
-#[derive(Hash, Copy, Clone, EnumIter, PartialEq, Eq)]
+#[derive(Hash, Copy, Clone, Debug, EnumIter, PartialEq, Eq)]
 pub enum WindowKind {
     Mixer,
     Effect(EffectSelector),
@@ -51,6 +51,7 @@ impl WindowData {
     }
 }
 
+#[derive(Debug, Clone)]
 pub struct WindowState2(HashMap<WindowKind, Rc<RefCell<WindowData>>>);
 
 impl Default for WindowState2 {
@@ -67,6 +68,24 @@ impl Default for WindowState2 {
 }
 
 impl WindowState2 {
+    pub fn update_from_store(&mut self, store: &Store, local_state: &LocalState) {
+        // Add any new effects from active mixer.
+        if let Some(mixer_sel) = local_state.active_mixer_chanel.get() {
+            let mixer = store.select(&mixer_sel);
+            for effect_index in 0..mixer.effects.len() {
+                let effect_sel = mixer_sel.downcast_effect(effect_index);
+                let window = WindowKind::Effect(effect_sel);
+                if !self.0.contains_key(&window) {
+                    self.0.insert(
+                        window,
+                        Rc::new(RefCell::new(WindowData::default_from_window(window))),
+                    );
+                }
+            }
+        };
+        // TODO add updating generators when implemented on Generator views.
+    }
+
     pub fn get_visible(&self, window: WindowKind) -> bool {
         self.0
             .get(&window)
@@ -94,36 +113,21 @@ impl WindowState2 {
     }
 }
 
-pub struct MixerWindowState {
-    pub visible: bool,
-    // Currently active / shown channel.
-    pub channel: MixerSelector,
-}
-
 /// Which windows are currently shown.
 pub struct WindowState {
-    pub mixer: MixerWindowState,
-    pub effects: WindowStateField<EffectSelector>,
     pub generator_list: bool,
     pub generators: WindowStateField<GeneratorSelector>,
     pub scale: bool,
     pub sample_tree: bool,
-    pub save: bool,
 }
 
 impl Default for WindowState {
     fn default() -> Self {
         Self {
-            mixer: MixerWindowState {
-                visible: false,
-                channel: MixerSelector(0),
-            },
-            effects: WindowStateField(HashSet::new()),
             generator_list: false,
             generators: WindowStateField(HashSet::new()),
             scale: false,
             sample_tree: false,
-            save: false,
         }
     }
 }

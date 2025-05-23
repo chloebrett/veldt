@@ -1,12 +1,11 @@
 use state::{Action, TypeField};
 
 use crate::{
-    WindowState,
     view::View,
     widget::{StateWindow, default_window},
     window_state::{WindowKind, WindowState2},
 };
-use egui::{Ui, pos2};
+use egui::Ui;
 
 pub struct SaveAs<'a, F: Fn(Action), G: FnMut()> {
     window_state: &'a WindowState2,

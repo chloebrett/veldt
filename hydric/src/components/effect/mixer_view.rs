@@ -1,6 +1,5 @@
 use super::{MixerMatrixView, effect_name};
 use crate::GetSet;
-use crate::WindowState;
 use crate::components::AudioLevel;
 use crate::local_state::LocalState;
 use crate::playback::AudioPlayer;
@@ -10,10 +9,9 @@ use crate::widget::int_slider;
 use crate::widget::{default_window, knob};
 use crate::window_state::WindowKind;
 use crate::window_state::WindowState2;
-use crate::window_state::WindowStateField;
 use egui::CornerRadius;
 use egui::Shape;
-use egui::{Button, Color32, Frame, InnerResponse, Layout, Pos2, Response, Stroke, Ui, Widget};
+use egui::{Button, Color32, Frame, InnerResponse, Layout, Response, Stroke, Ui, Widget};
 use mesic::from_db;
 use mesic::to_db;
 use shared::model::{Effect, EffectInstance, EffectMeta};
@@ -58,7 +56,6 @@ impl View for MixerView<'_> {
             .active_mixer_chanel
             .get()
             .unwrap_or(MixerSelector(0));
-        let mut mixer_sel_mut = mixer_sel;
         let MixerSelector(mixer_index) = mixer_sel;
 
         let mixer = &store.select(&mixer_sel);
@@ -110,7 +107,11 @@ impl View for MixerView<'_> {
                     ui,
                     "Selected channel",
                     mixer_index as f64,
-                    |it| mixer_sel_mut = MixerSelector(it as usize),
+                    |it| {
+                        local_state
+                            .active_mixer_chanel
+                            .set(Some(MixerSelector(it as usize)))
+                    },
                     0..=max_channel_index,
                     /* on_release= */
                     || {}, // no-op on_release since this doesn't use the store.
@@ -150,6 +151,7 @@ impl View for MixerView<'_> {
                                         ui.add_enabled(
                                             !edit_state,
                                             EffectWidget::new(
+                                                local_state,
                                                 &mixer.effects[effect_index],
                                                 effect_sel,
                                                 window_state,
@@ -246,6 +248,7 @@ impl View for MixerView<'_> {
 /// A widget to display and edit basic effect controls in the MixerView
 /// Being a widget that returns a `Response` makes it easier to drag and drop.
 struct EffectWidget<'a, F: Fn(Action), G: Fn()> {
+    local_state: &'a LocalState,
     effect: &'a EffectInstance,
     window_state: &'a WindowState2,
     effect_sel: EffectSelector,
@@ -255,6 +258,7 @@ struct EffectWidget<'a, F: Fn(Action), G: Fn()> {
 
 impl<'a, F: Fn(Action), G: Fn()> EffectWidget<'a, F, G> {
     fn new(
+        local_state: &'a LocalState,
         effect: &'a EffectInstance,
         effect_sel: EffectSelector,
         window_state: &'a WindowState2,
@@ -263,6 +267,7 @@ impl<'a, F: Fn(Action), G: Fn()> EffectWidget<'a, F, G> {
     ) -> Self {
         Self {
             effect,
+            local_state,
             window_state,
             effect_sel,
             dispatch,
@@ -275,6 +280,7 @@ impl<F: Fn(Action), G: Fn()> Widget for EffectWidget<'_, F, G> {
     fn ui(self, ui: &mut Ui) -> Response {
         let Self {
             effect,
+            local_state,
             window_state,
             effect_sel,
             dispatch,
@@ -299,6 +305,10 @@ impl<F: Fn(Action), G: Fn()> Widget for EffectWidget<'_, F, G> {
             );
 
             if ui.add(Button::new(text).selected(show)).clicked() {
+                local_state.visible_effects.update(|mut it| {
+                    it.push(effect_sel);
+                    it
+                });
                 window_state.set_visible(WindowKind::Effect(effect_sel), !show)
             }
         });
