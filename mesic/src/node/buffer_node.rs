@@ -4,7 +4,7 @@ use dasp_frame::Stereo;
 use dasp_graph::{Buffer, Input, Node};
 use std::cmp::min;
 
-// Note containing a buffer which it outputs.
+// Node containing a buffer which it outputs.
 #[derive(Default)]
 pub struct BufferNode {
     buffer: Vec<Stereo<f32>>,
@@ -12,10 +12,6 @@ pub struct BufferNode {
 }
 
 impl BufferNode {
-    fn _reset(&mut self) {
-        self.index = 0;
-    }
-
     fn process_channel(&mut self, out: &mut Buffer, channel_index: usize) {
         let start_index = self.index;
         let end_index = min(start_index + Buffer::LEN, self.buffer.len());
