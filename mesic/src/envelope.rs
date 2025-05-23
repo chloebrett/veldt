@@ -94,7 +94,7 @@ impl EnvelopeGenerator {
         self.config = envelope;
     }
 
-    pub fn get_last_output(&self) -> f32 {
+    pub fn peek(&self) -> f32 {
         self.last_output
     }
 }
