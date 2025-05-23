@@ -15,8 +15,8 @@ struct NodeState {
     config: NoiseConfig,
     meta: GeneratorMeta,
     playing: bool,
-    pink_b: [f32; 7],  // Coefficients for pink noise
-    last_brown_output: f32,  // Last output for brown noise
+    pink_b: [f32; 7],       // Coefficients for pink noise
+    last_brown_output: f32, // Last output for brown noise
 }
 
 impl Default for NodeState {
@@ -89,7 +89,14 @@ impl NoiseGeneratorNode {
         self.state.pink_b[3] = 0.86650 * self.state.pink_b[3] + wt * 0.3104856;
         self.state.pink_b[4] = 0.55000 * self.state.pink_b[4] + wt * 0.5329522;
         self.state.pink_b[5] = -0.7616 * self.state.pink_b[5] - wt * 0.0168980;
-        let pink = self.state.pink_b[0] + self.state.pink_b[1] + self.state.pink_b[2] + self.state.pink_b[3] + self.state.pink_b[4] + self.state.pink_b[5] + self.state.pink_b[6] + wt * 0.5362;
+        let pink = self.state.pink_b[0]
+            + self.state.pink_b[1]
+            + self.state.pink_b[2]
+            + self.state.pink_b[3]
+            + self.state.pink_b[4]
+            + self.state.pink_b[5]
+            + self.state.pink_b[6]
+            + wt * 0.5362;
         self.state.pink_b[6] = wt * 0.115926;
         (pink * 0.11).clamp(-1.0, 1.0)
     }
