@@ -74,7 +74,7 @@ impl Default for WindowState2 {
 }
 
 impl WindowState2 {
-    /// Derive changable windows such as effects and generators from the store every frame.
+    /// Derive windows that may change in count such as effects and generators from the store every frame.
     /// This way if other uses delete items, the window states will not go out of date.
     pub fn update(&mut self, store: &Store, local_state: &LocalState) {
         // Add any new effects from active mixer.
