@@ -20,6 +20,7 @@ pub use delay_node::*;
 pub use eq_node::*;
 pub use mod_delay_node::*;
 pub use noise_generator_node::*;
+pub use sample_node::*;
 pub use simple_wave_generator_node::*;
 pub use stingray_node::*;
 pub use wet_dry_node::*;

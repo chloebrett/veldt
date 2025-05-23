@@ -1,12 +1,15 @@
 use std::collections::HashSet;
 
-use super::{EdgeCounter, EdgeKey, EffectInfo, GeneratorInfo, make_node};
+use super::{EdgeCounter, EdgeKey, EffectInfo, GeneratorInfo, SamplePlacementInfo, make_node};
 use crate::graph::Graph;
 use crate::node::AmpNode;
 use dasp_graph::node::Sum;
 use petgraph::stable_graph::NodeIndex;
-use shared::model::{Effect, MatrixCell, Project};
-use state::{EffectSelector, GeneratorSelector, MixerMatrixCellSelector, MixerSelector, move_elem};
+use shared::model::{Effect, MatrixCell, PlacementType, Project};
+use state::{
+    EffectSelector, GeneratorSelector, MixerMatrixCellSelector, MixerSelector, PlacementSelector,
+    move_elem,
+};
 
 /// Describes a mixer channel from the viewpoint of the graph.
 /// Contains references to the generator and effect nodes linked to this channel.
@@ -16,6 +19,8 @@ pub struct ChannelInfo {
 
     // Generators that have been muted and so should not have edges.
     muted_generators: HashSet<usize>,
+
+    samples: Vec<SamplePlacementInfo>,
 
     // Input sum node for this mixer channel.
     // Sums together the generators.
@@ -54,6 +59,20 @@ impl ChannelInfo {
             })
             .collect();
 
+        // TODO: let each sample placement choose which mixer channel it is on, instead of putting
+        // all sample placements on channel 0.
+        let samples: Vec<SamplePlacementInfo> = if channel_index == 0 {
+            project
+                .placements
+                .iter()
+                .enumerate()
+                .filter(|(_, placement)| matches!(&placement.kind, PlacementType::Sample(..)))
+                .map(|(index, _)| SamplePlacementInfo::new(graph, PlacementSelector(index)))
+                .collect()
+        } else {
+            vec![]
+        };
+
         let input_node = graph.add_node(make_node(Sum));
 
         let effects: Vec<EffectInfo> = project.mixer.channels[channel_index]
@@ -76,6 +95,7 @@ impl ChannelInfo {
         let mut partial = Self {
             generators,
             muted_generators,
+            samples,
             input_node,
             effects,
             output_node,
@@ -126,6 +146,15 @@ impl ChannelInfo {
                     EdgeKey::GenToMixIn,
                 );
             }
+        }
+
+        for sample in &self.samples {
+            edge_counter.add_edge(
+                graph,
+                sample.node(),
+                self.input_node,
+                EdgeKey::SampleToMixIn,
+            );
         }
 
         let effects = &self.effects;

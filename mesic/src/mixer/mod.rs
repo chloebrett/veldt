@@ -12,11 +12,13 @@ mod channel_info;
 mod edge_counter;
 mod effect_info;
 mod generator_info;
+mod sample_placement_info;
 
 use channel_info::*;
 use edge_counter::*;
 use effect_info::*;
 use generator_info::*;
+use sample_placement_info::*;
 
 /// The mixer is responsible for creating, storing and manipulating mixer channels,
 /// and the effects and generators they contain.
