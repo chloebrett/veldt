@@ -4,7 +4,7 @@ use crate::{GetSet, LocalState};
 use egui::{Ui, pos2};
 use mesic::samples_to_beats;
 use ordered_float::OrderedFloat;
-use shared::model::{Placement, PlacementType, Sample, SamplePlacement, Track, TrackPlacement};
+use shared::model::{Placement, PlacementType, SamplePlacement, Track, TrackPlacement};
 use shared::types::Beats;
 use state::{
     Action, FloatField, IndexField, PlacementSelector, SampleSelector, Store, TrackSelector,
@@ -94,7 +94,10 @@ impl<'a> PlacementView<'a> {
             });
 
         let sample_sel = SampleSelector(sample_placement.sample_index);
-        let sample: &Sample = store.select(&sample_sel);
+        let Some(sample) = store.try_select(&sample_sel) else {
+            ui.label("No samples loaded yet.");
+            return;
+        };
         let max_duration = samples_to_beats(
             max(sample.left.len(), sample.right.len()),
             store.get().project.bpm,
@@ -103,7 +106,6 @@ impl<'a> PlacementView<'a> {
             .clipped_duration
             .unwrap_or(OrderedFloat(max_duration));
         Self::duration_ui(ui, sel, duration, max_duration, store);
-        log::info!("max_duration: {}, {}", max_duration, duration);
     }
 
     fn duration_ui(
