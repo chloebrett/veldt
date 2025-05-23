@@ -214,8 +214,7 @@ impl SequencerObject<PlacedTrack> for PlacedTrack {
         ])
     }
 
-    // TODO: remove all these unused _ui params.
-    fn get_selected(_ui: &Ui, store: &Store, local_state: &LocalState) -> Vec<PlacedTrack> {
+    fn get_selected(store: &Store, local_state: &LocalState) -> Vec<PlacedTrack> {
         local_state
             .selected_placements
             .get()
