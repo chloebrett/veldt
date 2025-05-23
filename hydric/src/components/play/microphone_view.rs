@@ -47,12 +47,16 @@ impl View for MicrophoneView<'_> {
                     self.mic.start();
                 }
 
-                if ui.button("Convert 1").clicked() {
-                    self.mic.convert_audio_1();
-                }
+                // if ui.button("Convert 1").clicked() {
+                //     self.mic.convert_audio_1();
+                // }
 
                 if ui.button("Stop").clicked() {
                     self.mic.stop();
+                }
+
+                if ui.button("Play mic Audio").clicked() {
+                    let _ = self.mic.play_mic_audio();
                 }
 
                 ui.label(format!("Blob count: {}", self.mic.blob_count()));

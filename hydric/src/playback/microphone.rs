@@ -11,9 +11,6 @@ use web_sys::{
     window, AudioBuffer, AudioBufferSourceNode, AudioContext
 };
 
-//use audiopus::{coder::Decoder, SampleRate, Channels};
-use ogg::reading::PacketReader;
-
 // This tutorial was used for the general code structure: https://web.dev/articles/media-recording-audio
 pub struct Microphone {
     stream: Arc<Mutex<Option<MediaStream>>>,
@@ -112,7 +109,7 @@ impl Microphone {
 
                 futures::future::ready(())
             }
-            Err(e) => futures::future::ready(()),
+            Err(_e) => futures::future::ready(()),
         });
 
         spawn_local(future);
