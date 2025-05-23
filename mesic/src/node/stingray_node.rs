@@ -321,15 +321,19 @@ impl StingrayWaveSource {
     }
 }
 
-
 #[cfg(test)]
 mod tests {
     use super::*;
-    use shared::model::{ModMatrix, EqConfig};
+    use shared::model::{EqConfig, ModMatrix};
     use state::StoreData;
 
     fn dummy_env(attack: f32, decay: f32, sustain: f32, release: f32) -> AdsrEnvelope {
-        AdsrEnvelope { attack, decay, sustain, release }
+        AdsrEnvelope {
+            attack,
+            decay,
+            sustain,
+            release,
+        }
     }
 
     #[test]
@@ -350,15 +354,17 @@ mod tests {
             mod_matrix.get(j, i).map(|x| (*x).into())
         });
 
-        let expected_attack = (a * envelopes[0].attack + b * envelopes[1].attack).clamp(0.0, 1000.0);
+        let expected_attack =
+            (a * envelopes[0].attack + b * envelopes[1].attack).clamp(0.0, 1000.0);
         let expected_decay = (a * envelopes[0].decay + b * envelopes[1].decay).clamp(0.0, 1000.0);
-        let expected_sustain = (a * envelopes[0].sustain + b * envelopes[1].sustain).clamp(0.0, 1.0);
-        let expected_release = (a * envelopes[0].release + b * envelopes[1].release).clamp(0.0, 1000.0);
+        let expected_sustain =
+            (a * envelopes[0].sustain + b * envelopes[1].sustain).clamp(0.0, 1.0);
+        let expected_release =
+            (a * envelopes[0].release + b * envelopes[1].release).clamp(0.0, 1000.0);
 
         assert!((result.attack - expected_attack).abs() < 1e-6);
         assert!((result.decay - expected_decay).abs() < 1e-6);
         assert!((result.sustain - expected_sustain).abs() < 1e-6);
         assert!((result.release - expected_release).abs() < 1e-6);
     }
-
 }
