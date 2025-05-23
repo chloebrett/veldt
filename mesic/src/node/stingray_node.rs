@@ -327,20 +327,11 @@ mod tests {
     use shared::model::{EqConfig, ModMatrix};
     use state::StoreData;
 
-    fn dummy_env(attack: f32, decay: f32, sustain: f32, release: f32) -> AdsrEnvelope {
-        AdsrEnvelope {
-            attack,
-            decay,
-            sustain,
-            release,
-        }
-    }
-
     #[test]
     fn test_additive_envelope() {
         let envelopes = vec![
-            dummy_env(100.0, 200.0, 1.0, 40.0),
-            dummy_env(50.0, 1000.0, 0.5, 0.0),
+            AdsrEnvelope { attack: 100.0, decay: 200.0, sustain: 1.0, release: 40.0},
+            AdsrEnvelope { attack: 50.0, decay: 1000.0, sustain: 0.5, release: 0.0},
         ];
 
         let a = 0.7;
