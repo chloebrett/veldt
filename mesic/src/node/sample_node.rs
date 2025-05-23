@@ -6,8 +6,9 @@ use shared::model::{Placement, SamplePlacement};
 use state::{PlacementSelector, SampleSelector};
 use std::cmp::max;
 
-// Node that plays a sample.
-// Distinct from buffer_node which is more general.
+/// Node that plays a placed sample.
+/// Distinct from buffer_node which is more rudimentary and used for previewing sounds before
+/// placing them.
 pub struct SampleNode {
     sel: PlacementSelector,
 }
