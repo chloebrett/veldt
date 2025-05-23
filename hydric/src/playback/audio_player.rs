@@ -75,7 +75,8 @@ pub struct AudioPlayer {
 
     // Root Mean Square of most recent window in audio.
     // Read with `level()`
-    rms: dasp_rms::Rms<Stereo<f32>, [Stereo<f32>; RMS_BUFFER_SAMPLES]>,
+    // Uses f64 for higher precision to reduce floating point errors.
+    rms: dasp_rms::Rms<Stereo<f64>, [Stereo<f64>; RMS_BUFFER_SAMPLES]>,
 
     // Peak audio from recent window.
     peak: StereoPeakDetector,
@@ -90,7 +91,7 @@ impl AudioPlayer {
         let (playback_tx, playback_rx) = crossbeam_channel::unbounded();
         let (update_tx, update_rx) = crossbeam_channel::unbounded();
         let (recent_tx, recent_rx) = crossbeam_channel::unbounded();
-        let rms_buffer = dasp_ring_buffer::Fixed::from([[0f32; 2]; RMS_BUFFER_SAMPLES]);
+        let rms_buffer = dasp_ring_buffer::Fixed::from([[0.0; 2]; RMS_BUFFER_SAMPLES]);
 
         Self {
             graph: Some(graph),
@@ -212,8 +213,8 @@ impl AudioPlayer {
         }
 
         while let Ok(update) = self.recent_rx.try_recv() {
-            let next = self.rms.next(update);
-            self.peak.next(next);
+            let next = self.rms.next([update[0] as f64, update[1] as f64]);
+            self.peak.next([next[0] as f32, next[1] as f32]);
             self.recent_buf.push(update);
             self.recent_buf_offset += 1;
         }
@@ -337,7 +338,7 @@ impl AudioPlayer {
     pub fn level(&self) -> [f32; 2] {
         log::debug!("{:?}", self.rms.current());
         let [left, right] = self.rms.current();
-        [to_db(left), to_db(right)]
+        [to_db(left as f32), to_db(right as f32)]
     }
 
     pub fn peak(&self) -> [f32; 2] {
