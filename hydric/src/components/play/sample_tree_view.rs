@@ -123,8 +123,10 @@ impl View for SampleTreeView<'_> {
                 }
 
                 poll(&mut self.async_state.load_sample_tree, |tree| {
-                    self.store
-                        .dispatchr(Action::SetChild(TypeField::SampleTree(tree.clone())))
+                    // self.store
+                    // //     .dispatchr(Action::SetChild(TypeField::SampleTree(tree.clone())))
+                    // self.store
+                    //     .dispatchr(Action::SetFloat(state::FloatField::Volume, 20.0))
                 });
 
                 if let Some(tree) = &self.store.get().sample_tree {
