@@ -66,11 +66,16 @@ impl Default for WindowState2 {
                 Rc::new(RefCell::new(WindowData::default_from_window(window))),
             );
         }
-        Self {windows, visible_effects: Rc::new(RefCell::new(HashSet::new()))} 
+        Self {
+            windows,
+            visible_effects: Rc::new(RefCell::new(HashSet::new())),
+        }
     }
 }
 
 impl WindowState2 {
+    /// Derive changable windows such as effects and generators from the store every frame.
+    /// This way if other uses delete items, the window states will not go out of date.
     pub fn update(&mut self, store: &Store, local_state: &LocalState) {
         // Add any new effects from active mixer.
         if let Some(mixer_sel) = local_state.active_mixer_chanel.get() {
@@ -86,7 +91,7 @@ impl WindowState2 {
                 }
             }
         };
-        // TODO add updating generators when implemented on Generator views.
+        // TODO add updating generators when implemented on generator views.
     }
 
     pub fn get_visible(&self, window: WindowKind) -> bool {
@@ -110,6 +115,8 @@ impl WindowState2 {
             })
         }
 
+        // TODO: Keep track of open generator windows.
+
         self.windows
             .get(&window)
             .expect("Windows should have been initialised.")
@@ -128,6 +135,7 @@ impl WindowState2 {
     }
 
     pub fn visible_effect(&self) -> Vec<EffectSelector> {
+        // TODO: Should only effects from active mixer channel be open?
         self.visible_effects.get().into_iter().collect()
     }
 }
