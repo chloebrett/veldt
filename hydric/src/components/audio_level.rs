@@ -196,7 +196,7 @@ impl<'a, F: Fn(f32), G: Fn()> AudioLevel<'a, F, G> {
         let shapes: Vec<_> = text_markers
             .iter()
             .map(|&marker| {
-                let level = self.convert_level(marker as f32) as f32;
+                let level = self.convert_level(marker as f32);
                 let text: WidgetText = if marker > 0 {
                     format!("+{marker}").into()
                 } else if marker == -100 {
@@ -215,14 +215,14 @@ impl<'a, F: Fn(f32), G: Fn()> AudioLevel<'a, F, G> {
                 // TODO: Understand this better so it can be properly aligned.
                 // 0.66 * galley rect height is what makes it look like the centre but why?
                 let offset = galley.rect.transform(to_screen.inverse()).size().y.abs() * 0.66;
-                let text_pos = pos2(text_range.left() + left_padding, level as f32 - offset);
+                let text_pos = pos2(text_range.left() + left_padding, level - offset);
                 Shape::Vec(vec![
                     TextShape::new(text_pos, galley, ui.visuals().text_color()).into(),
                     // Line to indicate level in line with text.
                     Shape::line(
                         vec![
-                            pos2(line_range.left(), level as f32),
-                            pos2(line_range.right() - right_padding, level as f32),
+                            pos2(line_range.left(), level),
+                            pos2(line_range.right() - right_padding, level),
                         ],
                         Stroke::new(1.0, Color32::from_white_alpha(32)),
                     ),
@@ -371,7 +371,7 @@ impl<F: Fn(f32), G: Fn()> Widget for AudioLevel<'_, F, G> {
                 // Add background shape.
                 painter.add(Shape::rect_filled(
                     response.rect,
-                    CornerRadius::same(0),
+                    CornerRadius::ZERO,
                     Color32::from_white_alpha(4),
                 ));
                 painter.add(

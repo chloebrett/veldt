@@ -1,4 +1,5 @@
 use poll_promise::Promise;
+use std::fmt::Debug;
 
 // Async states represent outgoing requests that may or may not have finished.
 // The Option<Promise<Result<..., ()>>> format is for the following reasons:
@@ -24,15 +25,22 @@ where
 pub fn poll<T, E, F>(input: &mut AsyncResult<T, E>, mut callback: F)
 where
     T: Send,
-    E: Send,
+    E: Send + Debug,
     F: FnMut(&T),
 {
     let promise_ref = input.as_ref();
     let mut should_clear = false;
     if let Some(promise) = promise_ref {
-        if let Some(Ok(result)) = promise.ready() {
-            should_clear = true;
-            callback(result);
+        match promise.ready() {
+            Some(Ok(result)) => {
+                should_clear = true;
+                callback(result);
+            }
+            Some(Err(err)) => {
+                should_clear = true;
+                log::error!("Error from promise: {:?}", err);
+            }
+            _ => {}
         }
     }
     if should_clear {

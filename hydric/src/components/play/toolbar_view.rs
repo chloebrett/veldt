@@ -89,13 +89,11 @@ impl View for ToolbarView<'_> {
                             let file_data = file.read().await;
 
                             // Upload our sample
-                            match upload_sample(file.file_name(), file_data).await {
-                                Ok(_) => Ok(()),
-                                Err(e) => {
-                                    error!("[5] Upload failed: {:?}", e);
-                                    Err(())
-                                }
+                            let result = upload_sample(file.file_name(), file_data).await;
+                            if let Err(ref e) = result {
+                                error!("[5] Upload failed: {:?}", e);
                             }
+                            result
                         });
 
                         ui.close_menu();
