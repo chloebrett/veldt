@@ -171,11 +171,18 @@ mod tests {
 
     use super::*;
 
+    /// Ensure current directory is `veldt/` and not `veldt/xeric/`.
+    fn set_parent_directory() {
+        let current_dir = env::current_dir().unwrap();
+        if current_dir.iter().last().unwrap().to_str() == Some("xeric") {
+            env::set_current_dir("../").unwrap();
+        }
+    }
+
     #[tokio::test]
     async fn load_sample() {
         // ARRANGE
-        // Move into root directory.
-        env::set_current_dir(Path::new("../")).unwrap();
+        set_parent_directory();
         let my_load_sample = LoadSampleContext;
         let sample_name = "89 BPM F# Minor.wav";
         let load_request = tonic::Request::new(LoadSampleRequest {
@@ -193,8 +200,7 @@ mod tests {
     #[tokio::test]
     async fn load_invalid_file_name_fails() {
         // ARRANGE
-        // Move into root directory.
-        env::set_current_dir(Path::new("../")).unwrap();
+        set_parent_directory();
         let my_load_sample = LoadSampleContext;
         let sample_name = "test.wav";
         let load_request = tonic::Request::new(LoadSampleRequest {
