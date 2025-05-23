@@ -46,6 +46,7 @@ js-sys = "0.3.77"
 ringbuffer = "0.15.0"
 dasp_rms = "0.11.0"
 dasp_ring_buffer = "0.11.0"
+ogg = "0.9.2"
 
 [features]
 # Displays some extra debug information in the UI.

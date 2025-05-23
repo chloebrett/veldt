@@ -8,8 +8,11 @@ use wasm_bindgen_futures::JsFuture;
 use wasm_bindgen_futures::spawn_local;
 use web_sys::{
     Blob, BlobEvent, MediaRecorder, MediaRecorderOptions, MediaStream, MediaStreamConstraints,
-    window,
+    window, AudioBuffer, AudioBufferSourceNode, AudioContext
 };
+
+//use audiopus::{coder::Decoder, SampleRate, Channels};
+use ogg::reading::PacketReader;
 
 // This tutorial was used for the general code structure: https://web.dev/articles/media-recording-audio
 pub struct Microphone {
@@ -21,6 +24,9 @@ pub struct Microphone {
     recording: Option<Mono<f32>>,
     tx: Sender<Blob>,
     rx: Receiver<Blob>,
+    audio_ctx: Arc<Mutex<Option<AudioContext>>>,
+    curr_source: Arc<Mutex<Option<AudioBufferSourceNode>>>,
+    playing_status: Arc<Mutex<bool>>,
 }
 
 impl Microphone {
@@ -36,6 +42,9 @@ impl Microphone {
             recording: None,
             tx,
             rx,
+            audio_ctx: Arc::new(Mutex::new(None)),
+            curr_source: Arc::new(Mutex::new(None)),
+            playing_status: Arc::new(Mutex::new(false)),
         }
     }
 
@@ -46,6 +55,8 @@ impl Microphone {
     pub fn intermediate_len(&self) -> usize {
         self.intermediate_data.lock().unwrap().len()
     }
+
+    //pub fn get_intermediate(&self) -> 
 
     pub fn recording(&self) -> Option<Mono<f32>> {
         self.recording
@@ -190,6 +201,56 @@ impl Microphone {
         spawn_local(array_buffer_future);
         Ok(())
     }
+
+    pub fn play_mic_audio(&self) -> Result<(), JsValue>{
+        //Create our audio context
+        let audio_ctx = AudioContext::new()?;
+        *self.audio_ctx.lock().unwrap() = Some(audio_ctx.clone());
+
+        //combine our chunks
+        let array = Array::new();
+        for chunk in &self.audio_chunks{
+            array.push(chunk);
+        }
+
+        
+        let blob = Blob::new_with_blob_sequence(&array)?;
+        
+        let source_clone = self.curr_source.clone();
+        let playing_status_clone = self.playing_status.clone();
+        
+        spawn_local(async move {
+            //extract an array buffer, need to do the map as JsFuture returns a JsValue which isnt useful to us
+            let array_promise = blob.array_buffer();
+            let array_buffer = JsFuture::from(array_promise).await.map(js_sys::ArrayBuffer::from).unwrap();
+            //let decoded = JsFuture::from(audio_ctx.decode_audio_data(&array_buffer)).await.unwrap();
+            
+            //Create an audio buffer
+            let decoded_promise = audio_ctx.decode_audio_data(&array_buffer).unwrap();
+            let decoded = JsFuture::from(decoded_promise).await.map(web_sys::AudioBuffer::from).unwrap();
+            let decoded = AudioBuffer::from(decoded);
+
+            let mut source_guard = source_clone.lock().unwrap();
+            let source = AudioBufferSourceNode::new(&audio_ctx).unwrap();
+            source.set_buffer(Some(&decoded));
+
+            // idk about this unwrap call, could be an issue if user has zero audio output 
+            // (mb skill issue tho if u making music without speakers)
+            source.connect_with_audio_node(&audio_ctx.destination()).unwrap();
+            source.start().unwrap();
+
+            *source_guard = Some(source);
+            *playing_status_clone.lock().unwrap() = true;
+
+            ()
+        });
+        Ok(())
+    }
+
+
+
+
+    // }
 
     async fn inner_stop(&mut self) {
         /*
