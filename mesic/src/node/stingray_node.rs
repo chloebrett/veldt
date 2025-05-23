@@ -402,8 +402,18 @@ mod tests {
     #[test]
     fn test_additive_envelope() {
         let envelopes = vec![
-            AdsrEnvelope { attack: 100.0, decay: 200.0, sustain: 1.0, release: 40.0},
-            AdsrEnvelope { attack: 50.0, decay: 1000.0, sustain: 0.5, release: 0.0},
+            AdsrEnvelope {
+                attack: 1000.0,
+                decay: 200.0,
+                sustain: 1.0,
+                release: 1000.0,
+            },
+            AdsrEnvelope {
+                attack: 0.0,
+                decay: 1000.0,
+                sustain: 0.5,
+                release: 0.0,
+            },
         ];
 
         let a = 0.7;
