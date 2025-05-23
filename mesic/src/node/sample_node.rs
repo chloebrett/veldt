@@ -10,27 +10,17 @@ use std::cmp::max;
 // Distinct from buffer_node which is more general.
 pub struct SampleNode {
     sel: PlacementSelector,
-
-    // Global playback position.
-    // TODO: send this down in the payload instead?
-    playback_index: usize,
 }
 
 impl SampleNode {
     pub fn new(sel: PlacementSelector) -> Self {
-        Self {
-            sel,
-            playback_index: 0,
-        }
+        Self { sel }
     }
 }
 
 impl Node<ProcessContext> for SampleNode {
     fn process(&mut self, _inputs: &[Input], output: &mut [Buffer], payload: &ProcessContext) {
-        if let Some(seek_pos) = payload.preview_seek_pos {
-            self.playback_index = seek_pos;
-            log::info!("Updated from seek_pos: {}", seek_pos);
-        }
+        let playback_pos = payload.playback_pos;
 
         let (out_left, out_right) = extract_outputs(output);
 
@@ -64,7 +54,7 @@ impl Node<ProcessContext> for SampleNode {
         let sample_start_index = beats_to_samples(*placement.offset, store.project.bpm);
 
         for i in 0..Buffer::LEN {
-            let offset: i32 = i as i32 + self.playback_index as i32 - sample_start_index as i32;
+            let offset: i32 = i as i32 + playback_pos as i32 - sample_start_index as i32;
 
             if offset < 0 || offset > duration_samples as i32 {
                 continue;
@@ -74,7 +64,5 @@ impl Node<ProcessContext> for SampleNode {
             out_left[i] = *sample.left.get(offset).unwrap_or(&0.0);
             out_right[i] = *sample.right.get(offset).unwrap_or(&0.0);
         }
-
-        self.playback_index += Buffer::LEN;
     }
 }

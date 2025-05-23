@@ -220,6 +220,10 @@ impl Mixer {
                 }
                 _ => false,
             },
+            Selector::Placement(..) => {
+                // TODO: handle adding, deleting and updating nodes when sample placements change.
+                false
+            }
             Selector::MixerMatrixCell(..) => match action {
                 // If the matrix changes, reset the routes for each node, then refresh the edges.
                 // NOTE: in future, consider what happens if the size of the matrix changes too.
