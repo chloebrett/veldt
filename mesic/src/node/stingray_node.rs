@@ -84,6 +84,11 @@ impl NodeState {
             }
         }
 
+        new_env.attack = new_env.attack.clamp(0.0, 1000.0);
+        new_env.decay = new_env.decay.clamp(0.0, 1000.0);
+        new_env.sustain = new_env.sustain.clamp(0.0, 1.0);
+        new_env.release = new_env.release.clamp(0.0, 1000.0);
+
         new_env
     }
 
@@ -386,4 +391,46 @@ impl StingrayWaveSource {
         self.sample_index += 1;
         output_stereo
     }
+}
+
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use shared::model::{ModMatrix, EqConfig};
+    use state::StoreData;
+
+    fn dummy_env(attack: f32, decay: f32, sustain: f32, release: f32) -> AdsrEnvelope {
+        AdsrEnvelope { attack, decay, sustain, release }
+    }
+
+    #[test]
+    fn test_additive_envelope() {
+        let envelopes = vec![
+            dummy_env(100.0, 200.0, 1.0, 40.0),
+            dummy_env(50.0, 1000.0, 0.5, 0.0),
+        ];
+
+        let a = 0.7;
+        let b = 0.3;
+
+        let mut mod_matrix = ModMatrix::new(6, 4);
+        mod_matrix.get_mut(0, 0).unwrap().set(a);
+        mod_matrix.get_mut(1, 0).unwrap().set(b);
+
+        let result = NodeState::update_envelope(0, &envelopes, &|j, i| {
+            mod_matrix.get(j, i).map(|x| (*x).into())
+        });
+
+        let expected_attack = (a * envelopes[0].attack + b * envelopes[1].attack).clamp(0.0, 1000.0);
+        let expected_decay = (a * envelopes[0].decay + b * envelopes[1].decay).clamp(0.0, 1000.0);
+        let expected_sustain = (a * envelopes[0].sustain + b * envelopes[1].sustain).clamp(0.0, 1.0);
+        let expected_release = (a * envelopes[0].release + b * envelopes[1].release).clamp(0.0, 1000.0);
+
+        assert!((result.attack - expected_attack).abs() < 1e-6);
+        assert!((result.decay - expected_decay).abs() < 1e-6);
+        assert!((result.sustain - expected_sustain).abs() < 1e-6);
+        assert!((result.release - expected_release).abs() < 1e-6);
+    }
+
 }
