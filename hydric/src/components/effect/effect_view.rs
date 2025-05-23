@@ -1,7 +1,8 @@
 use super::{CompressorView, DelayView, EqView, ModDelayView};
-use crate::WindowState;
+use crate::WindowState2;
 use crate::view::View;
 use crate::widget::{StateWindow, default_window};
+use crate::window_state::WindowKind;
 use egui::{Pos2, Ui};
 use shared::model::Effect;
 use state::{Action, EffectSelector, Store};
@@ -19,14 +20,15 @@ impl<'a, F: Fn(Action), G: Fn()> EffectView<'a, F, G> {
     pub fn new(
         store: &'a Store,
         selector: &'a EffectSelector,
-        window_state: &'a mut WindowState,
+        window_state: &'a WindowState2,
         dispatch: F,
         on_release: G,
     ) -> Option<Self> {
         let effect = store.try_select(selector)?;
         let effect: &'a Effect = &effect.it;
-        let visible = window_state.effects.get(*selector);
-        let on_close = Box::new(move || window_state.effects.set(*selector, false));
+        let visible = window_state.get_visible(WindowKind::Effect(*selector));
+        let on_close =
+            Box::new(move || window_state.set_visible(WindowKind::Effect(*selector), false));
 
         Some(Self {
             visible,

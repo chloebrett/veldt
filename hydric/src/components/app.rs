@@ -90,9 +90,9 @@ impl eframe::App for App {
         egui::TopBottomPanel::top("veldt_menu").show(ctx, |ui| {
             MenuBar::new(
                 &mut self.store,
+                &self.local_state,
                 &mut self.player,
-                &mut self.window_state,
-                &mut self.window_state2,
+                &self.window_state2,
                 &mut self.async_state,
             )
             .ui(ui);
@@ -133,7 +133,7 @@ impl View for App {
         }
         if self.window_state.mixer.visible {
             MixerView::new(
-                &mut self.window_state,
+                &self.window_state2,
                 &self.store,
                 &self.local_state,
                 &self.player,
@@ -149,7 +149,7 @@ impl View for App {
             if let Some(mut it) = EffectView::new(
                 &self.store,
                 &effect_selector,
-                &mut self.window_state,
+                &self.window_state2,
                 dispatch,
                 on_release,
             ) {

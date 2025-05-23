@@ -5,8 +5,11 @@ use crate::components::AudioLevel;
 use crate::local_state::LocalState;
 use crate::playback::AudioPlayer;
 use crate::view::View;
+use crate::widget::StateWindow;
 use crate::widget::int_slider;
 use crate::widget::{default_window, knob};
+use crate::window_state::WindowKind;
+use crate::window_state::WindowState2;
 use crate::window_state::WindowStateField;
 use egui::CornerRadius;
 use egui::Shape;
@@ -20,7 +23,7 @@ use state::{
 use strum::IntoEnumIterator;
 
 pub struct MixerView<'a> {
-    window_state: &'a mut WindowState,
+    window_state: &'a WindowState2,
     store: &'a Store,
     local_state: &'a LocalState,
     player: &'a AudioPlayer,
@@ -28,7 +31,7 @@ pub struct MixerView<'a> {
 
 impl<'a> MixerView<'a> {
     pub fn new(
-        window_state: &'a mut WindowState,
+        window_state: &'a WindowState2,
         store: &'a Store,
         local_state: &'a LocalState,
         player: &'a AudioPlayer,
@@ -51,9 +54,12 @@ impl View for MixerView<'_> {
             player,
             ..
         } = self;
-        let mixer_sel = window_state.mixer.channel;
+        let mixer_sel = local_state
+            .active_mixer_chanel
+            .get()
+            .unwrap_or(MixerSelector(0));
+        let mut mixer_sel_mut = mixer_sel;
         let MixerSelector(mixer_index) = mixer_sel;
-        let mixer_sel_mut = &mut window_state.mixer.channel;
 
         let mixer = &store.select(&mixer_sel);
         let dispatch_mixer = |action| store.dispatch(&mixer_sel, action);
@@ -63,14 +69,16 @@ impl View for MixerView<'_> {
         // Keep track of an object being dragged.
         let mut from_to = None;
 
-        default_window("Mixer")
-            .id("mixer".into())
-            .default_pos(Pos2 {
-                x: 1000.0,
-                y: 150.0,
-            })
-            .open(&mut window_state.mixer.visible)
-            .show(ui.ctx(), |ui| {
+        let window = StateWindow(
+            default_window("Mixer")
+                .id("mixer".into())
+                .default_pos(window_state.get_pos(WindowKind::Mixer)),
+        );
+        window.show_with_closure(
+            ui,
+            window_state.get_visible(WindowKind::Mixer),
+            |_| window_state.set_visible(WindowKind::Mixer, false),
+            |ui| {
                 ui.add_space(8.0);
 
                 ui.horizontal(|ui| {
@@ -102,7 +110,7 @@ impl View for MixerView<'_> {
                     ui,
                     "Selected channel",
                     mixer_index as f64,
-                    |it| *mixer_sel_mut = MixerSelector(it as usize),
+                    |it| mixer_sel_mut = MixerSelector(it as usize),
                     0..=max_channel_index,
                     /* on_release= */
                     || {}, // no-op on_release since this doesn't use the store.
@@ -133,7 +141,6 @@ impl View for MixerView<'_> {
                             ui.dnd_drop_zone::<EffectLocation, ()>(Frame::default(), |ui| {
                                 for effect_index in 0..mixer.effects.len() {
                                     let effect_sel = mixer_sel.downcast_effect(effect_index);
-                                    let effect_window = &mut window_state.effects;
                                     let dispatch_effect =
                                         |action: Action| store.dispatch(&effect_sel, action);
                                     // TODO Determine if this is the best way to do this.
@@ -145,7 +152,7 @@ impl View for MixerView<'_> {
                                             EffectWidget::new(
                                                 &mixer.effects[effect_index],
                                                 effect_sel,
-                                                effect_window,
+                                                window_state,
                                                 dispatch_effect,
                                                 on_release,
                                             ),
@@ -213,7 +220,8 @@ impl View for MixerView<'_> {
                         local_state.mixer_edit_state.set(!edit_state);
                     };
                 })
-            });
+            },
+        );
 
         // Update effects based on drag and drop.
         if let Some((from, to)) = from_to {
@@ -239,7 +247,7 @@ impl View for MixerView<'_> {
 /// Being a widget that returns a `Response` makes it easier to drag and drop.
 struct EffectWidget<'a, F: Fn(Action), G: Fn()> {
     effect: &'a EffectInstance,
-    effect_window: &'a mut WindowStateField<EffectSelector>,
+    window_state: &'a WindowState2,
     effect_sel: EffectSelector,
     dispatch: F,
     on_release: G,
@@ -249,13 +257,13 @@ impl<'a, F: Fn(Action), G: Fn()> EffectWidget<'a, F, G> {
     fn new(
         effect: &'a EffectInstance,
         effect_sel: EffectSelector,
-        effect_window: &'a mut WindowStateField<EffectSelector>,
+        window_state: &'a WindowState2,
         dispatch: F,
         on_release: G,
     ) -> Self {
         Self {
             effect,
-            effect_window,
+            window_state,
             effect_sel,
             dispatch,
             on_release,
@@ -267,13 +275,13 @@ impl<F: Fn(Action), G: Fn()> Widget for EffectWidget<'_, F, G> {
     fn ui(self, ui: &mut Ui) -> Response {
         let Self {
             effect,
-            effect_window,
+            window_state,
             effect_sel,
             dispatch,
             on_release,
         } = self;
         let InnerResponse { response, .. } = ui.horizontal(|ui| {
-            let show = effect_window.get(effect_sel);
+            let show = window_state.get_visible(WindowKind::Effect(effect_sel));
             let text = effect_name(&effect.it);
             let meta = &effect.meta;
 
@@ -290,11 +298,8 @@ impl<F: Fn(Action), G: Fn()> Widget for EffectWidget<'_, F, G> {
                 on_release,
             );
 
-            if ui
-                .add(Button::new(text).selected(effect_window.get(effect_sel)))
-                .clicked()
-            {
-                effect_window.set(effect_sel, !show)
+            if ui.add(Button::new(text).selected(show)).clicked() {
+                window_state.set_visible(WindowKind::Effect(effect_sel), !show)
             }
         });
         ui.separator();

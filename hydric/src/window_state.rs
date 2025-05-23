@@ -1,8 +1,11 @@
+use crate::local_state::GetSet;
 use egui::{Pos2, pos2, vec2};
 use state::{EffectSelector, GeneratorSelector, MixerSelector};
+use std::cell::RefCell;
 use std::cmp::{Eq, Ord};
 use std::collections::{HashMap, HashSet};
 use std::hash::Hash;
+use std::rc::Rc;
 use strum::EnumIter;
 use strum::IntoEnumIterator;
 
@@ -11,9 +14,9 @@ use strum::IntoEnumIterator;
 #[derive(Hash, Copy, Clone, EnumIter, PartialEq, Eq)]
 pub enum WindowKind {
     Mixer,
-    Effect(usize),
+    Effect(EffectSelector),
     GeneratorList,
-    Generator(usize),
+    Generator(GeneratorSelector),
     Scale,
     SampleTree,
     TrackRoll,
@@ -21,6 +24,7 @@ pub enum WindowKind {
 }
 
 /// Information about a window needed to render on the UI.
+#[derive(Debug, Clone, Copy)]
 struct WindowData {
     visible: bool,
     pos: Pos2,
@@ -30,7 +34,7 @@ impl WindowData {
     pub fn default_from_window(window: WindowKind) -> Self {
         let pos = match window {
             WindowKind::Mixer => pos2(1000.0, 150.0),
-            WindowKind::Effect(index) => {
+            WindowKind::Effect(EffectSelector(.., index)) => {
                 pos2(1000.0, 150.0) + vec2(50.0 * index as f32, 50.0 * index as f32)
             }
             WindowKind::GeneratorList => pos2(1100.0, 20.0),
@@ -47,31 +51,45 @@ impl WindowData {
     }
 }
 
-pub struct WindowState2(HashMap<WindowKind, WindowData>);
+pub struct WindowState2(HashMap<WindowKind, Rc<RefCell<WindowData>>>);
 
 impl Default for WindowState2 {
     fn default() -> Self {
         let mut windows = HashMap::new();
         for window in WindowKind::iter() {
-            windows.insert(window, WindowData::default_from_window(window));
+            windows.insert(
+                window,
+                Rc::new(RefCell::new(WindowData::default_from_window(window))),
+            );
         }
         Self(windows)
     }
 }
 
 impl WindowState2 {
-    pub fn get_mut_visible(&mut self, window: WindowKind) -> &mut bool {
-        &mut self
-            .0
-            .get_mut(&window)
+    pub fn get_visible(&self, window: WindowKind) -> bool {
+        self.0
+            .get(&window)
             .expect("Windows should have been initialised.")
+            .get()
             .visible
+    }
+
+    pub fn set_visible(&self, window: WindowKind, open: bool) {
+        self.0
+            .get(&window)
+            .expect("Windows should have been initialised.")
+            .update(|mut it| {
+                it.visible = open;
+                it
+            })
     }
 
     pub fn get_pos(&self, window: WindowKind) -> Pos2 {
         self.0
             .get(&window)
             .expect("Windows should have been initialised.")
+            .get()
             .pos
     }
 }

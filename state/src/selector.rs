@@ -60,7 +60,7 @@ impl MixerSelector {
     }
 }
 
-#[derive(Eq, PartialEq, Ord, PartialOrd, Copy, Clone, Debug, Hash)]
+#[derive(Eq, Default, PartialEq, Ord, PartialOrd, Copy, Clone, Debug, Hash)]
 pub struct EffectSelector(
     /* mixer_index */ pub usize,
     /* effect_index */ pub usize,
@@ -72,7 +72,7 @@ impl EffectSelector {
     }
 }
 
-#[derive(Eq, PartialEq, Ord, PartialOrd, Copy, Clone, Debug, Hash)]
+#[derive(Eq, Default, PartialEq, Ord, PartialOrd, Copy, Clone, Debug, Hash)]
 pub struct GeneratorSelector(/* generator_index */ pub usize);
 
 impl GeneratorSelector {
