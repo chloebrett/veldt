@@ -73,8 +73,7 @@ impl NoiseGeneratorNode {
     fn generate_brown_noise(&mut self, rng: &mut impl Rng) -> f32 {
         let wt = Self::generate_white_noise(rng);
         let leak = 0.02;
-        let mut output = (self.state.last_brown_output + wt * leak).clamp(-1.0, 1.0);
-        output *= 0.95; // Optional, reduces popping at the end
+        let output = (self.state.last_brown_output + wt * leak).clamp(-1.0, 1.0);
         self.state.last_brown_output = output;
         output
     }
