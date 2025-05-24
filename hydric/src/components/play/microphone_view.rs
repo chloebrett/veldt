@@ -43,7 +43,10 @@ impl View for MicrophoneView<'_> {
                     ui.label("Has permissions");
                 }
 
-                if ui.button("Record").clicked() && !self.mic.is_recording() && !self.mic.has_recording(){
+                if ui.button("Record").clicked()
+                    && !self.mic.is_recording()
+                    && !self.mic.has_recording()
+                {
                     self.mic.start();
                 }
 

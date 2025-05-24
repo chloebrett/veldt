@@ -14,7 +14,7 @@ use web_sys::{
 pub struct Microphone {
     stream: Arc<Mutex<Option<MediaStream>>>, // Arc Mutex is required because stream is used in an async callback .then() in get_permissions().
     media_recorder: Option<MediaRecorder>, // Records audio from microphone, constructed from stream.
-    audio_chunks: Vec<Blob>, // Holds output of media_recorder.
+    audio_chunks: Vec<Blob>,               // Holds output of media_recorder.
     intermediate_data: Arc<Mutex<Vec<u8>>>, // Holds processed vec<u8> data created in convert_audio().
     recording_status: bool, // State variable used in MicrophoneView to manage user input.
     tx: Sender<Blob>, // Use a stream to put media_recorder data in audio_chunks as they appear.
