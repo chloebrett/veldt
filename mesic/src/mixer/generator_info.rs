@@ -1,5 +1,4 @@
-use super::make_node;
-use crate::graph::Graph;
+use super::{GraphManager, NodeLabel, make_node};
 use crate::node::{NoiseGeneratorNode, SimpleWaveGeneratorNode, StingrayNode};
 use petgraph::stable_graph::NodeIndex;
 use shared::model::{Generator, GeneratorInstance};
@@ -15,7 +14,7 @@ pub struct GeneratorInfo {
 
 impl GeneratorInfo {
     pub fn new(
-        graph: &mut Graph,
+        graph_manager: &mut GraphManager,
         generator: &GeneratorInstance,
         selector: GeneratorSelector,
     ) -> Self {
@@ -25,7 +24,7 @@ impl GeneratorInfo {
             Generator::Stingray(..) => make_node(StingrayNode::new(selector)),
         };
 
-        let node = graph.add_node(node);
+        let node = graph_manager.add_node(node, NodeLabel::Generator);
 
         Self { selector, node }
     }
