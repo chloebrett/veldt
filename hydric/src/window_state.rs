@@ -79,10 +79,10 @@ impl Default for WindowState2 {
 
 impl WindowState2 {
     /// Derive windows that may change in count such as effects and generators from the store every frame.
-    /// This way if other uses delete items, the window states will not go out of date.
+    /// This way if other uses delete or adds items, the window states will not go out of date.
     pub fn update(&mut self, store: &Store) {
-        // Add any new effects from active mixer.
-        // Get all effects from store
+        // Update effect windows based on the store.
+        // Get all effects from the store
         let effects: Vec<EffectSelector> = store
             .get()
             .project
@@ -102,17 +102,19 @@ impl WindowState2 {
             })
             .flatten()
             .collect();
-        let effect_set: HashSet<EffectSelector> = HashSet::from_iter(effects);
-        let effects = self.effect_windows.clone();
-        for effect in effects.keys() {
+        let store_effects: HashSet<EffectSelector> = HashSet::from_iter(effects);
+        let effect_windows = self.effect_windows.clone();
+        // Remove effects no longer on the store.
+        for effect in effect_windows.keys() {
             let WindowKind::Effect(effect_sel) = effect else {
                 continue;
             };
-            if !effect_set.contains(&effect_sel) {
+            if !store_effects.contains(&effect_sel) {
                 self.effect_windows.remove(&effect);
             }
         }
-        for effect in effect_set {
+        // Add effects new to the store.
+        for effect in store_effects {
             let window = WindowKind::Effect(effect);
             if !self.effect_windows.contains_key(&window) {
                 self.effect_windows.insert(
@@ -141,19 +143,9 @@ impl WindowState2 {
             WindowKind::Effect(..) => &self.effect_windows,
             _ => &self.windows,
         };
-        // Keep track of open effect windows.
-        if let WindowKind::Effect(effect_sel) = window {
-            self.visible_effects.update(|mut it| {
-                if open {
-                    it.insert(effect_sel);
-                } else {
-                    it.remove(&effect_sel);
-                }
-                it
-            })
-        }
 
-        // TODO: Keep track of open generator windows.
+        // Keep track of open changeable windows.
+        self.update_visible(window, open);
 
         windows
             .get(&window)
@@ -178,6 +170,23 @@ impl WindowState2 {
 
     pub fn visible_effect(&self) -> Vec<EffectSelector> {
         self.visible_effects.get().into_iter().collect()
+    }
+
+    /// Keep track of open changeable windows such as effects and generators.
+    fn update_visible(&self, window: WindowKind, open: bool) {
+        let (visible_windows, sel) = match window {
+            WindowKind::Effect(sel) => (&self.visible_effects, sel),
+            // TODO: implement for generators.
+            _ => return,
+        };
+        visible_windows.update(|mut it| {
+            if open {
+                it.insert(sel);
+            } else {
+                it.remove(&sel);
+            }
+            it
+        });
     }
 }
 
