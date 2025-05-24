@@ -64,7 +64,7 @@ impl Microphone {
         // to specify audio only.
 
         let constraints = MediaStreamConstraints::new();
-        constraints.set_audio(&JsValue::from(true));
+        constraints.set_audio(&true.into());
 
         // Get media devices.
         let promise = media_devices.get_user_media_with_constraints(&constraints)?;
