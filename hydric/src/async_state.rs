@@ -13,6 +13,4 @@ pub struct AsyncState {
     pub upload_sample: AsyncResult<(), tonic::Status>,
     pub load_sample_tree: AsyncResult<FilenameTree, tonic::Status>,
     pub export: AsyncResult<(), tonic::Status>,
-    pub microphone_start: AsyncResult<(), String>,
-    pub microphone_stop: AsyncResult<Vec<u8>, String>,
 }

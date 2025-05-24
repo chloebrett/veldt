@@ -3,9 +3,8 @@ use super::{
     effect::{EffectView, MixerView},
     generator::{GeneratorView, generators_control},
     menu::MenuBar,
-    play::{MicrophoneView, SampleTreeView, ToolbarView},
+    play::{SampleTreeView, ToolbarView},
 };
-use crate::playback::Microphone;
 use crate::promise::spawn;
 use crate::rpc::broadcast_actions;
 use crate::rpc::load_project_list;
@@ -28,7 +27,6 @@ pub struct App {
     pub frame_history: FrameHistory,
     pub async_state: AsyncState,
     pub player: AudioPlayer,
-    pub mic: Microphone,
     pub window_state: WindowState,
     pub window_state2: WindowState2,
 }
@@ -48,7 +46,6 @@ impl Default for App {
             frame_history: FrameHistory::default(),
             async_state: AsyncState::default(),
             player: AudioPlayer::new(graph),
-            mic: Microphone::new(),
             window_state: WindowState::default(),
             window_state2: WindowState2::default(),
         }
@@ -89,7 +86,6 @@ impl eframe::App for App {
             .on_new_frame(ctx.input(|i| i.time), frame.info().cpu_usage);
 
         self.player.maybe_update();
-        self.mic.update_mic_recording();
 
         egui::TopBottomPanel::top("veldt_menu").show(ctx, |ui| {
             MenuBar::new(
@@ -169,14 +165,6 @@ impl View for App {
 
         NoteView::new(&self.store, &self.local_state).ui(ui);
         NoteRoll::new(&self.store, &self.local_state, &mut self.player).ui(ui);
-
-        MicrophoneView::new(
-            &self.store,
-            &mut self.async_state,
-            &mut self.window_state.microphone,
-            &mut self.mic,
-        )
-        .ui(ui);
         PlacementView::new(&self.store, &self.local_state).ui(ui);
 
         SampleTreeView::new(
