@@ -38,7 +38,7 @@ impl Microphone {
             recording_status: false,
             tx,
             rx,
-            audio_ctx: Arc::new(Mutex::new(None)),
+            audio_ctx: Arc::new(Mutex::new(None)), // Do we need these as arc?
             curr_source: Arc::new(Mutex::new(None)),
             playing_status: Arc::new(Mutex::new(false)),
         }
@@ -48,10 +48,8 @@ impl Microphone {
         self.stream.lock().unwrap().is_some()
     }
 
-    pub fn update(&mut self) {
-        log::info!("Tried update");
+    pub fn update_mic_recording(&mut self) {
         while let Ok(blob) = self.rx.try_recv() {
-            log::info!("Got update");
             self.audio_chunks.push(blob);
         }
     }
@@ -106,9 +104,7 @@ impl Microphone {
             let data = e
                 .data()
                 .expect("Should be fine so long as we have a valid blob.");
-            log::info!("Got data");
             if data.size() > 0.0 {
-                log::info!("Got data > 0");
                 tx.try_send(data).unwrap();
             }
         }) as Box<dyn FnMut(_)>);
@@ -129,7 +125,7 @@ impl Microphone {
         on_data_available.forget();
 
         let err_fn = Closure::wrap(Box::new(move |err: JsValue| {
-            log::error!("an error occurred on mic stream: {:?}", err)
+            log::error!("an error occurred on mic stream: {err:?}")
         }) as Box<dyn FnMut(_)>);
         let err_fn = err_fn.as_ref().dyn_ref();
         media_recorder.set_onerror(err_fn);
@@ -146,10 +142,10 @@ impl Microphone {
         self.media_recorder.as_ref().unwrap().stop().unwrap();
     }
 
-    pub fn convert_audio_1(&mut self) -> Result<(), JsValue> {
+    pub fn _convert_audio(&mut self) -> Result<(), JsValue> {
         let array = Array::new();
         for chunk in &self.audio_chunks {
-            array.push(&chunk);
+            array.push(chunk);
         }
 
         // Convert recorded chunks to bytes.
@@ -206,13 +202,12 @@ impl Microphone {
         let playing_status_clone = self.playing_status.clone();
 
         spawn_local(async move {
-            //extract an array buffer, need to do the map as JsFuture returns a JsValue which isnt useful to us
+            //Extract an array buffer, need to use map as JsFuture returns a JsValue which isn't useful.
             let array_promise = blob.array_buffer();
             let array_buffer = JsFuture::from(array_promise)
                 .await
                 .map(js_sys::ArrayBuffer::from)
                 .unwrap();
-            //let decoded = JsFuture::from(audio_ctx.decode_audio_data(&array_buffer)).await.unwrap();
 
             //Create an audio buffer
             let decoded_promise = audio_ctx.decode_audio_data(&array_buffer).unwrap();
@@ -220,13 +215,12 @@ impl Microphone {
                 .await
                 .map(web_sys::AudioBuffer::from)
                 .unwrap();
-            let decoded = AudioBuffer::from(decoded);
 
             let mut source_guard = source_clone.lock().unwrap();
             let source = AudioBufferSourceNode::new(&audio_ctx).unwrap();
             source.set_buffer(Some(&decoded));
 
-            // idk about this unwrap call, could be an issue if user has zero audio output
+            // IDK about this unwrap call, could be an issue if user has zero audio output
             // (mb skill issue tho if u making music without speakers)
             source
                 .connect_with_audio_node(&audio_ctx.destination())
@@ -299,7 +293,7 @@ impl Microphone {
     }
 
     pub fn has_recording(&self) -> bool {
-        self.audio_chunks.len() > 0
+        !self.audio_chunks.is_empty()
     }
 
     pub fn is_playing(&self) -> bool {

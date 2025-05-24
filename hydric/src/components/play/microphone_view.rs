@@ -47,10 +47,6 @@ impl View for MicrophoneView<'_> {
                     self.mic.start();
                 }
 
-                // if ui.button("Convert 1").clicked() {
-                //     self.mic.convert_audio_1();
-                // }
-
                 if ui.button("Stop Recording").clicked() {
                     self.mic.stop();
                 }
