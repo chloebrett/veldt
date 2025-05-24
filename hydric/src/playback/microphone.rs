@@ -1,3 +1,4 @@
+use async_std::channel::RecvError;
 use crossbeam_channel::{Receiver, Sender};
 use dasp_frame::Mono;
 use futures::FutureExt;
@@ -18,7 +19,6 @@ pub struct Microphone {
     audio_chunks: Vec<Blob>,
     intermediate_data: Arc<Mutex<Vec<u8>>>,
     recording_status: bool,
-    recording: Option<Mono<f32>>,
     tx: Sender<Blob>,
     rx: Receiver<Blob>,
     audio_ctx: Arc<Mutex<Option<AudioContext>>>,
@@ -36,17 +36,12 @@ impl Microphone {
             audio_chunks: vec![],
             intermediate_data: Arc::new(Mutex::new(vec![])),
             recording_status: false,
-            recording: None,
             tx,
             rx,
             audio_ctx: Arc::new(Mutex::new(None)),
             curr_source: Arc::new(Mutex::new(None)),
             playing_status: Arc::new(Mutex::new(false)),
         }
-    }
-
-    pub fn recording(&self) -> Option<Mono<f32>> {
-        self.recording
     }
 
     pub fn has_permissions(&self) -> bool {
@@ -118,14 +113,12 @@ impl Microphone {
             }
         }) as Box<dyn FnMut(_)>);
 
-        let stream = self
-            .stream
-            .lock()
-            .unwrap()
-            .take()
-            .expect("Expected get_permissions() to have succeeded.");
+        //Get a reference here as we want stream to persist after clearing mic recording.
+        let stream_guard = self.stream.lock().unwrap();
+        let stream = stream_guard.as_ref().expect("Stream should exist");
+
         let media_recorder =
-            MediaRecorder::new_with_media_stream_and_media_recorder_options(&stream, &options)
+            MediaRecorder::new_with_media_stream_and_media_recorder_options(stream, &options)
                 .unwrap();
 
         let callback = on_data_available.as_ref().dyn_ref();
@@ -273,13 +266,44 @@ impl Microphone {
     //known bug here, cant stop while paused. Unsure how to fix currently
     pub fn stop_mic_audio(&self) -> Result<(), JsValue> {
         if let Some(source) = self.curr_source.lock().unwrap().take() {
-            source.stop()?;
+            source.stop()?; //This is marked as depreceated yet I can't find an alternative.
         }
         *self.playing_status.lock().unwrap() = false;
         Ok(())
     }
 
+    pub fn clear_mic(&mut self) -> Result<(), JsValue> {
+
+        if let Some(ctx) = self.audio_ctx.lock().unwrap().take(){
+            //AudioBufferSourceNode is dropped if we stop playing, so have to check if it exists
+            if *self.playing_status.lock().unwrap(){
+                let _ = self.curr_source.lock().unwrap().take().unwrap().stop();                
+            }
+            let _ = ctx.close();
+        }
+
+        if let Some(recorder) = self.media_recorder.take(){
+            recorder.stop()?;
+        }
+
+        self.audio_chunks.clear();
+        *self.intermediate_data.lock().unwrap() = vec![];
+
+        self.recording_status = false;
+        *self.playing_status.lock().unwrap() = false;
+
+        Ok(())
+    }
+
     pub fn is_recording(&self) -> bool {
         self.recording_status
+    }
+
+    pub fn has_recording(&self) -> bool {
+        self.audio_chunks.len() > 0
+    }
+
+    pub fn is_playing(&self) -> bool {
+        *self.playing_status.lock().unwrap()
     }
 }
