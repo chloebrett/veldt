@@ -10,10 +10,7 @@ pub struct MicrophoneView<'a> {
 
 impl<'a> MicrophoneView<'a> {
     pub fn new(visible: &'a mut bool, mic: &'a mut Microphone) -> Self {
-        MicrophoneView {
-            visible,
-            mic,
-        }
+        MicrophoneView { visible, mic }
     }
 }
 
