@@ -56,7 +56,7 @@ impl View for MicrophoneView<'_> {
                 }
 
                 ui.horizontal(|ui| {
-                    if ui.button("Play mic Audio").clicked() && self.mic.has_recording(){
+                    if ui.button("Play mic Audio").clicked() && self.mic.has_recording() {
                         let _ = self.mic.play_mic_audio();
                     }
 
@@ -64,11 +64,11 @@ impl View for MicrophoneView<'_> {
                         let _ = self.mic.pause_mic_audio();
                     }
 
-                    if ui.button("stop").clicked() && self.mic.is_playing(){
+                    if ui.button("stop").clicked() && self.mic.is_playing() {
                         let _ = self.mic.stop_mic_audio();
                     }
 
-                    if ui.button("clear").clicked() && self.mic.has_recording(){
+                    if ui.button("clear").clicked() && self.mic.has_recording() {
                         let _ = self.mic.clear_mic();
                     }
                 });

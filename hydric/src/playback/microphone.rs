@@ -273,16 +273,15 @@ impl Microphone {
     }
 
     pub fn clear_mic(&mut self) -> Result<(), JsValue> {
-
-        if let Some(ctx) = self.audio_ctx.lock().unwrap().take(){
+        if let Some(ctx) = self.audio_ctx.lock().unwrap().take() {
             //AudioBufferSourceNode is dropped if we stop playing, so have to check if it exists
-            if *self.playing_status.lock().unwrap(){
-                let _ = self.curr_source.lock().unwrap().take().unwrap().stop();                
+            if *self.playing_status.lock().unwrap() {
+                let _ = self.curr_source.lock().unwrap().take().unwrap().stop();
             }
             let _ = ctx.close();
         }
 
-        if let Some(recorder) = self.media_recorder.take(){
+        if let Some(recorder) = self.media_recorder.take() {
             recorder.stop()?;
         }
 
