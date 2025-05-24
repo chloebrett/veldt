@@ -287,6 +287,16 @@ mod tests {
 
         let mixer = Mixer::new(&project);
 
+        let mut node_counts = HashMap::new();
+        node_counts.insert(NodeLabel::Generator, 1);
+        node_counts.insert(NodeLabel::Effect, 1);
+        node_counts.insert(NodeLabel::WetDry, 1);
+        node_counts.insert(NodeLabel::Buffer, 1);
+        // Main output + channel output
+        node_counts.insert(NodeLabel::Amp, 2);
+        // Main sum + channel input
+        node_counts.insert(NodeLabel::Sum, 2);
+
         let mut edge_counts = HashMap::new();
         edge_counts.insert(EdgeLabel::GenToMixIn, 1);
         edge_counts.insert(EdgeLabel::MixInToEff, 1);
@@ -297,17 +307,23 @@ mod tests {
         edge_counts.insert(EdgeLabel::MainBufToMainSum, 1);
         edge_counts.insert(EdgeLabel::MainSumToMainAmp, 1);
 
-        // Main sum and amp nodes (2) +
-        // Effect and mixer nodes (2) +
-        // Channel input and output nodes (2) +
-        // Generator nodes (1) +
-        // Buffer nodes (1).
-        assert_eq!(mixer.graph.node_count(), 8);
-        for (key, count) in mixer.edge_counter.counts.iter() {
+        for (key, count) in mixer.graph_manager.node_counts.iter() {
+            assert_eq!(
+                Some(count),
+                node_counts.get(key),
+                "Key: {:?}, had: {}, expected: {:?}",
+                key,
+                count,
+                node_counts.get(key)
+            );
+        }
+
+        // TODO: abstract out these HashMap assertions.
+        for (key, count) in mixer.graph_manager.edge_counts.iter() {
             assert_eq!(
                 Some(count),
                 edge_counts.get(key),
-                "{:?} {} {:?}",
+                "Key: {:?}, had: {}, expected: {:?}",
                 key,
                 count,
                 edge_counts.get(key)
@@ -342,6 +358,16 @@ mod tests {
 
         let mixer = Mixer::new(&project);
 
+        let mut node_counts = HashMap::new();
+        node_counts.insert(NodeLabel::Generator, 3);
+        node_counts.insert(NodeLabel::Buffer, 1);
+        node_counts.insert(NodeLabel::Effect, 3);
+        node_counts.insert(NodeLabel::WetDry, 3);
+        // Main sum + one sum for each channel input
+        node_counts.insert(NodeLabel::Sum, 3);
+        // Main amp + one amp for each channel output
+        node_counts.insert(NodeLabel::Amp, 3);
+
         let mut edge_counts = HashMap::new();
         edge_counts.insert(EdgeLabel::GenToMixIn, 3);
         edge_counts.insert(EdgeLabel::MixInToEff, 2);
@@ -354,13 +380,17 @@ mod tests {
         edge_counts.insert(EdgeLabel::MainBufToMainSum, 1);
         edge_counts.insert(EdgeLabel::MainSumToMainAmp, 1);
 
-        // Main sum and amp nodes (2) +
-        // Effect and mixer nodes (2 * 3 effects) +
-        // Channel input and output nodes (2 * 2 channels) +
-        // Generator nodes (3) +
-        // Buffer nodes (1).
-        assert_eq!(mixer.graph.node_count(), 16);
-        for (key, count) in mixer.edge_counter.counts.iter() {
+        for (key, count) in mixer.graph_manager.node_counts.iter() {
+            assert_eq!(
+                Some(count),
+                node_counts.get(key),
+                "{:?} {} {:?}",
+                key,
+                count,
+                node_counts.get(key)
+            );
+        }
+        for (key, count) in mixer.graph_manager.edge_counts.iter() {
             assert_eq!(
                 Some(count),
                 edge_counts.get(key),
