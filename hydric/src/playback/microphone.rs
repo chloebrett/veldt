@@ -86,8 +86,7 @@ impl Microphone {
         Ok(())
     }
 
-    pub fn start(&mut self) -> Result<(), JsValue>  {
-
+    pub fn start(&mut self) -> Result<(), JsValue> {
         if self.is_recording() || self.has_recording() {
             Err("Can not start recording if already recording, or if a recording already exists.")?;
         }
@@ -173,7 +172,7 @@ impl Microphone {
 
     pub fn play_mic_audio(&self) -> Result<(), JsValue> {
         // We dont want this code to run if we are already playing audio or if we do not have a recording.
-        if *self.playing_status.lock().unwrap() || !self.has_recording(){
+        if *self.playing_status.lock().unwrap() || !self.has_recording() {
             return Err("Already playing or no mic recording to play.")?;
         }
 
@@ -248,8 +247,7 @@ impl Microphone {
     }
 
     pub fn pause_mic_audio(&self) -> Result<(), JsValue> {
-
-        if !self.is_playing(){
+        if !self.is_playing() {
             return Err("Can not pause if not playing.")?;
         }
 
@@ -265,8 +263,7 @@ impl Microphone {
 
     // Known bug here, cant stop while paused. Unsure how to fix currently.
     pub fn stop_mic_audio(&self) -> Result<(), JsValue> {
-
-        if !self.is_playing(){
+        if !self.is_playing() {
             return Err("Can not stop if not playing.")?;
         }
 
@@ -278,8 +275,7 @@ impl Microphone {
     }
 
     pub fn clear_mic(&mut self) -> Result<(), JsValue> {
-
-        if !self.has_recording(){
+        if !self.has_recording() {
             Err("Can not clear if no mic recording is present.")?;
         }
 

@@ -12,11 +12,7 @@ pub struct MicrophoneView<'a> {
 }
 
 impl<'a> MicrophoneView<'a> {
-    pub fn new(
-        store: &'a Store,
-        visible: &'a mut bool,
-        mic: &'a mut Microphone,
-    ) -> Self {
+    pub fn new(store: &'a Store, visible: &'a mut bool, mic: &'a mut Microphone) -> Self {
         MicrophoneView {
             store,
             visible,
@@ -56,7 +52,7 @@ impl View for MicrophoneView<'_> {
                         let _ = self.mic.play_mic_audio();
                     }
 
-                    if ui.button("pause").clicked(){
+                    if ui.button("pause").clicked() {
                         let _ = self.mic.pause_mic_audio();
                     }
 
