@@ -179,14 +179,6 @@ impl View for MenuBar<'_> {
             }
             track_response.on_hover_ui(|ui| {
                 ui.label("Track Roll");
-            });
-            let microphone_response =
-                ui.add(Button::new("🎤").selected(self.window_state.microphone));
-            if microphone_response.clicked() {
-                self.window_state.microphone ^= true;
-            }
-            microphone_response.on_hover_ui(|ui| {
-                ui.label("Record Microphone");
             })
         });
     }

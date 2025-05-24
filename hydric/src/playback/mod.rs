@@ -1,10 +1,8 @@
 mod audio_player;
 mod audio_processor;
-mod microphone;
 
 pub use audio_player::*;
 use audio_processor::*;
-pub use microphone::*;
 
 use dasp_frame::Stereo;
 use shared::model::PitchName;
