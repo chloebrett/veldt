@@ -86,7 +86,12 @@ impl Microphone {
         Ok(())
     }
 
-    pub fn start(&mut self) {
+    pub fn start(&mut self) -> Result<(), JsValue>  {
+
+        if self.is_recording() || self.has_recording() {
+            Err("Can not start recording if already recording, or if a recording already exists.")?;
+        }
+
         // Currently using ogg for browser compatibility, however wav would be better in future as it is lossless.
         let options = MediaRecorderOptions::new();
         options.set_mime_type("audio/ogg");
@@ -130,6 +135,8 @@ impl Microphone {
             .unwrap();
         self.media_recorder = Some(media_recorder);
         self.recording_status = true;
+
+        Ok(())
     }
 
     pub fn stop(&mut self) {
@@ -165,9 +172,9 @@ impl Microphone {
     }
 
     pub fn play_mic_audio(&self) -> Result<(), JsValue> {
-        // We dont want this code to run if we are already playing audio.
-        if *self.playing_status.lock().unwrap() {
-            return Ok(());
+        // We dont want this code to run if we are already playing audio or if we do not have a recording.
+        if *self.playing_status.lock().unwrap() || !self.has_recording(){
+            return Err("Already playing or no mic recording to play.")?;
         }
 
         // Handling in the case we want to resume not play from start.
@@ -241,6 +248,11 @@ impl Microphone {
     }
 
     pub fn pause_mic_audio(&self) -> Result<(), JsValue> {
+
+        if !self.is_playing(){
+            return Err("Can not pause if not playing.")?;
+        }
+
         let mut playing_status_clone = self.playing_status.lock().unwrap();
         if *playing_status_clone {
             if let Some(ctx) = self.audio_ctx.lock().unwrap().as_ref() {
@@ -253,6 +265,11 @@ impl Microphone {
 
     // Known bug here, cant stop while paused. Unsure how to fix currently.
     pub fn stop_mic_audio(&self) -> Result<(), JsValue> {
+
+        if !self.is_playing(){
+            return Err("Can not stop if not playing.")?;
+        }
+
         if let Some(source) = self.curr_source.lock().unwrap().take() {
             source.stop()?; // This is marked as depreceated, yet I can't find an alternative.
         }
@@ -261,6 +278,11 @@ impl Microphone {
     }
 
     pub fn clear_mic(&mut self) -> Result<(), JsValue> {
+
+        if !self.has_recording(){
+            Err("Can not clear if no mic recording is present.")?;
+        }
+
         if let Some(ctx) = self.audio_ctx.lock().unwrap().take() {
             // AudioBufferSourceNode is dropped if we stop playing, so have to check if it exists.
             if *self.playing_status.lock().unwrap() {

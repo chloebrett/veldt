@@ -1,4 +1,3 @@
-use crate::view::View;
 use crate::widget::{StateWindow, default_window, get_set, int_slider, selectable_value, slider};
 use crate::{GetSet, LocalState};
 use egui::{Ui, pos2};
