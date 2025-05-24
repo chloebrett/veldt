@@ -91,6 +91,7 @@ pub struct WindowState {
     pub scale: bool,
     pub sample_tree: bool,
     pub save: bool,
+    pub microphone: bool,
 }
 
 impl Default for WindowState {
@@ -106,6 +107,7 @@ impl Default for WindowState {
             scale: false,
             sample_tree: false,
             save: false,
+            microphone: false,
         }
     }
 }
