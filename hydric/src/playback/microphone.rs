@@ -62,25 +62,21 @@ impl Microphone {
             .media_devices()
             .expect("Media_devices is not supported.");
 
-        /*
-        We can request different things for media devices to capture, as such we need a constraint
-        To specify audio only.
-        */
+        // We can request different things for media devices to capture, as such we need a constraint
+        // To specify audio only.
+
         let constraints = MediaStreamConstraints::new();
         constraints.set_audio(&JsValue::from(true));
 
         // Get media devices.
         let promise = media_devices.get_user_media_with_constraints(&constraints)?;
         let stream_ref = Arc::clone(&self.stream);
-        log::info!("Requested permissions");
 
         let future = JsFuture::from(promise).then(move |result| match result {
             Ok(stream) => {
-                log::info!("Received permissions");
                 let stream = MediaStream::from(stream);
                 let mut stream_ref = stream_ref.lock().unwrap();
                 *stream_ref = Some(stream.clone());
-                log::info!("Set stream: {:?}", stream.clone());
 
                 futures::future::ready(())
             }
@@ -93,7 +89,7 @@ impl Microphone {
     }
 
     pub fn start(&mut self) {
-        // I think there is good browser support for wav? If not we can use webm.
+        // Currently using ogg for browser compatibility, however wav would be better in future as it is lossless.
         let options = MediaRecorderOptions::new();
         options.set_mime_type("audio/ogg");
 
@@ -103,7 +99,7 @@ impl Microphone {
             // Only store if there is actually data.
             let data = e
                 .data()
-                .expect("Should be fine so long as we have a valid blob.");
+                .expect("MediaRecorder should construct valid blobs.");
             if data.size() > 0.0 {
                 tx.try_send(data).unwrap();
             }
