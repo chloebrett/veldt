@@ -12,6 +12,7 @@ use crate::wave::detune_multiplier;
 use crate::wave_cache::{WaveCache, WaveKey};
 use dasp_frame::Stereo;
 use dasp_graph::{Buffer, Input, Node};
+use log::info;
 use shared::model::{
     AntiAliasingMode, Generator, GeneratorInstance, GeneratorMeta, Oscillator, PitchName,
     StingrayConfig,
@@ -33,6 +34,7 @@ struct NodeState {
     voice: Voice,
     filter_left: Box<dyn ApplyFilter + Send>,
     filter_right: Box<dyn ApplyFilter + Send>,
+    lpf_freq: f32,
 }
 
 struct Voice {
@@ -64,6 +66,7 @@ impl Default for NodeState {
             },
             filter_left: eq_filter(&config.lpf),
             filter_right: eq_filter(&config.lpf),
+            lpf_freq: config.lpf.fc,
         }
     }
 }
@@ -82,8 +85,14 @@ impl NodeState {
                     // the coefficients. Keep the ring buffer as is.
                     // ApplyFilter should have an update() method that takes some kind of config
                     // object.
-                    self.filter_left = eq_filter(&config.lpf);
-                    self.filter_right = eq_filter(&config.lpf);
+                    // self.filter_left = eq_filter(&config.lpf);
+                    // self.filter_right = eq_filter(&config.lpf);
+
+                    self.lpf_freq = 10000.0;
+                    self.filter_left
+                        .update(self.lpf_freq, self.config.lpf.q);
+                    self.filter_right
+                        .update(self.lpf_freq, self.config.lpf.q);
                 }
                 if self.config.lfos != config.lfos {
                     for (i, lfo) in self.voice.lfos.iter_mut().enumerate() {
@@ -124,6 +133,7 @@ impl StingrayNode {
 }
 
 impl Node<ProcessContext> for StingrayNode {
+    // this function deals with read only config
     fn process(&mut self, _inputs: &[Input], output: &mut [Buffer], payload: &ProcessContext) {
         let state = &mut self.state;
         state.update(payload, self.selector);
@@ -190,7 +200,8 @@ impl Node<ProcessContext> for StingrayNode {
             }
 
             if let Some(sources) = &mut state.voice.sources {
-                for ((eg, source), j) in state.voice.egs.iter_mut().zip(sources.iter_mut()).zip(0..) {
+                for ((eg, source), j) in state.voice.egs.iter_mut().zip(sources.iter_mut()).zip(0..)
+                {
                     let mut lfo_value = 0.0;
                     // Access the column for this oscillator in the matrix
                     for k in 0..state.config.lfos.len() {

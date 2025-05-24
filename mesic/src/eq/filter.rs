@@ -1,6 +1,8 @@
 use super::ApplyFilter;
 use dasp_graph::Buffer;
 use ringbuffer::{AllocRingBuffer, RingBuffer};
+use std::f32::consts::TAU;
+use crate::consts::SAMPLE_RATE;
 
 pub struct Mix {
     // Note: wet/dry below is independent from wet/dry on the mixer.
@@ -74,6 +76,10 @@ impl ApplyFilter for FirstOrderFilter {
             apply_mix(xn, yn, *xn, &self.mix);
         }
     }
+
+    fn update(&mut self, _freq: f32, _q: f32) {
+        // No-op.
+    }
 }
 
 /// A filter which looks at:
@@ -145,6 +151,26 @@ impl ApplyFilter for SecondOrderFilter {
 
             apply_mix(xn, yn, *xn, &self.mix);
         }
+    }
+
+    fn update(&mut self, freq: f32, q: f32) {
+        let fs = SAMPLE_RATE as f32;
+        let theta = TAU * freq / fs;
+        let d = 1.0 / q;
+        let alpha = 0.5 * d * theta.sin();
+        let beta = 0.5 * (1.0 - alpha) / (1.0 + alpha);
+        let gamma = (0.5 + beta) * theta.cos();
+        let a1 = 0.5 + beta - gamma;
+        let a0 = 0.5 * a1;
+        let a2 = a0;
+        let b1 = -2.0 * gamma;
+        let b2 = 2.0 * beta;
+
+        self.config.a0 = a0;
+        self.config.a1 = a1;
+        self.config.a2 = a2;
+        self.config.b1 = b1;
+        self.config.b2 = b2;
     }
 }
 

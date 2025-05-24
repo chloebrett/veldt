@@ -32,6 +32,7 @@ use shelf_first_order::*;
 
 pub trait ApplyFilter {
     fn apply(&mut self, buffer: &mut Buffer);
+    fn update(&mut self, freq: f32, q: f32);
 }
 
 pub fn eq_filter(config: &EqConfig) -> Box<dyn ApplyFilter + Send> {
