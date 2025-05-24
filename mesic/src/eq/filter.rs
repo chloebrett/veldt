@@ -78,9 +78,7 @@ impl ApplyFilter for FirstOrderFilter {
     }
 
     // Currently this isn't used anywhere.
-    fn update(&mut self, _freq: f32, _q: f32) {
-        
-    }
+    fn update(&mut self, _freq: f32, _q: f32) {}
 }
 
 /// A filter which looks at:

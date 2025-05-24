@@ -221,20 +221,41 @@ impl Node<ProcessContext> for StingrayNode {
                     buffers[1][i] += amp * wave[1];
                 }
             }
-
-            let lfo_cutoff_mod = lfo_values[0];
-
+            
             let min_freq = 20.0;
             let max_freq = 20000.0;
-            let mod_range: f32 = 2.0;
 
-            // Exponential modulation of the cutoff frequency since we can't hear linear mod at high frequencies.
-            let exp_mod = mod_range.powf(lfo_cutoff_mod);
-            let new_lfo_cutoff = (state.config.lpf.fc * exp_mod).clamp(min_freq, max_freq);
-            state.filter_left.update(new_lfo_cutoff, state.config.lpf.q);
-            state
-                .filter_right
-                .update(new_lfo_cutoff, state.config.lpf.q);
+            // let lfo_cutoff_mod = lfo_values[0];
+            let mut lfo_cutoff_mod = 0.0;
+
+            for (j, lfo_value) in lfo_values.iter().enumerate() {
+                // Assuming LPF column is always last in the 6x4 matrix.
+                let col = 3;
+
+                // Get matrix value for this LFO and oscillator
+                let matrix_value: f32 = state
+                    .config
+                    .matrix
+                    .get(j + 3, col)
+                    .map_or(0.0, |cell_ref| (*cell_ref).into());
+
+                lfo_cutoff_mod += lfo_value * matrix_value;
+            }
+            
+            // Make sure the lfo_cutoff_mod is in the range of -1.0 to 1.0
+            // This implementation of the LFO LPF relation is based on the the ableton synth version
+            // https://learningsynths.ableton.com/en/playground
+            lfo_cutoff_mod /= lfo_values.len() as f32; 
+            let new_cutoff = state.config.lpf.fc + lfo_cutoff_mod * max_freq; // At 1.0 the LFO should go all the way to max_freq
+
+            state.filter_left.update(
+                new_cutoff.clamp(min_freq, max_freq),
+                state.config.lpf.q,
+            );
+            state.filter_right.update(
+                new_cutoff.clamp(min_freq, max_freq),
+                state.config.lpf.q,
+            );
         }
 
         for (channel_index, out_buf) in output.iter_mut().enumerate() {
