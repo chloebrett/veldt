@@ -34,7 +34,6 @@ struct NodeState {
     voice: Voice,
     filter_left: Box<dyn ApplyFilter + Send>,
     filter_right: Box<dyn ApplyFilter + Send>,
-    lpf_freq: f32,
 }
 
 struct Voice {
@@ -66,7 +65,6 @@ impl Default for NodeState {
             },
             filter_left: eq_filter(&config.lpf),
             filter_right: eq_filter(&config.lpf),
-            lpf_freq: config.lpf.fc,
         }
     }
 }
@@ -88,11 +86,10 @@ impl NodeState {
                     // self.filter_left = eq_filter(&config.lpf);
                     // self.filter_right = eq_filter(&config.lpf);
 
-                    self.lpf_freq = 10000.0;
                     self.filter_left
-                        .update(self.lpf_freq, self.config.lpf.q);
+                        .update(self.config.lpf.fc, self.config.lpf.q);
                     self.filter_right
-                        .update(self.lpf_freq, self.config.lpf.q);
+                        .update(self.config.lpf.fc, self.config.lpf.q);
                 }
                 if self.config.lfos != config.lfos {
                     for (i, lfo) in self.voice.lfos.iter_mut().enumerate() {
@@ -224,6 +221,20 @@ impl Node<ProcessContext> for StingrayNode {
                     buffers[1][i] += amp * wave[1];
                 }
             }
+
+            let lfo_cutoff_mod = lfo_values[0];
+
+            let min_freq = 20.0;
+            let max_freq = 20000.0;
+            let mod_range: f32 = 2.0;
+
+            // Exponential modulation of the cutoff frequency since we can't hear linear mod at high frequencies.
+            let exp_mod = mod_range.powf(lfo_cutoff_mod);
+            let new_lfo_cutoff = (state.config.lpf.fc * exp_mod).clamp(min_freq, max_freq);
+            state.filter_left.update(new_lfo_cutoff, state.config.lpf.q);
+            state
+                .filter_right
+                .update(new_lfo_cutoff, state.config.lpf.q);
         }
 
         for (channel_index, out_buf) in output.iter_mut().enumerate() {

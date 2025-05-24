@@ -1,8 +1,8 @@
 use super::ApplyFilter;
+use crate::consts::SAMPLE_RATE;
 use dasp_graph::Buffer;
 use ringbuffer::{AllocRingBuffer, RingBuffer};
 use std::f32::consts::TAU;
-use crate::consts::SAMPLE_RATE;
 
 pub struct Mix {
     // Note: wet/dry below is independent from wet/dry on the mixer.
@@ -77,8 +77,9 @@ impl ApplyFilter for FirstOrderFilter {
         }
     }
 
+    // Currently this isn't used anywhere.
     fn update(&mut self, _freq: f32, _q: f32) {
-        // No-op.
+        
     }
 }
 
@@ -153,6 +154,8 @@ impl ApplyFilter for SecondOrderFilter {
         }
     }
 
+    // This update function is used only for lhp second order filter.
+    // Maths needs changing if this is used for other filters.
     fn update(&mut self, freq: f32, q: f32) {
         let fs = SAMPLE_RATE as f32;
         let theta = TAU * freq / fs;
