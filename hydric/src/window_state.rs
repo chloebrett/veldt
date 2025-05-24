@@ -1,6 +1,6 @@
-use crate::local_state::{GetSet, LocalState};
+use crate::local_state::GetSet;
 use egui::{Pos2, pos2, vec2};
-use state::{EffectSelector, GeneratorSelector, Store};
+use state::{EffectSelector, GeneratorSelector, MixerSelector, Store};
 use std::cell::RefCell;
 use std::cmp::{Eq, Ord};
 use std::collections::{HashMap, HashSet};
@@ -55,19 +55,23 @@ impl WindowData {
 pub struct WindowState2 {
     windows: HashMap<WindowKind, Rc<RefCell<WindowData>>>,
     visible_effects: Rc<RefCell<HashSet<EffectSelector>>>,
+    effect_windows: HashMap<WindowKind, Rc<RefCell<WindowData>>>,
 }
 
 impl Default for WindowState2 {
     fn default() -> Self {
         let mut windows = HashMap::new();
+        let effect_windows = HashMap::new();
         for window in WindowKind::iter() {
-            windows.insert(
-                window,
-                Rc::new(RefCell::new(WindowData::default_from_window(window))),
-            );
+            let window_data = Rc::new(RefCell::new(WindowData::default_from_window(window)));
+            match window {
+                WindowKind::Effect(..) => continue,
+                _ => windows.insert(window, window_data),
+            };
         }
         Self {
             windows,
+            effect_windows,
             visible_effects: Rc::new(RefCell::new(HashSet::new())),
         }
     }
@@ -76,26 +80,56 @@ impl Default for WindowState2 {
 impl WindowState2 {
     /// Derive windows that may change in count such as effects and generators from the store every frame.
     /// This way if other uses delete items, the window states will not go out of date.
-    pub fn update(&mut self, store: &Store, local_state: &LocalState) {
+    pub fn update(&mut self, store: &Store) {
         // Add any new effects from active mixer.
-        if let Some(mixer_sel) = local_state.active_mixer_chanel.get() {
-            let mixer = store.select(&mixer_sel);
-            for effect_index in 0..mixer.effects.len() {
-                let effect_sel = mixer_sel.downcast_effect(effect_index);
-                let window = WindowKind::Effect(effect_sel);
-                if !self.windows.contains_key(&window) {
-                    self.windows.insert(
-                        window,
-                        Rc::new(RefCell::new(WindowData::default_from_window(window))),
-                    );
-                }
+        // Get all effects from store
+        let effects: Vec<EffectSelector> = store
+            .get()
+            .project
+            .mixer
+            .channels
+            .iter()
+            .enumerate()
+            .map(|(index, channel)| {
+                let mixer_sel = MixerSelector(index);
+                let effect_sels: Vec<EffectSelector> = channel
+                    .effects
+                    .iter()
+                    .enumerate()
+                    .map(|(effect_index, _)| mixer_sel.downcast_effect(effect_index))
+                    .collect();
+                effect_sels
+            })
+            .flatten()
+            .collect();
+        let effect_set: HashSet<EffectSelector> = HashSet::from_iter(effects);
+        let effects = self.effect_windows.clone();
+        for effect in effects.keys() {
+            let WindowKind::Effect(effect_sel) = effect else {
+                continue;
+            };
+            if !effect_set.contains(&effect_sel) {
+                self.effect_windows.remove(&effect);
             }
-        };
+        }
+        for effect in effect_set {
+            let window = WindowKind::Effect(effect);
+            if !self.effect_windows.contains_key(&window) {
+                self.effect_windows.insert(
+                    window,
+                    Rc::new(RefCell::new(WindowData::default_from_window(window))),
+                );
+            }
+        }
         // TODO add updating generators when implemented on generator views.
     }
 
     pub fn get_visible(&self, window: WindowKind) -> bool {
-        self.windows
+        let windows = match window {
+            WindowKind::Effect(..) => &self.effect_windows,
+            _ => &self.windows,
+        };
+        windows
             .get(&window)
             .expect("Windows should have been initialised.")
             .get()
@@ -103,6 +137,10 @@ impl WindowState2 {
     }
 
     pub fn set_visible(&self, window: WindowKind, open: bool) {
+        let windows = match window {
+            WindowKind::Effect(..) => &self.effect_windows,
+            _ => &self.windows,
+        };
         // Keep track of open effect windows.
         if let WindowKind::Effect(effect_sel) = window {
             self.visible_effects.update(|mut it| {
@@ -117,7 +155,7 @@ impl WindowState2 {
 
         // TODO: Keep track of open generator windows.
 
-        self.windows
+        windows
             .get(&window)
             .expect("Windows should have been initialised.")
             .update(|mut it| {
@@ -127,7 +165,11 @@ impl WindowState2 {
     }
 
     pub fn get_pos(&self, window: WindowKind) -> Pos2 {
-        self.windows
+        let windows = match window {
+            WindowKind::Effect(..) => &self.effect_windows,
+            _ => &self.windows,
+        };
+        windows
             .get(&window)
             .expect("Windows should have been initialised.")
             .get()
@@ -135,7 +177,6 @@ impl WindowState2 {
     }
 
     pub fn visible_effect(&self) -> Vec<EffectSelector> {
-        // TODO: Should only effects from active mixer channel be open?
         self.visible_effects.get().into_iter().collect()
     }
 }

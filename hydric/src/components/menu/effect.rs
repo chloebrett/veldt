@@ -47,7 +47,7 @@ impl View for EffectMenuOptions<'_> {
                                 Action::AddChild(TypeField::Effect(instance)),
                             );
                             // Open mixer window.
-                            self.local_state.active_mixer_chanel.set(Some(mixer_sel));
+                            self.local_state.active_mixer_channel.set(Some(mixer_sel));
                             self.window_state.set_visible(WindowKind::Mixer, true);
                         }
                     }

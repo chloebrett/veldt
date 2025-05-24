@@ -87,7 +87,7 @@ impl eframe::App for App {
 
         self.player.maybe_update();
 
-        self.window_state2.update(&self.store, &self.local_state);
+        self.window_state2.update(&self.store);
 
         egui::TopBottomPanel::top("veldt_menu").show(ctx, |ui| {
             MenuBar::new(

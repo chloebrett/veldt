@@ -53,7 +53,7 @@ impl View for MixerView<'_> {
             ..
         } = self;
         let mixer_sel = local_state
-            .active_mixer_chanel
+            .active_mixer_channel
             .get()
             .unwrap_or(MixerSelector(0));
         let MixerSelector(mixer_index) = mixer_sel;
@@ -109,7 +109,7 @@ impl View for MixerView<'_> {
                     mixer_index as f64,
                     |it| {
                         local_state
-                            .active_mixer_chanel
+                            .active_mixer_channel
                             .set(Some(MixerSelector(it as usize)))
                     },
                     0..=max_channel_index,
