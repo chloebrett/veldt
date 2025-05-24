@@ -171,7 +171,6 @@ impl View for App {
         NoteRoll::new(&self.store, &self.local_state, &mut self.player).ui(ui);
 
         MicrophoneView::new(
-            &self.store,
             &mut self.window_state.microphone,
             &mut self.mic,
         )

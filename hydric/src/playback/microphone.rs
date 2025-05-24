@@ -21,16 +21,16 @@ pub struct Microphone {
     /// audio_ctx: Arc Mutex required since it is used in an async spawn_local in play_mic_audio(). Framework to play audio.
     /// curr_source: Arc Mutex required since it is used in an async spawn_local in play_mic_audio(). Used to play audio.
     /// playing_status: Arc Mutex required because this can be modified at any time by AudioBufferSourceNode when it finishes playing audio.
-    stream: Arc<Mutex<Option<MediaStream>>>, 
-    media_recorder: Option<MediaRecorder>, 
-    audio_chunks: Vec<Blob>,               
-    intermediate_data: Arc<Mutex<Vec<u8>>>, 
-    recording_status: bool, 
-    tx: Sender<Blob>, 
+    stream: Arc<Mutex<Option<MediaStream>>>,
+    media_recorder: Option<MediaRecorder>,
+    audio_chunks: Vec<Blob>,
+    intermediate_data: Arc<Mutex<Vec<u8>>>,
+    recording_status: bool,
+    tx: Sender<Blob>,
     rx: Receiver<Blob>,
-    audio_ctx: Arc<Mutex<Option<AudioContext>>>, 
-    curr_source: Arc<Mutex<Option<AudioBufferSourceNode>>>, 
-    playing_status: Arc<Mutex<bool>>, 
+    audio_ctx: Arc<Mutex<Option<AudioContext>>>,
+    curr_source: Arc<Mutex<Option<AudioBufferSourceNode>>>,
+    playing_status: Arc<Mutex<bool>>,
 }
 
 impl Microphone {
@@ -69,9 +69,7 @@ impl Microphone {
             .media_devices()
             .expect("Media_devices is not supported.");
 
-        // We can request different things for media devices to capture, as such we need a constraint
-        // to specify audio only.
-
+        // We can request different things for media devices to capture, as such we need a constraint to specify audio only.
         let constraints = MediaStreamConstraints::new();
         constraints.set_audio(&true.into());
 
@@ -242,6 +240,7 @@ impl Microphone {
             }) as Box<dyn FnMut()>);
 
             // TODO: make this not be a memory leak.
+            #[allow(deprecated)]
             source.set_onended(Some(onended_closure.as_ref().unchecked_ref()));
             onended_closure.forget(); // Store permanently (or manage cleanup).
 
@@ -249,8 +248,6 @@ impl Microphone {
 
             *source_guard = Some(source);
             *playing_status_clone.lock().unwrap() = true;
-
-            ()
         });
         Ok(())
     }
@@ -277,6 +274,7 @@ impl Microphone {
         }
 
         if let Some(source) = self.curr_source.lock().unwrap().take() {
+            #[allow(deprecated)]
             source.stop()?; // This is marked as depreceated, yet I can't find an alternative.
         }
         *self.playing_status.lock().unwrap() = false;
@@ -291,6 +289,7 @@ impl Microphone {
         if let Some(ctx) = self.audio_ctx.lock().unwrap().take() {
             // AudioBufferSourceNode is dropped if we stop playing, so have to check if it exists.
             if *self.playing_status.lock().unwrap() {
+                #[allow(deprecated)]
                 let _ = self.curr_source.lock().unwrap().take().unwrap().stop();
             }
             let _ = ctx.close();
