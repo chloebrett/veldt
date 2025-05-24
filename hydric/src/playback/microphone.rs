@@ -1,6 +1,4 @@
-use async_std::channel::RecvError;
 use crossbeam_channel::{Receiver, Sender};
-use dasp_frame::Mono;
 use futures::FutureExt;
 use js_sys::Array;
 use std::sync::{Arc, Mutex};
@@ -38,7 +36,7 @@ impl Microphone {
             recording_status: false,
             tx,
             rx,
-            audio_ctx: Arc::new(Mutex::new(None)), // Do we need these as arc?
+            audio_ctx: Arc::new(Mutex::new(None)), // Do we need these as arc? TODO
             curr_source: Arc::new(Mutex::new(None)),
             playing_status: Arc::new(Mutex::new(false)),
         }
@@ -63,7 +61,7 @@ impl Microphone {
             .expect("Media_devices is not supported.");
 
         // We can request different things for media devices to capture, as such we need a constraint
-        // To specify audio only.
+        // to specify audio only.
 
         let constraints = MediaStreamConstraints::new();
         constraints.set_audio(&JsValue::from(true));
@@ -105,7 +103,7 @@ impl Microphone {
             }
         }) as Box<dyn FnMut(_)>);
 
-        //Get a reference here as we want stream to persist after clearing mic recording.
+        // Get a reference here as we want stream to persist after clearing mic recording.
         let stream_guard = self.stream.lock().unwrap();
         let stream = stream_guard.as_ref().expect("Stream should exist");
 
@@ -167,12 +165,12 @@ impl Microphone {
     }
 
     pub fn play_mic_audio(&self) -> Result<(), JsValue> {
-        // We dont want this code to run if already playing audio
+        // We dont want this code to run if we are already playing audio.
         if *self.playing_status.lock().unwrap() {
             return Ok(());
         }
 
-        // Handling in the case we want to resume not play from start
+        // Handling in the case we want to resume not play from start.
         if let Some(ctx) = self.audio_ctx.lock().unwrap().as_ref() {
             if ctx.state() == AudioContextState::Suspended {
                 let _ = ctx.resume()?;
@@ -182,11 +180,11 @@ impl Microphone {
             }
         }
 
-        //Create our audio context
+        // Create our audio context.
         let audio_ctx = AudioContext::new()?;
         *self.audio_ctx.lock().unwrap() = Some(audio_ctx.clone());
 
-        //combine our chunks
+        // Combine our chunks.
         let array = Array::new();
         for chunk in &self.audio_chunks {
             array.push(chunk);
@@ -198,18 +196,18 @@ impl Microphone {
         let playing_status_clone = self.playing_status.clone();
 
         spawn_local(async move {
-            //Extract an array buffer, need to use map as JsFuture returns a JsValue which isn't useful.
+            // Extract an array buffer, need to use map as JsFuture returns a JsValue which isn't useful.
             let array_promise = blob.array_buffer();
             let array_buffer = JsFuture::from(array_promise)
                 .await
                 .map(js_sys::ArrayBuffer::from)
                 .unwrap();
 
-            //Create an audio buffer
+            // Create an audio buffer.
             let decoded_promise = audio_ctx.decode_audio_data(&array_buffer).unwrap();
             let decoded = JsFuture::from(decoded_promise)
                 .await
-                .map(web_sys::AudioBuffer::from)
+                .map(AudioBuffer::from)
                 .unwrap();
 
             let mut source_guard = source_clone.lock().unwrap();
@@ -222,7 +220,7 @@ impl Microphone {
                 .connect_with_audio_node(&audio_ctx.destination())
                 .unwrap();
 
-            // need to handle finishing playing the audio
+            // Need to handle finishing playing the audio.
             let playing_status_closure_clone = playing_status_clone.clone(); // clone a clone?
             let onended_closure = Closure::wrap(Box::new(move || {
                 *playing_status_closure_clone.lock().unwrap() = false;
@@ -230,7 +228,7 @@ impl Microphone {
 
             // TODO: make this not be a memory leak.
             source.set_onended(Some(onended_closure.as_ref().unchecked_ref()));
-            onended_closure.forget(); // Store permanently (or manage cleanup)
+            onended_closure.forget(); // Store permanently (or manage cleanup).
 
             source.start().unwrap();
 
@@ -253,10 +251,10 @@ impl Microphone {
         Ok(())
     }
 
-    //known bug here, cant stop while paused. Unsure how to fix currently
+    // Known bug here, cant stop while paused. Unsure how to fix currently.
     pub fn stop_mic_audio(&self) -> Result<(), JsValue> {
         if let Some(source) = self.curr_source.lock().unwrap().take() {
-            source.stop()?; //This is marked as depreceated yet I can't find an alternative.
+            source.stop()?; // This is marked as depreceated, yet I can't find an alternative.
         }
         *self.playing_status.lock().unwrap() = false;
         Ok(())
@@ -264,7 +262,7 @@ impl Microphone {
 
     pub fn clear_mic(&mut self) -> Result<(), JsValue> {
         if let Some(ctx) = self.audio_ctx.lock().unwrap().take() {
-            //AudioBufferSourceNode is dropped if we stop playing, so have to check if it exists
+            // AudioBufferSourceNode is dropped if we stop playing, so have to check if it exists.
             if *self.playing_status.lock().unwrap() {
                 let _ = self.curr_source.lock().unwrap().take().unwrap().stop();
             }
