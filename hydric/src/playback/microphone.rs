@@ -12,16 +12,25 @@ use web_sys::{
 
 // This tutorial was used for the general code structure: https://web.dev/articles/media-recording-audio
 pub struct Microphone {
-    stream: Arc<Mutex<Option<MediaStream>>>, // Arc Mutex is required because stream is used in an async callback .then() in get_permissions().
-    media_recorder: Option<MediaRecorder>, // Records audio from microphone, constructed from stream.
-    audio_chunks: Vec<Blob>,               // Holds output of media_recorder.
-    intermediate_data: Arc<Mutex<Vec<u8>>>, // Holds processed vec<u8> data created in convert_audio().
-    recording_status: bool, // State variable used in MicrophoneView to manage user input.
-    tx: Sender<Blob>, // Use a stream to put media_recorder data in audio_chunks as they appear.
+    /// stream: Arc Mutex is required because stream is used in an async callback .then() in get_permissions().
+    /// media_recorder: Records audio from microphone, constructed from stream.
+    /// audio_chunks: Holds output of media_recorder.
+    /// intermediate_data: Holds processed vec<u8> data created in convert_audio().
+    /// recording_status: State variable used in MicrophoneView to manage user input.
+    /// tx/rx: Use a stream to put media_recorder data in audio_chunks as they appear.
+    /// audio_ctx: Arc Mutex required since it is used in an async spawn_local in play_mic_audio(). Framework to play audio.
+    /// curr_source: Arc Mutex required since it is used in an async spawn_local in play_mic_audio(). Used to play audio.
+    /// playing_status: Arc Mutex required because this can be modified at any time by AudioBufferSourceNode when it finishes playing audio.
+    stream: Arc<Mutex<Option<MediaStream>>>, 
+    media_recorder: Option<MediaRecorder>, 
+    audio_chunks: Vec<Blob>,               
+    intermediate_data: Arc<Mutex<Vec<u8>>>, 
+    recording_status: bool, 
+    tx: Sender<Blob>, 
     rx: Receiver<Blob>,
-    audio_ctx: Arc<Mutex<Option<AudioContext>>>, // Arc Mutex required since it is used in an async spawn_local in play_mic_audio(). Framework to play audio.
-    curr_source: Arc<Mutex<Option<AudioBufferSourceNode>>>, // Arc Mutex required since it is used in an async spawn_local in play_mic_audio(). Used to play audio.
-    playing_status: Arc<Mutex<bool>>, // Arc Mutex required because this can be modified at any time by AudioBufferSourceNode when it finishes playing audio.
+    audio_ctx: Arc<Mutex<Option<AudioContext>>>, 
+    curr_source: Arc<Mutex<Option<AudioBufferSourceNode>>>, 
+    playing_status: Arc<Mutex<bool>>, 
 }
 
 impl Microphone {
