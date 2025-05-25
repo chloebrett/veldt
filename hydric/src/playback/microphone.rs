@@ -1,6 +1,8 @@
 use crossbeam_channel::{Receiver, Sender};
 use futures::FutureExt;
 use js_sys::Array;
+use std::cell::RefCell;
+use std::rc::Rc;
 use std::sync::{Arc, Mutex};
 use wasm_bindgen::prelude::*;
 use wasm_bindgen_futures::JsFuture;
@@ -9,14 +11,12 @@ use web_sys::{
     AudioBuffer, AudioBufferSourceNode, AudioContext, AudioContextState, Blob, BlobEvent,
     MediaRecorder, MediaRecorderOptions, MediaStream, MediaStreamConstraints, window,
 };
-use std::rc::Rc;
-use std::cell::RefCell;
 
 // This tutorial was used for the general code structure: https://web.dev/articles/media-recording-audio
 pub struct Microphone {
     /// media_recorder: Records audio from microphone, constructed from stream.
     /// audio_chunks: Holds output of media_recorder.
-    /// intermediate_data: Holds processed vec<u8> data created in convert_audio(). Can be a Rc<RefCell>>. 
+    /// intermediate_data: Holds processed vec<u8> data created in convert_audio(). Can be a Rc<RefCell>>.
     /// recording_status: State variable used in MicrophoneView to manage user input.
     /// tx/rx: Use a stream to put media_recorder data in audio_chunks as they appear.
     /// audio_ctx: Framework to play audio.
@@ -235,7 +235,7 @@ impl Microphone {
                 .unwrap();
 
             // Need to handle finishing playing the audio.
-            let playing_status_closure_clone = playing_status_clone.clone(); 
+            let playing_status_closure_clone = playing_status_clone.clone();
             let onended_closure = Closure::wrap(Box::new(move || {
                 *playing_status_closure_clone.lock().unwrap() = false;
             }) as Box<dyn FnMut()>);
