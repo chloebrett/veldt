@@ -9,27 +9,28 @@ use web_sys::{
     AudioBuffer, AudioBufferSourceNode, AudioContext, AudioContextState, Blob, BlobEvent,
     MediaRecorder, MediaRecorderOptions, MediaStream, MediaStreamConstraints, window,
 };
+use std::rc::Rc;
+use std::cell::RefCell;
 
 // This tutorial was used for the general code structure: https://web.dev/articles/media-recording-audio
 pub struct Microphone {
-    /// stream: Arc Mutex is required because stream is used in an async callback .then() in get_permissions().
     /// media_recorder: Records audio from microphone, constructed from stream.
     /// audio_chunks: Holds output of media_recorder.
-    /// intermediate_data: Holds processed vec<u8> data created in convert_audio().
+    /// intermediate_data: Holds processed vec<u8> data created in convert_audio(). Can be a Rc<RefCell>>. 
     /// recording_status: State variable used in MicrophoneView to manage user input.
     /// tx/rx: Use a stream to put media_recorder data in audio_chunks as they appear.
-    /// audio_ctx: Arc Mutex required since it is used in an async spawn_local in play_mic_audio(). Framework to play audio.
-    /// curr_source: Arc Mutex required since it is used in an async spawn_local in play_mic_audio(). Used to play audio.
-    /// playing_status: Arc Mutex required because this can be modified at any time by AudioBufferSourceNode when it finishes playing audio.
-    stream: Arc<Mutex<Option<MediaStream>>>,
+    /// audio_ctx: Framework to play audio.
+    /// curr_source: Used to play audio.
+    /// playing_status: Arc Mutex or Rc<RefCell>> required because this can be modified at any time by AudioBufferSourceNode when it finishes playing audio.
+    stream: Rc<RefCell<Option<MediaStream>>>,
     media_recorder: Option<MediaRecorder>,
     audio_chunks: Vec<Blob>,
     intermediate_data: Arc<Mutex<Vec<u8>>>,
     recording_status: bool,
     tx: Sender<Blob>,
     rx: Receiver<Blob>,
-    audio_ctx: Arc<Mutex<Option<AudioContext>>>,
-    curr_source: Arc<Mutex<Option<AudioBufferSourceNode>>>,
+    audio_ctx: Rc<RefCell<Option<AudioContext>>>,
+    curr_source: Rc<RefCell<Option<AudioBufferSourceNode>>>,
     playing_status: Arc<Mutex<bool>>,
 }
 
@@ -38,21 +39,21 @@ impl Microphone {
         let (tx, rx) = crossbeam_channel::unbounded();
 
         Self {
-            stream: Arc::new(Mutex::new(None)),
+            stream: Rc::new(RefCell::new(None)),
             media_recorder: None,
             audio_chunks: vec![],
             intermediate_data: Arc::new(Mutex::new(vec![])),
             recording_status: false,
             tx,
             rx,
-            audio_ctx: Arc::new(Mutex::new(None)), // Do we need these as arc? TODO
-            curr_source: Arc::new(Mutex::new(None)),
+            audio_ctx: Rc::new(RefCell::new(None)),
+            curr_source: Rc::new(RefCell::new(None)),
             playing_status: Arc::new(Mutex::new(false)),
         }
     }
 
     pub fn has_permissions(&self) -> bool {
-        self.stream.lock().unwrap().is_some()
+        self.stream.borrow().is_some()
     }
 
     pub fn update_mic_recording(&mut self) {
@@ -75,13 +76,13 @@ impl Microphone {
 
         // Get media devices.
         let promise = media_devices.get_user_media_with_constraints(&constraints)?;
-        let stream_ref = Arc::clone(&self.stream);
+        let stream_ref = Rc::clone(&self.stream);
 
         let future = JsFuture::from(promise).then(move |result| match result {
             Ok(stream) => {
+                // Place our created MediaStream in Microphone's stream attribute.
                 let stream = MediaStream::from(stream);
-                let mut stream_ref = stream_ref.lock().unwrap();
-                *stream_ref = Some(stream.clone());
+                *stream_ref.borrow_mut() = Some(stream);
 
                 futures::future::ready(())
             }
@@ -115,7 +116,7 @@ impl Microphone {
         }) as Box<dyn FnMut(_)>);
 
         // Get a reference here as we want stream to persist after clearing mic recording.
-        let stream_guard = self.stream.lock().unwrap();
+        let stream_guard = self.stream.borrow();
         let stream = stream_guard.as_ref().expect("Stream should exist");
 
         let media_recorder =
@@ -184,7 +185,7 @@ impl Microphone {
         }
 
         // Handling in the case we want to resume not play from start.
-        if let Some(ctx) = self.audio_ctx.lock().unwrap().as_ref() {
+        if let Some(ctx) = self.audio_ctx.borrow().as_ref() {
             if ctx.state() == AudioContextState::Suspended {
                 let _ = ctx.resume()?;
                 *self.playing_status.lock().unwrap() = true;
@@ -195,7 +196,7 @@ impl Microphone {
 
         // Create our audio context.
         let audio_ctx = AudioContext::new()?;
-        *self.audio_ctx.lock().unwrap() = Some(audio_ctx.clone());
+        *self.audio_ctx.borrow_mut() = Some(audio_ctx.clone());
 
         // Combine our chunks.
         let array = Array::new();
@@ -223,18 +224,18 @@ impl Microphone {
                 .map(AudioBuffer::from)
                 .unwrap();
 
-            let mut source_guard = source_clone.lock().unwrap();
+            let mut source_guard = source_clone.borrow_mut();
             let source = AudioBufferSourceNode::new(&audio_ctx).unwrap();
             source.set_buffer(Some(&decoded));
 
             // IDK about this unwrap call, could be an issue if user has zero audio output
-            // (mb skill issue tho if u making music without speakers)
+            // (mb skill issue tho if u making music without speakers).
             source
                 .connect_with_audio_node(&audio_ctx.destination())
                 .unwrap();
 
             // Need to handle finishing playing the audio.
-            let playing_status_closure_clone = playing_status_clone.clone(); // clone a clone?
+            let playing_status_closure_clone = playing_status_clone.clone(); 
             let onended_closure = Closure::wrap(Box::new(move || {
                 *playing_status_closure_clone.lock().unwrap() = false;
             }) as Box<dyn FnMut()>);
@@ -259,7 +260,7 @@ impl Microphone {
 
         let mut playing_status_clone = self.playing_status.lock().unwrap();
         if *playing_status_clone {
-            if let Some(ctx) = self.audio_ctx.lock().unwrap().as_ref() {
+            if let Some(ctx) = self.audio_ctx.borrow().as_ref() {
                 let _ = ctx.suspend()?;
                 *playing_status_clone = false;
             }
@@ -273,7 +274,7 @@ impl Microphone {
             return Err("Can not stop if not playing.")?;
         }
 
-        if let Some(source) = self.curr_source.lock().unwrap().take() {
+        if let Some(source) = self.curr_source.borrow_mut().take() {
             #[allow(deprecated)]
             source.stop()?; // This is marked as depreceated, yet I can't find an alternative.
         }
@@ -286,11 +287,11 @@ impl Microphone {
             Err("Can not clear if no mic recording is present.")?;
         }
 
-        if let Some(ctx) = self.audio_ctx.lock().unwrap().take() {
+        if let Some(ctx) = self.audio_ctx.borrow_mut().take() {
             // AudioBufferSourceNode is dropped if we stop playing, so have to check if it exists.
             if *self.playing_status.lock().unwrap() {
                 #[allow(deprecated)]
-                let _ = self.curr_source.lock().unwrap().take().unwrap().stop();
+                let _ = self.curr_source.borrow_mut().take().unwrap().stop();
             }
             let _ = ctx.close();
         }
