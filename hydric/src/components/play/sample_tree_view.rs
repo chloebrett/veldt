@@ -2,7 +2,8 @@ use crate::AsyncState;
 use crate::promise::{poll, spawn};
 use crate::rpc::load_sample_tree;
 use crate::view::View;
-use crate::widget::{checkbox, default_window};
+use crate::widget::{StateWindow, checkbox, default_window};
+use crate::window_state::{WindowKind, WindowState};
 use egui::{Checkbox, Pos2, ScrollArea, Ui};
 use egui_ltreeview::{TreeView, TreeViewBuilder};
 use shared::model::{FileTreeConfig, FilenameTree};
@@ -11,15 +12,19 @@ use state::{Action, Store, TypeField};
 pub struct SampleTreeView<'a> {
     store: &'a Store,
     async_state: &'a mut AsyncState,
-    visible: &'a mut bool,
+    window_state: &'a WindowState,
 }
 
 impl<'a> SampleTreeView<'a> {
-    pub fn new(store: &'a Store, async_state: &'a mut AsyncState, visible: &'a mut bool) -> Self {
+    pub fn new(
+        store: &'a Store,
+        async_state: &'a mut AsyncState,
+        window_state: &'a WindowState,
+    ) -> Self {
         SampleTreeView {
             store,
             async_state,
-            visible,
+            window_state,
         }
     }
 }
@@ -57,11 +62,16 @@ fn add_node(
 
 impl View for SampleTreeView<'_> {
     fn ui(&mut self, ui: &mut Ui) {
-        default_window("Samples")
-            .resizable(true)
-            .open(self.visible)
-            .default_pos(Pos2 { x: 600.0, y: 20.0 })
-            .show(ui.ctx(), |ui| {
+        let window = StateWindow(
+            default_window("Samples")
+                .resizable(true)
+                .default_pos(Pos2 { x: 600.0, y: 20.0 }),
+        );
+        window.show_with_closure(
+            ui,
+            self.window_state.get_visible(WindowKind::SampleTree),
+            |_| self.window_state.set_visible(WindowKind::SampleTree, false),
+            |ui| {
                 let config = &self.store.get().sample_tree_config;
 
                 let mut search = config.search.clone();
@@ -140,6 +150,7 @@ impl View for SampleTreeView<'_> {
                             });
                         });
                 }
-            });
+            },
+        );
     }
 }

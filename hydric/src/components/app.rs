@@ -8,8 +8,8 @@ use super::{
 use crate::rpc::broadcast_actions;
 use crate::rpc::load_project_list;
 use crate::view::View;
-use crate::{AsyncState, LocalState, WindowState, playback::AudioPlayer};
-use crate::{components::FrameHistory, window_state::WindowState2};
+use crate::{AsyncState, LocalState, playback::AudioPlayer};
+use crate::{components::FrameHistory, window_state::WindowState};
 use crate::{promise::spawn, window_state::WindowKind};
 use egui::{ScrollArea, Ui, scroll_area::ScrollBarVisibility};
 use mesic::graph::RenderGraph;
@@ -28,7 +28,6 @@ pub struct App {
     pub async_state: AsyncState,
     pub player: AudioPlayer,
     pub window_state: WindowState,
-    pub window_state2: WindowState2,
 }
 
 impl Default for App {
@@ -47,7 +46,6 @@ impl Default for App {
             async_state: AsyncState::default(),
             player: AudioPlayer::new(graph),
             window_state: WindowState::default(),
-            window_state2: WindowState2::default(),
         }
     }
 }
@@ -68,11 +66,11 @@ impl App {
     }
 
     fn visible_generators(&self) -> Vec<GeneratorSelector> {
-        self.window_state.generators.clone().as_vec()
+        self.window_state.visible_generators()
     }
 
     fn visible_effects(&self) -> Vec<EffectSelector> {
-        self.window_state2.visible_effect()
+        self.window_state.visible_effect()
     }
 }
 
@@ -87,15 +85,14 @@ impl eframe::App for App {
 
         self.player.maybe_update();
 
-        self.window_state2.update(&self.store);
+        self.window_state.update(&self.store);
 
         egui::TopBottomPanel::top("veldt_menu").show(ctx, |ui| {
             MenuBar::new(
                 &mut self.store,
                 &self.local_state,
                 &mut self.player,
-                &mut self.window_state,
-                &self.window_state2,
+                &self.window_state,
                 &mut self.async_state,
             )
             .ui(ui);
@@ -117,26 +114,23 @@ impl eframe::App for App {
 
 impl View for App {
     fn ui(&mut self, ui: &mut Ui) {
-        if self.window_state.generator_list {
-            generators_control(ui.ctx(), &mut self.window_state, &self.store);
+        if self.window_state.get_visible(WindowKind::GeneratorList) {
+            generators_control(ui, &mut self.window_state, &self.store);
         }
 
         for sel in self.visible_generators() {
-            let generators = &mut self.window_state.generators;
-            let visible = generators.get(sel);
             GeneratorView::new(
                 &self.store,
+                &self.window_state,
                 &sel,
                 &self.local_state,
                 &mut self.player,
-                visible,
-                || generators.set(sel, false),
             )
             .ui(ui);
         }
-        if self.window_state2.get_visible(WindowKind::Mixer) {
+        if self.window_state.get_visible(WindowKind::Mixer) {
             MixerView::new(
-                &self.window_state2,
+                &self.window_state,
                 &self.store,
                 &self.local_state,
                 &self.player,
@@ -152,30 +146,25 @@ impl View for App {
             if let Some(mut it) = EffectView::new(
                 &self.store,
                 &effect_selector,
-                &self.window_state2,
+                &self.window_state,
                 dispatch,
                 on_release,
             ) {
                 it.ui(ui)
             }
         }
-        if self.window_state.scale {
+        if self.window_state.get_visible(WindowKind::Scale) {
             let dispatch = |action| self.store.dispatchr(action);
             let key = self.store.get().key;
             let scale = self.store.get().scale;
-            KeyView::new(dispatch, &mut self.window_state.scale, key, scale).ui(ui);
+            KeyView::new(dispatch, &self.window_state, key, scale).ui(ui);
         }
 
         NoteView::new(&self.store, &self.local_state).ui(ui);
         NoteRoll::new(&self.store, &self.local_state, &mut self.player).ui(ui);
         PlacementView::new(&self.store, &self.local_state).ui(ui);
 
-        SampleTreeView::new(
-            &self.store,
-            &mut self.async_state,
-            &mut self.window_state.sample_tree,
-        )
-        .ui(ui);
-        TrackRoll::new(&self.store, &mut self.window_state2, &self.local_state).ui(ui);
+        SampleTreeView::new(&self.store, &mut self.async_state, &self.window_state).ui(ui);
+        TrackRoll::new(&self.store, &mut self.window_state, &self.local_state).ui(ui);
     }
 }

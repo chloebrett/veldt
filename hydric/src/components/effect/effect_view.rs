@@ -1,5 +1,5 @@
 use super::{CompressorView, DelayView, EqView, ModDelayView};
-use crate::WindowState2;
+use crate::WindowState;
 use crate::view::View;
 use crate::widget::{StateWindow, default_window};
 use crate::window_state::WindowKind;
@@ -8,7 +8,7 @@ use shared::model::Effect;
 use state::{Action, EffectSelector, Store};
 
 pub struct EffectView<'a, F: Fn(Action), G: Fn()> {
-    window_state: &'a WindowState2,
+    window_state: &'a WindowState,
     effect: &'a Effect,
     selector: EffectSelector,
     dispatch: F,
@@ -19,7 +19,7 @@ impl<'a, F: Fn(Action), G: Fn()> EffectView<'a, F, G> {
     pub fn new(
         store: &'a Store,
         selector: &'a EffectSelector,
-        window_state: &'a WindowState2,
+        window_state: &'a WindowState,
         dispatch: F,
         on_release: G,
     ) -> Option<Self> {

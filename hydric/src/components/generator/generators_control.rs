@@ -1,28 +1,32 @@
 use super::generator_name;
 use crate::WindowState;
-use crate::widget::{default_window, int_slider, knob};
-use egui::{Button, Pos2};
+use crate::widget::{StateWindow, default_window, int_slider, knob};
+use crate::window_state::WindowKind;
+use egui::{Button, Pos2, Ui};
 use state::{Action, FloatField, GeneratorSelector, IndexField, Store, TypeField};
 
-pub fn generators_control(ctx: &egui::Context, window_state: &mut WindowState, store: &Store) {
+pub fn generators_control(ui: &mut Ui, window_state: &mut WindowState, store: &Store) {
     let generators = &store.get().project.generators;
-    let visible = &mut window_state.generator_list;
-
-    default_window("Generators")
-        .id("generators".into())
-        .default_pos(Pos2 {
-            x: 1000.0,
-            y: 150.0,
-        })
-        .open(visible)
-        .show(ctx, |ui| {
+    let window = StateWindow(
+        default_window("Generators")
+            .id("generators".into())
+            .default_pos(Pos2 {
+                x: 1000.0,
+                y: 150.0,
+            }),
+    );
+    window.show_with_closure(
+        ui,
+        window_state.get_visible(WindowKind::GeneratorList),
+        |_| window_state.set_visible(WindowKind::GeneratorList, false),
+        |ui| {
             for generator_index in 0..generators.len() {
                 let sel = GeneratorSelector(generator_index);
                 let on_release = || store.dispatchr(Action::Release);
 
                 let generator = &generators[generator_index];
                 let label = generator_name(generator);
-                let show = window_state.generators.get(sel);
+                let show = window_state.get_visible(WindowKind::Generator(sel));
                 let meta = generator.meta.clone();
                 ui.horizontal(|ui| {
                     let mute_response = ui.add(Button::new("Mute").selected(meta.mute));
@@ -32,7 +36,7 @@ pub fn generators_control(ctx: &egui::Context, window_state: &mut WindowState, s
 
                     let generator_response = ui.add(Button::new(label).selected(show));
                     if generator_response.clicked() {
-                        window_state.generators.set(sel, !show);
+                        window_state.set_visible(WindowKind::Generator(sel), !show);
                     }
 
                     knob(
@@ -72,5 +76,6 @@ pub fn generators_control(ctx: &egui::Context, window_state: &mut WindowState, s
                     ui.separator();
                 }
             }
-        });
+        },
+    );
 }

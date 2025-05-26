@@ -3,19 +3,19 @@ use state::{Action, TypeField};
 use crate::{
     view::View,
     widget::{StateWindow, default_window},
-    window_state::{WindowKind, WindowState2},
+    window_state::{WindowKind, WindowState},
 };
 use egui::Ui;
 
 pub struct SaveAs<'a, F: Fn(Action), G: FnMut()> {
-    window_state: &'a WindowState2,
+    window_state: &'a WindowState,
     name: &'a String,
     dispatch: F,
     on_click: G,
 }
 
 impl<'a, F: Fn(Action), G: FnMut()> SaveAs<'a, F, G> {
-    pub fn new(window_state: &'a WindowState2, name: &'a String, dispatch: F, on_click: G) -> Self {
+    pub fn new(window_state: &'a WindowState, name: &'a String, dispatch: F, on_click: G) -> Self {
         Self {
             window_state,
             name,

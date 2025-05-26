@@ -2,7 +2,7 @@ use crate::{
     GetSet, LocalState,
     view::View,
     widget::{Sequencer, SequencerObject, StateWindow, default_window},
-    window_state::{WindowKind, WindowState2},
+    window_state::{WindowKind, WindowState},
 };
 use egui::{
     Color32, CornerRadius, Pos2, Rect, ScrollArea, Shape, Stroke, StrokeKind, Ui, pos2, vec2,
@@ -22,14 +22,14 @@ use std::collections::HashSet;
 
 pub struct TrackRoll<'a> {
     store: &'a Store,
-    window_state: &'a mut WindowState2,
+    window_state: &'a mut WindowState,
     local_state: &'a LocalState,
 }
 
 impl<'a> TrackRoll<'a> {
     pub fn new(
         store: &'a Store,
-        window_state: &'a mut WindowState2,
+        window_state: &'a mut WindowState,
         local_state: &'a LocalState,
     ) -> Self {
         Self {
