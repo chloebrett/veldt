@@ -81,7 +81,8 @@ impl Default for WindowState {
 }
 
 impl WindowState {
-    /// Derive windows that may change in count such as effects and generators from the store every frame.
+    // Update state of variable windows such as effects and generators from store.
+    // Should be called every frame.
     pub fn update(&mut self, store: &Store) {
         // Update effect windows based on the store.
         // Get all effects from the store
@@ -197,7 +198,7 @@ impl WindowState {
             .pos
     }
 
-    pub fn visible_effect(&self) -> Vec<EffectSelector> {
+    pub fn visible_effects(&self) -> Vec<EffectSelector> {
         self.visible_effects.get().into_iter().collect()
     }
 

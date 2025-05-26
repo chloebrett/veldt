@@ -70,7 +70,7 @@ impl App {
     }
 
     fn visible_effects(&self) -> Vec<EffectSelector> {
-        self.window_state.visible_effect()
+        self.window_state.visible_effects()
     }
 }
 
