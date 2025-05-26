@@ -1,4 +1,4 @@
-use crate::graph::{Graph, ProcessContext, Processor, make_graph};
+use crate::graph::{ProcessContext, Processor, make_graph};
 use crate::node::{AmpNode, BufferNode};
 use dasp_graph::{BoxedNodeSend, Buffer, Node, NodeData, node::Sum};
 use petgraph::stable_graph::NodeIndex;
@@ -9,15 +9,15 @@ use state::{
 };
 
 mod channel_info;
-mod edge_counter;
 mod effect_info;
 mod generator_info;
+mod graph_manager;
 mod sample_placement_info;
 
 use channel_info::*;
-use edge_counter::*;
 use effect_info::*;
 use generator_info::*;
+use graph_manager::*;
 use sample_placement_info::*;
 
 /// The mixer is responsible for creating, storing and manipulating mixer channels,
@@ -57,9 +57,7 @@ use sample_placement_info::*;
 /// g = generator node
 /// s = sum node
 pub struct Mixer {
-    graph: Graph,
-
-    pub edge_counter: EdgeCounter,
+    pub graph_manager: GraphManager,
 
     channels: Vec<ChannelInfo>,
 
@@ -77,19 +75,19 @@ pub struct Mixer {
 
 impl Mixer {
     pub fn new(project: &Project) -> Self {
-        let mut graph = make_graph();
+        let mut graph_manager = GraphManager::new(make_graph());
 
         let channels: Vec<ChannelInfo> = (0..project.mixer.channels.len())
-            .map(|channel_index| ChannelInfo::new(&mut graph, project, channel_index))
+            .map(|channel_index| ChannelInfo::new(&mut graph_manager, project, channel_index))
             .collect();
 
-        let main_buffer = graph.add_node(make_node(BufferNode::default()));
-        let main_sum = graph.add_node(make_node(Sum));
-        let main_amp = graph.add_node(make_node(AmpNode::new_main()));
+        let main_buffer =
+            graph_manager.add_node(make_node(BufferNode::default()), NodeLabel::Buffer);
+        let main_sum = graph_manager.add_node(make_node(Sum), NodeLabel::Sum);
+        let main_amp = graph_manager.add_node(make_node(AmpNode::new_main()), NodeLabel::Amp);
 
         Self {
-            graph,
-            edge_counter: EdgeCounter::default(),
+            graph_manager,
             channels,
             main_buffer,
             main_sum,
@@ -108,15 +106,10 @@ impl Mixer {
     /// The edges are a pure function of the current mixer state (determined by the arrangement of
     /// the ChannelInfos and the structs contained within them).
     pub fn refresh_edges(&mut self) {
-        self.graph.clear_edges();
-        self.edge_counter.reset();
+        self.graph_manager.clear_edges();
 
-        self.edge_counter.add_edge(
-            &mut self.graph,
-            self.main_buffer,
-            self.main_sum,
-            EdgeKey::MainBufToMainSum,
-        );
+        self.graph_manager
+            .add_edge(self.main_buffer, self.main_sum, EdgeLabel::MainBufToMainSum);
 
         let inputs: Vec<_> = self
             .channels
@@ -125,28 +118,23 @@ impl Mixer {
             .collect();
 
         for (channel_index, channel) in self.channels.iter().enumerate() {
-            channel.add_edges(&mut self.graph, &mut self.edge_counter);
+            channel.add_edges(&mut self.graph_manager);
 
             // Only add the main channel to the main output sum node.
             // Other channels need to be routed via main.
             if channel_index == 0 {
-                self.edge_counter.add_edge(
-                    &mut self.graph,
+                self.graph_manager.add_edge(
                     channel.output_node,
                     self.main_sum,
-                    EdgeKey::MixOutToMainSum,
+                    EdgeLabel::MixOutToMainSum,
                 );
             } else {
-                channel.route_to_inputs(&mut self.graph, &mut self.edge_counter, &inputs);
+                channel.route_to_inputs(&mut self.graph_manager, &inputs);
             }
         }
 
-        self.edge_counter.add_edge(
-            &mut self.graph,
-            self.main_sum,
-            self.main_amp,
-            EdgeKey::MainSumToMainAmp,
-        );
+        self.graph_manager
+            .add_edge(self.main_sum, self.main_amp, EdgeLabel::MainSumToMainAmp);
     }
 
     /// Applies the given action, updating the underlying graph accordingly.
@@ -168,13 +156,18 @@ impl Mixer {
                     true
                 }
                 Action::DeleteChild(IndexField::Effect(effect_index)) => {
-                    self.channels[*mixer_index].delete_effect(&mut self.graph, *effect_index);
+                    self.channels[*mixer_index]
+                        .delete_effect(&mut self.graph_manager, *effect_index);
                     true
                 }
                 Action::AddChild(TypeField::Effect(effect)) => {
                     let selector =
                         EffectSelector(*mixer_index, self.channels[*mixer_index].effects_count());
-                    self.channels[*mixer_index].add_effect(&mut self.graph, &effect.it, &selector);
+                    self.channels[*mixer_index].add_effect(
+                        &mut self.graph_manager,
+                        &effect.it,
+                        &selector,
+                    );
                     true
                 }
                 _ => false,
@@ -229,7 +222,11 @@ impl Mixer {
                 // NOTE: in future, consider what happens if the size of the matrix changes too.
                 Action::SetFloat(FloatField::ModFactor, _) => {
                     for (channel_index, channel) in self.channels.iter_mut().enumerate() {
-                        channel.refresh_routes(&mut self.graph, channel_index, &store.project);
+                        channel.refresh_routes(
+                            &mut self.graph_manager,
+                            channel_index,
+                            &store.project,
+                        );
                     }
                     true
                 }
@@ -247,14 +244,19 @@ impl Mixer {
     /// Returns the buffers corresponding to the output node, which are filled after a processing
     /// run.
     pub fn output_buffers(&self) -> &[Buffer] {
-        &self.graph.node_weight(self.main_amp).unwrap().buffers
+        &self
+            .graph_manager
+            .graph
+            .node_weight(self.main_amp)
+            .unwrap()
+            .buffers
     }
 
     /// Processes the graph.
     /// Exposed as a method so that we don't ever have to expose a mutable version of Graph.
     /// Therefore, the mixer is the only object allowed to mutate the Graph.
     pub fn process(&mut self, processor: &mut Processor, payload: &ProcessContext) {
-        processor.process(&mut self.graph, payload, self.main_amp);
+        processor.process(&mut self.graph_manager.graph, payload, self.main_amp);
     }
 }
 
@@ -285,27 +287,43 @@ mod tests {
 
         let mixer = Mixer::new(&project);
 
-        let mut edge_counts = HashMap::new();
-        edge_counts.insert(EdgeKey::GenToMixIn, 1);
-        edge_counts.insert(EdgeKey::MixInToEff, 1);
-        edge_counts.insert(EdgeKey::MixInToEffMix, 1);
-        edge_counts.insert(EdgeKey::EffToEffMix, 1);
-        edge_counts.insert(EdgeKey::EffMixToMixOut, 1);
-        edge_counts.insert(EdgeKey::MixOutToMainSum, 1);
-        edge_counts.insert(EdgeKey::MainBufToMainSum, 1);
-        edge_counts.insert(EdgeKey::MainSumToMainAmp, 1);
+        let mut node_counts = HashMap::new();
+        node_counts.insert(NodeLabel::Generator, 1);
+        node_counts.insert(NodeLabel::Effect, 1);
+        node_counts.insert(NodeLabel::WetDry, 1);
+        node_counts.insert(NodeLabel::Buffer, 1);
+        // Main output + channel output
+        node_counts.insert(NodeLabel::Amp, 2);
+        // Main sum + channel input
+        node_counts.insert(NodeLabel::Sum, 2);
 
-        // Main sum and amp nodes (2) +
-        // Effect and mixer nodes (2) +
-        // Channel input and output nodes (2) +
-        // Generator nodes (1) +
-        // Buffer nodes (1).
-        assert_eq!(mixer.graph.node_count(), 8);
-        for (key, count) in mixer.edge_counter.counts.iter() {
+        let mut edge_counts = HashMap::new();
+        edge_counts.insert(EdgeLabel::GenToMixIn, 1);
+        edge_counts.insert(EdgeLabel::MixInToEff, 1);
+        edge_counts.insert(EdgeLabel::MixInToEffWetDry, 1);
+        edge_counts.insert(EdgeLabel::EffToEffWetDry, 1);
+        edge_counts.insert(EdgeLabel::EffWetDryToMixOut, 1);
+        edge_counts.insert(EdgeLabel::MixOutToMainSum, 1);
+        edge_counts.insert(EdgeLabel::MainBufToMainSum, 1);
+        edge_counts.insert(EdgeLabel::MainSumToMainAmp, 1);
+
+        for (key, count) in mixer.graph_manager.node_counts.iter() {
+            assert_eq!(
+                Some(count),
+                node_counts.get(key),
+                "Key: {:?}, had: {}, expected: {:?}",
+                key,
+                count,
+                node_counts.get(key)
+            );
+        }
+
+        // TODO: abstract out these HashMap assertions.
+        for (key, count) in mixer.graph_manager.edge_counts.iter() {
             assert_eq!(
                 Some(count),
                 edge_counts.get(key),
-                "{:?} {} {:?}",
+                "Key: {:?}, had: {}, expected: {:?}",
                 key,
                 count,
                 edge_counts.get(key)
@@ -340,25 +358,39 @@ mod tests {
 
         let mixer = Mixer::new(&project);
 
-        let mut edge_counts = HashMap::new();
-        edge_counts.insert(EdgeKey::GenToMixIn, 3);
-        edge_counts.insert(EdgeKey::MixInToEff, 2);
-        edge_counts.insert(EdgeKey::MixInToEffMix, 2);
-        edge_counts.insert(EdgeKey::EffToEffMix, 3);
-        edge_counts.insert(EdgeKey::EffMixToNextEff, 1);
-        edge_counts.insert(EdgeKey::EffMixToNextEffMix, 1);
-        edge_counts.insert(EdgeKey::EffMixToMixOut, 2);
-        edge_counts.insert(EdgeKey::MixOutToMainSum, 1);
-        edge_counts.insert(EdgeKey::MainBufToMainSum, 1);
-        edge_counts.insert(EdgeKey::MainSumToMainAmp, 1);
+        let mut node_counts = HashMap::new();
+        node_counts.insert(NodeLabel::Generator, 3);
+        node_counts.insert(NodeLabel::Buffer, 1);
+        node_counts.insert(NodeLabel::Effect, 3);
+        node_counts.insert(NodeLabel::WetDry, 3);
+        // Main sum + one sum for each channel input
+        node_counts.insert(NodeLabel::Sum, 3);
+        // Main amp + one amp for each channel output
+        node_counts.insert(NodeLabel::Amp, 3);
 
-        // Main sum and amp nodes (2) +
-        // Effect and mixer nodes (2 * 3 effects) +
-        // Channel input and output nodes (2 * 2 channels) +
-        // Generator nodes (3) +
-        // Buffer nodes (1).
-        assert_eq!(mixer.graph.node_count(), 16);
-        for (key, count) in mixer.edge_counter.counts.iter() {
+        let mut edge_counts = HashMap::new();
+        edge_counts.insert(EdgeLabel::GenToMixIn, 3);
+        edge_counts.insert(EdgeLabel::MixInToEff, 2);
+        edge_counts.insert(EdgeLabel::MixInToEffWetDry, 2);
+        edge_counts.insert(EdgeLabel::EffToEffWetDry, 3);
+        edge_counts.insert(EdgeLabel::EffWetDryToNextEff, 1);
+        edge_counts.insert(EdgeLabel::EffWetDryToNextEffWetDry, 1);
+        edge_counts.insert(EdgeLabel::EffWetDryToMixOut, 2);
+        edge_counts.insert(EdgeLabel::MixOutToMainSum, 1);
+        edge_counts.insert(EdgeLabel::MainBufToMainSum, 1);
+        edge_counts.insert(EdgeLabel::MainSumToMainAmp, 1);
+
+        for (key, count) in mixer.graph_manager.node_counts.iter() {
+            assert_eq!(
+                Some(count),
+                node_counts.get(key),
+                "{:?} {} {:?}",
+                key,
+                count,
+                node_counts.get(key)
+            );
+        }
+        for (key, count) in mixer.graph_manager.edge_counts.iter() {
             assert_eq!(
                 Some(count),
                 edge_counts.get(key),
