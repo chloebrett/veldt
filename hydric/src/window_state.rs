@@ -225,7 +225,6 @@ impl WindowState {
                 }
                 it
             }),
-            // TODO: implement for generators.
             _ => (),
         };
     }
