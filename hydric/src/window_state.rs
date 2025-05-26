@@ -117,7 +117,9 @@ impl WindowState {
         // Add effects new to the store.
         for effect in store_effects {
             let window = WindowKind::Effect(effect);
-            self.effect_windows.entry(window).or_insert_with(|| Rc::new(RefCell::new(WindowData::default_from_window(window))));
+            self.effect_windows
+                .entry(window)
+                .or_insert_with(|| Rc::new(RefCell::new(WindowData::default_from_window(window))));
         }
 
         // Update generator windows based on the store.
@@ -144,7 +146,9 @@ impl WindowState {
         // Add generators new to the store.
         for gen_sel in store_gens {
             let window = WindowKind::Generator(gen_sel);
-            self.generator_windows.entry(window).or_insert_with(|| Rc::new(RefCell::new(WindowData::default_from_window(window))));
+            self.generator_windows
+                .entry(window)
+                .or_insert_with(|| Rc::new(RefCell::new(WindowData::default_from_window(window))));
         }
     }
 
