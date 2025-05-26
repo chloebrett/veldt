@@ -1,7 +1,7 @@
 use crate::{
     GetSet, LocalState,
     view::View,
-    widget::{Sequencer, SequencerObject, default_window},
+    widget::{Sequencer, SequencerObject, StateWindow, default_window},
     window_state::{WindowKind, WindowState2},
 };
 use egui::{
@@ -89,11 +89,16 @@ impl View for TrackRoll<'_> {
             self.local_state.selected_placements.set(HashSet::default());
         }
 
-        default_window("Track Roll")
-            .default_pos(self.window_state.get_pos(WindowKind::TrackRoll))
-            .resizable(true)
-            .open(self.window_state.get_mut_visible(WindowKind::TrackRoll))
-            .show(ui.ctx(), |ui| {
+        let window = StateWindow(
+            default_window("Track Roll")
+                .default_pos(self.window_state.get_pos(WindowKind::TrackRoll))
+                .resizable(true),
+        );
+        window.show_with_closure(
+            ui,
+            self.window_state.get_visible(WindowKind::TrackRoll),
+            |_| self.window_state.set_visible(WindowKind::TrackRoll, false),
+            |ui| {
                 ui.horizontal(|ui| {
                     if ui.button("New track").clicked() {
                         store.dispatchr(Action::AddChild(TypeField::Track(Track::default())));
@@ -130,7 +135,8 @@ impl View for TrackRoll<'_> {
                                 ),
                         );
                     });
-            });
+            },
+        );
         self.local_state.track_roll_select_enabled.set(select);
     }
 }
