@@ -79,7 +79,6 @@ impl Default for WindowState2 {
 
 impl WindowState2 {
     /// Derive windows that may change in count such as effects and generators from the store every frame.
-    /// This way if other uses delete or adds items, the window states will not go out of date.
     pub fn update(&mut self, store: &Store) {
         // Update effect windows based on the store.
         // Get all effects from the store
