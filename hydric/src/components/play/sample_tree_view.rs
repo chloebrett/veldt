@@ -62,12 +62,12 @@ fn add_node(
 
 impl View for SampleTreeView<'_> {
     fn ui(&mut self, ui: &mut Ui) {
-        let window = StateWindow(
+        StateWindow(
             default_window("Samples")
                 .resizable(true)
                 .default_pos(Pos2 { x: 600.0, y: 20.0 }),
-        );
-        window.show_with_closure(
+        )
+        .show_with_closure(
             ui,
             self.window_state.get_visible(WindowKind::SampleTree),
             |_| self.window_state.set_visible(WindowKind::SampleTree, false),

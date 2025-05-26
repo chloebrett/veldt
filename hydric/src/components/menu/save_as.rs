@@ -33,12 +33,12 @@ impl<F: Fn(Action), G: FnMut()> View for SaveAs<'_, F, G> {
             dispatch,
             on_click,
         } = self;
-        let window = StateWindow(
+        StateWindow(
             default_window(name)
                 .default_pos(window_state.get_pos(WindowKind::Save))
                 .resizable(false),
-        );
-        window.show_with_closure(
+        )
+        .show_with_closure(
             ui,
             window_state.get_visible(WindowKind::Save),
             |_| window_state.set_visible(WindowKind::Save, false),

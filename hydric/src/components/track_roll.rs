@@ -89,12 +89,12 @@ impl View for TrackRoll<'_> {
             self.local_state.selected_placements.set(HashSet::default());
         }
 
-        let window = StateWindow(
+        StateWindow(
             default_window("Track Roll")
                 .default_pos(self.window_state.get_pos(WindowKind::TrackRoll))
                 .resizable(true),
-        );
-        window.show_with_closure(
+        )
+        .show_with_closure(
             ui,
             self.window_state.get_visible(WindowKind::TrackRoll),
             |_| self.window_state.set_visible(WindowKind::TrackRoll, false),

@@ -7,15 +7,15 @@ use state::{Action, FloatField, GeneratorSelector, IndexField, Store, TypeField}
 
 pub fn generators_control(ui: &mut Ui, window_state: &mut WindowState, store: &Store) {
     let generators = &store.get().project.generators;
-    let window = StateWindow(
+    StateWindow(
         default_window("Generators")
             .id("generators".into())
             .default_pos(Pos2 {
                 x: 1000.0,
                 y: 150.0,
             }),
-    );
-    window.show_with_closure(
+    )
+    .show_with_closure(
         ui,
         window_state.get_visible(WindowKind::GeneratorList),
         |_| window_state.set_visible(WindowKind::GeneratorList, false),
