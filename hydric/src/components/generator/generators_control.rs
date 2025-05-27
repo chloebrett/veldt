@@ -4,7 +4,10 @@ use crate::widget::{default_window, int_slider, knob};
 use egui::{Button, Pos2};
 use state::{Action, FloatField, GeneratorSelector, IndexField, Store, TypeField};
 
-pub fn generators_control(ctx: &egui::Context, window_state: &mut WindowState, store: &Store) {
+use crate::LocalState;
+use crate::local_state::GetSet;
+
+pub fn generators_control(ctx: &egui::Context, window_state: &mut WindowState, store: &Store, local_state: &LocalState) {
     let generators = &store.get().project.generators;
     let visible = &mut window_state.generator_list;
 
@@ -72,5 +75,25 @@ pub fn generators_control(ctx: &egui::Context, window_state: &mut WindowState, s
                     ui.separator();
                 }
             }
+
+            let mut selected = local_state.new_selected_generator.get();
+
+            ui.horizontal(|ui| {
+                egui::ComboBox::from_label("Select one!")
+                    .selected_text(format!("{:?}", selected))
+                    .show_ui(ui, |ui| {
+                        ui.selectable_value(&mut selected, "Simple Wave".to_string(), "Simple Wave Generator");
+                        ui.selectable_value(&mut selected, "Subtractive Synth".to_string(), "Stringray (Subtrative Synth)");
+                        ui.selectable_value(&mut selected, "Noise Generator".to_string(), "Noise Generator");
+                    }
+                );
+
+                local_state.new_selected_generator.set(selected);
+
+                if ui.button("Add Generator").clicked(){
+                    ui.label("Do something");
+                    
+                }
+            });
         });
 }

@@ -114,7 +114,7 @@ impl eframe::App for App {
 impl View for App {
     fn ui(&mut self, ui: &mut Ui) {
         if self.window_state.generator_list {
-            generators_control(ui.ctx(), &mut self.window_state, &self.store);
+            generators_control(ui.ctx(), &mut self.window_state, &self.store, &self.local_state);
         }
 
         for sel in self.visible_generators() {

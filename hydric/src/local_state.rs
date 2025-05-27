@@ -30,6 +30,8 @@ pub struct LocalState {
 
     pub track_roll_select_enabled: Rc<RefCell<bool>>,
     pub note_roll_select_enabled: Rc<RefCell<bool>>,
+
+    pub new_selected_generator: Rc<RefCell<String>>,
 }
 
 pub trait GetSet<T: Clone> {
