@@ -3,9 +3,8 @@ use super::{
     effect::{EffectView, MixerView},
     generator::{GeneratorView, generators_control},
     menu::MenuBar,
-    play::{MicrophoneView, SampleTreeView, ToolbarView},
+    play::{SampleTreeView, ToolbarView, MicrophoneView},
 };
-use crate::playback::Microphone;
 use crate::promise::spawn;
 use crate::rpc::broadcast_actions;
 use crate::rpc::load_project_list;
@@ -17,6 +16,7 @@ use mesic::graph::RenderGraph;
 use poll_promise::Promise;
 use state::{Action, EffectSelector, GeneratorSelector, Store};
 use std::sync::mpsc::channel;
+use crate::playback::Microphone;
 
 pub struct App {
     // State used for rendering audio and/or by other users.
@@ -28,9 +28,9 @@ pub struct App {
     pub frame_history: FrameHistory,
     pub async_state: AsyncState,
     pub player: AudioPlayer,
-    pub mic: Microphone,
     pub window_state: WindowState,
     pub window_state2: WindowState2,
+    pub mic: Microphone,
 }
 
 impl Default for App {
@@ -48,9 +48,9 @@ impl Default for App {
             frame_history: FrameHistory::default(),
             async_state: AsyncState::default(),
             player: AudioPlayer::new(graph),
-            mic: Microphone::new(),
             window_state: WindowState::default(),
             window_state2: WindowState2::default(),
+            mic: Microphone::new(),
         }
     }
 }
