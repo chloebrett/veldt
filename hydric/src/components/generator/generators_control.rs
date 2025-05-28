@@ -91,9 +91,55 @@ pub fn generators_control(ctx: &egui::Context, window_state: &mut WindowState, s
                 local_state.new_selected_generator.set(selected);
 
                 if ui.button("Add Generator").clicked(){
-                    ui.label("Do something");
-                    
-                }
-            });
+                    match selected  {
+                        "Simple Wave" => { 
+                            let new_generator = GeneratorInstance {
+                                it: Generator::SimpleWave(SimpleWaveConfig {
+                                    wave: WaveType::Sine,
+                                    envelope: AdsrEnvelope {
+                                        attack: 100.0,
+                                        decay: 100.0,
+                                        sustain: 0.8,
+                                        release: 100.0,
+                                    },
+                                    osc_count: 4,
+                                    detune_cents: 5.0,
+                                    anti_aliasing_mode: AntiAliasingMode::Off,
+                                    oversample_factor: 2,
+                                    polyphony_mode: PolyphonyMode::Polyphonic,
+                                    polyphony_limit: 2,
+                                }),
+                                meta: GeneratorMeta {
+                                    volume: 1.0,
+                                    mute: false,
+                                    pan: 0.0,
+                                    mixer_channel: 2,
+                                },
+                            };
+                        },
+                        "Subtractive Synth" => {
+                            let new_generator = GeneratorInstance {
+                                it: Generator::Stingray(StingrayConfig::default()),
+                                meta: GeneratorMeta {
+                                    volume: 1.0,
+                                    mute: false,
+                                    pan: 0.0,
+                                    mixer_channel: 2,
+                                },
+                            };
+                        },
+                        "Noise Generator" => {
+                            let new_generator = GeneratorInstance {
+                                it: Generator::Noise(NoiseConfig::default()),
+                                meta: GeneratorMeta {
+                                    volume: 1.0,
+                                    mute: false,
+                                    pan: 0.0,
+                                    mixer_channel: 2,
+                                },
+                            };
+                        }
+                    }
+                });
         });
 }
