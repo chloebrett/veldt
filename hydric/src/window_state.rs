@@ -90,7 +90,7 @@ impl WindowState2 {
             .channels
             .iter()
             .enumerate()
-            .map(|(index, channel)| {
+            .flat_map(|(index, channel)| {
                 let mixer_sel = MixerSelector(index);
                 let effect_sels: Vec<EffectSelector> = channel
                     .effects
@@ -100,7 +100,6 @@ impl WindowState2 {
                     .collect();
                 effect_sels
             })
-            .flatten()
             .collect();
         let store_effects: HashSet<EffectSelector> = HashSet::from_iter(effects);
         let effect_windows = self.effect_windows.clone();
@@ -109,19 +108,14 @@ impl WindowState2 {
             let WindowKind::Effect(effect_sel) = effect else {
                 continue;
             };
-            if !store_effects.contains(&effect_sel) {
-                self.effect_windows.remove(&effect);
+            if !store_effects.contains(effect_sel) {
+                self.effect_windows.remove(effect);
             }
         }
         // Add effects new to the store.
         for effect in store_effects {
             let window = WindowKind::Effect(effect);
-            if !self.effect_windows.contains_key(&window) {
-                self.effect_windows.insert(
-                    window,
-                    Rc::new(RefCell::new(WindowData::default_from_window(window))),
-                );
-            }
+            self.effect_windows.entry(window).or_insert_with(|| Rc::new(RefCell::new(WindowData::default_from_window(window))));
         }
         // TODO add updating generators when implemented on generator views.
     }
@@ -196,6 +190,8 @@ pub struct WindowState {
     pub generators: WindowStateField<GeneratorSelector>,
     pub scale: bool,
     pub sample_tree: bool,
+    pub save: bool,
+    pub microphone: bool,
 }
 
 impl Default for WindowState {
@@ -205,6 +201,8 @@ impl Default for WindowState {
             generators: WindowStateField(HashSet::new()),
             scale: false,
             sample_tree: false,
+            save: false,
+            microphone: false,
         }
     }
 }

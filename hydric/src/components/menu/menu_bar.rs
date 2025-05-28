@@ -166,6 +166,7 @@ impl View for MenuBar<'_> {
             sound_response.on_hover_ui(|ui| {
                 ui.label("Generators");
             });
+
             let mut window_icon = |icon, label, window_kind| {
                 let state = self.window_state2.get_visible(window_kind);
                 let icon_response = ui.add(Button::new(icon).selected(state));
@@ -176,8 +177,17 @@ impl View for MenuBar<'_> {
                     ui.label(label);
                 });
             };
+
             window_icon("🎨", "Mixer", WindowKind::Mixer);
             window_icon("📄", "Track Roll", WindowKind::TrackRoll);
+            let microphone_response =
+                ui.add(Button::new("🎤").selected(self.window_state.microphone));
+            if microphone_response.clicked() {
+                self.window_state.microphone ^= true;
+            }
+            microphone_response.on_hover_ui(|ui| {
+                ui.label("Record Microphone");
+            })
         });
     }
 }
