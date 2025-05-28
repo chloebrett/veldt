@@ -7,6 +7,9 @@ use state::{Action, FloatField, GeneratorSelector, IndexField, Store, TypeField}
 use crate::LocalState;
 use crate::local_state::GetSet;
 
+use shared::model::{GeneratorInstance,Generator,SimpleWaveConfig,WaveType,AdsrEnvelope,AntiAliasingMode,PolyphonyMode,GeneratorMeta,StingrayConfig,NoiseConfig,};
+
+
 pub fn generators_control(ctx: &egui::Context, window_state: &mut WindowState, store: &Store, local_state: &LocalState) {
     let generators = &store.get().project.generators;
     let visible = &mut window_state.generator_list;
@@ -88,10 +91,10 @@ pub fn generators_control(ctx: &egui::Context, window_state: &mut WindowState, s
                     }
                 );
 
-                local_state.new_selected_generator.set(selected);
+                local_state.new_selected_generator.set(selected.clone());
 
                 if ui.button("Add Generator").clicked(){
-                    match selected  {
+                    match selected.as_str()  {
                         "Simple Wave" => { 
                             let new_generator = GeneratorInstance {
                                 it: Generator::SimpleWave(SimpleWaveConfig {
@@ -114,7 +117,7 @@ pub fn generators_control(ctx: &egui::Context, window_state: &mut WindowState, s
                                     mute: false,
                                     pan: 0.0,
                                     mixer_channel: 2,
-                                },
+                                }
                             };
                         },
                         "Subtractive Synth" => {
@@ -125,7 +128,7 @@ pub fn generators_control(ctx: &egui::Context, window_state: &mut WindowState, s
                                     mute: false,
                                     pan: 0.0,
                                     mixer_channel: 2,
-                                },
+                                }
                             };
                         },
                         "Noise Generator" => {
@@ -136,10 +139,12 @@ pub fn generators_control(ctx: &egui::Context, window_state: &mut WindowState, s
                                     mute: false,
                                     pan: 0.0,
                                     mixer_channel: 2,
-                                },
+                                }
                             };
-                        }
-                    }
-                });
+                        },
+                        &_ => todo!()
+                    };
+                }
+            });
         });
 }
