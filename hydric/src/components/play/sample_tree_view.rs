@@ -4,9 +4,11 @@ use crate::rpc::load_sample_tree;
 use crate::view::View;
 use crate::widget::{checkbox, default_window};
 use egui::{Checkbox, Pos2, ScrollArea, Ui};
-use egui_ltreeview::{TreeView, TreeViewBuilder};
+use egui_ltreeview::{TreeView, TreeViewBuilder, Action as TreeAction};
 use shared::model::{FileTreeConfig, FilenameTree};
 use state::{Action, Store, TypeField};
+use log::info;
+use shared::model::FileTree;
 
 pub struct SampleTreeView<'a> {
     store: &'a Store,
@@ -134,14 +136,43 @@ impl View for SampleTreeView<'_> {
                         .min_scrolled_height(200.0)
                         .show(ui, |ui| {
                             let id = ui.make_persistent_id("sample_tree");
-                            TreeView::new(id).show(ui, |builder| {
+                            let (_response, actions) = TreeView::new(id).show(ui, |builder| {
                                 add_node(
                                     builder, tree, /* start_id= */ 0,
                                     /* ignore_top= */ true,
                                 );
                             });
-                        });
-                }
-            });
-    }
+                            for action in actions.iter() {
+                                match action {
+                                    TreeAction::Move(_) => {}
+                                    TreeAction::SetSelected(_) => {}
+                                    TreeAction::Drag(_) => {}
+                                    TreeAction::Activate(activate) => {
+                                        activate.selected.iter().for_each(|node_id| {
+                                            let filename = match tree {
+                                                FileTree::File(file) => {
+                                                    file
+                                                }
+                                                FileTree::Directory(_directory_name, subtree) => {
+                                                    let sample_node = subtree[*node_id - 1].clone();
+                                                    let sample_name = match sample_node {
+                                                        FileTree::File(sample_file_name) => {
+                                                            sample_file_name
+                                                        }
+                                                        FileTree::Directory(sub_directory_name, _sub_directory ) => {
+                                                            sub_directory_name
+                                                        }
+                                                    };
+                                                    &sample_name.clone()                                                    
+                                                }
+                                            };
+                                            info!("THE file name is {:?}", filename);
+                                        });
+                                    }
+                                }
+                            }
+                                                });
+                                        }
+                                    });
+                            }
 }
