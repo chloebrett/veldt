@@ -20,10 +20,6 @@ pub struct LocalState {
 
     pub mixer_edit_state: Rc<RefCell<bool>>,
 
-    pub note_window: Rc<RefCell<bool>>,
-    pub note_roll_window: Rc<RefCell<bool>>,
-    pub placement_window: Rc<RefCell<bool>>,
-
     pub drag_cursor_delta: RcOption<Pos2>,
 
     // TODO: in the case of multiple stingray instances, both env and lfo should be in a HashSet

@@ -21,6 +21,9 @@ pub enum WindowKind {
     SampleTree,
     TrackRoll,
     Save,
+    NoteRoll,
+    Placement,
+    Note,
 }
 
 /// Information about a window needed to render on the UI.
@@ -43,6 +46,9 @@ impl WindowData {
             WindowKind::Scale => pos2(50.0, 200.0),
             WindowKind::TrackRoll => pos2(30.0, 200.0),
             WindowKind::SampleTree => pos2(600.0, 20.0),
+            WindowKind::NoteRoll => pos2(600.0, 20.0),
+            WindowKind::Placement => pos2(100.0, 20.0),
+            WindowKind::Note => pos2(600.0, 20.0),
         };
         Self {
             visible: false,

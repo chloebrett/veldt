@@ -269,8 +269,12 @@ impl SequencerObject<PlacedTrack> for PlacedTrack {
     fn set_active(&self, local_state: &LocalState, index: usize) {
         let track_placement: Option<&TrackPlacement> = (&self.placement).try_into().ok();
 
-        local_state.note_roll_window.set(true);
-        local_state.placement_window.set(true);
+        local_state
+            .window_state
+            .set_visible(WindowKind::NoteRoll, true);
+        local_state
+            .window_state
+            .set_visible(WindowKind::Placement, true);
         local_state
             .active_track
             .set(track_placement.map(|it| TrackSelector(it.track_index)));
