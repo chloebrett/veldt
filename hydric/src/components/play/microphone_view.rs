@@ -1,27 +1,16 @@
-use crate::AsyncState;
 use crate::playback::Microphone;
 use crate::view::View;
 use crate::widget::default_window;
 use egui::{Pos2, Ui};
-use state::Store;
 
 pub struct MicrophoneView<'a> {
-    store: &'a Store,
-    async_state: &'a mut AsyncState,
     visible: &'a mut bool,
     mic: &'a mut Microphone,
 }
 
 impl<'a> MicrophoneView<'a> {
-    pub fn new(
-        store: &'a Store,
-        async_state: &'a mut AsyncState,
-        visible: &'a mut bool,
-        app_mic: &'a mut Microphone,
-    ) -> Self {
+    pub fn new(visible: &'a mut bool, app_mic: &'a mut Microphone) -> Self {
         MicrophoneView {
-            store,
-            async_state,
             visible,
             mic: app_mic,
         }

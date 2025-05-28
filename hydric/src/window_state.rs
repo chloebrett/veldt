@@ -115,7 +115,9 @@ impl WindowState2 {
         // Add effects new to the store.
         for effect in store_effects {
             let window = WindowKind::Effect(effect);
-            self.effect_windows.entry(window).or_insert_with(|| Rc::new(RefCell::new(WindowData::default_from_window(window))));
+            self.effect_windows
+                .entry(window)
+                .or_insert_with(|| Rc::new(RefCell::new(WindowData::default_from_window(window))));
         }
         // TODO add updating generators when implemented on generator views.
     }
@@ -190,7 +192,6 @@ pub struct WindowState {
     pub generators: WindowStateField<GeneratorSelector>,
     pub scale: bool,
     pub sample_tree: bool,
-    pub save: bool,
     pub microphone: bool,
 }
 
@@ -201,7 +202,6 @@ impl Default for WindowState {
             generators: WindowStateField(HashSet::new()),
             scale: false,
             sample_tree: false,
-            save: false,
             microphone: false,
         }
     }

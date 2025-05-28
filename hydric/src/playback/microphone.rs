@@ -234,8 +234,6 @@ impl Microphone {
 
             *source_guard = Some(source);
             *playing_status_clone.lock().unwrap() = true;
-
-            
         });
         Ok(())
     }

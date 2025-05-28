@@ -173,13 +173,7 @@ impl View for App {
         NoteView::new(&self.store, &self.local_state).ui(ui);
         NoteRoll::new(&self.store, &self.local_state, &mut self.player).ui(ui);
 
-        MicrophoneView::new(
-            &self.store,
-            &mut self.async_state,
-            &mut self.window_state.microphone,
-            &mut self.mic,
-        )
-        .ui(ui);
+        MicrophoneView::new(&mut self.window_state.microphone, &mut self.mic).ui(ui);
         PlacementView::new(&self.store, &self.local_state).ui(ui);
 
         SampleTreeView::new(
