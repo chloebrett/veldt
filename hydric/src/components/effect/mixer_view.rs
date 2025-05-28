@@ -147,7 +147,7 @@ impl View for MixerView<'_> {
                                     // TODO Determine if this is the best way to do this.
                                     // There seems to be no way to render an object once then pass the
                                     // response into the `dnd_drag_zone` if `edit_state` is true.
-                                    let mut render_effect_widget = |ui: &mut Ui| {
+                                    let render_effect_widget = |ui: &mut Ui| {
                                         ui.add_enabled(
                                             !edit_state,
                                             EffectWidget::new(
@@ -165,7 +165,7 @@ impl View for MixerView<'_> {
                                             .dnd_drag_source(
                                                 id,
                                                 EffectLocation::Index(effect_index),
-                                                &mut render_effect_widget,
+                                                render_effect_widget,
                                             )
                                             .response;
                                         // Update `from_to` if an object has been dragged and
