@@ -1,5 +1,5 @@
-use crate::promise::{spawn, poll};
-use crate::rpc::{upload_sample, load_sample};
+use crate::promise::{poll, spawn};
+use crate::rpc::{load_sample, upload_sample};
 use crate::view::View;
 use crate::widget::{default_window, knob, slider};
 use crate::{AsyncState, playback::AudioPlayer};
@@ -100,18 +100,19 @@ impl View for ToolbarView<'_> {
                 })
             });
 
-            poll(&mut self.async_state.upload_sample, |file_name| {
-                if file_name != "" {
-                    let file_name_clone = file_name.clone();
-                    // immediately load sample upon upload to avoid async mess if trying to preview
-                    spawn(&mut self.async_state.load_sample, async move {
-                        load_sample(file_name_clone).await
-                    });
-                }
-            });
+        poll(&mut self.async_state.upload_sample, |file_name| {
+            if file_name != "" {
+                let file_name_clone = file_name.clone();
+                // immediately load sample upon upload to avoid async mess if trying to preview
+                spawn(&mut self.async_state.load_sample, async move {
+                    load_sample(file_name_clone).await
+                });
+            }
+        });
 
-            poll(&mut self.async_state.load_sample, |sample| {
-                self.store.dispatchr(Action::AddChild(TypeField::Sample(sample.clone())));
-            }); 
+        poll(&mut self.async_state.load_sample, |sample| {
+            self.store
+                .dispatchr(Action::AddChild(TypeField::Sample(sample.clone())));
+        });
     }
 }
