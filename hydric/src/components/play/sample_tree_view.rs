@@ -1,14 +1,14 @@
-use crate::{AsyncState, playback::AudioPlayer};
 use crate::promise::{poll, spawn};
 use crate::rpc::load_sample_tree;
 use crate::view::View;
 use crate::widget::{checkbox, default_window};
+use crate::{AsyncState, playback::AudioPlayer};
 use egui::{Checkbox, Pos2, ScrollArea, Ui};
-use egui_ltreeview::{TreeView, TreeViewBuilder, Action as TreeAction};
-use shared::model::{FileTreeConfig, FilenameTree};
-use state::{Action, Store, TypeField};
+use egui_ltreeview::{Action as TreeAction, TreeView, TreeViewBuilder};
 use mesic::interleave_stereo;
 use shared::model::FileTree;
+use shared::model::{FileTreeConfig, FilenameTree};
+use state::{Action, Store, TypeField};
 
 pub struct SampleTreeView<'a> {
     store: &'a Store,
@@ -18,12 +18,17 @@ pub struct SampleTreeView<'a> {
 }
 
 impl<'a> SampleTreeView<'a> {
-    pub fn new(store: &'a Store, async_state: &'a mut AsyncState, visible: &'a mut bool, player: &'a mut AudioPlayer,) -> Self {
+    pub fn new(
+        store: &'a Store,
+        async_state: &'a mut AsyncState,
+        visible: &'a mut bool,
+        player: &'a mut AudioPlayer,
+    ) -> Self {
         SampleTreeView {
             store,
             async_state,
             visible,
-            player
+            player,
         }
     }
 }
@@ -59,7 +64,10 @@ fn add_node(
     }
 }
 
-pub fn get_filename(actions: Vec<TreeAction<usize>>, tree: &FileTree<String, String>) -> Option<String> {
+pub fn get_filename(
+    actions: Vec<TreeAction<usize>>,
+    tree: &FileTree<String, String>,
+) -> Option<String> {
     for action in actions.iter() {
         match action {
             TreeAction::Activate(activate) => {
@@ -70,7 +78,9 @@ pub fn get_filename(actions: Vec<TreeAction<usize>>, tree: &FileTree<String, Str
                             if let Some(sample_node) = subtree.get(*node_id - 1) {
                                 match sample_node {
                                     FileTree::File(sample_file_name) => sample_file_name.clone(),
-                                    FileTree::Directory(sub_directory_name, _sub_directory) => sub_directory_name.clone(),
+                                    FileTree::Directory(sub_directory_name, _sub_directory) => {
+                                        sub_directory_name.clone()
+                                    }
                                 }
                             } else {
                                 continue;
@@ -91,7 +101,7 @@ pub fn get_sample_index(actions: Vec<TreeAction<usize>>) -> Option<u8> {
         match action {
             TreeAction::Activate(activate) => {
                 if let Some(node_id) = activate.selected.iter().next() {
-                    return Some(node_id.clone() as u8 - 1)
+                    return Some(node_id.clone() as u8 - 1);
                 }
             }
             _ => {}
@@ -193,8 +203,8 @@ impl View for SampleTreeView<'_> {
                                     self.player.play();
                                 }
                             }
-                            });
-                        }
-                });
+                        });
                 }
+            });
+    }
 }
