@@ -7,20 +7,20 @@ use crate::{
     components::effect::effect_name,
     local_state::{GetSet, LocalState},
     view::View,
-    window_state::{WindowKind, WindowState2},
+    window_state::{WindowKind, WindowState},
 };
 
 pub struct EffectMenuOptions<'a> {
     store: &'a Store,
     local_state: &'a LocalState,
-    window_state: &'a WindowState2,
+    window_state: &'a WindowState,
 }
 
 impl<'a> EffectMenuOptions<'a> {
     pub fn new(
         store: &'a Store,
         local_state: &'a LocalState,
-        window_state: &'a WindowState2,
+        window_state: &'a WindowState,
     ) -> Self {
         Self {
             store,

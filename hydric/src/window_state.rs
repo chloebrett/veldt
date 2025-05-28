@@ -2,7 +2,7 @@ use crate::local_state::GetSet;
 use egui::{Pos2, pos2, vec2};
 use state::{EffectSelector, GeneratorSelector, MixerSelector, Store};
 use std::cell::RefCell;
-use std::cmp::{Eq, Ord};
+use std::cmp::Eq;
 use std::collections::{HashMap, HashSet};
 use std::hash::Hash;
 use std::rc::Rc;
@@ -21,6 +21,7 @@ pub enum WindowKind {
     SampleTree,
     TrackRoll,
     Save,
+    Microphone,
 }
 
 /// Information about a window needed to render on the UI.
@@ -43,6 +44,7 @@ impl WindowData {
             WindowKind::Scale => pos2(50.0, 200.0),
             WindowKind::TrackRoll => pos2(30.0, 200.0),
             WindowKind::SampleTree => pos2(600.0, 20.0),
+            WindowKind::Microphone => pos2(400.0, 40.0),
         };
         Self {
             visible: false,
@@ -52,32 +54,35 @@ impl WindowData {
 }
 
 #[derive(Debug, Clone)]
-pub struct WindowState2 {
+pub struct WindowState {
     windows: HashMap<WindowKind, Rc<RefCell<WindowData>>>,
     visible_effects: Rc<RefCell<HashSet<EffectSelector>>>,
+    visible_generators: Rc<RefCell<HashSet<GeneratorSelector>>>,
     effect_windows: HashMap<WindowKind, Rc<RefCell<WindowData>>>,
+    generator_windows: HashMap<WindowKind, Rc<RefCell<WindowData>>>,
 }
 
-impl Default for WindowState2 {
+impl Default for WindowState {
     fn default() -> Self {
         let mut windows = HashMap::new();
-        let effect_windows = HashMap::new();
         for window in WindowKind::iter() {
             let window_data = Rc::new(RefCell::new(WindowData::default_from_window(window)));
             match window {
-                WindowKind::Effect(..) => continue,
+                WindowKind::Effect(..) | WindowKind::Generator(..) => continue,
                 _ => windows.insert(window, window_data),
             };
         }
         Self {
             windows,
-            effect_windows,
+            effect_windows: HashMap::new(),
+            generator_windows: HashMap::new(),
             visible_effects: Rc::new(RefCell::new(HashSet::new())),
+            visible_generators: Rc::new(RefCell::new(HashSet::new())),
         }
     }
 }
 
-impl WindowState2 {
+impl WindowState {
     // Update state of variable windows such as effects and generators from store.
     // Should be called every frame.
     pub fn update(&mut self, store: &Store) {
@@ -119,12 +124,41 @@ impl WindowState2 {
                 .entry(window)
                 .or_insert_with(|| Rc::new(RefCell::new(WindowData::default_from_window(window))));
         }
-        // TODO add updating generators when implemented on generator views.
+
+        // Update generator windows based on the store.
+        // Get all generators from the store
+        let generators: Vec<GeneratorSelector> = store
+            .get()
+            .project
+            .generators
+            .iter()
+            .enumerate()
+            .map(|(index, _)| GeneratorSelector(index))
+            .collect();
+        let store_gens: HashSet<GeneratorSelector> = HashSet::from_iter(generators);
+        let gen_windows = self.generator_windows.clone();
+        // Remove generators no longer on the store.
+        for generator in gen_windows.keys() {
+            let WindowKind::Generator(gen_sel) = generator else {
+                continue;
+            };
+            if !store_gens.contains(gen_sel) {
+                self.generator_windows.remove(generator);
+            }
+        }
+        // Add generators new to the store.
+        for gen_sel in store_gens {
+            let window = WindowKind::Generator(gen_sel);
+            self.generator_windows
+                .entry(window)
+                .or_insert_with(|| Rc::new(RefCell::new(WindowData::default_from_window(window))));
+        }
     }
 
     pub fn get_visible(&self, window: WindowKind) -> bool {
         let windows = match window {
             WindowKind::Effect(..) => &self.effect_windows,
+            WindowKind::Generator(..) => &self.generator_windows,
             _ => &self.windows,
         };
         windows
@@ -137,6 +171,7 @@ impl WindowState2 {
     pub fn set_visible(&self, window: WindowKind, open: bool) {
         let windows = match window {
             WindowKind::Effect(..) => &self.effect_windows,
+            WindowKind::Generator(..) => &self.generator_windows,
             _ => &self.windows,
         };
 
@@ -155,6 +190,7 @@ impl WindowState2 {
     pub fn get_pos(&self, window: WindowKind) -> Pos2 {
         let windows = match window {
             WindowKind::Effect(..) => &self.effect_windows,
+            WindowKind::Generator(..) => &self.generator_windows,
             _ => &self.windows,
         };
         windows
@@ -164,71 +200,34 @@ impl WindowState2 {
             .pos
     }
 
-    pub fn visible_effect(&self) -> Vec<EffectSelector> {
+    pub fn visible_effects(&self) -> Vec<EffectSelector> {
         self.visible_effects.get().into_iter().collect()
+    }
+
+    pub fn visible_generators(&self) -> Vec<GeneratorSelector> {
+        self.visible_generators.get().into_iter().collect()
     }
 
     /// Keep track of open changeable windows such as effects and generators.
     fn update_visible(&self, window: WindowKind, open: bool) {
-        let (visible_windows, sel) = match window {
-            WindowKind::Effect(sel) => (&self.visible_effects, sel),
-            // TODO: implement for generators.
-            _ => return,
+        match window {
+            WindowKind::Effect(sel) => self.visible_effects.update(|mut it| {
+                if open {
+                    it.insert(sel);
+                } else {
+                    it.remove(&sel);
+                }
+                it
+            }),
+            WindowKind::Generator(sel) => self.visible_generators.update(|mut it| {
+                if open {
+                    it.insert(sel);
+                } else {
+                    it.remove(&sel);
+                }
+                it
+            }),
+            _ => (),
         };
-        visible_windows.update(|mut it| {
-            if open {
-                it.insert(sel);
-            } else {
-                it.remove(&sel);
-            }
-            it
-        });
-    }
-}
-
-/// Which windows are currently shown.
-pub struct WindowState {
-    pub generator_list: bool,
-    pub generators: WindowStateField<GeneratorSelector>,
-    pub scale: bool,
-    pub sample_tree: bool,
-    pub microphone: bool,
-}
-
-impl Default for WindowState {
-    fn default() -> Self {
-        Self {
-            generator_list: false,
-            generators: WindowStateField(HashSet::new()),
-            scale: false,
-            sample_tree: false,
-            microphone: false,
-        }
-    }
-}
-
-#[derive(Clone)]
-pub struct WindowStateField<T: Hash + Eq + Copy>(HashSet<T>);
-
-impl<T: Hash + Ord + Copy> WindowStateField<T> {
-    pub fn get(&self, index: T) -> bool {
-        self.0.contains(&index)
-    }
-
-    pub fn set(&mut self, index: T, visible: bool) {
-        let was_visible = self.get(index);
-        if visible == was_visible {
-            return;
-        }
-        if visible {
-            self.0.insert(index);
-        } else {
-            self.0.retain(|it| *it != index);
-        }
-    }
-
-    // Note: not necessarily sorted.
-    pub fn as_vec(&self) -> Vec<T> {
-        self.0.clone().into_iter().collect()
     }
 }
