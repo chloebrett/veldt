@@ -5,12 +5,12 @@ use super::{
     menu::MenuBar,
     play::{SampleTreeView, ToolbarView},
 };
-use crate::promise::spawn;
 use crate::rpc::broadcast_actions;
 use crate::rpc::load_project_list;
 use crate::view::View;
 use crate::{AsyncState, LocalState, WindowState, playback::AudioPlayer};
 use crate::{components::FrameHistory, window_state::WindowState2};
+use crate::{promise::spawn, window_state::WindowKind};
 use egui::{ScrollArea, Ui, scroll_area::ScrollBarVisibility};
 use mesic::graph::RenderGraph;
 use poll_promise::Promise;
@@ -72,7 +72,7 @@ impl App {
     }
 
     fn visible_effects(&self) -> Vec<EffectSelector> {
-        self.window_state.effects.clone().as_vec()
+        self.window_state2.visible_effect()
     }
 }
 
@@ -87,11 +87,15 @@ impl eframe::App for App {
 
         self.player.maybe_update();
 
+        self.window_state2.update(&self.store);
+
         egui::TopBottomPanel::top("veldt_menu").show(ctx, |ui| {
             MenuBar::new(
                 &mut self.store,
+                &self.local_state,
+                &mut self.player,
                 &mut self.window_state,
-                &mut self.window_state2,
+                &self.window_state2,
                 &mut self.async_state,
             )
             .ui(ui);
@@ -130,9 +134,9 @@ impl View for App {
             )
             .ui(ui);
         }
-        if self.window_state.mixer.visible {
+        if self.window_state2.get_visible(WindowKind::Mixer) {
             MixerView::new(
-                &mut self.window_state,
+                &self.window_state2,
                 &self.store,
                 &self.local_state,
                 &self.player,
@@ -148,7 +152,7 @@ impl View for App {
             if let Some(mut it) = EffectView::new(
                 &self.store,
                 &effect_selector,
-                &mut self.window_state,
+                &self.window_state2,
                 dispatch,
                 on_release,
             ) {

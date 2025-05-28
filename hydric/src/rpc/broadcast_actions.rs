@@ -6,7 +6,7 @@ use shared::serialize::map_vec;
 use state::ReversibleAction;
 use tonic_web_wasm_client::Client;
 
-pub async fn broadcast_actions(actions: Vec<ReversibleAction>) -> Result<(), ()> {
+pub async fn broadcast_actions(actions: Vec<ReversibleAction>) -> Result<(), tonic::Status> {
     let client = Client::new(XERIC_URL.to_string());
     let mut grpc = BroadcastActionsClient::new(client);
 
@@ -16,5 +16,5 @@ pub async fn broadcast_actions(actions: Vec<ReversibleAction>) -> Result<(), ()>
         })
         .await;
 
-    result.map(|_| ()).map_err(|_| ())
+    result.map(|_| ())
 }

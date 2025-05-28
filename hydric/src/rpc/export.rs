@@ -4,7 +4,7 @@ use shared::export::export_client::ExportClient;
 use shared::model::Project;
 use tonic_web_wasm_client::Client;
 
-pub async fn export(project: Project) -> Result<(), ()> {
+pub async fn export(project: Project) -> Result<(), tonic::Status> {
     let client = Client::new(XERIC_URL.to_string());
     let mut grpc = ExportClient::new(client);
 
@@ -14,5 +14,5 @@ pub async fn export(project: Project) -> Result<(), ()> {
         })
         .await;
 
-    result.map(|_| ()).map_err(|_| ())
+    result.map(|_| ())
 }

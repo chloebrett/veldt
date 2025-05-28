@@ -34,6 +34,7 @@ futures = "0.3.31"
 ringbuffer = "0.15.0"
 dasp_rms = "0.11.0"
 dasp_ring_buffer = "0.11.0"
+tonic = { version = "0.13.1", default-features = false }
 
 [features]
 # Displays some extra debug information in the UI.

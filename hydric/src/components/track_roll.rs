@@ -1,20 +1,21 @@
 use crate::{
     GetSet, LocalState,
     view::View,
-    widget::{Sequencer, SequencerObject, default_window},
+    widget::{Sequencer, SequencerObject, StateWindow, default_window},
     window_state::{WindowKind, WindowState2},
 };
 use egui::{
     Color32, CornerRadius, Pos2, Rect, ScrollArea, Shape, Stroke, StrokeKind, Ui, pos2, vec2,
 };
+use mesic::samples_to_beats;
 use ordered_float::OrderedFloat;
 use shared::{
     model::{Placement, PlacementType, SamplePlacement, Track, TrackPlacement},
     types::Beats,
 };
 use state::{
-    Action, FloatField, MultiIndexField, PlacementSelector, SelectorTrait, Store, TrackSelector,
-    TypeField, UintField,
+    Action, FloatField, MultiIndexField, PlacementSelector, SampleSelector, SelectorTrait, Store,
+    TrackSelector, TypeField, UintField,
 };
 use std::cmp::max;
 use std::collections::HashSet;
@@ -54,11 +55,21 @@ impl View for TrackRoll<'_> {
                     unclipped_duration: project.tracks[track_index].unclipped_duration(),
                     placement: placement.clone(),
                 },
-                PlacementType::Sample(SamplePlacement { .. }) => PlacedTrack {
-                    // TODO: use real sample duration.
-                    unclipped_duration: 1.0.into(),
-                    placement: placement.clone(),
-                },
+                PlacementType::Sample(SamplePlacement { sample_index }) => {
+                    let duration = store
+                        .try_select(&SampleSelector(sample_index))
+                        .map(|sample| {
+                            samples_to_beats(
+                                max(sample.left.len(), sample.right.len()),
+                                store.get().project.bpm,
+                            )
+                        })
+                        .unwrap_or(1.0);
+                    PlacedTrack {
+                        unclipped_duration: duration.into(),
+                        placement: placement.clone(),
+                    }
+                }
             })
             .collect();
 
@@ -78,11 +89,16 @@ impl View for TrackRoll<'_> {
             self.local_state.selected_placements.set(HashSet::default());
         }
 
-        default_window("Track Roll")
-            .default_pos(self.window_state.get_pos(WindowKind::TrackRoll))
-            .resizable(true)
-            .open(self.window_state.get_mut_visible(WindowKind::TrackRoll))
-            .show(ui.ctx(), |ui| {
+        let window = StateWindow(
+            default_window("Track Roll")
+                .default_pos(self.window_state.get_pos(WindowKind::TrackRoll))
+                .resizable(true),
+        );
+        window.show_with_closure(
+            ui,
+            self.window_state.get_visible(WindowKind::TrackRoll),
+            |_| self.window_state.set_visible(WindowKind::TrackRoll, false),
+            |ui| {
                 ui.horizontal(|ui| {
                     if ui.button("New track").clicked() {
                         store.dispatchr(Action::AddChild(TypeField::Track(Track::default())));
@@ -119,7 +135,8 @@ impl View for TrackRoll<'_> {
                                 ),
                         );
                     });
-            });
+            },
+        );
         self.local_state.track_roll_select_enabled.set(select);
     }
 }
@@ -214,8 +231,7 @@ impl SequencerObject<PlacedTrack> for PlacedTrack {
         ])
     }
 
-    // TODO: remove all these unused _ui params.
-    fn get_selected(_ui: &Ui, store: &Store, local_state: &LocalState) -> Vec<PlacedTrack> {
+    fn get_selected(store: &Store, local_state: &LocalState) -> Vec<PlacedTrack> {
         local_state
             .selected_placements
             .get()
