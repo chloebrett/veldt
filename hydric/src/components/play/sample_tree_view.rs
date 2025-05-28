@@ -1,6 +1,6 @@
 use crate::{AsyncState, playback::AudioPlayer};
 use crate::promise::{poll, spawn};
-use crate::rpc::{load_sample, load_sample_tree};
+use crate::rpc::load_sample_tree;
 use crate::view::View;
 use crate::widget::{checkbox, default_window};
 use egui::{Checkbox, Pos2, ScrollArea, Ui};
@@ -81,7 +81,21 @@ pub fn get_filename(actions: Vec<TreeAction<usize>>, tree: &FileTree<String, Str
                     return Some(filename);
                 }
             }
-            _ => {} // Ignore other TreeAction variants
+            _ => {}
+        }
+    }
+    None
+}
+
+pub fn get_sample_index(actions: Vec<TreeAction<usize>>) -> Option<u8> {
+    for action in actions.iter() {
+        match action {
+            TreeAction::Activate(activate) => {
+                if let Some(node_id) = activate.selected.iter().next() {
+                    return Some(node_id.clone() as u8 - 1)
+                }
+            }
+            _ => {}
         }
     }
     None
@@ -169,31 +183,18 @@ impl View for SampleTreeView<'_> {
                                     /* ignore_top= */ true,
                                 );
                             });
-                            let filename = get_filename(actions, tree);
-                            if let Some(filename) = filename {
-                                spawn(&mut self.async_state.load_sample, async move {
-                                    load_sample(filename.to_string()).await
-                                });
-                                ui.ctx().request_repaint();
+                            let sample_index = get_sample_index(actions);
+                            let all_samples = &self.store.get().project.samples;
+                            if !all_samples.is_empty() {
+                                if let Some(sample_index) = sample_index {
+                                    let sample = all_samples[sample_index as usize].clone();
+                                    let sample = interleave_stereo(sample.left, sample.right);
+                                    self.player.set_audio(sample);
+                                    self.player.play();
+                                }
                             }
                             });
                         }
                 });
-                
-                poll(&mut self.async_state.load_sample, |sample| {
-                    self.store.dispatchr(Action::AddChild(TypeField::Sample(sample.clone())));
-                    let all_samples = &self.store.get().project.samples;
-                    if all_samples.is_empty() {
-                        info!("NOOOOOO");
-                        return
-                    }
-                    info!("is this even happening");
-                    let sample = all_samples[0].clone(); // get most recent one
-                    let sample = interleave_stereo(sample.left, sample.right);
-                    self.player.set_audio(sample);
-                    self.player.play();
-                }); 
-
-
                 }
 }
