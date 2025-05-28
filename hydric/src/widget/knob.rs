@@ -3,6 +3,8 @@ use shared::types::KnobPosition;
 use std::f32::consts::TAU;
 use std::ops::RangeInclusive;
 
+const KNOB_FINE_DRAG_RATIO: f32 = 0.2;
+
 /// Forked from egui_knob: https://github.com/obsqrbtz/egui_knob
 /// egui_knob Copyright (c) 2025 Daniel Dada.
 /// Code is modified significantly.
@@ -312,7 +314,7 @@ impl Widget for Knob<'_> {
                 // Hold ctrl, alt or shift to move finely.
                 ui.input(|input| {
                     if input.modifiers.ctrl || input.modifiers.shift || input.modifiers.alt {
-                        delta *= 0.2;
+                        delta *= KNOB_FINE_DRAG_RATIO;
                     }
                 });
 

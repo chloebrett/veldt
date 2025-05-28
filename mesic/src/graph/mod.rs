@@ -27,6 +27,10 @@ pub struct ProcessContext {
     pub store: StoreData,
     pub main_seek_pos: Option<usize>,
     pub preview_seek_pos: Option<usize>,
+
+    // Current playback position.
+    pub playback_pos: usize,
+
     pub playback_mode: PlaybackMode,
     pub note_events: NoteEventsByGenerator,
 
@@ -41,6 +45,7 @@ impl ProcessContext {
             store,
             main_seek_pos: None,
             preview_seek_pos: None,
+            playback_pos: 0,
             playback_mode: PlaybackMode::Main,
             note_events: vec![],
             preview_buffer: vec![],
