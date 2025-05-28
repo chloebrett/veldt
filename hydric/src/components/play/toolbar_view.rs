@@ -7,9 +7,8 @@ use egui::{Pos2, Ui};
 use log::{error, info};
 use shared::types::Beats;
 use state::{Action, FloatField, Store, TypeField};
-use tonic::Status;
 
-use super::{play_control::*, sample_control::*};
+use super::play_control::*;
 
 pub struct ToolbarView<'a> {
     store: &'a mut Store,
@@ -70,7 +69,6 @@ impl View for ToolbarView<'_> {
                 ui.separator();
 
                 ui.horizontal(|ui| {
-                    sample_control(self.store, self.player, self.async_state, ui);
                     if ui.button("Upload Sample").clicked() {
                         /*
                         In future it is worth considering extending the async_state expected result to handle

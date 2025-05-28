@@ -8,7 +8,6 @@ use egui_ltreeview::{TreeView, TreeViewBuilder, Action as TreeAction};
 use shared::model::{FileTreeConfig, FilenameTree};
 use state::{Action, Store, TypeField};
 use mesic::interleave_stereo;
-use log::info;
 use shared::model::FileTree;
 
 pub struct SampleTreeView<'a> {
@@ -168,8 +167,9 @@ impl View for SampleTreeView<'_> {
                     })
                 }
 
-                poll(&mut self.async_state.load_sample_tree, |_tree| {
-                    
+                poll(&mut self.async_state.load_sample_tree, |tree| {
+                    self.store
+                        .dispatchr(Action::SetChild(TypeField::SampleTree(tree.clone())))
                 });
 
                 if let Some(tree) = &self.store.get().sample_tree {
