@@ -5,11 +5,11 @@ use super::{
     menu::MenuBar,
     play::{SampleTreeView, ToolbarView},
 };
+use crate::components::FrameHistory;
 use crate::rpc::broadcast_actions;
 use crate::rpc::load_project_list;
 use crate::view::View;
 use crate::{AsyncState, LocalState, playback::AudioPlayer};
-use crate::{components::FrameHistory, window_state::WindowState};
 use crate::{promise::spawn, window_state::WindowKind};
 use egui::{ScrollArea, Ui, scroll_area::ScrollBarVisibility};
 use mesic::graph::RenderGraph;
@@ -27,7 +27,6 @@ pub struct App {
     pub frame_history: FrameHistory,
     pub async_state: AsyncState,
     pub player: AudioPlayer,
-    pub window_state: WindowState,
 }
 
 impl Default for App {
@@ -45,7 +44,6 @@ impl Default for App {
             frame_history: FrameHistory::default(),
             async_state: AsyncState::default(),
             player: AudioPlayer::new(graph),
-            window_state: WindowState::default(),
         }
     }
 }
@@ -66,11 +64,11 @@ impl App {
     }
 
     fn visible_generators(&self) -> Vec<GeneratorSelector> {
-        self.window_state.visible_generators()
+        self.local_state.window_state.visible_generators()
     }
 
     fn visible_effects(&self) -> Vec<EffectSelector> {
-        self.window_state.visible_effects()
+        self.local_state.window_state.visible_effects()
     }
 }
 
@@ -85,14 +83,13 @@ impl eframe::App for App {
 
         self.player.maybe_update();
 
-        self.window_state.update(&self.store);
+        self.local_state.window_state.update(&self.store);
 
         egui::TopBottomPanel::top("veldt_menu").show(ctx, |ui| {
             MenuBar::new(
                 &mut self.store,
                 &self.local_state,
                 &mut self.player,
-                &self.window_state,
                 &mut self.async_state,
             )
             .ui(ui);
@@ -114,28 +111,19 @@ impl eframe::App for App {
 
 impl View for App {
     fn ui(&mut self, ui: &mut Ui) {
-        if self.window_state.get_visible(WindowKind::GeneratorList) {
-            generators_control(ui, &mut self.window_state, &self.store);
+        if self
+            .local_state
+            .window_state
+            .get_visible(WindowKind::GeneratorList)
+        {
+            generators_control(ui, &self.local_state, &self.store);
         }
 
         for sel in self.visible_generators() {
-            GeneratorView::new(
-                &self.store,
-                &self.window_state,
-                &sel,
-                &self.local_state,
-                &mut self.player,
-            )
-            .ui(ui);
+            GeneratorView::new(&self.store, &sel, &self.local_state, &mut self.player).ui(ui);
         }
-        if self.window_state.get_visible(WindowKind::Mixer) {
-            MixerView::new(
-                &self.window_state,
-                &self.store,
-                &self.local_state,
-                &self.player,
-            )
-            .ui(ui);
+        if self.local_state.window_state.get_visible(WindowKind::Mixer) {
+            MixerView::new(&self.store, &self.local_state, &self.player).ui(ui);
         }
 
         ToolbarView::new(&mut self.store, &mut self.async_state, &mut self.player).ui(ui);
@@ -146,25 +134,25 @@ impl View for App {
             if let Some(mut it) = EffectView::new(
                 &self.store,
                 &effect_selector,
-                &self.window_state,
+                &self.local_state,
                 dispatch,
                 on_release,
             ) {
                 it.ui(ui)
             }
         }
-        if self.window_state.get_visible(WindowKind::Scale) {
+        if self.local_state.window_state.get_visible(WindowKind::Scale) {
             let dispatch = |action| self.store.dispatchr(action);
             let key = self.store.get().key;
             let scale = self.store.get().scale;
-            KeyView::new(dispatch, &self.window_state, key, scale).ui(ui);
+            KeyView::new(dispatch, &self.local_state, key, scale).ui(ui);
         }
 
         NoteView::new(&self.store, &self.local_state).ui(ui);
         NoteRoll::new(&self.store, &self.local_state, &mut self.player).ui(ui);
         PlacementView::new(&self.store, &self.local_state).ui(ui);
 
-        SampleTreeView::new(&self.store, &mut self.async_state, &self.window_state).ui(ui);
-        TrackRoll::new(&self.store, &mut self.window_state, &self.local_state).ui(ui);
+        SampleTreeView::new(&self.store, &mut self.async_state, &self.local_state).ui(ui);
+        TrackRoll::new(&self.store, &self.local_state).ui(ui);
     }
 }

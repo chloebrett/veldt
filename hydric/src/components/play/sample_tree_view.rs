@@ -3,7 +3,7 @@ use crate::promise::{poll, spawn};
 use crate::rpc::load_sample_tree;
 use crate::view::View;
 use crate::widget::{StateWindow, checkbox, default_window};
-use crate::window_state::{WindowKind, WindowState};
+use crate::{LocalState, WindowKind};
 use egui::{Checkbox, Pos2, ScrollArea, Ui};
 use egui_ltreeview::{TreeView, TreeViewBuilder};
 use shared::model::{FileTreeConfig, FilenameTree};
@@ -12,19 +12,19 @@ use state::{Action, Store, TypeField};
 pub struct SampleTreeView<'a> {
     store: &'a Store,
     async_state: &'a mut AsyncState,
-    window_state: &'a WindowState,
+    local_state: &'a LocalState,
 }
 
 impl<'a> SampleTreeView<'a> {
     pub fn new(
         store: &'a Store,
         async_state: &'a mut AsyncState,
-        window_state: &'a WindowState,
+        local_state: &'a LocalState,
     ) -> Self {
         SampleTreeView {
             store,
             async_state,
-            window_state,
+            local_state,
         }
     }
 }
@@ -69,8 +69,14 @@ impl View for SampleTreeView<'_> {
         )
         .show_with_closure(
             ui,
-            self.window_state.get_visible(WindowKind::SampleTree),
-            |_| self.window_state.set_visible(WindowKind::SampleTree, false),
+            self.local_state
+                .window_state
+                .get_visible(WindowKind::SampleTree),
+            |_| {
+                self.local_state
+                    .window_state
+                    .set_visible(WindowKind::SampleTree, false)
+            },
             |ui| {
                 let config = &self.store.get().sample_tree_config;
 

@@ -2,7 +2,7 @@ use crate::{
     GetSet, LocalState,
     view::View,
     widget::{Sequencer, SequencerObject, StateWindow, default_window},
-    window_state::{WindowKind, WindowState},
+    window_state::WindowKind,
 };
 use egui::{
     Color32, CornerRadius, Pos2, Rect, ScrollArea, Shape, Stroke, StrokeKind, Ui, pos2, vec2,
@@ -22,21 +22,12 @@ use std::collections::HashSet;
 
 pub struct TrackRoll<'a> {
     store: &'a Store,
-    window_state: &'a mut WindowState,
     local_state: &'a LocalState,
 }
 
 impl<'a> TrackRoll<'a> {
-    pub fn new(
-        store: &'a Store,
-        window_state: &'a mut WindowState,
-        local_state: &'a LocalState,
-    ) -> Self {
-        Self {
-            store,
-            window_state,
-            local_state,
-        }
+    pub fn new(store: &'a Store, local_state: &'a LocalState) -> Self {
+        Self { store, local_state }
     }
 }
 
@@ -91,13 +82,19 @@ impl View for TrackRoll<'_> {
 
         StateWindow(
             default_window("Track Roll")
-                .default_pos(self.window_state.get_pos(WindowKind::TrackRoll))
+                .default_pos(self.local_state.window_state.get_pos(WindowKind::TrackRoll))
                 .resizable(true),
         )
         .show_with_closure(
             ui,
-            self.window_state.get_visible(WindowKind::TrackRoll),
-            |_| self.window_state.set_visible(WindowKind::TrackRoll, false),
+            self.local_state
+                .window_state
+                .get_visible(WindowKind::TrackRoll),
+            |_| {
+                self.local_state
+                    .window_state
+                    .set_visible(WindowKind::TrackRoll, false)
+            },
             |ui| {
                 ui.horizontal(|ui| {
                     if ui.button("New track").clicked() {
