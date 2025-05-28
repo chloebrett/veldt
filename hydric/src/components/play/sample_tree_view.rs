@@ -1,12 +1,13 @@
-use crate::AsyncState;
+use crate::{AsyncState, playback::AudioPlayer};
 use crate::promise::{poll, spawn};
-use crate::rpc::load_sample_tree;
+use crate::rpc::{load_sample, load_sample_tree};
 use crate::view::View;
 use crate::widget::{checkbox, default_window};
 use egui::{Checkbox, Pos2, ScrollArea, Ui};
 use egui_ltreeview::{TreeView, TreeViewBuilder, Action as TreeAction};
 use shared::model::{FileTreeConfig, FilenameTree};
 use state::{Action, Store, TypeField};
+use mesic::interleave_stereo;
 use log::info;
 use shared::model::FileTree;
 
@@ -14,14 +15,16 @@ pub struct SampleTreeView<'a> {
     store: &'a Store,
     async_state: &'a mut AsyncState,
     visible: &'a mut bool,
+    player: &'a mut AudioPlayer,
 }
 
 impl<'a> SampleTreeView<'a> {
-    pub fn new(store: &'a Store, async_state: &'a mut AsyncState, visible: &'a mut bool) -> Self {
+    pub fn new(store: &'a Store, async_state: &'a mut AsyncState, visible: &'a mut bool, player: &'a mut AudioPlayer,) -> Self {
         SampleTreeView {
             store,
             async_state,
             visible,
+            player
         }
     }
 }
@@ -55,6 +58,33 @@ fn add_node(
             next_id
         }
     }
+}
+
+pub fn get_filename(actions: Vec<TreeAction<usize>>, tree: &FileTree<String, String>) -> Option<String> {
+    for action in actions.iter() {
+        match action {
+            TreeAction::Activate(activate) => {
+                if let Some(node_id) = activate.selected.iter().next() {
+                    let filename = match tree {
+                        FileTree::File(file) => file.clone(),
+                        FileTree::Directory(_directory_name, subtree) => {
+                            if let Some(sample_node) = subtree.get(*node_id - 1) {
+                                match sample_node {
+                                    FileTree::File(sample_file_name) => sample_file_name.clone(),
+                                    FileTree::Directory(sub_directory_name, _sub_directory) => sub_directory_name.clone(),
+                                }
+                            } else {
+                                continue;
+                            }
+                        }
+                    };
+                    return Some(filename);
+                }
+            }
+            _ => {} // Ignore other TreeAction variants
+        }
+    }
+    None
 }
 
 impl View for SampleTreeView<'_> {
@@ -124,11 +154,8 @@ impl View for SampleTreeView<'_> {
                     })
                 }
 
-                poll(&mut self.async_state.load_sample_tree, |tree| {
-                    // self.store
-                    // //     .dispatchr(Action::SetChild(TypeField::SampleTree(tree.clone())))
-                    // self.store
-                    //     .dispatchr(Action::SetFloat(state::FloatField::Volume, 20.0))
+                poll(&mut self.async_state.load_sample_tree, |_tree| {
+                    
                 });
 
                 if let Some(tree) = &self.store.get().sample_tree {
@@ -142,37 +169,31 @@ impl View for SampleTreeView<'_> {
                                     /* ignore_top= */ true,
                                 );
                             });
-                            for action in actions.iter() {
-                                match action {
-                                    TreeAction::Move(_) => {}
-                                    TreeAction::SetSelected(_) => {}
-                                    TreeAction::Drag(_) => {}
-                                    TreeAction::Activate(activate) => {
-                                        activate.selected.iter().for_each(|node_id| {
-                                            let filename = match tree {
-                                                FileTree::File(file) => {
-                                                    file
-                                                }
-                                                FileTree::Directory(_directory_name, subtree) => {
-                                                    let sample_node = subtree[*node_id - 1].clone();
-                                                    let sample_name = match sample_node {
-                                                        FileTree::File(sample_file_name) => {
-                                                            sample_file_name
-                                                        }
-                                                        FileTree::Directory(sub_directory_name, _sub_directory ) => {
-                                                            sub_directory_name
-                                                        }
-                                                    };
-                                                    &sample_name.clone()                                                    
-                                                }
-                                            };
-                                            info!("THE file name is {:?}", filename);
-                                        });
-                                    }
-                                }
+                            let filename = get_filename(actions, tree);
+                            if let Some(filename) = filename {
+                                spawn(&mut self.async_state.load_sample, async move {
+                                    load_sample(filename.to_string()).await
+                                });
+                                ui.ctx().request_repaint();
                             }
-                                                });
-                                        }
-                                    });
-                            }
+                            });
+                        }
+                });
+                
+                poll(&mut self.async_state.load_sample, |sample| {
+                    self.store.dispatchr(Action::AddChild(TypeField::Sample(sample.clone())));
+                    let all_samples = &self.store.get().project.samples;
+                    if all_samples.is_empty() {
+                        info!("NOOOOOO");
+                        return
+                    }
+                    info!("is this even happening");
+                    let sample = all_samples[0].clone(); // get most recent one
+                    let sample = interleave_stereo(sample.left, sample.right);
+                    self.player.set_audio(sample);
+                    self.player.play();
+                }); 
+
+
+                }
 }
