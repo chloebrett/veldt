@@ -1,12 +1,13 @@
-use crate::promise::spawn;
-use crate::rpc::upload_sample;
+use crate::promise::{spawn, poll};
+use crate::rpc::{upload_sample, load_sample};
 use crate::view::View;
 use crate::widget::{default_window, knob, slider};
 use crate::{AsyncState, playback::AudioPlayer};
 use egui::{Pos2, Ui};
 use log::{error, info};
 use shared::types::Beats;
-use state::{Action, FloatField, Store};
+use state::{Action, FloatField, Store, TypeField};
+use tonic::Status;
 
 use super::{play_control::*, sample_control::*};
 
@@ -83,7 +84,7 @@ impl View for ToolbarView<'_> {
                             else {
                                 // No proper error handling as a user canceling the action is typical.
                                 info!("User canceled file upload");
-                                return Ok(());
+                                return Ok("".to_string());
                             };
 
                             let file_data = file.read().await;
@@ -100,5 +101,19 @@ impl View for ToolbarView<'_> {
                     }
                 })
             });
+
+            poll(&mut self.async_state.upload_sample, |file_name| {
+                if file_name != "" {
+                    let file_name_clone = file_name.clone();
+                    // immediately load sample upon upload to avoid async mess if trying to preview
+                    spawn(&mut self.async_state.load_sample, async move {
+                        load_sample(file_name_clone).await
+                    });
+                }
+            });
+
+            poll(&mut self.async_state.load_sample, |sample| {
+                self.store.dispatchr(Action::AddChild(TypeField::Sample(sample.clone())));
+            }); 
     }
 }
