@@ -4,9 +4,10 @@ use crate::view::View;
 use crate::widget::{default_window, knob, slider};
 use crate::{AsyncState, playback::AudioPlayer};
 use egui::{Pos2, Ui};
-use log::{error, info};
+use log::error;
 use shared::types::Beats;
 use state::{Action, FloatField, Store, TypeField};
+use tonic::Status;
 
 use super::play_control::*;
 
@@ -80,9 +81,7 @@ impl View for ToolbarView<'_> {
                                 .pick_file()
                                 .await
                             else {
-                                // No proper error handling as a user canceling the action is typical.
-                                info!("User canceled file upload");
-                                return Ok("".to_string());
+                                return Err(Status::aborted("User cancelled upload"));
                             };
 
                             let file_data = file.read().await;
@@ -101,11 +100,11 @@ impl View for ToolbarView<'_> {
             });
 
         poll(&mut self.async_state.upload_sample, |file_name| {
-            if file_name != "" {
-                let file_name_clone = file_name.clone();
+            if !file_name.is_empty() {
+                let file_name = file_name.clone();
                 // immediately load sample upon upload to avoid async mess if trying to preview
                 spawn(&mut self.async_state.load_sample, async move {
-                    load_sample(file_name_clone).await
+                    load_sample(file_name).await
                 });
             }
         });

@@ -6,7 +6,6 @@ use crate::{AsyncState, playback::AudioPlayer};
 use egui::{Checkbox, Pos2, ScrollArea, Ui};
 use egui_ltreeview::{Action as TreeAction, TreeView, TreeViewBuilder};
 use mesic::interleave_stereo;
-use shared::model::FileTree;
 use shared::model::{FileTreeConfig, FilenameTree};
 use state::{Action, Store, TypeField};
 
@@ -64,47 +63,12 @@ fn add_node(
     }
 }
 
-pub fn get_filename(
-    actions: Vec<TreeAction<usize>>,
-    tree: &FileTree<String, String>,
-) -> Option<String> {
-    for action in actions.iter() {
-        match action {
-            TreeAction::Activate(activate) => {
-                if let Some(node_id) = activate.selected.iter().next() {
-                    let filename = match tree {
-                        FileTree::File(file) => file.clone(),
-                        FileTree::Directory(_directory_name, subtree) => {
-                            if let Some(sample_node) = subtree.get(*node_id - 1) {
-                                match sample_node {
-                                    FileTree::File(sample_file_name) => sample_file_name.clone(),
-                                    FileTree::Directory(sub_directory_name, _sub_directory) => {
-                                        sub_directory_name.clone()
-                                    }
-                                }
-                            } else {
-                                continue;
-                            }
-                        }
-                    };
-                    return Some(filename);
-                }
-            }
-            _ => {}
-        }
-    }
-    None
-}
-
 pub fn get_sample_index(actions: Vec<TreeAction<usize>>) -> Option<u8> {
     for action in actions.iter() {
-        match action {
-            TreeAction::Activate(activate) => {
-                if let Some(node_id) = activate.selected.iter().next() {
-                    return Some(node_id.clone() as u8 - 1);
-                }
+        if let TreeAction::Activate(activate) = action {
+            if let Some(node_id) = activate.selected.iter().next() {
+                return Some(*node_id as u8 - 1);
             }
-            _ => {}
         }
     }
     None
