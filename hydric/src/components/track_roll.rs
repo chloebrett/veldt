@@ -1,8 +1,8 @@
 use crate::{
     GetSet, LocalState,
     view::View,
-    widget::{Sequencer, SequencerObject, default_window},
-    window_state::{WindowKind, WindowState2},
+    widget::{Sequencer, SequencerObject, StateWindow, default_window},
+    window_state::{WindowKind, WindowState},
 };
 use egui::{
     Color32, CornerRadius, Pos2, Rect, ScrollArea, Shape, Stroke, StrokeKind, Ui, pos2, vec2,
@@ -22,14 +22,14 @@ use std::collections::HashSet;
 
 pub struct TrackRoll<'a> {
     store: &'a Store,
-    window_state: &'a mut WindowState2,
+    window_state: &'a mut WindowState,
     local_state: &'a LocalState,
 }
 
 impl<'a> TrackRoll<'a> {
     pub fn new(
         store: &'a Store,
-        window_state: &'a mut WindowState2,
+        window_state: &'a mut WindowState,
         local_state: &'a LocalState,
     ) -> Self {
         Self {
@@ -89,11 +89,16 @@ impl View for TrackRoll<'_> {
             self.local_state.selected_placements.set(HashSet::default());
         }
 
-        default_window("Track Roll")
-            .default_pos(self.window_state.get_pos(WindowKind::TrackRoll))
-            .resizable(true)
-            .open(self.window_state.get_mut_visible(WindowKind::TrackRoll))
-            .show(ui.ctx(), |ui| {
+        StateWindow(
+            default_window("Track Roll")
+                .default_pos(self.window_state.get_pos(WindowKind::TrackRoll))
+                .resizable(true),
+        )
+        .show_with_closure(
+            ui,
+            self.window_state.get_visible(WindowKind::TrackRoll),
+            |_| self.window_state.set_visible(WindowKind::TrackRoll, false),
+            |ui| {
                 ui.horizontal(|ui| {
                     if ui.button("New track").clicked() {
                         store.dispatchr(Action::AddChild(TypeField::Track(Track::default())));
@@ -130,7 +135,8 @@ impl View for TrackRoll<'_> {
                                 ),
                         );
                     });
-            });
+            },
+        );
         self.local_state.track_roll_select_enabled.set(select);
     }
 }

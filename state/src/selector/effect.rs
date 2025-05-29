@@ -2,7 +2,7 @@ use super::{MixerSelector, Selector, SelectorTrait};
 use crate::StoreData;
 use shared::model::EffectInstance;
 
-#[derive(Eq, PartialEq, Ord, PartialOrd, Copy, Clone, Debug, Hash)]
+#[derive(Default, Eq, PartialEq, Ord, PartialOrd, Copy, Clone, Debug, Hash)]
 pub struct EffectSelector(
     /* mixer_index */ pub usize,
     /* effect_index */ pub usize,
