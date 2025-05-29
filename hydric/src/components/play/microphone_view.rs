@@ -1,26 +1,35 @@
-use crate::playback::Microphone;
 use crate::view::View;
-use crate::widget::default_window;
+use crate::widget::{StateWindow, default_window};
+use crate::window_state::WindowKind;
+use crate::{playback::Microphone, window_state::WindowState};
 use egui::{Pos2, Ui};
 
 pub struct MicrophoneView<'a> {
-    visible: &'a mut bool,
+    window_state: &'a WindowState,
     mic: &'a mut Microphone,
 }
 
 impl<'a> MicrophoneView<'a> {
-    pub fn new(visible: &'a mut bool, mic: &'a mut Microphone) -> Self {
-        MicrophoneView { visible, mic }
+    pub fn new(window_state: &'a WindowState, app_mic: &'a mut Microphone) -> Self {
+        MicrophoneView {
+            window_state,
+            mic: app_mic,
+        }
     }
 }
 
 impl View for MicrophoneView<'_> {
     fn ui(&mut self, ui: &mut Ui) {
-        default_window("Microphone")
-            .resizable(true)
-            .open(self.visible)
-            .default_pos(Pos2 { x: 600.0, y: 20.0 })
-            .show(ui.ctx(), |ui| {
+        StateWindow(
+            default_window("Microphone")
+                .resizable(true)
+                .default_pos(self.window_state.get_pos(WindowKind::Microphone)),
+        )
+        .show_with_closure(
+            ui,
+            self.window_state.get_visible(WindowKind::Microphone),
+            |_| self.window_state.set_visible(WindowKind::Microphone, false),
+            |ui| {
                 if ui.button("Permissions").clicked() {
                     let _ = self.mic.get_permissions();
                 }
@@ -57,6 +66,7 @@ impl View for MicrophoneView<'_> {
                         let _ = self.mic.clear_mic();
                     }
                 });
-            });
+            },
+        );
     }
 }
