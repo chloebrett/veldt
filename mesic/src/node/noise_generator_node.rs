@@ -1,8 +1,10 @@
-use crate::graph::{NoteEventType, ProcessContext};
 use crate::eq::{ApplyFilter, eq_filter};
+use crate::graph::{NoteEventType, ProcessContext};
 use dasp_graph::{Buffer, Input, Node};
 use rand::Rng;
-use shared::model::{Generator, GeneratorInstance, GeneratorMeta, NoiseConfig, NoiseType, EqConfig, EqType};
+use shared::model::{
+    EqConfig, EqType, Generator, GeneratorInstance, GeneratorMeta, NoiseConfig, NoiseType,
+};
 use state::GeneratorSelector;
 
 pub struct NoiseGeneratorNode {
@@ -29,14 +31,14 @@ impl Default for NodeState {
             playing: false,
             pink_filter: eq_filter(&EqConfig {
                 kind: EqType::SimpleFirstOrderLowPass,
-                fc: 1000.0,   
-                q: 0.707,  // See "Designing Audio Effect Plugins in C++", W. Pirkle, p273
+                fc: 1000.0,
+                q: 0.707, // See "Designing Audio Effect Plugins in C++", W. Pirkle, p273
                 gain: 0.0,
             }),
             brown_filter: eq_filter(&EqConfig {
                 kind: EqType::SimpleSecondOrderLowPass,
-                fc: 1000.0,   
-                q: 0.707,     
+                fc: 1000.0,
+                q: 0.707,
                 gain: 0.0,
             }),
         }
@@ -125,7 +127,7 @@ impl Node<ProcessContext> for NoiseGeneratorNode {
         }
 
         match kind {
-            NoiseType::White => {},
+            NoiseType::White => {}
             NoiseType::Pink => self.generate_pink_noise(&mut buffer),
             NoiseType::Brown => self.generate_brown_noise(&mut buffer),
         }
