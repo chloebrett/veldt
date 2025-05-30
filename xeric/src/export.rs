@@ -10,6 +10,7 @@ use std::fs::{File, create_dir_all};
 use std::io::{Cursor, Write};
 use std::path::PathBuf;
 use tonic::{Request, Response, Status, async_trait};
+use mp3lame_encoder::{Builder, DualPcm};
 
 // Exports project to .wav
 pub struct ExportContext;
@@ -93,5 +94,24 @@ impl Export for ExportContext {
             .map_err(|e| tonic::Status::invalid_argument(format!("{}", e)))?;
 
         Ok(tonic::Response::new(ExportReply { audio: wav_bytes }))
+    }
+
+    async fn export_mp3(&self, request: Request<ExportRequest>) -> Result<Response<ExportReply>, Status>{
+        
+        let req = request.into_inner();
+        let project: Project = req
+            .project
+            .ok_or(Status::invalid_argument("Project must be supplied"))?
+            .into();
+
+        // TODO: use the StoreData from the collab context.
+        let store = StoreData {
+            project: project.clone(),
+            ..StoreData::default()
+        };
+
+        let graph = RenderGraph::without_rx(&store);
+        
+        todo!();
     }
 }
