@@ -1,3 +1,4 @@
+use chrono::{Datelike, Local};
 use dasp_frame::Frame;
 use hound::{SampleFormat, WavSpec, WavWriter};
 use mesic::SAMPLE_RATE;
@@ -11,7 +12,6 @@ use std::fs::{File, create_dir_all};
 use std::io::{Cursor, Write};
 use std::path::PathBuf;
 use tonic::{Request, Response, Status, async_trait};
-use chrono::{Datelike, Local};
 
 // Exports project to .wav
 pub struct ExportContext;
@@ -26,13 +26,13 @@ impl AudioFileType {
     fn as_str(&self) -> &'static str {
         match self {
             AudioFileType::Mp3 => "mp3",
-            AudioFileType::Wav => "wav"
+            AudioFileType::Wav => "wav",
         }
     }
 }
 
 // Create output file path according to AudioFileType.
-fn wav_file_path(name: &str,file_type: AudioFileType) -> PathBuf {
+fn wav_file_path(name: &str, file_type: AudioFileType) -> PathBuf {
     let file_ext = file_type.as_str();
     let mut file_path = wav_dir_path(file_type);
     file_path.push(format!("{name}.{file_ext}"));
@@ -136,22 +136,30 @@ impl Export for ExportContext {
         };
 
         let graph = RenderGraph::without_rx(&store);
-        
+
         let (_, curr_year) = Local::now().year_ce();
 
         let mut mp3_encoder = Builder::new().expect("Create LAME builder");
         mp3_encoder.set_num_channels(2).expect("set channels");
-        mp3_encoder.set_sample_rate(SAMPLE_RATE as u32).expect("set sample rate");
-        mp3_encoder.set_brate(mp3lame_encoder::Bitrate::Kbps320).expect("set brate");
-        mp3_encoder.set_quality(mp3lame_encoder::Quality::Best).expect("set quality");
-        mp3_encoder.set_id3_tag(Id3Tag {
-            title: &project.name.as_bytes(),
-            artist: &[],
-            album: &[],
-            album_art: &[],
-            year: curr_year.to_string().as_bytes(),
-            comment: &[],
-        }).expect("set id3 tags");
+        mp3_encoder
+            .set_sample_rate(SAMPLE_RATE as u32)
+            .expect("set sample rate");
+        mp3_encoder
+            .set_brate(mp3lame_encoder::Bitrate::Kbps320)
+            .expect("set brate");
+        mp3_encoder
+            .set_quality(mp3lame_encoder::Quality::Best)
+            .expect("set quality");
+        mp3_encoder
+            .set_id3_tag(Id3Tag {
+                title: &project.name.as_bytes(),
+                artist: &[],
+                album: &[],
+                album_art: &[],
+                year: curr_year.to_string().as_bytes(),
+                comment: &[],
+            })
+            .expect("set id3 tags");
 
         let mut mp3_encoder = mp3_encoder.build().expect("Initialise LAME encoder");
 
@@ -173,12 +181,16 @@ impl Export for ExportContext {
         // This was the solution provided with the docs, so I am unsure of if there is a better way.
         let mut mp3_out_buffer = Vec::new();
         mp3_out_buffer.reserve(mp3lame_encoder::max_required_buffer_size(input.left.len()));
-        let encoded_size = mp3_encoder.encode(input, mp3_out_buffer.spare_capacity_mut()).expect("To encode");
+        let encoded_size = mp3_encoder
+            .encode(input, mp3_out_buffer.spare_capacity_mut())
+            .expect("To encode");
         unsafe {
             mp3_out_buffer.set_len(mp3_out_buffer.len().wrapping_add(encoded_size));
         }
 
-        let encoded_size = mp3_encoder.flush::<FlushNoGap>(mp3_out_buffer.spare_capacity_mut()).expect("to flush");
+        let encoded_size = mp3_encoder
+            .flush::<FlushNoGap>(mp3_out_buffer.spare_capacity_mut())
+            .expect("to flush");
         unsafe {
             mp3_out_buffer.set_len(mp3_out_buffer.len().wrapping_add(encoded_size));
         }
@@ -186,7 +198,7 @@ impl Export for ExportContext {
         // write to output file
         let dir_path = wav_dir_path(AudioFileType::Mp3);
         let _ = create_dir_all(&dir_path);
-        let file_path = wav_file_path(&project.name,AudioFileType::Mp3);
+        let file_path = wav_file_path(&project.name, AudioFileType::Mp3);
 
         // NOTE: will overwrite if the file already exists
         let mut out_file =
@@ -195,6 +207,8 @@ impl Export for ExportContext {
             .write_all(&mp3_out_buffer)
             .map_err(|e| tonic::Status::invalid_argument(format!("{}", e)))?;
 
-        Ok(tonic::Response::new(ExportReply { audio: mp3_out_buffer }))
+        Ok(tonic::Response::new(ExportReply {
+            audio: mp3_out_buffer,
+        }))
     }
 }
