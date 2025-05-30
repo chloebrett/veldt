@@ -71,10 +71,10 @@ impl View for MixerView<'_> {
                 .id("mixer".into())
                 .default_pos(window_state.get_pos(WindowKind::Mixer)),
         )
-        .show_with_closure(
+        .show(
             ui,
-            window_state.get_visible(WindowKind::Mixer),
-            |_| window_state.set_visible(WindowKind::Mixer, false),
+            window_state,
+            WindowKind::Mixer,
             |ui| {
                 ui.add_space(8.0);
 

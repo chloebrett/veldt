@@ -56,10 +56,10 @@ impl<F: Fn(Action), G: Fn()> View for EffectView<'_, F, G> {
                     y: 150.0 + 50.0 * effect_index as f32,
                 }),
         )
-        .show_with_closure(
+        .show(
             ui,
-            window_state.get_visible(WindowKind::Effect(self.selector)),
-            |_| window_state.set_visible(WindowKind::Effect(self.selector), false),
+            window_state,
+            WindowKind::Effect(self.selector),
             |ui| {
                 match effect {
                     Effect::SimpleEq(config) => EqView::new(config, dispatch, on_release).ui(ui),

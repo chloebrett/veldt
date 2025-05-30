@@ -2,7 +2,7 @@ use super::generator_name;
 use crate::WindowState;
 use crate::widget::{StateWindow, default_window, int_slider, knob};
 use crate::window_state::WindowKind;
-use egui::{Button, Pos2, Ui};
+use egui::{Button, Pos2, Ui, Window};
 use state::{Action, FloatField, GeneratorSelector, IndexField, Store, TypeField};
 
 pub fn generators_control(ui: &mut Ui, window_state: &mut WindowState, store: &Store) {
@@ -15,10 +15,10 @@ pub fn generators_control(ui: &mut Ui, window_state: &mut WindowState, store: &S
                 y: 150.0,
             }),
     )
-    .show_with_closure(
+    .show(
         ui,
-        window_state.get_visible(WindowKind::GeneratorList),
-        |_| window_state.set_visible(WindowKind::GeneratorList, false),
+        window_state,
+        WindowKind::GeneratorList,
         |ui| {
             for generator_index in 0..generators.len() {
                 let sel = GeneratorSelector(generator_index);

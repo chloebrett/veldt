@@ -35,10 +35,10 @@ impl<F: Fn(Action)> View for KeyView<'_, F> {
         } = *self;
 
         StateWindow(default_window("Scale").default_pos(Pos2 { x: 600.0, y: 20.0 }))
-            .show_with_closure(
+            .show(
                 ui,
-                window_state.get_visible(WindowKind::Scale),
-                |_| window_state.set_visible(WindowKind::Scale, false),
+                window_state,
+                WindowKind::Scale,
                 |ui| {
                     ComboBox::from_label("Key")
                         .selected_text(key.to_string())

@@ -43,14 +43,10 @@ impl View for GeneratorView<'_> {
 
         let title = generator_name(instance);
         StateWindow(default_window(title).default_pos(Pos2 { x: 1100.0, y: 20.0 }))
-            .show_with_closure(
+            .show(
                 ui,
-                self.window_state
-                    .get_visible(WindowKind::Generator(*self.selector)),
-                |_| {
-                    self.window_state
-                        .set_visible(WindowKind::Generator(*self.selector), false)
-                },
+                self.window_state,
+                WindowKind::Generator(*self.selector),
                 |ui| {
                     let generator = instance.it.clone();
                     let dispatch = |action| self.store.dispatch(self.selector, action);

@@ -1,5 +1,7 @@
 use egui::{InnerResponse, Ui, Window};
 
+use crate::window_state::{WindowKind, WindowState};
+
 /// Creates a default window which is non-resizable, non-collapsible, and disables drag-to-scroll.
 pub fn default_window(title: &str) -> Window {
     Window::new(title)
@@ -26,6 +28,23 @@ impl StateWindow<'_> {
         let response = window.open(&mut open).show(ui.ctx(), add_contents);
         if open != show {
             on_close(ui);
+        }
+        response
+    }
+
+    /// Shows a window that calls a closure when it is closed.
+    pub fn show<R>(
+        self,
+        ui: &mut Ui,
+        window_state: &WindowState,
+        window_kind: WindowKind,
+        add_contents: impl FnOnce(&mut Ui) -> R,
+    ) -> Option<InnerResponse<Option<R>>> {
+        let StateWindow(window) = self;
+        let mut open = window_state.get_visible(window_kind);
+        let response = window.open(&mut open).show(ui.ctx(), add_contents);
+        if open != window_state.get_visible(window_kind) {
+            window_state.set_visible(window_kind, open);
         }
         response
     }

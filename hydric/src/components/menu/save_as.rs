@@ -38,10 +38,10 @@ impl<F: Fn(Action), G: FnMut()> View for SaveAs<'_, F, G> {
                 .default_pos(window_state.get_pos(WindowKind::Save))
                 .resizable(false),
         )
-        .show_with_closure(
+        .show(
             ui,
-            window_state.get_visible(WindowKind::Save),
-            |_| window_state.set_visible(WindowKind::Save, false),
+            window_state,
+            WindowKind::Save,
             |ui| {
                 let mut temp_name = name.clone();
                 let response = ui.text_edit_singleline(&mut temp_name);
