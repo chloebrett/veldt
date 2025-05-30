@@ -1,9 +1,9 @@
 use crate::local_state::LocalState;
 use crate::view::View;
-use crate::widget::{StateWindow, default_window};
+use crate::widget::StateWindow;
 use crate::window_state::WindowKind;
-use crate::{playback::Microphone, window_state::WindowState};
-use egui::{Pos2, Ui};
+use crate::playback::Microphone;
+use egui::Ui;
 
 pub struct MicrophoneView<'a> {
     local_state: &'a LocalState,
@@ -21,7 +21,12 @@ impl<'a> MicrophoneView<'a> {
 
 impl View for MicrophoneView<'_> {
     fn ui(&mut self, ui: &mut Ui) {
-        StateWindow::show_from_window_state(ui, &self.local_state.window_state, WindowKind::Microphone, "Microphone", |ui| {
+        StateWindow::show_from_window_state(
+            ui,
+            &self.local_state.window_state,
+            WindowKind::Microphone,
+            "Microphone",
+            |ui| {
                 if ui.button("Permissions").clicked() {
                     let _ = self.mic.get_permissions();
                 }

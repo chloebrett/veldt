@@ -2,9 +2,9 @@ use crate::AsyncState;
 use crate::promise::{poll, spawn};
 use crate::rpc::load_sample_tree;
 use crate::view::View;
-use crate::widget::{StateWindow, checkbox, default_window};
+use crate::widget::{StateWindow, checkbox};
 use crate::{LocalState, WindowKind};
-use egui::{Checkbox, Pos2, ScrollArea, Ui};
+use egui::{Checkbox, ScrollArea, Ui};
 use egui_ltreeview::{TreeView, TreeViewBuilder};
 use shared::model::{FileTreeConfig, FilenameTree};
 use state::{Action, Store, TypeField};
@@ -62,7 +62,12 @@ fn add_node(
 
 impl View for SampleTreeView<'_> {
     fn ui(&mut self, ui: &mut Ui) {
-        StateWindow::show_from_window_state(ui, &self.local_state.window_state, WindowKind::SampleTree, "Samples", |ui| {
+        StateWindow::show_from_window_state(
+            ui,
+            &self.local_state.window_state,
+            WindowKind::SampleTree,
+            "Samples",
+            |ui| {
                 let config = &self.store.get().sample_tree_config;
                 let mut search = config.search.clone();
                 let response = ui.text_edit_singleline(&mut search);

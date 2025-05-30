@@ -1,9 +1,9 @@
 use super::{CompressorView, DelayView, EqView, ModDelayView};
 use crate::local_state::LocalState;
 use crate::view::View;
-use crate::widget::{StateWindow, default_window};
+use crate::widget::StateWindow;
 use crate::window_state::WindowKind;
-use egui::{Pos2, Ui};
+use egui::Ui;
 use shared::model::Effect;
 use state::{Action, EffectSelector, Store};
 

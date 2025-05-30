@@ -1,7 +1,7 @@
 use crate::{
     GetSet, LocalState,
     view::View,
-    widget::{Sequencer, SequencerObject, StateWindow, default_window},
+    widget::{Sequencer, SequencerObject, StateWindow},
     window_state::WindowKind,
 };
 use egui::{

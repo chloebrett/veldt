@@ -1,8 +1,8 @@
 use crate::view::View;
-use crate::widget::{StateWindow, default_window, get_set, int_slider, selectable_value, slider};
+use crate::widget::{StateWindow, get_set, int_slider, selectable_value, slider};
 use crate::window_state::WindowKind;
 use crate::{GetSet, LocalState};
-use egui::{Ui, pos2};
+use egui::Ui;
 use mesic::samples_to_beats;
 use ordered_float::OrderedFloat;
 use shared::model::{Placement, PlacementType, SamplePlacement, Track, TrackPlacement};

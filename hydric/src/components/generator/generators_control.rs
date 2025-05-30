@@ -1,8 +1,8 @@
 use super::generator_name;
 use crate::local_state::LocalState;
-use crate::widget::{StateWindow, default_window, int_slider, knob};
+use crate::widget::{StateWindow, int_slider, knob};
 use crate::window_state::WindowKind;
-use egui::{Button, Pos2, Ui, Window};
+use egui::{Button, Ui};
 use state::{Action, FloatField, GeneratorSelector, IndexField, Store, TypeField};
 
 pub fn generators_control(ui: &mut Ui, local_state: &LocalState, store: &Store) {

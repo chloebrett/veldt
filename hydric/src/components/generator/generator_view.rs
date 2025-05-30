@@ -3,10 +3,9 @@ use super::simple_wave::SimpleWaveView;
 use super::stingray::StingrayView;
 use crate::view::View;
 use crate::widget::StateWindow;
-use crate::widget::default_window;
 use crate::window_state::WindowKind;
 use crate::{LocalState, playback::AudioPlayer};
-use egui::{Pos2, Ui};
+use egui::Ui;
 use shared::model::{Generator, GeneratorInstance};
 use state::{Action, GeneratorSelector, Store};
 

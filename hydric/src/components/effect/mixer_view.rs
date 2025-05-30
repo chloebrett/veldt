@@ -6,7 +6,7 @@ use crate::playback::AudioPlayer;
 use crate::view::View;
 use crate::widget::StateWindow;
 use crate::widget::int_slider;
-use crate::widget::{default_window, knob};
+use crate::widget::knob;
 use crate::window_state::WindowKind;
 use egui::CornerRadius;
 use egui::Shape;

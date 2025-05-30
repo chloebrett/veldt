@@ -1,8 +1,8 @@
 use crate::local_state::LocalState;
 use crate::view::View;
-use crate::widget::{StateWindow, default_window, get_set, selectable_value};
+use crate::widget::{StateWindow, get_set, selectable_value};
 use crate::window_state::WindowKind;
-use egui::{ComboBox, Pos2, Ui};
+use egui::{ComboBox, Ui};
 use shared::model::{Scale, ScaleValue};
 use state::{Action, TypeField};
 use strum::IntoEnumIterator;

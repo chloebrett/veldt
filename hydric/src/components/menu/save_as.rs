@@ -3,7 +3,7 @@ use state::{Action, TypeField};
 use crate::{
     local_state::LocalState,
     view::View,
-    widget::{StateWindow, default_window},
+    widget::StateWindow,
     window_state::WindowKind,
 };
 use egui::Ui;

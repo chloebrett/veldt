@@ -1,9 +1,9 @@
 use crate::LocalState;
 use crate::local_state::GetSet;
 use crate::view::View;
-use crate::widget::{StateWindow, default_window, get_set, int_slider, selectable_value, slider};
+use crate::widget::{StateWindow, get_set, int_slider, selectable_value, slider};
 use crate::window_state::WindowKind;
-use egui::{Ui, pos2};
+use egui::Ui;
 use shared::model::ScaleValue;
 use shared::types::{Beats, Octave};
 use state::{Action, FloatField, IndexField, Store, TrackSelector, TypeField};
