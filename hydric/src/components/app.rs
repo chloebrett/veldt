@@ -175,6 +175,7 @@ impl View for App {
             &mut self.async_state,
             &mut self.window_state.sample_tree,
             &mut self.player,
+            &self.local_state,
         )
         .ui(ui);
         TrackRoll::new(&self.store, &mut self.window_state2, &self.local_state).ui(ui);
