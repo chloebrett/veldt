@@ -1,7 +1,8 @@
 use crate::graph::{NoteEventType, ProcessContext};
+use crate::eq::{ApplyFilter, eq_filter};
 use dasp_graph::{Buffer, Input, Node};
 use rand::Rng;
-use shared::model::{Generator, GeneratorInstance, GeneratorMeta, NoiseConfig, NoiseType};
+use shared::model::{Generator, GeneratorInstance, GeneratorMeta, NoiseConfig, NoiseType, EqConfig, EqType};
 use state::GeneratorSelector;
 
 pub struct NoiseGeneratorNode {
@@ -15,8 +16,8 @@ struct NodeState {
     config: NoiseConfig,
     meta: GeneratorMeta,
     playing: bool,
-    pink_b: [f32; 7],       // Coefficients for pink noise
-    last_brown_output: f32, // Last output for brown noise
+    pink_filter: Box<dyn ApplyFilter + Send>,
+    brown_filter: Box<dyn ApplyFilter + Send>,
 }
 
 impl Default for NodeState {
@@ -26,8 +27,18 @@ impl Default for NodeState {
             config: config.clone(),
             meta: GeneratorMeta::default(),
             playing: false,
-            pink_b: [0.0; 7],
-            last_brown_output: 0.0,
+            pink_filter: eq_filter(&EqConfig {
+                kind: EqType::SimpleFirstOrderLowPass,
+                fc: 1000.0,   
+                q: 0.707,  // See "Designing Audio Effect Plugins in C++", W. Pirkle, p273
+                gain: 0.0,
+            }),
+            brown_filter: eq_filter(&EqConfig {
+                kind: EqType::SimpleSecondOrderLowPass,
+                fc: 1000.0,   
+                q: 0.707,     
+                gain: 0.0,
+            }),
         }
     }
 }
@@ -64,48 +75,18 @@ impl NoiseGeneratorNode {
         }
     }
 
-    fn generate_white_noise(rng: &mut impl Rng) -> f32 {
+    fn generate_white_noise(&self, rng: &mut impl Rng) -> f32 {
         let min = -1.0;
         let max = 1.0;
         generate_random_number_in_range(rng, min, max)
     }
 
-    fn generate_brown_noise(&mut self, rng: &mut impl Rng) -> f32 {
-        let wt = Self::generate_white_noise(rng);
-        let leak = 0.02;
-        let output = (self.state.last_brown_output + wt * leak).clamp(-1.0, 1.0);
-        self.state.last_brown_output = output;
-        output
+    fn generate_pink_noise(&mut self, buffer: &mut Buffer) {
+        self.state.pink_filter.apply(buffer);
     }
 
-    fn generate_pink_noise(&mut self, rng: &mut impl Rng) -> f32 {
-        // From Paul Kellet's implementation: https://www.musicdsp.org/en/latest/Filters/76-pink-noise-filter.html
-        let wt = Self::generate_white_noise(rng);
-
-        self.state.pink_b[0] = 0.99886 * self.state.pink_b[0] + wt * 0.0555179;
-        self.state.pink_b[1] = 0.99332 * self.state.pink_b[1] + wt * 0.0750759;
-        self.state.pink_b[2] = 0.96900 * self.state.pink_b[2] + wt * 0.1538520;
-        self.state.pink_b[3] = 0.86650 * self.state.pink_b[3] + wt * 0.3104856;
-        self.state.pink_b[4] = 0.55000 * self.state.pink_b[4] + wt * 0.5329522;
-        self.state.pink_b[5] = -0.7616 * self.state.pink_b[5] - wt * 0.0168980;
-        let pink = self.state.pink_b[0]
-            + self.state.pink_b[1]
-            + self.state.pink_b[2]
-            + self.state.pink_b[3]
-            + self.state.pink_b[4]
-            + self.state.pink_b[5]
-            + self.state.pink_b[6]
-            + wt * 0.5362;
-        self.state.pink_b[6] = wt * 0.115926;
-        (pink * 0.11).clamp(-1.0, 1.0)
-    }
-
-    fn generate_noise_sample(&mut self, rng: &mut impl Rng, kind: NoiseType) -> f32 {
-        match kind {
-            NoiseType::White => Self::generate_white_noise(rng),
-            NoiseType::Pink => self.generate_pink_noise(rng),
-            NoiseType::Brown => self.generate_brown_noise(rng),
-        }
+    fn generate_brown_noise(&mut self, buffer: &mut Buffer) {
+        self.state.brown_filter.apply(buffer);
     }
 }
 
@@ -139,8 +120,14 @@ impl Node<ProcessContext> for NoiseGeneratorNode {
             }
 
             if self.state.playing {
-                buffer[i] = self.generate_noise_sample(&mut rng, kind);
+                buffer[i] = self.generate_white_noise(&mut rng);
             }
+        }
+
+        match kind {
+            NoiseType::White => {},
+            NoiseType::Pink => self.generate_pink_noise(&mut buffer),
+            NoiseType::Brown => self.generate_brown_noise(&mut buffer),
         }
 
         for out_buf in output.iter_mut() {
