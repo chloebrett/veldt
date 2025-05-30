@@ -32,7 +32,6 @@ use shelf_first_order::*;
 
 pub trait ApplyFilter {
     fn apply(&mut self, buffer: &mut Buffer);
-    fn update(&mut self, freq: f32, q: f32);
 }
 
 pub fn eq_filter(config: &EqConfig) -> Box<dyn ApplyFilter + Send> {
@@ -151,4 +150,19 @@ pub fn get_eq_filter_coeffs(config: &EqConfig) -> Option<BiquadCoefficients> {
             })
         }
     }
+}
+
+pub fn adjusted_eq_config_for_lfo(config: &EqConfig, lfo_state: f32) -> EqConfig {
+    let min_freq = 20.0;
+    let max_freq = 20000.0;
+
+    // Make sure the lfo_cutoff is in the range of -1.0 to 1.0
+    // This implementation of the LFO-LPF relation is based on the the ableton synth version
+    // https://learningsynths.ableton.com/en/playground
+    let new_cutoff = config.fc + lfo_state * (max_freq - min_freq); // At 1.0 the LFO should go all the way to max_freq
+    let new_cutoff = new_cutoff.clamp(min_freq, max_freq);
+
+    let mut adjusted_config = config.clone();
+    adjusted_config.fc = new_cutoff;
+    adjusted_config
 }

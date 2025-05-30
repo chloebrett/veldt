@@ -4,9 +4,9 @@ use super::pan_multipliers;
 use crate::SAMPLE_RATE;
 use crate::consts::CHANNEL_COUNT;
 use crate::envelope::EnvelopeGenerator;
-use crate::eq::{ApplyFilter, eq_filter};
+use crate::eq::{ApplyFilter, adjusted_eq_config_for_lfo, eq_filter};
 use crate::graph::{NoteEventType, ProcessContext};
-use crate::lfo::Lfo;
+use crate::lfo::LfoGenerator;
 use crate::maths::linspace;
 use crate::wave::detune_multiplier;
 use crate::wave_cache::{WaveCache, WaveKey};
@@ -39,7 +39,7 @@ struct NodeState {
 struct Voice {
     egs: [EnvelopeGenerator; 3],
     sources: Option<[StingrayWaveSource; 3]>,
-    lfos: [Lfo; 3],
+    lfos: [LfoGenerator; 3],
 }
 
 impl Default for NodeState {
@@ -53,7 +53,7 @@ impl Default for NodeState {
         let lfos: Vec<_> = config
             .lfos
             .iter()
-            .map(|lfo| Lfo::new(lfo.clone()))
+            .map(|lfo| LfoGenerator::new(lfo.clone()))
             .collect();
         Self {
             config: config.clone(),
@@ -83,19 +83,24 @@ impl NodeState {
                     // the coefficients. Keep the ring buffer as is.
                     // ApplyFilter should have an update() method that takes some kind of config
                     // object.
-                    // self.filter_left = eq_filter(&config.lpf);
-                    // self.filter_right = eq_filter(&config.lpf);
-
-                    self.filter_left
-                        .update(self.config.lpf.fc, self.config.lpf.q);
-                    self.filter_right
-                        .update(self.config.lpf.fc, self.config.lpf.q);
+                    self.filter_left = eq_filter(&config.lpf);
+                    self.filter_right = eq_filter(&config.lpf);
                 }
                 if self.config.lfos != config.lfos {
                     for (i, lfo) in self.voice.lfos.iter_mut().enumerate() {
                         lfo.set_lfo(config.lfos[i].clone());
                     }
                 }
+
+                // adjust eqconfig based on first lfo
+                let matrix_value = config
+                    .matrix
+                    .get(1 + 3, 3)
+                    .map_or(0.0, |cell_ref| (*cell_ref).into());
+                let lfo_state = matrix_value * self.voice.lfos[0].current_value;
+                let adjusted_eq_config = adjusted_eq_config_for_lfo(&config.lpf, lfo_state);
+                self.filter_left = eq_filter(&adjusted_eq_config);
+                self.filter_right = eq_filter(&adjusted_eq_config);
 
                 self.config = config.clone();
             }
@@ -152,9 +157,8 @@ impl Node<ProcessContext> for StingrayNode {
                 events.retain(|it| it.kind == NoteEventType::On);
             }
 
-            let mut lfo_values = [0.0; 3];
             for (i, lfo) in state.voice.lfos.iter_mut().enumerate() {
-                lfo_values[i] = lfo.next();
+                lfo.next();
             }
 
             for note_event in events {
@@ -209,7 +213,7 @@ impl Node<ProcessContext> for StingrayNode {
                             .get(k + 3, j)
                             .map_or(0.0, |cell_ref| (*cell_ref).into());
                         // Get the LFO value
-                        lfo_value += lfo_values[k] * matrix_value;
+                        lfo_value += state.voice.lfos[k].current_value * matrix_value;
                     }
                     lfo_value /= state.config.lfos.len() as f32;
                     lfo_value = lfo_value * 0.5 + 0.5; // Normalize to 0..1
@@ -221,41 +225,39 @@ impl Node<ProcessContext> for StingrayNode {
                     buffers[1][i] += amp * wave[1];
                 }
             }
-            
-            let min_freq = 20.0;
-            let max_freq = 20000.0;
 
-            // let lfo_cutoff_mod = lfo_values[0];
-            let mut lfo_cutoff_mod = 0.0;
+            // let min_freq = 20.0;
+            // let max_freq = 20000.0;
 
-            for (j, lfo_value) in lfo_values.iter().enumerate() {
-                // Assuming LPF column is always last in the 6x4 matrix.
-                let col = 3;
+            // // let lfo_cutoff_mod = lfo_values[0];
+            // let mut lfo_cutoff_mod = 0.0;
 
-                // Get matrix value for this LFO and oscillator
-                let matrix_value: f32 = state
-                    .config
-                    .matrix
-                    .get(j + 3, col)
-                    .map_or(0.0, |cell_ref| (*cell_ref).into());
+            // for (j, lfo_value) in lfo_values.iter().enumerate() {
+            //     // Assuming LPF column is always last in the 6x4 matrix.
+            //     let col = 3;
 
-                lfo_cutoff_mod += lfo_value * matrix_value;
-            }
-            
-            // Make sure the lfo_cutoff_mod is in the range of -1.0 to 1.0
-            // This implementation of the LFO LPF relation is based on the the ableton synth version
-            // https://learningsynths.ableton.com/en/playground
-            lfo_cutoff_mod /= lfo_values.len() as f32; 
-            let new_cutoff = state.config.lpf.fc + lfo_cutoff_mod * max_freq; // At 1.0 the LFO should go all the way to max_freq
+            //     // Get matrix value for this LFO and oscillator
+            //     let matrix_value: f32 = state
+            //         .config
+            //         .matrix
+            //         .get(j + 3, col)
+            //         .map_or(0.0, |cell_ref| (*cell_ref).into());
 
-            state.filter_left.update(
-                new_cutoff.clamp(min_freq, max_freq),
-                state.config.lpf.q,
-            );
-            state.filter_right.update(
-                new_cutoff.clamp(min_freq, max_freq),
-                state.config.lpf.q,
-            );
+            //     lfo_cutoff_mod += lfo_value * matrix_value;
+            // }
+
+            // // Make sure the lfo_cutoff_mod is in the range of -1.0 to 1.0
+            // // This implementation of the LFO LPF relation is based on the the ableton synth version
+            // // https://learningsynths.ableton.com/en/playground
+            // lfo_cutoff_mod /= lfo_values.len() as f32;
+            // let new_cutoff = state.config.lpf.fc + lfo_cutoff_mod * max_freq; // At 1.0 the LFO should go all the way to max_freq
+
+            // state
+            //     .filter_left
+            //     .update(new_cutoff.clamp(min_freq, max_freq), state.config.lpf.q);
+            // state
+            //     .filter_right
+            //     .update(new_cutoff.clamp(min_freq, max_freq), state.config.lpf.q);
         }
 
         for (channel_index, out_buf) in output.iter_mut().enumerate() {

@@ -3,13 +3,13 @@ use crate::wave::make_wave;
 use shared::model::{AntiAliasingMode, LfoConfig};
 
 #[derive(Clone, Debug)]
-pub struct Lfo {
+pub struct LfoGenerator {
     pub config: LfoConfig,
     pub sample_index: usize,
     pub current_value: f32,
 }
 
-impl Lfo {
+impl LfoGenerator {
     pub fn new(config: LfoConfig) -> Self {
         Self {
             config,
