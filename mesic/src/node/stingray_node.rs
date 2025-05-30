@@ -97,6 +97,20 @@ impl NodeState {
             if self.meta != *meta {
                 self.meta = meta.clone();
             }
+            // This LFO to LPF modulation is so scuffed
+            // Only uses the first LFO to modulate the LPF cutoff.
+            let knob_value = self
+                .config
+                .matrix
+                .get(3, 3)
+                .map_or(0.0, |cell_ref| (*cell_ref).into());
+            let lfo_state = self.voice.lfos[0].current_value * knob_value;
+            // let new_config = adjusted_eq_config_for_lfo(&self.config.lpf, lfo_state);
+            let new_config = &self.config.lpf;
+
+            // This seems to break the whole synth's sound but the general behaviour seems correct.
+            self.filter_left = eq_filter(&new_config);
+            self.filter_right = eq_filter(&new_config);
         }
     }
 }
@@ -147,7 +161,7 @@ impl Node<ProcessContext> for StingrayNode {
                 events.retain(|it| it.kind == NoteEventType::On);
             }
 
-            for (i, lfo) in state.voice.lfos.iter_mut().enumerate() {
+            for lfo in state.voice.lfos.iter_mut() {
                 lfo.next();
             }
 
@@ -218,19 +232,19 @@ impl Node<ProcessContext> for StingrayNode {
 
             // This LFO to LPF modulation is so scuffed
             // Only uses the first LFO to modulate the LPF cutoff.
-            let knob_value = state
-                            .config
-                            .matrix
-                            .get(3, 3)
-                            .map_or(0.0, |cell_ref| (*cell_ref).into());
-            let lfo_state = state.voice.lfos[0].current_value * knob_value;
+            // let knob_value = state
+            //     .config
+            //     .matrix
+            //     .get(3, 3)
+            //     .map_or(0.0, |cell_ref| (*cell_ref).into());
+            // let lfo_state = state.voice.lfos[0].current_value * knob_value;
             // let new_config = adjusted_eq_config_for_lfo(&state.config.lpf, lfo_state);
-            let new_config = &state.config.lpf;
+            // let new_config = &state.config.lpf;
 
             // I don't know if this implementation is correct, but it seems to work.
             // This seems to break the whole LPF Stuff but the general behaviour seems correct.
-            state.filter_left = eq_filter(&new_config);
-            state.filter_right = eq_filter(&new_config);
+            // state.filter_left = eq_filter(&new_config);
+            // state.filter_right = eq_filter(&new_config);
         }
 
         for (channel_index, out_buf) in output.iter_mut().enumerate() {
