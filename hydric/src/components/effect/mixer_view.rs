@@ -8,7 +8,7 @@ use crate::widget::StateWindow;
 use crate::widget::int_slider;
 use crate::widget::{default_window, knob};
 use crate::window_state::WindowKind;
-use crate::window_state::WindowState2;
+use crate::window_state::WindowState;
 use egui::CornerRadius;
 use egui::Shape;
 use egui::{Button, Color32, Frame, InnerResponse, Layout, Response, Stroke, Ui, Widget};
@@ -21,7 +21,7 @@ use state::{
 use strum::IntoEnumIterator;
 
 pub struct MixerView<'a> {
-    window_state: &'a WindowState2,
+    window_state: &'a WindowState,
     store: &'a Store,
     local_state: &'a LocalState,
     player: &'a AudioPlayer,
@@ -29,7 +29,7 @@ pub struct MixerView<'a> {
 
 impl<'a> MixerView<'a> {
     pub fn new(
-        window_state: &'a WindowState2,
+        window_state: &'a WindowState,
         store: &'a Store,
         local_state: &'a LocalState,
         player: &'a AudioPlayer,
@@ -66,12 +66,12 @@ impl View for MixerView<'_> {
         // Keep track of an object being dragged.
         let mut from_to = None;
 
-        let window = StateWindow(
+        StateWindow(
             default_window("Mixer")
                 .id("mixer".into())
                 .default_pos(window_state.get_pos(WindowKind::Mixer)),
-        );
-        window.show_with_closure(
+        )
+        .show_with_closure(
             ui,
             window_state.get_visible(WindowKind::Mixer),
             |_| window_state.set_visible(WindowKind::Mixer, false),
@@ -147,7 +147,7 @@ impl View for MixerView<'_> {
                                     // TODO Determine if this is the best way to do this.
                                     // There seems to be no way to render an object once then pass the
                                     // response into the `dnd_drag_zone` if `edit_state` is true.
-                                    let mut render_effect_widget = |ui: &mut Ui| {
+                                    let render_effect_widget = |ui: &mut Ui| {
                                         ui.add_enabled(
                                             !edit_state,
                                             EffectWidget::new(
@@ -165,7 +165,7 @@ impl View for MixerView<'_> {
                                             .dnd_drag_source(
                                                 id,
                                                 EffectLocation::Index(effect_index),
-                                                &mut render_effect_widget,
+                                                render_effect_widget,
                                             )
                                             .response;
                                         // Update `from_to` if an object has been dragged and
@@ -248,7 +248,7 @@ impl View for MixerView<'_> {
 /// Being a widget that returns a `Response` makes it easier to drag and drop.
 struct EffectWidget<'a, F: Fn(Action), G: Fn()> {
     effect: &'a EffectInstance,
-    window_state: &'a WindowState2,
+    window_state: &'a WindowState,
     effect_sel: EffectSelector,
     dispatch: F,
     on_release: G,
@@ -258,7 +258,7 @@ impl<'a, F: Fn(Action), G: Fn()> EffectWidget<'a, F, G> {
     fn new(
         effect: &'a EffectInstance,
         effect_sel: EffectSelector,
-        window_state: &'a WindowState2,
+        window_state: &'a WindowState,
         dispatch: F,
         on_release: G,
     ) -> Self {

@@ -4,41 +4,40 @@ use super::stingray::StingrayView;
 use crate::view::View;
 use crate::widget::StateWindow;
 use crate::widget::default_window;
+use crate::window_state::WindowKind;
+use crate::window_state::WindowState;
 use crate::{LocalState, playback::AudioPlayer};
 use egui::{Pos2, Ui};
 use shared::model::{Generator, GeneratorInstance};
 use state::{Action, GeneratorSelector, Store};
 
-pub struct GeneratorView<'a, F: FnMut()> {
+pub struct GeneratorView<'a> {
     store: &'a Store,
+    window_state: &'a WindowState,
     selector: &'a GeneratorSelector,
     local_state: &'a LocalState,
     player: &'a mut AudioPlayer,
-    visible: bool,
-    on_close: F,
 }
 
-impl<'a, F: FnMut()> GeneratorView<'a, F> {
+impl<'a> GeneratorView<'a> {
     pub fn new(
         store: &'a Store,
+        window_state: &'a WindowState,
         selector: &'a GeneratorSelector,
         local_state: &'a LocalState,
         player: &'a mut AudioPlayer,
-        visible: bool,
-        on_close: F,
     ) -> Self {
         Self {
             store,
+            window_state,
             selector,
             local_state,
             player,
-            visible,
-            on_close,
         }
     }
 }
 
-impl<F: FnMut()> View for GeneratorView<'_, F> {
+impl View for GeneratorView<'_> {
     fn ui(&mut self, ui: &mut Ui) {
         let instance = &self.store.select(self.selector);
 
@@ -46,8 +45,12 @@ impl<F: FnMut()> View for GeneratorView<'_, F> {
         StateWindow(default_window(title).default_pos(Pos2 { x: 1100.0, y: 20.0 }))
             .show_with_closure(
                 ui,
-                self.visible,
-                |_| (self.on_close)(),
+                self.window_state
+                    .get_visible(WindowKind::Generator(*self.selector)),
+                |_| {
+                    self.window_state
+                        .set_visible(WindowKind::Generator(*self.selector), false)
+                },
                 |ui| {
                     let generator = instance.it.clone();
                     let dispatch = |action| self.store.dispatch(self.selector, action);
