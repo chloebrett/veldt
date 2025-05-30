@@ -21,7 +21,7 @@ pub struct SampleTreeView<'a> {
 }
 
 impl<'a> SampleTreeView<'a> {
-    pub fn new(store: &'a Store, async_state: &'a mut AsyncState, visible: &'a mut bool) -> Self {
+    pub fn new(store: &'a Store, async_state: &'a mut AsyncState, window_state: &'a WindowState, player: &'a mut AudioPlayer, local_state: &'a LocalState,) -> Self {
         SampleTreeView {
             store,
             async_state,
