@@ -1,9 +1,9 @@
 use egui::Pos2;
 use shared::model::Sample;
 use state::{MixerSelector, TrackSelector};
+use std::borrow as std_borrow;
 use std::cell::RefCell;
-use std::{borrow as std_borrow};
-use std::collections::{HashSet, HashMap};
+use std::collections::{HashMap, HashSet};
 use std::rc::Rc;
 
 type RcOption<T> = Rc<RefCell<Option<T>>>;
@@ -87,7 +87,6 @@ where
         K: std_borrow::Borrow<Q>,
         Q: Eq + std::hash::Hash;
 }
-
 
 impl<K, V> HashMapOperations<K, V> for Rc<RefCell<HashMap<K, V>>>
 where
