@@ -10,8 +10,8 @@ use crate::wave_cache::{WaveCache, WaveKey};
 use dasp_frame::Stereo;
 use dasp_graph::{Buffer, Input, Node};
 use shared::model::{
-    AntiAliasingMode, Generator, GeneratorInstance, GeneratorMeta, Oscillator,
-    PitchName, StingrayConfig,
+    AntiAliasingMode, Generator, GeneratorInstance, GeneratorMeta, Oscillator, PitchName,
+    StingrayConfig,
 };
 use shared::types::{Freq, KnobPosition, Volume};
 use state::GeneratorSelector;
