@@ -1,7 +1,6 @@
 use std::vec;
 
 use super::pan_multipliers;
-use crate::SAMPLE_RATE;
 use crate::consts::CHANNEL_COUNT;
 use crate::envelope::EnvelopeGenerator;
 use crate::eq::{ApplyFilter, adjusted_eq_config_for_lfo, eq_filter};
@@ -10,11 +9,12 @@ use crate::lfo::LfoGenerator;
 use crate::maths::linspace;
 use crate::wave::detune_multiplier;
 use crate::wave_cache::{WaveCache, WaveKey};
+use crate::{SAMPLE_RATE, eq};
 use dasp_frame::Stereo;
 use dasp_graph::{Buffer, Input, Node};
 use log::info;
 use shared::model::{
-    AntiAliasingMode, Generator, GeneratorInstance, GeneratorMeta, Oscillator, PitchName,
+    AntiAliasingMode, EqConfig, Generator, GeneratorInstance, GeneratorMeta, Oscillator, PitchName,
     StingrayConfig,
 };
 use shared::types::{Freq, KnobPosition, Volume};
@@ -78,29 +78,19 @@ impl NodeState {
         } = &payload.store.select(&selector)
         {
             if self.config != *config {
-                if self.config.lpf != config.lpf {
-                    // TODO: don't re-create the whole filter, just update
-                    // the coefficients. Keep the ring buffer as is.
-                    // ApplyFilter should have an update() method that takes some kind of config
-                    // object.
-                    self.filter_left = eq_filter(&config.lpf);
-                    self.filter_right = eq_filter(&config.lpf);
-                }
+                // if self.config.lpf != config.lpf {
+                //     // TODO: don't re-create the whole filter, just update
+                //     // the coefficients. Keep the ring buffer as is.
+                //     // ApplyFilter should have an update() method that takes some kind of config
+                //     // object.
+                //     self.filter_left = eq_filter(&config.lpf);
+                //     self.filter_right = eq_filter(&config.lpf);
+                // }
                 if self.config.lfos != config.lfos {
                     for (i, lfo) in self.voice.lfos.iter_mut().enumerate() {
                         lfo.set_lfo(config.lfos[i].clone());
                     }
                 }
-
-                // adjust eqconfig based on first lfo
-                let matrix_value = config
-                    .matrix
-                    .get(1 + 3, 3)
-                    .map_or(0.0, |cell_ref| (*cell_ref).into());
-                let lfo_state = matrix_value * self.voice.lfos[0].current_value;
-                let adjusted_eq_config = adjusted_eq_config_for_lfo(&config.lpf, lfo_state);
-                self.filter_left = eq_filter(&adjusted_eq_config);
-                self.filter_right = eq_filter(&adjusted_eq_config);
 
                 self.config = config.clone();
             }
@@ -207,7 +197,7 @@ impl Node<ProcessContext> for StingrayNode {
                     // Access the column for this oscillator in the matrix
                     for k in 0..state.config.lfos.len() {
                         // Get matrix value for this oscillator and LFO
-                        let matrix_value: f32 = state
+                        let matrix_value = state
                             .config
                             .matrix
                             .get(k + 3, j)
@@ -226,38 +216,21 @@ impl Node<ProcessContext> for StingrayNode {
                 }
             }
 
-            // let min_freq = 20.0;
-            // let max_freq = 20000.0;
+            // This LFO to LPF modulation is so scuffed
+            // Only uses the first LFO to modulate the LPF cutoff.
+            let knob_value = state
+                            .config
+                            .matrix
+                            .get(3, 3)
+                            .map_or(0.0, |cell_ref| (*cell_ref).into());
+            let lfo_state = state.voice.lfos[0].current_value * knob_value;
+            // let new_config = adjusted_eq_config_for_lfo(&state.config.lpf, lfo_state);
+            let new_config = &state.config.lpf;
 
-            // // let lfo_cutoff_mod = lfo_values[0];
-            // let mut lfo_cutoff_mod = 0.0;
-
-            // for (j, lfo_value) in lfo_values.iter().enumerate() {
-            //     // Assuming LPF column is always last in the 6x4 matrix.
-            //     let col = 3;
-
-            //     // Get matrix value for this LFO and oscillator
-            //     let matrix_value: f32 = state
-            //         .config
-            //         .matrix
-            //         .get(j + 3, col)
-            //         .map_or(0.0, |cell_ref| (*cell_ref).into());
-
-            //     lfo_cutoff_mod += lfo_value * matrix_value;
-            // }
-
-            // // Make sure the lfo_cutoff_mod is in the range of -1.0 to 1.0
-            // // This implementation of the LFO LPF relation is based on the the ableton synth version
-            // // https://learningsynths.ableton.com/en/playground
-            // lfo_cutoff_mod /= lfo_values.len() as f32;
-            // let new_cutoff = state.config.lpf.fc + lfo_cutoff_mod * max_freq; // At 1.0 the LFO should go all the way to max_freq
-
-            // state
-            //     .filter_left
-            //     .update(new_cutoff.clamp(min_freq, max_freq), state.config.lpf.q);
-            // state
-            //     .filter_right
-            //     .update(new_cutoff.clamp(min_freq, max_freq), state.config.lpf.q);
+            // I don't know if this implementation is correct, but it seems to work.
+            // This seems to break the whole LPF Stuff but the general behaviour seems correct.
+            state.filter_left = eq_filter(&new_config);
+            state.filter_right = eq_filter(&new_config);
         }
 
         for (channel_index, out_buf) in output.iter_mut().enumerate() {
@@ -270,6 +243,15 @@ impl Node<ProcessContext> for StingrayNode {
         self.state.filter_right.apply(&mut output[1]);
     }
 }
+
+// fn apply_mod(buffer: &mut Buffer, mod_buffer: &Buffer, eq_config: &EqConfig) {
+//     for (cur_input, mod_value) in buffer.iter_mut().zip(mod_buffer.iter()) {
+//         let adjusted_config = adjusted_eq_config_for_lfo(eq_config, mod_value);
+//         let mut filter = eq_filter(&adjusted_config);
+//         // Apply the modulation value to the current input sample.
+//         *cur_input *= *mod_value;
+//     }
+// }
 
 #[derive(Debug)]
 pub struct StingrayWaveSource {
