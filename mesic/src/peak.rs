@@ -106,7 +106,6 @@ impl StereoPeakDetector {
 
 #[cfg(test)]
 mod test {
-
     use super::PeakDetector;
 
     #[test]

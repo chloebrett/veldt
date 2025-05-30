@@ -2,12 +2,15 @@ use crate::view::View;
 use crate::widget::{StateWindow, default_window, get_set, int_slider, selectable_value, slider};
 use crate::{GetSet, LocalState};
 use egui::{Ui, pos2};
+use mesic::samples_to_beats;
 use ordered_float::OrderedFloat;
 use shared::model::{Placement, PlacementType, SamplePlacement, Track, TrackPlacement};
 use shared::types::Beats;
 use state::{
-    Action, FloatField, IndexField, PlacementSelector, Store, TrackSelector, TypeField, UintField,
+    Action, FloatField, IndexField, PlacementSelector, SampleSelector, Store, TrackSelector,
+    TypeField, UintField,
 };
+use std::cmp::max;
 
 pub struct PlacementView<'a> {
     store: &'a Store,
@@ -58,34 +61,17 @@ impl<'a> PlacementView<'a> {
 
         let track_sel = TrackSelector(track_placement.track_index);
         let track: &Track = store.select(&track_sel);
-        let max_note_length = *(track.unclipped_duration());
+        let max_duration = *(track.unclipped_duration());
         let duration = *placement
             .clipped_duration
-            .unwrap_or(OrderedFloat(max_note_length)) as f64;
-        ui.horizontal(|ui| {
-            slider(
-                ui,
-                "Clipped duration",
-                duration,
-                |it| {
-                    store.dispatch(sel, {
-                        let clipped_duration = if it < max_note_length as f64 {
-                            Some(it as Beats)
-                        } else {
-                            None
-                        };
-                        Action::SetChild(TypeField::ClippedDuration(clipped_duration))
-                    })
-                },
-                0.0..=max_note_length as f64,
-                on_release,
-            );
-        });
+            .unwrap_or(OrderedFloat(max_duration));
+        Self::duration_ui(ui, sel, duration, max_duration, store);
     }
 
     fn sample_placement_ui(
         ui: &mut Ui,
         placement_index: usize,
+        placement: &Placement,
         sample_placement: &SamplePlacement,
         sel: &PlacementSelector,
         store: &Store,
@@ -106,6 +92,50 @@ impl<'a> PlacementView<'a> {
                     );
                 }
             });
+
+        let sample_sel = SampleSelector(sample_placement.sample_index);
+        let Some(sample) = store.try_select(&sample_sel) else {
+            ui.label("No samples loaded yet.");
+            return;
+        };
+        let max_duration = samples_to_beats(
+            max(sample.left.len(), sample.right.len()),
+            store.get().project.bpm,
+        );
+        let duration = *placement
+            .clipped_duration
+            .unwrap_or(OrderedFloat(max_duration));
+        Self::duration_ui(ui, sel, duration, max_duration, store);
+    }
+
+    fn duration_ui(
+        ui: &mut Ui,
+        sel: &PlacementSelector,
+        duration: f32,
+        max_duration: f32,
+        store: &Store,
+    ) {
+        let on_release = || store.dispatchr(Action::Release);
+
+        ui.horizontal(|ui| {
+            slider(
+                ui,
+                "Clipped duration",
+                duration as f64,
+                |it| {
+                    store.dispatch(sel, {
+                        let clipped_duration = if it < max_duration as f64 {
+                            Some(it as Beats)
+                        } else {
+                            None
+                        };
+                        Action::SetChild(TypeField::ClippedDuration(clipped_duration))
+                    })
+                },
+                0.0..=max_duration as f64,
+                on_release,
+            );
+        });
     }
 }
 
@@ -147,6 +177,7 @@ impl View for PlacementView<'_> {
                         Self::sample_placement_ui(
                             ui,
                             placement_index,
+                            placement,
                             sample_placement,
                             &sel,
                             store,

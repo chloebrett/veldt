@@ -70,12 +70,14 @@ pub struct AudioPlayer {
 
     // Delay from the audio playback end.
     // Needs to be a mutex because it's written from a static JS callback (the data callback
-    // for the AudioContext).
+    // for the AudioContext). Can't be an Rc<RefCell<...>> because CPAL expects all captured
+    // arguments to be Send.
     output_delay: Arc<Mutex<usize>>,
 
     // Root Mean Square of most recent window in audio.
     // Read with `level()`
-    rms: dasp_rms::Rms<Stereo<f32>, [Stereo<f32>; RMS_BUFFER_SAMPLES]>,
+    // Uses f64 because without it, the RMS glitches below -50dB or so.
+    rms: dasp_rms::Rms<Stereo<f64>, [Stereo<f64>; RMS_BUFFER_SAMPLES]>,
 
     // Peak audio from recent window.
     peak: StereoPeakDetector,
@@ -86,11 +88,13 @@ impl AudioPlayer {
         // This channel only ever contains zero or one messages. Each message contains BUFFER_SIZE samples.
         let (audio_tx, audio_rx) = crossbeam_channel::bounded(1);
 
+        // RMS tracking uses a dasp ring buffer.
+        let rms_buffer = dasp_ring_buffer::Fixed::from([[0.0; 2]; RMS_BUFFER_SAMPLES]);
+
         // Other channels are used for message passing and are unbounded.
         let (playback_tx, playback_rx) = crossbeam_channel::unbounded();
         let (update_tx, update_rx) = crossbeam_channel::unbounded();
         let (recent_tx, recent_rx) = crossbeam_channel::unbounded();
-        let rms_buffer = dasp_ring_buffer::Fixed::from([[0f32; 2]; RMS_BUFFER_SAMPLES]);
 
         Self {
             graph: Some(graph),
@@ -212,8 +216,8 @@ impl AudioPlayer {
         }
 
         while let Ok(update) = self.recent_rx.try_recv() {
-            let next = self.rms.next(update);
-            self.peak.next(next);
+            let next = self.rms.next([update[0] as f64, update[1] as f64]);
+            self.peak.next([next[0] as f32, next[1] as f32]);
             self.recent_buf.push(update);
             self.recent_buf_offset += 1;
         }
@@ -335,9 +339,8 @@ impl AudioPlayer {
     }
 
     pub fn level(&self) -> [f32; 2] {
-        log::debug!("{:?}", self.rms.current());
         let [left, right] = self.rms.current();
-        [to_db(left), to_db(right)]
+        [to_db(left as f32), to_db(right as f32)]
     }
 
     pub fn peak(&self) -> [f32; 2] {
