@@ -301,6 +301,9 @@ impl Node<ProcessContext> for StingrayNode {
                 }
             }
 
+            let mut adjusted_config = apply_env_lpf(state);
+            let adjusted_filter = eq_filter(&adjusted_config);
+
             if let Some(sources) = &mut state.voice.sources {
                 for (eg, source) in state.voice.egs.iter_mut().zip(sources.iter_mut()) {
                     let amp = eg.next().unwrap_or(0.0);
@@ -310,7 +313,7 @@ impl Node<ProcessContext> for StingrayNode {
                     buffers[1][i] += amp * wave[1];
                 }
             }
-        }
+        };
 
         for (channel_index, out_buf) in output.iter_mut().enumerate() {
             out_buf.copy_from_slice(&buffers[channel_index]);
