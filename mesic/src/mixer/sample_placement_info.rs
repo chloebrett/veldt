@@ -1,5 +1,4 @@
-use super::make_node;
-use crate::graph::Graph;
+use super::{GraphManager, NodeLabel, make_node};
 use crate::node::SampleNode;
 use petgraph::stable_graph::NodeIndex;
 use state::PlacementSelector;
@@ -12,8 +11,8 @@ pub struct SamplePlacementInfo {
 }
 
 impl SamplePlacementInfo {
-    pub fn new(graph: &mut Graph, selector: PlacementSelector) -> Self {
-        let node = graph.add_node(make_node(SampleNode::new(selector)));
+    pub fn new(graph_manager: &mut GraphManager, selector: PlacementSelector) -> Self {
+        let node = graph_manager.add_node(make_node(SampleNode::new(selector)), NodeLabel::Sample);
 
         Self { node }
     }

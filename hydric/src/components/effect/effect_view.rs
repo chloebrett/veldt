@@ -2,13 +2,13 @@ use super::{CompressorView, DelayView, EqView, ModDelayView};
 use crate::WindowState;
 use crate::view::View;
 use crate::widget::{StateWindow, default_window};
+use crate::window_state::WindowKind;
 use egui::{Pos2, Ui};
 use shared::model::Effect;
 use state::{Action, EffectSelector, Store};
 
 pub struct EffectView<'a, F: Fn(Action), G: Fn()> {
-    visible: bool,
-    on_close: Box<dyn FnMut() + 'a>,
+    window_state: &'a WindowState,
     effect: &'a Effect,
     selector: EffectSelector,
     dispatch: F,
@@ -19,18 +19,15 @@ impl<'a, F: Fn(Action), G: Fn()> EffectView<'a, F, G> {
     pub fn new(
         store: &'a Store,
         selector: &'a EffectSelector,
-        window_state: &'a mut WindowState,
+        window_state: &'a WindowState,
         dispatch: F,
         on_release: G,
     ) -> Option<Self> {
         let effect = store.try_select(selector)?;
         let effect: &'a Effect = &effect.it;
-        let visible = window_state.effects.get(*selector);
-        let on_close = Box::new(move || window_state.effects.set(*selector, false));
 
         Some(Self {
-            visible,
-            on_close,
+            window_state,
             effect,
             selector: *selector,
             dispatch,
@@ -42,9 +39,8 @@ impl<'a, F: Fn(Action), G: Fn()> EffectView<'a, F, G> {
 impl<F: Fn(Action), G: Fn()> View for EffectView<'_, F, G> {
     fn ui(&mut self, ui: &mut Ui) {
         let Self {
-            visible,
-            on_close,
             effect,
+            window_state,
             ..
         } = self;
         let dispatch = &self.dispatch;
@@ -62,8 +58,8 @@ impl<F: Fn(Action), G: Fn()> View for EffectView<'_, F, G> {
         )
         .show_with_closure(
             ui,
-            *visible,
-            |_| on_close(),
+            window_state.get_visible(WindowKind::Effect(self.selector)),
+            |_| window_state.set_visible(WindowKind::Effect(self.selector), false),
             |ui| {
                 match effect {
                     Effect::SimpleEq(config) => EqView::new(config, dispatch, on_release).ui(ui),
