@@ -34,21 +34,22 @@ impl<F: Fn(Action), G: FnMut()> View for SaveAs<'_, F, G> {
             dispatch,
             on_click,
         } = self;
-        StateWindow(
-            default_window(name)
-                .default_pos(local_state.window_state.get_pos(WindowKind::Save))
-                .resizable(false),
-        )
-        .show(ui, &local_state.window_state, WindowKind::Save, |ui| {
-            let mut temp_name = name.clone();
-            let response = ui.text_edit_singleline(&mut temp_name);
-            if response.changed() {
-                dispatch(Action::SetChild(TypeField::ProjectName(temp_name)));
-            }
+        StateWindow::show_from_window_state(
+            ui,
+            &local_state.window_state,
+            WindowKind::Save,
+            name,
+            |ui| {
+                let mut temp_name = name.clone();
+                let response = ui.text_edit_singleline(&mut temp_name);
+                if response.changed() {
+                    dispatch(Action::SetChild(TypeField::ProjectName(temp_name)));
+                }
 
-            if ui.button("Save").clicked() {
-                on_click()
-            }
-        });
+                if ui.button("Save").clicked() {
+                    on_click()
+                }
+            },
+        );
     }
 }

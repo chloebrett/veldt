@@ -5,8 +5,8 @@ use super::{
     menu::MenuBar,
     play::{MicrophoneView, SampleTreeView, ToolbarView},
 };
-use crate::playback::Microphone;
 use crate::components::FrameHistory;
+use crate::playback::Microphone;
 use crate::rpc::broadcast_actions;
 use crate::rpc::load_project_list;
 use crate::view::View;

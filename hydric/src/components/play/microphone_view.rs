@@ -21,16 +21,7 @@ impl<'a> MicrophoneView<'a> {
 
 impl View for MicrophoneView<'_> {
     fn ui(&mut self, ui: &mut Ui) {
-        StateWindow(
-            default_window("Microphone")
-                .resizable(true)
-                .default_pos(self.local_state.window_state.get_pos(WindowKind::Microphone)),
-        )
-        .show_with_closure(
-            ui,
-            self.local_state.window_state.get_visible(WindowKind::Microphone),
-            |_| self.local_state.window_state.set_visible(WindowKind::Microphone, false),
-            |ui| {
+        StateWindow::show_from_window_state(ui, &self.local_state.window_state, WindowKind::Microphone, "Microphone", |ui| {
                 if ui.button("Permissions").clicked() {
                     let _ = self.mic.get_permissions();
                 }

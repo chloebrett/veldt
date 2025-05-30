@@ -14,7 +14,25 @@ pub fn default_window(title: &str) -> Window {
 /// window using arbitrary data.
 pub struct StateWindow<'a>(pub Window<'a>);
 
-impl StateWindow<'_> {
+impl<'a> StateWindow<'a> {
+    /// Configures and shows a window from `WindowState` and `WindowKind`.
+    // TODO: Move title onto `WindowState`.
+    pub fn show_from_window_state<R>(
+        ui: &mut Ui,
+        window_state: &WindowState,
+        window_kind: WindowKind,
+        title: &'a str,
+        add_contents: impl FnOnce(&mut Ui) -> R,
+    ) -> Option<InnerResponse<Option<R>>> {
+        Self(default_window(title).default_pos(window_state.get_pos(window_kind)))
+            .show_with_closure(
+                ui,
+                window_state.get_visible(window_kind),
+                move |_| window_state.set_visible(window_kind, false),
+                add_contents,
+            )
+    }
+
     /// Shows a window that calls a closure when it is closed.
     pub fn show_with_closure<R>(
         self,
@@ -28,23 +46,6 @@ impl StateWindow<'_> {
         let response = window.open(&mut open).show(ui.ctx(), add_contents);
         if open != show {
             on_close(ui);
-        }
-        response
-    }
-
-    /// Shows a window that calls a closure when it is closed.
-    pub fn show<R>(
-        self,
-        ui: &mut Ui,
-        window_state: &WindowState,
-        window_kind: WindowKind,
-        add_contents: impl FnOnce(&mut Ui) -> R,
-    ) -> Option<InnerResponse<Option<R>>> {
-        let StateWindow(window) = self;
-        let mut open = window_state.get_visible(window_kind);
-        let response = window.open(&mut open).show(ui.ctx(), add_contents);
-        if open != window_state.get_visible(window_kind) {
-            window_state.set_visible(window_kind, open);
         }
         response
     }

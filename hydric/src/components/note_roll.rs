@@ -123,19 +123,11 @@ impl View for NoteRoll<'_> {
             local_state.selected_notes.set(HashSet::default());
         }
         let title = format!("Track {}", track_sel.0);
-        let window = StateWindow(
-            default_window(&title)
-                .default_pos(Pos2 { x: 600.0, y: 20.0 })
-                .resizable(true),
-        );
-        window.show_with_closure(
+        StateWindow::show_from_window_state(
             ui,
-            local_state.window_state.get_visible(WindowKind::NoteRoll),
-            |_| {
-                local_state
-                    .window_state
-                    .set_visible(WindowKind::NoteRoll, false)
-            },
+            &local_state.window_state,
+            WindowKind::NoteRoll,
+            &title,
             |ui| {
                 ui.horizontal(|ui| {
                     if ui.button("New note").clicked() {

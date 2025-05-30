@@ -38,10 +38,11 @@ impl View for GeneratorView<'_> {
         let instance = &self.store.select(self.selector);
 
         let title = generator_name(instance);
-        StateWindow(default_window(title).default_pos(Pos2 { x: 1100.0, y: 20.0 })).show(
+        StateWindow::show_from_window_state(
             ui,
             &self.local_state.window_state,
             WindowKind::Generator(*self.selector),
+            title,
             |ui| {
                 let generator = instance.it.clone();
                 let dispatch = |action| self.store.dispatch(self.selector, action);

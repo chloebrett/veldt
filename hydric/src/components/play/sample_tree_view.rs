@@ -62,24 +62,8 @@ fn add_node(
 
 impl View for SampleTreeView<'_> {
     fn ui(&mut self, ui: &mut Ui) {
-        StateWindow(
-            default_window("Samples")
-                .resizable(true)
-                .default_pos(Pos2 { x: 600.0, y: 20.0 }),
-        )
-        .show_with_closure(
-            ui,
-            self.local_state
-                .window_state
-                .get_visible(WindowKind::SampleTree),
-            |_| {
-                self.local_state
-                    .window_state
-                    .set_visible(WindowKind::SampleTree, false)
-            },
-            |ui| {
+        StateWindow::show_from_window_state(ui, &self.local_state.window_state, WindowKind::SampleTree, "Samples", |ui| {
                 let config = &self.store.get().sample_tree_config;
-
                 let mut search = config.search.clone();
                 let response = ui.text_edit_singleline(&mut search);
                 if response.changed() {

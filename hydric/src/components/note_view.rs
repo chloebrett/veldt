@@ -32,15 +32,11 @@ impl View for NoteView<'_> {
         let on_release = || store.dispatchr(Action::Release);
         let sel = track_sel.downcast_note(note_index);
         let note = &store.select(&sel);
-        let window = StateWindow(default_window("Notes").default_pos(pos2(600.0, 20.0)));
-        window.show_with_closure(
+        StateWindow::show_from_window_state(
             ui,
-            local_state.window_state.get_visible(WindowKind::Note),
-            |_| {
-                local_state
-                    .window_state
-                    .set_visible(WindowKind::Note, false)
-            },
+            &local_state.window_state,
+            WindowKind::Note,
+            "Notes",
             |ui| {
                 egui::ComboBox::from_id_salt(format!("note_{note_index}"))
                     .selected_text(note.note.pitch_name.scale_value.to_string())
