@@ -1,5 +1,5 @@
 use crate::consts::{MS_PER_SECOND, SAMPLE_RATE};
-use shared::model::AdsrEnvelope;
+use shared::model::{AdsrEnvelope, ModMatrix};
 
 #[derive(Debug, Clone)]
 enum EnvelopeState {
@@ -97,6 +97,39 @@ impl EnvelopeGenerator {
     pub fn peek(&self) -> f32 {
         self.last_output
     }
+
+    pub fn add_envelopes(
+        &mut self,
+        osc_index: usize,
+        envelopes: &[AdsrEnvelope],
+        matrix: &ModMatrix,
+    ) -> AdsrEnvelope {
+        let mut new_env = AdsrEnvelope {
+            attack: 0.0,
+            decay: 0.0,
+            sustain: 0.0,
+            release: 0.0,
+        };
+
+        for (j, env) in envelopes.iter().enumerate() {
+            let weight = matrix.get(j, osc_index)
+                    .map_or(0.0, |c| (*c).into());
+
+            if weight != 0.0 {
+                new_env.attack += weight * env.attack;
+                new_env.decay += weight * env.decay;
+                new_env.sustain += weight * env.sustain;
+                new_env.release += weight * env.release;
+            }
+        }
+
+        new_env.attack = new_env.attack.clamp(0.0, 1000.0);
+        new_env.decay = new_env.decay.clamp(0.0, 1000.0);
+        new_env.sustain = new_env.sustain.clamp(0.0, 1.0);
+        new_env.release = new_env.release.clamp(0.0, 1000.0);
+
+        new_env
+    }
 }
 
 const SHUTDOWN_MS: f32 = 1.0;
@@ -125,6 +158,8 @@ impl Iterator for EnvelopeGenerator {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use shared::model::{EqConfig, ModMatrix};
+    use state::StoreData;
 
     const FLOAT_THRES: f32 = 1e-6;
 
@@ -198,5 +233,59 @@ mod tests {
                 panic!("Floats {a}, {b} differed at index {i}");
             }
         }
+    }
+
+    #[test]
+    fn test_additive_envelope() {
+        let envelopes = vec![
+            AdsrEnvelope {
+                attack: 1000.0,
+                decay: 200.0,
+                sustain: 1.0,
+                release: 1000.0,
+            },
+            AdsrEnvelope {
+                attack: 0.0,
+                decay: 1000.0,
+                sustain: 0.5,
+                release: 0.0,
+            },
+        ];
+
+        let mut eg = EnvelopeGenerator {
+            state: EnvelopeState::Attack,
+            config: AdsrEnvelope {
+                attack: 0.0,
+                decay: 0.0,
+                sustain: 0.0,
+                release: 0.0,
+            },
+            last_output: 0.0,
+            attack_per_sample: 0.0,
+            decay_per_sample: 0.0,
+            release_per_sample: 0.0,
+        };
+
+        let a = 0.7;
+        let b = 0.3;
+
+        let mut mod_matrix = ModMatrix::new(6, 4);
+        mod_matrix.get_mut(0, 0).unwrap().set(a);
+        mod_matrix.get_mut(1, 0).unwrap().set(b);
+
+        let result = eg.add_envelopes(0, &envelopes, &mod_matrix);
+
+        let expected_attack =
+            (a * envelopes[0].attack + b * envelopes[1].attack).clamp(0.0, 1000.0);
+        let expected_decay = (a * envelopes[0].decay + b * envelopes[1].decay).clamp(0.0, 1000.0);
+        let expected_sustain =
+            (a * envelopes[0].sustain + b * envelopes[1].sustain).clamp(0.0, 1.0);
+        let expected_release =
+            (a * envelopes[0].release + b * envelopes[1].release).clamp(0.0, 1000.0);
+
+        assert!((result.attack - expected_attack).abs() < 1e-6);
+        assert!((result.decay - expected_decay).abs() < 1e-6);
+        assert!((result.sustain - expected_sustain).abs() < 1e-6);
+        assert!((result.release - expected_release).abs() < 1e-6);
     }
 }

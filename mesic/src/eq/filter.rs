@@ -74,6 +74,11 @@ impl ApplyFilter for FirstOrderFilter {
             apply_mix(xn, yn, *xn, &self.mix);
         }
     }
+
+    fn apply_sample(&mut self, x: &mut f32) -> f32 {
+        // Not in use currently
+        *x
+    }
 }
 
 /// A filter which looks at:
@@ -145,6 +150,25 @@ impl ApplyFilter for SecondOrderFilter {
 
             apply_mix(xn, yn, *xn, &self.mix);
         }
+    }
+
+    fn apply_sample(&mut self, x: &mut f32) -> f32 {
+        let SecondOrderFilterConfig { a0, a1, a2, b1, b2 } = self.config;
+
+        let xn2 = self.x_buffer.dequeue().unwrap();
+        let xn1 = *self.x_buffer.front().unwrap();
+
+        let yn2 = self.y_buffer.dequeue().unwrap();
+        let yn1 = *self.y_buffer.front().unwrap();
+
+        let yn = a0 * *x + a1 * xn1 + a2 * xn2 - b1 * yn1 - b2 * yn2;
+
+        self.x_buffer.push(*x);
+        self.y_buffer.push(yn);
+
+        apply_mix(x, yn, *x, &self.mix);
+
+        yn
     }
 }
 
