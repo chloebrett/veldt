@@ -46,9 +46,8 @@ fn wav_dir_path(file_type: AudioFileType) -> PathBuf {
     dir_path
 }
 
-fn float_to_u16(sample: f32) -> u16 {
-    let i16_sample = (sample.clamp(-1.0, 1.0) * i16::MAX as f32) as i16;
-    i16_sample as u16 ^ 0x8000 // Flip sign bit.
+fn float_to_i16(sample: f32) -> i16 {
+    (sample.clamp(-1.0, 1.0) * i16::MAX as f32) as i16
 }
 
 #[async_trait]
@@ -168,8 +167,8 @@ impl Export for ExportContext {
         let mut right_channel = Vec::new();
 
         for frame in graph {
-            left_channel.push(float_to_u16(frame[0]));
-            right_channel.push(float_to_u16(frame[1]));
+            left_channel.push(float_to_i16(frame[0]));
+            right_channel.push(float_to_i16(frame[1]));
         }
 
         let input = DualPcm {
