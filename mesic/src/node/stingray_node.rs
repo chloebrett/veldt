@@ -11,7 +11,7 @@ use crate::wave_cache::{WaveCache, WaveKey};
 use dasp_frame::Stereo;
 use dasp_graph::{Buffer, Input, Node};
 use shared::model::{
-    AdsrEnvelope, AntiAliasingMode, Generator, GeneratorInstance, GeneratorMeta, Oscillator,
+    AntiAliasingMode, Generator, GeneratorInstance, GeneratorMeta, Oscillator,
     PitchName, StingrayConfig,
 };
 use shared::types::{Freq, KnobPosition, Volume};
@@ -274,6 +274,7 @@ impl Node<ProcessContext> for StingrayNode {
                             let eg = &mut state.voice.egs[i];
                             let osc = state.config.oscillators[i].clone();
 
+                            eg.add_envelopes(i, &state.config.envelopes, &state.config.matrix);
                             eg.note_on();
                             eg.set_envelope(env);
 
