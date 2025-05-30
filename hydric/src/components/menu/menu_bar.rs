@@ -105,13 +105,13 @@ impl View for MenuBar<'_> {
                 });
 
                 ui.menu_button("Export", |ui| {
-                    if ui.button("WAV").clicked(){
+                    if ui.button("WAV").clicked() {
                         let project = self.store.get().project.clone();
                         spawn(&mut self.async_state.export, async move {
                             export(project).await
                         });
                     }
-                    if ui.button("MP3").clicked(){
+                    if ui.button("MP3").clicked() {
                         let project = self.store.get().project.clone();
                         spawn(&mut self.async_state.export, async move {
                             export_mp3(project).await
