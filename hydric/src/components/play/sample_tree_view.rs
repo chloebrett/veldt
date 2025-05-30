@@ -1,12 +1,14 @@
+use crate::local_state::HashMapOperations;
+use crate::local_state::LocalState;
 use crate::promise::{poll, spawn};
-use crate::rpc::load_sample_tree;
+use crate::rpc::{load_sample, load_sample_tree};
 use crate::view::View;
 use crate::widget::{checkbox, default_window};
 use crate::{AsyncState, playback::AudioPlayer};
 use egui::{Checkbox, Pos2, ScrollArea, Ui};
 use egui_ltreeview::{Action as TreeAction, TreeView, TreeViewBuilder};
 use mesic::interleave_stereo;
-use shared::model::{FileTreeConfig, FilenameTree};
+use shared::model::{FileTree, FileTreeConfig, FilenameTree};
 use state::{Action, Store, TypeField};
 
 pub struct SampleTreeView<'a> {
@@ -14,6 +16,7 @@ pub struct SampleTreeView<'a> {
     async_state: &'a mut AsyncState,
     visible: &'a mut bool,
     player: &'a mut AudioPlayer,
+    local_state: &'a LocalState,
 }
 
 impl<'a> SampleTreeView<'a> {
@@ -22,12 +25,14 @@ impl<'a> SampleTreeView<'a> {
         async_state: &'a mut AsyncState,
         visible: &'a mut bool,
         player: &'a mut AudioPlayer,
+        local_state: &'a LocalState,
     ) -> Self {
         SampleTreeView {
             store,
             async_state,
             visible,
             player,
+            local_state,
         }
     }
 }
@@ -63,15 +68,25 @@ fn add_node(
     }
 }
 
-pub fn get_sample_index(actions: Vec<TreeAction<usize>>) -> Option<u8> {
+pub fn get_sample_file_name(
+    actions: Vec<TreeAction<usize>>,
+    tree: &FileTree<String, String>,
+) -> String {
+    let mut sample_file_name = "".to_string();
     for action in actions.iter() {
         if let TreeAction::Activate(activate) = action {
             if let Some(node_id) = activate.selected.iter().next() {
-                return Some(*node_id as u8 - 1);
+                if let FileTree::Directory(_sample_directory, sample_files) = tree {
+                    if let Some(sample_node) = sample_files.get(*node_id - 1) {
+                        if let FileTree::File(file_name) = sample_node {
+                            sample_file_name = file_name.to_string();
+                        }
+                    };
+                }
             }
         }
     }
-    None
+    sample_file_name
 }
 
 impl View for SampleTreeView<'_> {
@@ -157,16 +172,41 @@ impl View for SampleTreeView<'_> {
                                     /* ignore_top= */ true,
                                 );
                             });
-                            let sample_index = get_sample_index(actions);
-                            let all_samples = &self.store.get().project.samples;
-                            if !all_samples.is_empty() {
-                                if let Some(sample_index) = sample_index {
-                                    let sample = all_samples[sample_index as usize].clone();
-                                    let sample = interleave_stereo(sample.left, sample.right);
-                                    self.player.set_audio(sample);
-                                    self.player.play();
+                            let selected_sample = get_sample_file_name(actions, tree);
+                            if !selected_sample.is_empty() {
+                                if !self
+                                    .local_state
+                                    .sample_cache
+                                    .hashmap_contains_key(&selected_sample)
+                                {
+                                    spawn(&mut self.async_state.load_sample, async move {
+                                        load_sample(selected_sample).await
+                                    });
+                                } else {
+                                    // if sample is already loaded in local state then play it
+                                    let cached_sample =
+                                        self.local_state.sample_cache.hashmap_get(&selected_sample);
+                                    if let Some(sample) = cached_sample {
+                                        let sample_audio = interleave_stereo(
+                                            sample.left.clone(),
+                                            sample.right.clone(),
+                                        );
+                                        self.player.set_audio(sample_audio);
+                                        self.player.play();
+                                    }
                                 }
                             }
+
+                            poll(&mut self.async_state.load_sample, |sample| {
+                                let sample_audio =
+                                    interleave_stereo(sample.left.clone(), sample.right.clone());
+                                self.player.set_audio(sample_audio);
+                                self.player.play();
+                                // cache into local state
+                                self.local_state
+                                    .sample_cache
+                                    .hashmap_insert(sample.sample_name.clone(), sample.clone());
+                            });
                         });
                 }
             });

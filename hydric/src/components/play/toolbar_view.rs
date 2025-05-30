@@ -1,15 +1,15 @@
-use crate::promise::{poll, spawn};
-use crate::rpc::{load_sample, upload_sample};
+use super::play_control::*;
+use crate::promise::spawn;
+use crate::rpc::upload_sample;
 use crate::view::View;
 use crate::widget::{default_window, knob, slider};
 use crate::{AsyncState, playback::AudioPlayer};
 use egui::{Pos2, Ui};
 use log::error;
+use log::info;
 use shared::types::Beats;
-use state::{Action, FloatField, Store, TypeField};
+use state::{Action, FloatField, Store};
 use tonic::Status;
-
-use super::play_control::*;
 
 pub struct ToolbarView<'a> {
     store: &'a mut Store,
@@ -91,6 +91,7 @@ impl View for ToolbarView<'_> {
                             if let Err(ref e) = result {
                                 error!("[5] Upload failed: {:?}", e);
                             }
+                            info!("This happened");
                             result
                         });
 
@@ -98,20 +99,5 @@ impl View for ToolbarView<'_> {
                     }
                 })
             });
-
-        poll(&mut self.async_state.upload_sample, |file_name| {
-            if !file_name.is_empty() {
-                let file_name = file_name.clone();
-                // immediately load sample upon upload to avoid async mess if trying to preview
-                spawn(&mut self.async_state.load_sample, async move {
-                    load_sample(file_name).await
-                });
-            }
-        });
-
-        poll(&mut self.async_state.load_sample, |sample| {
-            self.store
-                .dispatchr(Action::AddChild(TypeField::Sample(sample.clone())));
-        });
     }
 }
