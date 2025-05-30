@@ -13,7 +13,7 @@ use std::io::{Cursor, Write};
 use std::path::PathBuf;
 use tonic::{Request, Response, Status, async_trait};
 
-// Exports project to .wav
+// Exports project to .wav or .mp3
 pub struct ExportContext;
 
 // Created so that we can combine the file_path and dir_path functions.
@@ -102,12 +102,12 @@ impl Export for ExportContext {
 
         let wav_bytes = buffer.into_inner();
 
-        // write to output file
+        // Write to output file.
         let dir_path = wav_dir_path(AudioFileType::Wav);
         let _ = create_dir_all(&dir_path);
         let file_path = wav_file_path(&project.name, AudioFileType::Wav);
 
-        // NOTE: will overwrite if the file already exists
+        // NOTE: will overwrite if the file already exists.
         let mut out_file =
             File::create(&file_path).map_err(|e| tonic::Status::internal(format!("{e}")))?;
         out_file
@@ -171,6 +171,7 @@ impl Export for ExportContext {
             right_channel.push(float_to_i16(frame[1]));
         }
 
+        // Note that docs specify u16, but this is incorrect.
         let input = DualPcm {
             left: &left_channel,
             right: &right_channel,
@@ -178,7 +179,8 @@ impl Export for ExportContext {
 
         // There are some unsafe code executions here, but shouldn't be an issue so long as length of left and right channel are equal.
         // This was the solution provided with the docs, so I am unsure of if there is a better way.
-        let mut mp3_out_buffer = Vec::with_capacity(mp3lame_encoder::max_required_buffer_size(input.left.len()));
+        let mut mp3_out_buffer =
+            Vec::with_capacity(mp3lame_encoder::max_required_buffer_size(input.left.len()));
         let encoded_size = mp3_encoder
             .encode(input, mp3_out_buffer.spare_capacity_mut())
             .expect("To encode");
@@ -193,12 +195,12 @@ impl Export for ExportContext {
             mp3_out_buffer.set_len(mp3_out_buffer.len().wrapping_add(encoded_size));
         }
 
-        // write to output file
+        // Write to output file.
         let dir_path = wav_dir_path(AudioFileType::Mp3);
         let _ = create_dir_all(&dir_path);
         let file_path = wav_file_path(&project.name, AudioFileType::Mp3);
 
-        // NOTE: will overwrite if the file already exists
+        // NOTE: will overwrite if the file already exists.
         let mut out_file =
             File::create(&file_path).map_err(|e| tonic::Status::internal(format!("{e}")))?;
         out_file
