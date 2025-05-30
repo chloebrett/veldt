@@ -10,7 +10,7 @@ use crate::wave_cache::{WaveCache, WaveKey};
 use dasp_frame::Stereo;
 use dasp_graph::{Buffer, Input, Node};
 use shared::model::{
-    AntiAliasingMode, Generator, GeneratorInstance, GeneratorMeta, Oscillator, PitchName,
+    AntiAliasingMode, EqConfig, Generator, GeneratorInstance, GeneratorMeta, Oscillator, PitchName,
     StingrayConfig,
 };
 use shared::types::{Freq, KnobPosition, Volume};
@@ -80,23 +80,6 @@ impl NodeState {
             if self.meta != *meta {
                 self.meta = meta.clone();
             }
-
-            let mut lpf_mod = 0.0;
-            let mod_matrix = &self.config.matrix;
-
-            for i in 0..self.config.envelopes.len() {
-                let cell: f32 = mod_matrix
-                    .get(i, 3) // lpf column
-                    .map_or(0.0, |c| (*c).into());
-
-                if cell != 0.0 {
-                    let eg = &self.voice.egs[i];
-                    lpf_mod += cell * eg.peek();
-                }
-            }
-
-            let mod_freq = (self.config.lpf.fc + lpf_mod).clamp(20.0, SAMPLE_RATE as f32 / 2.0);
-            self.config.lpf.fc = mod_freq;
         }
     }
 }
@@ -186,6 +169,9 @@ impl Node<ProcessContext> for StingrayNode {
                 }
             }
 
+            let mut adjusted_config = apply_env_lpf(state);
+            let adjusted_filter = eq_filter(&adjusted_config);
+
             if let Some(sources) = &mut state.voice.sources {
                 for (eg, source) in state.voice.egs.iter_mut().zip(sources.iter_mut()) {
                     let amp = eg.next().unwrap_or(0.0);
@@ -195,7 +181,7 @@ impl Node<ProcessContext> for StingrayNode {
                     buffers[1][i] += amp * wave[1];
                 }
             }
-        }
+        };
 
         for (channel_index, out_buf) in output.iter_mut().enumerate() {
             out_buf.copy_from_slice(&buffers[channel_index]);
@@ -277,4 +263,24 @@ impl StingrayWaveSource {
         self.sample_index += 1;
         output_stereo
     }
+}
+
+pub fn apply_env_lpf(state: &mut NodeState) -> EqConfig {
+    let mut lpf_mod = 0.0;
+    let mod_matrix = &state.config.matrix;
+    let lpf_col = 3; // lpf column in matrix
+
+    for i in 0..state.config.envelopes.len() {
+        let cell: f32 = mod_matrix.get(i, lpf_col).map_or(0.0, |c| (*c).into());
+
+        if cell != 0.0 {
+            let eg = &state.voice.egs[i];
+            lpf_mod += cell * eg.peek();
+        }
+    }
+    let mod_freq = (state.config.lpf.fc + lpf_mod).clamp(20.0, SAMPLE_RATE as f32 / 2.0);
+    let mut adjusted_config = state.config.lpf.clone();
+    adjusted_config.fc = mod_freq;
+
+    adjusted_config
 }
