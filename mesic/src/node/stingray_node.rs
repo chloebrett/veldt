@@ -206,7 +206,7 @@ impl Node<ProcessContext> for StingrayNode {
         let state = &mut self.state;
         state.update(payload, self.selector);
 
-        let mut buffers = [Buffer::SILENT; 2];
+        let mut buffers: [Buffer; 2] = [Buffer::SILENT; 2];
         let GeneratorSelector(generator_index) = self.selector;
 
         if payload.stop_generators.get(generator_index) == Some(&true) {
@@ -303,6 +303,8 @@ impl Node<ProcessContext> for StingrayNode {
 
             let mut adjusted_config = apply_env_lpf(state);
             let adjusted_filter = eq_filter(&adjusted_config);
+            // state.filter_left.set_config(adjusted_filter);
+            // state.filter_right.set_config(adjusted_filter);
 
             if let Some(sources) = &mut state.voice.sources {
                 for (eg, source) in state.voice.egs.iter_mut().zip(sources.iter_mut()) {
