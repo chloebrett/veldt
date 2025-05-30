@@ -313,7 +313,7 @@ impl Node<ProcessContext> for StingrayNode {
                     buffers[1][i] += amp * wave[1];
                 }
             }
-        };
+        }
 
         for (channel_index, out_buf) in output.iter_mut().enumerate() {
             out_buf.copy_from_slice(&buffers[channel_index]);
