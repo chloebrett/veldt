@@ -127,6 +127,10 @@ impl SecondOrderFilter {
             y_buffer,
         }
     }
+
+    pub fn set_config(&mut self, new_config: SecondOrderFilterConfig) {
+        self.config = new_config;
+    }
 }
 
 impl ApplyFilter for SecondOrderFilter {
