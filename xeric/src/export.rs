@@ -80,7 +80,7 @@ impl Export for ExportContext {
         let mut buffer = Cursor::new(Vec::new());
         {
             let mut writer = WavWriter::new(&mut buffer, spec)
-                .map_err(|e| tonic::Status::invalid_argument(format!("{}", e)))?;
+                .map_err(|e| tonic::Status::invalid_argument(format!("{e}")))?;
 
             for frame in graph {
                 for channel in 0..2 {
@@ -91,13 +91,13 @@ impl Export for ExportContext {
 
                     writer
                         .write_sample(sample_i16)
-                        .map_err(|e| tonic::Status::invalid_argument(format!("{}", e)))?;
+                        .map_err(|e| tonic::Status::invalid_argument(format!("{e}")))?;
                 }
             }
 
             writer
                 .finalize()
-                .map_err(|e| tonic::Status::invalid_argument(format!("{}", e)))?;
+                .map_err(|e| tonic::Status::invalid_argument(format!("{e}")))?;
         }
 
         let wav_bytes = buffer.into_inner();
@@ -109,10 +109,10 @@ impl Export for ExportContext {
 
         // NOTE: will overwrite if the file already exists
         let mut out_file =
-            File::create(&file_path).map_err(|e| tonic::Status::internal(format!("{}", e)))?;
+            File::create(&file_path).map_err(|e| tonic::Status::internal(format!("{e}")))?;
         out_file
             .write_all(&wav_bytes)
-            .map_err(|e| tonic::Status::invalid_argument(format!("{}", e)))?;
+            .map_err(|e| tonic::Status::invalid_argument(format!("{e}")))?;
 
         Ok(tonic::Response::new(ExportReply { audio: wav_bytes }))
     }
@@ -151,7 +151,7 @@ impl Export for ExportContext {
             .expect("set quality");
         mp3_encoder
             .set_id3_tag(Id3Tag {
-                title: &project.name.as_bytes(),
+                title: project.name.as_bytes(),
                 artist: &[],
                 album: &[],
                 album_art: &[],
@@ -178,8 +178,7 @@ impl Export for ExportContext {
 
         // There are some unsafe code executions here, but shouldn't be an issue so long as length of left and right channel are equal.
         // This was the solution provided with the docs, so I am unsure of if there is a better way.
-        let mut mp3_out_buffer = Vec::new();
-        mp3_out_buffer.reserve(mp3lame_encoder::max_required_buffer_size(input.left.len()));
+        let mut mp3_out_buffer = Vec::with_capacity(mp3lame_encoder::max_required_buffer_size(input.left.len()));
         let encoded_size = mp3_encoder
             .encode(input, mp3_out_buffer.spare_capacity_mut())
             .expect("To encode");
@@ -201,10 +200,10 @@ impl Export for ExportContext {
 
         // NOTE: will overwrite if the file already exists
         let mut out_file =
-            File::create(&file_path).map_err(|e| tonic::Status::internal(format!("{}", e)))?;
+            File::create(&file_path).map_err(|e| tonic::Status::internal(format!("{e}")))?;
         out_file
             .write_all(&mp3_out_buffer)
-            .map_err(|e| tonic::Status::invalid_argument(format!("{}", e)))?;
+            .map_err(|e| tonic::Status::invalid_argument(format!("{e}")))?;
 
         Ok(tonic::Response::new(ExportReply {
             audio: mp3_out_buffer,
