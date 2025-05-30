@@ -1,11 +1,11 @@
 use super::generator_name;
-use crate::WindowState;
+use crate::local_state::LocalState;
 use crate::widget::{StateWindow, default_window, int_slider, knob};
 use crate::window_state::WindowKind;
 use egui::{Button, Pos2, Ui, Window};
 use state::{Action, FloatField, GeneratorSelector, IndexField, Store, TypeField};
 
-pub fn generators_control(ui: &mut Ui, window_state: &mut WindowState, store: &Store) {
+pub fn generators_control(ui: &mut Ui, local_state: &LocalState, store: &Store) {
     let generators = &store.get().project.generators;
     StateWindow(
         default_window("Generators")
@@ -15,14 +15,14 @@ pub fn generators_control(ui: &mut Ui, window_state: &mut WindowState, store: &S
                 y: 150.0,
             }),
     )
-    .show(ui, window_state, WindowKind::GeneratorList, |ui| {
+    .show(ui, &local_state.window_state, WindowKind::GeneratorList, |ui| {
         for generator_index in 0..generators.len() {
             let sel = GeneratorSelector(generator_index);
             let on_release = || store.dispatchr(Action::Release);
 
             let generator = &generators[generator_index];
             let label = generator_name(generator);
-            let show = window_state.get_visible(WindowKind::Generator(sel));
+            let show = local_state.window_state.get_visible(WindowKind::Generator(sel));
             let meta = generator.meta.clone();
             ui.horizontal(|ui| {
                 let mute_response = ui.add(Button::new("Mute").selected(meta.mute));
@@ -32,9 +32,8 @@ pub fn generators_control(ui: &mut Ui, window_state: &mut WindowState, store: &S
 
                 let generator_response = ui.add(Button::new(label).selected(show));
                 if generator_response.clicked() {
-                    window_state.set_visible(WindowKind::Generator(sel), !show);
+                    local_state.window_state.set_visible(WindowKind::Generator(sel), !show);
                 }
-
                 knob(
                     ui,
                     "Volume",

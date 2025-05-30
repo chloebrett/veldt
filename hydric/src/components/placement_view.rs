@@ -1,5 +1,6 @@
 use crate::view::View;
 use crate::widget::{StateWindow, default_window, get_set, int_slider, selectable_value, slider};
+use crate::window_state::WindowKind;
 use crate::{GetSet, LocalState};
 use egui::{Ui, pos2};
 use mesic::samples_to_beats;
@@ -158,8 +159,14 @@ impl View for PlacementView<'_> {
         );
         window.show_with_closure(
             ui,
-            self.local_state.placement_window.get(),
-            |_| self.local_state.placement_window.set(false),
+            self.local_state
+                .window_state
+                .get_visible(WindowKind::Placement),
+            |_| {
+                self.local_state
+                    .window_state
+                    .set_visible(WindowKind::Placement, false)
+            },
             |ui| {
                 match &placement.kind {
                     PlacementType::Track(track_placement) => {
@@ -208,7 +215,9 @@ impl View for PlacementView<'_> {
 
                 if ui.button("Delete").clicked() {
                     store.dispatchr(Action::DeleteChild(IndexField::Placement(placement_index)));
-                    self.local_state.placement_window.set(false);
+                    self.local_state
+                        .window_state
+                        .set_visible(WindowKind::Placement, false);
                     self.local_state.active_placement.set(None);
                     self.local_state.selected_placements.update(|mut it| {
                         it.remove(&placement_index);

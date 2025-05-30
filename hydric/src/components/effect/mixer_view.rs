@@ -8,7 +8,6 @@ use crate::widget::StateWindow;
 use crate::widget::int_slider;
 use crate::widget::{default_window, knob};
 use crate::window_state::WindowKind;
-use crate::window_state::WindowState;
 use egui::CornerRadius;
 use egui::Shape;
 use egui::{Button, Color32, Frame, InnerResponse, Layout, Response, Stroke, Ui, Widget};
@@ -21,21 +20,14 @@ use state::{
 use strum::IntoEnumIterator;
 
 pub struct MixerView<'a> {
-    window_state: &'a WindowState,
     store: &'a Store,
     local_state: &'a LocalState,
     player: &'a AudioPlayer,
 }
 
 impl<'a> MixerView<'a> {
-    pub fn new(
-        window_state: &'a WindowState,
-        store: &'a Store,
-        local_state: &'a LocalState,
-        player: &'a AudioPlayer,
-    ) -> Self {
+    pub fn new(store: &'a Store, local_state: &'a LocalState, player: &'a AudioPlayer) -> Self {
         Self {
-            window_state,
             store,
             local_state,
             player,
@@ -46,7 +38,6 @@ impl<'a> MixerView<'a> {
 impl View for MixerView<'_> {
     fn ui(&mut self, ui: &mut Ui) {
         let Self {
-            window_state,
             store,
             local_state,
             player,
@@ -69,9 +60,9 @@ impl View for MixerView<'_> {
         StateWindow(
             default_window("Mixer")
                 .id("mixer".into())
-                .default_pos(window_state.get_pos(WindowKind::Mixer)),
+                .default_pos(local_state.window_state.get_pos(WindowKind::Mixer)),
         )
-        .show(ui, window_state, WindowKind::Mixer, |ui| {
+        .show(ui, &local_state.window_state, WindowKind::Mixer, |ui| {
             ui.add_space(8.0);
 
             ui.horizontal(|ui| {
@@ -147,7 +138,7 @@ impl View for MixerView<'_> {
                                         EffectWidget::new(
                                             &mixer.effects[effect_index],
                                             effect_sel,
-                                            window_state,
+                                            local_state,
                                             dispatch_effect,
                                             on_release,
                                         ),
@@ -241,7 +232,7 @@ impl View for MixerView<'_> {
 /// Being a widget that returns a `Response` makes it easier to drag and drop.
 struct EffectWidget<'a, F: Fn(Action), G: Fn()> {
     effect: &'a EffectInstance,
-    window_state: &'a WindowState,
+    local_state: &'a LocalState,
     effect_sel: EffectSelector,
     dispatch: F,
     on_release: G,
@@ -251,13 +242,13 @@ impl<'a, F: Fn(Action), G: Fn()> EffectWidget<'a, F, G> {
     fn new(
         effect: &'a EffectInstance,
         effect_sel: EffectSelector,
-        window_state: &'a WindowState,
+        local_state: &'a LocalState,
         dispatch: F,
         on_release: G,
     ) -> Self {
         Self {
             effect,
-            window_state,
+            local_state,
             effect_sel,
             dispatch,
             on_release,
@@ -269,13 +260,15 @@ impl<F: Fn(Action), G: Fn()> Widget for EffectWidget<'_, F, G> {
     fn ui(self, ui: &mut Ui) -> Response {
         let Self {
             effect,
-            window_state,
+            local_state,
             effect_sel,
             dispatch,
             on_release,
         } = self;
         let InnerResponse { response, .. } = ui.horizontal(|ui| {
-            let show = window_state.get_visible(WindowKind::Effect(effect_sel));
+            let show = local_state
+                .window_state
+                .get_visible(WindowKind::Effect(effect_sel));
             let text = effect_name(&effect.it);
             let meta = &effect.meta;
 
@@ -293,7 +286,9 @@ impl<F: Fn(Action), G: Fn()> Widget for EffectWidget<'_, F, G> {
             );
 
             if ui.add(Button::new(text).selected(show)).clicked() {
-                window_state.set_visible(WindowKind::Effect(effect_sel), !show)
+                local_state
+                    .window_state
+                    .set_visible(WindowKind::Effect(effect_sel), !show)
             }
         });
         ui.separator();

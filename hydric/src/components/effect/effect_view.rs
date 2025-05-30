@@ -1,5 +1,5 @@
 use super::{CompressorView, DelayView, EqView, ModDelayView};
-use crate::WindowState;
+use crate::local_state::LocalState;
 use crate::view::View;
 use crate::widget::{StateWindow, default_window};
 use crate::window_state::WindowKind;
@@ -8,7 +8,7 @@ use shared::model::Effect;
 use state::{Action, EffectSelector, Store};
 
 pub struct EffectView<'a, F: Fn(Action), G: Fn()> {
-    window_state: &'a WindowState,
+    local_state: &'a LocalState,
     effect: &'a Effect,
     selector: EffectSelector,
     dispatch: F,
@@ -19,7 +19,7 @@ impl<'a, F: Fn(Action), G: Fn()> EffectView<'a, F, G> {
     pub fn new(
         store: &'a Store,
         selector: &'a EffectSelector,
-        window_state: &'a WindowState,
+        local_state: &'a LocalState,
         dispatch: F,
         on_release: G,
     ) -> Option<Self> {
@@ -27,7 +27,7 @@ impl<'a, F: Fn(Action), G: Fn()> EffectView<'a, F, G> {
         let effect: &'a Effect = &effect.it;
 
         Some(Self {
-            window_state,
+            local_state,
             effect,
             selector: *selector,
             dispatch,
@@ -40,7 +40,7 @@ impl<F: Fn(Action), G: Fn()> View for EffectView<'_, F, G> {
     fn ui(&mut self, ui: &mut Ui) {
         let Self {
             effect,
-            window_state,
+            local_state,
             ..
         } = self;
         let dispatch = &self.dispatch;
@@ -56,7 +56,7 @@ impl<F: Fn(Action), G: Fn()> View for EffectView<'_, F, G> {
                     y: 150.0 + 50.0 * effect_index as f32,
                 }),
         )
-        .show(ui, window_state, WindowKind::Effect(self.selector), |ui| {
+        .show(ui, &local_state.window_state, WindowKind::Effect(self.selector), |ui| {
             match effect {
                 Effect::SimpleEq(config) => EqView::new(config, dispatch, on_release).ui(ui),
                 Effect::Delay(config) => DelayView::new(config, dispatch, on_release).ui(ui),
