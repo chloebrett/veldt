@@ -2,6 +2,7 @@ use dasp_frame::Frame;
 use hound::{SampleFormat, WavSpec, WavWriter};
 use mesic::SAMPLE_RATE;
 use mesic::graph::RenderGraph;
+use mp3lame_encoder::{Builder, DualPcm};
 use shared::export::{ExportReply, ExportRequest, export_server::Export};
 use shared::model::Project;
 use state::StoreData;
@@ -10,7 +11,6 @@ use std::fs::{File, create_dir_all};
 use std::io::{Cursor, Write};
 use std::path::PathBuf;
 use tonic::{Request, Response, Status, async_trait};
-use mp3lame_encoder::{Builder, DualPcm};
 
 // Exports project to .wav
 pub struct ExportContext;
@@ -96,8 +96,10 @@ impl Export for ExportContext {
         Ok(tonic::Response::new(ExportReply { audio: wav_bytes }))
     }
 
-    async fn export_mp3(&self, request: Request<ExportRequest>) -> Result<Response<ExportReply>, Status>{
-        
+    async fn export_mp3(
+        &self,
+        request: Request<ExportRequest>,
+    ) -> Result<Response<ExportReply>, Status> {
         let req = request.into_inner();
         let project: Project = req
             .project
@@ -111,7 +113,7 @@ impl Export for ExportContext {
         };
 
         let graph = RenderGraph::without_rx(&store);
-        
+
         todo!();
     }
 }
