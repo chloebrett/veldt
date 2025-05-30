@@ -56,30 +56,23 @@ impl<F: Fn(Action), G: Fn()> View for EffectView<'_, F, G> {
                     y: 150.0 + 50.0 * effect_index as f32,
                 }),
         )
-        .show(
-            ui,
-            window_state,
-            WindowKind::Effect(self.selector),
-            |ui| {
-                match effect {
-                    Effect::SimpleEq(config) => EqView::new(config, dispatch, on_release).ui(ui),
-                    Effect::Delay(config) => DelayView::new(config, dispatch, on_release).ui(ui),
-                    Effect::Compressor(config) => {
-                        CompressorView::new(config, dispatch, on_release).ui(ui)
-                    }
-                    Effect::ModDelay(config) => {
-                        ModDelayView::new(config, dispatch, on_release).ui(ui)
-                    }
+        .show(ui, window_state, WindowKind::Effect(self.selector), |ui| {
+            match effect {
+                Effect::SimpleEq(config) => EqView::new(config, dispatch, on_release).ui(ui),
+                Effect::Delay(config) => DelayView::new(config, dispatch, on_release).ui(ui),
+                Effect::Compressor(config) => {
+                    CompressorView::new(config, dispatch, on_release).ui(ui)
                 }
+                Effect::ModDelay(config) => ModDelayView::new(config, dispatch, on_release).ui(ui),
+            }
 
-                ui.separator();
-                ui.label(format!(
-                    "Mixer {} | Effect {}",
-                    mixer_index + 1,
-                    effect_index + 1
-                ));
-            },
-        );
+            ui.separator();
+            ui.label(format!(
+                "Mixer {} | Effect {}",
+                mixer_index + 1,
+                effect_index + 1
+            ));
+        });
     }
 }
 

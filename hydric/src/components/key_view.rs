@@ -34,41 +34,38 @@ impl<F: Fn(Action)> View for KeyView<'_, F> {
             ..
         } = *self;
 
-        StateWindow(default_window("Scale").default_pos(Pos2 { x: 600.0, y: 20.0 }))
-            .show(
-                ui,
-                window_state,
-                WindowKind::Scale,
-                |ui| {
-                    ComboBox::from_label("Key")
-                        .selected_text(key.to_string())
-                        .show_ui(ui, |ui| {
-                            for scale_note in ScaleValue::iter() {
-                                selectable_value(
-                                    ui,
-                                    get_set(key, |it| {
-                                        dispatch(Action::SetChild(TypeField::Key(it)))
-                                    }),
-                                    scale_note,
-                                    scale_note.to_string(),
-                                );
-                            }
-                        });
-                    ComboBox::from_label("Scale")
-                        .selected_text(scale.to_string())
-                        .show_ui(ui, |ui| {
-                            for scale_option in Scale::iter() {
-                                selectable_value(
-                                    ui,
-                                    get_set(scale, |it| {
-                                        dispatch(Action::SetChild(TypeField::Scale(it)))
-                                    }),
-                                    scale_option,
-                                    scale_option.to_string(),
-                                );
-                            }
-                        });
-                },
-            );
+        StateWindow(default_window("Scale").default_pos(Pos2 { x: 600.0, y: 20.0 })).show(
+            ui,
+            window_state,
+            WindowKind::Scale,
+            |ui| {
+                ComboBox::from_label("Key")
+                    .selected_text(key.to_string())
+                    .show_ui(ui, |ui| {
+                        for scale_note in ScaleValue::iter() {
+                            selectable_value(
+                                ui,
+                                get_set(key, |it| dispatch(Action::SetChild(TypeField::Key(it)))),
+                                scale_note,
+                                scale_note.to_string(),
+                            );
+                        }
+                    });
+                ComboBox::from_label("Scale")
+                    .selected_text(scale.to_string())
+                    .show_ui(ui, |ui| {
+                        for scale_option in Scale::iter() {
+                            selectable_value(
+                                ui,
+                                get_set(scale, |it| {
+                                    dispatch(Action::SetChild(TypeField::Scale(it)))
+                                }),
+                                scale_option,
+                                scale_option.to_string(),
+                            );
+                        }
+                    });
+            },
+        );
     }
 }

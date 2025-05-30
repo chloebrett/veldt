@@ -38,21 +38,16 @@ impl<F: Fn(Action), G: FnMut()> View for SaveAs<'_, F, G> {
                 .default_pos(window_state.get_pos(WindowKind::Save))
                 .resizable(false),
         )
-        .show(
-            ui,
-            window_state,
-            WindowKind::Save,
-            |ui| {
-                let mut temp_name = name.clone();
-                let response = ui.text_edit_singleline(&mut temp_name);
-                if response.changed() {
-                    dispatch(Action::SetChild(TypeField::ProjectName(temp_name)));
-                }
+        .show(ui, window_state, WindowKind::Save, |ui| {
+            let mut temp_name = name.clone();
+            let response = ui.text_edit_singleline(&mut temp_name);
+            if response.changed() {
+                dispatch(Action::SetChild(TypeField::ProjectName(temp_name)));
+            }
 
-                if ui.button("Save").clicked() {
-                    on_click()
-                }
-            },
-        );
+            if ui.button("Save").clicked() {
+                on_click()
+            }
+        });
     }
 }
