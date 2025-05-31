@@ -1,5 +1,5 @@
 use super::{extract_inputs, extract_outputs};
-use crate::eq::{ApplyFilter, eq_filter};
+use crate::eq::{ApplyFilter, eq_filter, EqFilter};
 use crate::graph::ProcessContext;
 use dasp_graph::{Buffer, Input, Node};
 use shared::model::{Effect, EffectInstance, EqConfig};
@@ -8,8 +8,8 @@ use state::EffectSelector;
 pub struct EqNode {
     selector: EffectSelector,
     config: EqConfig,
-    filter_left: Box<dyn ApplyFilter + Send>,
-    filter_right: Box<dyn ApplyFilter + Send>,
+    filter_left: EqFilter,
+    filter_right: EqFilter,
 }
 
 impl EqNode {

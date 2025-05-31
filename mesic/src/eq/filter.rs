@@ -85,6 +85,11 @@ impl ApplyFilter for FirstOrderFilter {
             apply_mix(xn, yn, *xn, &self.mix);
         }
     }
+
+    fn apply_sample(&mut self, sample: &mut f32) {
+        let yn = self.state.process(*sample, &self.config);
+        apply_mix(sample, yn, *sample, &self.mix);
+    }
 }
 
 /// Holds ring buffer states for second order filters
@@ -166,6 +171,11 @@ impl ApplyFilter for SecondOrderFilter {
             let yn = self.state.process(*xn, &self.config);
             apply_mix(xn, yn, *xn, &self.mix);
         }
+    }
+
+    fn apply_sample(&mut self, sample: &mut f32) {
+        let yn = self.state.process(*sample, &self.config);
+        apply_mix(sample, yn, *sample, &self.mix);
     }
 }
 

@@ -2,7 +2,7 @@ mod apf_first_order;
 mod apf_second_order;
 mod bps_basic;
 pub mod eq_display;
-mod filter;
+pub mod filter;
 mod first_order_all_pole;
 mod lhp_first_order;
 mod lhp_second_order;
@@ -27,36 +27,104 @@ use parametric_constant_second_order::*;
 use parametric_second_order::*;
 use resonator_sa::*;
 use resonator_simple::*;
-use shared::model::{EqConfig, EqType};
 use shelf_first_order::*;
+use shared::model::{EqConfig, EqType};
+use crate::eq::filter::{FirstOrderFilter, SecondOrderFilter};
 
 pub trait ApplyFilter {
     fn apply(&mut self, buffer: &mut Buffer);
+    fn apply_sample(&mut self, sample: &mut f32);
 }
 
-pub fn eq_filter(config: &EqConfig) -> Box<dyn ApplyFilter + Send> {
+pub enum EqFilter {
+    SimpleResonator(SecondOrderFilter),
+    SmithAngellResonator(SecondOrderFilter),
+    SimpleFirstOrderLowPass(FirstOrderFilter),
+    SimpleFirstOrderHighPass(FirstOrderFilter),
+    SimpleSecondOrderLowPass(SecondOrderFilter),
+    SimpleSecondOrderHighPass(SecondOrderFilter),
+    SimpleSecondOrderResonator(SecondOrderFilter),
+    FirstOrderAllPass(FirstOrderFilter),
+    SecondOrderAllPass(SecondOrderFilter),
+    SimpleSecondOrderBandStop(SecondOrderFilter),
+    LinkwitzRileySecondOrderLowPass(SecondOrderFilter),
+    LinkwitzRileySecondOrderHighPass(SecondOrderFilter),
+    ParametricSecondOrderNonConstantQ(SecondOrderFilter),
+    ParametricSecondOrderConstantQ(SecondOrderFilter),
+    FirstOrderAllPole(FirstOrderFilter),
+    LowShelvingFirstOrder(FirstOrderFilter),
+    HighShelvingFirstOrder(FirstOrderFilter),
+}
+
+impl ApplyFilter for EqFilter {
+    fn apply(&mut self, buffer: &mut Buffer) {
+        match self {
+            EqFilter::SimpleResonator(f) => f.apply(buffer),
+            EqFilter::SmithAngellResonator(f) => f.apply(buffer),
+            EqFilter::SimpleFirstOrderLowPass(f) => f.apply(buffer),
+            EqFilter::SimpleFirstOrderHighPass(f) => f.apply(buffer),
+            EqFilter::SimpleSecondOrderLowPass(f) => f.apply(buffer),
+            EqFilter::SimpleSecondOrderHighPass(f) => f.apply(buffer),
+            EqFilter::SimpleSecondOrderResonator(f) => f.apply(buffer),
+            EqFilter::FirstOrderAllPass(f) => f.apply(buffer),
+            EqFilter::SecondOrderAllPass(f) => f.apply(buffer),
+            EqFilter::SimpleSecondOrderBandStop(f) => f.apply(buffer),
+            EqFilter::LinkwitzRileySecondOrderLowPass(f) => f.apply(buffer),
+            EqFilter::LinkwitzRileySecondOrderHighPass(f) => f.apply(buffer),
+            EqFilter::ParametricSecondOrderNonConstantQ(f) => f.apply(buffer),
+            EqFilter::FirstOrderAllPole(f) => f.apply(buffer),
+            EqFilter::LowShelvingFirstOrder(f) => f.apply(buffer),
+            EqFilter::HighShelvingFirstOrder(f) => f.apply(buffer),
+            EqFilter::ParametricSecondOrderConstantQ(f) => f.apply(buffer),
+        }
+    }
+
+    fn apply_sample(&mut self, sample: &mut f32) {
+        match self {
+            EqFilter::SimpleResonator(f) => f.apply_sample(sample),
+            EqFilter::SmithAngellResonator(f) => f.apply_sample(sample),
+            EqFilter::SimpleFirstOrderLowPass(f) => f.apply_sample(sample),
+            EqFilter::SimpleFirstOrderHighPass(f) => f.apply_sample(sample),
+            EqFilter::SimpleSecondOrderLowPass(f) => f.apply_sample(sample),
+            EqFilter::SimpleSecondOrderHighPass(f) => f.apply_sample(sample),
+            EqFilter::SimpleSecondOrderResonator(f) => f.apply_sample(sample),
+            EqFilter::FirstOrderAllPass(f) => f.apply_sample(sample),
+            EqFilter::SecondOrderAllPass(f) => f.apply_sample(sample),
+            EqFilter::SimpleSecondOrderBandStop(f) => f.apply_sample(sample),
+            EqFilter::LinkwitzRileySecondOrderLowPass(f) => f.apply_sample(sample),
+            EqFilter::LinkwitzRileySecondOrderHighPass(f) => f.apply_sample(sample),
+            EqFilter::ParametricSecondOrderNonConstantQ(f) => f.apply_sample(sample),
+            EqFilter::FirstOrderAllPole(f) => f.apply_sample(sample),
+            EqFilter::LowShelvingFirstOrder(f) => f.apply_sample(sample),
+            EqFilter::HighShelvingFirstOrder(f) => f.apply_sample(sample),
+            EqFilter::ParametricSecondOrderConstantQ(f) => f.apply_sample(sample),
+        }
+    }
+}
+
+pub fn eq_filter(config: &EqConfig) -> EqFilter {
     match config.kind {
-        EqType::SimpleResonator => Box::new(resonator_simple(config)),
-        EqType::SmithAngellResonator => Box::new(resonator_smith_angell(config)),
-        EqType::SimpleFirstOrderLowPass => Box::new(lhp_first_order(config, LowHigh::Low)),
-        EqType::SimpleFirstOrderHighPass => Box::new(lhp_first_order(config, LowHigh::High)),
-        EqType::SimpleSecondOrderLowPass => Box::new(lhp_second_order(config, LowHigh::Low)),
-        EqType::SimpleSecondOrderHighPass => Box::new(lhp_second_order(config, LowHigh::High)),
-        EqType::SimpleSecondOrderResonator => Box::new(band_pass_basic(config)),
-        EqType::FirstOrderAllPass => Box::new(apf_first_order(config)),
-        EqType::SecondOrderAllPass => Box::new(apf_second_order(config)),
-        EqType::SimpleSecondOrderBandStop => Box::new(band_stop_basic(config)),
+        EqType::SimpleResonator => EqFilter::SimpleResonator(resonator_simple(config)),
+        EqType::SmithAngellResonator => EqFilter::SmithAngellResonator(resonator_smith_angell(config)),
+        EqType::SimpleFirstOrderLowPass => EqFilter::SimpleFirstOrderLowPass(lhp_first_order(config, LowHigh::Low)),
+        EqType::SimpleFirstOrderHighPass => EqFilter::SimpleFirstOrderHighPass(lhp_first_order(config, LowHigh::High)),
+        EqType::SimpleSecondOrderLowPass => EqFilter::SimpleSecondOrderLowPass(lhp_second_order(config, LowHigh::Low)),
+        EqType::SimpleSecondOrderHighPass => EqFilter::SimpleSecondOrderHighPass(lhp_second_order(config, LowHigh::High)),
+        EqType::SimpleSecondOrderResonator => EqFilter::SimpleSecondOrderResonator(band_pass_basic(config)),
+        EqType::FirstOrderAllPass => EqFilter::FirstOrderAllPass(apf_first_order(config)),
+        EqType::SecondOrderAllPass => EqFilter::SecondOrderAllPass(apf_second_order(config)),
+        EqType::SimpleSecondOrderBandStop => EqFilter::SimpleSecondOrderBandStop(band_stop_basic(config)),
         EqType::LinkwitzRileySecondOrderLowPass => {
-            Box::new(lhp_second_order_lr(config, LowHigh::Low))
+            EqFilter::LinkwitzRileySecondOrderLowPass(lhp_second_order_lr(config, LowHigh::Low))
         }
         EqType::LinkwitzRileySecondOrderHighPass => {
-            Box::new(lhp_second_order_lr(config, LowHigh::High))
+            EqFilter::LinkwitzRileySecondOrderHighPass(lhp_second_order_lr(config, LowHigh::High))
         }
-        EqType::ParametricSecondOrderNonConstantQ => Box::new(parametric_non_constant_q(config)),
-        EqType::FirstOrderAllPole => Box::new(first_order_all_pole(config)),
-        EqType::LowShelvingFirstOrder => Box::new(shelf_first_order(config, LowHigh::Low)),
-        EqType::HighShelvingFirstOrder => Box::new(shelf_first_order(config, LowHigh::High)),
-        EqType::ParametricSecondOrderConstantQ => Box::new(parametric_constant_q(config)),
+        EqType::ParametricSecondOrderNonConstantQ => EqFilter::ParametricSecondOrderNonConstantQ(parametric_non_constant_q(config)),
+        EqType::FirstOrderAllPole => EqFilter::FirstOrderAllPole(first_order_all_pole(config)),
+        EqType::LowShelvingFirstOrder => EqFilter::LowShelvingFirstOrder(shelf_first_order(config, LowHigh::Low)),
+        EqType::HighShelvingFirstOrder => EqFilter::HighShelvingFirstOrder(shelf_first_order(config, LowHigh::High)),
+        EqType::ParametricSecondOrderConstantQ => EqFilter::ParametricSecondOrderConstantQ(parametric_constant_q(config)),
     }
 }
 
