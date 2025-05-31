@@ -99,6 +99,8 @@ impl RenderGraph {
         let store = &mut self.process_context.store;
         while let Ok((selector, action)) = self.rx.try_recv() {
             // Stop generators when a track changes its generator index.
+            // This needs to run before the store update, as we reference the previous state of the
+            // store.
             if let Selector::Placement(placement_index) = selector {
                 if let Action::SetIndex(IndexField::Generator(_)) = action {
                     if let PlacementType::Track(track_placement) =
