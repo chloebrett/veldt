@@ -1,6 +1,6 @@
 use super::generator_name;
 use crate::WindowState;
-use crate::widget::{StateWindow, default_window, int_slider, knob};
+use crate::widget::{StateWindow, add_knob, default_window, int_slider, styled_knob};
 use crate::window_state::WindowKind;
 use egui::{Button, Pos2, Ui};
 use state::{Action, FloatField, GeneratorSelector, IndexField, Store, TypeField};
@@ -39,24 +39,27 @@ pub fn generators_control(ui: &mut Ui, window_state: &mut WindowState, store: &S
                         window_state.set_visible(WindowKind::Generator(sel), !show);
                     }
 
-                    knob(
+                    add_knob(
                         ui,
-                        "Volume",
-                        meta.volume,
-                        |it| store.dispatch(&sel, Action::SetFloat(FloatField::Volume, it)),
-                        // TODO: let this go up a bit past 1?
-                        0.0..=1.0,
-                        /* neutral= */ 0.8,
+                        styled_knob(
+                            "Volume",
+                            meta.volume,
+                            |it| store.dispatch(&sel, Action::SetFloat(FloatField::Volume, it)),
+                            // TODO: let this go up a bit past 1?
+                            0.0..=1.0,
+                        )
+                        .with_neutral(0.8),
                         on_release,
                     );
-                    // TODO: make the pan knob centre at the top since it's bipolar.
-                    knob(
+                    add_knob(
                         ui,
-                        "Pan",
-                        meta.pan,
-                        |it| store.dispatch(&sel, Action::SetFloat(FloatField::Pan, it)),
-                        -1.0..=1.0,
-                        /* neutral= */ 0.0,
+                        styled_knob(
+                            "Pan",
+                            meta.pan,
+                            |it| store.dispatch(&sel, Action::SetFloat(FloatField::Pan, it)),
+                            -1.0..=1.0,
+                        )
+                        .with_neutral(0.0),
                         on_release,
                     );
                 });

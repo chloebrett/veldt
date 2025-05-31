@@ -2,7 +2,7 @@ use crate::view::View;
 use crate::widget::{StateWindow, default_window};
 use crate::window_state::WindowKind;
 use crate::{playback::Microphone, window_state::WindowState};
-use egui::{Pos2, Ui};
+use egui::Ui;
 
 pub struct MicrophoneView<'a> {
     window_state: &'a WindowState,

@@ -1,28 +1,16 @@
 use egui::{Align2, Color32, Rect, Response, Sense, Stroke, Ui, Vec2, Widget};
-use shared::types::KnobPosition;
 use std::f32::consts::TAU;
 use std::ops::RangeInclusive;
 
 const KNOB_FINE_DRAG_RATIO: f32 = 0.2;
 
-/// Forked from egui_knob: https://github.com/obsqrbtz/egui_knob
-/// egui_knob Copyright (c) 2025 Daniel Dada.
-/// Code is modified significantly.
-pub fn knob<F>(
-    ui: &mut Ui,
+pub fn styled_knob(
     label: &str,
-    value: KnobPosition,
-    setter: impl Fn(KnobPosition),
+    value: f32,
+    setter: impl Fn(f32),
     range: RangeInclusive<f32>,
-    neutral: f32,
-    on_release: F,
-) where
-    F: Fn(),
-{
-    let min = *range.start();
-    let max = *range.end();
-    let mut temp = value.clamp(min, max);
-    let knob = Knob::new(&mut temp, min, max, neutral, KnobStyle::Wiper)
+) -> Knob<impl Fn(f32)> {
+    Knob::new(value, setter, range, KnobStyle::Wiper)
         .with_size(20.0)
         .with_font_size(12.0)
         .with_stroke_width(2.0)
@@ -33,80 +21,29 @@ pub fn knob<F>(
             Color32::WHITE,
         )
         .with_label(label, LabelPosition::Right)
-        .with_label_offset(4.0);
-    let response = ui.add(knob);
-
-    if temp != value {
-        setter(temp.clamp(min, max));
-    }
-
-    if response.drag_stopped() || response.lost_focus() {
-        on_release();
-    }
+        .with_label_offset(4.0)
 }
 
-/// Not ideal since this introduces some code repetition, but fine for now.
-/// Should move towards builder pattern in future, and maybe modify the knob itself to handle the
-/// setter.
-pub fn custom_knob(
-    ui: &mut Ui,
-    label: &str,
-    value: KnobPosition,
-    setter: impl Fn(KnobPosition),
-    range: RangeInclusive<f32>,
-    neutral: f32,
-    on_release: impl Fn(),
-    modify: impl Fn(Knob) -> Knob,
-) {
-    let min = *range.start();
-    let max = *range.end();
-    let mut temp = value.clamp(min, max);
-    let knob = Knob::new(&mut temp, min, max, neutral, KnobStyle::Wiper)
-        .with_size(20.0)
-        .with_font_size(12.0)
-        .with_stroke_width(2.0)
-        .with_colors(
-            Color32::GRAY,
-            Color32::WHITE,
-            Color32::WHITE,
-            Color32::WHITE,
-        )
-        .with_label(label, LabelPosition::Right)
-        .with_label_offset(4.0);
-    let knob = modify(knob);
-    let response = ui.add(knob);
-
-    if temp != value {
-        setter(temp.clamp(min, max));
-    }
-
-    if response.drag_stopped() || response.lost_focus() {
-        on_release();
-    }
-}
-
-pub fn knob_disabled(ui: &mut Ui, label: &str, value: KnobPosition, range: RangeInclusive<f32>) {
-    let min = *range.start();
-    let max = *range.end();
-    let mut temp = value.clamp(min, max);
-    let knob = Knob::new(&mut temp, min, max, 0.0, KnobStyle::Wiper)
-        .with_size(20.0)
-        .with_font_size(12.0)
-        .with_stroke_width(2.0)
+pub fn disabled_knob(label: &str, value: f32, range: RangeInclusive<f32>) -> Knob<impl Fn(f32)> {
+    styled_knob(label, value, |_| {}, range)
         .with_colors(
             Color32::DARK_GRAY,
             Color32::GRAY,
             Color32::GRAY,
             Color32::GRAY,
         )
-        .with_label(label, LabelPosition::Right)
-        .with_label_offset(4.0)
-        .enabled(false);
-    ui.add(knob);
+        .enabled(false)
+}
+
+pub fn add_knob<F: Fn()>(ui: &mut Ui, knob: Knob<impl FnMut(f32)>, on_release: F) {
+    let response = ui.add(knob);
+
+    if response.drag_stopped() || response.lost_focus() {
+        on_release();
+    }
 }
 
 /// Position of the label relative to the knob
-#[expect(dead_code)]
 pub enum LabelPosition {
     Top,
     Bottom,
@@ -115,7 +52,6 @@ pub enum LabelPosition {
 }
 
 /// Visual style of the knob indicator
-#[expect(dead_code)]
 pub enum KnobStyle {
     /// A line extending from the center to the edge
     Wiper,
@@ -133,11 +69,10 @@ pub enum KnobStyle {
 ///     .with_label("Volume", LabelPosition::Bottom)
 ///     .with_step(0.1);
 /// ```
-pub struct Knob<'a> {
-    value: &'a mut f32,
-    min: f32,
-    max: f32,
-    neutral: f32,
+pub struct Knob<F: FnMut(f32)> {
+    value: f32,
+    set_value: F,
+    range: RangeInclusive<f32>,
     size: f32,
     font_size: f32,
     stroke_width: f32,
@@ -149,12 +84,13 @@ pub struct Knob<'a> {
     label_position: LabelPosition,
     style: KnobStyle,
     label_offset: f32,
-    label_format: Box<dyn Fn(f32) -> String>,
+    label_format: Box<dyn FnMut(f32) -> String>,
     step: Option<f32>,
+    neutral: Option<f32>,
     enabled: bool,
 }
 
-impl<'a> Knob<'a> {
+impl<F: FnMut(f32)> Knob<F> {
     /// Creates a new knob widget
     ///
     /// # Arguments
@@ -162,12 +98,11 @@ impl<'a> Knob<'a> {
     /// * `min` - Minimum value
     /// * `max` - Maximum value
     /// * `style` - Visual style of the knob indicator
-    pub fn new(value: &'a mut f32, min: f32, max: f32, neutral: f32, style: KnobStyle) -> Self {
+    pub fn new(value: f32, set_value: F, range: RangeInclusive<f32>, style: KnobStyle) -> Self {
         Self {
-            value,
-            min,
-            max,
-            neutral,
+            value: value.clamp(*range.start(), *range.end()),
+            set_value,
+            range,
             size: 40.0,
             font_size: 12.0,
             stroke_width: 2.0,
@@ -181,6 +116,7 @@ impl<'a> Knob<'a> {
             label_offset: 1.0,
             label_format: Box::new(|v| format!("{:.2}", v)),
             step: None,
+            neutral: None,
             enabled: true,
         }
     }
@@ -248,17 +184,24 @@ impl<'a> Knob<'a> {
     /// Knob::new(&mut value, 0.0, 1.0, KnobStyle::Wiper)
     ///     .with_label_format(|v| format!("{:.1}%", v * 100.0));
     /// ```
-    #[expect(dead_code)]
-    pub fn with_label_format(mut self, format: impl Fn(f32) -> String + 'static) -> Self {
+    pub fn with_label_format(mut self, format: impl FnMut(f32) -> String + 'static) -> Self {
         self.label_format = Box::new(format);
         self
     }
 
-    /// Sets the step size for value changes
+    /// Sets the step size for value changes.
     ///
     /// When set, the value will snap to discrete steps as the knob is dragged.
     pub fn with_step(mut self, step: f32) -> Self {
         self.step = Some(step);
+        self
+    }
+
+    /// Sets the neutral value.
+    ///
+    /// When the knob is double clicked, it will reset to the neutral value.
+    pub fn with_neutral(mut self, neutral: f32) -> Self {
+        self.neutral = Some(neutral);
         self
     }
 
@@ -268,13 +211,15 @@ impl<'a> Knob<'a> {
     }
 }
 
-impl Widget for Knob<'_> {
-    fn ui(self, ui: &mut Ui) -> Response {
+impl<F: FnMut(f32)> Widget for Knob<F> {
+    fn ui(mut self, ui: &mut Ui) -> Response {
         let knob_size = Vec2::splat(self.size);
+        let min = *self.range.start();
+        let max = *self.range.end();
 
         let label_size = if let Some(label) = &self.label {
             let font_id = egui::FontId::proportional(self.font_size);
-            let max_text = format!("{}: {}", label, (self.label_format)(self.max));
+            let max_text = format!("{}: {}", label, (self.label_format)(max));
             ui.painter()
                 .layout(max_text, font_id, Color32::WHITE, f32::INFINITY)
                 .size()
@@ -300,15 +245,16 @@ impl Widget for Knob<'_> {
 
         let (rect, mut response) = ui.allocate_exact_size(adjusted_size, Sense::click_and_drag());
 
-        let mut is_dragging = false;
-
         if self.enabled {
             // Double click to return to neutral state.
             if response.double_clicked() {
-                *self.value = self.neutral;
-                response.mark_changed();
+                if let Some(neutral) = self.neutral {
+                    if neutral != self.value {
+                        (self.set_value)(neutral);
+                        response.mark_changed();
+                    }
+                }
             } else if response.dragged() {
-                is_dragging = true;
                 let mut delta = response.drag_delta().y;
 
                 // Hold ctrl, alt or shift to move finely.
@@ -318,21 +264,22 @@ impl Widget for Knob<'_> {
                     }
                 });
 
-                let range = self.max - self.min;
-                let step = self.step.unwrap_or(range * 0.005);
-                let new_value = (*self.value - delta * step).clamp(self.min, self.max);
+                let step = self.step.unwrap_or((max - min) * 0.005);
+                let mut new_value = (self.value - delta * step).clamp(min, max);
 
-                *self.value = if let Some(step) = self.step {
-                    let steps = ((new_value - self.min) / step).round();
-                    (self.min + steps * step).clamp(self.min, self.max)
-                } else {
-                    new_value
-                };
+                if let Some(step) = self.step {
+                    let steps = ((new_value - min) / step).round();
+                    new_value = (min + steps * step).clamp(min, max)
+                }
 
-                response.mark_changed();
+                if new_value != self.value {
+                    (self.set_value)(new_value);
+                    response.mark_changed();
+                }
             }
         }
 
+        let is_dragging = response.dragged() && self.enabled;
         let painter = ui.painter();
         let knob_rect = match self.label_position {
             LabelPosition::Left => {
@@ -367,7 +314,7 @@ impl Widget for Knob<'_> {
 
         let start_angle = down + offset;
 
-        let angle = TAU * ((*self.value - self.min) / (self.max - self.min) * range + start_angle);
+        let angle = TAU * ((self.value - min) / (max - min) * range + start_angle);
 
         let knob_color = if is_dragging {
             self.knob_dragging_color
@@ -391,7 +338,7 @@ impl Widget for Knob<'_> {
         }
 
         if let Some(label) = self.label {
-            let value_string = (self.label_format)(*self.value);
+            let value_string = (self.label_format)(self.value);
             let label_text = if label.is_empty() {
                 // If the label is empty, format only the value string
                 value_string.to_string()
