@@ -18,7 +18,10 @@ impl FirstOrderFilterState {
     pub fn new() -> Self {
         // The buffers are initialized to zero, which means the first sample processed will act as though
         // silence preceded it.
-        Self { x_buffer: 0.0, y_buffer: 0.0 }
+        Self {
+            x_buffer: 0.0,
+            y_buffer: 0.0,
+        }
     }
 
     pub fn process(&mut self, x0: f32, config: &FirstOrderFilterConfig) -> f32 {
@@ -71,11 +74,7 @@ impl FirstOrderFilter {
 
     fn new_internal(config: FirstOrderFilterConfig, mix: Option<Mix>) -> Self {
         let state = FirstOrderFilterState::new();
-        Self {
-            config,
-            mix,
-            state,
-        }
+        Self { config, mix, state }
     }
 }
 
@@ -99,7 +98,7 @@ impl SecondOrderFilterState {
         // Ring buffers store up to two samples back.
         let x_buffer = AllocRingBuffer::from([0.0; 2]);
         let y_buffer = AllocRingBuffer::from([0.0; 2]);
-        Self { x_buffer, y_buffer, }
+        Self { x_buffer, y_buffer }
     }
 
     pub fn process(&mut self, x0: f32, config: &SecondOrderFilterConfig) -> f32 {
@@ -157,11 +156,7 @@ impl SecondOrderFilter {
 
     fn new_internal(config: SecondOrderFilterConfig, mix: Option<Mix>) -> Self {
         let state = SecondOrderFilterState::new();
-        Self {
-            config,
-            mix,
-            state
-        }
+        Self { config, mix, state }
     }
 }
 
