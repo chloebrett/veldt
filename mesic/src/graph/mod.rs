@@ -34,6 +34,10 @@ pub struct ProcessContext {
     pub playback_mode: PlaybackMode,
     pub note_events: NoteEventsByGenerator,
 
+    // Tracks which generators, if any, should be stopped. Used when a track has its generator
+    // index changed - we stop the generator at the old index.
+    pub stop_generators: Vec<bool>,
+
     // A buffer to play starting at sample 0.
     // Used for playing server-rendered audio, previewing samples, etc.
     pub preview_buffer: Vec<Stereo<f32>>,
@@ -48,6 +52,7 @@ impl ProcessContext {
             playback_pos: 0,
             playback_mode: PlaybackMode::Main,
             note_events: vec![],
+            stop_generators: vec![],
             preview_buffer: vec![],
         }
     }

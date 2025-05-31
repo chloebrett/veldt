@@ -22,7 +22,7 @@ pub fn interleave_stereo(left: Vec<f32>, right: Vec<f32>) -> Vec<Stereo<f32>> {
 }
 
 /// Convert a stereo signal into two vectors for left and right.
-pub fn split_stereo_audio(stereo_audio: &[[f32; 2]]) -> (Vec<f32>, Vec<f32>) {
+pub fn split_stereo_audio(stereo_audio: &[Stereo<f32>]) -> (Vec<f32>, Vec<f32>) {
     stereo_audio.iter().map(|it| (it[0], it[1])).unzip()
 }
 
