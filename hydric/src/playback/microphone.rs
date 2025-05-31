@@ -14,23 +14,23 @@ use web_sys::{
 
 // This tutorial was used for the general code structure: https://web.dev/articles/media-recording-audio
 pub struct Microphone {
-    /// media_recorder: Records audio from microphone, constructed from stream.
-    /// audio_chunks: Holds output of media_recorder.
-    /// intermediate_data: Holds processed vec<u8> data created in convert_audio(). Can be a Rc<RefCell>>.
-    /// recording_status: State variable used in MicrophoneView to manage user input.
-    /// tx/rx: Use a stream to put media_recorder data in audio_chunks as they appear.
-    /// audio_ctx: Framework to play audio.
-    /// curr_source: Used to play audio.
-    /// playing_status: Arc Mutex or Rc<RefCell>> required because this can be modified at any time by AudioBufferSourceNode when it finishes playing audio.
     stream: Rc<RefCell<Option<MediaStream>>>,
+    /// media_recorder: Records audio from microphone, constructed from stream.
     media_recorder: Option<MediaRecorder>,
+    /// audio_chunks: Holds output of media_recorder.
     audio_chunks: Vec<Blob>,
+    /// intermediate_data: Holds processed vec<u8> data created in convert_audio(). Can be a Rc<RefCell>>.
     intermediate_data: Arc<Mutex<Vec<u8>>>,
+    /// recording_status: State variable used in MicrophoneView to manage user input.
     recording_status: bool,
+    /// tx/rx: Use a stream to put media_recorder data in audio_chunks as they appear.
     tx: Sender<Blob>,
     rx: Receiver<Blob>,
+    /// audio_ctx: Framework to play audio.
     audio_ctx: Rc<RefCell<Option<AudioContext>>>,
+    /// curr_source: Used to play audio.
     curr_source: Rc<RefCell<Option<AudioBufferSourceNode>>>,
+    /// playing_status: Arc Mutex or Rc<RefCell>> required because this can be modified at any time by AudioBufferSourceNode when it finishes playing audio.
     playing_status: Arc<Mutex<bool>>,
 }
 
@@ -224,7 +224,7 @@ impl Microphone {
                 .map(AudioBuffer::from)
                 .unwrap();
 
-            let mut source_guard = source_clone.borrow_mut();
+            let mut source_ref = source_clone.borrow_mut();
             let source = AudioBufferSourceNode::new(&audio_ctx).unwrap();
             source.set_buffer(Some(&decoded));
 
@@ -240,14 +240,18 @@ impl Microphone {
                 *playing_status_closure_clone.lock().unwrap() = false;
             }) as Box<dyn FnMut()>);
 
-            // TODO: make this not be a memory leak.
+            // Marked as deprecated in the source code (go to definition). However, not in the web sys docs: 
+            // https://docs.rs/web-sys/latest/web_sys/struct.AudioScheduledSourceNode.html#method.set_onended
+            // or the MDN docs: https://developer.mozilla.org/en-US/docs/Web/API/AudioScheduledSourceNode/ended_event
+            // May be a mistake.
             #[allow(deprecated)]
             source.set_onended(Some(onended_closure.as_ref().unchecked_ref()));
+            // TODO: make this not be a memory leak.
             onended_closure.forget(); // Store permanently (or manage cleanup).
 
             source.start().unwrap();
 
-            *source_guard = Some(source);
+            *source_ref = Some(source);
             *playing_status_clone.lock().unwrap() = true;
         });
         Ok(())
@@ -275,6 +279,10 @@ impl Microphone {
         }
 
         if let Some(source) = self.curr_source.borrow_mut().take() {
+            // Marked as deprecated in the source code (go to definition). However, not in the web sys docs: 
+            // https://docs.rs/web-sys/latest/web_sys/struct.AudioScheduledSourceNode.html#method.stop
+            // or the MDN docs: https://developer.mozilla.org/en-US/docs/Web/API/AudioScheduledSourceNode/stop
+            // May be a mistake.
             #[allow(deprecated)]
             source.stop()?; // This is marked as depreceated, yet I can't find an alternative.
         }
@@ -290,6 +298,7 @@ impl Microphone {
         if let Some(ctx) = self.audio_ctx.borrow_mut().take() {
             // AudioBufferSourceNode is dropped if we stop playing, so have to check if it exists.
             if *self.playing_status.lock().unwrap() {
+                // Same situation as the stop_mic_audio(). Potentially mistakenly marked as deprecated. 
                 #[allow(deprecated)]
                 let _ = self.curr_source.borrow_mut().take().unwrap().stop();
             }
