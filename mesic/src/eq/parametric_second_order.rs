@@ -1,4 +1,4 @@
-use super::filter::{Mix, Filter, FilterConfig};
+use super::filter::{Filter, FilterConfig, Mix};
 use crate::consts::SAMPLE_RATE;
 use shared::model::EqConfig;
 use std::f32::consts::TAU;
@@ -22,8 +22,5 @@ pub fn parametric_non_constant_q(config: &EqConfig) -> Filter {
     let wet: f32 = mu - 1.0;
     let dry: f32 = 1.0;
 
-    Filter::new(
-        FilterConfig { a0, a1, a2, b1, b2 },
-        Mix { wet, dry },
-    )
+    Filter::new(FilterConfig { a0, a1, a2, b1, b2 }, Mix { wet, dry })
 }
