@@ -46,7 +46,7 @@ impl GraphManager {
         // TODO: abstract this better.
         let current = self.node_counts.get(&key).unwrap_or(&0);
         self.node_counts.insert(key, current - 1);
-        if *self.node_counts.get(&key).unwrap() <= 0 {
+        if *self.node_counts.get(&key).unwrap() == 0 {
             self.node_counts.remove(&key);
         }
     }
