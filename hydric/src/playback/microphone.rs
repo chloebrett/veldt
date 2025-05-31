@@ -240,7 +240,7 @@ impl Microphone {
                 *playing_status_closure_clone.lock().unwrap() = false;
             }) as Box<dyn FnMut()>);
 
-            // Marked as deprecated in the source code (go to definition). However, not in the web sys docs: 
+            // Marked as deprecated in the source code (go to definition). However, not in the web sys docs:
             // https://docs.rs/web-sys/latest/web_sys/struct.AudioScheduledSourceNode.html#method.set_onended
             // or the MDN docs: https://developer.mozilla.org/en-US/docs/Web/API/AudioScheduledSourceNode/ended_event
             // May be a mistake.
@@ -279,7 +279,7 @@ impl Microphone {
         }
 
         if let Some(source) = self.curr_source.borrow_mut().take() {
-            // Marked as deprecated in the source code (go to definition). However, not in the web sys docs: 
+            // Marked as deprecated in the source code (go to definition). However, not in the web sys docs:
             // https://docs.rs/web-sys/latest/web_sys/struct.AudioScheduledSourceNode.html#method.stop
             // or the MDN docs: https://developer.mozilla.org/en-US/docs/Web/API/AudioScheduledSourceNode/stop
             // May be a mistake.
@@ -298,7 +298,7 @@ impl Microphone {
         if let Some(ctx) = self.audio_ctx.borrow_mut().take() {
             // AudioBufferSourceNode is dropped if we stop playing, so have to check if it exists.
             if *self.playing_status.lock().unwrap() {
-                // Same situation as the stop_mic_audio(). Potentially mistakenly marked as deprecated. 
+                // Same situation as the stop_mic_audio(). Potentially mistakenly marked as deprecated.
                 #[allow(deprecated)]
                 let _ = self.curr_source.borrow_mut().take().unwrap().stop();
             }
