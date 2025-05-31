@@ -13,10 +13,12 @@ pub fn linspace(low: f32, high: f32, count: u32) -> Vec<f32> {
         .collect()
 }
 
+/// Linear interpolation.
 pub fn lerp(a: f32, b: f32, t: f32) -> f32 {
     a * (1.0 - t) + b * t
 }
 
+/// Inverse lerp function.
 pub fn ilerp(a: f32, b: f32, x: f32) -> f32 {
     (x - a) / (b - a)
 }

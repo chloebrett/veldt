@@ -4,6 +4,7 @@ use shared::model::{AntiAliasingMode, WaveType};
 use shared::types::Freq;
 use std::f32::consts::TAU;
 
+/// Returns the frequency multiplier required to detune by the specified number of cents.
 pub fn detune_multiplier(cents: f32) -> Freq {
     if cents == 0.0 {
         return 1.0;
@@ -14,7 +15,7 @@ pub fn detune_multiplier(cents: f32) -> Freq {
     SEMITONE_FREQ.powf(interval)
 }
 
-/// Constructs the given wave at the given phase. x is between 0 and TAU (or will be modulo'd to be
+/// Constructs the given wave at the given phase. x is between 0 and 1 (or will be modulo'd to be
 /// between these numbers).
 /// wave_freq is sent to determine cutoffs for additive anti-aliasing.
 pub fn make_wave(

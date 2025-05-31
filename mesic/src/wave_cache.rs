@@ -29,7 +29,7 @@ pub struct WaveCache {
 // Multiplier on the lookup table size.
 // This is necessary when the frequency isn't a clean divisor of the sample rate,
 // which is most of the time.
-// A value of 10, coupled with lerping, gets rid of most of the audible harmonics.
+// A value of 10, coupled with lerping, gets rid of most of the audible aliasing harmonics.
 const FIDELITY: f32 = 10.0;
 
 impl WaveCache {
