@@ -120,19 +120,23 @@ impl RenderGraph {
             return;
         };
 
-        if let Action::SetIndex(IndexField::Generator(_)) = action {
-            if let PlacementType::Track(track_placement) =
-                &store.project.placements[*placement_index].kind
-            {
-                let prev_generator_index = track_placement.generator_index;
-                let stop_generators = &mut self.process_context.stop_generators;
-                while stop_generators.len() <= prev_generator_index {
-                    stop_generators.push(false);
-                }
-                stop_generators[prev_generator_index] = true;
-                log::info!("Stopped generator: {:?}", stop_generators);
-            }
+        let Action::SetIndex(IndexField::Generator(_)) = action else {
+            return;
+        };
+
+        let PlacementType::Track(track_placement) =
+            &store.project.placements[*placement_index].kind
+        else {
+            return;
+        };
+
+        let prev_generator_index = track_placement.generator_index;
+        let stop_generators = &mut self.process_context.stop_generators;
+        while stop_generators.len() <= prev_generator_index {
+            stop_generators.push(false);
         }
+        stop_generators[prev_generator_index] = true;
+        log::info!("Stopped generator: {:?}", stop_generators);
     }
 
     fn update_duration(&mut self) {
