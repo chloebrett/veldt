@@ -8,6 +8,34 @@ pub struct Mix {
     pub dry: f32,
 }
 
+/// Holds ring buffer states for first order filters
+pub struct FirstOrderFilterState {
+    x_buffer: f32, // effectively a ring buffer with length 1.
+    y_buffer: f32, // same as above.
+}
+
+impl FirstOrderFilterState {
+    pub fn new() -> Self {
+        // The buffers are initialized to zero, which means the first sample processed will act as though
+        // silence preceded it.
+        Self { x_buffer: 0.0, y_buffer: 0.0 }
+    }
+
+    pub fn process(&mut self, x0: f32, config: &FirstOrderFilterConfig) -> f32 {
+        let FirstOrderFilterConfig { a0, a1, b1 } = config;
+
+        let xn1 = self.x_buffer;
+        let yn1 = self.y_buffer;
+
+        let yn = a0 * x0 + a1 * xn1 - b1 * yn1;
+
+        self.x_buffer = x0;
+        self.y_buffer = yn;
+
+        yn
+    }
+}
+
 /// A filter which looks at:
 /// * x0 (current input)
 /// * x1 (input one sample back)
@@ -22,9 +50,7 @@ pub struct Mix {
 pub struct FirstOrderFilter {
     pub config: FirstOrderFilterConfig,
     pub mix: Option<Mix>, // if absent, assumed as wet = 1.0 and dry = 0.0.
-
-    x_buffer: f32, // effectively a ring buffer with length 1.
-    y_buffer: f32, // same as above.
+    pub state: FirstOrderFilterState,
 }
 
 /// Helps to prevent typos in param names.
@@ -44,35 +70,56 @@ impl FirstOrderFilter {
     }
 
     fn new_internal(config: FirstOrderFilterConfig, mix: Option<Mix>) -> Self {
-        // The buffers are initialized to zero, which means the first sample processed will act as though
-        // silence preceded it.
-        let x_buffer = 0.0;
-        let y_buffer = 0.0;
-
+        let state = FirstOrderFilterState::new();
         Self {
             config,
             mix,
-            x_buffer,
-            y_buffer,
+            state,
         }
     }
 }
 
 impl ApplyFilter for FirstOrderFilter {
     fn apply(&mut self, buffer: &mut Buffer) {
-        let FirstOrderFilterConfig { a0, a1, b1 } = self.config;
-
         for xn in buffer.iter_mut() {
-            let xn1 = self.x_buffer;
-            let yn1 = self.y_buffer;
-
-            let yn = a0 * *xn + a1 * xn1 - b1 * yn1;
-
-            self.x_buffer = *xn;
-            self.y_buffer = yn;
-
+            let yn = self.state.process(*xn, &self.config);
             apply_mix(xn, yn, *xn, &self.mix);
         }
+    }
+}
+
+/// Holds ring buffer states for second order filters
+pub struct SecondOrderFilterState {
+    x_buffer: AllocRingBuffer<f32>,
+    y_buffer: AllocRingBuffer<f32>,
+}
+
+impl SecondOrderFilterState {
+    pub fn new() -> Self {
+        // Ring buffers store up to two samples back.
+        let x_buffer = AllocRingBuffer::from([0.0; 2]);
+        let y_buffer = AllocRingBuffer::from([0.0; 2]);
+        Self { x_buffer, y_buffer, }
+    }
+
+    pub fn process(&mut self, x0: f32, config: &SecondOrderFilterConfig) -> f32 {
+        let SecondOrderFilterConfig { a0, a1, a2, b1, b2 } = config;
+
+        // The oldest values should be removed from the ring buffer in each iteration.
+        let xn2 = self.x_buffer.dequeue().expect("Expected value in x buffer");
+        let yn2 = self.y_buffer.dequeue().expect("Expected value in y buffer");
+
+        // The second-oldest values should be checked but not removed, because we will still
+        // need them to process the next sample.
+        let xn1 = self.x_buffer.front().expect("Expected value in x buffer");
+        let yn1 = self.y_buffer.front().expect("Expected value in y buffer");
+
+        let yn = a0 * x0 + a1 * xn1 + a2 * xn2 - b1 * yn1 - b2 * yn2;
+
+        self.x_buffer.push(x0);
+        self.y_buffer.push(yn);
+
+        yn
     }
 }
 
@@ -87,9 +134,7 @@ impl ApplyFilter for FirstOrderFilter {
 pub struct SecondOrderFilter {
     pub config: SecondOrderFilterConfig,
     pub mix: Option<Mix>,
-
-    x_buffer: AllocRingBuffer<f32>,
-    y_buffer: AllocRingBuffer<f32>,
+    pub state: SecondOrderFilterState,
 }
 
 /// Helps to prevent typos in param names.
@@ -111,38 +156,19 @@ impl SecondOrderFilter {
     }
 
     fn new_internal(config: SecondOrderFilterConfig, mix: Option<Mix>) -> Self {
-        // Ring buffers store up to two samples back.
-        let x_buffer = AllocRingBuffer::from([0.0; 2]);
-        let y_buffer = AllocRingBuffer::from([0.0; 2]);
-
+        let state = SecondOrderFilterState::new();
         Self {
             config,
             mix,
-            x_buffer,
-            y_buffer,
+            state
         }
     }
 }
 
 impl ApplyFilter for SecondOrderFilter {
     fn apply(&mut self, buffer: &mut Buffer) {
-        let SecondOrderFilterConfig { a0, a1, a2, b1, b2 } = self.config;
-
         for xn in buffer.iter_mut() {
-            // The oldest values should be removed from the ring buffer in each iteration.
-            let xn2 = self.x_buffer.dequeue().expect("Expected value in x buffer");
-            let yn2 = self.y_buffer.dequeue().expect("Expected value in y buffer");
-
-            // The second-oldest values should be checked but not removed, because we will still
-            // need them to process the next sample.
-            let xn1 = self.x_buffer.front().expect("Expected value in x buffer");
-            let yn1 = self.y_buffer.front().expect("Expected value in y buffer");
-
-            let yn = a0 * *xn + a1 * xn1 + a2 * xn2 - b1 * yn1 - b2 * yn2;
-
-            self.x_buffer.push(*xn);
-            self.y_buffer.push(yn);
-
+            let yn = self.state.process(*xn, &self.config);
             apply_mix(xn, yn, *xn, &self.mix);
         }
     }
