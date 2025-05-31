@@ -96,27 +96,13 @@ impl RenderGraph {
         // TODO: there is a bug where new effects won't pick up these changes immediately,
         // and have to have their values tweaked first.
         // Investigate.
-        let store = &mut self.process_context.store;
         while let Ok((selector, action)) = self.rx.try_recv() {
             // Stop generators when a track changes its generator index.
             // This needs to run before the store update, as we reference the previous state of the
             // store.
-            if let Selector::Placement(placement_index) = selector {
-                if let Action::SetIndex(IndexField::Generator(_)) = action {
-                    if let PlacementType::Track(track_placement) =
-                        &store.project.placements[placement_index].kind
-                    {
-                        let prev_generator_index = track_placement.generator_index;
-                        let stop_generators = &mut self.process_context.stop_generators;
-                        while stop_generators.len() <= prev_generator_index {
-                            stop_generators.push(false);
-                        }
-                        stop_generators[prev_generator_index] = true;
-                        log::info!("Stopped generator: {:?}", stop_generators);
-                    }
-                }
-            }
+            self.maybe_stop_generator(&selector, &action);
 
+            let store = &mut self.process_context.store;
             store.update(&selector, &action);
 
             // Also update the graph topology by listening for the appropriate actions.
@@ -125,6 +111,28 @@ impl RenderGraph {
         }
 
         self.update_duration();
+    }
+
+    // If a track placement changes its generator index, stop the old generator from playing.
+    fn maybe_stop_generator(&mut self, selector: &Selector, action: &Action) {
+        let store = &self.process_context.store;
+        let Selector::Placement(placement_index) = selector else {
+            return;
+        };
+
+        if let Action::SetIndex(IndexField::Generator(_)) = action {
+            if let PlacementType::Track(track_placement) =
+                &store.project.placements[*placement_index].kind
+            {
+                let prev_generator_index = track_placement.generator_index;
+                let stop_generators = &mut self.process_context.stop_generators;
+                while stop_generators.len() <= prev_generator_index {
+                    stop_generators.push(false);
+                }
+                stop_generators[prev_generator_index] = true;
+                log::info!("Stopped generator: {:?}", stop_generators);
+            }
+        }
     }
 
     fn update_duration(&mut self) {
