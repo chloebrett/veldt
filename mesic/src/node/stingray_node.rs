@@ -2,7 +2,7 @@ use super::pan_multipliers;
 use crate::SAMPLE_RATE;
 use crate::consts::CHANNEL_COUNT;
 use crate::envelope::EnvelopeGenerator;
-use crate::eq::{ApplyFilter, eq_filter, EqFilter};
+use crate::eq::{ApplyFilter, EqFilter, eq_filter};
 use crate::graph::{NoteEventType, ProcessContext};
 use crate::maths::linspace;
 use crate::wave::detune_multiplier;
