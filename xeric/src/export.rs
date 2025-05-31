@@ -11,8 +11,8 @@ use std::env::current_dir;
 use std::fs::{File, create_dir_all};
 use std::io::{Cursor, Write};
 use std::path::PathBuf;
-use tonic::{Request, Response, Status, async_trait};
 use strum::Display;
+use tonic::{Request, Response, Status, async_trait};
 
 // Exports project to .wav or .mp3
 pub struct ExportContext;
