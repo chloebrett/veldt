@@ -24,7 +24,6 @@ impl<'a> StateWindow<'a> {
         title: &'a str,
         add_contents: impl FnOnce(&mut Ui) -> R,
     ) -> Option<InnerResponse<Option<R>>> {
-        log::debug!("{:?}", window_kind.to_string());
         Self(
             default_window(title)
                 .id(window_state.get_id(window_kind))
