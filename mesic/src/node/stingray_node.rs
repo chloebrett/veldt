@@ -116,6 +116,13 @@ impl Node<ProcessContext> for StingrayNode {
         let mut buffers = [Buffer::SILENT; 2];
         let GeneratorSelector(generator_index) = self.selector;
 
+        if payload.stop_generators.get(generator_index) == Some(&true) {
+            log::info!("Stopped stingray: {generator_index}");
+            for eg in state.voice.egs.iter_mut() {
+                eg.note_off();
+            }
+        }
+
         // TODO: fix this, it's n^2 right now. (well, n*64).
         for i in 0..Buffer::LEN {
             let mut events: Vec<_> = payload.note_events[generator_index]

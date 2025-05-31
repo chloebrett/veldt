@@ -86,6 +86,11 @@ impl Node<ProcessContext> for SimpleWaveGeneratorNode {
         let mut buffer = Buffer::SILENT;
         let GeneratorSelector(generator_index) = self.selector;
 
+        if payload.stop_generators.get(generator_index) == Some(&true) {
+            log::info!("Stopped SWG: {generator_index}");
+            state.voice.eg.note_off();
+        }
+
         // TODO: fix this, it's n^2 right now. (well, n*64).
         for i in 0..buffer.len() {
             let mut events: Vec<_> = payload.note_events[generator_index]
