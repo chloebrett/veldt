@@ -76,6 +76,11 @@ impl FirstOrderFilter {
         let state = FirstOrderFilterState::new();
         Self { config, mix, state }
     }
+
+    pub fn set_config(mut self, config: FirstOrderFilterConfig) -> Self {
+        self.config = config;
+        self
+    }
 }
 
 impl ApplyFilter for FirstOrderFilter {
@@ -162,6 +167,11 @@ impl SecondOrderFilter {
     fn new_internal(config: SecondOrderFilterConfig, mix: Option<Mix>) -> Self {
         let state = SecondOrderFilterState::new();
         Self { config, mix, state }
+    }
+
+    pub fn set_config(mut self, config: SecondOrderFilterConfig) -> Self {
+        self.config = config;
+        self
     }
 }
 
