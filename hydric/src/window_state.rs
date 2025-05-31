@@ -60,7 +60,7 @@ impl WindowData {
             WindowKind::Generator(GeneratorSelector(index)) => {
                 format!("{}", index)
             }
-            _ => "".to_string(), 
+            _ => "".to_string(),
         };
         Self {
             visible: false,
