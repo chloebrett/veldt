@@ -1,8 +1,8 @@
 use crate::local_state::LocalState;
+use crate::playback::Microphone;
 use crate::view::View;
 use crate::widget::StateWindow;
 use crate::window_state::WindowKind;
-use crate::playback::Microphone;
 use egui::Ui;
 
 pub struct MicrophoneView<'a> {

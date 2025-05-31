@@ -24,13 +24,18 @@ impl<'a> StateWindow<'a> {
         title: &'a str,
         add_contents: impl FnOnce(&mut Ui) -> R,
     ) -> Option<InnerResponse<Option<R>>> {
-        Self(default_window(title).default_pos(window_state.get_pos(window_kind)))
-            .show_with_closure(
-                ui,
-                window_state.get_visible(window_kind),
-                move |_| window_state.set_visible(window_kind, false),
-                add_contents,
-            )
+        log::debug!("{:?}", window_kind.to_string());
+        Self(
+            default_window(title)
+                .id(window_state.get_id(window_kind))
+                .default_pos(window_state.get_pos(window_kind)),
+        )
+        .show_with_closure(
+            ui,
+            window_state.get_visible(window_kind),
+            move |_| window_state.set_visible(window_kind, false),
+            add_contents,
+        )
     }
 
     /// Shows a window that calls a closure when it is closed.
