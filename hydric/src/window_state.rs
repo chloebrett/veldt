@@ -10,7 +10,6 @@ use strum::IntoEnumIterator;
 use strum::{Display, EnumIter};
 
 /// Windows variants that will appear on the UI.
-// TODO: Move all windows to WindowKind
 #[derive(Hash, Copy, Clone, Display, Debug, EnumIter, PartialEq, Eq)]
 pub enum WindowKind {
     Mixer,
@@ -53,20 +52,20 @@ impl WindowData {
             WindowKind::Placement => pos2(100.0, 20.0),
             WindowKind::Note => pos2(600.0, 20.0),
         };
-        // Create unique IDs for `WindowKinds` that could have multiple variants.
+        // Create unique IDs for `WindowKind` that could have multiple variants.
         let id_string = match window {
             WindowKind::Effect(EffectSelector(mixer_index, effect_index)) => {
-                format!("{}_{}_{}", window.to_string(), mixer_index, effect_index)
+                format!("{}_{}", mixer_index, effect_index)
             }
             WindowKind::Generator(GeneratorSelector(index)) => {
-                format!("{}_{}", window.to_string(), index)
+                format!("{}", index)
             }
-            _ => window.to_string(),
+            _ => "".to_string(), 
         };
         Self {
             visible: false,
             pos,
-            id: Id::new(format!("window_{id_string}")),
+            id: Id::new(format!("window_{}_{id_string}", window.to_string())),
         }
     }
 }

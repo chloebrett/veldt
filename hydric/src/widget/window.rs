@@ -15,7 +15,7 @@ pub fn default_window(title: &str) -> Window {
 pub struct StateWindow<'a>(pub Window<'a>);
 
 impl<'a> StateWindow<'a> {
-    /// Configures and shows a window from `WindowState` and `WindowKind`.
+    /// Configures and shows a window based on `WindowState` and `WindowKind`.
     // TODO: Move title onto `WindowState`.
     pub fn show_from_window_state<R>(
         ui: &mut Ui,
