@@ -12,37 +12,40 @@ use std::fs::{File, create_dir_all};
 use std::io::{Cursor, Write};
 use std::path::PathBuf;
 use tonic::{Request, Response, Status, async_trait};
+use strum::Display;
 
 // Exports project to .wav or .mp3
 pub struct ExportContext;
 
-// Created so that we can combine the file_path and dir_path functions.
+#[derive(Display)]
 enum AudioFileType {
+    #[strum(to_string = "mp3")]
     Mp3,
+    #[strum(to_string = "wav")]
     Wav,
 }
 
-impl AudioFileType {
-    fn as_str(&self) -> &'static str {
-        match self {
-            AudioFileType::Mp3 => "mp3",
-            AudioFileType::Wav => "wav",
-        }
-    }
-}
+// impl AudioFileType {
+//     fn as_str(&self) -> &'static str {
+//         match self {
+//             AudioFileType::Mp3 => "mp3",
+//             AudioFileType::Wav => "wav",
+//         }
+//     }
+// }
 
 // Create output file path according to AudioFileType.
-fn wav_file_path(name: &str, file_type: AudioFileType) -> PathBuf {
-    let file_ext = file_type.as_str();
-    let mut file_path = wav_dir_path(file_type);
+fn export_file_path(name: &str, file_type: AudioFileType) -> PathBuf {
+    let file_ext = file_type.to_string();
+    let mut file_path = export_dir_path(file_type);
     file_path.push(format!("{name}.{file_ext}"));
     file_path
 }
 
-fn wav_dir_path(file_type: AudioFileType) -> PathBuf {
+fn export_dir_path(file_type: AudioFileType) -> PathBuf {
     let mut dir_path = current_dir().unwrap();
     // Note: no need to pop '/xeric', as we assume we are running from the veldt dir.
-    dir_path.push(file_type.as_str());
+    dir_path.push(file_type.to_string());
     dir_path
 }
 
@@ -103,9 +106,9 @@ impl Export for ExportContext {
         let wav_bytes = buffer.into_inner();
 
         // Write to output file.
-        let dir_path = wav_dir_path(AudioFileType::Wav);
+        let dir_path = export_dir_path(AudioFileType::Wav);
         let _ = create_dir_all(&dir_path);
-        let file_path = wav_file_path(&project.name, AudioFileType::Wav);
+        let file_path = export_file_path(&project.name, AudioFileType::Wav);
 
         // NOTE: will overwrite if the file already exists.
         let mut out_file =
@@ -143,6 +146,7 @@ impl Export for ExportContext {
         mp3_encoder
             .set_sample_rate(SAMPLE_RATE as u32)
             .expect("set sample rate");
+        // TODO: Allow user to specify bitrate, common options are 320, 256, 192 and 128kbps.
         mp3_encoder
             .set_brate(mp3lame_encoder::Bitrate::Kbps320)
             .expect("set brate");
@@ -163,8 +167,8 @@ impl Export for ExportContext {
         let mut mp3_encoder = mp3_encoder.build().expect("Initialise LAME encoder");
 
         // Sample buffers.
-        let mut left_channel = Vec::new();
-        let mut right_channel = Vec::new();
+        let mut left_channel = vec![];
+        let mut right_channel = vec![];
 
         for frame in graph {
             left_channel.push(float_to_i16(frame[0]));
@@ -196,9 +200,9 @@ impl Export for ExportContext {
         }
 
         // Write to output file.
-        let dir_path = wav_dir_path(AudioFileType::Mp3);
+        let dir_path = export_dir_path(AudioFileType::Mp3);
         let _ = create_dir_all(&dir_path);
-        let file_path = wav_file_path(&project.name, AudioFileType::Mp3);
+        let file_path = export_file_path(&project.name, AudioFileType::Mp3);
 
         // NOTE: will overwrite if the file already exists.
         let mut out_file =

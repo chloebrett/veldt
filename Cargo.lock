@@ -5716,6 +5716,7 @@ dependencies = [
  "prost",
  "shared",
  "state",
+ "strum 0.27.1",
  "tokio",
  "tonic",
  "tonic-web",
