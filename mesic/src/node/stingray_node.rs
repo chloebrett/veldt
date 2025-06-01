@@ -3,7 +3,7 @@ use crate::SAMPLE_RATE;
 use crate::consts::CHANNEL_COUNT;
 use crate::envelope::EnvelopeGenerator;
 use crate::eq::filter::Filter;
-use crate::eq::{ApplyFilter, eq_filter};
+use crate::eq::{eq_filter};
 use crate::graph::{NoteEventType, ProcessContext};
 use crate::maths::linspace;
 use crate::wave::detune_multiplier;
@@ -71,7 +71,7 @@ impl NodeState {
                 if self.config.lpf != config.lpf {
                     // TODO: don't re-create the whole filter, just update
                     // the coefficients. Keep the ring buffer as is.
-                    // ApplyFilter should have an update() method that takes some kind of config
+                    // Filter should have an update() method that takes some kind of config
                     // object.
                     self.filter_left = eq_filter(&config.lpf);
                     self.filter_right = eq_filter(&config.lpf);

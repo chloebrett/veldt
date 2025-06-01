@@ -17,7 +17,6 @@ mod shelf_first_order;
 use apf_first_order::*;
 use apf_second_order::*;
 use bps_basic::*;
-use dasp_graph::Buffer;
 use filter::Filter;
 use first_order_all_pole::*;
 use lhp_first_order::*;
@@ -30,10 +29,6 @@ use resonator_sa::*;
 use resonator_simple::*;
 use shared::model::{EqConfig, EqType};
 use shelf_first_order::*;
-
-pub trait ApplyFilter {
-    fn apply(&mut self, buffer: &mut Buffer);
-}
 
 pub fn eq_filter(config: &EqConfig) -> Filter {
     match config.kind {

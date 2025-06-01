@@ -1,4 +1,3 @@
-use super::ApplyFilter;
 use dasp_graph::Buffer;
 use ringbuffer::{AllocRingBuffer, RingBuffer};
 
@@ -92,10 +91,8 @@ impl Filter {
             y_buffer,
         }
     }
-}
 
-impl ApplyFilter for Filter {
-    fn apply(&mut self, buffer: &mut Buffer) {
+    pub fn apply(&mut self, buffer: &mut Buffer) {
         let FilterConfig { a0, a1, a2, b1, b2 } = self.config;
 
         for xn in buffer.iter_mut() {
