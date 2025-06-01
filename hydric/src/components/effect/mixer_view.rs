@@ -6,7 +6,7 @@ use crate::playback::AudioPlayer;
 use crate::view::View;
 use crate::widget::StateWindow;
 use crate::widget::int_slider;
-use crate::widget::{add_knob, default_window, styled_knob};
+use crate::widget::{add_knob, styled_knob};
 use crate::window_state::WindowKind;
 use egui::CornerRadius;
 use egui::Shape;
@@ -57,19 +57,11 @@ impl View for MixerView<'_> {
         // Keep track of an object being dragged.
         let mut from_to = None;
 
-        StateWindow(
-            default_window("Mixer")
-                .id("mixer".into())
-                .default_pos(local_state.window_state.get_pos(WindowKind::Mixer)),
-        )
-        .show_with_closure(
+        StateWindow::show_from_window_state(
             ui,
-            local_state.window_state.get_visible(WindowKind::Mixer),
-            |_| {
-                local_state
-                    .window_state
-                    .set_visible(WindowKind::Mixer, false)
-            },
+            &local_state.window_state,
+            WindowKind::Mixer,
+            "Mixer",
             |ui| {
                 ui.add_space(8.0);
 
