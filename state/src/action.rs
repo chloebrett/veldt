@@ -23,6 +23,7 @@ pub enum Action {
     // Add a child object by type.
     AddChild(TypeField),
     // Set children of an object by type.
+    AddChildren(MultiTypeField),
     SetChildren(MultiTypeField),
     MoveChild(MoveField),
 
@@ -56,6 +57,7 @@ impl From<ActionProto> for Action {
             ActionKind::AddChild(child) => Action::AddChild(child.into()),
             ActionKind::SetChild(child) => Action::SetChild(child.into()),
             ActionKind::SetChildren(children) => Action::SetChildren(children.into()),
+            ActionKind::AddChildren(children) => Action::AddChildren(children.into())
         }
     }
 }
@@ -79,6 +81,7 @@ impl From<Action> for ActionProto {
                 Action::DeleteChildren(indexes) => ActionKind::DeleteChildren(indexes.into()),
                 Action::MoveChild(it) => ActionKind::MoveChild(it.into()),
                 Action::SetChildren(it) => ActionKind::SetChildren(it.into()),
+                Action::AddChildren(it) => ActionKind::AddChildren(it.into()),
 
                 // Non-serializable actions
                 Action::Release => panic!(),
