@@ -1,3 +1,4 @@
+use dasp_frame::Stereo;
 use egui::epaint::TextShape;
 use egui::text::TextWrapping;
 use egui::{Align, Modifiers, Pos2, Rangef, Stroke, TextStyle, WidgetText};
@@ -159,8 +160,8 @@ impl<'a, F: Fn(f32), G: Fn()> AudioLevel<'a, F, G> {
         ui: &mut Ui,
         to_screen: RectTransform,
         range: Rect,
-        levels: [f32; 2],
-        peaks: [f32; 2],
+        levels: Stereo<f32>,
+        peaks: Stereo<f32>,
     ) -> Shape {
         // Divide range for left and right channels.
         let (left_range, right_range) = range.split_left_right_at_fraction(0.5);
