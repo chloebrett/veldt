@@ -1,11 +1,11 @@
 use super::generator_name;
-use crate::WindowState;
-use crate::widget::{StateWindow, default_window, int_slider, knob};
+use crate::local_state::LocalState;
+use crate::widget::{StateWindow, add_knob, default_window, int_slider, styled_knob};
 use crate::window_state::WindowKind;
 use egui::{Button, Pos2, Ui};
 use state::{Action, FloatField, GeneratorSelector, IndexField, Store, TypeField};
 
-pub fn generators_control(ui: &mut Ui, window_state: &mut WindowState, store: &Store) {
+pub fn generators_control(ui: &mut Ui, local_state: &LocalState, store: &Store) {
     let generators = &store.get().project.generators;
     StateWindow(
         default_window("Generators")
@@ -17,8 +17,14 @@ pub fn generators_control(ui: &mut Ui, window_state: &mut WindowState, store: &S
     )
     .show_with_closure(
         ui,
-        window_state.get_visible(WindowKind::GeneratorList),
-        |_| window_state.set_visible(WindowKind::GeneratorList, false),
+        local_state
+            .window_state
+            .get_visible(WindowKind::GeneratorList),
+        |_| {
+            local_state
+                .window_state
+                .set_visible(WindowKind::GeneratorList, false)
+        },
         |ui| {
             for generator_index in 0..generators.len() {
                 let sel = GeneratorSelector(generator_index);
@@ -26,7 +32,9 @@ pub fn generators_control(ui: &mut Ui, window_state: &mut WindowState, store: &S
 
                 let generator = &generators[generator_index];
                 let label = generator_name(generator);
-                let show = window_state.get_visible(WindowKind::Generator(sel));
+                let show = local_state
+                    .window_state
+                    .get_visible(WindowKind::Generator(sel));
                 let meta = generator.meta.clone();
                 ui.horizontal(|ui| {
                     let mute_response = ui.add(Button::new("Mute").selected(meta.mute));
@@ -36,27 +44,32 @@ pub fn generators_control(ui: &mut Ui, window_state: &mut WindowState, store: &S
 
                     let generator_response = ui.add(Button::new(label).selected(show));
                     if generator_response.clicked() {
-                        window_state.set_visible(WindowKind::Generator(sel), !show);
+                        local_state
+                            .window_state
+                            .set_visible(WindowKind::Generator(sel), !show);
                     }
 
-                    knob(
+                    add_knob(
                         ui,
-                        "Volume",
-                        meta.volume,
-                        |it| store.dispatch(&sel, Action::SetFloat(FloatField::Volume, it)),
-                        // TODO: let this go up a bit past 1?
-                        0.0..=1.0,
-                        /* neutral= */ 0.8,
+                        styled_knob(
+                            "Volume",
+                            meta.volume,
+                            |it| store.dispatch(&sel, Action::SetFloat(FloatField::Volume, it)),
+                            // TODO: let this go up a bit past 1?
+                            0.0..=1.0,
+                        )
+                        .with_neutral(0.8),
                         on_release,
                     );
-                    // TODO: make the pan knob centre at the top since it's bipolar.
-                    knob(
+                    add_knob(
                         ui,
-                        "Pan",
-                        meta.pan,
-                        |it| store.dispatch(&sel, Action::SetFloat(FloatField::Pan, it)),
-                        -1.0..=1.0,
-                        /* neutral= */ 0.0,
+                        styled_knob(
+                            "Pan",
+                            meta.pan,
+                            |it| store.dispatch(&sel, Action::SetFloat(FloatField::Pan, it)),
+                            -1.0..=1.0,
+                        )
+                        .with_neutral(0.0),
                         on_release,
                     );
                 });

@@ -1,4 +1,4 @@
-use shared::model::{Mixer, ModMatrix, Project};
+use shared::model::{Mixer, Project};
 use state::StoreData;
 
 pub fn empty_store_data() -> StoreData {
@@ -11,7 +11,6 @@ pub fn empty_store_data() -> StoreData {
             generators: vec![],
             mixer: Mixer::default(),
             bpm: 120.0,
-            mod_matrix: ModMatrix::default(),
         },
         ..Default::default()
     }

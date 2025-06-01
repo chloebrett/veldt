@@ -1,4 +1,4 @@
-use crate::widget::knob;
+use crate::widget::{add_knob, styled_knob};
 use crate::{transform::Transform, view::View};
 use egui::Color32;
 use egui::{
@@ -31,42 +31,50 @@ impl<F: Fn(Action), G: Fn()> View for CompressorView<'_, F, G> {
         ui.horizontal(|ui| {
             ui.add(CompressorDisplay::new(config));
             ui.vertical(|ui| {
-                knob(
+                add_knob(
                     ui,
-                    "Threshold",
-                    config.threshold,
-                    |it| dispatch(Action::SetFloat(FloatField::Threshold, it)),
-                    -60.0..=0.0,
-                    /* neutral= */ -10.0,
+                    styled_knob(
+                        "Threshold",
+                        config.threshold,
+                        |it| dispatch(Action::SetFloat(FloatField::Threshold, it)),
+                        -60.0..=0.0,
+                    )
+                    .with_neutral(-10.0),
                     &self.on_release,
                 );
-                knob(
+                add_knob(
                     ui,
-                    "Ratio",
-                    config.ratio,
-                    |it| dispatch(Action::SetFloat(FloatField::Ratio, it)),
-                    1.0..=100.0, // TODO: logarithmic
-                    /* neutral= */ 3.0,
+                    styled_knob(
+                        "Ratio",
+                        config.ratio,
+                        |it| dispatch(Action::SetFloat(FloatField::Ratio, it)),
+                        1.0..=100.0,
+                    )
+                    .with_neutral(3.0), // TODO: logarithmic
                     &self.on_release,
                 );
             });
             ui.vertical(|ui| {
-                knob(
+                add_knob(
                     ui,
-                    "Attack (ms)",
-                    config.attack_ms,
-                    |it| dispatch(Action::SetFloat(FloatField::AttackMs, it)),
-                    0.0..=1000.0,
-                    /* neutral= */ 100.0,
+                    styled_knob(
+                        "Attack (ms)",
+                        config.attack_ms,
+                        |it| dispatch(Action::SetFloat(FloatField::AttackMs, it)),
+                        0.0..=1000.0,
+                    )
+                    .with_neutral(100.0),
                     &self.on_release,
                 );
-                knob(
+                add_knob(
                     ui,
-                    "Release (ms)",
-                    config.release_ms,
-                    |it| dispatch(Action::SetFloat(FloatField::ReleaseMs, it)),
-                    0.0..=1000.0,
-                    /* neutral= */ 100.0,
+                    styled_knob(
+                        "Release (ms)",
+                        config.release_ms,
+                        |it| dispatch(Action::SetFloat(FloatField::ReleaseMs, it)),
+                        0.0..=1000.0,
+                    )
+                    .with_neutral(100.0),
                     &self.on_release,
                 );
             });

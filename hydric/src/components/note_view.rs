@@ -2,6 +2,7 @@ use crate::LocalState;
 use crate::local_state::GetSet;
 use crate::view::View;
 use crate::widget::{StateWindow, default_window, get_set, int_slider, selectable_value, slider};
+use crate::window_state::WindowKind;
 use egui::{Ui, pos2};
 use shared::model::ScaleValue;
 use shared::types::{Beats, Octave};
@@ -34,8 +35,12 @@ impl View for NoteView<'_> {
         let window = StateWindow(default_window("Notes").default_pos(pos2(600.0, 20.0)));
         window.show_with_closure(
             ui,
-            local_state.note_window.get(),
-            |_| local_state.note_window.set(false),
+            local_state.window_state.get_visible(WindowKind::Note),
+            |_| {
+                local_state
+                    .window_state
+                    .set_visible(WindowKind::Note, false)
+            },
             |ui| {
                 egui::ComboBox::from_id_salt(format!("note_{note_index}"))
                     .selected_text(note.note.pitch_name.scale_value.to_string())
@@ -94,7 +99,9 @@ impl View for NoteView<'_> {
                         Action::DeleteChild(IndexField::PlacedNote(note_index)),
                     );
                     self.local_state.active_note.set(None);
-                    self.local_state.note_window.set(false);
+                    self.local_state
+                        .window_state
+                        .set_visible(WindowKind::Note, false);
                     self.local_state.selected_notes.update(|mut it| {
                         it.remove(&note_index);
                         it

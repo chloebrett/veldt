@@ -1,9 +1,9 @@
-use super::filter::{SecondOrderFilter, SecondOrderFilterConfig};
+use super::filter::{Filter, FilterConfig};
 use crate::consts::SAMPLE_RATE;
 use shared::model::EqConfig;
 use std::f32::consts::PI;
 
-pub fn apf_second_order(config: &EqConfig) -> SecondOrderFilter {
+pub fn apf_second_order(config: &EqConfig) -> Filter {
     let bw = config.fc / config.q;
     let alpha_arg = ((bw * PI) / SAMPLE_RATE as f32).tan();
     let alpha = 1.0 + 1.0 / (alpha_arg - 1.0);
@@ -13,5 +13,5 @@ pub fn apf_second_order(config: &EqConfig) -> SecondOrderFilter {
     let a2 = 1.0;
     let b1 = a1;
     let b2 = a0;
-    SecondOrderFilter::new_wet(SecondOrderFilterConfig { a0, a1, a2, b1, b2 })
+    Filter::new_wet(FilterConfig { a0, a1, a2, b1, b2 })
 }
