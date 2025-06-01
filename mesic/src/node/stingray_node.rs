@@ -1,5 +1,4 @@
 use super::pan_multipliers;
-use crate::{lfo, SAMPLE_RATE};
 use crate::consts::CHANNEL_COUNT;
 use crate::envelope::EnvelopeGenerator;
 use crate::eq::{ApplyFilter, eq_filter};
@@ -8,6 +7,7 @@ use crate::lfo::LfoGenerator;
 use crate::maths::linspace;
 use crate::wave::detune_multiplier;
 use crate::wave_cache::{WaveCache, WaveKey};
+use crate::{SAMPLE_RATE, lfo};
 use dasp_frame::Stereo;
 use dasp_graph::{Buffer, Input, Node};
 use shared::model::{
@@ -298,7 +298,7 @@ impl StingrayWaveSource {
 
         // Apply the low frequency oscillator to the output.
         // Currently only used for volume modulation.
-        let lfo_amp = 1.0 - lfo_value; 
+        let lfo_amp = 1.0 - lfo_value;
         output_mono *= lfo_amp;
 
         let mut output_stereo = [output_mono; CHANNEL_COUNT];
