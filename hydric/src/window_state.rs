@@ -24,6 +24,7 @@ pub enum WindowKind {
     NoteRoll,
     Placement,
     Note,
+    Microphone,
 }
 
 /// Information about a window needed to render on the UI.
@@ -49,6 +50,7 @@ impl WindowData {
             WindowKind::NoteRoll => pos2(600.0, 20.0),
             WindowKind::Placement => pos2(100.0, 20.0),
             WindowKind::Note => pos2(600.0, 20.0),
+            WindowKind::Microphone => pos2(400.0, 40.0),
         };
         Self {
             visible: false,

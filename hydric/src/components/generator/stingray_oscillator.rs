@@ -1,7 +1,7 @@
 use super::SimpleWaveVisualiser;
 use crate::view::View;
 use crate::widget::{
-    custom_knob, get_set, inner_frame, int_slider, knob, outer_frame, selectable_value,
+    add_knob, get_set, inner_frame, int_slider, outer_frame, selectable_value, styled_knob,
 };
 use eframe::egui;
 use egui::{Color32, Ui, Vec2};
@@ -98,59 +98,67 @@ impl<F: Fn(Action), G: Fn()> View for StingrayOscillatorView<'_, F, G> {
             const KNOB_SPACE: f32 = 2.0;
             inner_frame().show(ui, |ui| {
                 ui.vertical(|ui| {
-                    knob(
+                    add_knob(
                         ui,
-                        "Volume",
-                        config.volume,
-                        |it| dispatch(Action::SetFloat(FloatField::Volume, it)),
-                        0.0..=1.0,
-                        0.0,
+                        styled_knob(
+                            "Volume",
+                            config.volume,
+                            |it| dispatch(Action::SetFloat(FloatField::Volume, it)),
+                            0.0..=1.0,
+                        )
+                        .with_neutral(0.0),
                         on_release,
                     );
                     ui.add_space(KNOB_SPACE);
 
-                    knob(
+                    add_knob(
                         ui,
-                        "Pan",
-                        config.pan,
-                        |it| dispatch(Action::SetFloat(FloatField::Pan, it)),
-                        -1.0..=1.0,
-                        0.0,
+                        styled_knob(
+                            "Pan",
+                            config.pan,
+                            |it| dispatch(Action::SetFloat(FloatField::Pan, it)),
+                            -1.0..=1.0,
+                        )
+                        .with_neutral(0.0),
                         on_release,
                     );
                     ui.add_space(KNOB_SPACE);
 
                     let detune_coarse = config.osc_detune as i32 / 100;
                     let detune_fine = config.osc_detune % 100.0;
-                    custom_knob(
+                    add_knob(
                         ui,
-                        "Coarse",
-                        detune_coarse as f32,
-                        |it| {
-                            dispatch(Action::SetFloat(
-                                FloatField::OscillatorDetune,
-                                it * 100.0 + detune_fine,
-                            ))
-                        },
-                        -24.0..=24.0,
-                        0.0,
+                        styled_knob(
+                            "Coarse",
+                            detune_coarse as f32,
+                            |it| {
+                                dispatch(Action::SetFloat(
+                                    FloatField::OscillatorDetune,
+                                    it * 100.0 + detune_fine,
+                                ))
+                            },
+                            -24.0..=24.0,
+                        )
+                        .with_neutral(0.0)
+                        .with_step(1.0),
                         on_release,
-                        |knob| knob.with_step(1.0),
                     );
                     ui.add_space(KNOB_SPACE);
 
-                    knob(
+                    add_knob(
                         ui,
-                        "Fine",
-                        detune_fine,
-                        |it| {
-                            dispatch(Action::SetFloat(
-                                FloatField::OscillatorDetune,
-                                detune_coarse as f32 * 100.0 + it,
-                            ))
-                        },
-                        -100.0..=100.0,
-                        0.0,
+                        styled_knob(
+                            "Fine",
+                            detune_fine,
+                            |it| {
+                                dispatch(Action::SetFloat(
+                                    FloatField::OscillatorDetune,
+                                    detune_coarse as f32 * 100.0 + it,
+                                ))
+                            },
+                            -100.0..=100.0,
+                        )
+                        .with_neutral(0.0),
                         on_release,
                     );
                 });
@@ -179,13 +187,15 @@ impl<F: Fn(Action), G: Fn()> View for StingrayOscillatorView<'_, F, G> {
                         on_release,
                     );
                     ui.add_space(6.0);
-                    knob(
+                    add_knob(
                         ui,
-                        "Unison Detune",
-                        config.unison_detune,
-                        |it| dispatch(Action::SetFloat(FloatField::UnisonDetune, it)),
-                        0.0..=100.0,
-                        0.0,
+                        styled_knob(
+                            "Unison Detune",
+                            config.unison_detune,
+                            |it| dispatch(Action::SetFloat(FloatField::UnisonDetune, it)),
+                            0.0..=100.0,
+                        )
+                        .with_neutral(0.0),
                         on_release,
                     );
                 });

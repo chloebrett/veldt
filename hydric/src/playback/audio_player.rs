@@ -338,12 +338,12 @@ impl AudioPlayer {
         self.send(PlaybackMessage::Seek(self.position));
     }
 
-    pub fn level(&self) -> [f32; 2] {
+    pub fn level(&self) -> Stereo<f32> {
         let [left, right] = self.rms.current();
         [to_db(left as f32), to_db(right as f32)]
     }
 
-    pub fn peak(&self) -> [f32; 2] {
+    pub fn peak(&self) -> Stereo<f32> {
         let [left, right] = self.peak.current();
         [to_db(left), to_db(right)]
     }

@@ -1,6 +1,6 @@
 use crate::transform::Transform;
 use crate::view::View;
-use crate::widget::knob;
+use crate::widget::{add_knob, styled_knob};
 use egui::{
     Color32, Pos2, Rect, Ui,
     containers::Frame,
@@ -60,60 +60,68 @@ impl<F: Fn(Action), G: Fn()> View for EnvelopeView<'_, F, G> {
                 ui.painter().add(shape.transform(to_screen));
             });
             ui.vertical(|ui| {
-                knob(
+                add_knob(
                     ui,
-                    "Attack (ms)",
-                    envelope.attack,
-                    |attack| {
-                        dispatch(Action::SetChild(TypeField::Envelope(AdsrEnvelope {
-                            attack,
-                            ..envelope
-                        })))
-                    },
-                    0.0..=1000.0,
-                    /* neutral= */ 100.0,
+                    styled_knob(
+                        "Attack (ms)",
+                        envelope.attack,
+                        |attack| {
+                            dispatch(Action::SetChild(TypeField::Envelope(AdsrEnvelope {
+                                attack,
+                                ..envelope
+                            })))
+                        },
+                        0.0..=1000.0,
+                    )
+                    .with_neutral(100.0),
                     on_release,
                 );
-                knob(
+                add_knob(
                     ui,
-                    "Decay (ms)",
-                    envelope.decay,
-                    |decay| {
-                        dispatch(Action::SetChild(TypeField::Envelope(AdsrEnvelope {
-                            decay,
-                            ..envelope
-                        })))
-                    },
-                    0.0..=1000.0,
-                    /* neutral= */ 100.0,
+                    styled_knob(
+                        "Decay (ms)",
+                        envelope.decay,
+                        |decay| {
+                            dispatch(Action::SetChild(TypeField::Envelope(AdsrEnvelope {
+                                decay,
+                                ..envelope
+                            })))
+                        },
+                        0.0..=1000.0,
+                    )
+                    .with_neutral(100.0),
                     on_release,
                 );
-                knob(
+                add_knob(
                     ui,
-                    "Sustain",
-                    envelope.sustain,
-                    |sustain| {
-                        dispatch(Action::SetChild(TypeField::Envelope(AdsrEnvelope {
-                            sustain,
-                            ..envelope
-                        })))
-                    },
-                    0.0..=1.0,
-                    /* neutral= */ 0.8,
+                    styled_knob(
+                        "Sustain",
+                        envelope.sustain,
+                        |sustain| {
+                            dispatch(Action::SetChild(TypeField::Envelope(AdsrEnvelope {
+                                sustain,
+                                ..envelope
+                            })))
+                        },
+                        0.0..=1.0,
+                    )
+                    .with_neutral(0.8),
                     on_release,
                 );
-                knob(
+                add_knob(
                     ui,
-                    "Release (ms)",
-                    envelope.release,
-                    |release| {
-                        dispatch(Action::SetChild(TypeField::Envelope(AdsrEnvelope {
-                            release,
-                            ..envelope
-                        })))
-                    },
-                    0.0..=1000.0,
-                    /* neutral= */ 100.0,
+                    styled_knob(
+                        "Release (ms)",
+                        envelope.release,
+                        |release| {
+                            dispatch(Action::SetChild(TypeField::Envelope(AdsrEnvelope {
+                                release,
+                                ..envelope
+                            })))
+                        },
+                        0.0..=1000.0,
+                    )
+                    .with_neutral(100.0),
                     on_release,
                 );
             });

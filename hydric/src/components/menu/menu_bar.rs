@@ -165,6 +165,7 @@ impl View for MenuBar<'_> {
             window_icon("🎷", "Generators", WindowKind::GeneratorList);
             window_icon("🎨", "Mixer", WindowKind::Mixer);
             window_icon("📄", "Track Roll", WindowKind::TrackRoll);
+            window_icon("🎤", "Record Microphone", WindowKind::Microphone);
         });
     }
 }

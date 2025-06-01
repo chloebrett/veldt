@@ -1,5 +1,5 @@
 use crate::view::View;
-use crate::widget::{knob, outer_frame};
+use crate::widget::{add_knob, outer_frame, styled_knob};
 use eframe::egui;
 use egui::Ui;
 use shared::model::EqConfig;
@@ -35,23 +35,27 @@ impl<F: Fn(Action), G: Fn()> View for StingrayLpfView<'_, F, G> {
                 ui.label("Low Pass Filter");
                 ui.add_space(4.0);
             });
-            knob(
+            add_knob(
                 ui,
-                "Freq",
-                config.fc,
-                |it| dispatch(Action::SetFloat(FloatField::Fc, it)),
-                20.0..=20000.0,
-                2000.0,
+                styled_knob(
+                    "Freq",
+                    config.fc,
+                    |it| dispatch(Action::SetFloat(FloatField::Fc, it)),
+                    20.0..=20000.0,
+                )
+                .with_neutral(2000.0),
                 on_release,
             );
 
-            knob(
+            add_knob(
                 ui,
-                "Q",
-                config.q,
-                |it| dispatch(Action::SetFloat(FloatField::Q, it)),
-                0.1..=100.0,
-                1.0,
+                styled_knob(
+                    "Q",
+                    config.q,
+                    |it| dispatch(Action::SetFloat(FloatField::Q, it)),
+                    0.1..=100.0,
+                )
+                .with_neutral(1.0),
                 on_release,
             );
         });

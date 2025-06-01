@@ -5,9 +5,9 @@ use crate::convert::beats_to_samples;
 use crate::mixer::Mixer;
 use dasp_frame::Stereo;
 use dasp_graph::Buffer;
-use shared::model::{PitchName, Project};
+use shared::model::{PitchName, PlacementType, Project};
 use shared::types::Beats;
-use state::{Action, GeneratorSelector, Selector, StoreData};
+use state::{Action, GeneratorSelector, IndexField, Selector, StoreData};
 use std::sync::mpsc::Receiver;
 
 /// Wraps a Mixer (which in turn wraps a Graph) to add processing/iteration, seeking, and listening
@@ -96,8 +96,13 @@ impl RenderGraph {
         // TODO: there is a bug where new effects won't pick up these changes immediately,
         // and have to have their values tweaked first.
         // Investigate.
-        let store = &mut self.process_context.store;
         while let Ok((selector, action)) = self.rx.try_recv() {
+            // Stop generators when a track changes its generator index.
+            // This needs to run before the store update, as we reference the previous state of the
+            // store.
+            self.maybe_stop_generator(&selector, &action);
+
+            let store = &mut self.process_context.store;
             store.update(&selector, &action);
 
             // Also update the graph topology by listening for the appropriate actions.
@@ -106,6 +111,32 @@ impl RenderGraph {
         }
 
         self.update_duration();
+    }
+
+    // If a track placement changes its generator index, stop the old generator from playing.
+    fn maybe_stop_generator(&mut self, selector: &Selector, action: &Action) {
+        let store = &self.process_context.store;
+        let Selector::Placement(placement_index) = selector else {
+            return;
+        };
+
+        let Action::SetIndex(IndexField::Generator(_)) = action else {
+            return;
+        };
+
+        let PlacementType::Track(track_placement) =
+            &store.project.placements[*placement_index].kind
+        else {
+            return;
+        };
+
+        let prev_generator_index = track_placement.generator_index;
+        let stop_generators = &mut self.process_context.stop_generators;
+        while stop_generators.len() <= prev_generator_index {
+            stop_generators.push(false);
+        }
+        stop_generators[prev_generator_index] = true;
+        log::info!("Stopped generator: {:?}", stop_generators);
     }
 
     fn update_duration(&mut self) {
@@ -184,6 +215,7 @@ impl Iterator for RenderGraph {
                 .process(&mut self.processor, &self.process_context);
             self.process_context.main_seek_pos = None;
             self.process_context.preview_seek_pos = None;
+            self.process_context.stop_generators = vec![];
         }
 
         match self.process_context.playback_mode {
@@ -227,7 +259,7 @@ mod tests {
         // TODO Fix. This test does not terminate.
         let graph = RenderGraph::without_rx(&empty_store_data());
         // Iterator should be empty.
-        let output: Vec<[f32; 2]> = graph.collect();
+        let output: Vec<Stereo<f32>> = graph.collect();
         assert!(output.is_empty())
     }
 
@@ -251,7 +283,7 @@ mod tests {
         // Act
         let mut graph = RenderGraph::without_rx(&empty_store_data());
         graph.set_audio(&input);
-        let output: Vec<[f32; 2]> = graph.collect();
+        let output: Vec<Stereo<f32>> = graph.collect();
 
         // Assert
         assert_eq!(output, input)
