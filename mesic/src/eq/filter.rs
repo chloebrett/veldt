@@ -56,6 +56,7 @@ impl FilterConfig {
         self
     }
 
+    #[expect(dead_code)] // remove once used.
     pub fn a2(mut self, val: f32) -> Self {
         self.a2 = val;
         self
