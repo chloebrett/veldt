@@ -6,7 +6,7 @@ use crate::playback::AudioPlayer;
 use crate::view::View;
 use crate::widget::StateWindow;
 use crate::widget::int_slider;
-use crate::widget::{default_window, knob};
+use crate::widget::{add_knob, default_window, styled_knob};
 use crate::window_state::WindowKind;
 use crate::window_state::WindowState;
 use egui::CornerRadius;
@@ -289,13 +289,15 @@ impl<F: Fn(Action), G: Fn()> Widget for EffectWidget<'_, F, G> {
             if ui.add(Button::new("Mute").selected(meta.mute)).clicked() {
                 dispatch(Action::SetChild(TypeField::Mute(!meta.mute)))
             }
-            knob(
+            add_knob(
                 ui,
-                "Wet",
-                meta.wet,
-                |it| dispatch(Action::SetFloat(FloatField::Wet, it)),
-                0.0..=1.0,
-                /* neutral= */ 0.5,
+                styled_knob(
+                    "Wet",
+                    meta.wet,
+                    |it| dispatch(Action::SetFloat(FloatField::Wet, it)),
+                    0.0..=1.0,
+                )
+                .with_neutral(0.5),
                 on_release,
             );
 

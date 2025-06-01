@@ -79,6 +79,11 @@ impl Node<ProcessContext> for NoiseGeneratorNode {
         let mut rng = rand::thread_rng();
         let GeneratorSelector(generator_index) = self.selector;
 
+        if payload.stop_generators.get(generator_index) == Some(&true) {
+            log::info!("Stopped noise: {generator_index}");
+            state.playing = false;
+        }
+
         for i in 0..buffer.len() {
             let mut events: Vec<_> = payload.note_events[generator_index]
                 .clone()

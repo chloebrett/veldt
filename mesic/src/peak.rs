@@ -95,11 +95,11 @@ impl StereoPeakDetector {
         )
     }
 
-    pub fn next(&mut self, frame: Stereo<f32>) -> [f32; 2] {
+    pub fn next(&mut self, frame: Stereo<f32>) -> Stereo<f32> {
         [self.0.next(frame[0]), self.1.next(frame[1])]
     }
 
-    pub fn current(&self) -> [f32; 2] {
+    pub fn current(&self) -> Stereo<f32> {
         [self.0.current(), self.1.current()]
     }
 }

@@ -1,10 +1,10 @@
-use super::filter::{FirstOrderFilter, FirstOrderFilterConfig, Mix};
+use super::filter::{Filter, FilterConfig, Mix};
 use super::low_high::LowHigh;
 use crate::consts::SAMPLE_RATE;
 use shared::model::EqConfig;
 use std::f32::consts::PI;
 
-pub fn shelf_first_order(config: &EqConfig, low_high: LowHigh) -> FirstOrderFilter {
+pub fn shelf_first_order(config: &EqConfig, low_high: LowHigh) -> Filter {
     let fs = SAMPLE_RATE as f32;
 
     // See "Designing Audio Effect Plugins in C++", W. Pirkle, p278 (Shelving Filters)
@@ -34,5 +34,5 @@ pub fn shelf_first_order(config: &EqConfig, low_high: LowHigh) -> FirstOrderFilt
     let wet: f32 = mu - 1.0;
     let dry: f32 = 1.0;
 
-    FirstOrderFilter::new(FirstOrderFilterConfig { a0, a1, b1 }, Mix { wet, dry })
+    Filter::new(FilterConfig::new().a0(a0).a1(a1).b1(b1), Mix { wet, dry })
 }
