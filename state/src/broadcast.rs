@@ -34,6 +34,7 @@ pub fn broadcast_type(action: &Action) -> BroadcastType {
             TypeField::Sample(..) => BroadcastType::Never,
             _ => BroadcastType::Immediate,
         },
+        Action::AddChildren(..) => BroadcastType::Immediate,
         Action::DeleteChild(..) => BroadcastType::Immediate,
         Action::DeleteChildren(..) => BroadcastType::Immediate,
         Action::Release => BroadcastType::Never,

@@ -15,6 +15,7 @@ message ActionProto {
     MoveFieldProto move_child = 9;
     MultiIndexFieldProto delete_children = 10;
     MultiTypeFieldProto set_children = 11;
+    MultiTypeFieldProto add_children = 12;
   }
 }
 

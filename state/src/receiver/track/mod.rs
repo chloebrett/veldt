@@ -37,6 +37,11 @@ impl ActionReceiver for Track {
                 self.notes = notes.to_vec();
                 Action::SetChildren(MultiTypeField::PlacedNote(prev))
             }
+            Action::AddChildren(MultiTypeField::PlacedNote(notes)) => {
+                let prev = self.notes.clone();
+                self.notes.extend(notes.to_vec());
+                Action::SetChildren(MultiTypeField::PlacedNote(prev))
+            }
             _ => return None,
         })
     }
