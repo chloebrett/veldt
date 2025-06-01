@@ -13,11 +13,5 @@ pub fn resonator_simple(config: &EqConfig) -> Filter {
     let b1: f32 = (-4.0 * b2) / (1.0 + b2) * theta.cos();
     let a0: f32 = (1.0 - b2) * (1.0 - ((b1 * b1) / (4.0 * b2))).sqrt();
 
-    Filter::new_wet(FilterConfig {
-        a0,
-        a1: 0.0,
-        b1,
-        a2: 0.0,
-        b2,
-    })
+    Filter::new_wet(FilterConfig::new().a0(a0).b1(b1).b2(b2))
 }

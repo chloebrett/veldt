@@ -34,14 +34,7 @@ pub fn shelf_first_order(config: &EqConfig, low_high: LowHigh) -> Filter {
     let wet: f32 = mu - 1.0;
     let dry: f32 = 1.0;
 
-    Filter::new(
-        FilterConfig {
-            a0,
-            a1,
-            a2: 0.0,
-            b1,
-            b2: 0.0,
-        },
+    Filter::new(FilterConfig::new().a0(a0).a1(a1).b1(b1),
         Mix { wet, dry },
     )
 }
