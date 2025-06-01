@@ -126,7 +126,6 @@ impl Filter {
                 .y_buffer
                 .front()
                 .expect("Expected value in y buffer");
-
             let yn = a0 * *xn + a1 * xn1 + a2 * xn2 - b1 * yn1 - b2 * yn2;
 
             self.state.x_buffer.push(*xn);
