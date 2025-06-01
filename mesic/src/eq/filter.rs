@@ -34,6 +34,7 @@ pub struct FilterConfig {
     pub b2: f32, // coefficient of y2.
 }
 
+/// Builder for FilterConfig
 impl FilterConfig {
     pub fn new() -> Self {
         FilterConfig {
