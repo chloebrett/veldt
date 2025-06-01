@@ -15,6 +15,7 @@ use shared::model::{
 };
 use shared::types::{Freq, KnobPosition, Volume};
 use state::GeneratorSelector;
+use crate::eq::filter::Filter;
 
 pub struct StingrayNode {
     selector: GeneratorSelector,
@@ -28,8 +29,8 @@ struct NodeState {
     config: StingrayConfig,
     meta: GeneratorMeta,
     voice: Voice,
-    filter_left: Box<dyn ApplyFilter + Send>,
-    filter_right: Box<dyn ApplyFilter + Send>,
+    filter_left: Filter,
+    filter_right: Filter,
 }
 
 struct Voice {

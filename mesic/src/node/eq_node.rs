@@ -4,12 +4,13 @@ use crate::graph::ProcessContext;
 use dasp_graph::{Buffer, Input, Node};
 use shared::model::{Effect, EffectInstance, EqConfig};
 use state::EffectSelector;
+use crate::eq::filter::Filter;
 
 pub struct EqNode {
     selector: EffectSelector,
     config: EqConfig,
-    filter_left: Box<dyn ApplyFilter + Send>,
-    filter_right: Box<dyn ApplyFilter + Send>,
+    filter_left: Filter,
+    filter_right: Filter,
 }
 
 impl EqNode {
