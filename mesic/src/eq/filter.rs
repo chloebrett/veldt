@@ -1,8 +1,6 @@
 use super::ApplyFilter;
-use crate::consts::SAMPLE_RATE;
 use dasp_graph::Buffer;
 use ringbuffer::{AllocRingBuffer, RingBuffer};
-use std::f32::consts::TAU;
 
 pub struct Mix {
     // Note: wet/dry below is independent from wet/dry on the mixer.
