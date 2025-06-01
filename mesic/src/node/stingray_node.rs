@@ -11,8 +11,8 @@ use crate::wave_cache::{WaveCache, WaveKey};
 use dasp_frame::Stereo;
 use dasp_graph::{Buffer, Input, Node};
 use shared::model::{
-    AntiAliasingMode, Generator, GeneratorInstance, GeneratorMeta, Oscillator,
-    PitchName, StingrayConfig,
+    AntiAliasingMode, EqConfig, Generator, GeneratorInstance, GeneratorMeta, Oscillator, PitchName,
+    StingrayConfig,
 };
 use shared::types::{Freq, KnobPosition, Volume};
 use state::GeneratorSelector;
@@ -216,35 +216,6 @@ impl Node<ProcessContext> for StingrayNode {
             }
         }
 
-        // Update frequency cut-off for LPF and envelopes
-        let mut new_envs = Vec::new();
-        let lpf_freq = &state.config.lpf.fc;
-        let lpf_col = 3;
-        let mut lpf_mod = 0.0;
-        for i in 0..state.config.envelopes.len() {
-            // Update each envelope for each oscillator
-            let env = Self::update_envelope(i, envelopes, &|j, i| {
-                mod_matrix.get(j, i).map(|x| (*x).into())
-            });
-            new_envs.push(env);
-
-            // Update LPF cutoff based on envelope
-            let cell: f32 = mod_matrix
-                .get(i, lpf_col)
-                .map_or(0.0, |cell_ref| (*cell_ref).into());
-
-            if cell == 0.0 {
-                continue;
-            }
-
-            let eg = &state.voice.egs[i];
-            let env_val = eg.get_last_output();
-            lpf_mod += cell * env_val;
-        }
-
-        let mod_freq = (lpf_freq + lpf_mod).clamp(20.0, SAMPLE_RATE as f32 / 2.0);
-        state.config.lpf.fc = mod_freq;
-
         // TODO: fix this, it's n^2 right now. (well, n*64).
         for i in 0..Buffer::LEN {
             let mut events: Vec<_> = payload.note_events[generator_index]
@@ -270,13 +241,11 @@ impl Node<ProcessContext> for StingrayNode {
                         let mut sources = vec![];
 
                         for i in 0..state.config.envelopes.len() {
-                            let env = new_envs[i].clone();
                             let eg = &mut state.voice.egs[i];
                             let osc = state.config.oscillators[i].clone();
 
                             eg.add_envelopes(i, &state.config.envelopes, &state.config.matrix);
                             eg.note_on();
-                            eg.set_envelope(env);
 
                             // TODO: update config dynamically, not just when starting a new note.
                             sources.push(StingrayWaveSource::new(note_event.pitch_name, osc));
@@ -399,51 +368,22 @@ impl StingrayWaveSource {
     }
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-    use shared::model::{EqConfig, ModMatrix};
-    use state::StoreData;
+pub fn apply_env_lpf(state: &mut NodeState) -> EqConfig {
+    let mut lpf_mod = 0.0;
+    let mod_matrix = &state.config.matrix;
+    let lpf_col = 3; // lpf column in matrix
 
-    #[test]
-    fn test_additive_envelope() {
-        let envelopes = vec![
-            AdsrEnvelope {
-                attack: 1000.0,
-                decay: 200.0,
-                sustain: 1.0,
-                release: 1000.0,
-            },
-            AdsrEnvelope {
-                attack: 0.0,
-                decay: 1000.0,
-                sustain: 0.5,
-                release: 0.0,
-            },
-        ];
+    for i in 0..state.config.envelopes.len() {
+        let cell: f32 = mod_matrix.get(i, lpf_col).map_or(0.0, |c| (*c).into());
 
-        let a = 0.7;
-        let b = 0.3;
-
-        let mut mod_matrix = ModMatrix::new(6, 4);
-        mod_matrix.get_mut(0, 0).unwrap().set(a);
-        mod_matrix.get_mut(1, 0).unwrap().set(b);
-
-        let result = NodeState::update_envelope(0, &envelopes, &|j, i| {
-            mod_matrix.get(j, i).map(|x| (*x).into())
-        });
-
-        let expected_attack =
-            (a * envelopes[0].attack + b * envelopes[1].attack).clamp(0.0, 1000.0);
-        let expected_decay = (a * envelopes[0].decay + b * envelopes[1].decay).clamp(0.0, 1000.0);
-        let expected_sustain =
-            (a * envelopes[0].sustain + b * envelopes[1].sustain).clamp(0.0, 1.0);
-        let expected_release =
-            (a * envelopes[0].release + b * envelopes[1].release).clamp(0.0, 1000.0);
-
-        assert!((result.attack - expected_attack).abs() < 1e-6);
-        assert!((result.decay - expected_decay).abs() < 1e-6);
-        assert!((result.sustain - expected_sustain).abs() < 1e-6);
-        assert!((result.release - expected_release).abs() < 1e-6);
+        if cell != 0.0 {
+            let eg = &state.voice.egs[i];
+            lpf_mod += cell * eg.peek();
+        }
     }
+    let mod_freq = (state.config.lpf.fc + lpf_mod).clamp(20.0, SAMPLE_RATE as f32 / 2.0);
+    let mut adjusted_config = state.config.lpf.clone();
+    adjusted_config.fc = mod_freq;
+
+    adjusted_config
 }
