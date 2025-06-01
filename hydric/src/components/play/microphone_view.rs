@@ -2,7 +2,7 @@ use crate::view::View;
 use crate::widget::{StateWindow, default_window};
 use crate::window_state::WindowKind;
 use crate::{playback::Microphone, window_state::WindowState};
-use egui::{Pos2, Ui};
+use egui::Ui;
 
 pub struct MicrophoneView<'a> {
     window_state: &'a WindowState,
@@ -42,7 +42,7 @@ impl View for MicrophoneView<'_> {
                     && !self.mic.is_recording()
                     && !self.mic.has_recording()
                 {
-                    self.mic.start();
+                    let _ = self.mic.start();
                 }
 
                 if ui.button("Stop Recording").clicked() {
@@ -50,19 +50,19 @@ impl View for MicrophoneView<'_> {
                 }
 
                 ui.horizontal(|ui| {
-                    if ui.button("Play mic Audio").clicked() && self.mic.has_recording() {
+                    if ui.button("Play mic Audio").clicked() {
                         let _ = self.mic.play_mic_audio();
                     }
 
-                    if ui.button("pause").clicked() && self.mic.is_playing() {
+                    if ui.button("pause").clicked() {
                         let _ = self.mic.pause_mic_audio();
                     }
 
-                    if ui.button("stop").clicked() && self.mic.is_playing() {
+                    if ui.button("stop").clicked() {
                         let _ = self.mic.stop_mic_audio();
                     }
 
-                    if ui.button("clear").clicked() && self.mic.has_recording() {
+                    if ui.button("clear").clicked() {
                         let _ = self.mic.clear_mic();
                     }
                 });
