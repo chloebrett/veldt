@@ -170,7 +170,14 @@ impl View for App {
         MicrophoneView::new(&mut self.window_state, &mut self.mic).ui(ui);
         PlacementView::new(&self.store, &self.local_state).ui(ui);
 
-        SampleTreeView::new(&self.store, &mut self.async_state, &self.window_state, &mut self.player, &self.local_state,).ui(ui);
+        SampleTreeView::new(
+            &self.store,
+            &mut self.async_state,
+            &self.window_state,
+            &mut self.player,
+            &self.local_state,
+        )
+        .ui(ui);
         TrackRoll::new(&self.store, &mut self.window_state, &self.local_state).ui(ui);
     }
 }

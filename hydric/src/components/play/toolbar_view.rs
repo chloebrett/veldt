@@ -6,7 +6,6 @@ use crate::widget::{default_window, knob, slider};
 use crate::{AsyncState, playback::AudioPlayer};
 use egui::{Pos2, Ui};
 use log::error;
-use log::info;
 use shared::types::Beats;
 use state::{Action, FloatField, Store};
 use tonic::Status;
@@ -91,7 +90,6 @@ impl View for ToolbarView<'_> {
                             if let Err(ref e) = result {
                                 error!("[5] Upload failed: {:?}", e);
                             }
-                            info!("This happened");
                             result
                         });
 

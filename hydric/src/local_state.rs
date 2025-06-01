@@ -1,7 +1,6 @@
 use egui::Pos2;
 use shared::model::Sample;
 use state::{MixerSelector, TrackSelector};
-use std::borrow as std_borrow;
 use std::cell::RefCell;
 use std::collections::{HashMap, HashSet};
 use std::rc::Rc;
@@ -60,70 +59,5 @@ impl<T: Clone> GetSet<T> for Rc<RefCell<T>> {
     fn update(&self, closure: impl Fn(T) -> T) {
         let old = self.get();
         self.set(closure(old));
-    }
-}
-
-pub trait HashMapOperations<K, V>
-where
-    K: Eq + std::hash::Hash + Clone,
-    V: Clone,
-{
-    fn hashmap_insert(&self, key: K, value: V) -> Option<V>;
-
-    fn hashmap_get<Q: ?Sized>(&self, key: &Q) -> Option<V>
-    where
-        K: std_borrow::Borrow<Q>,
-        Q: Eq + std::hash::Hash;
-
-    // Currently not used anywhere so it's commented out to avoid lints but could be useful
-    // fn hashmap_update<Q: ?Sized, F>(&self, key: &Q, f: F) -> bool
-    // where
-    //     K: std_borrow::Borrow<Q>,
-    //     Q: Eq + std::hash::Hash,
-    //     F: FnOnce(&mut V);
-
-    fn hashmap_contains_key<Q: ?Sized>(&self, key: &Q) -> bool
-    where
-        K: std_borrow::Borrow<Q>,
-        Q: Eq + std::hash::Hash;
-}
-
-impl<K, V> HashMapOperations<K, V> for Rc<RefCell<HashMap<K, V>>>
-where
-    K: Eq + std::hash::Hash + Clone,
-    V: Clone,
-{
-    fn hashmap_insert(&self, key: K, value: V) -> Option<V> {
-        self.borrow_mut().insert(key, value)
-    }
-
-    fn hashmap_get<Q: ?Sized>(&self, key: &Q) -> Option<V>
-    where
-        K: std_borrow::Borrow<Q>,
-        Q: Eq + std::hash::Hash,
-    {
-        self.borrow().get(key).cloned()
-    }
-
-    // fn hashmap_update<Q: ?Sized, F>(&self, key: &Q, f: F) -> bool
-    // where
-    //     K: std_borrow::Borrow<Q>,
-    //     Q: Eq + std::hash::Hash,
-    //     F: FnOnce(&mut V),
-    // {
-    //     if let Some(value) = self.borrow_mut().get_mut(key) {
-    //         f(value);
-    //         true
-    //     } else {
-    //         false
-    //     }
-    // }
-
-    fn hashmap_contains_key<Q: ?Sized>(&self, key: &Q) -> bool
-    where
-        K: std_borrow::Borrow<Q>,
-        Q: Eq + std::hash::Hash,
-    {
-        self.borrow().contains_key(key)
     }
 }

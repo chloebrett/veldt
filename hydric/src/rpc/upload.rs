@@ -33,6 +33,6 @@ pub async fn upload_sample(file_name: String, bytes: Vec<u8>) -> Result<String, 
                 total_chunks,
             }
         }));
-    let _ = grpc.upload_sample(stream).await.map(|_| ()); //Currently discarding response.
+    grpc.upload_sample(stream).await.map(|_| ()); //Currently discarding response.
     Result::Ok(file_name_clone)
 }
