@@ -3,7 +3,8 @@ use std::vec;
 use super::pan_multipliers;
 use crate::consts::CHANNEL_COUNT;
 use crate::envelope::EnvelopeGenerator;
-use crate::eq::{ApplyFilter, adjusted_eq_config_for_lfo, eq_filter};
+use crate::eq::eq_filter;
+use crate::eq::filter::Filter;
 use crate::graph::{NoteEventType, ProcessContext};
 use crate::lfo::LfoGenerator;
 use crate::maths::linspace;
@@ -32,8 +33,8 @@ struct NodeState {
     config: StingrayConfig,
     meta: GeneratorMeta,
     voice: Voice,
-    filter_left: Box<dyn ApplyFilter + Send>,
-    filter_right: Box<dyn ApplyFilter + Send>,
+    filter_left: Filter,
+    filter_right: Filter,
 }
 
 struct Voice {

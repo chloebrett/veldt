@@ -1,5 +1,3 @@
-use super::ApplyFilter;
-use crate::consts::SAMPLE_RATE;
 use dasp_graph::Buffer;
 use ringbuffer::{AllocRingBuffer, RingBuffer};
 use std::f32::consts::TAU;
@@ -58,6 +56,7 @@ impl FilterConfig {
         self
     }
 
+    #[expect(dead_code)] // remove once used.
     pub fn a2(mut self, val: f32) -> Self {
         self.a2 = val;
         self
@@ -94,10 +93,8 @@ impl Filter {
             y_buffer,
         }
     }
-}
 
-impl ApplyFilter for Filter {
-    fn apply(&mut self, buffer: &mut Buffer) {
+    pub fn apply(&mut self, buffer: &mut Buffer) {
         let FilterConfig { a0, a1, a2, b1, b2 } = self.config;
 
         for xn in buffer.iter_mut() {

@@ -1,17 +1,16 @@
 use crate::local_state::GetSet;
-use egui::{Pos2, pos2, vec2};
+use egui::{Id, Pos2, pos2, vec2};
 use state::{EffectSelector, GeneratorSelector, MixerSelector, Store};
 use std::cell::RefCell;
 use std::cmp::Eq;
 use std::collections::{HashMap, HashSet};
 use std::hash::Hash;
 use std::rc::Rc;
-use strum::EnumIter;
 use strum::IntoEnumIterator;
+use strum::{Display, EnumIter};
 
 /// Windows variants that will appear on the UI.
-// TODO: Move all windows to WindowKind
-#[derive(Hash, Copy, Clone, Debug, EnumIter, PartialEq, Eq)]
+#[derive(Hash, Copy, Clone, Display, Debug, EnumIter, PartialEq, Eq)]
 pub enum WindowKind {
     Mixer,
     Effect(EffectSelector),
@@ -22,6 +21,9 @@ pub enum WindowKind {
     TrackRoll,
     Save,
     Microphone,
+    NoteRoll,
+    Placement,
+    Note,
 }
 
 /// Information about a window needed to render on the UI.
@@ -29,6 +31,7 @@ pub enum WindowKind {
 struct WindowData {
     visible: bool,
     pos: Pos2,
+    id: Id,
 }
 
 impl WindowData {
@@ -45,10 +48,24 @@ impl WindowData {
             WindowKind::TrackRoll => pos2(30.0, 200.0),
             WindowKind::SampleTree => pos2(600.0, 20.0),
             WindowKind::Microphone => pos2(400.0, 40.0),
+            WindowKind::NoteRoll => pos2(600.0, 20.0),
+            WindowKind::Placement => pos2(100.0, 20.0),
+            WindowKind::Note => pos2(600.0, 20.0),
+        };
+        // Create unique IDs for `WindowKind` that could have multiple variants.
+        let id_string = match window {
+            WindowKind::Effect(EffectSelector(mixer_index, effect_index)) => {
+                format!("{}_{}", mixer_index, effect_index)
+            }
+            WindowKind::Generator(GeneratorSelector(index)) => {
+                format!("{}", index)
+            }
+            _ => "".to_string(),
         };
         Self {
             visible: false,
             pos,
+            id: Id::new(format!("window_{}_{id_string}", window.to_string())),
         }
     }
 }
@@ -153,6 +170,19 @@ impl WindowState {
                 .entry(window)
                 .or_insert_with(|| Rc::new(RefCell::new(WindowData::default_from_window(window))));
         }
+    }
+
+    pub fn get_id(&self, window: WindowKind) -> Id {
+        let windows = match window {
+            WindowKind::Effect(..) => &self.effect_windows,
+            WindowKind::Generator(..) => &self.generator_windows,
+            _ => &self.windows,
+        };
+        windows
+            .get(&window)
+            .expect("Windows should have been initialised.")
+            .get()
+            .id
     }
 
     pub fn get_visible(&self, window: WindowKind) -> bool {

@@ -1,7 +1,8 @@
 use crate::view::View;
-use crate::widget::{StateWindow, default_window, get_set, int_slider, selectable_value, slider};
+use crate::widget::{StateWindow, get_set, int_slider, selectable_value, slider};
+use crate::window_state::WindowKind;
 use crate::{GetSet, LocalState};
-use egui::{Ui, pos2};
+use egui::Ui;
 use mesic::samples_to_beats;
 use ordered_float::OrderedFloat;
 use shared::model::{Placement, PlacementType, SamplePlacement, Track, TrackPlacement};
@@ -150,16 +151,11 @@ impl View for PlacementView<'_> {
         let tracks_length = store.get().project.tracks.len();
         let sel = PlacementSelector(placement_index);
         let title = format!("Placement {placement_index}");
-
-        let window = StateWindow(
-            default_window(&title)
-                .default_pos(pos2(100.0, 20.0))
-                .resizable(true),
-        );
-        window.show_with_closure(
+        StateWindow::show_from_window_state(
             ui,
-            self.local_state.placement_window.get(),
-            |_| self.local_state.placement_window.set(false),
+            &self.local_state.window_state,
+            WindowKind::Placement,
+            &title,
             |ui| {
                 match &placement.kind {
                     PlacementType::Track(track_placement) => {
@@ -208,7 +204,9 @@ impl View for PlacementView<'_> {
 
                 if ui.button("Delete").clicked() {
                     store.dispatchr(Action::DeleteChild(IndexField::Placement(placement_index)));
-                    self.local_state.placement_window.set(false);
+                    self.local_state
+                        .window_state
+                        .set_visible(WindowKind::Placement, false);
                     self.local_state.active_placement.set(None);
                     self.local_state.selected_placements.update(|mut it| {
                         it.remove(&placement_index);
