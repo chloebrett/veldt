@@ -1,4 +1,5 @@
 use super::pan_multipliers;
+use crate::SAMPLE_RATE;
 use crate::consts::CHANNEL_COUNT;
 use crate::envelope::EnvelopeGenerator;
 use crate::eq::eq_filter;
@@ -8,7 +9,6 @@ use crate::lfo::LfoGenerator;
 use crate::maths::linspace;
 use crate::wave::detune_multiplier;
 use crate::wave_cache::{WaveCache, WaveKey};
-use crate::SAMPLE_RATE;
 use dasp_frame::Stereo;
 use dasp_graph::{Buffer, Input, Node};
 use shared::model::{
