@@ -107,8 +107,8 @@ impl EnvelopeGenerator {
             release: 0.0,
         };
 
-        for (j, env) in envelopes.iter().enumerate() {
-            let weight = matrix.get(j, osc_index).map_or(0.0, |c| (*c).into());
+        for (i, env) in envelopes.iter().enumerate() {
+            let weight = matrix.get(i, osc_index).map_or(0.0, |c| (*c).into());
 
             if weight != 0.0 {
                 new_env.attack += weight * env.attack;
