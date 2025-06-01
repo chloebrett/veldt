@@ -143,16 +143,16 @@ impl Filter {
     fn apply_sample(&mut self, x: &mut f32) -> f32 {
         let FilterConfig { a0, a1, a2, b1, b2 } = self.config;
 
-        let xn2 = self.x_buffer.dequeue().unwrap();
-        let xn1 = *self.x_buffer.front().unwrap();
+        let xn2 = self.state.x_buffer.dequeue().unwrap();
+        let xn1 = *self.state.x_buffer.front().unwrap();
 
-        let yn2 = self.y_buffer.dequeue().unwrap();
-        let yn1 = *self.y_buffer.front().unwrap();
+        let yn2 = self.state.y_buffer.dequeue().unwrap();
+        let yn1 = *self.state.y_buffer.front().unwrap();
 
         let yn = a0 * *x + a1 * xn1 + a2 * xn2 - b1 * yn1 - b2 * yn2;
 
-        self.x_buffer.push(*x);
-        self.y_buffer.push(yn);
+        self.state.x_buffer.push(*x);
+        self.state.y_buffer.push(yn);
 
         apply_mix(x, yn, *x, &self.mix);
 
