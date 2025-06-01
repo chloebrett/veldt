@@ -30,7 +30,6 @@ pub struct App {
     pub player: AudioPlayer,
     pub mic: Microphone,
 }
-
 impl Default for App {
     fn default() -> Self {
         let broadcast = |actions| {
