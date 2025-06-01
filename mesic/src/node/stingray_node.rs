@@ -8,7 +8,7 @@ use crate::lfo::LfoGenerator;
 use crate::maths::linspace;
 use crate::wave::detune_multiplier;
 use crate::wave_cache::{WaveCache, WaveKey};
-use crate::{SAMPLE_RATE, lfo};
+use crate::SAMPLE_RATE;
 use dasp_frame::Stereo;
 use dasp_graph::{Buffer, Input, Node};
 use shared::model::{
