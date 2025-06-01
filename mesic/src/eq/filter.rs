@@ -17,12 +17,9 @@ impl FilterState {
         // Ring buffers store up to two samples back.
         let x_buffer = AllocRingBuffer::from([0.0; 2]);
         let y_buffer = AllocRingBuffer::from([0.0; 2]);
-        Self {
-                x_buffer,
-                y_buffer
-            }
-        }
+        Self { x_buffer, y_buffer }
     }
+}
 
 /// A filter which looks at:
 /// * x0 (current input)
@@ -36,7 +33,7 @@ impl FilterState {
 pub struct Filter {
     pub config: FilterConfig,
     pub mix: Option<Mix>, // if absent, assumed as wet = 1.0 and dry = 0.0.
-    pub state: FilterState,    
+    pub state: FilterState,
 }
 
 /// Helps to prevent typos in param names.
@@ -98,11 +95,7 @@ impl Filter {
 
     fn new_internal(config: FilterConfig, mix: Option<Mix>) -> Self {
         let state = FilterState::new();
-        Self {
-            config,
-            mix,
-            state,
-        }
+        Self { config, mix, state }
     }
 
     pub fn apply(&mut self, buffer: &mut Buffer) {
@@ -110,13 +103,29 @@ impl Filter {
 
         for xn in buffer.iter_mut() {
             // The oldest values should be removed from the ring buffer in each iteration.
-            let xn2 = self.state.x_buffer.dequeue().expect("Expected value in x buffer");
-            let yn2 = self.state.y_buffer.dequeue().expect("Expected value in y buffer");
+            let xn2 = self
+                .state
+                .x_buffer
+                .dequeue()
+                .expect("Expected value in x buffer");
+            let yn2 = self
+                .state
+                .y_buffer
+                .dequeue()
+                .expect("Expected value in y buffer");
 
             // The second-oldest values should be checked but not removed, because we will still
             // need them to process the next sample.
-            let xn1 = self.state.x_buffer.front().expect("Expected value in x buffer");
-            let yn1 = self.state.y_buffer.front().expect("Expected value in y buffer");
+            let xn1 = self
+                .state
+                .x_buffer
+                .front()
+                .expect("Expected value in x buffer");
+            let yn1 = self
+                .state
+                .y_buffer
+                .front()
+                .expect("Expected value in y buffer");
 
             let yn = a0 * *xn + a1 * xn1 + a2 * xn2 - b1 * yn1 - b2 * yn2;
 

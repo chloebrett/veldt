@@ -57,7 +57,7 @@ impl From<ActionProto> for Action {
             ActionKind::AddChild(child) => Action::AddChild(child.into()),
             ActionKind::SetChild(child) => Action::SetChild(child.into()),
             ActionKind::SetChildren(children) => Action::SetChildren(children.into()),
-            ActionKind::AddChildren(children) => Action::AddChildren(children.into())
+            ActionKind::AddChildren(children) => Action::AddChildren(children.into()),
         }
     }
 }
