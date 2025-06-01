@@ -1,4 +1,4 @@
-use crate::model::{GeneratorInstance, Mixer, ModMatrix, Placement, Sample, Track, TrackPlacement};
+use crate::model::{GeneratorInstance, Mixer, Placement, Sample, Track, TrackPlacement};
 use crate::pmodel::*;
 use crate::types::Beats;
 use local_macro::{FromProto, IntoProto};
@@ -25,9 +25,6 @@ pub struct Project {
     pub mixer: Mixer,
 
     pub bpm: Beats,
-
-    #[proto_optional]
-    pub mod_matrix: ModMatrix,
 }
 
 impl Project {
@@ -160,7 +157,6 @@ mod tests {
                 }],
             },
             bpm: 120.0,
-            mod_matrix: ModMatrix::default(),
         };
         assert_proto_round_trip::<Project, ProjectProto>(project);
     }
