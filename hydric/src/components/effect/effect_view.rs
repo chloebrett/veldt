@@ -1,9 +1,9 @@
 use super::{CompressorView, DelayView, EqView, ModDelayView};
 use crate::local_state::LocalState;
 use crate::view::View;
-use crate::widget::{StateWindow, default_window};
+use crate::widget::StateWindow;
 use crate::window_state::WindowKind;
-use egui::{Pos2, Ui};
+use egui::Ui;
 use shared::model::Effect;
 use state::{Action, EffectSelector, Store};
 
@@ -47,25 +47,11 @@ impl<F: Fn(Action), G: Fn()> View for EffectView<'_, F, G> {
         let on_release = &self.on_release;
         let title = effect_name(effect);
         let EffectSelector(mixer_index, effect_index) = self.selector;
-
-        StateWindow(
-            default_window(title)
-                .id(format!("effects_{}_{}", mixer_index, effect_index).into())
-                .default_pos(Pos2 {
-                    x: 1000.0 + 50.0 * effect_index as f32,
-                    y: 150.0 + 50.0 * effect_index as f32,
-                }),
-        )
-        .show_with_closure(
+        StateWindow::show_from_window_state(
             ui,
-            local_state
-                .window_state
-                .get_visible(WindowKind::Effect(self.selector)),
-            |_| {
-                local_state
-                    .window_state
-                    .set_visible(WindowKind::Effect(self.selector), false)
-            },
+            &local_state.window_state,
+            WindowKind::Effect(self.selector),
+            title,
             |ui| {
                 match effect {
                     Effect::SimpleEq(config) => EqView::new(config, dispatch, on_release).ui(ui),

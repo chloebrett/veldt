@@ -1,7 +1,7 @@
 use crate::{
     GetSet, LocalState,
     view::View,
-    widget::{Sequencer, SequencerObject, StateWindow, default_window},
+    widget::{Sequencer, SequencerObject, StateWindow},
     window_state::WindowKind,
 };
 use egui::{
@@ -79,22 +79,11 @@ impl View for TrackRoll<'_> {
         if !select {
             self.local_state.selected_placements.set(HashSet::default());
         }
-
-        StateWindow(
-            default_window("Track Roll")
-                .default_pos(self.local_state.window_state.get_pos(WindowKind::TrackRoll))
-                .resizable(true),
-        )
-        .show_with_closure(
+        StateWindow::show_from_window_state(
             ui,
-            self.local_state
-                .window_state
-                .get_visible(WindowKind::TrackRoll),
-            |_| {
-                self.local_state
-                    .window_state
-                    .set_visible(WindowKind::TrackRoll, false)
-            },
+            &self.local_state.window_state,
+            WindowKind::TrackRoll,
+            "Track Roll",
             |ui| {
                 ui.horizontal(|ui| {
                     if ui.button("New track").clicked() {

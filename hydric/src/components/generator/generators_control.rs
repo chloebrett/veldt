@@ -1,30 +1,17 @@
 use super::generator_name;
 use crate::local_state::LocalState;
-use crate::widget::{StateWindow, add_knob, default_window, int_slider, styled_knob};
+use crate::widget::{StateWindow, add_knob, int_slider, styled_knob};
 use crate::window_state::WindowKind;
-use egui::{Button, Pos2, Ui};
+use egui::{Button, Ui};
 use state::{Action, FloatField, GeneratorSelector, IndexField, Store, TypeField};
 
 pub fn generators_control(ui: &mut Ui, local_state: &LocalState, store: &Store) {
     let generators = &store.get().project.generators;
-    StateWindow(
-        default_window("Generators")
-            .id("generators".into())
-            .default_pos(Pos2 {
-                x: 1000.0,
-                y: 150.0,
-            }),
-    )
-    .show_with_closure(
+    StateWindow::show_from_window_state(
         ui,
-        local_state
-            .window_state
-            .get_visible(WindowKind::GeneratorList),
-        |_| {
-            local_state
-                .window_state
-                .set_visible(WindowKind::GeneratorList, false)
-        },
+        &local_state.window_state,
+        WindowKind::GeneratorList,
+        "Generators",
         |ui| {
             for generator_index in 0..generators.len() {
                 let sel = GeneratorSelector(generator_index);
