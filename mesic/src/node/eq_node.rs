@@ -1,10 +1,10 @@
 use super::{extract_inputs, extract_outputs};
+use crate::eq::filter::Filter;
 use crate::eq::{ApplyFilter, eq_filter};
 use crate::graph::ProcessContext;
 use dasp_graph::{Buffer, Input, Node};
 use shared::model::{Effect, EffectInstance, EqConfig};
 use state::EffectSelector;
-use crate::eq::filter::Filter;
 
 pub struct EqNode {
     selector: EffectSelector,

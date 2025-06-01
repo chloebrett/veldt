@@ -2,6 +2,7 @@ use super::pan_multipliers;
 use crate::SAMPLE_RATE;
 use crate::consts::CHANNEL_COUNT;
 use crate::envelope::EnvelopeGenerator;
+use crate::eq::filter::Filter;
 use crate::eq::{ApplyFilter, eq_filter};
 use crate::graph::{NoteEventType, ProcessContext};
 use crate::maths::linspace;
@@ -15,7 +16,6 @@ use shared::model::{
 };
 use shared::types::{Freq, KnobPosition, Volume};
 use state::GeneratorSelector;
-use crate::eq::filter::Filter;
 
 pub struct StingrayNode {
     selector: GeneratorSelector,
