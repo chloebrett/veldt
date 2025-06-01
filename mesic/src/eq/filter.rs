@@ -116,7 +116,7 @@ impl Filter {
     }
 
     fn apply_sample(&mut self, x: &mut f32) -> f32 {
-        let SecondOrderFilterConfig { a0, a1, a2, b1, b2 } = self.config;
+        let FilterConfig { a0, a1, a2, b1, b2 } = self.config;
 
         let xn2 = self.x_buffer.dequeue().unwrap();
         let xn1 = *self.x_buffer.front().unwrap();

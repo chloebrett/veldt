@@ -177,7 +177,7 @@ impl Node<ProcessContext> for StingrayNode {
                 }
             }
 
-            let mut adjusted_config = apply_env_lpf(state);
+            let adjusted_config = apply_env_lpf(state);
             let adjusted_filter = eq_filter(&adjusted_config);
             // state.filter_left.set_config(adjusted_filter);
             // state.filter_right.set_config(adjusted_filter);
