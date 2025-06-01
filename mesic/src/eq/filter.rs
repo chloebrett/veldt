@@ -34,6 +34,43 @@ pub struct FilterConfig {
     pub b2: f32, // coefficient of y2.
 }
 
+impl FilterConfig {
+    pub fn new() -> Self {
+        FilterConfig {
+            a0: 0.0,
+            a1: 0.0,
+            a2: 0.0,
+            b1: 0.0,
+            b2: 0.0,
+        }
+    }
+
+    pub fn a0(mut self, val: f32) -> Self {
+        self.a0 = val;
+        self
+    }
+
+    pub fn a1(mut self, val: f32) -> Self {
+        self.a1 = val;
+        self
+    }
+
+    pub fn a2(mut self, val: f32) -> Self {
+        self.a2 = val;
+        self
+    }
+
+    pub fn b1(mut self, val: f32) -> Self {
+        self.b1 = val;
+        self
+    }
+
+    pub fn b2(mut self, val: f32) -> Self {
+        self.b2 = val;
+        self
+    }
+}
+
 impl Filter {
     pub fn new_wet(config: FilterConfig) -> Self {
         Self::new_internal(config, None)
