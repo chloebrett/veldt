@@ -1,9 +1,9 @@
-use super::filter::{Mix, SecondOrderFilter, SecondOrderFilterConfig};
+use super::filter::{Filter, FilterConfig, Mix};
 use crate::consts::SAMPLE_RATE;
 use shared::model::EqConfig;
 use std::f32::consts::TAU;
 
-pub fn parametric_non_constant_q(config: &EqConfig) -> SecondOrderFilter {
+pub fn parametric_non_constant_q(config: &EqConfig) -> Filter {
     let fs = SAMPLE_RATE as f32;
     let thetac = TAU * config.fc / fs;
 
@@ -22,8 +22,5 @@ pub fn parametric_non_constant_q(config: &EqConfig) -> SecondOrderFilter {
     let wet: f32 = mu - 1.0;
     let dry: f32 = 1.0;
 
-    SecondOrderFilter::new(
-        SecondOrderFilterConfig { a0, a1, a2, b1, b2 },
-        Mix { wet, dry },
-    )
+    Filter::new(FilterConfig { a0, a1, a2, b1, b2 }, Mix { wet, dry })
 }

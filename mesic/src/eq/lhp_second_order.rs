@@ -1,10 +1,10 @@
-use super::filter::{SecondOrderFilter, SecondOrderFilterConfig};
+use super::filter::{Filter, FilterConfig};
 use super::low_high::LowHigh;
 use crate::consts::SAMPLE_RATE;
 use shared::model::EqConfig;
 use std::f32::consts::TAU;
 
-pub fn lhp_second_order(config: &EqConfig, low_high: LowHigh) -> SecondOrderFilter {
+pub fn lhp_second_order(config: &EqConfig, low_high: LowHigh) -> Filter {
     let fs = SAMPLE_RATE as f32;
     let theta: f32 = TAU * config.fc / fs;
     let d: f32 = 1.0 / config.q;
@@ -25,5 +25,5 @@ pub fn lhp_second_order(config: &EqConfig, low_high: LowHigh) -> SecondOrderFilt
     let b1 = -2.0 * gamma;
     let b2 = 2.0 * beta;
 
-    SecondOrderFilter::new_wet(SecondOrderFilterConfig { a0, a1, a2, b1, b2 })
+    Filter::new_wet(FilterConfig { a0, a1, a2, b1, b2 })
 }
