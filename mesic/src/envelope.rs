@@ -94,11 +94,7 @@ impl EnvelopeGenerator {
         self.config = envelope;
     }
 
-    pub fn peek(&self) -> f32 {
-        self.last_output
-    }
-
-    pub fn add_envelopes(
+    pub fn update_envelope(
         &mut self,
         osc_index: usize,
         envelopes: &[AdsrEnvelope],
@@ -272,7 +268,7 @@ mod tests {
         mod_matrix.get_mut(0, 0).unwrap().set(a);
         mod_matrix.get_mut(1, 0).unwrap().set(b);
 
-        let result = eg.add_envelopes(0, &envelopes, &mod_matrix);
+        let result = eg.update_envelope(0, &envelopes, &mod_matrix);
 
         let expected_attack =
             (a * envelopes[0].attack + b * envelopes[1].attack).clamp(0.0, 1000.0);

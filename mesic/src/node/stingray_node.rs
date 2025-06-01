@@ -11,7 +11,7 @@ use crate::wave_cache::{WaveCache, WaveKey};
 use dasp_frame::Stereo;
 use dasp_graph::{Buffer, Input, Node};
 use shared::model::{
-    AdsrEnvelope, AntiAliasingMode, EqConfig, Generator, GeneratorInstance, GeneratorMeta,
+    AntiAliasingMode, Generator, GeneratorInstance, GeneratorMeta,
     Oscillator, PitchName, StingrayConfig,
 };
 use shared::types::{Freq, KnobPosition, Volume};
@@ -36,7 +36,6 @@ struct NodeState {
 struct Voice {
     egs: [EnvelopeGenerator; 3],
     sources: Option<[StingrayWaveSource; 3]>,
-    osc_envs: [AdsrEnvelope; 3],
 }
 
 impl Default for NodeState {
@@ -53,7 +52,6 @@ impl Default for NodeState {
             voice: Voice {
                 egs: [egs[0].clone(), egs[1].clone(), egs[2].clone()],
                 sources: None,
-                osc_envs: config.envelopes,
             },
             filter_left: eq_filter(&config.lpf),
             filter_right: eq_filter(&config.lpf),
@@ -62,36 +60,6 @@ impl Default for NodeState {
 }
 
 impl NodeState {
-    fn update_envelope(
-        osc_index: usize,
-        envelopes: &[AdsrEnvelope],
-        matrix: &dyn Fn(usize, usize) -> Option<f32>,
-    ) -> AdsrEnvelope {
-        let mut new_env = AdsrEnvelope {
-            attack: 0.0,
-            decay: 0.0,
-            sustain: 0.0,
-            release: 0.0,
-        };
-
-        for (j, env) in envelopes.iter().enumerate() {
-            let weight = matrix(j, osc_index).unwrap_or(0.0);
-            if weight != 0.0 {
-                new_env.attack += weight * env.attack;
-                new_env.decay += weight * env.decay;
-                new_env.sustain += weight * env.sustain;
-                new_env.release += weight * env.release;
-            }
-        }
-
-        new_env.attack = new_env.attack.clamp(0.0, 1000.0);
-        new_env.decay = new_env.decay.clamp(0.0, 1000.0);
-        new_env.sustain = new_env.sustain.clamp(0.0, 1.0);
-        new_env.release = new_env.release.clamp(0.0, 1000.0);
-
-        new_env
-    }
-
     fn update(&mut self, payload: &ProcessContext, selector: GeneratorSelector) {
         if let GeneratorInstance {
             it: Generator::Stingray(config),
@@ -114,31 +82,9 @@ impl NodeState {
                 self.meta = meta.clone();
             }
 
-            let mut new_envs: [AdsrEnvelope; 3] = Default::default();
-            let mut lpf_mod = 0.0;
-            let mod_matrix = &self.config.matrix;
-
-            for i in 0..self.config.envelopes.len() {
-                let env = Self::update_envelope(i, &self.config.envelopes, &|j, i| {
-                    mod_matrix.get(j, i).map(|x| (*x).into())
-                });
-
-                let cell: f32 = mod_matrix
-                    .get(i, 3) // lpf column
-                    .map_or(0.0, |c| (*c).into());
-
-                if cell != 0.0 {
-                    let eg = &self.voice.egs[i];
-                    lpf_mod += cell * eg.peek();
-                }
-
-                new_envs[i] = env;
+            for i in 0..self.voice.egs.len() {
+                self.voice.egs[i].update_envelope(i, &self.config.envelopes, &self.config.matrix);
             }
-
-            let mod_freq = (self.config.lpf.fc + lpf_mod).clamp(20.0, SAMPLE_RATE as f32 / 2.0);
-            self.config.lpf.fc = mod_freq;
-
-            self.voice.osc_envs = new_envs;
         }
     }
 }
@@ -163,41 +109,6 @@ impl StingrayNode {
         for x in buffer.iter_mut() {
             *x *= pan_mult * volume;
         }
-    }
-
-    fn update_envelope(
-        osc_index: usize,
-        envelopes: &[AdsrEnvelope],
-        matrix: &dyn Fn(usize, usize) -> Option<f32>,
-    ) -> AdsrEnvelope {
-        let mut new_env = AdsrEnvelope {
-            attack: 0.0,
-            decay: 0.0,
-            sustain: 0.0,
-            release: 0.0,
-        };
-        let mut count = 0;
-
-        for (j, env) in envelopes.iter().enumerate() {
-            let weight = matrix(j, osc_index).unwrap_or(0.0);
-            if weight != 0.0 {
-                count += 1;
-                new_env.attack += weight * env.attack;
-                new_env.decay += weight * env.decay;
-                new_env.sustain += weight * env.sustain;
-                new_env.release += weight * env.release;
-            }
-        }
-
-        if count > 0 {
-            let divisor = count as f32;
-            new_env.attack /= divisor;
-            new_env.decay /= divisor;
-            new_env.sustain /= divisor;
-            new_env.release /= divisor;
-        }
-
-        new_env
     }
 }
 
@@ -244,7 +155,6 @@ impl Node<ProcessContext> for StingrayNode {
                             let eg = &mut state.voice.egs[i];
                             let osc = state.config.oscillators[i].clone();
 
-                            eg.add_envelopes(i, &state.config.envelopes, &state.config.matrix);
                             eg.note_on();
 
                             // TODO: update config dynamically, not just when starting a new note.
@@ -269,11 +179,6 @@ impl Node<ProcessContext> for StingrayNode {
                     }
                 }
             }
-
-            let adjusted_config = apply_env_lpf(state);
-            let adjusted_filter = eq_filter(&adjusted_config);
-            // state.filter_left.set_config(adjusted_filter);
-            // state.filter_right.set_config(adjusted_filter);
 
             if let Some(sources) = &mut state.voice.sources {
                 for (eg, source) in state.voice.egs.iter_mut().zip(sources.iter_mut()) {
@@ -366,24 +271,4 @@ impl StingrayWaveSource {
         self.sample_index += 1;
         output_stereo
     }
-}
-
-pub fn apply_env_lpf(state: &mut NodeState) -> EqConfig {
-    let mut lpf_mod = 0.0;
-    let mod_matrix = &state.config.matrix;
-    let lpf_col = 3; // lpf column in matrix
-
-    for i in 0..state.config.envelopes.len() {
-        let cell: f32 = mod_matrix.get(i, lpf_col).map_or(0.0, |c| (*c).into());
-
-        if cell != 0.0 {
-            let eg = &state.voice.egs[i];
-            lpf_mod += cell * eg.peek();
-        }
-    }
-    let mod_freq = (state.config.lpf.fc + lpf_mod).clamp(20.0, SAMPLE_RATE as f32 / 2.0);
-    let mut adjusted_config = state.config.lpf.clone();
-    adjusted_config.fc = mod_freq;
-
-    adjusted_config
 }
