@@ -1,8 +1,8 @@
 use crate::{
     GetSet, LocalState,
     view::View,
-    widget::{Sequencer, SequencerObject, StateWindow, default_window},
-    window_state::{WindowKind, WindowState},
+    widget::{Sequencer, SequencerObject, StateWindow},
+    window_state::WindowKind,
 };
 use egui::{
     Color32, CornerRadius, Pos2, Rect, ScrollArea, Shape, Stroke, StrokeKind, Ui, pos2, vec2,
@@ -22,21 +22,12 @@ use std::collections::HashSet;
 
 pub struct TrackRoll<'a> {
     store: &'a Store,
-    window_state: &'a mut WindowState,
     local_state: &'a LocalState,
 }
 
 impl<'a> TrackRoll<'a> {
-    pub fn new(
-        store: &'a Store,
-        window_state: &'a mut WindowState,
-        local_state: &'a LocalState,
-    ) -> Self {
-        Self {
-            store,
-            window_state,
-            local_state,
-        }
+    pub fn new(store: &'a Store, local_state: &'a LocalState) -> Self {
+        Self { store, local_state }
     }
 }
 
@@ -88,16 +79,11 @@ impl View for TrackRoll<'_> {
         if !select {
             self.local_state.selected_placements.set(HashSet::default());
         }
-
-        StateWindow(
-            default_window("Track Roll")
-                .default_pos(self.window_state.get_pos(WindowKind::TrackRoll))
-                .resizable(true),
-        )
-        .show_with_closure(
+        StateWindow::show_from_window_state(
             ui,
-            self.window_state.get_visible(WindowKind::TrackRoll),
-            |_| self.window_state.set_visible(WindowKind::TrackRoll, false),
+            &self.local_state.window_state,
+            WindowKind::TrackRoll,
+            "Track Roll",
             |ui| {
                 ui.horizontal(|ui| {
                     if ui.button("New track").clicked() {
@@ -272,8 +258,12 @@ impl SequencerObject<PlacedTrack> for PlacedTrack {
     fn set_active(&self, local_state: &LocalState, index: usize) {
         let track_placement: Option<&TrackPlacement> = (&self.placement).try_into().ok();
 
-        local_state.note_roll_window.set(true);
-        local_state.placement_window.set(true);
+        local_state
+            .window_state
+            .set_visible(WindowKind::NoteRoll, true);
+        local_state
+            .window_state
+            .set_visible(WindowKind::Placement, true);
         local_state
             .active_track
             .set(track_placement.map(|it| TrackSelector(it.track_index)));
