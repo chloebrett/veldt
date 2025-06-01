@@ -2,10 +2,10 @@ use crate::local_state::LocalState;
 use crate::promise::{poll, spawn};
 use crate::rpc::{load_sample, load_sample_tree};
 use crate::view::View;
-use crate::widget::{StateWindow, checkbox, default_window};
-use crate::window_state::{WindowKind, WindowState};
+use crate::widget::{StateWindow, checkbox};
+use crate::WindowKind;
 use crate::{AsyncState, playback::AudioPlayer};
-use egui::{Checkbox, Pos2, ScrollArea, Ui};
+use egui::{Checkbox, ScrollArea, Ui};
 use egui_ltreeview::{Action as TreeAction, TreeView, TreeViewBuilder};
 use mesic::interleave_stereo;
 use shared::model::{FileTree, FileTreeConfig, FilenameTree};
@@ -14,7 +14,6 @@ use state::{Action, Store, TypeField};
 pub struct SampleTreeView<'a> {
     store: &'a Store,
     async_state: &'a mut AsyncState,
-    window_state: &'a WindowState,
     player: &'a mut AudioPlayer,
     local_state: &'a LocalState,
 }
@@ -23,14 +22,12 @@ impl<'a> SampleTreeView<'a> {
     pub fn new(
         store: &'a Store,
         async_state: &'a mut AsyncState,
-        window_state: &'a WindowState,
         player: &'a mut AudioPlayer,
         local_state: &'a LocalState,
     ) -> Self {
         SampleTreeView {
             store,
             async_state,
-            window_state,
             player,
             local_state,
         }
@@ -95,18 +92,13 @@ pub fn interacted_sample_file_name(
 
 impl View for SampleTreeView<'_> {
     fn ui(&mut self, ui: &mut Ui) {
-        StateWindow(
-            default_window("Samples")
-                .resizable(true)
-                .default_pos(Pos2 { x: 600.0, y: 20.0 }),
-        )
-        .show_with_closure(
+        StateWindow::show_from_window_state(
             ui,
-            self.window_state.get_visible(WindowKind::SampleTree),
-            |_| self.window_state.set_visible(WindowKind::SampleTree, false),
+            &self.local_state.window_state,
+            WindowKind::SampleTree,
+            "Samples",
             |ui| {
                 let config = &self.store.get().sample_tree_config;
-
                 let mut search = config.search.clone();
                 let response = ui.text_edit_singleline(&mut search);
                 if response.changed() {

@@ -17,8 +17,6 @@ message ProjectProto {
   MixerProto mixer = 6;
 
   float bpm = 7;
-
-  ModMatrixProto mod_matrix = 8;
 }
 
 message MixerProto {
