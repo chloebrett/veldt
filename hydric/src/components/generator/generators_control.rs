@@ -17,7 +17,9 @@ pub fn generators_control(ui: &mut Ui, local_state: &LocalState, store: &Store) 
         WindowKind::GeneratorList,
         "Generators",
         |ui| {
-            for (index, (generator_id, generator)) in generators.clone().into_iter().enumerate() {
+            for (index, (generator_id, generator)) in
+                store.get().project.generators.iter().enumerate()
+            {
                 let sel = GeneratorSelector(*generator_id);
                 let on_release = || store.dispatchr(Action::Release);
 
@@ -75,7 +77,7 @@ pub fn generators_control(ui: &mut Ui, local_state: &LocalState, store: &Store) 
                     on_release,
                 );
 
-                if index < generators.len() - 1 {
+                if index < store.get().project.generators.len() - 1 {
                     ui.separator();
                 }
             }

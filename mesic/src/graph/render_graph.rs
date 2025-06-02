@@ -7,7 +7,7 @@ use dasp_frame::Stereo;
 use dasp_graph::Buffer;
 use shared::model::{GeneratorId, PitchName, PlacementType, Project};
 use shared::types::Beats;
-use state::{Action, GeneratorSelector, IndexField, Selector, StoreData, TypeField};
+use state::{Action, GeneratorSelector, Selector, StoreData, TypeField};
 use std::collections::HashMap;
 use std::sync::mpsc::Receiver;
 

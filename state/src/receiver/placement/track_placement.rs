@@ -1,6 +1,6 @@
 use crate::receiver::ActionReceiver;
 use crate::{Action, IndexField, TypeField};
-use shared::model::{GeneratorId, TrackPlacement};
+use shared::model::TrackPlacement;
 
 impl ActionReceiver for TrackPlacement {
     fn apply(&mut self, action: &Action) -> Option<Action> {
