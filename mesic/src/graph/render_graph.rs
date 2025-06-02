@@ -5,9 +5,10 @@ use crate::convert::beats_to_samples;
 use crate::mixer::Mixer;
 use dasp_frame::Stereo;
 use dasp_graph::Buffer;
-use shared::model::{PitchName, PlacementType, Project};
+use shared::model::{GeneratorId, PitchName, PlacementType, Project};
 use shared::types::Beats;
 use state::{Action, GeneratorSelector, IndexField, Selector, StoreData};
+use std::collections::HashMap;
 use std::sync::mpsc::Receiver;
 
 /// Wraps a Mixer (which in turn wraps a Graph) to add processing/iteration, seeking, and listening
@@ -23,7 +24,7 @@ pub struct RenderGraph {
     rx: Receiver<(Selector, Action)>,
 
     // Pending note on/off events sent from UI (e.g. from interacting with piano).
-    pending_note_events: Vec<Vec<NoteEvent>>,
+    pending_note_events: HashMap<GeneratorId, Vec<NoteEvent>>,
 
     // Playback state.
     main_playback_len: usize,
@@ -42,7 +43,7 @@ impl RenderGraph {
             processor: make_processor(),
             process_context: ProcessContext::new(store.clone()),
             rx,
-            pending_note_events: vec![],
+            pending_note_events: HashMap::new(),
             main_playback_len,
             main_playback_index: 0,
             preview_playback_len: 0,
@@ -130,12 +131,10 @@ impl RenderGraph {
             return;
         };
 
-        let prev_generator_index = track_placement.generator_index;
+        // TODO: change track_placement.generator_index to generator_id.
+        let prev_generator_id = GeneratorId(track_placement.generator_index);
         let stop_generators = &mut self.process_context.stop_generators;
-        while stop_generators.len() <= prev_generator_index {
-            stop_generators.push(false);
-        }
-        stop_generators[prev_generator_index] = true;
+        stop_generators.insert(prev_generator_id, true);
         log::info!("Stopped generator: {:?}", stop_generators);
     }
 
@@ -151,10 +150,14 @@ impl RenderGraph {
         );
 
         // Load any events sent from the UI by the user.
-        for (i, event) in self.pending_note_events.clone().into_iter().enumerate() {
-            self.process_context.note_events[i].extend(event);
+        for (generator_id, event) in self.pending_note_events.clone().into_iter() {
+            self.process_context
+                .note_events
+                .entry(generator_id)
+                .or_default()
+                .extend(event);
         }
-        self.pending_note_events = vec![];
+        self.pending_note_events.clear();
     }
 
     /// Processes a note event sent by the user.
@@ -165,16 +168,15 @@ impl RenderGraph {
         pitch_name: PitchName,
         kind: NoteEventType,
     ) {
-        let GeneratorSelector(generator_index) = generator;
-        // Note: this pattern will become a bit inefficient if there are a lot of generators.
-        while self.pending_note_events.len() <= generator_index {
-            self.pending_note_events.push(vec![]);
-        }
-        self.pending_note_events[generator_index].push(NoteEvent {
-            kind,
-            sample_index: 0,
-            pitch_name,
-        });
+        let GeneratorSelector(generator_id) = generator;
+        self.pending_note_events
+            .entry(generator_id)
+            .or_default()
+            .push(NoteEvent {
+                kind,
+                sample_index: 0,
+                pitch_name,
+            });
         log::info!("Pending: {:?}", self.pending_note_events);
     }
 
@@ -215,7 +217,7 @@ impl Iterator for RenderGraph {
                 .process(&mut self.processor, &self.process_context);
             self.process_context.main_seek_pos = None;
             self.process_context.preview_seek_pos = None;
-            self.process_context.stop_generators = vec![];
+            self.process_context.stop_generators.clear();
         }
 
         match self.process_context.playback_mode {

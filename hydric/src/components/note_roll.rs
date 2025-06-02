@@ -12,7 +12,7 @@ use egui::{
 };
 use mesic::create_scale_values;
 use shared::{
-    model::{Note, PitchName, PlacedNote, PlacementType, Scale, ScaleValue},
+    model::{GeneratorId, Note, PitchName, PlacedNote, PlacementType, Scale, ScaleValue},
     types::PitchValue,
 };
 use state::{
@@ -158,7 +158,10 @@ impl View for NoteRoll<'_> {
                                     _ => None,
                                 })
                                 .next()
-                                .map(GeneratorSelector);
+                                // TODO: replace generator_index with generator_id here.
+                                .map(|generator_index| {
+                                    GeneratorSelector(GeneratorId(generator_index))
+                                });
 
                             Piano::new(
                                 max_note,

@@ -1,12 +1,9 @@
 use super::{GeneratorSelector, Selector, SelectorTrait};
 use crate::StoreData;
-use shared::model::{EqConfig, StingrayConfig};
+use shared::model::{EqConfig, GeneratorId, StingrayConfig};
 
 #[derive(Eq, PartialEq, Ord, PartialOrd, Copy, Clone, Debug, Hash)]
-pub struct GeneratorEffectSelector(
-    /* generator_index */ pub usize,
-    /* effect_index */ pub usize,
-);
+pub struct GeneratorEffectSelector(pub GeneratorId, /* effect_index */ pub usize);
 
 impl GeneratorEffectSelector {
     pub fn upcast(&self) -> GeneratorSelector {
@@ -17,15 +14,16 @@ impl GeneratorEffectSelector {
 impl SelectorTrait for GeneratorEffectSelector {
     type Item = EqConfig;
 
-    // NOTE: in theory, can support multiple generator effects, but for now we only have stingray LPF
+    // NOTE: in theory, can support arbitrary generator effects,
+    // but for now we only have stingray LPF
     fn try_select<'a>(&'a self, store: &'a StoreData) -> Option<&'a Self::Item> {
-        let instance = store.project.generators.get(self.0)?;
+        let instance = store.project.generators.get(&self.0)?;
         let stingray: &StingrayConfig = (&instance.it).try_into().ok()?;
         Some(&stingray.lpf)
     }
 
     fn try_select_mut<'a>(&'a self, store: &'a mut StoreData) -> Option<&'a mut Self::Item> {
-        let instance = store.project.generators.get_mut(self.0)?;
+        let instance = store.project.generators.get_mut(&self.0)?;
         let stingray: &mut StingrayConfig = (&mut instance.it).try_into().ok()?;
         Some(&mut stingray.lpf)
     }

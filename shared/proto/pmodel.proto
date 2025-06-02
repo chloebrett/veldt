@@ -12,7 +12,7 @@ message ProjectProto {
 
   repeated SampleProto samples = 4;
 
-  repeated GeneratorInstanceProto generators = 5;
+  map<uint32, GeneratorInstanceProto> generators = 5;
 
   MixerProto mixer = 6;
 
