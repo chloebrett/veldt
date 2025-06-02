@@ -117,7 +117,7 @@ mod tests {
                 right: vec![0.0, 1.0, 3.0],
                 sample_rate: 1.0,
             }],
-            generators: vec![GeneratorInstance {
+            generators: HashMap::from([(GeneratorId(0), GeneratorInstance {
                 it: Generator::SimpleWave(SimpleWaveConfig {
                     wave: WaveType::Sine,
                     envelope: AdsrEnvelope {
@@ -139,7 +139,7 @@ mod tests {
                     pan: 0.0,
                     mixer_channel: 0,
                 },
-            }],
+            })]),
             mixer: Mixer {
                 matrix: MixerMatrix::with_channels(3),
                 channels: vec![MixerChannel {
