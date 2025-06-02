@@ -338,11 +338,9 @@ mod tests {
 
         // Two generators on channel 0,
         // One generator on channel 1.
-        project.generators.extend(vec![
-            (GeneratorId(0), some_generator()),
-            (GeneratorId(1), some_generator()),
-            (GeneratorId(2), some_generator()),
-        ]);
+        project
+            .generators
+            .extend((0..=2).map(|i| (GeneratorId(i), some_generator())));
         project
             .generators
             .get_mut(&GeneratorId(2))

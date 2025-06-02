@@ -7,8 +7,8 @@ use shared::model::{GeneratorId, GeneratorInstance};
 use state::{Action, FloatField, GeneratorSelector, IndexField, Store, TypeField};
 
 pub fn generators_control(ui: &mut Ui, local_state: &LocalState, store: &Store) {
-    let generators = &store.get().project.generators;
-    let generators_vec: Vec<(&GeneratorId, &GeneratorInstance)> = generators.iter().collect();
+    let generators: Vec<(&GeneratorId, &GeneratorInstance)> =
+        store.get().project.generators.iter().collect();
 
     StateWindow::show_from_window_state(
         ui,
@@ -16,7 +16,7 @@ pub fn generators_control(ui: &mut Ui, local_state: &LocalState, store: &Store) 
         WindowKind::GeneratorList,
         "Generators",
         |ui| {
-            for (index, (generator_id, generator)) in generators_vec.into_iter().enumerate() {
+            for (index, (generator_id, generator)) in generators.clone().into_iter().enumerate() {
                 let sel = GeneratorSelector(*generator_id);
                 let on_release = || store.dispatchr(Action::Release);
 
