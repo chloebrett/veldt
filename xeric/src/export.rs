@@ -25,15 +25,6 @@ enum AudioFileType {
     Wav,
 }
 
-// impl AudioFileType {
-//     fn as_str(&self) -> &'static str {
-//         match self {
-//             AudioFileType::Mp3 => "mp3",
-//             AudioFileType::Wav => "wav",
-//         }
-//     }
-// }
-
 // Create output file path according to AudioFileType.
 fn export_file_path(name: &str, file_type: AudioFileType) -> PathBuf {
     let file_ext = file_type.to_string();
@@ -44,6 +35,8 @@ fn export_file_path(name: &str, file_type: AudioFileType) -> PathBuf {
 
 fn export_dir_path(file_type: AudioFileType) -> PathBuf {
     let mut dir_path = current_dir().unwrap();
+    dir_path.push("assets");
+    dir_path.push("exports");
     // Note: no need to pop '/xeric', as we assume we are running from the veldt dir.
     dir_path.push(file_type.to_string());
     dir_path
