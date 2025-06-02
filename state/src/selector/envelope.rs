@@ -1,12 +1,9 @@
 use super::{GeneratorSelector, Selector, SelectorTrait};
 use crate::StoreData;
-use shared::model::{AdsrEnvelope, StingrayConfig, GeneratorId};
+use shared::model::{AdsrEnvelope, GeneratorId, StingrayConfig};
 
 #[derive(Eq, PartialEq, Ord, PartialOrd, Copy, Clone, Debug, Hash)]
-pub struct EnvelopeSelector(
-    pub GeneratorId,
-    /* envelope_index */ pub usize,
-);
+pub struct EnvelopeSelector(pub GeneratorId, /* envelope_index */ pub usize);
 
 impl EnvelopeSelector {
     pub fn upcast(&self) -> GeneratorSelector {

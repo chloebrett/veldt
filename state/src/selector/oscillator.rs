@@ -1,6 +1,6 @@
 use super::{GeneratorSelector, Selector, SelectorTrait};
 use crate::StoreData;
-use shared::model::{Oscillator, StingrayConfig, GeneratorId};
+use shared::model::{GeneratorId, Oscillator, StingrayConfig};
 
 impl OscillatorSelector {
     pub fn upcast(&self) -> GeneratorSelector {
@@ -9,10 +9,7 @@ impl OscillatorSelector {
 }
 
 #[derive(Eq, PartialEq, Ord, PartialOrd, Copy, Clone, Debug, Hash)]
-pub struct OscillatorSelector(
-    pub GeneratorId,
-    /* oscillator_index */ pub usize,
-);
+pub struct OscillatorSelector(pub GeneratorId, /* oscillator_index */ pub usize);
 
 impl SelectorTrait for OscillatorSelector {
     type Item = Oscillator;

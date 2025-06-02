@@ -1,12 +1,9 @@
 use super::{GeneratorSelector, Selector, SelectorTrait};
 use crate::StoreData;
-use shared::model::{LfoConfig, StingrayConfig, GeneratorId};
+use shared::model::{GeneratorId, LfoConfig, StingrayConfig};
 
 #[derive(Eq, PartialEq, Ord, PartialOrd, Copy, Clone, Debug, Hash)]
-pub struct LfoSelector(
-    pub GeneratorId,
-    /* lfo_index */ pub usize,
-);
+pub struct LfoSelector(pub GeneratorId, /* lfo_index */ pub usize);
 
 impl LfoSelector {
     pub fn upcast(&self) -> GeneratorSelector {

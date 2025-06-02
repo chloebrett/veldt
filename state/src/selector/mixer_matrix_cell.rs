@@ -1,6 +1,6 @@
 use super::{GeneratorSelector, Selector, SelectorTrait};
 use crate::StoreData;
-use shared::model::{MatrixCell, StingrayConfig, GeneratorId};
+use shared::model::{GeneratorId, MatrixCell, StingrayConfig};
 
 #[derive(Eq, PartialEq, Ord, PartialOrd, Copy, Clone, Debug, Hash)]
 pub struct MixerMatrixCellSelector(/* row */ pub usize, /* col */ pub usize);

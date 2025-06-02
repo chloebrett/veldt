@@ -65,25 +65,12 @@ pub enum Selector {
     Generator(GeneratorId),
     Placement(/* placement_index */ usize),
     Sample(/* sample_index */ usize),
-    Oscillator(
-        GeneratorId,
-        /* oscillator_index */ usize,
-    ),
+    Oscillator(GeneratorId, /* oscillator_index */ usize),
     MixerMatrixCell(/* row */ usize, /* col */ usize),
     Lfo(GeneratorId, /* lfo_index */ usize),
-    Envelope(
-        GeneratorId,
-        /* envelope_index */ usize,
-    ),
-    GeneratorEffect(
-        GeneratorId,
-        /* oscillator_index */ usize,
-    ),
-    ModMatrixCell(
-        GeneratorId,
-        /* row */ usize,
-        /* col */ usize,
-    ),
+    Envelope(GeneratorId, /* envelope_index */ usize),
+    GeneratorEffect(GeneratorId, /* oscillator_index */ usize),
+    ModMatrixCell(GeneratorId, /* row */ usize, /* col */ usize),
 }
 
 impl From<Selector> for SelectorProto {

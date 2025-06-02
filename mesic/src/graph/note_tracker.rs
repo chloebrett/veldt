@@ -1,7 +1,8 @@
 use crate::convert::beats_to_samples;
 use dasp_graph::Buffer;
-use shared::model::{PitchName, PlacementType, Project, TrackPlacement};
+use shared::model::{PitchName, GeneratorId, PlacementType, Project, TrackPlacement};
 use std::cmp::min;
+use std::collections::HashMap;
 
 #[derive(Clone, Debug)]
 pub struct NoteEvent {
@@ -24,7 +25,7 @@ impl NoteTracker {
         project: &Project,
         global_sample_index: usize,
     ) -> HashMap<GeneratorId, Vec<NoteEvent>> {
-        let mut result: HashMap<Vec<NoteEvent>> = HashMap::new();
+        let mut result: HashMap<GeneratorId, Vec<NoteEvent>> = HashMap::new();
 
         let bpm = project.bpm;
 
@@ -35,7 +36,9 @@ impl NoteTracker {
                 .clone()
                 .into_iter()
                 .filter(|it| match &it.kind {
-                    PlacementType::Track(it) => it.generator_id == generator_id,
+                    // TODO: rename generator_index in track placement to GeneratorId!
+                    // This conversion is otherwise not necessarily correct.
+                    PlacementType::Track(it) => it.generator_index == **generator_id,
                     _ => false,
                 })
                 .collect();
@@ -66,7 +69,7 @@ impl NoteTracker {
 
                     let start_sample = note_start_sample as isize - global_sample_index as isize;
                     if buf_range.contains(&start_sample) {
-                        result.entry(generator_id).or_default().push({
+                        result.entry(*generator_id).or_default().push({
                             NoteEvent {
                                 kind: NoteEventType::On,
                                 sample_index: start_sample as usize,
@@ -77,7 +80,7 @@ impl NoteTracker {
 
                     let end_sample = note_end_sample as isize - global_sample_index as isize;
                     if buf_range.contains(&end_sample) {
-                        result.entry(generator_id).or_default().push({
+                        result.entry(*generator_id).or_default().push({
                             NoteEvent {
                                 kind: NoteEventType::Off,
                                 sample_index: end_sample as usize,

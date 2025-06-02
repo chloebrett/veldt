@@ -2,10 +2,10 @@ use crate::receiver::ActionReceiver;
 use crate::{Action, Selector, SelectorTrait, reducer};
 use ordered_float::OrderedFloat;
 use shared::model::{
-    AdsrEnvelope, AntiAliasingMode, FileTreeConfig, FilenameTree, Generator, GeneratorInstance,
-    GeneratorMeta, Mixer, MixerChannel, MixerMatrix, NoiseConfig, Note, PitchName, PlacedNote,
-    Placement, PlacementType, PolyphonyMode, Project, Scale, ScaleValue, SimpleWaveConfig,
-    StingrayConfig, Track, TrackPlacement, WaveType, GeneratorId
+    AdsrEnvelope, AntiAliasingMode, FileTreeConfig, FilenameTree, Generator, GeneratorId,
+    GeneratorInstance, GeneratorMeta, Mixer, MixerChannel, MixerMatrix, NoiseConfig, Note,
+    PitchName, PlacedNote, Placement, PlacementType, PolyphonyMode, Project, Scale, ScaleValue,
+    SimpleWaveConfig, StingrayConfig, Track, TrackPlacement, WaveType,
 };
 use shared::types::Volume;
 use std::collections::HashMap;
@@ -133,7 +133,7 @@ impl Default for StoreData {
                             },
                         },
                     ),
-                    ]),
+                ]),
                 mixer: Mixer {
                     matrix: MixerMatrix::with_channels(3),
                     channels: vec![EMPTY_CHANNEL; 3],

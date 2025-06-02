@@ -3,7 +3,7 @@ use super::{
     OscillatorSelector, Selector, SelectorTrait,
 };
 use crate::StoreData;
-use shared::model::{GeneratorInstance, GeneratorId};
+use shared::model::{GeneratorId, GeneratorInstance};
 
 #[derive(Eq, PartialEq, Ord, PartialOrd, Copy, Clone, Debug, Hash)]
 pub struct GeneratorSelector(pub GeneratorId);

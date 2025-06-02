@@ -77,15 +77,15 @@ impl Node<ProcessContext> for NoiseGeneratorNode {
 
         let mut buffer = Buffer::SILENT;
         let mut rng = rand::thread_rng();
-        let GeneratorSelector(generator_index) = self.selector;
+        let GeneratorSelector(generator_id) = self.selector;
 
-        if payload.stop_generators.get(generator_index) == Some(&true) {
-            log::info!("Stopped noise: {generator_index}");
+        if payload.stop_generators.get(&generator_id) == Some(&true) {
+            log::info!("Stopped noise: {:?}", generator_id);
             state.playing = false;
         }
 
         for i in 0..buffer.len() {
-            let mut events: Vec<_> = payload.note_events[generator_index]
+            let mut events: Vec<_> = payload.note_events[&generator_id]
                 .clone()
                 .into_iter()
                 .filter(|it| it.sample_index == i)

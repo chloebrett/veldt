@@ -2,6 +2,8 @@ use dasp_frame::Stereo;
 use dasp_graph::{BoxedNodeSend, NodeData};
 use petgraph::stable_graph::StableGraph;
 use state::StoreData;
+use std::collections::HashMap;
+use shared::model::GeneratorId;
 
 mod note_tracker;
 mod render_graph;
@@ -36,6 +38,7 @@ pub struct ProcessContext {
 
     // Tracks which generators, if any, should be stopped. Used when a track has its generator
     // changed - we stop the previous generator.
+    // TODO: combine this with `note_events` into a single map.
     pub stop_generators: HashMap<GeneratorId, bool>,
 
     // A buffer to play starting at sample 0.
@@ -51,8 +54,8 @@ impl ProcessContext {
             preview_seek_pos: None,
             playback_pos: 0,
             playback_mode: PlaybackMode::Main,
-            note_events: vec![],
-            stop_generators: vec![],
+            note_events: HashMap::new(),
+            stop_generators: HashMap::new(),
             preview_buffer: vec![],
         }
     }
