@@ -10,6 +10,7 @@ enum Tag {
     Optional,
     Enum,
     Repeated,
+    HashMap,
     None,
 }
 
@@ -51,6 +52,10 @@ fn extract_tag(field: &Field) -> Tag {
         if attr.path().is_ident("proto_repeated") {
             tag = Tag::Repeated;
         }
+
+        if attr.path().is_ident("proto_hashmap") {
+            tag = Tag::HashMap;
+        }
     }
     tag
 }
@@ -62,7 +67,8 @@ fn extract_tag(field: &Field) -> Tag {
         proto_type_u32,
         proto_optional,
         proto_enum,
-        proto_repeated
+        proto_repeated,
+        proto_hashmap
     )
 )]
 pub fn derive_from_proto(input: TokenStream) -> TokenStream {
@@ -84,6 +90,9 @@ pub fn derive_from_proto(input: TokenStream) -> TokenStream {
                     Tag::Optional => quote!(#name: item.#name.unwrap().into()),
                     Tag::Repeated => {
                         quote!(#name: item.#name.into_iter().map(|it| it.into()).collect())
+                    }
+                    Tag::HashMap => {
+                        quote!(#name: item.#name.into_iter().map(|(key, value)| (key.into(), value.into())).collect())
                     }
                     Tag::Enum => quote!(#name: item.#name().into()),
                     Tag::None => quote!(#name: item.#name.into()),
@@ -141,7 +150,8 @@ pub fn derive_from_proto(input: TokenStream) -> TokenStream {
         proto_type_u32,
         proto_optional,
         proto_enum,
-        proto_repeated
+        proto_repeated,
+        proto_hashmap
     )
 )]
 pub fn derive_into_proto(input: TokenStream) -> TokenStream {
@@ -163,6 +173,9 @@ pub fn derive_into_proto(input: TokenStream) -> TokenStream {
                     Tag::Optional => quote!(#name: Some(item.#name.into())),
                     Tag::Repeated => {
                         quote!(#name: item.#name.into_iter().map(|it| it.into()).collect())
+                    }
+                    Tag::HashMap => {
+                        quote!(#name: item.#name.into_iter().map(|(key, value)| (key.into(), value.into())).collect())
                     }
                     // enums are saved as i32 in protos.
                     // increment by 1 to account for Unknown = 0.

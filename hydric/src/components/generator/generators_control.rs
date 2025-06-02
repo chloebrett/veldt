@@ -6,18 +6,18 @@ use egui::{Button, Ui};
 use state::{Action, FloatField, GeneratorSelector, IndexField, Store, TypeField};
 
 pub fn generators_control(ui: &mut Ui, local_state: &LocalState, store: &Store) {
-    let generators = &store.get().project.generators;
     StateWindow::show_from_window_state(
         ui,
         &local_state.window_state,
         WindowKind::GeneratorList,
         "Generators",
         |ui| {
-            for generator_index in 0..generators.len() {
-                let sel = GeneratorSelector(generator_index);
+            for (index, (generator_id, generator)) in
+                store.get().project.generators.iter().enumerate()
+            {
+                let sel = GeneratorSelector(*generator_id);
                 let on_release = || store.dispatchr(Action::Release);
 
-                let generator = &generators[generator_index];
                 let label = generator_name(generator);
                 let show = local_state
                     .window_state
@@ -72,7 +72,7 @@ pub fn generators_control(ui: &mut Ui, local_state: &LocalState, store: &Store) 
                     on_release,
                 );
 
-                if generator_index < generators.len() - 1 {
+                if index < store.get().project.generators.len() - 1 {
                     ui.separator();
                 }
             }
