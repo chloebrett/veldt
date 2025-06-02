@@ -28,12 +28,7 @@ impl LfoGenerator {
         self.sample_index += 1;
         self.sample_index = self.sample_index % (SAMPLE_RATE as usize);
 
-        self.current_value = make_wave(
-            phase,
-            wave,
-            frequency,
-            AntiAliasingMode::Off,
-        );
+        self.current_value = make_wave(phase, wave, frequency, AntiAliasingMode::Off);
         self.current_value
     }
 

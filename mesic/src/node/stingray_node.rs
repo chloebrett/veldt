@@ -187,7 +187,12 @@ impl Node<ProcessContext> for StingrayNode {
             }
 
             if let Some(sources) = &mut state.voice.sources {
-                for (j, (eg, source)) in state.voice.egs.iter_mut().zip(sources.iter_mut()).enumerate()
+                for (j, (eg, source)) in state
+                    .voice
+                    .egs
+                    .iter_mut()
+                    .zip(sources.iter_mut())
+                    .enumerate()
                 {
                     let mut lfo_value = 0.0;
                     const LFO_ROW_START: usize = 3;
