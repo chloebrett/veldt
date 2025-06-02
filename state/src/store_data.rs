@@ -75,7 +75,7 @@ impl Default for StoreData {
                 placements: vec![Placement {
                     kind: PlacementType::Track(TrackPlacement {
                         track_index: 0,
-                        generator_index: 0,
+                        generator_id: 0.into(),
                     }),
                     offset: 0.0.into(),
                     clipped_duration: None,

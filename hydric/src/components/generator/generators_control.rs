@@ -7,8 +7,9 @@ use shared::model::{GeneratorId, GeneratorInstance};
 use state::{Action, FloatField, GeneratorSelector, IndexField, Store, TypeField};
 
 pub fn generators_control(ui: &mut Ui, local_state: &LocalState, store: &Store) {
-    let generators: Vec<(&GeneratorId, &GeneratorInstance)> =
+    let mut generators: Vec<(&GeneratorId, &GeneratorInstance)> =
         store.get().project.generators.iter().collect();
+    generators.sort_by_key(|&(&k, _)| k);
 
     StateWindow::show_from_window_state(
         ui,

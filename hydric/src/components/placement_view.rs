@@ -32,9 +32,7 @@ impl<'a> PlacementView<'a> {
         sel: &PlacementSelector,
         store: &Store,
     ) {
-        let on_release = || store.dispatchr(Action::Release);
-
-        egui::ComboBox::from_id_salt(format!("placement_{placement_index}"))
+        egui::ComboBox::from_id_salt(format!("placement_{placement_index}_track"))
             .selected_text(format!("Track {}", track_placement.track_index))
             .show_ui(ui, |ui| {
                 for track_index in 0..tracks_length {
@@ -49,16 +47,23 @@ impl<'a> PlacementView<'a> {
                 }
             });
 
-        // TODO: better UI than a slider for this!
-        let max_generator_index = (store.get().project.generators.len() - 1) as i32;
-        int_slider(
-            ui,
-            "Generator index",
-            track_placement.generator_index as f64,
-            |it| store.dispatch(sel, Action::SetIndex(IndexField::Generator(it as usize))),
-            0..=max_generator_index,
-            on_release,
-        );
+        egui::ComboBox::from_id_salt(format!("placement_{placement_index}_generator"))
+            .selected_text(format!("Generator ID {}", *track_placement.generator_id))
+            .show_ui(ui, |ui| {
+                let mut generators: Vec<_> = store.get().project.generators.keys().collect();
+                generators.sort();
+
+                for generator_id in generators {
+                    selectable_value(
+                        ui,
+                        get_set(&track_placement.generator_id, |it| {
+                            store.dispatch(sel, Action::SetChild(TypeField::GeneratorId(*it)))
+                        }),
+                        &generator_id,
+                        generator_id.to_string(),
+                    );
+                }
+            });
 
         let track_sel = TrackSelector(track_placement.track_index);
         let track: &Track = store.select(&track_sel);
