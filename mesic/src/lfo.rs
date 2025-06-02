@@ -32,12 +32,12 @@ impl LfoGenerator {
             phase,
             wave,
             frequency,
-            AntiAliasingMode::Off, // Surely the freq is low enough to not need Anti Aliasing
+            AntiAliasingMode::Off,
         );
         self.current_value
     }
 
-    pub fn set_lfo(&mut self, config: LfoConfig) {
+    pub fn set_config(&mut self, config: LfoConfig) {
         self.config = config;
     }
 }

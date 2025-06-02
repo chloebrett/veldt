@@ -43,16 +43,8 @@ struct Voice {
 impl Default for NodeState {
     fn default() -> Self {
         let config = StingrayConfig::default();
-        let egs: Vec<_> = config
-            .envelopes
-            .iter()
-            .map(|env| EnvelopeGenerator::new(env.clone()))
-            .collect();
-        let lfos: Vec<_> = config
-            .lfos
-            .iter()
-            .map(|lfo| LfoGenerator::new(lfo.clone()))
-            .collect();
+        let egs = config.envelopes.clone().map(EnvelopeGenerator::new);
+        let lfos = config.lfos.clone().map(LfoGenerator::new);
         Self {
             config: config.clone(),
             meta: GeneratorMeta::default(),
@@ -86,7 +78,7 @@ impl NodeState {
                 }
                 if self.config.lfos != config.lfos {
                     for (i, lfo) in self.voice.lfos.iter_mut().enumerate() {
-                        lfo.set_lfo(config.lfos[i].clone());
+                        lfo.set_config(config.lfos[i].clone());
                     }
                 }
 
@@ -195,26 +187,20 @@ impl Node<ProcessContext> for StingrayNode {
             }
 
             if let Some(sources) = &mut state.voice.sources {
-                for ((eg, source), j) in state.voice.egs.iter_mut().zip(sources.iter_mut()).zip(0..)
+                for (j, (eg, source)) in state.voice.egs.iter_mut().zip(sources.iter_mut()).enumerate()
                 {
                     let mut lfo_value = 0.0;
-                    let mut lfos_active = 0;
+                    const LFO_ROW_START: usize = 3;
                     // Access the column for this oscillator in the matrix
                     for k in 0..state.config.lfos.len() {
                         // Get matrix value for this oscillator and LFO
                         let matrix_value = state
                             .config
                             .matrix
-                            .get(k + 3, j)
+                            .get(k + LFO_ROW_START, j)
                             .map_or(0.0, |cell_ref| (*cell_ref).into());
-                        if matrix_value != 0.0 {
-                            lfos_active += 1;
-                            lfo_value += state.voice.lfos[k].current_value * matrix_value;
-                        }
-                    }
-                    if lfo_value != 0.0 {
-                        lfo_value /= lfos_active as f32;
-                        lfo_value = (lfo_value + 1.0) / 2.0; // Normalize to 0..1
+
+                        lfo_value += state.voice.lfos[k].current_value * matrix_value;
                     }
 
                     let amp = eg.next().unwrap_or(0.0);
@@ -299,8 +285,9 @@ impl StingrayWaveSource {
 
         // Apply the low frequency oscillator to the output.
         // Currently only used for volume modulation.
-        let lfo_amp = 1.0 - lfo_value;
-        output_mono *= lfo_amp;
+        if lfo_value != 0.0 {
+            output_mono *= lfo_value;
+        }
 
         let mut output_stereo = [output_mono; CHANNEL_COUNT];
         for (channel_index, out) in output_stereo.iter_mut().enumerate() {
