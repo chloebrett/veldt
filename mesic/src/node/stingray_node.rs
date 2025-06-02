@@ -4,7 +4,7 @@ use crate::consts::CHANNEL_COUNT;
 use crate::envelope::EnvelopeGenerator;
 use crate::eq::eq_filter;
 use crate::eq::filter::Filter;
-use crate::graph::{NoteEventType, ProcessContext};
+use crate::graph::{NoteEvent, NoteEventType, ProcessContext};
 use crate::maths::linspace;
 use crate::wave::detune_multiplier;
 use crate::wave_cache::{WaveCache, WaveKey};
@@ -126,8 +126,11 @@ impl Node<ProcessContext> for StingrayNode {
 
         // TODO: fix this, it's n^2 right now. (well, n*64).
         for i in 0..Buffer::LEN {
-            let mut events: Vec<_> = payload.note_events[&generator_id]
-                .clone()
+            let mut events: Vec<NoteEvent> = payload
+                .note_events
+                .get(&generator_id)
+                .cloned()
+                .unwrap_or(vec![])
                 .into_iter()
                 .filter(|it| it.sample_index == i)
                 .collect();

@@ -1,4 +1,4 @@
-use crate::graph::{NoteEventType, ProcessContext};
+use crate::graph::{NoteEvent, NoteEventType, ProcessContext};
 use dasp_graph::{Buffer, Input, Node};
 use rand::Rng;
 use shared::model::{Generator, GeneratorInstance, GeneratorMeta, NoiseConfig, NoiseType};
@@ -85,8 +85,11 @@ impl Node<ProcessContext> for NoiseGeneratorNode {
         }
 
         for i in 0..buffer.len() {
-            let mut events: Vec<_> = payload.note_events[&generator_id]
-                .clone()
+            let mut events: Vec<NoteEvent> = payload
+                .note_events
+                .get(&generator_id)
+                .cloned()
+                .unwrap_or(vec![])
                 .into_iter()
                 .filter(|it| it.sample_index == i)
                 .collect();

@@ -271,8 +271,8 @@ mod tests {
     use super::*;
 
     use shared::model::{
-        DelayConfig, Effect, EffectInstance, EffectMeta, Generator, GeneratorInstance,
-        GeneratorMeta, MixerChannel, SimpleWaveConfig, GeneratorId
+        DelayConfig, Effect, EffectInstance, EffectMeta, Generator, GeneratorId, GeneratorInstance,
+        GeneratorMeta, MixerChannel, SimpleWaveConfig,
     };
     use std::collections::HashMap;
 
@@ -338,10 +338,17 @@ mod tests {
 
         // Two generators on channel 0,
         // One generator on channel 1.
+        project.generators.extend(vec![
+            (GeneratorId(0), some_generator()),
+            (GeneratorId(1), some_generator()),
+            (GeneratorId(2), some_generator()),
+        ]);
         project
             .generators
-            .extend(vec![(GeneratorId(0), some_generator()), (GeneratorId(1), some_generator()), (GeneratorId(2), some_generator())]);
-        project.generators.get_mut(&GeneratorId(2)).unwrap().meta.mixer_channel = 1;
+            .get_mut(&GeneratorId(2))
+            .unwrap()
+            .meta
+            .mixer_channel = 1;
 
         // One effect on channel 0,
         // Two effects on channel 1.

@@ -117,29 +117,32 @@ mod tests {
                 right: vec![0.0, 1.0, 3.0],
                 sample_rate: 1.0,
             }],
-            generators: HashMap::from([(GeneratorId(0), GeneratorInstance {
-                it: Generator::SimpleWave(SimpleWaveConfig {
-                    wave: WaveType::Sine,
-                    envelope: AdsrEnvelope {
-                        attack: 0.1,
-                        decay: 0.1,
-                        sustain: 0.8,
-                        release: 0.1,
+            generators: HashMap::from([(
+                GeneratorId(0),
+                GeneratorInstance {
+                    it: Generator::SimpleWave(SimpleWaveConfig {
+                        wave: WaveType::Sine,
+                        envelope: AdsrEnvelope {
+                            attack: 0.1,
+                            decay: 0.1,
+                            sustain: 0.8,
+                            release: 0.1,
+                        },
+                        osc_count: 4,
+                        detune_cents: 5.0,
+                        anti_aliasing_mode: AntiAliasingMode::Additive,
+                        oversample_factor: 2,
+                        polyphony_mode: PolyphonyMode::Polyphonic,
+                        polyphony_limit: 0,
+                    }),
+                    meta: GeneratorMeta {
+                        volume: 1.0,
+                        mute: false,
+                        pan: 0.0,
+                        mixer_channel: 0,
                     },
-                    osc_count: 4,
-                    detune_cents: 5.0,
-                    anti_aliasing_mode: AntiAliasingMode::Additive,
-                    oversample_factor: 2,
-                    polyphony_mode: PolyphonyMode::Polyphonic,
-                    polyphony_limit: 0,
-                }),
-                meta: GeneratorMeta {
-                    volume: 1.0,
-                    mute: false,
-                    pan: 0.0,
-                    mixer_channel: 0,
                 },
-            })]),
+            )]),
             mixer: Mixer {
                 matrix: MixerMatrix::with_channels(3),
                 channels: vec![MixerChannel {
