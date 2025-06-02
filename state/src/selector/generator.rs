@@ -3,10 +3,10 @@ use super::{
     OscillatorSelector, Selector, SelectorTrait,
 };
 use crate::StoreData;
-use shared::model::GeneratorInstance;
+use shared::model::{GeneratorInstance, GeneratorId};
 
-#[derive(Eq, PartialEq, Ord, PartialOrd, Default, Copy, Clone, Debug, Hash)]
-pub struct GeneratorSelector(/* generator_index */ pub usize);
+#[derive(Eq, PartialEq, Ord, PartialOrd, Copy, Clone, Debug, Hash)]
+pub struct GeneratorSelector(pub GeneratorId);
 
 impl GeneratorSelector {
     pub fn downcast_oscillator(&self, oscillator_index: usize) -> OscillatorSelector {
@@ -30,11 +30,11 @@ impl SelectorTrait for GeneratorSelector {
     type Item = GeneratorInstance;
 
     fn try_select<'a>(&'a self, store: &'a StoreData) -> Option<&'a Self::Item> {
-        store.project.generators.get(self.0)
+        store.project.generators.get(&self.0)
     }
 
     fn try_select_mut<'a>(&'a self, store: &'a mut StoreData) -> Option<&'a mut Self::Item> {
-        store.project.generators.get_mut(self.0)
+        store.project.generators.get_mut(&self.0)
     }
 
     fn as_enum(&self) -> Selector {

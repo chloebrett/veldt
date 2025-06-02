@@ -3,6 +3,8 @@ use crate::pmodel::*;
 use crate::types::Beats;
 use local_macro::{FromProto, IntoProto};
 use ordered_float::OrderedFloat;
+use std::collections::HashMap;
+use std::ops::Deref;
 
 #[derive(Clone, Debug, PartialEq, FromProto, IntoProto, Default)]
 pub struct Project {
@@ -18,13 +20,37 @@ pub struct Project {
     #[proto_repeated]
     pub samples: Vec<Sample>,
 
-    #[proto_repeated]
-    pub generators: Vec<GeneratorInstance>,
+    #[proto_hashmap]
+    pub generators: HashMap<GeneratorId, GeneratorInstance>,
 
     #[proto_optional]
     pub mixer: Mixer,
 
     pub bpm: Beats,
+}
+
+// TODO: implement/derive deref/derefmut.
+#[derive(Hash, PartialEq, Eq, Ord, PartialOrd, Debug, Clone, Copy)]
+pub struct GeneratorId(pub usize);
+
+impl From<u32> for GeneratorId {
+    fn from(other: u32) -> Self {
+        GeneratorId(other as usize)
+    }
+}
+
+impl From<GeneratorId> for u32 {
+    fn from(other: GeneratorId) -> Self {
+        other.0 as u32
+    }
+}
+
+impl Deref for GeneratorId {
+    type Target = usize;
+
+    fn deref(&self) -> &usize {
+        &self.0
+    }
 }
 
 impl Project {

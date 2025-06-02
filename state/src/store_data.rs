@@ -5,9 +5,10 @@ use shared::model::{
     AdsrEnvelope, AntiAliasingMode, FileTreeConfig, FilenameTree, Generator, GeneratorInstance,
     GeneratorMeta, Mixer, MixerChannel, MixerMatrix, NoiseConfig, Note, PitchName, PlacedNote,
     Placement, PlacementType, PolyphonyMode, Project, Scale, ScaleValue, SimpleWaveConfig,
-    StingrayConfig, Track, TrackPlacement, WaveType,
+    StingrayConfig, Track, TrackPlacement, WaveType, GeneratorId
 };
 use shared::types::Volume;
+use std::collections::HashMap;
 
 #[derive(Debug, Clone)]
 pub struct StoreData {
@@ -81,49 +82,58 @@ impl Default for StoreData {
                     visual_placement: 0,
                 }],
                 samples: vec![],
-                generators: vec![
-                    GeneratorInstance {
-                        it: Generator::SimpleWave(SimpleWaveConfig {
-                            wave: WaveType::Sine,
-                            envelope: AdsrEnvelope {
-                                attack: 100.0,
-                                decay: 100.0,
-                                sustain: 0.8,
-                                release: 100.0,
+                generators: HashMap::from([
+                    (
+                        GeneratorId(0),
+                        GeneratorInstance {
+                            it: Generator::SimpleWave(SimpleWaveConfig {
+                                wave: WaveType::Sine,
+                                envelope: AdsrEnvelope {
+                                    attack: 100.0,
+                                    decay: 100.0,
+                                    sustain: 0.8,
+                                    release: 100.0,
+                                },
+                                osc_count: 4,
+                                detune_cents: 5.0,
+                                anti_aliasing_mode: AntiAliasingMode::Off,
+                                oversample_factor: 2,
+                                polyphony_mode: PolyphonyMode::Polyphonic,
+                                polyphony_limit: 2,
+                            }),
+                            meta: GeneratorMeta {
+                                volume: 1.0,
+                                mute: false,
+                                pan: 0.0,
+                                mixer_channel: 2,
                             },
-                            osc_count: 4,
-                            detune_cents: 5.0,
-                            anti_aliasing_mode: AntiAliasingMode::Off,
-                            oversample_factor: 2,
-                            polyphony_mode: PolyphonyMode::Polyphonic,
-                            polyphony_limit: 2,
-                        }),
-                        meta: GeneratorMeta {
-                            volume: 1.0,
-                            mute: false,
-                            pan: 0.0,
-                            mixer_channel: 2,
                         },
-                    },
-                    GeneratorInstance {
-                        it: Generator::Stingray(StingrayConfig::default()),
-                        meta: GeneratorMeta {
-                            volume: 1.0,
-                            mute: false,
-                            pan: 0.0,
-                            mixer_channel: 2,
+                    ),
+                    (
+                        GeneratorId(1),
+                        GeneratorInstance {
+                            it: Generator::Stingray(StingrayConfig::default()),
+                            meta: GeneratorMeta {
+                                volume: 1.0,
+                                mute: false,
+                                pan: 0.0,
+                                mixer_channel: 2,
+                            },
                         },
-                    },
-                    GeneratorInstance {
-                        it: Generator::Noise(NoiseConfig::default()),
-                        meta: GeneratorMeta {
-                            volume: 1.0,
-                            mute: false,
-                            pan: 0.0,
-                            mixer_channel: 2,
+                    ),
+                    (
+                        GeneratorId(2),
+                        GeneratorInstance {
+                            it: Generator::Noise(NoiseConfig::default()),
+                            meta: GeneratorMeta {
+                                volume: 1.0,
+                                mute: false,
+                                pan: 0.0,
+                                mixer_channel: 2,
+                            },
                         },
-                    },
-                ],
+                    ),
+                    ]),
                 mixer: Mixer {
                     matrix: MixerMatrix::with_channels(3),
                     channels: vec![EMPTY_CHANNEL; 3],

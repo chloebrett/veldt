@@ -32,11 +32,11 @@ pub struct ProcessContext {
     pub playback_pos: usize,
 
     pub playback_mode: PlaybackMode,
-    pub note_events: NoteEventsByGenerator,
+    pub note_events: HashMap<GeneratorId, Vec<NoteEvent>>,
 
     // Tracks which generators, if any, should be stopped. Used when a track has its generator
-    // index changed - we stop the generator at the old index.
-    pub stop_generators: Vec<bool>,
+    // changed - we stop the previous generator.
+    pub stop_generators: HashMap<GeneratorId, bool>,
 
     // A buffer to play starting at sample 0.
     // Used for playing server-rendered audio, previewing samples, etc.
