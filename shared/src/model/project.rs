@@ -30,7 +30,7 @@ pub struct Project {
 }
 
 // TODO: implement/derive deref/derefmut.
-#[derive(Hash, PartialEq, Eq, Ord, PartialOrd, Debug, Clone, Copy)]
+#[derive(Hash, Default, PartialEq, Eq, Ord, PartialOrd, Debug, Clone, Copy)]
 pub struct GeneratorId(pub usize);
 
 impl From<u32> for GeneratorId {

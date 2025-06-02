@@ -5,11 +5,11 @@ use crate::convert::beats_to_samples;
 use crate::mixer::Mixer;
 use dasp_frame::Stereo;
 use dasp_graph::Buffer;
-use shared::model::{PitchName, PlacementType, Project, GeneratorId};
+use shared::model::{GeneratorId, PitchName, PlacementType, Project};
 use shared::types::Beats;
 use state::{Action, GeneratorSelector, IndexField, Selector, StoreData};
-use std::sync::mpsc::Receiver;
 use std::collections::HashMap;
+use std::sync::mpsc::Receiver;
 
 /// Wraps a Mixer (which in turn wraps a Graph) to add processing/iteration, seeking, and listening
 /// for updates to the Store.
@@ -151,7 +151,11 @@ impl RenderGraph {
 
         // Load any events sent from the UI by the user.
         for (generator_id, event) in self.pending_note_events.clone().into_iter() {
-            self.process_context.note_events.entry(generator_id).or_default().extend(event);
+            self.process_context
+                .note_events
+                .entry(generator_id)
+                .or_default()
+                .extend(event);
         }
         self.pending_note_events.clear();
     }

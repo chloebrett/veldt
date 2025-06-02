@@ -5,7 +5,7 @@ use super::{
 use crate::StoreData;
 use shared::model::{GeneratorId, GeneratorInstance};
 
-#[derive(Eq, PartialEq, Ord, PartialOrd, Copy, Clone, Debug, Hash)]
+#[derive(Eq, PartialEq, Ord, Default, PartialOrd, Copy, Clone, Debug, Hash)]
 pub struct GeneratorSelector(pub GeneratorId);
 
 impl GeneratorSelector {

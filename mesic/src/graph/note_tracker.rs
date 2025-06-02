@@ -1,6 +1,6 @@
 use crate::convert::beats_to_samples;
 use dasp_graph::Buffer;
-use shared::model::{PitchName, GeneratorId, PlacementType, Project, TrackPlacement};
+use shared::model::{GeneratorId, PitchName, PlacementType, Project, TrackPlacement};
 use std::cmp::min;
 use std::collections::HashMap;
 

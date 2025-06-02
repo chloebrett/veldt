@@ -1,9 +1,9 @@
 use dasp_frame::Stereo;
 use dasp_graph::{BoxedNodeSend, NodeData};
 use petgraph::stable_graph::StableGraph;
+use shared::model::GeneratorId;
 use state::StoreData;
 use std::collections::HashMap;
-use shared::model::GeneratorId;
 
 mod note_tracker;
 mod render_graph;

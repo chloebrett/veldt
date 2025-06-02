@@ -57,8 +57,8 @@ impl WindowData {
             WindowKind::Effect(EffectSelector(mixer_index, effect_index)) => {
                 format!("{}_{}", mixer_index, effect_index)
             }
-            WindowKind::Generator(GeneratorSelector(index)) => {
-                format!("{}", index)
+            WindowKind::Generator(GeneratorSelector(id)) => {
+                format!("{:?}", id)
             }
             _ => "".to_string(),
         };
@@ -149,8 +149,7 @@ impl WindowState {
             .project
             .generators
             .iter()
-            .enumerate()
-            .map(|(index, _)| GeneratorSelector(index))
+            .map(|(id, _)| GeneratorSelector(*id))
             .collect();
         let store_gens: HashSet<GeneratorSelector> = HashSet::from_iter(generators);
         let gen_windows = self.generator_windows.clone();
