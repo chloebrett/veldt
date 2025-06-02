@@ -3,10 +3,9 @@ use super::simple_wave::SimpleWaveView;
 use super::stingray::StingrayView;
 use crate::view::View;
 use crate::widget::StateWindow;
-use crate::widget::default_window;
 use crate::window_state::WindowKind;
 use crate::{LocalState, playback::AudioPlayer};
-use egui::{Pos2, Ui};
+use egui::Ui;
 use shared::model::{Generator, GeneratorInstance};
 use state::{Action, GeneratorSelector, Store};
 
@@ -38,46 +37,39 @@ impl View for GeneratorView<'_> {
         let instance = &self.store.select(self.selector);
 
         let title = generator_name(instance);
-        StateWindow(default_window(title).default_pos(Pos2 { x: 1100.0, y: 20.0 }))
-            .show_with_closure(
-                ui,
-                self.local_state
-                    .window_state
-                    .get_visible(WindowKind::Generator(*self.selector)),
-                |_| {
-                    self.local_state
-                        .window_state
-                        .set_visible(WindowKind::Generator(*self.selector), false)
-                },
-                |ui| {
-                    let generator = instance.it.clone();
-                    let dispatch = |action| self.store.dispatch(self.selector, action);
-                    let on_release = || self.store.dispatchr(Action::Release);
-
-                    match generator {
-                        Generator::SimpleWave(config) => SimpleWaveView::new(
-                            *self.selector,
+        StateWindow::show_from_window_state(
+            ui,
+            &self.local_state.window_state,
+            WindowKind::Generator(*self.selector),
+            title,
+            |ui| {
+                let generator = instance.it.clone();
+                let dispatch = |action| self.store.dispatch(self.selector, action);
+                let on_release = || self.store.dispatchr(Action::Release);
+                match generator {
+                    Generator::SimpleWave(config) => SimpleWaveView::new(
+                        *self.selector,
+                        &config,
+                        self.player,
+                        dispatch,
+                        on_release,
+                    )
+                    .ui(ui),
+                    Generator::Noise(config) => NoiseView::new(&config, dispatch).ui(ui),
+                    Generator::Stingray(config) => {
+                        StingrayView::new(
                             &config,
-                            self.player,
-                            dispatch,
                             on_release,
+                            self.store,
+                            self.local_state,
+                            self.selector,
+                            self.player,
                         )
-                        .ui(ui),
-                        Generator::Noise(config) => NoiseView::new(&config, dispatch).ui(ui),
-                        Generator::Stingray(config) => {
-                            StingrayView::new(
-                                &config,
-                                on_release,
-                                self.store,
-                                self.local_state,
-                                self.selector,
-                                self.player,
-                            )
-                            .ui(ui);
-                        }
-                    };
-                },
-            );
+                        .ui(ui);
+                    }
+                };
+            },
+        );
     }
 }
 

@@ -1,11 +1,6 @@
 use state::{Action, TypeField};
 
-use crate::{
-    local_state::LocalState,
-    view::View,
-    widget::{StateWindow, default_window},
-    window_state::WindowKind,
-};
+use crate::{local_state::LocalState, view::View, widget::StateWindow, window_state::WindowKind};
 use egui::Ui;
 
 pub struct SaveAs<'a, F: Fn(Action), G: FnMut()> {
@@ -34,19 +29,11 @@ impl<F: Fn(Action), G: FnMut()> View for SaveAs<'_, F, G> {
             dispatch,
             on_click,
         } = self;
-        StateWindow(
-            default_window(name)
-                .default_pos(local_state.window_state.get_pos(WindowKind::Save))
-                .resizable(false),
-        )
-        .show_with_closure(
+        StateWindow::show_from_window_state(
             ui,
-            local_state.window_state.get_visible(WindowKind::Save),
-            |_| {
-                local_state
-                    .window_state
-                    .set_visible(WindowKind::Save, false)
-            },
+            &local_state.window_state,
+            WindowKind::Save,
+            name,
             |ui| {
                 let mut temp_name = name.clone();
                 let response = ui.text_edit_singleline(&mut temp_name);
