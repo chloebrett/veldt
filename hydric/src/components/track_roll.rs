@@ -299,7 +299,7 @@ impl SequencerObject<PlacedTrack> for PlacedTrack {
             placement: Placement {
                 kind: PlacementType::Track(TrackPlacement {
                     track_index,
-                    generator_index: 0,
+                    generator_id: 0.into(),
                 }),
                 offset: offset.into(),
                 clipped_duration: None,

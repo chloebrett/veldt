@@ -62,7 +62,7 @@ message PlacementProto {
 message TrackPlacementProto {
   uint32 track_index = 1;
 
-  uint32 generator_index = 2;
+  uint32 generator_id = 2;
 }
 
 message SamplePlacementProto {

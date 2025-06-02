@@ -1,3 +1,4 @@
+use crate::model::GeneratorId;
 use crate::pmodel::{placement_proto::Kind as PlacementTypeProto, *};
 use crate::types::Beats;
 use local_macro::{FromProto, IntoProto};
@@ -38,9 +39,8 @@ pub struct TrackPlacement {
     pub track_index: usize,
 
     /// The generator this track placement is associated with.
-    /// TODO: use a more stable ID instead of the index.
-    #[proto_type_u32]
-    pub generator_index: usize,
+    #[proto_into]
+    pub generator_id: GeneratorId,
 }
 
 impl<'a> TryFrom<&'a Placement> for &'a TrackPlacement {

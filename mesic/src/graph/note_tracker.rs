@@ -38,7 +38,7 @@ impl NoteTracker {
                 .filter(|it| match &it.kind {
                     // TODO: rename generator_index in track placement to GeneratorId!
                     // This conversion is otherwise not necessarily correct.
-                    PlacementType::Track(it) => it.generator_index == **generator_id,
+                    PlacementType::Track(it) => it.generator_id == *generator_id,
                     _ => false,
                 })
                 .collect();

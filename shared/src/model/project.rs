@@ -106,7 +106,7 @@ mod tests {
             placements: vec![Placement {
                 kind: PlacementType::Track(TrackPlacement {
                     track_index: 3,
-                    generator_index: 3,
+                    generator_id: 3.into(),
                 }),
                 offset: 2.5.into(),
                 clipped_duration: Some(5.2.into()),
