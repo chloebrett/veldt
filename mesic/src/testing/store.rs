@@ -1,5 +1,6 @@
 use shared::model::{Mixer, Project};
 use state::StoreData;
+use std::collections::HashMap;
 
 pub fn empty_store_data() -> StoreData {
     StoreData {
@@ -8,7 +9,7 @@ pub fn empty_store_data() -> StoreData {
             tracks: vec![],
             placements: vec![],
             samples: vec![],
-            generators: vec![],
+            generators: HashMap::new(),
             mixer: Mixer::default(),
             bpm: 120.0,
         },

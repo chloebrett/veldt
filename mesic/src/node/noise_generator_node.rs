@@ -1,4 +1,4 @@
-use crate::graph::{NoteEventType, ProcessContext};
+use crate::graph::{NoteEvent, NoteEventType, ProcessContext};
 use dasp_graph::{Buffer, Input, Node};
 use rand::Rng;
 use shared::model::{Generator, GeneratorInstance, GeneratorMeta, NoiseConfig, NoiseType};
@@ -77,16 +77,19 @@ impl Node<ProcessContext> for NoiseGeneratorNode {
 
         let mut buffer = Buffer::SILENT;
         let mut rng = rand::thread_rng();
-        let GeneratorSelector(generator_index) = self.selector;
+        let GeneratorSelector(generator_id) = self.selector;
 
-        if payload.stop_generators.get(generator_index) == Some(&true) {
-            log::info!("Stopped noise: {generator_index}");
+        if payload.stop_generators.get(&generator_id) == Some(&true) {
+            log::info!("Stopped noise: {:?}", generator_id);
             state.playing = false;
         }
 
         for i in 0..buffer.len() {
-            let mut events: Vec<_> = payload.note_events[generator_index]
-                .clone()
+            let mut events: Vec<NoteEvent> = payload
+                .note_events
+                .get(&generator_id)
+                .cloned()
+                .unwrap_or(vec![])
                 .into_iter()
                 .filter(|it| it.sample_index == i)
                 .collect();
