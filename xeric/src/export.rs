@@ -1,8 +1,8 @@
 use chrono::{Datelike, Local};
 use dasp_frame::Frame;
 use hound::{SampleFormat, WavSpec, WavWriter};
-use mesic::consts::CHANNEL_COUNT;
 use mesic::SAMPLE_RATE;
+use mesic::consts::CHANNEL_COUNT;
 use mesic::graph::RenderGraph;
 use mp3lame_encoder::{Builder, DualPcm, FlushNoGap, Id3Tag};
 use shared::export::{ExportReply, ExportRequest, export_server::Export};
@@ -129,23 +129,25 @@ fn export_wav(project: &Project) -> Result<Response<ExportReply>, Status> {
     Ok(tonic::Response::new(ExportReply { audio: wav_bytes }))
 }
 
-fn make_mp3_encoder(num_channels:u8, sample_rate:u32, bit_rate:mp3lame_encoder::Bitrate, quality: mp3lame_encoder::Quality, id3_tag:Id3Tag) -> mp3lame_encoder::Encoder {
+fn make_mp3_encoder(
+    num_channels: u8,
+    sample_rate: u32,
+    bit_rate: mp3lame_encoder::Bitrate,
+    quality: mp3lame_encoder::Quality,
+    id3_tag: Id3Tag,
+) -> mp3lame_encoder::Encoder {
     let mut mp3_encoder = Builder::new().expect("Create LAME builder");
 
-    mp3_encoder.set_num_channels(num_channels).expect("set channels");
+    mp3_encoder
+        .set_num_channels(num_channels)
+        .expect("set channels");
     mp3_encoder
         .set_sample_rate(sample_rate)
         .expect("set sample rate");
     // TODO: Allow user to specify bitrate, common options are 320, 256, 192 and 128kbps.
-    mp3_encoder
-        .set_brate(bit_rate)
-        .expect("set brate");
-    mp3_encoder
-        .set_quality(quality)
-        .expect("set quality");
-    mp3_encoder
-        .set_id3_tag(id3_tag)
-        .expect("set id3 tags");
+    mp3_encoder.set_brate(bit_rate).expect("set brate");
+    mp3_encoder.set_quality(quality).expect("set quality");
+    mp3_encoder.set_id3_tag(id3_tag).expect("set id3 tags");
 
     mp3_encoder.build().expect("Initialise LAME encoder")
 }
@@ -177,7 +179,13 @@ fn export_mp3(project: &Project) -> Result<Response<ExportReply>, Status> {
         comment: &[],
     };
 
-    let mut mp3_encoder = make_mp3_encoder(channel_count_u8, sample_rate_u32, bit_rate, quality, id3_tag);
+    let mut mp3_encoder = make_mp3_encoder(
+        channel_count_u8,
+        sample_rate_u32,
+        bit_rate,
+        quality,
+        id3_tag,
+    );
 
     // Sample buffers.
     let mut left_channel = vec![];
