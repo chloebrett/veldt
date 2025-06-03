@@ -57,9 +57,10 @@ impl Export for ExportContext {
             .project
             .ok_or(Status::invalid_argument("Project must be supplied"))?
             .into();
-        let config = req.config
+        let config = req
+            .config
             .ok_or(Status::invalid_argument("Config must be supplied"))?;
-        
+
         match config.audio_type.as_str() {
             "mp3" => export_mp3(&project),
             "wav" => export_wav(&project),
@@ -71,9 +72,7 @@ impl Export for ExportContext {
 // TODO: Work out how to either box the status cleanly, or implement custom error types for export_wav and export_mp3
 // to resolve this linting warning.
 #[allow(clippy::result_large_err)]
-fn export_wav(
-    project: &Project,
-) -> Result<Response<ExportReply>, Status> {
+fn export_wav(project: &Project) -> Result<Response<ExportReply>, Status> {
     // TODO: use the StoreData from the collab context.
     let store = StoreData {
         project: project.clone(),
@@ -131,9 +130,7 @@ fn export_wav(
 
 // Code written using example from: https://docs.rs/mp3lame-encoder/latest/mp3lame_encoder/
 #[allow(clippy::result_large_err)]
-fn export_mp3(
-    project: &Project
-) -> Result<Response<ExportReply>, Status> {
+fn export_mp3(project: &Project) -> Result<Response<ExportReply>, Status> {
     // TODO: use the StoreData from the collab context.
     let store = StoreData {
         project: project.clone(),
