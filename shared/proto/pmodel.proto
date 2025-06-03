@@ -75,6 +75,8 @@ message SampleProto {
   bytes right = 2;
 
   float sample_rate = 3;
+
+  string sample_name = 4;
 }
 
 message MixerChannelProto {
