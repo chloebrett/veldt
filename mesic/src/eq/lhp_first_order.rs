@@ -1,4 +1,4 @@
-use super::filter::{FirstOrderFilter, FirstOrderFilterConfig};
+use super::filter::{Filter, FilterConfig};
 use super::low_high::LowHigh;
 use crate::consts::SAMPLE_RATE;
 use shared::model::EqConfig;
@@ -6,7 +6,7 @@ use std::f32::consts::TAU;
 
 /// Simple first order low/high pass.
 /// Ignores Q value - this is the equivalent of the second order l/h p with Q = 0.707.
-pub fn lhp_first_order(config: &EqConfig, low_high: LowHigh) -> FirstOrderFilter {
+pub fn lhp_first_order(config: &EqConfig, low_high: LowHigh) -> Filter {
     let fs = SAMPLE_RATE as f32;
     let theta = TAU * config.fc / fs;
 
@@ -22,5 +22,5 @@ pub fn lhp_first_order(config: &EqConfig, low_high: LowHigh) -> FirstOrderFilter
     };
     let b1 = -gamma;
 
-    FirstOrderFilter::new_wet(FirstOrderFilterConfig { a0, a1, b1 })
+    Filter::new_wet(FilterConfig::new().a0(a0).a1(a1).b1(b1))
 }

@@ -2,8 +2,9 @@ use super::pan_multipliers;
 use crate::SAMPLE_RATE;
 use crate::consts::CHANNEL_COUNT;
 use crate::envelope::EnvelopeGenerator;
-use crate::eq::{ApplyFilter, eq_filter};
-use crate::graph::{NoteEventType, ProcessContext};
+use crate::eq::eq_filter;
+use crate::eq::filter::Filter;
+use crate::graph::{NoteEvent, NoteEventType, ProcessContext};
 use crate::maths::linspace;
 use crate::wave::detune_multiplier;
 use crate::wave_cache::{WaveCache, WaveKey};
@@ -28,8 +29,8 @@ struct NodeState {
     config: StingrayConfig,
     meta: GeneratorMeta,
     voice: Voice,
-    filter_left: Box<dyn ApplyFilter + Send>,
-    filter_right: Box<dyn ApplyFilter + Send>,
+    filter_left: Filter,
+    filter_right: Filter,
 }
 
 struct Voice {
@@ -70,7 +71,7 @@ impl NodeState {
                 if self.config.lpf != config.lpf {
                     // TODO: don't re-create the whole filter, just update
                     // the coefficients. Keep the ring buffer as is.
-                    // ApplyFilter should have an update() method that takes some kind of config
+                    // Filter should have an update() method that takes some kind of config
                     // object.
                     self.filter_left = eq_filter(&config.lpf);
                     self.filter_right = eq_filter(&config.lpf);
@@ -114,12 +115,22 @@ impl Node<ProcessContext> for StingrayNode {
         state.update(payload, self.selector);
 
         let mut buffers = [Buffer::SILENT; 2];
-        let GeneratorSelector(generator_index) = self.selector;
+        let GeneratorSelector(generator_id) = self.selector;
+
+        if payload.stop_generators.get(&generator_id) == Some(&true) {
+            log::info!("Stopped stingray: {:?}", generator_id);
+            for eg in state.voice.egs.iter_mut() {
+                eg.note_off();
+            }
+        }
 
         // TODO: fix this, it's n^2 right now. (well, n*64).
         for i in 0..Buffer::LEN {
-            let mut events: Vec<_> = payload.note_events[generator_index]
-                .clone()
+            let mut events: Vec<NoteEvent> = payload
+                .note_events
+                .get(&generator_id)
+                .cloned()
+                .unwrap_or(vec![])
                 .into_iter()
                 .filter(|it| it.sample_index == i)
                 .collect();

@@ -1521,6 +1521,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "egui_fancy_knob"
+version = "0.1.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "851a66aa397ccec839b886b67c7135240b891610768d3ed402ae4b9c6589d231"
+dependencies = [
+ "egui",
+]
+
+[[package]]
 name = "egui_glow"
 version = "0.31.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2221,6 +2230,7 @@ dependencies = [
  "ecolor",
  "eframe",
  "egui",
+ "egui_fancy_knob",
  "egui_ltreeview",
  "egui_plot",
  "futures",

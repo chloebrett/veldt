@@ -6,20 +6,20 @@ use super::{
 use crate::node::AmpNode;
 use dasp_graph::node::Sum;
 use petgraph::stable_graph::NodeIndex;
-use shared::model::{Effect, MatrixCell, PlacementType, Project};
+use shared::model::{Effect, GeneratorId, MatrixCell, PlacementType, Project};
 use state::{
     EffectSelector, GeneratorSelector, MixerMatrixCellSelector, MixerSelector, PlacementSelector,
     move_elem,
 };
+use std::collections::HashMap;
 
 /// Describes a mixer channel from the viewpoint of the graph.
 /// Contains references to the generator and effect nodes linked to this channel.
 pub struct ChannelInfo {
-    // TODO: consider using a HashSet instead.
-    generators: Vec<GeneratorInfo>,
+    generators: HashMap<GeneratorId, GeneratorInfo>,
 
     // Generators that have been muted and so should not have edges.
-    muted_generators: HashSet<usize>,
+    muted_generators: HashSet<GeneratorId>,
 
     samples: Vec<SamplePlacementInfo>,
 
@@ -47,16 +47,18 @@ pub struct ChannelInfo {
 impl ChannelInfo {
     pub fn new(graph_manager: &mut GraphManager, project: &Project, channel_index: usize) -> Self {
         let mut muted_generators = HashSet::new();
-        let generators: Vec<GeneratorInfo> = project
+        let generators: HashMap<GeneratorId, GeneratorInfo> = project
             .generators
             .iter()
-            .filter(|generator| generator.meta.mixer_channel == channel_index)
-            .enumerate()
-            .map(|(generator_index, generator)| {
+            .filter(|(_, generator)| generator.meta.mixer_channel == channel_index)
+            .map(|(generator_id, generator)| {
                 if generator.meta.volume == 0.0 || generator.meta.mute {
-                    muted_generators.insert(generator_index);
+                    muted_generators.insert(*generator_id);
                 }
-                GeneratorInfo::new(graph_manager, generator, GeneratorSelector(generator_index))
+                (
+                    *generator_id,
+                    GeneratorInfo::new(graph_manager, generator, GeneratorSelector(*generator_id)),
+                )
             })
             .collect();
 
@@ -144,8 +146,8 @@ impl ChannelInfo {
     }
 
     pub fn add_edges(&self, graph_manager: &mut GraphManager) {
-        for (generator_index, generator) in self.generators.iter().enumerate() {
-            if !self.muted_generators.contains(&generator_index) {
+        for (generator_id, generator) in self.generators.iter() {
+            if !self.muted_generators.contains(&generator_id) {
                 // Do not add edges for muted generators.
                 graph_manager.add_edge(generator.node(), self.input_node, EdgeLabel::GenToMixIn);
             }
@@ -200,16 +202,15 @@ impl ChannelInfo {
     }
 
     pub fn contains_generator(&mut self, selector: GeneratorSelector) -> bool {
-        self.generators
-            .iter()
-            .any(|generator| generator.selector == selector)
+        let GeneratorSelector(generator_id) = selector;
+        self.generators.contains_key(&generator_id)
     }
 
-    pub fn set_generator_muted(&mut self, generator_index: usize, mute: bool) {
+    pub fn set_generator_muted(&mut self, generator_id: GeneratorId, mute: bool) {
         if mute {
-            self.muted_generators.insert(generator_index);
+            self.muted_generators.insert(generator_id);
         } else {
-            self.muted_generators.remove(&generator_index);
+            self.muted_generators.remove(&generator_id);
         }
     }
 
@@ -241,21 +242,16 @@ impl ChannelInfo {
     /// This allows for a two-step process whereby a generator is soft-deleted from one
     /// ChannelInfo then added to another, by reference, without actually recreating the generator.
     pub fn soft_delete_generator(&mut self, selector: GeneratorSelector) -> Option<GeneratorInfo> {
-        for i in 0..self.generators.len() {
-            if self.generators[i].selector == selector {
-                // Note: swap_remove used because order of the generators doesn't matter,
-                // but the performance gain of this is negligible.
-                return Some(self.generators.swap_remove(i));
-            }
-        }
-        None
+        let GeneratorSelector(generator_id) = selector;
+        self.generators.remove(&generator_id)
     }
 
     /// Adds a generator to the ChannelInfo's generator list, without re-adding it to the graph.
     /// Designed to be used in tandem with soft_delete_generator for moving generator nodes
     /// between mixer channels.
     pub fn soft_add_generator(&mut self, generator: &GeneratorInfo) {
-        self.generators.push(generator.clone());
+        let GeneratorSelector(generator_id) = generator.selector;
+        self.generators.insert(generator_id, generator.clone());
     }
 
     pub fn route_to_inputs(&self, graph_manager: &mut GraphManager, inputs: &[NodeIndex]) {

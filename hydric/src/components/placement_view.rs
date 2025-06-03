@@ -1,7 +1,8 @@
 use crate::view::View;
-use crate::widget::{StateWindow, default_window, get_set, int_slider, selectable_value, slider};
+use crate::widget::{StateWindow, get_set, int_slider, selectable_value, slider};
+use crate::window_state::WindowKind;
 use crate::{GetSet, LocalState};
-use egui::{Ui, pos2};
+use egui::Ui;
 use mesic::samples_to_beats;
 use ordered_float::OrderedFloat;
 use shared::model::{Placement, PlacementType, SamplePlacement, Track, TrackPlacement};
@@ -31,9 +32,7 @@ impl<'a> PlacementView<'a> {
         sel: &PlacementSelector,
         store: &Store,
     ) {
-        let on_release = || store.dispatchr(Action::Release);
-
-        egui::ComboBox::from_id_salt(format!("placement_{placement_index}"))
+        egui::ComboBox::from_id_salt(format!("placement_{placement_index}_track"))
             .selected_text(format!("Track {}", track_placement.track_index))
             .show_ui(ui, |ui| {
                 for track_index in 0..tracks_length {
@@ -48,16 +47,23 @@ impl<'a> PlacementView<'a> {
                 }
             });
 
-        // TODO: better UI than a slider for this!
-        let max_generator_index = (store.get().project.generators.len() - 1) as i32;
-        int_slider(
-            ui,
-            "Generator index",
-            track_placement.generator_index as f64,
-            |it| store.dispatch(sel, Action::SetIndex(IndexField::Generator(it as usize))),
-            0..=max_generator_index,
-            on_release,
-        );
+        egui::ComboBox::from_id_salt(format!("placement_{placement_index}_generator"))
+            .selected_text(format!("Generator ID {}", *track_placement.generator_id))
+            .show_ui(ui, |ui| {
+                let mut generators: Vec<_> = store.get().project.generators.keys().collect();
+                generators.sort();
+
+                for generator_id in generators {
+                    selectable_value(
+                        ui,
+                        get_set(&track_placement.generator_id, |it| {
+                            store.dispatch(sel, Action::SetChild(TypeField::GeneratorId(*it)))
+                        }),
+                        &generator_id,
+                        generator_id.to_string(),
+                    );
+                }
+            });
 
         let track_sel = TrackSelector(track_placement.track_index);
         let track: &Track = store.select(&track_sel);
@@ -150,16 +156,11 @@ impl View for PlacementView<'_> {
         let tracks_length = store.get().project.tracks.len();
         let sel = PlacementSelector(placement_index);
         let title = format!("Placement {placement_index}");
-
-        let window = StateWindow(
-            default_window(&title)
-                .default_pos(pos2(100.0, 20.0))
-                .resizable(true),
-        );
-        window.show_with_closure(
+        StateWindow::show_from_window_state(
             ui,
-            self.local_state.placement_window.get(),
-            |_| self.local_state.placement_window.set(false),
+            &self.local_state.window_state,
+            WindowKind::Placement,
+            &title,
             |ui| {
                 match &placement.kind {
                     PlacementType::Track(track_placement) => {
@@ -208,7 +209,9 @@ impl View for PlacementView<'_> {
 
                 if ui.button("Delete").clicked() {
                     store.dispatchr(Action::DeleteChild(IndexField::Placement(placement_index)));
-                    self.local_state.placement_window.set(false);
+                    self.local_state
+                        .window_state
+                        .set_visible(WindowKind::Placement, false);
                     self.local_state.active_placement.set(None);
                     self.local_state.selected_placements.update(|mut it| {
                         it.remove(&placement_index);

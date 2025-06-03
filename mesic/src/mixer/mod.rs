@@ -271,7 +271,7 @@ mod tests {
     use super::*;
 
     use shared::model::{
-        DelayConfig, Effect, EffectInstance, EffectMeta, Generator, GeneratorInstance,
+        DelayConfig, Effect, EffectInstance, EffectMeta, Generator, GeneratorId, GeneratorInstance,
         GeneratorMeta, MixerChannel, SimpleWaveConfig,
     };
     use std::collections::HashMap;
@@ -279,7 +279,7 @@ mod tests {
     #[test]
     fn one_generator_one_effect() {
         let mut project = Project::default();
-        project.generators.push(some_generator());
+        project.generators.insert(GeneratorId(0), some_generator());
         project.mixer.channels.push(MixerChannel {
             volume: 1.0,
             effects: vec![some_effect()],
@@ -340,8 +340,13 @@ mod tests {
         // One generator on channel 1.
         project
             .generators
-            .extend(vec![some_generator(), some_generator(), some_generator()]);
-        project.generators[2].meta.mixer_channel = 1;
+            .extend((0..=2).map(|i| (GeneratorId(i), some_generator())));
+        project
+            .generators
+            .get_mut(&GeneratorId(2))
+            .unwrap()
+            .meta
+            .mixer_channel = 1;
 
         // One effect on channel 0,
         // Two effects on channel 1.

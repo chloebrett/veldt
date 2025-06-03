@@ -1,7 +1,7 @@
 use super::EnvelopeView;
 use crate::playback::AudioPlayer;
 use crate::view::View;
-use crate::widget::{get_set, int_slider, knob, selectable_value};
+use crate::widget::{add_knob, get_set, int_slider, selectable_value, styled_knob};
 use egui::{Button, Sense, Ui};
 use shared::model::{
     AntiAliasingMode, PitchName, PolyphonyMode, ScaleValue, SimpleWaveConfig, WaveType,
@@ -123,13 +123,15 @@ impl<F: Fn(Action), G: Fn()> View for SimpleWaveView<'_, F, G> {
                     1..=24,
                     &self.on_release,
                 );
-                knob(
+                add_knob(
                     ui,
-                    "Osc detune (cents)",
-                    self.config.detune_cents,
-                    |it| (self.dispatch)(Action::SetFloat(FloatField::Detune, it)),
-                    0.0..=100.0,
-                    /* neutral= */ 10.0,
+                    styled_knob(
+                        "Osc detune (cents)",
+                        self.config.detune_cents,
+                        |it| (self.dispatch)(Action::SetFloat(FloatField::Detune, it)),
+                        0.0..=100.0,
+                    )
+                    .with_neutral(10.0),
                     &self.on_release,
                 );
                 self.aliasing_combo_box(ui);
