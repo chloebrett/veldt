@@ -146,10 +146,6 @@ impl Node<ProcessContext> for StingrayNode {
                 events.retain(|it| it.kind == NoteEventType::On);
             }
 
-            for lfo in state.voice.lfos.iter_mut() {
-                lfo.next();
-            }
-
             for note_event in events {
                 match &note_event.kind {
                     NoteEventType::On => {
@@ -208,7 +204,7 @@ impl Node<ProcessContext> for StingrayNode {
                             .get(k + LFO_ROW_START, j)
                             .map_or(0.0, |cell_ref| (*cell_ref).into());
 
-                        lfo_value += state.voice.lfos[k].current_value * matrix_value;
+                        lfo_value += state.voice.lfos[k].next() * matrix_value;
                     }
 
                     let amp = eg.next().unwrap_or(0.0);
