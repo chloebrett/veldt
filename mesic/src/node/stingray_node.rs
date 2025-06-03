@@ -49,9 +49,9 @@ impl Default for NodeState {
             config: config.clone(),
             meta: GeneratorMeta::default(),
             voice: Voice {
-                egs: [egs[0].clone(), egs[1].clone(), egs[2].clone()],
+                egs,
                 sources: None,
-                lfos: [lfos[0].clone(), lfos[1].clone(), lfos[2].clone()],
+                lfos,
             },
             filter_left: eq_filter(&config.lpf),
             filter_right: eq_filter(&config.lpf),
@@ -78,7 +78,7 @@ impl NodeState {
                 }
                 if self.config.lfos != config.lfos {
                     for (i, lfo) in self.voice.lfos.iter_mut().enumerate() {
-                        lfo.set_config(config.lfos[i].clone());
+                        lfo.config = config.lfos[i].clone();
                     }
                 }
 
@@ -194,6 +194,7 @@ impl Node<ProcessContext> for StingrayNode {
                     .enumerate()
                 {
                     let mut lfo_value = 0.0;
+                    let mut lfo_active = false;
                     const LFO_ROW_START: usize = 3;
                     // Access the column for this oscillator in the matrix
                     for k in 0..state.config.lfos.len() {
@@ -204,11 +205,15 @@ impl Node<ProcessContext> for StingrayNode {
                             .get(k + LFO_ROW_START, j)
                             .map_or(0.0, |cell_ref| (*cell_ref).into());
 
+                        if matrix_value != 0.0 {
+                            lfo_active = true;
+                        }
+
                         lfo_value += state.voice.lfos[k].next() * matrix_value;
                     }
 
                     let amp = eg.next().unwrap_or(0.0);
-                    let wave = source.next(&mut self.cache, lfo_value);
+                    let wave = source.next(&mut self.cache, lfo_value, lfo_active);
 
                     buffers[0][i] += amp * wave[0];
                     buffers[1][i] += amp * wave[1];
@@ -247,7 +252,7 @@ impl StingrayWaveSource {
         self.pitch == pitch
     }
 
-    fn next(&mut self, cache: &mut WaveCache, lfo_value: f32) -> Stereo<f32> {
+    fn next(&mut self, cache: &mut WaveCache, lfo_value: f32, lfo_active: bool) -> Stereo<f32> {
         let osc = &self.oscillator;
         let freq: Freq = self.pitch.into();
         let freq = freq * detune_multiplier(osc.osc_detune);
@@ -289,7 +294,7 @@ impl StingrayWaveSource {
 
         // Apply the low frequency oscillator to the output.
         // Currently only used for volume modulation.
-        if lfo_value != 0.0 {
+        if lfo_active {
             output_mono *= lfo_value;
         }
 

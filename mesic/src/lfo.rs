@@ -24,12 +24,7 @@ impl LfoGenerator {
         let phase = self.sample_index as f32 / period;
 
         self.sample_index += 1;
-        self.sample_index = self.sample_index % (SAMPLE_RATE as usize);
 
         make_wave(phase, wave, frequency, AntiAliasingMode::Off)
-    }
-
-    pub fn set_config(&mut self, config: LfoConfig) {
-        self.config = config;
     }
 }
