@@ -1,9 +1,9 @@
+use crate::WindowKind;
 use crate::local_state::LocalState;
 use crate::promise::{poll, spawn};
 use crate::rpc::{load_sample, load_sample_tree};
 use crate::view::View;
 use crate::widget::{StateWindow, checkbox};
-use crate::WindowKind;
 use crate::{AsyncState, playback::AudioPlayer};
 use egui::{Checkbox, ScrollArea, Ui};
 use egui_ltreeview::{Action as TreeAction, TreeView, TreeViewBuilder};
@@ -82,6 +82,7 @@ pub fn interacted_sample_file_name(
     })?;
 
     let node_id = action.selected.iter().next()?;
+    // TODO: support samples nested in directories
     let sample_node = sample_files.get(*node_id - 1)?;
     let FileTree::File(file_name) = sample_node else {
         return None;
@@ -202,8 +203,10 @@ impl View for SampleTreeView<'_> {
                                 self.player.set_audio(sample_audio);
                                 self.player.play();
                                 // cache into local state
-                                let mut sample_cache = self.local_state.sample_cache.borrow_mut();
-                                sample_cache.insert(sample.sample_name.clone(), sample.clone());
+                                self.local_state
+                                    .sample_cache
+                                    .borrow_mut()
+                                    .insert(sample.sample_name.clone(), sample.clone());
                             });
                         });
                 }
