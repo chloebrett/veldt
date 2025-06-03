@@ -57,155 +57,164 @@ impl Export for ExportContext {
             .project
             .ok_or(Status::invalid_argument("Project must be supplied"))?
             .into();
-
-        // TODO: use the StoreData from the collab context.
-        let store = StoreData {
-            project: project.clone(),
-            ..StoreData::default()
-        };
-
-        let graph = RenderGraph::without_rx(&store);
-
-        let spec = WavSpec {
-            channels: 2, // stereo
-            sample_rate: SAMPLE_RATE as u32,
-            bits_per_sample: 16,
-            sample_format: SampleFormat::Int,
-        };
-
-        let mut buffer = Cursor::new(Vec::new());
-        {
-            let mut writer = WavWriter::new(&mut buffer, spec)
-                .map_err(|e| tonic::Status::invalid_argument(format!("{e}")))?;
-
-            for frame in graph {
-                for channel in 0..2 {
-                    let sample = *frame.channel(channel).unwrap();
-
-                    let sample_i16 =
-                        (sample * i16::MAX as f32).clamp(i16::MIN as f32, i16::MAX as f32) as i16;
-
-                    writer
-                        .write_sample(sample_i16)
-                        .map_err(|e| tonic::Status::invalid_argument(format!("{e}")))?;
-                }
-            }
-
-            writer
-                .finalize()
-                .map_err(|e| tonic::Status::invalid_argument(format!("{e}")))?;
+        let config = req.config
+            .ok_or(Status::invalid_argument("Config must be supplied"))?;
+        
+        match config.audio_type.as_str() {
+            "mp3" => export_mp3(&project),
+            "wav" => export_wav(&project),
+            _ => Err(Status::invalid_argument("Invalid audio type")),
         }
-
-        let wav_bytes = buffer.into_inner();
-
-        // Write to output file.
-        let dir_path = export_dir_path(AudioFileType::Wav);
-        let _ = create_dir_all(&dir_path);
-        let file_path = export_file_path(&project.name, AudioFileType::Wav);
-
-        // NOTE: will overwrite if the file already exists.
-        let mut out_file =
-            File::create(&file_path).map_err(|e| tonic::Status::internal(format!("{e}")))?;
-        out_file
-            .write_all(&wav_bytes)
-            .map_err(|e| tonic::Status::invalid_argument(format!("{e}")))?;
-
-        Ok(tonic::Response::new(ExportReply { audio: wav_bytes }))
     }
+}
 
-    // Code written using example from: https://docs.rs/mp3lame-encoder/latest/mp3lame_encoder/
-    async fn export_mp3(
-        &self,
-        request: Request<ExportRequest>,
-    ) -> Result<Response<ExportReply>, Status> {
-        let req = request.into_inner();
-        let project: Project = req
-            .project
-            .ok_or(Status::invalid_argument("Project must be supplied"))?
-            .into();
+// TODO: Work out how to either box the status cleanly, or implement custom error types for export_wav and export_mp3
+// to resolve this linting warning.
+#[allow(clippy::result_large_err)]
+fn export_wav(
+    project: &Project,
+) -> Result<Response<ExportReply>, Status> {
+    // TODO: use the StoreData from the collab context.
+    let store = StoreData {
+        project: project.clone(),
+        ..StoreData::default()
+    };
 
-        // TODO: use the StoreData from the collab context.
-        let store = StoreData {
-            project: project.clone(),
-            ..StoreData::default()
-        };
+    let graph = RenderGraph::without_rx(&store);
 
-        let graph = RenderGraph::without_rx(&store);
+    let spec = WavSpec {
+        channels: 2, // stereo
+        sample_rate: SAMPLE_RATE as u32,
+        bits_per_sample: 16,
+        sample_format: SampleFormat::Int,
+    };
 
-        let (_, curr_year) = Local::now().year_ce();
-
-        let mut mp3_encoder = Builder::new().expect("Create LAME builder");
-        mp3_encoder.set_num_channels(2).expect("set channels");
-        mp3_encoder
-            .set_sample_rate(SAMPLE_RATE as u32)
-            .expect("set sample rate");
-        // TODO: Allow user to specify bitrate, common options are 320, 256, 192 and 128kbps.
-        mp3_encoder
-            .set_brate(mp3lame_encoder::Bitrate::Kbps320)
-            .expect("set brate");
-        mp3_encoder
-            .set_quality(mp3lame_encoder::Quality::Best)
-            .expect("set quality");
-        mp3_encoder
-            .set_id3_tag(Id3Tag {
-                title: project.name.as_bytes(),
-                artist: &[],
-                album: &[],
-                album_art: &[],
-                year: curr_year.to_string().as_bytes(),
-                comment: &[],
-            })
-            .expect("set id3 tags");
-
-        let mut mp3_encoder = mp3_encoder.build().expect("Initialise LAME encoder");
-
-        // Sample buffers.
-        let mut left_channel = vec![];
-        let mut right_channel = vec![];
+    let mut buffer = Cursor::new(Vec::new());
+    {
+        let mut writer = WavWriter::new(&mut buffer, spec)
+            .map_err(|e| tonic::Status::invalid_argument(format!("{e}")))?;
 
         for frame in graph {
-            left_channel.push(float_to_i16(frame[0]));
-            right_channel.push(float_to_i16(frame[1]));
+            for channel in 0..2 {
+                let sample = *frame.channel(channel).unwrap();
+
+                let sample_i16 =
+                    (sample * i16::MAX as f32).clamp(i16::MIN as f32, i16::MAX as f32) as i16;
+
+                writer
+                    .write_sample(sample_i16)
+                    .map_err(|e| tonic::Status::invalid_argument(format!("{e}")))?;
+            }
         }
 
-        // Note that docs specify u16, but this is incorrect.
-        let input = DualPcm {
-            left: &left_channel,
-            right: &right_channel,
-        };
-
-        // There are some unsafe code executions here, but shouldn't be an issue so long as length of left and right channel are equal.
-        // This was the solution provided with the docs, so I am unsure of if there is a better way.
-        let mut mp3_out_buffer =
-            Vec::with_capacity(mp3lame_encoder::max_required_buffer_size(input.left.len()));
-        let encoded_size = mp3_encoder
-            .encode(input, mp3_out_buffer.spare_capacity_mut())
-            .expect("To encode");
-        unsafe {
-            mp3_out_buffer.set_len(mp3_out_buffer.len().wrapping_add(encoded_size));
-        }
-
-        let encoded_size = mp3_encoder
-            .flush::<FlushNoGap>(mp3_out_buffer.spare_capacity_mut())
-            .expect("to flush");
-        unsafe {
-            mp3_out_buffer.set_len(mp3_out_buffer.len().wrapping_add(encoded_size));
-        }
-
-        // Write to output file.
-        let dir_path = export_dir_path(AudioFileType::Mp3);
-        let _ = create_dir_all(&dir_path);
-        let file_path = export_file_path(&project.name, AudioFileType::Mp3);
-
-        // NOTE: will overwrite if the file already exists.
-        let mut out_file =
-            File::create(&file_path).map_err(|e| tonic::Status::internal(format!("{e}")))?;
-        out_file
-            .write_all(&mp3_out_buffer)
+        writer
+            .finalize()
             .map_err(|e| tonic::Status::invalid_argument(format!("{e}")))?;
-
-        Ok(tonic::Response::new(ExportReply {
-            audio: mp3_out_buffer,
-        }))
     }
+
+    let wav_bytes = buffer.into_inner();
+
+    // Write to output file.
+    let dir_path = export_dir_path(AudioFileType::Wav);
+    let _ = create_dir_all(&dir_path);
+    let file_path = export_file_path(&project.name, AudioFileType::Wav);
+
+    // NOTE: will overwrite if the file already exists.
+    let mut out_file =
+        File::create(&file_path).map_err(|e| tonic::Status::internal(format!("{e}")))?;
+    out_file
+        .write_all(&wav_bytes)
+        .map_err(|e| tonic::Status::invalid_argument(format!("{e}")))?;
+
+    Ok(tonic::Response::new(ExportReply { audio: wav_bytes }))
+}
+
+// Code written using example from: https://docs.rs/mp3lame-encoder/latest/mp3lame_encoder/
+#[allow(clippy::result_large_err)]
+fn export_mp3(
+    project: &Project
+) -> Result<Response<ExportReply>, Status> {
+    // TODO: use the StoreData from the collab context.
+    let store = StoreData {
+        project: project.clone(),
+        ..StoreData::default()
+    };
+
+    let graph = RenderGraph::without_rx(&store);
+
+    let (_, curr_year) = Local::now().year_ce();
+
+    let mut mp3_encoder = Builder::new().expect("Create LAME builder");
+    mp3_encoder.set_num_channels(2).expect("set channels");
+    mp3_encoder
+        .set_sample_rate(SAMPLE_RATE as u32)
+        .expect("set sample rate");
+    // TODO: Allow user to specify bitrate, common options are 320, 256, 192 and 128kbps.
+    mp3_encoder
+        .set_brate(mp3lame_encoder::Bitrate::Kbps320)
+        .expect("set brate");
+    mp3_encoder
+        .set_quality(mp3lame_encoder::Quality::Best)
+        .expect("set quality");
+    mp3_encoder
+        .set_id3_tag(Id3Tag {
+            title: project.name.as_bytes(),
+            artist: &[],
+            album: &[],
+            album_art: &[],
+            year: curr_year.to_string().as_bytes(),
+            comment: &[],
+        })
+        .expect("set id3 tags");
+
+    let mut mp3_encoder = mp3_encoder.build().expect("Initialise LAME encoder");
+
+    // Sample buffers.
+    let mut left_channel = vec![];
+    let mut right_channel = vec![];
+
+    for frame in graph {
+        left_channel.push(float_to_i16(frame[0]));
+        right_channel.push(float_to_i16(frame[1]));
+    }
+
+    // Note that docs specify u16, but this is incorrect.
+    let input = DualPcm {
+        left: &left_channel,
+        right: &right_channel,
+    };
+
+    // There are some unsafe code executions here, but shouldn't be an issue so long as length of left and right channel are equal.
+    // This was the solution provided with the docs, so I am unsure of if there is a better way.
+    let mut mp3_out_buffer =
+        Vec::with_capacity(mp3lame_encoder::max_required_buffer_size(input.left.len()));
+    let encoded_size = mp3_encoder
+        .encode(input, mp3_out_buffer.spare_capacity_mut())
+        .expect("To encode");
+    unsafe {
+        mp3_out_buffer.set_len(mp3_out_buffer.len().wrapping_add(encoded_size));
+    }
+
+    let encoded_size = mp3_encoder
+        .flush::<FlushNoGap>(mp3_out_buffer.spare_capacity_mut())
+        .expect("to flush");
+    unsafe {
+        mp3_out_buffer.set_len(mp3_out_buffer.len().wrapping_add(encoded_size));
+    }
+
+    // Write to output file.
+    let dir_path = export_dir_path(AudioFileType::Mp3);
+    let _ = create_dir_all(&dir_path);
+    let file_path = export_file_path(&project.name, AudioFileType::Mp3);
+
+    // NOTE: will overwrite if the file already exists.
+    let mut out_file =
+        File::create(&file_path).map_err(|e| tonic::Status::internal(format!("{e}")))?;
+    out_file
+        .write_all(&mp3_out_buffer)
+        .map_err(|e| tonic::Status::invalid_argument(format!("{e}")))?;
+
+    Ok(tonic::Response::new(ExportReply {
+        audio: mp3_out_buffer,
+    }))
 }

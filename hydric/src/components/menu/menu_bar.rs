@@ -3,7 +3,7 @@ use crate::{
     local_state::LocalState,
     playback::AudioPlayer,
     promise::{poll, spawn},
-    rpc::{export, export_mp3, load_project, load_project_list, save_project},
+    rpc::{export, load_project, load_project_list, save_project},
     view::View,
     window_state::{WindowKind, WindowState},
 };
@@ -108,13 +108,13 @@ impl View for MenuBar<'_> {
                     if ui.button("WAV").clicked() {
                         let project = self.store.get().project.clone();
                         spawn(&mut self.async_state.export, async move {
-                            export(project).await
+                            export(project,"wav".to_string()).await
                         });
                     }
                     if ui.button("MP3").clicked() {
                         let project = self.store.get().project.clone();
                         spawn(&mut self.async_state.export, async move {
-                            export_mp3(project).await
+                            export(project,"mp3".to_string()).await
                         });
                     }
                 });

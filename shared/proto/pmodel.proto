@@ -360,3 +360,7 @@ message LfoConfigProto {
   WaveTypeProto wave = 1;
   float frequency = 2;
 }
+
+message ExportConfigProto {
+  string audio_type = 1;
+}

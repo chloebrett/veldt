@@ -6,12 +6,11 @@ import "pmodel.proto";
 
 service Export {
   rpc Export (ExportRequest) returns (ExportReply) {}
-
-  rpc Export_mp3 (ExportRequest) returns (ExportReply) {}
 }
 
 message ExportRequest {
   pmodel.ProjectProto project = 1;
+  pmodel.ExportConfigProto config = 2;
 }
 
 message ExportReply {
