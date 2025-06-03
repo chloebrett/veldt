@@ -1,6 +1,7 @@
 use chrono::{Datelike, Local};
 use dasp_frame::Frame;
 use hound::{SampleFormat, WavSpec, WavWriter};
+use mesic::consts::CHANNEL_COUNT;
 use mesic::SAMPLE_RATE;
 use mesic::graph::RenderGraph;
 use mp3lame_encoder::{Builder, DualPcm, FlushNoGap, Id3Tag};
@@ -128,6 +129,27 @@ fn export_wav(project: &Project) -> Result<Response<ExportReply>, Status> {
     Ok(tonic::Response::new(ExportReply { audio: wav_bytes }))
 }
 
+fn make_mp3_encoder(num_channels:u8, sample_rate:u32, bit_rate:mp3lame_encoder::Bitrate, quality: mp3lame_encoder::Quality, id3_tag:Id3Tag) -> mp3lame_encoder::Encoder {
+    let mut mp3_encoder = Builder::new().expect("Create LAME builder");
+
+    mp3_encoder.set_num_channels(num_channels).expect("set channels");
+    mp3_encoder
+        .set_sample_rate(sample_rate)
+        .expect("set sample rate");
+    // TODO: Allow user to specify bitrate, common options are 320, 256, 192 and 128kbps.
+    mp3_encoder
+        .set_brate(bit_rate)
+        .expect("set brate");
+    mp3_encoder
+        .set_quality(quality)
+        .expect("set quality");
+    mp3_encoder
+        .set_id3_tag(id3_tag)
+        .expect("set id3 tags");
+
+    mp3_encoder.build().expect("Initialise LAME encoder")
+}
+
 // Code written using example from: https://docs.rs/mp3lame-encoder/latest/mp3lame_encoder/
 #[allow(clippy::result_large_err)]
 fn export_mp3(project: &Project) -> Result<Response<ExportReply>, Status> {
@@ -139,43 +161,34 @@ fn export_mp3(project: &Project) -> Result<Response<ExportReply>, Status> {
 
     let graph = RenderGraph::without_rx(&store);
 
+    // Setup values for encoder builder.
     let (_, curr_year) = Local::now().year_ce();
+    let curr_year = curr_year.to_string();
+    let channel_count_u8 = CHANNEL_COUNT as u8;
+    let sample_rate_u32 = SAMPLE_RATE as u32;
+    let bit_rate = mp3lame_encoder::Bitrate::Kbps320;
+    let quality = mp3lame_encoder::Quality::Best;
+    let id3_tag = Id3Tag {
+        title: project.name.as_bytes(),
+        artist: &[],
+        album: &[],
+        album_art: &[],
+        year: curr_year.as_bytes(),
+        comment: &[],
+    };
 
-    let mut mp3_encoder = Builder::new().expect("Create LAME builder");
-    mp3_encoder.set_num_channels(2).expect("set channels");
-    mp3_encoder
-        .set_sample_rate(SAMPLE_RATE as u32)
-        .expect("set sample rate");
-    // TODO: Allow user to specify bitrate, common options are 320, 256, 192 and 128kbps.
-    mp3_encoder
-        .set_brate(mp3lame_encoder::Bitrate::Kbps320)
-        .expect("set brate");
-    mp3_encoder
-        .set_quality(mp3lame_encoder::Quality::Best)
-        .expect("set quality");
-    mp3_encoder
-        .set_id3_tag(Id3Tag {
-            title: project.name.as_bytes(),
-            artist: &[],
-            album: &[],
-            album_art: &[],
-            year: curr_year.to_string().as_bytes(),
-            comment: &[],
-        })
-        .expect("set id3 tags");
-
-    let mut mp3_encoder = mp3_encoder.build().expect("Initialise LAME encoder");
+    let mut mp3_encoder = make_mp3_encoder(channel_count_u8, sample_rate_u32, bit_rate, quality, id3_tag);
 
     // Sample buffers.
     let mut left_channel = vec![];
     let mut right_channel = vec![];
 
+    // Note that docs specify u16, but this is incorrect.
     for frame in graph {
         left_channel.push(float_to_i16(frame[0]));
         right_channel.push(float_to_i16(frame[1]));
     }
 
-    // Note that docs specify u16, but this is incorrect.
     let input = DualPcm {
         left: &left_channel,
         right: &right_channel,
