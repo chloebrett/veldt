@@ -1,7 +1,7 @@
 use super::envelope_line;
 use crate::transform::Transform;
 use crate::view::View;
-use crate::widget::{TabDisplay, TabOrientation, inner_frame, knob, outer_frame};
+use crate::widget::{TabDisplay, TabOrientation, add_knob, inner_frame, outer_frame, styled_knob};
 use crate::{GetSet, LocalState};
 use egui::{
     Color32, Rect, Ui, Vec2,
@@ -86,48 +86,62 @@ impl<F: Fn(Action), G: Fn()> View for StingrayEnvelopeView<'_, F, G> {
                         ui.add_space(10.0);
                         // All the knobs for envelope modification
                         ui.horizontal(|ui| {
-                            knob(
+                            add_knob(
                                 ui,
-                                "A",
-                                config.envelopes[active_env_tab].attack,
-                                |attack| {
-                                    dispatch(Action::SetFloat(FloatField::AdsrAttack, attack));
-                                },
-                                0.0..=1000.0,
-                                /* neutral= */ 100.0,
+                                styled_knob(
+                                    "A",
+                                    config.envelopes[active_env_tab].attack,
+                                    |attack| {
+                                        dispatch(Action::SetFloat(FloatField::AdsrAttack, attack));
+                                    },
+                                    0.0..=1000.0,
+                                )
+                                .with_neutral(100.0),
                                 on_release,
                             );
-                            knob(
+                            add_knob(
                                 ui,
-                                "D",
-                                config.envelopes[active_env_tab].decay,
-                                |decay| {
-                                    dispatch(Action::SetFloat(FloatField::AdsrDecay, decay));
-                                },
-                                0.0..=1000.0,
-                                /* neutral= */ 100.0,
+                                styled_knob(
+                                    "D",
+                                    config.envelopes[active_env_tab].decay,
+                                    |decay| {
+                                        dispatch(Action::SetFloat(FloatField::AdsrDecay, decay));
+                                    },
+                                    0.0..=1000.0,
+                                )
+                                .with_neutral(100.0),
                                 on_release,
                             );
-                            knob(
+                            add_knob(
                                 ui,
-                                "S",
-                                config.envelopes[active_env_tab].sustain,
-                                |sustain| {
-                                    dispatch(Action::SetFloat(FloatField::AdsrSustain, sustain));
-                                },
-                                0.0..=1.0,
-                                /* neutral= */ 0.8,
+                                styled_knob(
+                                    "S",
+                                    config.envelopes[active_env_tab].sustain,
+                                    |sustain| {
+                                        dispatch(Action::SetFloat(
+                                            FloatField::AdsrSustain,
+                                            sustain,
+                                        ));
+                                    },
+                                    0.0..=1.0,
+                                )
+                                .with_neutral(0.8),
                                 on_release,
                             );
-                            knob(
+                            add_knob(
                                 ui,
-                                "R",
-                                config.envelopes[active_env_tab].release,
-                                |release| {
-                                    dispatch(Action::SetFloat(FloatField::AdsrRelease, release));
-                                },
-                                0.0..=1000.0,
-                                /* neutral= */ 100.0,
+                                styled_knob(
+                                    "R",
+                                    config.envelopes[active_env_tab].release,
+                                    |release| {
+                                        dispatch(Action::SetFloat(
+                                            FloatField::AdsrRelease,
+                                            release,
+                                        ));
+                                    },
+                                    0.0..=1000.0,
+                                )
+                                .with_neutral(100.0),
                                 on_release,
                             );
                         });

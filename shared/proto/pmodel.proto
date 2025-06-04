@@ -12,13 +12,11 @@ message ProjectProto {
 
   repeated SampleProto samples = 4;
 
-  repeated GeneratorInstanceProto generators = 5;
+  map<uint32, GeneratorInstanceProto> generators = 5;
 
   MixerProto mixer = 6;
 
   float bpm = 7;
-
-  ModMatrixProto mod_matrix = 8;
 }
 
 message MixerProto {
@@ -64,7 +62,7 @@ message PlacementProto {
 message TrackPlacementProto {
   uint32 track_index = 1;
 
-  uint32 generator_index = 2;
+  uint32 generator_id = 2;
 }
 
 message SamplePlacementProto {
@@ -77,6 +75,8 @@ message SampleProto {
   bytes right = 2;
 
   float sample_rate = 3;
+
+  string sample_name = 4;
 }
 
 message MixerChannelProto {

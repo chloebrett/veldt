@@ -1,8 +1,11 @@
 use egui::Pos2;
+use shared::model::Sample;
 use state::{MixerSelector, TrackSelector};
 use std::cell::RefCell;
-use std::collections::HashSet;
+use std::collections::{HashMap, HashSet};
 use std::rc::Rc;
+
+use crate::WindowState;
 
 type RcOption<T> = Rc<RefCell<Option<T>>>;
 
@@ -18,10 +21,6 @@ pub struct LocalState {
 
     pub mixer_edit_state: Rc<RefCell<bool>>,
 
-    pub note_window: Rc<RefCell<bool>>,
-    pub note_roll_window: Rc<RefCell<bool>>,
-    pub placement_window: Rc<RefCell<bool>>,
-
     pub drag_cursor_delta: RcOption<Pos2>,
 
     // TODO: in the case of multiple stingray instances, both env and lfo should be in a HashSet
@@ -31,6 +30,10 @@ pub struct LocalState {
 
     pub track_roll_select_enabled: Rc<RefCell<bool>>,
     pub note_roll_select_enabled: Rc<RefCell<bool>>,
+
+    pub window_state: WindowState,
+
+    pub sample_cache: Rc<RefCell<HashMap<String, Sample>>>,
 }
 
 pub trait GetSet<T: Clone> {

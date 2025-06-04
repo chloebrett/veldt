@@ -59,6 +59,11 @@ impl ActionReceiver for Project {
                 self.placements = placements.to_vec();
                 Action::SetChildren(MultiTypeField::Placement(prev))
             }
+            Action::AddChildren(MultiTypeField::Placement(placements)) => {
+                let prev = self.placements.clone();
+                self.placements.extend(placements.to_vec());
+                Action::AddChildren(MultiTypeField::Placement(prev))
+            }
             _ => return None,
         })
     }

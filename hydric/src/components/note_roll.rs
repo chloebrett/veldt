@@ -4,7 +4,8 @@ use crate::{
     playback::AudioPlayer,
     transform::Yx,
     view::View,
-    widget::{Sequencer, SequencerObject, StateWindow, default_window},
+    widget::{Sequencer, SequencerObject, StateWindow},
+    window_state::WindowKind,
 };
 use egui::{
     Color32, CornerRadius, Pos2, Rect, ScrollArea, Shape, Stroke, StrokeKind, Ui, Vec2, pos2, vec2,
@@ -122,15 +123,11 @@ impl View for NoteRoll<'_> {
             local_state.selected_notes.set(HashSet::default());
         }
         let title = format!("Track {}", track_sel.0);
-        let window = StateWindow(
-            default_window(&title)
-                .default_pos(Pos2 { x: 600.0, y: 20.0 })
-                .resizable(true),
-        );
-        window.show_with_closure(
+        StateWindow::show_from_window_state(
             ui,
-            local_state.note_roll_window.get(),
-            |_| local_state.note_roll_window.set(false),
+            &local_state.window_state,
+            WindowKind::NoteRoll,
+            &title,
             |ui| {
                 ui.horizontal(|ui| {
                     if ui.button("New note").clicked() {
@@ -156,7 +153,7 @@ impl View for NoteRoll<'_> {
                                 .iter()
                                 .filter_map(|placement| match &placement.kind {
                                     PlacementType::Track(it) if it.track_index == track_sel.0 => {
-                                        Some(it.generator_index)
+                                        Some(it.generator_id)
                                     }
                                     _ => None,
                                 })
@@ -290,7 +287,7 @@ impl SequencerObject<PlacedNote> for PlacedNote {
     }
 
     fn set_active(&self, local_state: &LocalState, index: usize) {
-        local_state.note_window.set(true);
+        local_state.window_state.set_visible(WindowKind::Note, true);
         local_state.active_note.set(Some(index));
     }
 
