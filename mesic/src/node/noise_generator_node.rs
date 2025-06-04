@@ -1,4 +1,5 @@
-use crate::eq::{ApplyFilter, eq_filter};
+use crate::eq::eq_filter;
+use crate::eq::filter::Filter;
 use crate::graph::{NoteEvent, NoteEventType, ProcessContext};
 use dasp_graph::{Buffer, Input, Node};
 use rand::Rng;
@@ -18,8 +19,8 @@ struct NodeState {
     config: NoiseConfig,
     meta: GeneratorMeta,
     playing: bool,
-    pink_filter: Box<dyn ApplyFilter + Send>,
-    brown_filter: Box<dyn ApplyFilter + Send>,
+    pink_filter: Filter,
+    brown_filter: Filter,
 }
 
 impl Default for NodeState {
@@ -103,7 +104,7 @@ impl Node<ProcessContext> for NoiseGeneratorNode {
 
         if payload.stop_generators.get(&generator_id) == Some(&true) {
             log::info!("Stopped noise: {:?}", generator_id);
-            state.playing = false;
+            self.state.playing = false;
         }
 
         for i in 0..buffer.len() {
