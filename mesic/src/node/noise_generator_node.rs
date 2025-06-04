@@ -152,3 +152,70 @@ impl Node<ProcessContext> for NoiseGeneratorNode {
 pub fn generate_random_number_in_range(rng: &mut impl Rng, min: f32, max: f32) -> f32 {
     rng.gen_range(min..=max)
 }
+
+#[cfg(test)]
+mod tests {
+    use state::GeneratorSelector;
+    use crate::node::NoiseGeneratorNode;
+    use shared::model::GeneratorId;
+    use dasp_graph::Buffer;
+
+    const FLOAT_THRES: f32 = 1e-6;
+
+    struct PkCoefficients {
+        b0: f32,
+        b1: f32,
+        b2: f32,
+        b3: f32,
+        b4: f32,
+        b5: f32,
+        b6: f32,
+    }
+
+    impl PkCoefficients {
+        fn pk_pink_noise(&mut self, white: f32) -> f32 {
+            self.b0 = 0.99886 * self.b0 + white * 0.0555179;
+            self.b1 = 0.99332 * self.b1 + white * 0.0750759;
+            self.b2 = 0.96900 * self.b2 + white * 0.1538520;
+            self.b3 = 0.86650 * self.b3 + white * 0.3104856;
+            self.b4 = 0.55000 * self.b4 + white * 0.5329522;
+            self.b5 = -0.7616 * self.b5 - white * 0.0168980;
+            let pink = self.b0 + self.b1 + self.b2 + self.b3 + self.b4 + self.b5 + self.b6 + white * 0.5362;
+            self.b6 = white * 0.115926;
+
+            pink
+        }
+    }
+
+    fn assert_almost_equal(first: Buffer, second: Buffer) {
+        if first.len() != second.len() {
+            panic!("Lengths differed! {}, {}", first.len(), second.len());
+        }
+        for i in 0..first.len() {
+            let a = first[i];
+            let b = second[i];
+            if (a - b).abs() > FLOAT_THRES {
+                panic!("Floats {a}, {b} differed at index {i}");
+            }
+        }
+    }
+
+    #[test]
+    #[ignore]
+    fn test_pink_noise() {
+        let mut pk_coeff = PkCoefficients { b0: 0.0, b1: 0.0, b2: 0.0, b3: 0.0, b4: 0.0, b5: 0.0, b6: 0.0 };
+        let mut node = NoiseGeneratorNode::new(GeneratorSelector(GeneratorId(0)));
+        let mut rng = rand::thread_rng();
+        let mut buffer = Buffer::SILENT;
+        let mut pk_buffer = Buffer::SILENT;
+
+        for i in 0..buffer.len() {
+            let white = node.generate_white_noise(&mut rng);
+            pk_buffer[i] = pk_coeff.pk_pink_noise(white);
+        }
+
+        node.generate_pink_noise(&mut buffer);
+
+        assert_almost_equal(buffer, pk_buffer);
+    }
+}
