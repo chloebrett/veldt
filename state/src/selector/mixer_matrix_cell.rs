@@ -1,6 +1,6 @@
 use super::{GeneratorSelector, Selector, SelectorTrait};
 use crate::StoreData;
-use shared::model::{MatrixCell, StingrayConfig};
+use shared::model::{GeneratorId, MatrixCell, StingrayConfig};
 
 #[derive(Eq, PartialEq, Ord, PartialOrd, Copy, Clone, Debug, Hash)]
 pub struct MixerMatrixCellSelector(/* row */ pub usize, /* col */ pub usize);
@@ -23,7 +23,7 @@ impl SelectorTrait for MixerMatrixCellSelector {
 
 #[derive(Eq, PartialEq, Ord, PartialOrd, Copy, Clone, Debug, Hash)]
 pub struct ModMatrixCellSelector(
-    /* generator_index */ pub usize,
+    pub GeneratorId,
     /* row */ pub usize,
     /* col */ pub usize,
 );
@@ -38,13 +38,13 @@ impl SelectorTrait for ModMatrixCellSelector {
     type Item = MatrixCell;
 
     fn try_select<'a>(&'a self, store: &'a StoreData) -> Option<&'a Self::Item> {
-        let instance = store.project.generators.get(self.0)?;
+        let instance = store.project.generators.get(&self.0)?;
         let stingray: &StingrayConfig = (&instance.it).try_into().ok()?;
         stingray.matrix.get(self.1, self.2)
     }
 
     fn try_select_mut<'a>(&'a self, store: &'a mut StoreData) -> Option<&'a mut Self::Item> {
-        let instance = store.project.generators.get_mut(self.0)?;
+        let instance = store.project.generators.get_mut(&self.0)?;
         let stingray: &mut StingrayConfig = (&mut instance.it).try_into().ok()?;
         stingray.matrix.get_mut(self.1, self.2)
     }

@@ -3,6 +3,8 @@ use crate::pmodel::*;
 use crate::types::Beats;
 use local_macro::{FromProto, IntoProto};
 use ordered_float::OrderedFloat;
+use std::collections::HashMap;
+use std::ops::Deref;
 
 #[derive(Clone, Debug, PartialEq, FromProto, IntoProto, Default)]
 pub struct Project {
@@ -18,13 +20,37 @@ pub struct Project {
     #[proto_repeated]
     pub samples: Vec<Sample>,
 
-    #[proto_repeated]
-    pub generators: Vec<GeneratorInstance>,
+    #[proto_hashmap]
+    pub generators: HashMap<GeneratorId, GeneratorInstance>,
 
     #[proto_optional]
     pub mixer: Mixer,
 
     pub bpm: Beats,
+}
+
+// TODO: implement/derive deref/derefmut.
+#[derive(Hash, Default, PartialEq, Eq, Ord, PartialOrd, Debug, Clone, Copy)]
+pub struct GeneratorId(pub usize);
+
+impl From<u32> for GeneratorId {
+    fn from(other: u32) -> Self {
+        GeneratorId(other as usize)
+    }
+}
+
+impl From<GeneratorId> for u32 {
+    fn from(other: GeneratorId) -> Self {
+        other.0 as u32
+    }
+}
+
+impl Deref for GeneratorId {
+    type Target = usize;
+
+    fn deref(&self) -> &usize {
+        &self.0
+    }
 }
 
 impl Project {
@@ -80,7 +106,7 @@ mod tests {
             placements: vec![Placement {
                 kind: PlacementType::Track(TrackPlacement {
                     track_index: 3,
-                    generator_index: 3,
+                    generator_id: 3.into(),
                 }),
                 offset: 2.5.into(),
                 clipped_duration: Some(5.2.into()),
@@ -90,30 +116,34 @@ mod tests {
                 left: vec![0.0, 1.0, 3.0],
                 right: vec![0.0, 1.0, 3.0],
                 sample_rate: 1.0,
+                sample_name: "default".to_string(),
             }],
-            generators: vec![GeneratorInstance {
-                it: Generator::SimpleWave(SimpleWaveConfig {
-                    wave: WaveType::Sine,
-                    envelope: AdsrEnvelope {
-                        attack: 0.1,
-                        decay: 0.1,
-                        sustain: 0.8,
-                        release: 0.1,
+            generators: HashMap::from([(
+                GeneratorId(0),
+                GeneratorInstance {
+                    it: Generator::SimpleWave(SimpleWaveConfig {
+                        wave: WaveType::Sine,
+                        envelope: AdsrEnvelope {
+                            attack: 0.1,
+                            decay: 0.1,
+                            sustain: 0.8,
+                            release: 0.1,
+                        },
+                        osc_count: 4,
+                        detune_cents: 5.0,
+                        anti_aliasing_mode: AntiAliasingMode::Additive,
+                        oversample_factor: 2,
+                        polyphony_mode: PolyphonyMode::Polyphonic,
+                        polyphony_limit: 0,
+                    }),
+                    meta: GeneratorMeta {
+                        volume: 1.0,
+                        mute: false,
+                        pan: 0.0,
+                        mixer_channel: 0,
                     },
-                    osc_count: 4,
-                    detune_cents: 5.0,
-                    anti_aliasing_mode: AntiAliasingMode::Additive,
-                    oversample_factor: 2,
-                    polyphony_mode: PolyphonyMode::Polyphonic,
-                    polyphony_limit: 0,
-                }),
-                meta: GeneratorMeta {
-                    volume: 1.0,
-                    mute: false,
-                    pan: 0.0,
-                    mixer_channel: 0,
                 },
-            }],
+            )]),
             mixer: Mixer {
                 matrix: MixerMatrix::with_channels(3),
                 channels: vec![MixerChannel {

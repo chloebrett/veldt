@@ -3,21 +3,26 @@ use crate::local_state::LocalState;
 use crate::widget::{StateWindow, add_knob, int_slider, styled_knob};
 use crate::window_state::WindowKind;
 use egui::{Button, Ui};
+use shared::model::{GeneratorId, GeneratorInstance};
 use state::{Action, FloatField, GeneratorSelector, IndexField, Store, TypeField};
 
 pub fn generators_control(ui: &mut Ui, local_state: &LocalState, store: &Store) {
-    let generators = &store.get().project.generators;
+    let mut generators: Vec<(&GeneratorId, &GeneratorInstance)> =
+        store.get().project.generators.iter().collect();
+    generators.sort_by_key(|&(&k, _)| k);
+
     StateWindow::show_from_window_state(
         ui,
         &local_state.window_state,
         WindowKind::GeneratorList,
         "Generators",
         |ui| {
-            for generator_index in 0..generators.len() {
-                let sel = GeneratorSelector(generator_index);
+            for (index, (generator_id, generator)) in
+                store.get().project.generators.iter().enumerate()
+            {
+                let sel = GeneratorSelector(*generator_id);
                 let on_release = || store.dispatchr(Action::Release);
 
-                let generator = &generators[generator_index];
                 let label = generator_name(generator);
                 let show = local_state
                     .window_state
@@ -72,7 +77,7 @@ pub fn generators_control(ui: &mut Ui, local_state: &LocalState, store: &Store) 
                     on_release,
                 );
 
-                if generator_index < generators.len() - 1 {
+                if index < store.get().project.generators.len() - 1 {
                     ui.separator();
                 }
             }

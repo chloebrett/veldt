@@ -4,7 +4,8 @@ use crate::consts::CHANNEL_COUNT;
 use crate::envelope::EnvelopeGenerator;
 use crate::eq::eq_filter;
 use crate::eq::filter::Filter;
-use crate::graph::{NoteEventType, ProcessContext};
+use crate::graph::{NoteEvent, NoteEventType, ProcessContext};
+use crate::lfo::LfoGenerator;
 use crate::maths::linspace;
 use crate::wave::detune_multiplier;
 use crate::wave_cache::{WaveCache, WaveKey};
@@ -36,22 +37,21 @@ struct NodeState {
 struct Voice {
     egs: [EnvelopeGenerator; 3],
     sources: Option<[StingrayWaveSource; 3]>,
+    lfos: [LfoGenerator; 3],
 }
 
 impl Default for NodeState {
     fn default() -> Self {
         let config = StingrayConfig::default();
-        let egs: Vec<_> = config
-            .envelopes
-            .iter()
-            .map(|env| EnvelopeGenerator::new(env.clone()))
-            .collect();
+        let egs = config.envelopes.clone().map(EnvelopeGenerator::new);
+        let lfos = config.lfos.clone().map(LfoGenerator::new);
         Self {
             config: config.clone(),
             meta: GeneratorMeta::default(),
             voice: Voice {
-                egs: [egs[0].clone(), egs[1].clone(), egs[2].clone()],
+                egs,
                 sources: None,
+                lfos,
             },
             filter_left: eq_filter(&config.lpf),
             filter_right: eq_filter(&config.lpf),
@@ -76,6 +76,12 @@ impl NodeState {
                     self.filter_left = eq_filter(&config.lpf);
                     self.filter_right = eq_filter(&config.lpf);
                 }
+                if self.config.lfos != config.lfos {
+                    for (i, lfo) in self.voice.lfos.iter_mut().enumerate() {
+                        lfo.config = config.lfos[i].clone();
+                    }
+                }
+
                 self.config = config.clone();
             }
             if self.meta != *meta {
@@ -117,11 +123,11 @@ impl Node<ProcessContext> for StingrayNode {
         let state = &mut self.state;
         state.update(payload, self.selector);
 
-        let mut buffers: [Buffer; 2] = [Buffer::SILENT; 2];
-        let GeneratorSelector(generator_index) = self.selector;
+        let mut buffers = [Buffer::SILENT; 2];
+        let GeneratorSelector(generator_id) = self.selector;
 
-        if payload.stop_generators.get(generator_index) == Some(&true) {
-            log::info!("Stopped stingray: {generator_index}");
+        if payload.stop_generators.get(&generator_id) == Some(&true) {
+            log::info!("Stopped stingray: {:?}", generator_id);
             for eg in state.voice.egs.iter_mut() {
                 eg.note_off();
             }
@@ -129,8 +135,11 @@ impl Node<ProcessContext> for StingrayNode {
 
         // TODO: fix this, it's n^2 right now. (well, n*64).
         for i in 0..Buffer::LEN {
-            let mut events: Vec<_> = payload.note_events[generator_index]
-                .clone()
+            let mut events: Vec<NoteEvent> = payload
+                .note_events
+                .get(&generator_id)
+                .cloned()
+                .unwrap_or(vec![])
                 .into_iter()
                 .filter(|it| it.sample_index == i)
                 .collect();
@@ -181,9 +190,34 @@ impl Node<ProcessContext> for StingrayNode {
             }
 
             if let Some(sources) = &mut state.voice.sources {
-                for (eg, source) in state.voice.egs.iter_mut().zip(sources.iter_mut()) {
+                for (j, (eg, source)) in state
+                    .voice
+                    .egs
+                    .iter_mut()
+                    .zip(sources.iter_mut())
+                    .enumerate()
+                {
+                    let mut lfo_value = 0.0;
+                    let mut lfo_active = false;
+                    const LFO_ROW_START: usize = 3;
+                    // Access the column for this oscillator in the matrix
+                    for k in 0..state.config.lfos.len() {
+                        // Get matrix value for this oscillator and LFO
+                        let matrix_value = state
+                            .config
+                            .matrix
+                            .get(k + LFO_ROW_START, j)
+                            .map_or(0.0, |cell_ref| (*cell_ref).into());
+
+                        if matrix_value != 0.0 {
+                            lfo_active = true;
+                        }
+
+                        lfo_value += state.voice.lfos[k].next() * matrix_value;
+                    }
+
                     let amp = eg.next().unwrap_or(0.0);
-                    let wave = source.next(&mut self.cache);
+                    let wave = source.next(&mut self.cache, lfo_value, lfo_active);
 
                     buffers[0][i] += amp * wave[0];
                     buffers[1][i] += amp * wave[1];
@@ -222,7 +256,7 @@ impl StingrayWaveSource {
         self.pitch == pitch
     }
 
-    fn next(&mut self, cache: &mut WaveCache) -> Stereo<f32> {
+    fn next(&mut self, cache: &mut WaveCache, lfo_value: f32, lfo_active: bool) -> Stereo<f32> {
         let osc = &self.oscillator;
         let freq: Freq = self.pitch.into();
         let freq = freq * detune_multiplier(osc.osc_detune);
@@ -260,6 +294,12 @@ impl StingrayWaveSource {
         // Add soft clipping to lessen the peaks in volume.
         if unison > 1 {
             output_mono = (output_mono / 0.95).tanh() * 0.95;
+        }
+
+        // Apply the low frequency oscillator to the output.
+        // Currently only used for volume modulation.
+        if lfo_active {
+            output_mono *= lfo_value;
         }
 
         let mut output_stereo = [output_mono; CHANNEL_COUNT];

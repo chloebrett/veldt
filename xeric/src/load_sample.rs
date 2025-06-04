@@ -143,6 +143,7 @@ impl LoadSample for LoadSampleContext {
             left,
             right,
             sample_rate: reader.spec().sample_rate as f32,
+            sample_name: filename.clone(),
         };
         info!("Loaded sample.");
         Ok(Response::new(LoadSampleReply {

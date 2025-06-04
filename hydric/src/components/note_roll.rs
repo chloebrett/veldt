@@ -153,7 +153,7 @@ impl View for NoteRoll<'_> {
                                 .iter()
                                 .filter_map(|placement| match &placement.kind {
                                     PlacementType::Track(it) if it.track_index == track_sel.0 => {
-                                        Some(it.generator_index)
+                                        Some(it.generator_id)
                                     }
                                     _ => None,
                                 })

@@ -7,9 +7,11 @@ enum Tag {
         proto_type: Ident,
         model_type: Ident,
     },
+    Into_,
     Optional,
     Enum,
     Repeated,
+    HashMap,
     None,
 }
 
@@ -42,6 +44,11 @@ fn extract_tag(field: &Field) -> Tag {
             tag = Tag::Optional;
         }
 
+        // if tagged with proto_into, then call .into() when converting between proto/model types.
+        if attr.path().is_ident("proto_into") {
+            tag = Tag::Into_;
+        }
+
         // if tagged with proto_enum, then call "<field>()" on the field, to return the
         // enum type instead of an i32.
         if attr.path().is_ident("proto_enum") {
@@ -50,6 +57,10 @@ fn extract_tag(field: &Field) -> Tag {
 
         if attr.path().is_ident("proto_repeated") {
             tag = Tag::Repeated;
+        }
+
+        if attr.path().is_ident("proto_hashmap") {
+            tag = Tag::HashMap;
         }
     }
     tag
@@ -60,9 +71,11 @@ fn extract_tag(field: &Field) -> Tag {
     attributes(
         proto_type_u8,
         proto_type_u32,
+        proto_into,
         proto_optional,
         proto_enum,
-        proto_repeated
+        proto_repeated,
+        proto_hashmap
     )
 )]
 pub fn derive_from_proto(input: TokenStream) -> TokenStream {
@@ -81,9 +94,13 @@ pub fn derive_from_proto(input: TokenStream) -> TokenStream {
                     Tag::AsType { model_type, .. } => {
                         quote!(#name: (item.#name as #model_type).into())
                     }
+                    Tag::Into_ => quote!(#name: item.#name.into()),
                     Tag::Optional => quote!(#name: item.#name.unwrap().into()),
                     Tag::Repeated => {
                         quote!(#name: item.#name.into_iter().map(|it| it.into()).collect())
+                    }
+                    Tag::HashMap => {
+                        quote!(#name: item.#name.into_iter().map(|(key, value)| (key.into(), value.into())).collect())
                     }
                     Tag::Enum => quote!(#name: item.#name().into()),
                     Tag::None => quote!(#name: item.#name.into()),
@@ -139,9 +156,11 @@ pub fn derive_from_proto(input: TokenStream) -> TokenStream {
     attributes(
         proto_type_u8,
         proto_type_u32,
+        proto_into,
         proto_optional,
         proto_enum,
-        proto_repeated
+        proto_repeated,
+        proto_hashmap
     )
 )]
 pub fn derive_into_proto(input: TokenStream) -> TokenStream {
@@ -160,9 +179,13 @@ pub fn derive_into_proto(input: TokenStream) -> TokenStream {
                     Tag::AsType { proto_type, .. } => {
                         quote!(#name: (item.#name as #proto_type).into())
                     }
+                    Tag::Into_ => quote!(#name: item.#name.into()),
                     Tag::Optional => quote!(#name: Some(item.#name.into())),
                     Tag::Repeated => {
                         quote!(#name: item.#name.into_iter().map(|it| it.into()).collect())
+                    }
+                    Tag::HashMap => {
+                        quote!(#name: item.#name.into_iter().map(|(key, value)| (key.into(), value.into())).collect())
                     }
                     // enums are saved as i32 in protos.
                     // increment by 1 to account for Unknown = 0.

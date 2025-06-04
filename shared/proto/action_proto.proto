@@ -78,6 +78,7 @@ message TypeFieldProto {
     pmodel.MixerChannelProto mixer_channel = 20;
     pmodel.PolyphonyModeProto polyphony_mode = 21;
     pmodel.NoiseTypeProto noise_type = 22;
+    uint32 generator_id = 23;
   }
 }
 
