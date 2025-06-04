@@ -155,10 +155,10 @@ pub fn generate_random_number_in_range(rng: &mut impl Rng, min: f32, max: f32) -
 
 #[cfg(test)]
 mod tests {
-    use state::GeneratorSelector;
     use crate::node::NoiseGeneratorNode;
-    use shared::model::GeneratorId;
     use dasp_graph::Buffer;
+    use shared::model::GeneratorId;
+    use state::GeneratorSelector;
 
     const FLOAT_THRES: f32 = 1e-6;
 
@@ -180,7 +180,14 @@ mod tests {
             self.b3 = 0.86650 * self.b3 + white * 0.3104856;
             self.b4 = 0.55000 * self.b4 + white * 0.5329522;
             self.b5 = -0.7616 * self.b5 - white * 0.0168980;
-            let pink = self.b0 + self.b1 + self.b2 + self.b3 + self.b4 + self.b5 + self.b6 + white * 0.5362;
+            let pink = self.b0
+                + self.b1
+                + self.b2
+                + self.b3
+                + self.b4
+                + self.b5
+                + self.b6
+                + white * 0.5362;
             self.b6 = white * 0.115926;
 
             pink
@@ -203,7 +210,15 @@ mod tests {
     #[test]
     #[ignore]
     fn test_pink_noise() {
-        let mut pk_coeff = PkCoefficients { b0: 0.0, b1: 0.0, b2: 0.0, b3: 0.0, b4: 0.0, b5: 0.0, b6: 0.0 };
+        let mut pk_coeff = PkCoefficients {
+            b0: 0.0,
+            b1: 0.0,
+            b2: 0.0,
+            b3: 0.0,
+            b4: 0.0,
+            b5: 0.0,
+            b6: 0.0,
+        };
         let mut node = NoiseGeneratorNode::new(GeneratorSelector(GeneratorId(0)));
         let mut rng = rand::thread_rng();
         let mut buffer = Buffer::SILENT;
