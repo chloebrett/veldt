@@ -120,9 +120,10 @@ impl View for MixerView<'_> {
                     let dispatch_volume =
                         |it| dispatch_mixer(Action::SetFloat(FloatField::Volume, from_db(it)));
                     let mut level = to_db(mixer.volume);
-                    ui.add(Fader::stereo(&mut level, player.level())
-                        .rect_handle_shape(0.5)
-                        .text_size(12.0)
+                    ui.add(
+                        Fader::stereo(&mut level, player.level())
+                            .rect_handle_shape(0.5)
+                            .text_size(12.0),
                     );
                     if level != to_db(mixer.volume) {
                         dispatch_volume(level)
