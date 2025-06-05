@@ -48,6 +48,7 @@ dasp_rms = "0.11.0"
 dasp_ring_buffer = "0.11.0"
 tonic = { version = "0.13.1", default-features = false }
 egui_fancy_knob = "0.1.0"
+egui_fader = "0.1.0"
 
 [features]
 # Displays some extra debug information in the UI.
