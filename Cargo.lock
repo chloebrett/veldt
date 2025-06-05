@@ -1511,9 +1511,9 @@ dependencies = [
 
 [[package]]
 name = "egui_fader"
-version = "0.1.0"
+version = "0.1.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "a68b1de4d46c56e145e13d6328f1a42972e10853195410223f5c86afce67abb2"
+checksum = "3b3437ba82730555a635af593915123954bc03f3e8481d55931141fb2d0b4f05"
 dependencies = [
  "dasp",
  "dasp_frame",
