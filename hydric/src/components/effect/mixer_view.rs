@@ -120,10 +120,12 @@ impl View for MixerView<'_> {
                     let dispatch_volume =
                         |it| dispatch_mixer(Action::SetFloat(FloatField::Volume, from_db(it)));
                     let mut level = to_db(mixer.volume);
-                    Fader::stereo(&mut level, player.level()).rect_handle_shape(0.5).ui(ui);
+                    Fader::stereo(&mut level, player.level())
+                        .rect_handle_shape(0.5)
+                        .ui(ui);
                     if level != to_db(mixer.volume) {
                         dispatch_volume(level)
-                    } 
+                    }
                     ui.vertical(|ui| {
                         ui.with_layout(Layout::default(), |ui| {
                             // Set background to transparent to avoid a lightened background caused by drag
