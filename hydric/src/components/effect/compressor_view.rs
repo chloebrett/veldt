@@ -1,8 +1,6 @@
-use std::f32;
-
 use crate::widget::{add_knob, styled_knob};
 use crate::{transform::Transform, view::View};
-use egui::{Color32, Pos2};
+use egui::Color32;
 use egui::{
     Frame, Rect, Response, Sense, Shape, Stroke, Ui, Vec2, Widget, emath::RectTransform, pos2, vec2,
 };
@@ -118,7 +116,10 @@ impl Widget for CompressorDisplay<'_> {
         // TODO: Add knee when implemented.
         // TODO: Add live level to show compression.
         let CompressorConfig {
-            threshold, ratio, gain, ..
+            threshold,
+            ratio,
+            gain,
+            ..
         } = *config;
         let max_db = 0.0;
         let min_db = -60.0;
