@@ -78,6 +78,17 @@ impl<F: Fn(Action), G: Fn()> View for CompressorView<'_, F, G> {
                     &self.on_release,
                 );
             });
+            add_knob(
+                ui,
+                styled_knob(
+                    "Gain",
+                    config.gain,
+                    |it| dispatch(Action::SetFloat(FloatField::Gain, it)),
+                    0.0..=2.0,
+                )
+                .with_neutral(1.0),
+                &self.on_release,
+            );
         });
     }
 }
