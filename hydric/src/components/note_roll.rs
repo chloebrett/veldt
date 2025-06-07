@@ -4,7 +4,7 @@ use crate::{
     playback::AudioPlayer,
     transform::Yx,
     view::View,
-    widget::{Sequencer, SequencerObject, StateWindow},
+    widget::{NoteSequencer, NoteSequencerObject, StateWindow},
     window_state::WindowKind,
 };
 use egui::{
@@ -170,7 +170,7 @@ impl View for NoteRoll<'_> {
                             )
                             .ui(ui);
                             ui.add(
-                                Sequencer::new(store, local_state, range)
+                                NoteSequencer::new(store, local_state, range)
                                     .objects(notes.into_iter().enumerate().collect())
                                     .parent_index(track_sel.0)
                                     .select(select)
@@ -190,7 +190,7 @@ impl View for NoteRoll<'_> {
     }
 }
 
-impl SequencerObject<PlacedNote, usize> for PlacedNote {
+impl NoteSequencerObject<PlacedNote, usize> for PlacedNote {
     fn to_pos(&self, range: Rect) -> Pos2 {
         let offset: f32 = self.offset.into();
         let y = offset - range.top();

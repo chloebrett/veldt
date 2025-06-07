@@ -1,7 +1,7 @@
 use crate::{
     GetSet, LocalState,
     view::View,
-    widget::{Sequencer, SequencerObject, StateWindow},
+    widget::{StateWindow, TrackSequencer, TrackSequencerObject},
     window_state::WindowKind,
 };
 use egui::{
@@ -115,7 +115,7 @@ impl View for TrackRoll<'_> {
                     .min_scrolled_height(400.0)
                     .show(ui, |ui| {
                         ui.add(
-                            Sequencer::new(store, self.local_state, range)
+                            TrackSequencer::new(store, self.local_state, range)
                                 .objects(placed_tracks)
                                 .size(vec2(600.0, 100.0 * max_visual_placement as f32))
                                 .select(select)
@@ -138,7 +138,7 @@ struct PlacedTrack {
     unclipped_duration: OrderedFloat<f32>,
 }
 
-impl SequencerObject<PlacedTrack, PlacementId> for PlacedTrack {
+impl TrackSequencerObject<PlacedTrack, PlacementId> for PlacedTrack {
     fn to_pos(&self, range: Rect) -> Pos2 {
         let y = self.placement.visual_placement as f32;
         let x = *self.placement.offset - range.left();

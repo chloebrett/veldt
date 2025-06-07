@@ -10,7 +10,7 @@ use std::collections::HashMap;
 use std::fmt::Debug;
 use std::hash::Hash;
 
-pub struct Sequencer<'a, T: SequencerObject<T, U>, U: Debug + Eq + Hash + Copy> {
+pub struct NoteSequencer<'a, T: NoteSequencerObject<T, U>, U: Debug + Eq + Hash + Copy> {
     store: &'a Store,
     local_state: &'a LocalState,
     range: Rect,
@@ -24,9 +24,9 @@ pub struct Sequencer<'a, T: SequencerObject<T, U>, U: Debug + Eq + Hash + Copy> 
     select: bool,
 }
 
-impl<'a, T: SequencerObject<T, U>, U: Debug + Eq + Hash + Copy> Sequencer<'a, T, U> {
+impl<'a, T: NoteSequencerObject<T, U>, U: Debug + Eq + Hash + Copy> NoteSequencer<'a, T, U> {
     pub fn new(store: &'a Store, local_state: &'a LocalState, range: Rect) -> Self {
-        Sequencer {
+        NoteSequencer {
             store,
             local_state,
             range,
@@ -235,7 +235,7 @@ impl<'a, T: SequencerObject<T, U>, U: Debug + Eq + Hash + Copy> Sequencer<'a, T,
     }
 }
 
-impl<T: SequencerObject<T, U>, U: Debug + Eq + Hash + Copy> Widget for Sequencer<'_, T, U> {
+impl<T: NoteSequencerObject<T, U>, U: Debug + Eq + Hash + Copy> Widget for NoteSequencer<'_, T, U> {
     fn ui(self, ui: &mut Ui) -> Response {
         let mut res: Option<Response> = None;
 
@@ -296,7 +296,7 @@ impl<T: SequencerObject<T, U>, U: Debug + Eq + Hash + Copy> Widget for Sequencer
     }
 }
 
-pub trait SequencerObject<T, U> {
+pub trait NoteSequencerObject<T, U> {
     fn to_pos(&self, range: Rect) -> Pos2;
 
     fn to_rect(&self, range: Rect) -> Rect;

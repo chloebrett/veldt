@@ -2,7 +2,7 @@ use crate::{
     playback::AudioPlayer,
     transform::{Transform, Yx},
     view::View,
-    widget::SequencerObject,
+    widget::NoteSequencerObject,
 };
 use egui::{
     Color32, CornerRadius, Frame, Pos2, Rect, Sense, Shape, Stroke, StrokeKind, Ui, Vec2,
