@@ -85,8 +85,7 @@ impl<F: Fn(Action), G: Fn()> View for CompressorView<'_, F, G> {
                     "Gain",
                     config.gain,
                     |it| dispatch(Action::SetFloat(FloatField::Gain, it)),
-                    // TODO: Make gain dB.
-                    0.0..=2.0,
+                    0.0..=20.0,
                 )
                 .with_neutral(1.0),
                 &self.on_release,
@@ -123,8 +122,6 @@ impl Widget for CompressorDisplay<'_> {
         } = *config;
         let max_db = 0.0;
         let min_db = -60.0;
-        // TODO: Make gain dB.
-        let gain = to_db(gain);
         Frame::canvas(ui.style())
             .show(ui, |ui| {
                 let (response, painter) = ui.allocate_painter(size, Sense::click());
