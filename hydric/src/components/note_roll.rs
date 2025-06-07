@@ -1,4 +1,4 @@
-use super::{Piano, PianoOrientation};
+use super::{note_roll_2::{Note as RollNote, NoteRoll2}, Piano, PianoOrientation};
 use crate::{
     GetSet, LocalState,
     playback::AudioPlayer,
@@ -12,8 +12,7 @@ use egui::{
 };
 use mesic::create_scale_values;
 use shared::{
-    model::{Note, PitchName, PlacedNote, PlacementType, Scale, ScaleValue},
-    types::PitchValue,
+    model::{Note, PitchName, PlacedNote, PlacementType, Scale, ScaleValue}, serialize::map_vec, types::PitchValue
 };
 use state::{
     Action, FloatField, GeneratorSelector, MultiIndexField, NoteSelector, SelectorTrait, Store,
@@ -106,6 +105,7 @@ impl View for NoteRoll<'_> {
             offset: offset.into(),
         };
         let notes = store.select(&track_sel).notes.clone();
+
         let white_note_pattern = self.make_white_note_pattern(max_note);
         let unclipped_duration = store.select(&track_sel).unclipped_duration();
         let range = Rect::from_min_max(
@@ -129,6 +129,8 @@ impl View for NoteRoll<'_> {
             WindowKind::NoteRoll,
             &title,
             |ui| {
+                let mut roll_notes: Vec<RollNote> = map_vec(notes.clone());
+                let r = ui.add(NoteRoll2::new(&mut roll_notes));
                 ui.horizontal(|ui| {
                     if ui.button("New note").clicked() {
                         store.dispatch(
