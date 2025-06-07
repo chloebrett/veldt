@@ -7,8 +7,7 @@ message ProjectProto {
 
   repeated TrackProto tracks = 2;
 
-  /// Ordered based on start_position.
-  repeated PlacementProto placements = 3;
+  map<uint32, PlacementProto> placements = 3;
 
   repeated SampleProto samples = 4;
 

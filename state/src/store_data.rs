@@ -72,7 +72,7 @@ impl Default for StoreData {
                     }],
                     offset: OrderedFloat(0.0),
                 }],
-                placements: vec![Placement {
+                placements: HashMap::from([(PlacementId(0), Placement {
                     kind: PlacementType::Track(TrackPlacement {
                         track_index: 0,
                         generator_id: 0.into(),
@@ -80,7 +80,7 @@ impl Default for StoreData {
                     offset: 0.0.into(),
                     clipped_duration: None,
                     visual_placement: 0,
-                }],
+                })]),
                 samples: vec![],
                 generators: HashMap::from([
                     (

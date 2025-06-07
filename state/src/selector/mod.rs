@@ -63,7 +63,7 @@ pub enum Selector {
     Mixer(/* mixer_index */ usize),
     Effect(/* mixer_index */ usize, /* effect_index */ usize),
     Generator(GeneratorId),
-    Placement(/* placement_index */ usize),
+    Placement(PlacementId),
     Sample(/* sample_index */ usize),
     Oscillator(GeneratorId, /* oscillator_index */ usize),
     MixerMatrixCell(/* row */ usize, /* col */ usize),
