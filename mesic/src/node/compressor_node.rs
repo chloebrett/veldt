@@ -37,7 +37,6 @@ impl CompressorNode {
             // TODO: also support using the compressor as a downward expander.
             let pre_gain = compress(*x, db_rms, threshold, ratio_recip);
 
-            // TODO: use dB for makeup gain.
             *x = pre_gain * from_db(self.config.gain)
         }
     }
