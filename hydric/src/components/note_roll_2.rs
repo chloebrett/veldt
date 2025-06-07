@@ -1,6 +1,9 @@
 use std::ops::RangeInclusive;
 
-use egui::{lerp, pos2, remap_clamp, vec2, Pos2, Rangef, Rect, Response, Sense, StrokeKind, Ui, Vec2, Widget};
+use egui::{
+    Pos2, Rangef, Rect, Response, Sense, StrokeKind, Ui, Vec2, Widget, lerp, pos2, remap_clamp,
+    vec2,
+};
 use shared::model::PlacedNote;
 
 const MIN_PITCH_VALUE: i32 = 9;
@@ -22,7 +25,7 @@ impl From<PlacedNote> for Note {
         Self {
             x: object.offset.into(),
             y: pitch_value as f32,
-            duration: object.note.beats
+            duration: object.note.beats,
         }
     }
 }
@@ -186,7 +189,6 @@ impl<'a> NoteRoll2<'a> {
                 StrokeKind::Inside,
             );
         }
-
     }
     fn piano_ui() {}
     fn notes_context_menu() {}

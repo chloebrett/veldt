@@ -1,4 +1,7 @@
-use super::{note_roll_2::{Note as RollNote, NoteRoll2}, Piano, PianoOrientation};
+use super::{
+    Piano, PianoOrientation,
+    note_roll_2::{Note as RollNote, NoteRoll2},
+};
 use crate::{
     GetSet, LocalState,
     playback::AudioPlayer,
@@ -12,7 +15,9 @@ use egui::{
 };
 use mesic::create_scale_values;
 use shared::{
-    model::{Note, PitchName, PlacedNote, PlacementType, Scale, ScaleValue}, serialize::map_vec, types::PitchValue
+    model::{Note, PitchName, PlacedNote, PlacementType, Scale, ScaleValue},
+    serialize::map_vec,
+    types::PitchValue,
 };
 use state::{
     Action, FloatField, GeneratorSelector, MultiIndexField, NoteSelector, SelectorTrait, Store,
