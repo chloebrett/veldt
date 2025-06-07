@@ -86,7 +86,7 @@ impl<F: Fn(Action), G: Fn()> View for CompressorView<'_, F, G> {
                     |it| dispatch(Action::SetFloat(FloatField::Gain, it)),
                     0.0..=20.0,
                 )
-                .with_neutral(1.0),
+                .with_neutral(0.0),
                 &self.on_release,
             );
         });
