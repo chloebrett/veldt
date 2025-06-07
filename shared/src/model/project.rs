@@ -77,7 +77,7 @@ impl Deref for PlacementId {
 impl Project {
     pub fn duration(&self) -> OrderedFloat<f32> {
         let mut max = OrderedFloat(0.0);
-        for (_, placement) in &self.placements {
+        for placement in self.placements.values() {
             if let &Ok(&TrackPlacement { track_index, .. }) = &placement.try_into() {
                 let track = &self.tracks[track_index];
                 let offset = &placement.offset;

@@ -3,7 +3,7 @@ use shared::action_proto::selector_proto::IndexTriple;
 use shared::action_proto::{
     SelectorProto, selector_proto::IndexPair, selector_proto::Kind as SelectorKind,
 };
-use shared::model::GeneratorId;
+use shared::model::{GeneratorId, PlacementId};
 
 mod effect;
 mod envelope;
@@ -83,7 +83,7 @@ impl From<Selector> for SelectorProto {
                 Selector::Mixer(it) => SelectorKind::Mixer(it as u32),
                 Selector::Effect(first, second) => SelectorKind::Effect(pair(first, second)),
                 Selector::Generator(it) => SelectorKind::Generator(it.into()),
-                Selector::Placement(it) => SelectorKind::Placement(it as u32),
+                Selector::Placement(it) => SelectorKind::Placement(it.into()),
                 Selector::Sample(it) => SelectorKind::Sample(it as u32),
                 Selector::Oscillator(first, second) => {
                     SelectorKind::Oscillator(pair(*first, second))
@@ -117,7 +117,7 @@ impl From<SelectorProto> for Selector {
                 Selector::Effect(first as usize, second as usize)
             }
             SelectorKind::Generator(it) => Selector::Generator(it.into()),
-            SelectorKind::Placement(it) => Selector::Placement(it as usize),
+            SelectorKind::Placement(it) => Selector::Placement(it.into()),
             SelectorKind::Sample(it) => Selector::Sample(it as usize),
             SelectorKind::Oscillator(IndexPair { first, second }) => {
                 Selector::Oscillator(first.into(), second as usize)

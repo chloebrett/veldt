@@ -36,7 +36,9 @@ pub fn broadcast_type(action: &Action) -> BroadcastType {
         },
         Action::AddChildren(..) => BroadcastType::Immediate,
         Action::DeleteChild(..) => BroadcastType::Immediate,
+        Action::DeleteChildById(..) => BroadcastType::Immediate,
         Action::DeleteChildren(..) => BroadcastType::Immediate,
+        Action::DeleteChildrenById(..) => BroadcastType::Immediate,
         Action::Release => BroadcastType::Never,
         Action::NonReversible => BroadcastType::Never,
     }

@@ -2,7 +2,7 @@ use shared::action_proto::{
     MultiTypeFieldKind, MultiTypeFieldProto, TypeFieldProto,
     type_field_proto::Kind as TypeFieldKind,
 };
-use shared::model::{EffectInstance, GeneratorInstance, PlacedNote, Placement, Track};
+use shared::model::{EffectInstance, GeneratorInstance, PlacedNote, Placement, Track, PlacementId};
 use strum::{Display, EnumString};
 
 /// Extension of TypeField for working with multiple values.
@@ -13,6 +13,7 @@ pub enum MultiTypeField {
     Placement(Vec<Placement>),
     Effect(Vec<EffectInstance>),
     Generator(Vec<GeneratorInstance>),
+    PlacementId(Vec<PlacementId>),
 }
 
 impl From<MultiTypeFieldProto> for MultiTypeField {
@@ -84,6 +85,19 @@ impl From<MultiTypeFieldProto> for MultiTypeField {
                     })
                     .collect(),
             ),
+            MultiTypeFieldKind::PlacementIdTypeFieldKind => MultiTypeField::PlacementId(
+                object
+                    .values
+                    .iter()
+                    .filter_map(|value| {
+                        if let Some(TypeFieldKind::PlacementId(placement_id)) = &value.kind {
+                            Some((*placement_id).into())
+                        } else {
+                            None
+                        }
+                    })
+                    .collect(),
+            ),
         }
     }
 }
@@ -133,6 +147,15 @@ impl From<MultiTypeField> for MultiTypeFieldProto {
                     .into_iter()
                     .map(|value| TypeFieldProto {
                         kind: Some(TypeFieldKind::Generator(value.into())),
+                    })
+                    .collect(),
+            },
+            MultiTypeField::PlacementId(placement_ids) => Self {
+                kind: MultiTypeFieldKind::PlacementIdTypeFieldKind.into(),
+                values: placement_ids
+                    .into_iter()
+                    .map(|value| TypeFieldProto {
+                        kind: Some(TypeFieldKind::PlacementId(value.into())),
                     })
                     .collect(),
             },
