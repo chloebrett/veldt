@@ -10,15 +10,15 @@ use egui::{
 use mesic::samples_to_beats;
 use ordered_float::OrderedFloat;
 use shared::{
-    model::{Placement, PlacementType, SamplePlacement, Track, TrackPlacement},
+    model::{Placement, PlacementId, PlacementType, SamplePlacement, Track, TrackPlacement},
     types::Beats,
 };
 use state::{
-    Action, FloatField, MultiIndexField, PlacementSelector, SampleSelector, SelectorTrait, Store,
+    Action, FloatField, MultiTypeField, PlacementSelector, SampleSelector, SelectorTrait, Store,
     TrackSelector, TypeField, UintField,
 };
 use std::cmp::max;
-use std::collections::HashSet;
+use std::collections::{HashMap, HashSet};
 
 pub struct TrackRoll<'a> {
     store: &'a Store,
@@ -38,29 +38,35 @@ impl View for TrackRoll<'_> {
 
         // TODO: rename PlacedTrack to something encompassing both tracks and samples.
         // They can be a single object, but just contain a tag/enum specifying which one they are.
-        let placed_tracks: Vec<PlacedTrack> = project
+        let placed_tracks: HashMap<PlacementId, PlacedTrack> = project
             .placements
-            .iter()
-            .map(|placement| match placement.kind {
-                PlacementType::Track(TrackPlacement { track_index, .. }) => PlacedTrack {
-                    unclipped_duration: project.tracks[track_index].unclipped_duration(),
-                    placement: placement.clone(),
-                },
-                PlacementType::Sample(SamplePlacement { sample_index }) => {
-                    let duration = store
-                        .try_select(&SampleSelector(sample_index))
-                        .map(|sample| {
-                            samples_to_beats(
-                                max(sample.left.len(), sample.right.len()),
-                                store.get().project.bpm,
-                            )
-                        })
-                        .unwrap_or(1.0);
-                    PlacedTrack {
-                        unclipped_duration: duration.into(),
-                        placement: placement.clone(),
-                    }
-                }
+            .clone()
+            .into_iter()
+            .map(|(id, placement)| {
+                (
+                    id,
+                    match placement.kind {
+                        PlacementType::Track(TrackPlacement { track_index, .. }) => PlacedTrack {
+                            unclipped_duration: project.tracks[track_index].unclipped_duration(),
+                            placement: placement.clone(),
+                        },
+                        PlacementType::Sample(SamplePlacement { sample_index }) => {
+                            let duration = store
+                                .try_select(&SampleSelector(sample_index))
+                                .map(|sample| {
+                                    samples_to_beats(
+                                        max(sample.left.len(), sample.right.len()),
+                                        store.get().project.bpm,
+                                    )
+                                })
+                                .unwrap_or(1.0);
+                            PlacedTrack {
+                                unclipped_duration: duration.into(),
+                                placement: placement.clone(),
+                            }
+                        }
+                    },
+                )
             })
             .collect();
 
@@ -68,7 +74,7 @@ impl View for TrackRoll<'_> {
         let max_visual_placement = max(
             project
                 .placements
-                .iter()
+                .values()
                 .map(|it| it.visual_placement)
                 .max()
                 .unwrap_or(0),
@@ -132,7 +138,7 @@ struct PlacedTrack {
     unclipped_duration: OrderedFloat<f32>,
 }
 
-impl SequencerObject<PlacedTrack> for PlacedTrack {
+impl SequencerObject<PlacedTrack, PlacementId> for PlacedTrack {
     fn to_pos(&self, range: Rect) -> Pos2 {
         let y = self.placement.visual_placement as f32;
         let x = *self.placement.offset - range.left();
@@ -185,8 +191,8 @@ impl SequencerObject<PlacedTrack> for PlacedTrack {
     }
 
     fn get_active(store: &Store, local_state: &LocalState) -> Option<PlacedTrack> {
-        let index = local_state.active_placement.get()?;
-        let selector = PlacementSelector(index);
+        let id = local_state.active_placement.get()?;
+        let selector = PlacementSelector(id);
         let placement = store.select(&selector);
         let track_placement: Option<&TrackPlacement> = placement.try_into().ok();
         Some(PlacedTrack {
@@ -251,11 +257,11 @@ impl SequencerObject<PlacedTrack> for PlacedTrack {
         ])
     }
 
-    fn selector(index: usize, _parent_index: Option<usize>) -> impl SelectorTrait {
-        PlacementSelector(index)
+    fn selector(id: PlacementId, _parent_index: Option<usize>) -> impl SelectorTrait {
+        PlacementSelector(id)
     }
 
-    fn set_active(&self, local_state: &LocalState, index: usize) {
+    fn set_active(&self, local_state: &LocalState, id: PlacementId) {
         let track_placement: Option<&TrackPlacement> = (&self.placement).try_into().ok();
 
         local_state
@@ -267,20 +273,22 @@ impl SequencerObject<PlacedTrack> for PlacedTrack {
         local_state
             .active_track
             .set(track_placement.map(|it| TrackSelector(it.track_index)));
-        local_state.active_placement.set(Some(index));
+        local_state.active_placement.set(Some(id));
     }
 
-    fn set_selected(local_state: &LocalState, index: Option<usize>) {
-        let Some(index) = index else {
+    fn set_selected(local_state: &LocalState, id: Option<PlacementId>) {
+        // TODO: weird API. Deleting all selections if this is none? Shouldn't we just pass a set
+        // of IDs?
+        let Some(id) = id else {
             local_state.selected_placements.set(HashSet::default());
             return;
         };
 
         local_state.selected_placements.update(|mut it| {
-            if it.contains(&index) {
-                it.remove(&index);
+            if it.contains(&id) {
+                it.remove(&id);
             } else {
-                it.insert(index);
+                it.insert(id);
             }
             it
         });
@@ -314,10 +322,10 @@ impl SequencerObject<PlacedTrack> for PlacedTrack {
             .active_placement
             .update(|placement| match placement {
                 // If the active placement is selected, "de-activate" it.
-                Some(index) if local_state.selected_placements.get().contains(&index) => None,
+                Some(id) if local_state.selected_placements.get().contains(&id) => None,
                 _ => placement,
             });
-        store.dispatchr(Action::DeleteChildren(MultiIndexField::Placement(
+        store.dispatchr(Action::DeleteChildrenById(MultiTypeField::PlacementId(
             local_state.selected_placements.get().into_iter().collect(),
         )));
     }

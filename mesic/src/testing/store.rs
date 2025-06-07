@@ -7,7 +7,7 @@ pub fn empty_store_data() -> StoreData {
         project: Project {
             name: "empty".into(),
             tracks: vec![],
-            placements: vec![],
+            placements: HashMap::new(),
             samples: vec![],
             generators: HashMap::new(),
             mixer: Mixer::default(),

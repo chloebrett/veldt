@@ -117,7 +117,7 @@ impl RenderGraph {
     // If a track placement changes its generator index, stop the old generator from playing.
     fn maybe_stop_generator(&mut self, selector: &Selector, action: &Action) {
         let store = &self.process_context.store;
-        let Selector::Placement(placement_index) = selector else {
+        let Selector::Placement(placement_id) = selector else {
             return;
         };
 
@@ -125,8 +125,7 @@ impl RenderGraph {
             return;
         };
 
-        let PlacementType::Track(track_placement) =
-            &store.project.placements[*placement_index].kind
+        let PlacementType::Track(track_placement) = &store.project.placements[placement_id].kind
         else {
             return;
         };

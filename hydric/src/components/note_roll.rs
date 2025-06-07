@@ -150,7 +150,7 @@ impl View for NoteRoll<'_> {
                                 .get()
                                 .project
                                 .placements
-                                .iter()
+                                .values()
                                 .filter_map(|placement| match &placement.kind {
                                     PlacementType::Track(it) if it.track_index == track_sel.0 => {
                                         Some(it.generator_id)
@@ -171,7 +171,7 @@ impl View for NoteRoll<'_> {
                             .ui(ui);
                             ui.add(
                                 Sequencer::new(store, local_state, range)
-                                    .objects(notes)
+                                    .objects(notes.into_iter().enumerate().collect())
                                     .parent_index(track_sel.0)
                                     .select(select)
                                     .horizontal_rects(
@@ -190,7 +190,7 @@ impl View for NoteRoll<'_> {
     }
 }
 
-impl SequencerObject<PlacedNote> for PlacedNote {
+impl SequencerObject<PlacedNote, usize> for PlacedNote {
     fn to_pos(&self, range: Rect) -> Pos2 {
         let offset: f32 = self.offset.into();
         let y = offset - range.top();
