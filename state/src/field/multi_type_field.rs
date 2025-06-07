@@ -2,7 +2,7 @@ use shared::action_proto::{
     MultiTypeFieldKind, MultiTypeFieldProto, TypeFieldProto,
     type_field_proto::Kind as TypeFieldKind,
 };
-use shared::model::{EffectInstance, GeneratorInstance, PlacedNote, Placement, Track, PlacementId};
+use shared::model::{EffectInstance, GeneratorInstance, PlacedNote, Placement, PlacementId, Track};
 use strum::{Display, EnumString};
 
 /// Extension of TypeField for working with multiple values.

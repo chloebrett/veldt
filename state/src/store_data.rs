@@ -4,8 +4,8 @@ use ordered_float::OrderedFloat;
 use shared::model::{
     AdsrEnvelope, AntiAliasingMode, FileTreeConfig, FilenameTree, Generator, GeneratorId,
     GeneratorInstance, GeneratorMeta, Mixer, MixerChannel, MixerMatrix, NoiseConfig, Note,
-    PitchName, PlacedNote, Placement, PlacementType, PolyphonyMode, Project, Scale, ScaleValue,
-    SimpleWaveConfig, StingrayConfig, Track, TrackPlacement, WaveType, PlacementId
+    PitchName, PlacedNote, Placement, PlacementId, PlacementType, PolyphonyMode, Project, Scale,
+    ScaleValue, SimpleWaveConfig, StingrayConfig, Track, TrackPlacement, WaveType,
 };
 use shared::types::Volume;
 use std::collections::HashMap;
@@ -72,15 +72,18 @@ impl Default for StoreData {
                     }],
                     offset: OrderedFloat(0.0),
                 }],
-                placements: HashMap::from([(PlacementId(0), Placement {
-                    kind: PlacementType::Track(TrackPlacement {
-                        track_index: 0,
-                        generator_id: 0.into(),
-                    }),
-                    offset: 0.0.into(),
-                    clipped_duration: None,
-                    visual_placement: 0,
-                })]),
+                placements: HashMap::from([(
+                    PlacementId(0),
+                    Placement {
+                        kind: PlacementType::Track(TrackPlacement {
+                            track_index: 0,
+                            generator_id: 0.into(),
+                        }),
+                        offset: 0.0.into(),
+                        clipped_duration: None,
+                        visual_placement: 0,
+                    },
+                )]),
                 samples: vec![],
                 generators: HashMap::from([
                     (

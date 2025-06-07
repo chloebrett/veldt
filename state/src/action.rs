@@ -18,12 +18,12 @@ pub enum Action {
     DeleteChild(IndexField),
     // Delete a child object by ID.
     // TODO: ID types live on TypeField, maybe they should have their own enum?
-    DeleteChildById(TypeField), 
+    DeleteChildById(TypeField),
     // Delete multiple children by index.
     DeleteChildren(MultiIndexField),
     // Delete multiple children by ID.
     // TODO: ID types live on TypeField, maybe they should have their own enum?
-    DeleteChildrenById(MultiTypeField), 
+    DeleteChildrenById(MultiTypeField),
     // Set a child object by type.
     SetChild(TypeField),
     // Add a child object by type.

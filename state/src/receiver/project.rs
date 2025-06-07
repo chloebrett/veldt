@@ -1,13 +1,19 @@
 use crate::receiver::ActionReceiver;
 use crate::{Action, FloatField, IndexField, MultiTypeField, TypeField};
-use shared::model::{Project, Placement, PlacementId};
+use shared::model::{Placement, PlacementId, Project};
 use std::collections::HashMap;
 
 impl ActionReceiver for Project {
     fn apply(&mut self, action: &Action) -> Option<Action> {
         Some(match action {
             Action::AddChild(TypeField::Placement(placement)) => {
-                let next_id = *self.placements.clone().into_keys().max().unwrap_or(PlacementId(0)) + 1;
+                let next_id = *self
+                    .placements
+                    .clone()
+                    .into_keys()
+                    .max()
+                    .unwrap_or(PlacementId(0))
+                    + 1;
                 let next_id = PlacementId(next_id);
                 self.placements.insert(next_id, placement.clone());
                 Action::DeleteChildById(TypeField::PlacementId(next_id))
@@ -71,7 +77,13 @@ impl ActionReceiver for Project {
                 // the action. Otherwise, we risk ID references going out of sync when performing
                 // actions and undo/redo.
                 let prev: Vec<Placement> = self.placements.clone().into_values().collect();
-                let mut id = *self.placements.clone().into_keys().max().unwrap_or(PlacementId(0)) + 1;
+                let mut id = *self
+                    .placements
+                    .clone()
+                    .into_keys()
+                    .max()
+                    .unwrap_or(PlacementId(0))
+                    + 1;
                 for placement in placements {
                     self.placements.insert(PlacementId(id), placement.clone());
                     id += 1;
