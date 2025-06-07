@@ -1,6 +1,6 @@
 use crate::receiver::ActionReceiver;
 use crate::{Action, TypeField};
-use shared::model::{SampleId, SamplePlacement};
+use shared::model::SamplePlacement;
 
 impl ActionReceiver for SamplePlacement {
     fn apply(&mut self, action: &Action) -> Option<Action> {

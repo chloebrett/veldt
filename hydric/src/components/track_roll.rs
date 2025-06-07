@@ -47,9 +47,9 @@ impl View for TrackRoll<'_> {
                             unclipped_duration: project.tracks[track_index].unclipped_duration(),
                             placement: placement.clone(),
                         },
-                        PlacementType::Sample(SamplePlacement { sample_index }) => {
+                        PlacementType::Sample(SamplePlacement { sample_id }) => {
                             let duration = store
-                                .try_select(&SampleSelector(sample_index))
+                                .try_select(&SampleSelector(sample_id))
                                 .map(|sample| {
                                     samples_to_beats(
                                         max(sample.left.len(), sample.right.len()),
