@@ -65,7 +65,7 @@ impl WindowData {
         Self {
             visible: false,
             pos,
-            id: Id::new(format!("window_{}_{id_string}", window.to_string())),
+            id: Id::new(format!("window_{window}_{id_string}")),
         }
     }
 }
@@ -148,8 +148,8 @@ impl WindowState {
             .get()
             .project
             .generators
-            .iter()
-            .map(|(id, _)| GeneratorSelector(*id))
+            .keys()
+            .map(|id| GeneratorSelector(*id))
             .collect();
         let store_gens: HashSet<GeneratorSelector> = HashSet::from_iter(generators);
         let gen_windows = self.generator_windows.clone();

@@ -447,13 +447,13 @@ impl<'a> NoteSequencer<'a> {
         for (id, object) in self.objects.iter().enumerate() {
             let movable_id = response.id.with(format!("movable_{:?}", id));
             let movable_resp = ui.interact(
-                make_movable_rect(&object).transform(to_sequencer),
+                make_movable_rect(object).transform(to_sequencer),
                 movable_id,
                 Sense::drag(),
             );
             let resize_id = response.id.with(format!("resize_{:?}", id));
             let resize_resp = ui.interact(
-                make_resize_rect(&object).transform(to_sequencer),
+                make_resize_rect(object).transform(to_sequencer),
                 resize_id,
                 Sense::drag(),
             );

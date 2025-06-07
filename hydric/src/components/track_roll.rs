@@ -11,8 +11,8 @@ use shared::{
     types::Beats,
 };
 use state::{
-    Action, FloatField, MultiTypeField, PlacementSelector, SampleSelector, SelectorTrait, Store,
-    TrackSelector, TypeField, UintField,
+    Action, FloatField, MultiTypeField, PlacementSelector, SampleSelector, Store, TrackSelector,
+    TypeField, UintField,
 };
 use std::cmp::max;
 use std::collections::{HashMap, HashSet};
@@ -154,15 +154,7 @@ impl PlacedTrack {
         Rect::from_min_size(track_pos, track_size)
     }
 
-    fn x_action(&self, x: f32, range: Rect) -> Option<Action> {
-        Some(Action::SetFloat(FloatField::Offset, x - range.left()))
-    }
-
-    fn y_action(&self, y: f32, _range: Rect) -> Option<Action> {
-        Some(Action::SetUint(UintField::VisualPlacement, y as u32))
-    }
-
-    fn resize_action(&self, x: f32, _range: Rect) -> Option<Action> {
+    fn resize_action(&self, x: f32) -> Action {
         let clipped_duration = x - *self.placement.offset;
         let max_note_length = *self.unclipped_duration;
         let clipped_duration = if clipped_duration < max_note_length {
@@ -170,9 +162,7 @@ impl PlacedTrack {
         } else {
             None
         };
-        Some(Action::SetChild(TypeField::ClippedDuration(
-            clipped_duration,
-        )))
+        Action::SetChild(TypeField::ClippedDuration(clipped_duration))
     }
 
     fn shape(&self, range: Rect) -> Shape {
@@ -287,7 +277,7 @@ impl PlacedTrack {
         });
     }
 
-    fn add_new(&self, store: &Store, _parent_index: Option<usize>) {
+    fn add_new(&self, store: &Store) {
         store.dispatchr(Action::AddChild(TypeField::Placement(
             self.placement.clone(),
         )));
@@ -310,7 +300,7 @@ impl PlacedTrack {
         }
     }
 
-    fn delete_selected(store: &Store, local_state: &LocalState, _parent_index: Option<usize>) {
+    fn delete_selected(store: &Store, local_state: &LocalState) {
         local_state
             .active_placement
             .update(|placement| match placement {
@@ -324,16 +314,14 @@ impl PlacedTrack {
     }
 }
 
-pub struct TrackSequencer<'a> {
+struct TrackSequencer<'a> {
     store: &'a Store,
     local_state: &'a LocalState,
     range: Rect,
     size: Vec2,
     objects: HashMap<PlacementId, PlacedTrack>,
-    sense: Sense,
     quantise_level: Beats,
     background_shapes: Vec<Shape>,
-    parent_index: Option<usize>,
     select: bool,
 }
 
@@ -345,10 +333,8 @@ impl<'a> TrackSequencer<'a> {
             range,
             size: vec2(400.0, 600.0),
             objects: HashMap::new(),
-            sense: Sense::drag(),
             quantise_level: 0.125,
             background_shapes: vec![],
-            parent_index: None,
             select: false,
         }
     }
@@ -408,8 +394,6 @@ impl<'a> TrackSequencer<'a> {
     }
 
     fn interact(&self, ui: &mut Ui, response: &Response) {
-        let edit_object =
-            |id: PlacementId, action: Action| self.store.dispatch(&PlacementSelector(id), action);
         let on_release = || self.store.dispatchr(Action::Release);
 
         let make_movable_rect = |object: &PlacedTrack| object.to_rect(self.range);
@@ -429,13 +413,13 @@ impl<'a> TrackSequencer<'a> {
         for (id, object) in &self.objects {
             let movable_id = response.id.with(format!("movable_{:?}", id));
             let movable_resp = ui.interact(
-                make_movable_rect(&object).transform(to_sequencer),
+                make_movable_rect(object).transform(to_sequencer),
                 movable_id,
                 Sense::drag(),
             );
             let resize_id = response.id.with(format!("resize_{:?}", id));
             let resize_resp = ui.interact(
-                make_resize_rect(&object).transform(to_sequencer),
+                make_resize_rect(object).transform(to_sequencer),
                 resize_id,
                 Sense::drag(),
             );
@@ -449,7 +433,8 @@ impl<'a> TrackSequencer<'a> {
             if resize_resp.hovered() {
                 ui.ctx().set_cursor_icon(CursorIcon::ResizeColumn);
             }
-            let release = self.move_object(*id, movable_resp, to_sequencer, &edit_object)
+            let edit_object = |action: Action| self.store.dispatch(&PlacementSelector(*id), action);
+            let release = self.move_object(movable_resp, to_sequencer, &edit_object)
                 || self.resize_object(*id, resize_resp, to_sequencer, &edit_object);
             if release {
                 // TODO: fix release dispatch for move actions.
@@ -466,13 +451,10 @@ impl<'a> TrackSequencer<'a> {
 
     fn move_object(
         &self,
-        id: PlacementId,
         response: Response,
         to_sequencer: RectTransform,
-        // TODO: bind this to the ID instead of passing as a param?
-        edit_object: &impl Fn(PlacementId, Action),
+        edit_object: &impl Fn(Action),
     ) -> bool {
-        let object = self.objects.get(&id).expect("Should have got object.");
         let drag_pos = response.interact_pointer_pos();
         let drag_delta = response.drag_delta();
         if let Some(drag_pos) = drag_pos {
@@ -495,14 +477,16 @@ impl<'a> TrackSequencer<'a> {
                     vec2(f32::INFINITY, self.range.size().y - 1.0).to_pos2(),
                 );
             if drag_delta.y != 0.0 {
-                if let Some(action) = object.y_action(scaled_pos.y, self.range) {
-                    edit_object(id, action);
-                };
+                edit_object(Action::SetUint(
+                    UintField::VisualPlacement,
+                    self.quantise(scaled_pos.y) as u32,
+                ))
             }
             if drag_delta.x != 0.0 {
-                if let Some(action) = object.x_action(self.quantise(scaled_pos.x), self.range) {
-                    edit_object(id, action);
-                };
+                edit_object(Action::SetFloat(
+                    FloatField::Offset,
+                    self.quantise(scaled_pos.x) - self.range.left(),
+                ))
             }
         }
         // Return true when interaction completed.
@@ -514,7 +498,7 @@ impl<'a> TrackSequencer<'a> {
         id: PlacementId,
         response: Response,
         to_sequencer: RectTransform,
-        edit_object: &impl Fn(PlacementId, Action),
+        edit_object: &impl Fn(Action),
     ) -> bool {
         let object = &self.objects[&id];
         let drag_pos = response.interact_pointer_pos();
@@ -523,9 +507,7 @@ impl<'a> TrackSequencer<'a> {
                 pos2(object.to_rect(self.range).left(), 0.0),
                 self.range.size().to_pos2(),
             );
-            if let Some(action) = object.resize_action(self.quantise(scaled_pos.x), self.range) {
-                edit_object(id, action);
-            };
+            edit_object(object.resize_action(self.quantise(scaled_pos.x)));
         }
         // Return true when interaction completed.
         response.lost_focus() || response.drag_stopped()
@@ -550,11 +532,10 @@ impl Widget for TrackSequencer<'_> {
                 store,
                 range,
                 size,
-                sense,
                 select,
                 ..
             } = self;
-            let (response, painter) = ui.allocate_painter(size, sense);
+            let (response, painter) = ui.allocate_painter(size, Sense::drag());
             let to_screen = RectTransform::from_to(
                 Rect::from_min_size(Pos2::ZERO, range.size()),
                 response.rect,
@@ -568,13 +549,13 @@ impl Widget for TrackSequencer<'_> {
                 if ui.input(|input| {
                     input.key_pressed(egui::Key::Delete) || input.key_pressed(egui::Key::Backspace)
                 }) {
-                    PlacedTrack::delete_selected(store, self.local_state, self.parent_index);
+                    PlacedTrack::delete_selected(store, self.local_state);
                     PlacedTrack::set_selected(self.local_state, None);
                 }
             } else if response.interact(Sense::click()).clicked() {
                 let pos = response.interact_pointer_pos().unwrap();
                 let object = PlacedTrack::from_pos(pos.transform(to_screen.inverse()), range);
-                object.add_new(store, self.parent_index);
+                object.add_new(store);
             }
 
             self.interact(ui, &response);
