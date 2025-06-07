@@ -1,6 +1,6 @@
 use crate::receiver::ActionReceiver;
 use crate::{Action, FloatField, IndexField, MultiTypeField, TypeField};
-use shared::model::{Placement, PlacementId, Project};
+use shared::model::{Placement, PlacementId, Project, SampleId};
 use std::collections::HashMap;
 
 impl ActionReceiver for Project {
@@ -38,7 +38,8 @@ impl ActionReceiver for Project {
                 Action::SetFloat(FloatField::Bpm, prev)
             }
             Action::AddChild(TypeField::Sample(sample)) => {
-                self.samples.push(sample.clone());
+                let max_id = self.samples.keys().max().unwrap_or(&SampleId(0));
+                self.samples.insert(SampleId((**max_id)+1), sample.clone());
                 Action::NonReversible
             }
             Action::AddChild(TypeField::Track(track)) => {

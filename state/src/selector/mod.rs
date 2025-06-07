@@ -3,7 +3,7 @@ use shared::action_proto::selector_proto::IndexTriple;
 use shared::action_proto::{
     SelectorProto, selector_proto::IndexPair, selector_proto::Kind as SelectorKind,
 };
-use shared::model::{GeneratorId, PlacementId};
+use shared::model::{GeneratorId, PlacementId, SampleId};
 
 mod effect;
 mod envelope;
@@ -64,7 +64,7 @@ pub enum Selector {
     Effect(/* mixer_index */ usize, /* effect_index */ usize),
     Generator(GeneratorId),
     Placement(PlacementId),
-    Sample(/* sample_index */ usize),
+    Sample(SampleId),
     Oscillator(GeneratorId, /* oscillator_index */ usize),
     MixerMatrixCell(/* row */ usize, /* col */ usize),
     Lfo(GeneratorId, /* lfo_index */ usize),
@@ -84,7 +84,7 @@ impl From<Selector> for SelectorProto {
                 Selector::Effect(first, second) => SelectorKind::Effect(pair(first, second)),
                 Selector::Generator(it) => SelectorKind::Generator(it.into()),
                 Selector::Placement(it) => SelectorKind::Placement(it.into()),
-                Selector::Sample(it) => SelectorKind::Sample(it as u32),
+                Selector::Sample(it) => SelectorKind::Sample(it.into()),
                 Selector::Oscillator(first, second) => {
                     SelectorKind::Oscillator(pair(*first, second))
                 }
@@ -118,7 +118,7 @@ impl From<SelectorProto> for Selector {
             }
             SelectorKind::Generator(it) => Selector::Generator(it.into()),
             SelectorKind::Placement(it) => Selector::Placement(it.into()),
-            SelectorKind::Sample(it) => Selector::Sample(it as usize),
+            SelectorKind::Sample(it) => Selector::Sample(it.into()),
             SelectorKind::Oscillator(IndexPair { first, second }) => {
                 Selector::Oscillator(first.into(), second as usize)
             }

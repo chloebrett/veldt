@@ -84,7 +84,7 @@ impl Default for StoreData {
                         visual_placement: 0,
                     },
                 )]),
-                samples: vec![],
+                samples: HashMap::new(),
                 generators: HashMap::from([
                     (
                         GeneratorId(0),
