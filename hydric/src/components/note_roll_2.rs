@@ -1,7 +1,8 @@
 use std::ops::RangeInclusive;
 
 use egui::{
-    lerp, pos2, remap_clamp, vec2, CornerRadius, Pos2, Rangef, Rect, Response, Sense, StrokeKind, Ui, Vec2, Widget
+    CornerRadius, Pos2, Rangef, Rect, Response, Sense, StrokeKind, Ui, Vec2, Widget, lerp, pos2,
+    remap_clamp, vec2,
 };
 use shared::model::{self, PlacedNote};
 
@@ -34,8 +35,11 @@ impl From<PlacedNote> for Note {
 impl From<Note> for PlacedNote {
     fn from(object: Note) -> Self {
         Self {
-            note: model::Note { pitch_name: (object.y as i32).into(), beats: object.duration },
-            offset: object.x.into()
+            note: model::Note {
+                pitch_name: (object.y as i32).into(),
+                beats: object.duration,
+            },
+            offset: object.x.into(),
         }
     }
 }
@@ -137,10 +141,9 @@ impl<'a> NoteRoll2<'a> {
         let x_position_range = rect.x_range();
         let y_position_range = rect.y_range();
         let note_min = pos2(note.x, note.y);
-        let note_size= vec2(note.duration, -1.0);
+        let note_size = vec2(note.duration, -1.0);
         let min = self.position_from_pos(note_min, x_position_range, y_position_range);
-        let max = self
-            .position_from_pos(note_min + note_size, x_position_range, y_position_range);
+        let max = self.position_from_pos(note_min + note_size, x_position_range, y_position_range);
         Rect::from_min_max(min, max)
     }
 
@@ -156,14 +159,19 @@ impl<'a> NoteRoll2<'a> {
             if resize_rect.x_range().contains(pointer_position.x) {
                 // Note is being resized.
                 let new_position = pos2(rect.right() + delta.x, pointer_position.y);
-                let prev_x = self.pos_from_position(rect.right_top(), x_position_range, y_position_range).x; 
-                let next_x = self.pos_from_position(new_position, x_position_range, y_position_range).x;
+                let prev_x = self
+                    .pos_from_position(rect.right_top(), x_position_range, y_position_range)
+                    .x;
+                let next_x = self
+                    .pos_from_position(new_position, x_position_range, y_position_range)
+                    .x;
                 let duration_delta = next_x - prev_x;
                 self.set_note_duration(index, self.get_note(index).duration + duration_delta);
             } else {
                 // Note is being dragged.
                 let new_position = pos2(rect.left() + delta.x, pointer_position.y);
-                let new_pos = self.pos_from_position(new_position, x_position_range, y_position_range);
+                let new_pos =
+                    self.pos_from_position(new_position, x_position_range, y_position_range);
                 self.set_note_pos(index, new_pos);
             }
         }
@@ -186,7 +194,7 @@ impl<'a> NoteRoll2<'a> {
     fn note_ui(&self, ui: &Ui, response: &Response) {
         let visuals = ui.style().interact(response);
         let widget_visuals = &ui.visuals().widgets;
-        let note_rect = response.rect; 
+        let note_rect = response.rect;
         let centre = note_rect.center();
         let size = note_rect.size() + Vec2::splat(visuals.expansion);
         let rect = Rect::from_center_size(centre, size);
@@ -210,7 +218,8 @@ impl<'a> NoteRoll2<'a> {
             let min = pos2(*duration.start(), pitch);
             let size = vec2(*duration.end(), -1.0);
             let min_position = self.position_from_pos(min, x_position_range, y_position_range);
-            let max_position = self.position_from_pos(min + size, x_position_range, y_position_range);
+            let max_position =
+                self.position_from_pos(min + size, x_position_range, y_position_range);
             log::debug!("{:?} {:?}", min_position, max_position);
             let rect = Rect::from_min_max(min_position, max_position);
             let colour = if white_notes.contains(&(pitch % 12.0)) {
@@ -220,7 +229,6 @@ impl<'a> NoteRoll2<'a> {
             };
             ui.painter().rect_filled(rect, CornerRadius::ZERO, colour);
         }
-
     }
     fn notes_context_menu() {}
     fn roll_context_menu() {}
