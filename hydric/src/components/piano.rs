@@ -1,8 +1,8 @@
 use crate::{
+    components::note_roll::NoteSequencerObject,
     playback::AudioPlayer,
     transform::{Transform, Yx},
     view::View,
-    widget::NoteSequencerObject,
 };
 use egui::{
     Color32, CornerRadius, Frame, Pos2, Rect, Sense, Shape, Stroke, StrokeKind, Ui, Vec2,
