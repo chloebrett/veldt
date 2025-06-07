@@ -169,7 +169,12 @@ impl View for NoteRoll<'_> {
                             .ui(ui);
                             ui.add(
                                 NoteSequencer::new(store, local_state, range)
-                                    .objects(notes)
+                                    .objects(
+                                        notes
+                                            .into_iter()
+                                            .map(|it| NoteSequencerObject(it))
+                                            .collect(),
+                                    )
                                     .parent_index(track_sel.0)
                                     .select(select)
                                     .horizontal_rects(
@@ -188,33 +193,25 @@ impl View for NoteRoll<'_> {
     }
 }
 
-impl NoteSequencerObject for PlacedNote {
-    fn to_pos(&self, range: Rect) -> Pos2 {
-        let offset: f32 = self.offset.into();
+pub struct NoteSequencerObject(pub PlacedNote);
+
+impl NoteSequencerObject {
+    pub fn to_pos(&self, range: Rect) -> Pos2 {
+        let offset: f32 = self.0.offset.into();
         let y = offset - range.top();
-        let pitch_value: PitchValue = self.note.pitch_name.into();
+        let pitch_value: PitchValue = self.0.note.pitch_name.into();
         let x = range.right() as i32 - pitch_value;
         pos2(x as f32, y)
     }
 
     fn to_rect(&self, range: Rect) -> Rect {
         let pos = self.to_pos(range.yx()).yx();
-        let note_size = vec2(self.note.beats, 1.0);
+        let note_size = vec2(self.0.note.beats, 1.0);
         Rect::from_min_size(pos, note_size)
     }
 
-    fn x_action(&self, x: f32, range: Rect) -> Option<Action> {
-        Some(Action::SetFloat(FloatField::Offset, x - range.left()))
-    }
-
-    fn y_action(&self, y: f32, range: Rect) -> Option<Action> {
-        Some(Action::SetChild(TypeField::PitchName(PitchName::from(
-            (range.bottom() - y) as i32,
-        ))))
-    }
-
     fn resize_action(&self, x: f32, _range: Rect) -> Option<Action> {
-        let beats = x - *self.offset;
+        let beats = x - *self.0.offset;
         Some(Action::SetFloat(FloatField::Duration, beats))
     }
 
@@ -222,12 +219,12 @@ impl NoteSequencerObject for PlacedNote {
         Shape::rect_filled(self.to_rect(range), CornerRadius::same(1), Color32::WHITE)
     }
 
-    fn get_active(store: &Store, local_state: &LocalState) -> Option<PlacedNote> {
+    fn get_active(store: &Store, local_state: &LocalState) -> Option<Self> {
         let track_sel = local_state.active_track.get()?;
         local_state.active_note.get().map(|note_index| {
             let sel: NoteSelector = track_sel.downcast_note(note_index);
             let note: &PlacedNote = store.select(&sel);
-            note.clone()
+            NoteSequencerObject(note.clone())
         })
     }
 
@@ -246,7 +243,7 @@ impl NoteSequencerObject for PlacedNote {
         ])
     }
 
-    fn get_selected(store: &Store, local_state: &LocalState) -> Vec<PlacedNote> {
+    fn get_selected(store: &Store, local_state: &LocalState) -> Vec<Self> {
         let Some(track_sel) = local_state.active_track.get() else {
             return vec![];
         };
@@ -257,7 +254,7 @@ impl NoteSequencerObject for PlacedNote {
             .map(|note_index| {
                 let sel: NoteSelector = track_sel.downcast_note(note_index);
                 let note: &PlacedNote = store.select(&sel);
-                note.clone()
+                NoteSequencerObject(note.clone())
             })
             .collect()
     }
@@ -309,20 +306,20 @@ impl NoteSequencerObject for PlacedNote {
     fn add_new(&self, store: &Store, parent_index: Option<usize>) {
         store.dispatch(
             &TrackSelector(parent_index.expect("Should have been track index.")),
-            Action::AddChild(TypeField::PlacedNote(self.clone())),
+            Action::AddChild(TypeField::PlacedNote(self.0.clone())),
         );
     }
 
-    fn from_pos(pos: Pos2, range: Rect) -> PlacedNote {
+    fn from_pos(pos: Pos2, range: Rect) -> Self {
         let offset = pos.x + range.left();
         let pitch_value: PitchValue = (range.bottom() - pos.y) as i32;
-        PlacedNote {
+        NoteSequencerObject(PlacedNote {
             note: Note {
                 pitch_name: pitch_value.into(),
                 beats: 1.0,
             },
             offset: offset.into(),
-        }
+        })
     }
 
     fn delete_selected(store: &Store, local_state: &LocalState, parent_index: Option<usize>) {
@@ -345,7 +342,7 @@ pub struct NoteSequencer<'a> {
     local_state: &'a LocalState,
     range: Rect,
     size: Vec2,
-    objects: Vec<PlacedNote>,
+    objects: Vec<NoteSequencerObject>,
     sense: Sense,
     quantise_level: Beats,
     background_shapes: Vec<Shape>,
@@ -370,7 +367,7 @@ impl<'a> NoteSequencer<'a> {
     }
 
     #[inline]
-    pub fn objects(mut self, objects: Vec<PlacedNote>) -> Self {
+    pub fn objects(mut self, objects: Vec<NoteSequencerObject>) -> Self {
         self.objects = objects;
         self
     }
@@ -425,13 +422,15 @@ impl<'a> NoteSequencer<'a> {
 
     fn interact(&self, ui: &mut Ui, response: &Response) {
         let edit_object = |index: usize, action: Action| {
-            self.store
-                .dispatch(&PlacedNote::selector(index, self.parent_index), action)
+            self.store.dispatch(
+                &NoteSequencerObject::selector(index, self.parent_index),
+                action,
+            )
         };
         let on_release = || self.store.dispatchr(Action::Release);
 
-        let make_movable_rect = |object: &PlacedNote| object.to_rect(self.range);
-        let make_resize_rect = |object: &PlacedNote| {
+        let make_movable_rect = |object: &NoteSequencerObject| object.to_rect(self.range);
+        let make_resize_rect = |object: &NoteSequencerObject| {
             let rect = object.to_rect(self.range);
             // Width of window where shape can be grabbed to resize.
             let x_size = 0.3;
@@ -459,7 +458,7 @@ impl<'a> NoteSequencer<'a> {
             );
             if self.select {
                 if movable_resp.interact(Sense::click()).clicked() {
-                    PlacedNote::set_selected(self.local_state, Some(id));
+                    NoteSequencerObject::set_selected(self.local_state, Some(id));
                 }
             } else if movable_resp.interact(Sense::click()).double_clicked() {
                 object.set_active(self.local_state, id);
@@ -490,7 +489,6 @@ impl<'a> NoteSequencer<'a> {
         // TODO: bind this to the ID instead of passing as a param?
         edit_object: &impl Fn(usize, Action),
     ) -> bool {
-        let object = self.objects.get(index).expect("Should have got object.");
         let drag_pos = response.interact_pointer_pos();
         let drag_delta = response.drag_delta();
         if let Some(drag_pos) = drag_pos {
@@ -513,14 +511,21 @@ impl<'a> NoteSequencer<'a> {
                     vec2(f32::INFINITY, self.range.size().y - 1.0).to_pos2(),
                 );
             if drag_delta.y != 0.0 {
-                if let Some(action) = object.y_action(scaled_pos.y, self.range) {
-                    edit_object(index, action);
-                };
+                edit_object(
+                    index,
+                    Action::SetChild(TypeField::PitchName(PitchName::from(
+                        (self.range.bottom() - scaled_pos.y) as i32,
+                    ))),
+                )
             }
             if drag_delta.x != 0.0 {
-                if let Some(action) = object.x_action(self.quantise(scaled_pos.x), self.range) {
-                    edit_object(index, action);
-                };
+                edit_object(
+                    index,
+                    Action::SetFloat(
+                        FloatField::Offset,
+                        self.quantise(scaled_pos.x) - self.range.left(),
+                    ),
+                )
             }
         }
         // Return true when interaction completed.
@@ -581,17 +586,22 @@ impl Widget for NoteSequencer<'_> {
             // If user double clicks outside of an object remove all objects from selection.
             if select {
                 if response.interact(Sense::click()).double_clicked() {
-                    PlacedNote::set_selected(self.local_state, None)
+                    NoteSequencerObject::set_selected(self.local_state, None)
                 }
                 if ui.input(|input| {
                     input.key_pressed(egui::Key::Delete) || input.key_pressed(egui::Key::Backspace)
                 }) {
-                    PlacedNote::delete_selected(store, self.local_state, self.parent_index);
-                    PlacedNote::set_selected(self.local_state, None);
+                    NoteSequencerObject::delete_selected(
+                        store,
+                        self.local_state,
+                        self.parent_index,
+                    );
+                    NoteSequencerObject::set_selected(self.local_state, None);
                 }
             } else if response.interact(Sense::click()).clicked() {
                 let pos = response.interact_pointer_pos().unwrap();
-                let object = PlacedNote::from_pos(pos.transform(to_screen.inverse()), range);
+                let object =
+                    NoteSequencerObject::from_pos(pos.transform(to_screen.inverse()), range);
                 object.add_new(store, self.parent_index);
             }
 
@@ -600,11 +610,11 @@ impl Widget for NoteSequencer<'_> {
             painter.extend(self.background_shapes.clone().transform(to_screen));
             painter.add(self.object_shapes().transform(to_screen));
 
-            if let Some(object) = PlacedNote::get_active(self.store, self.local_state) {
+            if let Some(object) = NoteSequencerObject::get_active(self.store, self.local_state) {
                 painter.add(object.active_shape(range).transform(to_screen));
             }
 
-            let objects = PlacedNote::get_selected(self.store, self.local_state);
+            let objects = NoteSequencerObject::get_selected(self.store, self.local_state);
             if !objects.is_empty() {
                 painter.extend(
                     objects
@@ -618,38 +628,4 @@ impl Widget for NoteSequencer<'_> {
 
         res.unwrap()
     }
-}
-
-pub trait NoteSequencerObject {
-    fn to_pos(&self, range: Rect) -> Pos2;
-
-    fn to_rect(&self, range: Rect) -> Rect;
-
-    fn from_pos(pos: Pos2, rect: Rect) -> PlacedNote;
-
-    fn x_action(&self, x: f32, range: Rect) -> Option<Action>;
-
-    fn y_action(&self, y: f32, range: Rect) -> Option<Action>;
-
-    fn resize_action(&self, x: f32, range: Rect) -> Option<Action>;
-
-    fn shape(&self, range: Rect) -> Shape;
-
-    fn get_active(store: &Store, local_state: &LocalState) -> Option<PlacedNote>;
-
-    fn active_shape(&self, range: Rect) -> Shape;
-
-    fn get_selected(store: &Store, local_state: &LocalState) -> Vec<PlacedNote>;
-
-    fn selected_shape(&self, range: Rect) -> Shape;
-
-    fn selector(id: usize, parent_index: Option<usize>) -> impl SelectorTrait;
-
-    fn set_active(&self, local_state: &LocalState, id: usize);
-
-    fn set_selected(local_state: &LocalState, id: Option<usize>);
-
-    fn add_new(&self, store: &Store, parent_index: Option<usize>);
-
-    fn delete_selected(store: &Store, local_state: &LocalState, parent_index: Option<usize>);
 }
