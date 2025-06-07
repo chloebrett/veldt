@@ -37,9 +37,9 @@ impl Node<ProcessContext> for SampleNode {
             log::error!("Placement wasn't a sample placement: {:?}", self.sel);
             return;
         };
-        let sample_sel = SampleSelector(sample_placement.sample_index);
+        let sample_sel = SampleSelector(sample_placement.sample_id);
         let Some(sample) = &store.try_select(&sample_sel) else {
-            log::error!("Sample doesn't exist: {:?}", sample_placement.sample_index);
+            log::error!("Sample doesn't exist: {:?}", sample_placement.sample_id);
             return;
         };
 

@@ -39,7 +39,8 @@ impl ActionReceiver for Project {
             }
             Action::AddChild(TypeField::Sample(sample)) => {
                 let max_id = self.samples.keys().max().unwrap_or(&SampleId(0));
-                self.samples.insert(SampleId((**max_id)+1), sample.clone());
+                self.samples
+                    .insert(SampleId((**max_id) + 1), sample.clone());
                 Action::NonReversible
             }
             Action::AddChild(TypeField::Track(track)) => {

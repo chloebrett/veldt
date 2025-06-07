@@ -65,7 +65,7 @@ message TrackPlacementProto {
 }
 
 message SamplePlacementProto {
-  uint32 sample_index = 1;
+  uint32 sample_id = 1;
 }
 
 message SampleProto {

@@ -8,7 +8,7 @@ pub fn empty_store_data() -> StoreData {
             name: "empty".into(),
             tracks: vec![],
             placements: HashMap::new(),
-            samples: vec![],
+            samples: HashMap::new(),
             generators: HashMap::new(),
             mixer: Mixer::default(),
             bpm: 120.0,
