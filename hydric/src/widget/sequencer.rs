@@ -5,13 +5,17 @@ use egui::{
 };
 use shared::types::Beats;
 use state::{Action, SelectorTrait, Store};
+use std::cmp::Eq;
+use std::collections::HashMap;
+use std::fmt::Debug;
+use std::hash::Hash;
 
-pub struct Sequencer<'a, T: SequencerObject<T>> {
+pub struct Sequencer<'a, T: SequencerObject<T, U>, U: Debug + Eq + Hash + Copy> {
     store: &'a Store,
     local_state: &'a LocalState,
     range: Rect,
     size: Vec2,
-    objects: Vec<T>,
+    objects: HashMap<U, T>,
     sense: Sense,
     quantise_level: Beats,
     // A closure to modify object in Store. Takes object index and `Action` to dispatch change.
@@ -20,14 +24,14 @@ pub struct Sequencer<'a, T: SequencerObject<T>> {
     select: bool,
 }
 
-impl<'a, T: SequencerObject<T>> Sequencer<'a, T> {
+impl<'a, T: SequencerObject<T, U>, U: Debug + Eq + Hash + Copy> Sequencer<'a, T, U> {
     pub fn new(store: &'a Store, local_state: &'a LocalState, range: Rect) -> Self {
         Sequencer {
             store,
             local_state,
             range,
             size: vec2(400.0, 600.0),
-            objects: vec![],
+            objects: HashMap::new(),
             sense: Sense::drag(),
             quantise_level: 0.125,
             background_shapes: vec![],
@@ -37,7 +41,7 @@ impl<'a, T: SequencerObject<T>> Sequencer<'a, T> {
     }
 
     #[inline]
-    pub fn objects(mut self, objects: Vec<T>) -> Self {
+    pub fn objects(mut self, objects: HashMap<U, T>) -> Self {
         self.objects = objects;
         self
     }
@@ -96,9 +100,9 @@ impl<'a, T: SequencerObject<T>> Sequencer<'a, T> {
     }
 
     fn interact(&self, ui: &mut Ui, response: &Response) {
-        let edit_object = |index: usize, action: Action| {
+        let edit_object = |id: U, action: Action| {
             self.store
-                .dispatch(&T::selector(index, self.parent_index), action)
+                .dispatch(&T::selector(id, self.parent_index), action)
         };
         let on_release = || self.store.dispatchr(Action::Release);
 
@@ -116,31 +120,31 @@ impl<'a, T: SequencerObject<T>> Sequencer<'a, T> {
             Rect::from_min_size(Pos2::ZERO, self.range.size()),
             response.rect,
         );
-        for (index, object) in self.objects.iter().enumerate() {
-            let movable_id = response.id.with(format!("movable_{}", index));
+        for (id, object) in &self.objects {
+            let movable_id = response.id.with(format!("movable_{:?}", id));
             let movable_resp = ui.interact(
-                make_movable_rect(object).transform(to_sequencer),
+                make_movable_rect(&object).transform(to_sequencer),
                 movable_id,
                 Sense::drag(),
             );
-            let resize_id = response.id.with(format!("resize_{}", index));
+            let resize_id = response.id.with(format!("resize_{:?}", id));
             let resize_resp = ui.interact(
-                make_resize_rect(object).transform(to_sequencer),
+                make_resize_rect(&object).transform(to_sequencer),
                 resize_id,
                 Sense::drag(),
             );
             if self.select {
                 if movable_resp.interact(Sense::click()).clicked() {
-                    T::set_selected(self.local_state, Some(index));
+                    T::set_selected(self.local_state, Some(*id));
                 }
             } else if movable_resp.interact(Sense::click()).double_clicked() {
-                object.set_active(self.local_state, index);
+                object.set_active(self.local_state, *id);
             }
             if resize_resp.hovered() {
                 ui.ctx().set_cursor_icon(CursorIcon::ResizeColumn);
             }
-            let release = self.move_object(index, movable_resp, to_sequencer, &edit_object)
-                || self.resize_object(index, resize_resp, to_sequencer, &edit_object);
+            let release = self.move_object(*id, movable_resp, to_sequencer, &edit_object)
+                || self.resize_object(*id, resize_resp, to_sequencer, &edit_object);
             if release {
                 // TODO: fix release dispatch for move actions.
                 // Compaction doesn't work properly because we have separate x and y actions.
@@ -156,12 +160,13 @@ impl<'a, T: SequencerObject<T>> Sequencer<'a, T> {
 
     fn move_object(
         &self,
-        index: usize,
+        id: U,
         response: Response,
         to_sequencer: RectTransform,
-        edit_object: &impl Fn(usize, Action),
+        // TODO: bind this to the ID instead of passing as a param?
+        edit_object: &impl Fn(U, Action),
     ) -> bool {
-        let object = self.objects.get(index).expect("Should have got object.");
+        let object = self.objects.get(&id).expect("Should have got object.");
         let drag_pos = response.interact_pointer_pos();
         let drag_delta = response.drag_delta();
         if let Some(drag_pos) = drag_pos {
@@ -185,12 +190,12 @@ impl<'a, T: SequencerObject<T>> Sequencer<'a, T> {
                 );
             if drag_delta.y != 0.0 {
                 if let Some(action) = object.y_action(scaled_pos.y, self.range) {
-                    edit_object(index, action);
+                    edit_object(id, action);
                 };
             }
             if drag_delta.x != 0.0 {
                 if let Some(action) = object.x_action(self.quantise(scaled_pos.x), self.range) {
-                    edit_object(index, action);
+                    edit_object(id, action);
                 };
             }
         }
@@ -200,12 +205,12 @@ impl<'a, T: SequencerObject<T>> Sequencer<'a, T> {
 
     fn resize_object(
         &self,
-        index: usize,
+        id: U,
         response: Response,
         to_sequencer: RectTransform,
-        edit_object: &impl Fn(usize, Action),
+        edit_object: &impl Fn(U, Action),
     ) -> bool {
-        let object = &self.objects[index];
+        let object = &self.objects[&id];
         let drag_pos = response.interact_pointer_pos();
         if let Some(drag_pos) = drag_pos {
             let scaled_pos = drag_pos.transform(to_sequencer.inverse()).clamp(
@@ -213,7 +218,7 @@ impl<'a, T: SequencerObject<T>> Sequencer<'a, T> {
                 self.range.size().to_pos2(),
             );
             if let Some(action) = object.resize_action(self.quantise(scaled_pos.x), self.range) {
-                edit_object(index, action);
+                edit_object(id, action);
             };
         }
         // Return true when interaction completed.
@@ -223,14 +228,14 @@ impl<'a, T: SequencerObject<T>> Sequencer<'a, T> {
     fn object_shapes(&self) -> Shape {
         Shape::Vec(
             self.objects
-                .iter()
+                .values()
                 .map(|object| object.shape(self.range))
                 .collect(),
         )
     }
 }
 
-impl<T: SequencerObject<T>> Widget for Sequencer<'_, T> {
+impl<T: SequencerObject<T, U>, U: Debug + Eq + Hash + Copy> Widget for Sequencer<'_, T, U> {
     fn ui(self, ui: &mut Ui) -> Response {
         let mut res: Option<Response> = None;
 
@@ -291,7 +296,8 @@ impl<T: SequencerObject<T>> Widget for Sequencer<'_, T> {
     }
 }
 
-pub trait SequencerObject<T> {
+// TODO: parameterize based on type of the ID.
+pub trait SequencerObject<T, U> {
     fn to_pos(&self, range: Rect) -> Pos2;
 
     fn to_rect(&self, range: Rect) -> Rect;
@@ -314,11 +320,11 @@ pub trait SequencerObject<T> {
 
     fn selected_shape(&self, range: Rect) -> Shape;
 
-    fn selector(index: usize, parent_index: Option<usize>) -> impl SelectorTrait;
+    fn selector(id: U, parent_index: Option<usize>) -> impl SelectorTrait;
 
-    fn set_active(&self, local_state: &LocalState, index: usize);
+    fn set_active(&self, local_state: &LocalState, id: U);
 
-    fn set_selected(local_state: &LocalState, index: Option<usize>);
+    fn set_selected(local_state: &LocalState, id: Option<U>);
 
     fn add_new(&self, store: &Store, parent_index: Option<usize>);
 

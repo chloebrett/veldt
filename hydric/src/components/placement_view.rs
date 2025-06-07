@@ -5,7 +5,9 @@ use crate::{GetSet, LocalState};
 use egui::Ui;
 use mesic::samples_to_beats;
 use ordered_float::OrderedFloat;
-use shared::model::{Placement, PlacementType, SamplePlacement, Track, TrackPlacement};
+use shared::model::{
+    Placement, PlacementId, PlacementType, SamplePlacement, Track, TrackPlacement,
+};
 use shared::types::Beats;
 use state::{
     Action, FloatField, IndexField, PlacementSelector, SampleSelector, Store, TrackSelector,
@@ -25,14 +27,14 @@ impl<'a> PlacementView<'a> {
 
     fn track_placement_ui(
         ui: &mut Ui,
-        placement_index: usize,
+        placement_id: PlacementId,
         placement: &Placement,
         track_placement: &TrackPlacement,
         tracks_length: usize,
         sel: &PlacementSelector,
         store: &Store,
     ) {
-        egui::ComboBox::from_id_salt(format!("placement_{placement_index}_track"))
+        egui::ComboBox::from_id_salt(format!("placement_{:?}_track", placement_id))
             .selected_text(format!("Track {}", track_placement.track_index))
             .show_ui(ui, |ui| {
                 for track_index in 0..tracks_length {
@@ -47,7 +49,7 @@ impl<'a> PlacementView<'a> {
                 }
             });
 
-        egui::ComboBox::from_id_salt(format!("placement_{placement_index}_generator"))
+        egui::ComboBox::from_id_salt(format!("placement_{:?}_generator", placement_id))
             .selected_text(format!("Generator ID {}", *track_placement.generator_id))
             .show_ui(ui, |ui| {
                 let mut generators: Vec<_> = store.get().project.generators.keys().collect();
@@ -76,7 +78,7 @@ impl<'a> PlacementView<'a> {
 
     fn sample_placement_ui(
         ui: &mut Ui,
-        placement_index: usize,
+        placement_id: PlacementId,
         placement: &Placement,
         sample_placement: &SamplePlacement,
         sel: &PlacementSelector,
@@ -84,7 +86,7 @@ impl<'a> PlacementView<'a> {
     ) {
         let samples_length = store.get().project.samples.len();
 
-        egui::ComboBox::from_id_salt(format!("placement_{placement_index}"))
+        egui::ComboBox::from_id_salt(format!("placement_{:?}", placement_id))
             .selected_text(format!("Sample {}", sample_placement.sample_index))
             .show_ui(ui, |ui| {
                 for sample_index in 0..samples_length {
@@ -148,14 +150,15 @@ impl<'a> PlacementView<'a> {
 impl View for PlacementView<'_> {
     fn ui(&mut self, ui: &mut Ui) {
         let store = &self.store;
-        let Some(placement_index): Option<usize> = self.local_state.active_placement.get() else {
+        let Some(placement_id): Option<PlacementId> = self.local_state.active_placement.get()
+        else {
             return;
         };
         let on_release = || store.dispatchr(Action::Release);
-        let placement = &store.get().project.placements[placement_index];
+        let placement = &store.get().project.placements[&placement_id];
         let tracks_length = store.get().project.tracks.len();
-        let sel = PlacementSelector(placement_index);
-        let title = format!("Placement {placement_index}");
+        let sel = PlacementSelector(placement_id);
+        let title = format!("Placement {:?}", placement_id);
         StateWindow::show_from_window_state(
             ui,
             &self.local_state.window_state,
@@ -166,9 +169,9 @@ impl View for PlacementView<'_> {
                     PlacementType::Track(track_placement) => {
                         Self::track_placement_ui(
                             ui,
-                            placement_index,
+                            placement_id,
                             placement,
-                            track_placement,
+                            &track_placement,
                             tracks_length,
                             &sel,
                             store,
@@ -177,9 +180,9 @@ impl View for PlacementView<'_> {
                     PlacementType::Sample(sample_placement) => {
                         Self::sample_placement_ui(
                             ui,
-                            placement_index,
+                            placement_id,
                             placement,
-                            sample_placement,
+                            &sample_placement,
                             &sel,
                             store,
                         );
@@ -208,13 +211,15 @@ impl View for PlacementView<'_> {
                 );
 
                 if ui.button("Delete").clicked() {
-                    store.dispatchr(Action::DeleteChild(IndexField::Placement(placement_index)));
+                    store.dispatchr(Action::DeleteChildById(TypeField::PlacementId(
+                        placement_id,
+                    )));
                     self.local_state
                         .window_state
                         .set_visible(WindowKind::Placement, false);
                     self.local_state.active_placement.set(None);
                     self.local_state.selected_placements.update(|mut it| {
-                        it.remove(&placement_index);
+                        it.remove(&placement_id);
                         it
                     });
                 }
