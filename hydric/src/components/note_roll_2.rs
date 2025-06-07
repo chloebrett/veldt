@@ -1,8 +1,7 @@
 use std::ops::RangeInclusive;
 
 use egui::{
-    CornerRadius, Pos2, Rangef, Rect, Response, Sense, StrokeKind, Ui, Vec2, Widget, lerp, pos2,
-    remap_clamp, vec2,
+    lerp, pos2, remap_clamp, vec2, CornerRadius, CursorIcon, Pos2, Rangef, Rect, Response, Sense, StrokeKind, Ui, Vec2, Widget
 };
 use shared::model::{self, PlacedNote};
 
@@ -147,42 +146,47 @@ impl<'a> NoteRoll2<'a> {
         Rect::from_min_max(min, max)
     }
 
-    fn note_drag(&mut self, response: &Response, roll_response: &Response, index: usize) {
+    fn note_drag(&mut self, roll_response: &Response, response: &Response, index: usize) {
         let rect = response.rect;
-        // Split rect for drag and resize portions.
-        let drag_resize_ratio = 0.8;
-        let (_, resize_rect) = rect.split_left_right_at_fraction(drag_resize_ratio);
         let x_position_range = roll_response.rect.x_range();
         let y_position_range = roll_response.rect.y_range();
         if let Some(pointer_position) = response.interact_pointer_pos() {
             let delta = response.drag_delta();
-            if resize_rect.x_range().contains(pointer_position.x) {
-                // Note is being resized.
-                let new_position = pos2(rect.right() + delta.x, pointer_position.y);
-                let prev_x = self
-                    .pos_from_position(rect.right_top(), x_position_range, y_position_range)
-                    .x;
-                let next_x = self
-                    .pos_from_position(new_position, x_position_range, y_position_range)
-                    .x;
-                let duration_delta = next_x - prev_x;
-                self.set_note_duration(index, self.get_note(index).duration + duration_delta);
-            } else {
-                // Note is being dragged.
-                let new_position = pos2(rect.left() + delta.x, pointer_position.y);
-                let new_pos =
-                    self.pos_from_position(new_position, x_position_range, y_position_range);
-                self.set_note_pos(index, new_pos);
-            }
+            let new_position = pos2(rect.left() + delta.x, pointer_position.y);
+            let new_pos = self.pos_from_position(new_position, x_position_range, y_position_range);
+            self.set_note_pos(index, new_pos);
+        }
+    }
+
+    fn note_resize(&mut self, roll_response: &Response, response: &Response, index: usize) {
+        let rect = response.rect;
+        let x_position_range = roll_response.rect.x_range();
+        let y_position_range = roll_response.rect.y_range();
+        if let Some(pointer_position) = response.interact_pointer_pos() {
+            let delta = response.drag_delta();
+            let new_position = pos2(rect.right() + delta.x, pointer_position.y);
+            let prev_x = self
+                .pos_from_position(rect.right_top(), x_position_range, y_position_range)
+                .x;
+            let next_x = self
+                .pos_from_position(new_position, x_position_range, y_position_range)
+                .x;
+            let duration_delta = next_x - prev_x;
+            self.set_note_duration(index, self.get_note(index).duration + duration_delta);
         }
     }
 
     fn note_interact(&mut self, ui: &mut Ui, response: &Response, index: usize) {
         let rect = self.note_rect(&response.rect, index);
-        let note_id = response.id.with(index);
-        let note_response = ui.interact(rect, note_id, Sense::drag());
-        self.note_drag(&note_response, &response, index);
-        self.note_ui(ui, &note_response);
+        let drag_id = response.id.with(format!("drag_{index}"));
+        let resize_id = response.id.with(format!("resize_{index}"));
+        let drag_resize_split = 0.8;
+        let (drag_rect, resize_rect) = rect.split_left_right_at_fraction(0.8);
+        let drag_response = ui.interact(drag_rect, drag_id, Sense::drag());
+        let resize_response = ui.interact(resize_rect, resize_id, Sense::drag());
+        self.note_drag(&response, &drag_response, index);
+        self.note_resize(&response, &resize_response, index);
+        self.note_ui(ui, &rect, &drag_response, &resize_response);
     }
 
     fn notes_interact(&mut self, ui: &mut Ui, response: &Response) {
@@ -191,12 +195,20 @@ impl<'a> NoteRoll2<'a> {
         }
     }
 
-    fn note_ui(&self, ui: &Ui, response: &Response) {
-        let visuals = ui.style().interact(response);
-        let widget_visuals = &ui.visuals().widgets;
-        let note_rect = response.rect;
-        let centre = note_rect.center();
-        let size = note_rect.size() + Vec2::splat(visuals.expansion);
+    fn note_ui(&self, ui: &Ui, rect: &Rect, drag_response: &Response, resize_response: &Response) {
+        let active = |response: &Response| {
+            response.is_pointer_button_down_on() || response.has_focus() || response.clicked()
+        };
+        let hovered = |response: &Response| response.hovered() || response.highlighted();
+        let visuals = &if active(drag_response) || active(resize_response) {
+            ui.style().visuals.widgets.active
+        } else if hovered(drag_response) || hovered(resize_response) {
+            ui.style().visuals.widgets.hovered
+        } else {
+            ui.style().visuals.widgets.inactive
+        };
+        let centre = rect.center();
+        let size = rect.size() + Vec2::splat(visuals.expansion);
         let rect = Rect::from_center_size(centre, size);
         ui.painter().rect(
             rect,
@@ -205,6 +217,9 @@ impl<'a> NoteRoll2<'a> {
             visuals.fg_stroke,
             StrokeKind::Inside,
         );
+        if resize_response.hovered() {
+            ui.ctx().set_cursor_icon(CursorIcon::ResizeColumn);
+        }
     }
 
     fn background_ui(&self, ui: &Ui, response: &Response) {
@@ -220,7 +235,6 @@ impl<'a> NoteRoll2<'a> {
             let min_position = self.position_from_pos(min, x_position_range, y_position_range);
             let max_position =
                 self.position_from_pos(min + size, x_position_range, y_position_range);
-            log::debug!("{:?} {:?}", min_position, max_position);
             let rect = Rect::from_min_max(min_position, max_position);
             let colour = if white_notes.contains(&(pitch % 12.0)) {
                 ui.style().visuals.faint_bg_color
