@@ -137,7 +137,7 @@ impl View for NoteRoll<'_> {
                 ui.horizontal(|ui| {
                     Piano::new(
                         max_note,
-                        min_note,
+                        min_note-1,
                         PianoOrientation::Vertical,
                         vec2(600.0, 50.0),
                         None,
@@ -145,7 +145,7 @@ impl View for NoteRoll<'_> {
                     )
                     .ui(ui);
                     let mut roll_notes: Vec<RollNote> = map_vec(notes.clone());
-                    ui.add(NoteRoll2::new(&mut roll_notes));
+                    ui.add(NoteRoll2::new(&mut roll_notes).range(range.y_range().max..=range.y_range().min).duration(range.x_range()));
                     let next_notes: Vec<PlacedNote> = map_vec(roll_notes);
                     store.dispatch(
                         &track_sel,

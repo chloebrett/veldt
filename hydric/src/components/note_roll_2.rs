@@ -1,11 +1,10 @@
 use std::ops::RangeInclusive;
 
 use egui::{
-    lerp, pos2, remap_clamp, vec2, CornerRadius, CursorIcon, Pos2, Rangef, Rect, Response, Sense, StrokeKind, Ui, Vec2, Widget
+    CornerRadius, CursorIcon, Pos2, Rangef, Rect, Response, Sense, StrokeKind, Ui, Vec2, Widget,
+    lerp, pos2, remap_clamp, vec2,
 };
 use shared::model::{self, PlacedNote};
-
-use super::piano::Piano;
 
 const MIN_PITCH_VALUE: i32 = 9;
 
@@ -61,14 +60,14 @@ impl<'a> NoteRoll2<'a> {
     }
 
     #[inline]
-    pub fn range(mut self, range: RangeInclusive<f32>) -> Self {
-        self.range = range;
+    pub fn range(mut self, range: impl Into<RangeInclusive<f32>>) -> Self {
+        self.range = range.into();
         self
     }
 
     #[inline]
-    pub fn duration(mut self, duration: RangeInclusive<f32>) -> Self {
-        self.duration = duration;
+    pub fn duration(mut self, duration: impl Into<RangeInclusive<f32>>) -> Self {
+        self.duration = duration.into();
         self
     }
 
@@ -181,7 +180,7 @@ impl<'a> NoteRoll2<'a> {
         let drag_id = response.id.with(format!("drag_{index}"));
         let resize_id = response.id.with(format!("resize_{index}"));
         let drag_resize_split = 0.8;
-        let (drag_rect, resize_rect) = rect.split_left_right_at_fraction(0.8);
+        let (drag_rect, resize_rect) = rect.split_left_right_at_fraction(drag_resize_split);
         let drag_response = ui.interact(drag_rect, drag_id, Sense::drag());
         let resize_response = ui.interact(resize_rect, resize_id, Sense::drag());
         self.note_drag(&response, &drag_response, index);
