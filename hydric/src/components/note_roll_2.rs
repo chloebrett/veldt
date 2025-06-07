@@ -1,10 +1,11 @@
 use std::ops::RangeInclusive;
 
 use egui::{
-    Pos2, Rangef, Rect, Response, Sense, StrokeKind, Ui, Vec2, Widget, lerp, pos2, remap_clamp,
-    vec2,
+    lerp, pos2, remap_clamp, vec2, CornerRadius, Pos2, Rangef, Rect, Response, Sense, StrokeKind, Ui, Vec2, Widget
 };
-use shared::model::PlacedNote;
+use shared::model::{self, PlacedNote};
+
+use super::piano::Piano;
 
 const MIN_PITCH_VALUE: i32 = 9;
 
@@ -30,6 +31,15 @@ impl From<PlacedNote> for Note {
     }
 }
 
+impl From<Note> for PlacedNote {
+    fn from(object: Note) -> Self {
+        Self {
+            note: model::Note { pitch_name: (object.y as i32).into(), beats: object.duration },
+            offset: object.x.into()
+        }
+    }
+}
+
 pub struct NoteRoll2<'a> {
     notes: &'a mut Vec<Note>,
     range: RangeInclusive<f32>,
@@ -48,13 +58,13 @@ impl<'a> NoteRoll2<'a> {
     }
 
     #[inline]
-    fn range(mut self, range: RangeInclusive<f32>) -> Self {
+    pub fn range(mut self, range: RangeInclusive<f32>) -> Self {
         self.range = range;
         self
     }
 
     #[inline]
-    fn duration(mut self, duration: RangeInclusive<f32>) -> Self {
+    pub fn duration(mut self, duration: RangeInclusive<f32>) -> Self {
         self.duration = duration;
         self
     }
@@ -109,7 +119,7 @@ impl<'a> NoteRoll2<'a> {
             0.0..=1.0,
             0.0..=1.0,
         );
-        pos_from_normalised(normalised, self.get_range(), self.get_duration())
+        pos_from_normalised(normalised, self.get_duration(), self.get_range())
     }
 
     fn position_from_pos(
@@ -118,7 +128,7 @@ impl<'a> NoteRoll2<'a> {
         x_position_range: Rangef,
         y_position_range: Rangef,
     ) -> Pos2 {
-        let normalised = normalised_from_pos(pos, self.get_range(), self.get_duration());
+        let normalised = normalised_from_pos(pos, self.get_duration(), self.get_range());
         lerp_pos(x_position_range, y_position_range, normalised)
     }
 
@@ -126,44 +136,45 @@ impl<'a> NoteRoll2<'a> {
         let note = self.get_note(index);
         let x_position_range = rect.x_range();
         let y_position_range = rect.y_range();
-        let note_pos = pos2(note.x, note.y);
-        let note_size = vec2(note.duration, 1.0);
-        let min = self.position_from_pos(note_pos, x_position_range, y_position_range);
-        let size = self
-            .position_from_pos(note_size.to_pos2(), x_position_range, y_position_range)
-            .to_vec2();
-        Rect::from_min_size(min, size)
+        let note_min = pos2(note.x, note.y);
+        let note_size= vec2(note.duration, -1.0);
+        let min = self.position_from_pos(note_min, x_position_range, y_position_range);
+        let max = self
+            .position_from_pos(note_min + note_size, x_position_range, y_position_range);
+        Rect::from_min_max(min, max)
     }
 
-    fn rect_drag(&mut self, response: &Response, roll_response: &Response) -> Option<Pos2> {
+    fn note_drag(&mut self, response: &Response, roll_response: &Response, index: usize) {
         let rect = response.rect;
+        // Split rect for drag and resize portions.
+        let drag_resize_ratio = 0.8;
+        let (_, resize_rect) = rect.split_left_right_at_fraction(drag_resize_ratio);
         let x_position_range = roll_response.rect.x_range();
         let y_position_range = roll_response.rect.y_range();
-        if response.interact_pointer_pos().is_some() {
+        if let Some(pointer_position) = response.interact_pointer_pos() {
             let delta = response.drag_delta();
-            let new_position = rect.left_top() + delta;
-            let new_pos = self.pos_from_position(new_position, x_position_range, y_position_range);
-            Some(new_pos)
-        } else {
-            None
+            if resize_rect.x_range().contains(pointer_position.x) {
+                // Note is being resized.
+                let new_position = pos2(rect.right() + delta.x, pointer_position.y);
+                let prev_x = self.pos_from_position(rect.right_top(), x_position_range, y_position_range).x; 
+                let next_x = self.pos_from_position(new_position, x_position_range, y_position_range).x;
+                let duration_delta = next_x - prev_x;
+                self.set_note_duration(index, self.get_note(index).duration + duration_delta);
+            } else {
+                // Note is being dragged.
+                let new_position = pos2(rect.left() + delta.x, pointer_position.y);
+                let new_pos = self.pos_from_position(new_position, x_position_range, y_position_range);
+                self.set_note_pos(index, new_pos);
+            }
         }
     }
 
     fn note_interact(&mut self, ui: &mut Ui, response: &Response, index: usize) {
         let rect = self.note_rect(&response.rect, index);
-        // Split rect for drag and resize portions.
-        let drag_resize_ratio = 0.2;
-        let (drag_rect, resize_rect) = rect.split_left_right_at_fraction(drag_resize_ratio);
-        let drag_id = response.id.with(format!("drag_{index}"));
-        let resize_id = response.id.with(format!("resize_{index}"));
-        let drag_response = ui.interact(drag_rect, drag_id, Sense::drag());
-        let resize_response = ui.interact(resize_rect, resize_id, Sense::drag());
-        if let Some(new_pos) = self.rect_drag(&drag_response, &response) {
-            self.set_note_pos(index, new_pos);
-        };
-        if let Some(new_pos) = self.rect_drag(&resize_response, &response) {
-            self.set_note_duration(index, new_pos.x);
-        }
+        let note_id = response.id.with(index);
+        let note_response = ui.interact(rect, note_id, Sense::drag());
+        self.note_drag(&note_response, &response, index);
+        self.note_ui(ui, &note_response);
     }
 
     fn notes_interact(&mut self, ui: &mut Ui, response: &Response) {
@@ -172,31 +183,51 @@ impl<'a> NoteRoll2<'a> {
         }
     }
 
-    fn notes_ui(&self, ui: &Ui, response: &Response) {
+    fn note_ui(&self, ui: &Ui, response: &Response) {
         let visuals = ui.style().interact(response);
         let widget_visuals = &ui.visuals().widgets;
-        for index in 0..self.get_notes().len() {
-            let note_rect = self.note_rect(&response.rect, index);
-            let centre = note_rect.center();
-            let size = note_rect.size();
-            let size = size + Vec2::splat(visuals.expansion);
-            let rect = Rect::from_center_size(centre, size);
-            ui.painter().rect(
-                rect,
-                visuals.corner_radius,
-                visuals.bg_fill,
-                visuals.fg_stroke,
-                StrokeKind::Inside,
-            );
-        }
+        let note_rect = response.rect; 
+        let centre = note_rect.center();
+        let size = note_rect.size() + Vec2::splat(visuals.expansion);
+        let rect = Rect::from_center_size(centre, size);
+        ui.painter().rect(
+            rect,
+            visuals.corner_radius,
+            visuals.bg_fill,
+            visuals.fg_stroke,
+            StrokeKind::Inside,
+        );
     }
-    fn piano_ui() {}
+
+    fn background_ui(&self, ui: &Ui, response: &Response) {
+        let white_notes = [0.0, 2.0, 4.0, 5.0, 7.0, 9.0, 11.0];
+        let x_position_range = response.rect.x_range();
+        let y_position_range = response.rect.y_range();
+        let duration = self.get_duration();
+        let range = self.get_range();
+        for pitch in *range.end() as usize..=*range.start() as usize {
+            let pitch = pitch as f32;
+            let min = pos2(*duration.start(), pitch);
+            let size = vec2(*duration.end(), -1.0);
+            let min_position = self.position_from_pos(min, x_position_range, y_position_range);
+            let max_position = self.position_from_pos(min + size, x_position_range, y_position_range);
+            log::debug!("{:?} {:?}", min_position, max_position);
+            let rect = Rect::from_min_max(min_position, max_position);
+            let colour = if white_notes.contains(&(pitch % 12.0)) {
+                ui.style().visuals.faint_bg_color
+            } else {
+                ui.style().visuals.extreme_bg_color
+            };
+            ui.painter().rect_filled(rect, CornerRadius::ZERO, colour);
+        }
+
+    }
     fn notes_context_menu() {}
     fn roll_context_menu() {}
     fn add_contents(&mut self, ui: &mut Ui) -> Response {
         let response = ui.allocate_response(self.size, Sense::drag());
+        self.background_ui(ui, &response);
         self.notes_interact(ui, &response);
-        self.notes_ui(ui, &response);
         response
     }
 }
@@ -211,18 +242,18 @@ impl Widget for NoteRoll2<'_> {
 
 fn normalised_from_pos(
     pos: Pos2,
-    range: RangeInclusive<f32>,
     duration: RangeInclusive<f32>,
+    range: RangeInclusive<f32>,
 ) -> Pos2 {
-    remap_clamp_pos(pos, range, duration, 0.0..=1.0, 0.0..=1.0)
+    remap_clamp_pos(pos, duration, range, 0.0..=1.0, 0.0..=1.0)
 }
 
 fn pos_from_normalised(
     normalised: Pos2,
-    range: RangeInclusive<f32>,
     duration: RangeInclusive<f32>,
+    range: RangeInclusive<f32>,
 ) -> Pos2 {
-    lerp_pos(range, duration, normalised)
+    lerp_pos(duration, range, normalised)
 }
 
 fn remap_clamp_pos(

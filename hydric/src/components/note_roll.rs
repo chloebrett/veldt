@@ -134,8 +134,14 @@ impl View for NoteRoll<'_> {
             WindowKind::NoteRoll,
             &title,
             |ui| {
-                let mut roll_notes: Vec<RollNote> = map_vec(notes.clone());
-                let r = ui.add(NoteRoll2::new(&mut roll_notes));
+                ui.horizontal(|ui| {
+                    Piano::new(max_note, min_note, PianoOrientation::Vertical, vec2(600.0, 50.0), None, None).ui(ui);
+                    let mut roll_notes: Vec<RollNote> = map_vec(notes.clone());
+                    ui.add(NoteRoll2::new(&mut roll_notes));
+                    let next_notes: Vec<PlacedNote> = map_vec(roll_notes);
+                    store.dispatch(&track_sel, Action::SetChildren(state::MultiTypeField::PlacedNote(next_notes)));
+
+                });
                 ui.horizontal(|ui| {
                     if ui.button("New note").clicked() {
                         store.dispatch(
