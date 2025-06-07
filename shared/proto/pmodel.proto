@@ -9,7 +9,7 @@ message ProjectProto {
 
   map<uint32, PlacementProto> placements = 3;
 
-  repeated SampleProto samples = 4;
+  map<uint32, SampleProto> samples = 4;
 
   map<uint32, GeneratorInstanceProto> generators = 5;
 
