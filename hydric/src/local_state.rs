@@ -1,7 +1,8 @@
 use egui::Pos2;
+use shared::model::Sample;
 use state::{MixerSelector, TrackSelector};
 use std::cell::RefCell;
-use std::collections::HashSet;
+use std::collections::{HashMap, HashSet};
 use std::rc::Rc;
 
 use crate::WindowState;
@@ -31,6 +32,8 @@ pub struct LocalState {
     pub note_roll_select_enabled: Rc<RefCell<bool>>,
 
     pub window_state: WindowState,
+
+    pub sample_cache: Rc<RefCell<HashMap<String, Sample>>>,
 }
 
 pub trait GetSet<T: Clone> {

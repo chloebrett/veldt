@@ -1,6 +1,5 @@
 use super::{MixerMatrixView, effect_name};
 use crate::GetSet;
-use crate::components::AudioLevel;
 use crate::local_state::LocalState;
 use crate::playback::AudioPlayer;
 use crate::view::View;
@@ -11,6 +10,7 @@ use crate::window_state::WindowKind;
 use egui::CornerRadius;
 use egui::Shape;
 use egui::{Button, Color32, Frame, InnerResponse, Layout, Response, Stroke, Ui, Widget};
+use egui_fader::Fader;
 use mesic::from_db;
 use mesic::to_db;
 use shared::model::{Effect, EffectInstance, EffectMeta};
@@ -119,8 +119,15 @@ impl View for MixerView<'_> {
                 ui.horizontal(|ui| {
                     let dispatch_volume =
                         |it| dispatch_mixer(Action::SetFloat(FloatField::Volume, from_db(it)));
-                    AudioLevel::new(player, to_db(mixer.volume), dispatch_volume, on_release)
-                        .ui(ui);
+                    let mut level = to_db(mixer.volume);
+                    ui.add(
+                        Fader::stereo(&mut level, player.level())
+                            .rect_handle_shape(0.5)
+                            .text_size(12.0),
+                    );
+                    if level != to_db(mixer.volume) {
+                        dispatch_volume(level)
+                    }
                     ui.vertical(|ui| {
                         ui.with_layout(Layout::default(), |ui| {
                             // Set background to transparent to avoid a lightened background caused by drag

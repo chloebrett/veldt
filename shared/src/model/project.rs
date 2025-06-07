@@ -140,6 +140,7 @@ mod tests {
                 left: vec![0.0, 1.0, 3.0],
                 right: vec![0.0, 1.0, 3.0],
                 sample_rate: 1.0,
+                sample_name: "default".to_string(),
             }],
             generators: HashMap::from([(
                 GeneratorId(0),
