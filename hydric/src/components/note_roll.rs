@@ -14,8 +14,8 @@ use shared::{
     types::PitchValue,
 };
 use state::{
-    Action, FloatField, GeneratorSelector, MultiIndexField, NoteSelector, SelectorTrait, Store,
-    TrackSelector, TypeField,
+    Action, FloatField, GeneratorSelector, MultiIndexField, NoteSelector, Store, TrackSelector,
+    TypeField,
 };
 use std::collections::HashSet;
 
@@ -168,14 +168,8 @@ impl View for NoteRoll<'_> {
                             )
                             .ui(ui);
                             ui.add(
-                                NoteSequencer::new(store, local_state, range)
-                                    .objects(
-                                        notes
-                                            .into_iter()
-                                            .map(|it| NoteSequencerObject(it))
-                                            .collect(),
-                                    )
-                                    .parent_index(track_sel.0)
+                                NoteSequencer::new(store, local_state, range, track_sel.0)
+                                    .objects(notes.into_iter().map(NoteSequencerObject).collect())
                                     .select(select)
                                     .horizontal_rects(
                                         white_note_pattern,
@@ -210,7 +204,7 @@ impl NoteSequencerObject {
         Rect::from_min_size(pos, note_size)
     }
 
-    fn resize_action(&self, x: f32, _range: Rect) -> Option<Action> {
+    fn resize_action(&self, x: f32) -> Option<Action> {
         let beats = x - *self.0.offset;
         Some(Action::SetFloat(FloatField::Duration, beats))
     }
@@ -274,13 +268,6 @@ impl NoteSequencerObject {
         ])
     }
 
-    fn selector(index: usize, parent_index: Option<usize>) -> impl SelectorTrait {
-        NoteSelector(
-            parent_index.expect("Track index should have been set as parent index"),
-            index,
-        )
-    }
-
     fn set_active(&self, local_state: &LocalState, index: usize) {
         local_state.window_state.set_visible(WindowKind::Note, true);
         local_state.active_note.set(Some(index));
@@ -303,9 +290,9 @@ impl NoteSequencerObject {
         local_state.selected_notes.set(notes);
     }
 
-    fn add_new(&self, store: &Store, parent_index: Option<usize>) {
+    fn add_new(&self, store: &Store, parent_index: usize) {
         store.dispatch(
-            &TrackSelector(parent_index.expect("Should have been track index.")),
+            &TrackSelector(parent_index),
             Action::AddChild(TypeField::PlacedNote(self.0.clone())),
         );
     }
@@ -322,14 +309,14 @@ impl NoteSequencerObject {
         })
     }
 
-    fn delete_selected(store: &Store, local_state: &LocalState, parent_index: Option<usize>) {
+    fn delete_selected(store: &Store, local_state: &LocalState, parent_index: usize) {
         local_state.active_note.update(|note| match note {
             // If the active note is selected, "de-activate" it.
             Some(index) if local_state.selected_notes.get().contains(&index) => None,
             _ => note,
         });
         store.dispatch(
-            &TrackSelector(parent_index.expect("Should have been a parent index")),
+            &TrackSelector(parent_index),
             Action::DeleteChildren(MultiIndexField::PlacedNote(
                 local_state.selected_notes.get().into_iter().collect(),
             )),
@@ -343,25 +330,28 @@ pub struct NoteSequencer<'a> {
     range: Rect,
     size: Vec2,
     objects: Vec<NoteSequencerObject>,
-    sense: Sense,
     quantise_level: Beats,
     background_shapes: Vec<Shape>,
-    parent_index: Option<usize>,
+    parent_index: usize,
     select: bool,
 }
 
 impl<'a> NoteSequencer<'a> {
-    pub fn new(store: &'a Store, local_state: &'a LocalState, range: Rect) -> Self {
+    pub fn new(
+        store: &'a Store,
+        local_state: &'a LocalState,
+        range: Rect,
+        parent_index: usize,
+    ) -> Self {
         NoteSequencer {
             store,
             local_state,
             range,
             size: vec2(400.0, 600.0),
             objects: vec![],
-            sense: Sense::drag(),
             quantise_level: 0.125,
             background_shapes: vec![],
-            parent_index: None,
+            parent_index,
             select: false,
         }
     }
@@ -369,11 +359,6 @@ impl<'a> NoteSequencer<'a> {
     #[inline]
     pub fn objects(mut self, objects: Vec<NoteSequencerObject>) -> Self {
         self.objects = objects;
-        self
-    }
-
-    pub fn parent_index(mut self, index: usize) -> Self {
-        self.parent_index = Some(index);
         self
     }
 
@@ -421,12 +406,6 @@ impl<'a> NoteSequencer<'a> {
     }
 
     fn interact(&self, ui: &mut Ui, response: &Response) {
-        let edit_object = |index: usize, action: Action| {
-            self.store.dispatch(
-                &NoteSequencerObject::selector(index, self.parent_index),
-                action,
-            )
-        };
         let on_release = || self.store.dispatchr(Action::Release);
 
         let make_movable_rect = |object: &NoteSequencerObject| object.to_rect(self.range);
@@ -443,14 +422,14 @@ impl<'a> NoteSequencer<'a> {
             Rect::from_min_size(Pos2::ZERO, self.range.size()),
             response.rect,
         );
-        for (id, object) in self.objects.iter().enumerate() {
-            let movable_id = response.id.with(format!("movable_{:?}", id));
+        for (index, object) in self.objects.iter().enumerate() {
+            let movable_id = response.id.with(format!("movable_{index}"));
             let movable_resp = ui.interact(
                 make_movable_rect(object).transform(to_sequencer),
                 movable_id,
                 Sense::drag(),
             );
-            let resize_id = response.id.with(format!("resize_{:?}", id));
+            let resize_id = response.id.with(format!("resize_{index}"));
             let resize_resp = ui.interact(
                 make_resize_rect(object).transform(to_sequencer),
                 resize_id,
@@ -458,16 +437,20 @@ impl<'a> NoteSequencer<'a> {
             );
             if self.select {
                 if movable_resp.interact(Sense::click()).clicked() {
-                    NoteSequencerObject::set_selected(self.local_state, Some(id));
+                    NoteSequencerObject::set_selected(self.local_state, Some(index));
                 }
             } else if movable_resp.interact(Sense::click()).double_clicked() {
-                object.set_active(self.local_state, id);
+                object.set_active(self.local_state, index);
             }
             if resize_resp.hovered() {
                 ui.ctx().set_cursor_icon(CursorIcon::ResizeColumn);
             }
-            let release = self.move_object(id, movable_resp, to_sequencer, &edit_object)
-                || self.resize_object(id, resize_resp, to_sequencer, &edit_object);
+            let edit_object = |action: Action| {
+                self.store
+                    .dispatch(&NoteSelector(self.parent_index, index), action)
+            };
+            let release = self.move_object(movable_resp, to_sequencer, &edit_object)
+                || self.resize_object(index, resize_resp, to_sequencer, &edit_object);
             if release {
                 // TODO: fix release dispatch for move actions.
                 // Compaction doesn't work properly because we have separate x and y actions.
@@ -483,11 +466,9 @@ impl<'a> NoteSequencer<'a> {
 
     fn move_object(
         &self,
-        index: usize,
         response: Response,
         to_sequencer: RectTransform,
-        // TODO: bind this to the ID instead of passing as a param?
-        edit_object: &impl Fn(usize, Action),
+        edit_object: &impl Fn(Action),
     ) -> bool {
         let drag_pos = response.interact_pointer_pos();
         let drag_delta = response.drag_delta();
@@ -511,21 +492,15 @@ impl<'a> NoteSequencer<'a> {
                     vec2(f32::INFINITY, self.range.size().y - 1.0).to_pos2(),
                 );
             if drag_delta.y != 0.0 {
-                edit_object(
-                    index,
-                    Action::SetChild(TypeField::PitchName(PitchName::from(
-                        (self.range.bottom() - scaled_pos.y) as i32,
-                    ))),
-                )
+                edit_object(Action::SetChild(TypeField::PitchName(PitchName::from(
+                    (self.range.bottom() - scaled_pos.y) as i32,
+                ))))
             }
             if drag_delta.x != 0.0 {
-                edit_object(
-                    index,
-                    Action::SetFloat(
-                        FloatField::Offset,
-                        self.quantise(scaled_pos.x) - self.range.left(),
-                    ),
-                )
+                edit_object(Action::SetFloat(
+                    FloatField::Offset,
+                    self.quantise(scaled_pos.x) - self.range.left(),
+                ))
             }
         }
         // Return true when interaction completed.
@@ -537,17 +512,16 @@ impl<'a> NoteSequencer<'a> {
         index: usize,
         response: Response,
         to_sequencer: RectTransform,
-        edit_object: &impl Fn(usize, Action),
+        edit_object: &impl Fn(Action),
     ) -> bool {
         let object = &self.objects[index];
-        let drag_pos = response.interact_pointer_pos();
-        if let Some(drag_pos) = drag_pos {
+        if let Some(drag_pos) = response.interact_pointer_pos() {
             let scaled_pos = drag_pos.transform(to_sequencer.inverse()).clamp(
                 pos2(object.to_rect(self.range).left(), 0.0),
                 self.range.size().to_pos2(),
             );
-            if let Some(action) = object.resize_action(self.quantise(scaled_pos.x), self.range) {
-                edit_object(index, action);
+            if let Some(action) = object.resize_action(self.quantise(scaled_pos.x)) {
+                edit_object(action);
             };
         }
         // Return true when interaction completed.
@@ -573,11 +547,10 @@ impl Widget for NoteSequencer<'_> {
                 store,
                 range,
                 size,
-                sense,
                 select,
                 ..
             } = self;
-            let (response, painter) = ui.allocate_painter(size, sense);
+            let (response, painter) = ui.allocate_painter(size, Sense::drag());
             let to_screen = RectTransform::from_to(
                 Rect::from_min_size(Pos2::ZERO, range.size()),
                 response.rect,

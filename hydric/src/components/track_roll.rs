@@ -455,9 +455,8 @@ impl<'a> TrackSequencer<'a> {
         to_sequencer: RectTransform,
         edit_object: &impl Fn(Action),
     ) -> bool {
-        let drag_pos = response.interact_pointer_pos();
         let drag_delta = response.drag_delta();
-        if let Some(drag_pos) = drag_pos {
+        if let Some(drag_pos) = response.interact_pointer_pos() {
             // Keep track of the delta between object and cursor position at drag start.
             if response.interact(Sense::drag()).drag_started() {
                 self.local_state
