@@ -296,7 +296,6 @@ impl<T: SequencerObject<T, U>, U: Debug + Eq + Hash + Copy> Widget for Sequencer
     }
 }
 
-// TODO: parameterize based on type of the ID.
 pub trait SequencerObject<T, U> {
     fn to_pos(&self, range: Rect) -> Pos2;
 
