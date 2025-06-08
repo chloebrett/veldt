@@ -35,7 +35,7 @@ impl Default for NodeState {
             brown_filter: eq_filter(&EqConfig {
                 kind: EqType::SimpleFirstOrderLowPass,
                 fc: 20.0,
-                q: 0.707,  // See "Designing Audio Effect Plugins in C++", W. Pirkle, p273
+                q: 0.707, // See "Designing Audio Effect Plugins in C++", W. Pirkle, p273
                 gain: 0.0,
             }),
         }
@@ -65,27 +65,27 @@ impl NodeState {
         filters.push(eq_filter(&EqConfig {
             kind: EqType::SimpleFirstOrderLowPass,
             fc: SAMPLE_RATE as f32 / 4.0,
-            q: 0.707, 
-            gain: 0.0,
-        }));
-
-        filters.push(eq_filter(&EqConfig {
-            kind: EqType::SimpleFirstOrderLowPass,
-            fc: SAMPLE_RATE as f32 / 8.0, 
             q: 0.707,
             gain: 0.0,
         }));
 
         filters.push(eq_filter(&EqConfig {
             kind: EqType::SimpleFirstOrderLowPass,
-            fc: SAMPLE_RATE as f32 / 16.0, 
+            fc: SAMPLE_RATE as f32 / 8.0,
             q: 0.707,
             gain: 0.0,
         }));
 
         filters.push(eq_filter(&EqConfig {
             kind: EqType::SimpleFirstOrderLowPass,
-            fc: SAMPLE_RATE as f32 / 32.0, 
+            fc: SAMPLE_RATE as f32 / 16.0,
+            q: 0.707,
+            gain: 0.0,
+        }));
+
+        filters.push(eq_filter(&EqConfig {
+            kind: EqType::SimpleFirstOrderLowPass,
+            fc: SAMPLE_RATE as f32 / 32.0,
             q: 0.707,
             gain: 0.0,
         }));
