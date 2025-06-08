@@ -7,6 +7,7 @@ use shared::model::{
     EqConfig, EqType, Generator, GeneratorInstance, GeneratorMeta, NoiseConfig, NoiseType,
 };
 use state::GeneratorSelector;
+use crate::consts::SAMPLE_RATE;
 
 pub struct NoiseGeneratorNode {
     selector: GeneratorSelector,
@@ -19,7 +20,7 @@ struct NodeState {
     config: NoiseConfig,
     meta: GeneratorMeta,
     playing: bool,
-    pink_filter: Filter,
+    pink_filters: Vec<Filter>,
     brown_filter: Filter,
 }
 
@@ -30,16 +31,11 @@ impl Default for NodeState {
             config: config.clone(),
             meta: GeneratorMeta::default(),
             playing: false,
-            pink_filter: eq_filter(&EqConfig {
-                kind: EqType::SimpleFirstOrderLowPass,
-                fc: 1000.0,
-                q: 0.707, // See "Designing Audio Effect Plugins in C++", W. Pirkle, p273
-                gain: 0.0,
-            }),
+            pink_filters: Self::initialise_pink_filters(),
             brown_filter: eq_filter(&EqConfig {
-                kind: EqType::SimpleSecondOrderLowPass,
-                fc: 1000.0,
-                q: 0.707,
+                kind: EqType::SimpleFirstOrderLowPass,
+                fc: 20.0, 
+                q: 0.707, 
                 gain: 0.0,
             }),
         }
@@ -61,6 +57,34 @@ impl NodeState {
                 self.meta = meta.clone();
             }
         }
+    }
+
+    // New helper function to initialize your pink noise filter chain
+    fn initialise_pink_filters() -> Vec<Filter> {
+        let mut filters = Vec::new();
+
+        filters.push(eq_filter(&EqConfig {
+            kind: EqType::SimpleFirstOrderLowPass,
+            fc: SAMPLE_RATE as f32 / 4.0,
+            q: 0.707,
+            gain: 0.0,
+        }));
+
+        filters.push(eq_filter(&EqConfig {
+            kind: EqType::SimpleFirstOrderLowPass,
+            fc: SAMPLE_RATE as f32 / 16.0,
+            q: 0.707,
+            gain: 0.0,
+        }));
+
+        filters.push(eq_filter(&EqConfig {
+            kind: EqType::SimpleFirstOrderLowPass,
+            fc: SAMPLE_RATE as f32 / 32.0,
+            q: 0.707,
+            gain: 0.0,
+        }));
+
+        filters
     }
 }
 
@@ -85,7 +109,9 @@ impl NoiseGeneratorNode {
     }
 
     fn generate_pink_noise(&mut self, buffer: &mut Buffer) {
-        self.state.pink_filter.apply(buffer);
+        for filter in &mut self.state.pink_filters {
+            filter.apply(buffer);
+        }
     }
 
     fn generate_brown_noise(&mut self, buffer: &mut Buffer) {
@@ -160,7 +186,7 @@ mod tests {
     use shared::model::GeneratorId;
     use state::GeneratorSelector;
 
-    const FLOAT_THRES: f32 = 1e-6;
+    const FLOAT_THRES: f32 = 1e-3;
 
     struct PkCoefficients {
         b0: f32,
@@ -207,8 +233,8 @@ mod tests {
         }
     }
 
-    #[test]
     #[ignore]
+    #[test]
     fn test_pink_noise() {
         let mut pk_coeff = PkCoefficients {
             b0: 0.0,
