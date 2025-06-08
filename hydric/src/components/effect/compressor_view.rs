@@ -48,9 +48,11 @@ impl<F: Fn(Action), G: Fn()> View for CompressorView<'_, F, G> {
                         "Ratio",
                         config.ratio,
                         |it| dispatch(Action::SetFloat(FloatField::Ratio, it)),
-                        1.0..=100.0,
+                        1.0..=f32::INFINITY,
                     )
-                    .with_neutral(3.0), // TODO: logarithmic
+                    .logarithmic(true)
+                    .largest_finite(100.0)
+                    .with_neutral(3.0),
                     &self.on_release,
                 );
             });

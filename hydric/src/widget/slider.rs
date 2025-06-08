@@ -16,20 +16,6 @@ pub fn slider<T: PartialEq + Clone + Into<f64> + From<f64>, F: Fn(T), G: Fn()>(
     );
 }
 
-pub fn log_slider<T: PartialEq + Clone + Into<f64> + From<f64>, F: Fn(T), G: Fn()>(
-    ui: &mut Ui,
-    label: &str,
-    value: T,
-    setter: F,
-    range: RangeInclusive<f64>,
-    on_release: G,
-) {
-    slider_internal(
-        ui, label, value, setter, range, on_release, /* logarithmic= */ true,
-        /* fixed_decimals= */ None,
-    );
-}
-
 pub fn int_slider<T: PartialEq + Clone + Into<f64> + From<f64>, F: FnMut(T), G: Fn()>(
     ui: &mut Ui,
     label: &str,
