@@ -68,9 +68,8 @@ impl ChannelInfo {
             project
                 .placements
                 .iter()
-                .enumerate()
                 .filter(|(_, placement)| matches!(&placement.kind, PlacementType::Sample(..)))
-                .map(|(index, _)| SamplePlacementInfo::new(graph_manager, PlacementSelector(index)))
+                .map(|(id, _)| SamplePlacementInfo::new(graph_manager, PlacementSelector(*id)))
                 .collect()
         } else {
             vec![]
@@ -147,7 +146,7 @@ impl ChannelInfo {
 
     pub fn add_edges(&self, graph_manager: &mut GraphManager) {
         for (generator_id, generator) in self.generators.iter() {
-            if !self.muted_generators.contains(&generator_id) {
+            if !self.muted_generators.contains(generator_id) {
                 // Do not add edges for muted generators.
                 graph_manager.add_edge(generator.node(), self.input_node, EdgeLabel::GenToMixIn);
             }

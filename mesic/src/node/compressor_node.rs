@@ -1,4 +1,5 @@
 use super::{extract_inputs, extract_outputs};
+use crate::from_db;
 use crate::graph::ProcessContext;
 use crate::{consts::SAMPLE_RATE, to_db};
 use dasp_graph::{Buffer, Input, Node};
@@ -36,8 +37,7 @@ impl CompressorNode {
             // TODO: also support using the compressor as a downward expander.
             let pre_gain = compress(*x, db_rms, threshold, ratio_recip);
 
-            // TODO: use dB for makeup gain.
-            *x = pre_gain * self.config.gain
+            *x = pre_gain * from_db(self.config.gain)
         }
     }
 
@@ -70,7 +70,7 @@ fn compress(input: f32, detector: f32, threshold: f32, ratio_recip: f32) -> f32 
     } else {
         detector
     };
-    let compress_gain = 10f32.powf((y_out - detector) / 20.0);
+    let compress_gain = from_db(y_out - detector);
     // Scale output by compression amount
     input * compress_gain
 }

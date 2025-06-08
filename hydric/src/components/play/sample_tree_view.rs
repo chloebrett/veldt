@@ -81,7 +81,7 @@ pub fn interacted_sample_file_name(
         }
     })?;
 
-    let node_id = action.selected.iter().next()?;
+    let node_id = action.selected.first()?;
     // TODO: support samples nested in directories
     let sample_node = sample_files.get(*node_id - 1)?;
     let FileTree::File(file_name) = sample_node else {

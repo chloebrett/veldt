@@ -11,5 +11,5 @@ pub fn first_order_all_pole(config: &EqConfig) -> Filter {
     let a0 = 1.0 + b1;
     let a1 = 0.0;
 
-    Filter::new_wet(FilterConfig::new().a0(a0).a1(a1).b1(b1))
+    Filter::new_wet(FilterConfig::default().a0(a0).a1(a1).b1(b1))
 }
