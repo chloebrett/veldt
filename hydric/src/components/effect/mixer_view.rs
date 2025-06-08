@@ -197,7 +197,9 @@ impl View for MixerView<'_> {
                                             it: effect,
                                             meta: EffectMeta::default(),
                                         };
-                                        dispatch_mixer(Action::AddChild(TypeField::Effect(instance)));
+                                        dispatch_mixer(Action::AddChild(TypeField::Effect(
+                                            instance,
+                                        )));
                                     }
                                 }
                             });
