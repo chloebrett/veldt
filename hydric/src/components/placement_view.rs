@@ -61,7 +61,7 @@ impl<'a> PlacementView<'a> {
                         get_set(&track_placement.generator_id, |it| {
                             store.dispatch(sel, Action::SetChild(TypeField::GeneratorId(*it)))
                         }),
-                        &generator_id,
+                        generator_id,
                         generator_id.to_string(),
                     );
                 }
@@ -171,7 +171,7 @@ impl View for PlacementView<'_> {
                             ui,
                             placement_id,
                             placement,
-                            &track_placement,
+                            track_placement,
                             tracks_length,
                             &sel,
                             store,
@@ -182,7 +182,7 @@ impl View for PlacementView<'_> {
                             ui,
                             placement_id,
                             placement,
-                            &sample_placement,
+                            sample_placement,
                             &sel,
                             store,
                         );
