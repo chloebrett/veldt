@@ -148,71 +148,73 @@ impl Mixer {
                     from_field,
                     to_field,
                 }) => {
-                    let (IndexField::Effect(from), IndexField::Effect(to)) = (from_field, to_field)
+                    let (IndexField::EffectId(from), IndexField::EffectId(to)) =
+                        (from_field, to_field)
                     else {
-                        panic!("Action should have only received Effect IndexFields.")
+                        panic!("Action should have only received EffectId IndexFields.")
                     };
                     self.channels[*mixer_index].move_effect(*from, *to);
                     true
                 }
-                Action::DeleteChild(IndexField::Effect(effect_index)) => {
-                    self.channels[*mixer_index]
-                        .delete_effect(&mut self.graph_manager, *effect_index);
+                Action::DeleteChildById(TypeField::EffectId(effect_id)) => {
+                    self.channels[*mixer_index].delete_effect(&mut self.graph_manager, *effect_id);
                     true
                 }
-                Action::AddChild(TypeField::Effect(effect)) => {
-                    let selector =
-                        EffectSelector(*mixer_index, self.channels[*mixer_index].effects_count());
+                Action::AddChildAtIndex(
+                    TypeField::EffectId(effect_id),
+                    IndexField::EffectId(index),
+                ) => {
+                    let effect = &store.project.effects[effect_id].it;
                     self.channels[*mixer_index].add_effect(
                         &mut self.graph_manager,
-                        &effect.it,
-                        &selector,
+                        effect,
+                        &EffectSelector(*effect_id),
+                        *index,
                     );
                     true
                 }
                 _ => false,
             },
-            Selector::Generator(generator_index) => match action {
-                Action::SetIndex(IndexField::Mixer(mixer_channel)) => {
-                    let selector = GeneratorSelector(*generator_index);
-
-                    // Find the channel containing this generator, then move it to the correct
-                    // channel.
-                    for channel in self.channels.iter_mut() {
-                        if let Some(generator) = channel.soft_delete_generator(selector) {
-                            self.channels[*mixer_channel].soft_add_generator(&generator);
-                            // TODO: Update mute information when generator is moved.
-                            break;
+            Selector::Generator(generator_id) => {
+                let selector = GeneratorSelector(*generator_id);
+                match action {
+                    Action::SetIndex(IndexField::Mixer(mixer_channel)) => {
+                        // Find the channel containing this generator, then move it to the correct
+                        // channel.
+                        for channel in self.channels.iter_mut() {
+                            if let Some(generator) = channel.soft_delete_generator(selector) {
+                                self.channels[*mixer_channel].soft_add_generator(&generator);
+                                // TODO: Update mute information when generator is moved.
+                                break;
+                            }
                         }
+                        true
                     }
-                    true
-                }
-                Action::SetFloat(FloatField::Volume, 0.0)
-                | Action::SetChild(TypeField::Mute(true)) => {
-                    let selector = GeneratorSelector(*generator_index);
-                    // Find the channel containing this generator, then mute it.
-                    for channel in self.channels.iter_mut() {
-                        if channel.contains_generator(selector) {
-                            channel.set_generator_muted(*generator_index, true);
-                            break;
+                    Action::SetFloat(FloatField::Volume, 0.0)
+                    | Action::SetChild(TypeField::Mute(true)) => {
+                        // Find the channel containing this generator, then mute it.
+                        for channel in self.channels.iter_mut() {
+                            if channel.contains_generator(selector) {
+                                channel.set_generator_muted(*generator_id, true);
+                                break;
+                            }
                         }
+                        true
                     }
-                    true
-                }
-                Action::SetFloat(FloatField::Volume, _)
-                | Action::SetChild(TypeField::Mute(false)) => {
-                    let selector = GeneratorSelector(*generator_index);
-                    // Find the channel containing this generator, then unmute it.
-                    for channel in self.channels.iter_mut() {
-                        if channel.contains_generator(selector) {
-                            channel.set_generator_muted(*generator_index, false);
-                            break;
+                    Action::SetFloat(FloatField::Volume, _)
+                    | Action::SetChild(TypeField::Mute(false)) => {
+                        // Find the channel containing this generator, then unmute it.
+                        for channel in self.channels.iter_mut() {
+                            if channel.contains_generator(selector) {
+                                channel.set_generator_muted(*generator_id, false);
+                                break;
+                            }
                         }
+                        true
                     }
-                    true
+                    _ => false,
                 }
-                _ => false,
-            },
+            }
             Selector::Placement(..) => {
                 // TODO: handle adding, deleting and updating nodes when sample placements change.
                 false
@@ -271,8 +273,8 @@ mod tests {
     use super::*;
 
     use shared::model::{
-        DelayConfig, Effect, EffectInstance, EffectMeta, Generator, GeneratorId, GeneratorInstance,
-        GeneratorMeta, MixerChannel, SimpleWaveConfig,
+        DelayConfig, Effect, EffectId, EffectInstance, EffectMeta, Generator, GeneratorId,
+        GeneratorInstance, GeneratorMeta, MixerChannel, SimpleWaveConfig,
     };
     use std::collections::HashMap;
 
@@ -280,9 +282,10 @@ mod tests {
     fn one_generator_one_effect() {
         let mut project = Project::default();
         project.generators.insert(GeneratorId(0), some_generator());
+        project.effects.insert(EffectId(0), some_effect());
         project.mixer.channels.push(MixerChannel {
             volume: 1.0,
-            effects: vec![some_effect()],
+            effect_ids: vec![EffectId(0)],
         });
 
         let mixer = Mixer::new(&project);
@@ -350,14 +353,17 @@ mod tests {
 
         // One effect on channel 0,
         // Two effects on channel 1.
+        project
+            .effects
+            .extend((0..=2).map(|i| (EffectId(i), some_effect())));
         project.mixer.channels.extend([
             MixerChannel {
                 volume: 1.0,
-                effects: vec![some_effect()],
+                effect_ids: vec![EffectId(0)],
             },
             MixerChannel {
                 volume: 1.0,
-                effects: vec![some_effect(), some_effect()],
+                effect_ids: vec![EffectId(1), EffectId(2)],
             },
         ]);
 

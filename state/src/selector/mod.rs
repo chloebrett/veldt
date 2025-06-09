@@ -3,7 +3,7 @@ use shared::action_proto::selector_proto::IndexTriple;
 use shared::action_proto::{
     SelectorProto, selector_proto::IndexPair, selector_proto::Kind as SelectorKind,
 };
-use shared::model::{GeneratorId, PlacementId, SampleId, TrackId};
+use shared::model::{EffectId, GeneratorId, PlacementId, SampleId, TrackId};
 
 mod effect;
 mod envelope;
@@ -61,7 +61,7 @@ pub enum Selector {
     Track(TrackId),
     Note(TrackId, /* note_index */ usize),
     Mixer(/* mixer_index */ usize),
-    Effect(/* mixer_index */ usize, /* effect_index */ usize),
+    Effect(EffectId),
     Generator(GeneratorId),
     Placement(PlacementId),
     Sample(SampleId),
@@ -81,7 +81,7 @@ impl From<Selector> for SelectorProto {
                 Selector::Track(it) => SelectorKind::Track(it.into()),
                 Selector::Note(first, second) => SelectorKind::Note(pair(*first, second)),
                 Selector::Mixer(it) => SelectorKind::Mixer(it as u32),
-                Selector::Effect(first, second) => SelectorKind::Effect(pair(first, second)),
+                Selector::Effect(it) => SelectorKind::Effect(it.into()),
                 Selector::Generator(it) => SelectorKind::Generator(it.into()),
                 Selector::Placement(it) => SelectorKind::Placement(it.into()),
                 Selector::Sample(it) => SelectorKind::Sample(it.into()),
@@ -113,9 +113,7 @@ impl From<SelectorProto> for Selector {
                 Selector::Note(first.into(), second as usize)
             }
             SelectorKind::Mixer(it) => Selector::Mixer(it as usize),
-            SelectorKind::Effect(IndexPair { first, second }) => {
-                Selector::Effect(first as usize, second as usize)
-            }
+            SelectorKind::Effect(it) => Selector::Effect(it.into()),
             SelectorKind::Generator(it) => Selector::Generator(it.into()),
             SelectorKind::Placement(it) => Selector::Placement(it.into()),
             SelectorKind::Sample(it) => Selector::Sample(it.into()),

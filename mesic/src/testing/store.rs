@@ -10,6 +10,7 @@ pub fn empty_store_data() -> StoreData {
             placements: HashMap::new(),
             samples: HashMap::new(),
             generators: HashMap::new(),
+            effects: HashMap::new(),
             mixer: Mixer::default(),
             bpm: 120.0,
         },

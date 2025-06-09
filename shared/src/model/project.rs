@@ -1,6 +1,6 @@
 use crate::model::{
-    GeneratorId, GeneratorInstance, Mixer, Placement, PlacementId, Sample, SampleId, Track,
-    TrackId, TrackPlacement,
+    EffectId, EffectInstance, GeneratorId, GeneratorInstance, Mixer, Placement, PlacementId,
+    Sample, SampleId, Track, TrackId, TrackPlacement,
 };
 use crate::pmodel::*;
 use crate::types::Beats;
@@ -23,6 +23,9 @@ pub struct Project {
 
     #[proto_hashmap]
     pub generators: HashMap<GeneratorId, GeneratorInstance>,
+
+    #[proto_hashmap]
+    pub effects: HashMap<EffectId, EffectInstance>,
 
     #[proto_optional]
     pub mixer: Mixer,
@@ -130,46 +133,56 @@ mod tests {
                     },
                 },
             )]),
+            effects: HashMap::from([
+                (
+                    EffectId(0),
+                    EffectInstance {
+                        it: Effect::SimpleEq(EqConfig {
+                            kind: EqType::SimpleResonator,
+                            fc: 1000.0,
+                            q: 1.0,
+                            gain: 0.0,
+                        }),
+                        meta: EffectMeta {
+                            wet: 1.0,
+                            mute: false,
+                        },
+                    },
+                ),
+                (
+                    EffectId(1),
+                    EffectInstance {
+                        it: Effect::Delay(DelayConfig {
+                            delay_ms: 250.0,
+                            feedback: 0.5,
+                        }),
+                        meta: EffectMeta {
+                            wet: 0.5,
+                            mute: false,
+                        },
+                    },
+                ),
+                (
+                    EffectId(2),
+                    EffectInstance {
+                        it: Effect::ModDelay(ModDelayConfig {
+                            min_depth: 100,
+                            max_depth: 200,
+                            freq: 10.0,
+                            lfo_type: WaveType::Triangle,
+                        }),
+                        meta: EffectMeta {
+                            wet: 0.5,
+                            mute: false,
+                        },
+                    },
+                ),
+            ]),
             mixer: Mixer {
                 matrix: MixerMatrix::with_channels(3),
                 channels: vec![MixerChannel {
                     volume: 1.0,
-                    effects: vec![
-                        EffectInstance {
-                            it: Effect::SimpleEq(EqConfig {
-                                kind: EqType::SimpleResonator,
-                                fc: 1000.0,
-                                q: 1.0,
-                                gain: 0.0,
-                            }),
-                            meta: EffectMeta {
-                                wet: 1.0,
-                                mute: false,
-                            },
-                        },
-                        EffectInstance {
-                            it: Effect::Delay(DelayConfig {
-                                delay_ms: 250.0,
-                                feedback: 0.5,
-                            }),
-                            meta: EffectMeta {
-                                wet: 0.5,
-                                mute: false,
-                            },
-                        },
-                        EffectInstance {
-                            it: Effect::ModDelay(ModDelayConfig {
-                                min_depth: 100,
-                                max_depth: 200,
-                                freq: 10.0,
-                                lfo_type: WaveType::Triangle,
-                            }),
-                            meta: EffectMeta {
-                                wet: 0.5,
-                                mute: false,
-                            },
-                        },
-                    ],
+                    effect_ids: vec![0.into(), 1.into(), 2.into()],
                 }],
             },
             bpm: 120.0,

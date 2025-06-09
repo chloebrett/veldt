@@ -1,6 +1,6 @@
 use shared::action_proto::{TypeFieldProto, type_field_proto::Kind as TypeFieldKind};
 use shared::model::{
-    AdsrEnvelope, AntiAliasingMode, EffectInstance, EqType, FileTreeConfig, FilenameTree,
+    AdsrEnvelope, AntiAliasingMode, EffectId, EffectInstance, EqType, FileTreeConfig, FilenameTree,
     GeneratorId, GeneratorInstance, MixerChannel, NoiseType, PitchName, PlacedNote, Placement,
     PlacementId, PolyphonyMode, Project, Sample, SampleId, Scale, ScaleValue, Track, TrackId,
     WaveType,
@@ -46,6 +46,7 @@ pub enum TypeField {
     PlacementId(PlacementId),
     SampleId(SampleId),
     TrackId(TrackId),
+    EffectId(EffectId),
 
     // Note: if we end up with more bools/primitives, make dedicated types for them so that we
     // don't have to keep expanding the proto.
@@ -93,6 +94,7 @@ impl From<TypeFieldProto> for TypeField {
             TypeFieldKind::PlacementId(it) => TypeField::PlacementId(it.into()),
             TypeFieldKind::SampleId(it) => TypeField::SampleId(it.into()),
             TypeFieldKind::TrackId(it) => TypeField::TrackId(it.into()),
+            TypeFieldKind::EffectId(it) => TypeField::EffectId(it.into()),
         }
     }
 }
@@ -142,6 +144,7 @@ impl From<TypeField> for TypeFieldProto {
                 TypeField::PlacementId(it) => TypeFieldKind::PlacementId(it.into()),
                 TypeField::SampleId(it) => TypeFieldKind::SampleId(it.into()),
                 TypeField::TrackId(it) => TypeFieldKind::TrackId(it.into()),
+                TypeField::EffectId(it) => TypeFieldKind::EffectId(it.into()),
             }),
         }
     }
