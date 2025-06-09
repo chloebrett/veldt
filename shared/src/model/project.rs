@@ -1,10 +1,12 @@
-use crate::model::{GeneratorInstance, Mixer, Placement, Sample, Track, TrackPlacement};
+use crate::model::{
+    GeneratorId, GeneratorInstance, Mixer, Placement, PlacementId, Sample, SampleId, Track,
+    TrackPlacement,
+};
 use crate::pmodel::*;
 use crate::types::Beats;
 use local_macro::{FromProto, IntoProto};
 use ordered_float::OrderedFloat;
 use std::collections::HashMap;
-use std::ops::Deref;
 
 #[derive(Clone, Debug, PartialEq, FromProto, IntoProto, Default)]
 pub struct Project {
@@ -16,8 +18,8 @@ pub struct Project {
     #[proto_hashmap]
     pub placements: HashMap<PlacementId, Placement>,
 
-    #[proto_repeated]
-    pub samples: Vec<Sample>,
+    #[proto_hashmap]
+    pub samples: HashMap<SampleId, Sample>,
 
     #[proto_hashmap]
     pub generators: HashMap<GeneratorId, GeneratorInstance>,
@@ -26,52 +28,6 @@ pub struct Project {
     pub mixer: Mixer,
 
     pub bpm: Beats,
-}
-
-#[derive(Hash, Default, PartialEq, Eq, Ord, PartialOrd, Debug, Clone, Copy)]
-pub struct GeneratorId(pub usize);
-
-impl From<u32> for GeneratorId {
-    fn from(other: u32) -> Self {
-        Self(other as usize)
-    }
-}
-
-impl From<GeneratorId> for u32 {
-    fn from(other: GeneratorId) -> Self {
-        *other as u32
-    }
-}
-
-impl Deref for GeneratorId {
-    type Target = usize;
-
-    fn deref(&self) -> &usize {
-        &self.0
-    }
-}
-
-#[derive(Hash, Default, PartialEq, Eq, Ord, PartialOrd, Debug, Clone, Copy)]
-pub struct PlacementId(pub usize);
-
-impl From<u32> for PlacementId {
-    fn from(other: u32) -> Self {
-        Self(other as usize)
-    }
-}
-
-impl From<PlacementId> for u32 {
-    fn from(other: PlacementId) -> Self {
-        *other as u32
-    }
-}
-
-impl Deref for PlacementId {
-    type Target = usize;
-
-    fn deref(&self) -> &usize {
-        &self.0
-    }
 }
 
 impl Project {
@@ -136,12 +92,15 @@ mod tests {
                     visual_placement: 6,
                 },
             )]),
-            samples: vec![Sample {
-                left: vec![0.0, 1.0, 3.0],
-                right: vec![0.0, 1.0, 3.0],
-                sample_rate: 1.0,
-                sample_name: "default".to_string(),
-            }],
+            samples: HashMap::from([(
+                SampleId(0),
+                Sample {
+                    left: vec![0.0, 1.0, 3.0],
+                    right: vec![0.0, 1.0, 3.0],
+                    sample_rate: 1.0,
+                    sample_name: "default".to_string(),
+                },
+            )]),
             generators: HashMap::from([(
                 GeneratorId(0),
                 GeneratorInstance {

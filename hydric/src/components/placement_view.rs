@@ -84,24 +84,22 @@ impl<'a> PlacementView<'a> {
         sel: &PlacementSelector,
         store: &Store,
     ) {
-        let samples_length = store.get().project.samples.len();
-
         egui::ComboBox::from_id_salt(format!("placement_{:?}", placement_id))
-            .selected_text(format!("Sample {}", sample_placement.sample_index))
+            .selected_text(format!("Sample {:?}", sample_placement.sample_id))
             .show_ui(ui, |ui| {
-                for sample_index in 0..samples_length {
+                for sample_id in store.get().project.samples.keys() {
                     selectable_value(
                         ui,
-                        get_set(&sample_placement.sample_index, |it| {
-                            store.dispatch(sel, Action::SetIndex(IndexField::Sample(*it)))
+                        get_set(&sample_placement.sample_id, |it| {
+                            store.dispatch(sel, Action::SetChild(TypeField::SampleId(*it)))
                         }),
-                        &sample_index,
-                        sample_index.to_string(),
+                        &sample_id,
+                        sample_id.to_string(),
                     );
                 }
             });
 
-        let sample_sel = SampleSelector(sample_placement.sample_index);
+        let sample_sel = SampleSelector(sample_placement.sample_id);
         let Some(sample) = store.try_select(&sample_sel) else {
             ui.label("No samples loaded yet.");
             return;

@@ -1,4 +1,4 @@
-use crate::model::GeneratorId;
+use crate::model::{GeneratorId, SampleId};
 use crate::pmodel::{placement_proto::Kind as PlacementTypeProto, *};
 use crate::types::Beats;
 use local_macro::{FromProto, IntoProto};
@@ -56,9 +56,8 @@ impl<'a> TryFrom<&'a Placement> for &'a TrackPlacement {
 
 #[derive(Clone, Debug, PartialEq, Eq, FromProto, IntoProto, Default)]
 pub struct SamplePlacement {
-    /// TODO: use a more stable ID instead of the index.
-    #[proto_type_u32]
-    pub sample_index: usize,
+    #[proto_into]
+    pub sample_id: SampleId,
 }
 
 impl<'a> TryFrom<&'a Placement> for &'a SamplePlacement {
