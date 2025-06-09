@@ -6,7 +6,7 @@ use super::{
 use crate::node::AmpNode;
 use dasp_graph::node::Sum;
 use petgraph::stable_graph::NodeIndex;
-use shared::model::{Effect, GeneratorId, MatrixCell, PlacementType, Project};
+use shared::model::{Effect, GeneratorId, MatrixCell, PlacementType, Project, EffectId};
 use state::{
     EffectSelector, GeneratorSelector, MixerMatrixCellSelector, MixerSelector, PlacementSelector,
     move_elem,
@@ -78,15 +78,11 @@ impl ChannelInfo {
         let input_node = graph_manager.add_node(make_node(Sum), NodeLabel::Sum);
 
         let effects: Vec<EffectInfo> = project.mixer.channels[channel_index]
-            .effects
+            .effect_ids
             .iter()
-            .enumerate()
-            .map(|(effect_index, effect)| {
-                EffectInfo::new(
-                    graph_manager,
-                    &effect.it,
-                    &EffectSelector(channel_index, effect_index),
-                )
+            .map(|effect_id| {
+                let effect = &project.effects[&effect_id].it;
+                EffectInfo::new(graph_manager, &effect, &EffectSelector(*effect_id))
             })
             .collect();
 
@@ -213,15 +209,18 @@ impl ChannelInfo {
         }
     }
 
-    pub fn effects_count(&self) -> usize {
-        self.effects.len()
-    }
-
     pub fn move_effect(&mut self, from_index: usize, to_index: usize) {
         move_elem(&mut self.effects, from_index, to_index);
     }
 
-    pub fn delete_effect(&mut self, graph_manager: &mut GraphManager, index: usize) {
+    pub fn delete_effect(&mut self, graph_manager: &mut GraphManager, effect_id: EffectId) {
+        let Some(index) = self
+            .effects
+            .iter()
+            .position(|it| it.effect_id() == effect_id)
+        else {
+            return;
+        };
         let mut effect = self.effects.remove(index);
         effect.remove_from_graph(graph_manager);
     }
@@ -231,10 +230,11 @@ impl ChannelInfo {
         graph_manager: &mut GraphManager,
         effect: &Effect,
         selector: &EffectSelector,
+        at_index: usize,
     ) {
         // EffectInfo::new handles adding nodes to the graph.
         self.effects
-            .push(EffectInfo::new(graph_manager, effect, selector));
+            .insert(at_index, EffectInfo::new(graph_manager, effect, selector));
     }
 
     /// Deletes a generator from the ChannelInfo's generator list, without deleting it from the graph.
