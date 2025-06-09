@@ -20,6 +20,8 @@ use generator_info::*;
 use graph_manager::*;
 use sample_placement_info::*;
 
+pub use graph_manager::GraphDebugTx;
+
 /// The mixer is responsible for creating, storing and manipulating mixer channels,
 /// and the effects and generators they contain.
 ///
@@ -135,6 +137,14 @@ impl Mixer {
 
         self.graph_manager
             .add_edge(self.main_sum, self.main_amp, EdgeLabel::MainSumToMainAmp);
+    }
+
+    pub fn get_debug_tx(&self) -> Option<GraphDebugTx> {
+        self.graph_manager.debug_tx.clone()
+    }
+
+    pub fn set_debug_tx(&mut self, debug_tx: GraphDebugTx) {
+        self.graph_manager.debug_tx = Some(debug_tx);
     }
 
     /// Applies the given action, updating the underlying graph accordingly.
