@@ -127,7 +127,6 @@ impl View for MixerView<'_> {
                         .window_state
                         .set_visible(WindowKind::ChannelEffect, !show_effect);
                 };
-                log::debug!("!{:?}", show_effect);
             },
         );
     }
