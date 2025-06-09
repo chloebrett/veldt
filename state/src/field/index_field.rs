@@ -8,10 +8,11 @@ use strum::{Display, EnumString};
 /// Used to distinguish *which* index is being referred to, and also contains the index value.
 #[derive(EnumString, Display, PartialEq, Clone, Debug)]
 pub enum IndexField {
+    // TODO: remove unused, there are several.
     Track(usize),
     PlacedNote(usize),
     Placement(usize),
-    Effect(usize),
+    EffectId(usize),
     Mixer(usize),
     Generator(usize),
     Sample(usize),
@@ -23,7 +24,7 @@ impl From<IndexFieldProto> for IndexField {
             IndexFieldKind::Track(it) => IndexField::Track(it as usize),
             IndexFieldKind::PlacedNote(it) => IndexField::PlacedNote(it as usize),
             IndexFieldKind::Placement(it) => IndexField::Placement(it as usize),
-            IndexFieldKind::Effect(it) => IndexField::Effect(it as usize),
+            IndexFieldKind::EffectId(it) => IndexField::EffectId(it as usize),
             IndexFieldKind::Mixer(it) => IndexField::Mixer(it as usize),
             IndexFieldKind::Generator(it) => IndexField::Generator(it as usize),
             IndexFieldKind::Sample(it) => IndexField::Sample(it as usize),
@@ -38,7 +39,7 @@ impl From<IndexField> for IndexFieldProto {
                 IndexField::Track(it) => IndexFieldKind::Track(it as u32),
                 IndexField::PlacedNote(it) => IndexFieldKind::PlacedNote(it as u32),
                 IndexField::Placement(it) => IndexFieldKind::Placement(it as u32),
-                IndexField::Effect(it) => IndexFieldKind::Effect(it as u32),
+                IndexField::EffectId(it) => IndexFieldKind::EffectId(it as u32),
                 IndexField::Mixer(it) => IndexFieldKind::Mixer(it as u32),
                 IndexField::Generator(it) => IndexFieldKind::Generator(it as u32),
                 IndexField::Sample(it) => IndexFieldKind::Sample(it as u32),
@@ -52,7 +53,7 @@ pub enum MultiIndexField {
     Track(Vec<usize>),
     PlacedNote(Vec<usize>),
     Placement(Vec<usize>),
-    Effect(Vec<usize>),
+    EffectId(Vec<usize>),
     Mixer(Vec<usize>),
     Generator(Vec<usize>),
     Sample(Vec<usize>),
@@ -66,7 +67,7 @@ impl From<MultiIndexFieldProto> for MultiIndexField {
             MultiIndexFieldKind::TrackIndexFieldKind => Self::Track(indexes),
             MultiIndexFieldKind::PlacedNoteIndexFieldKind => Self::PlacedNote(indexes),
             MultiIndexFieldKind::PlacementIndexFieldKind => Self::Placement(indexes),
-            MultiIndexFieldKind::EffectIndexFieldKind => Self::Effect(indexes),
+            MultiIndexFieldKind::EffectIdIndexFieldKind => Self::EffectId(indexes),
             MultiIndexFieldKind::MixerIndexFieldKind => Self::Mixer(indexes),
             MultiIndexFieldKind::GeneratorIndexFieldKind => Self::Generator(indexes),
             MultiIndexFieldKind::SampleIndexFieldKind => Self::Sample(indexes),
@@ -89,8 +90,8 @@ impl From<MultiIndexField> for MultiIndexFieldProto {
                 kind: MultiIndexFieldKind::PlacementIndexFieldKind.into(),
                 values: to_u32s(indexes),
             },
-            MultiIndexField::Effect(indexes) => MultiIndexFieldProto {
-                kind: MultiIndexFieldKind::EffectIndexFieldKind.into(),
+            MultiIndexField::EffectId(indexes) => MultiIndexFieldProto {
+                kind: MultiIndexFieldKind::EffectIdIndexFieldKind.into(),
                 values: to_u32s(indexes),
             },
             MultiIndexField::Mixer(indexes) => MultiIndexFieldProto {

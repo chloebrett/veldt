@@ -2,7 +2,7 @@ use crate::{
     FloatField, IndexField, MoveField, MultiIndexField, MultiTypeField, TypeField, UintField,
 };
 use shared::action_proto::{
-    ActionProto, SetFloatProto, SetUintProto, action_proto::Kind as ActionKind,
+    ActionProto, ChildIndexPairProto, SetFloatProto, SetUintProto, action_proto::Kind as ActionKind,
 };
 use std::str::FromStr;
 
@@ -28,6 +28,7 @@ pub enum Action {
     SetChild(TypeField),
     // Add a child object by type.
     AddChild(TypeField),
+    AddChildAtIndex(TypeField, IndexField),
     // Set children of an object by type.
     AddChildren(MultiTypeField),
     SetChildren(MultiTypeField),
@@ -63,6 +64,9 @@ impl From<ActionProto> for Action {
             ActionKind::DeleteChildren(indexes) => Action::DeleteChildren(indexes.into()),
             ActionKind::DeleteChildrenById(ids) => Action::DeleteChildrenById(ids.into()),
             ActionKind::AddChild(child) => Action::AddChild(child.into()),
+            ActionKind::AddChildAtIndex(ChildIndexPairProto { child, index }) => {
+                Action::AddChildAtIndex(child.unwrap().into(), index.unwrap().into())
+            }
             ActionKind::SetChild(child) => Action::SetChild(child.into()),
             ActionKind::SetChildren(children) => Action::SetChildren(children.into()),
             ActionKind::AddChildren(children) => Action::AddChildren(children.into()),
@@ -85,6 +89,12 @@ impl From<Action> for ActionProto {
                 Action::SetIndex(index) => ActionKind::SetIndex(index.into()),
                 Action::SetChild(child) => ActionKind::SetChild(child.into()),
                 Action::AddChild(child) => ActionKind::AddChild(child.into()),
+                Action::AddChildAtIndex(child, index) => {
+                    ActionKind::AddChildAtIndex(ChildIndexPairProto {
+                        child: Some(child.into()),
+                        index: Some(index.into()),
+                    })
+                }
                 Action::DeleteChild(index) => ActionKind::DeleteChild(index.into()),
                 Action::DeleteChildById(id) => ActionKind::DeleteChildById(id.into()),
                 Action::DeleteChildren(indexes) => ActionKind::DeleteChildren(indexes.into()),

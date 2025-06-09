@@ -1,8 +1,7 @@
-use crate::model::{EffectId, EffectInstance};
+use crate::model::EffectId;
 use crate::pmodel::*;
 use crate::types::Volume;
 use local_macro::{FromProto, IntoProto};
-use std::collections::HashMap;
 use std::ops::Deref;
 
 #[derive(Default, Clone, Debug, PartialEq, FromProto, IntoProto)]
