@@ -46,7 +46,11 @@ impl View for ChannelEffectView<'_> {
         // Keep track of an object being dragged.
         let mut from_to = None;
         let MixerSelector(channel_index) = selector;
-        let title = format!("Channel {channel_index} effects");
+        let title = if channel_index > 0 {
+            format!("Channel {channel_index} effects")
+        } else {
+            format!("Main channel effects")
+        };
         StateWindow::show_from_window_state(
             ui,
             &local_state.window_state,
