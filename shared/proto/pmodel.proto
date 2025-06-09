@@ -16,6 +16,8 @@ message ProjectProto {
   MixerProto mixer = 6;
 
   float bpm = 7;
+
+  map<uint32, EffectInstanceProto> effects = 8;
 }
 
 message MixerProto {
@@ -81,7 +83,7 @@ message SampleProto {
 message MixerChannelProto {
   float volume = 1;
 
-  repeated EffectInstanceProto effects = 2;
+  repeated uint32 effect_ids = 2;
 }
 
 message PlacedNoteProto {
