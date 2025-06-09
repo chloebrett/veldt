@@ -148,7 +148,6 @@ impl Mixer {
     }
 
     pub fn set_debug_tx(&mut self, debug_tx: Sender<GraphDebugInfo>) {
-        log::info!("Set debug tx");
         self.graph_manager.set_debug_tx(debug_tx);
     }
 

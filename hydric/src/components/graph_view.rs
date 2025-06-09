@@ -2,7 +2,7 @@ use crate::{LocalState, WindowKind, playback::AudioPlayer, view::View, widget::S
 use egui::{Color32, Id, Ui, pos2};
 use egui_snarl::{
     InPin, InPinId, OutPin, OutPinId, Snarl,
-    ui::{NodeLayout, PinInfo, PinPlacement, SnarlStyle, SnarlViewer, SnarlWidget},
+    ui::{PinInfo, SnarlStyle, SnarlViewer, SnarlWidget},
 };
 use mesic::NodeLabel;
 use std::collections::HashMap;
