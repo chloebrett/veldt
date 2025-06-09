@@ -1,11 +1,15 @@
 use super::ProcessContext;
 use crate::graph::Graph;
+use crossbeam_channel::Sender;
 use dasp_graph::{BoxedNodeSend, NodeData};
 use petgraph::stable_graph::NodeIndex;
 use std::collections::HashMap;
-use std::sync::mpsc::Sender;
 
-pub type GraphDebugTx = Sender<(HashMap<NodeIndex, NodeLabel>, Vec<(NodeIndex, NodeIndex)>)>;
+#[derive(Debug)]
+pub struct GraphDebugInfo {
+    pub node_labels: HashMap<NodeIndex, NodeLabel>,
+    pub edges: Vec<(NodeIndex, NodeIndex)>,
+}
 
 /// Holds a graph and tracks node and edges with extra metadata.
 /// Helpful for testing/debugging.
@@ -16,7 +20,7 @@ pub struct GraphManager {
 
     // Used for rendering a graph for debugging.
     pub node_labels: HashMap<NodeIndex, NodeLabel>,
-    pub debug_tx: Option<GraphDebugTx>,
+    debug_tx: Option<Sender<GraphDebugInfo>>,
 }
 
 impl GraphManager {
@@ -72,17 +76,32 @@ impl GraphManager {
         self.send_debug();
     }
 
+    pub fn get_debug_tx(&self) -> Option<Sender<GraphDebugInfo>> {
+        self.debug_tx.clone()
+    }
+
+    pub fn set_debug_tx(&mut self, debug_tx: Sender<GraphDebugInfo>) {
+        self.debug_tx = Some(debug_tx);
+        self.send_debug();
+    }
+
     fn send_debug(&self) {
         let Some(tx) = &self.debug_tx else {
+            log::info!("Send debug - missing debug tx!");
             return;
         };
+        log::info!("Send debug - has debug tx!");
 
         let edges: Vec<(NodeIndex, NodeIndex)> = self
             .graph
             .edge_indices()
             .filter_map(|edge| self.graph.edge_endpoints(edge))
             .collect();
-        tx.send((self.node_labels.clone(), edges)).unwrap();
+        tx.send(GraphDebugInfo {
+            node_labels: self.node_labels.clone(),
+            edges,
+        })
+        .unwrap();
     }
 }
 

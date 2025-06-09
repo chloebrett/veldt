@@ -148,6 +148,9 @@ impl View for MenuBar<'_> {
                 if ui.button("Recreate mixer").clicked() {
                     self.player.refresh_mixer();
                 }
+                if ui.button("Init mixer graph debug").clicked() {
+                    self.player.init_mixer_debug();
+                }
             });
             let mut window_icon = |icon, label, window_kind| {
                 let state = self.local_state.window_state.get_visible(window_kind);

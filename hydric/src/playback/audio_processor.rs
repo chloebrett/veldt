@@ -70,6 +70,9 @@ impl AudioProcessor {
             PlaybackMessage::RecreateMixer => {
                 self.graph.recreate_mixer();
             }
+            PlaybackMessage::PassDebugChannelToMixer(debug_tx) => {
+                self.graph.set_debug_tx(debug_tx);
+            }
             PlaybackMessage::SetAudio(audio) => {
                 self.graph.set_audio(&audio);
             }
