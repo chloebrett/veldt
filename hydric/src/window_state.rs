@@ -25,6 +25,7 @@ pub enum WindowKind {
     NoteRoll,
     Placement,
     Note,
+    GraphDebug,
 }
 
 /// Information about a window needed to render on the UI.
@@ -53,6 +54,7 @@ impl WindowData {
             WindowKind::NoteRoll => pos2(600.0, 20.0),
             WindowKind::Placement => pos2(100.0, 20.0),
             WindowKind::Note => pos2(600.0, 20.0),
+            WindowKind::GraphDebug => pos2(600.0, 20.0),
         };
         // Create unique IDs for `WindowKind` that could have multiple variants.
         let id_string = match window {

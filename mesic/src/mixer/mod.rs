@@ -1,5 +1,6 @@
 use crate::graph::{ProcessContext, Processor, make_graph};
 use crate::node::{AmpNode, BufferNode};
+use crossbeam_channel::Sender;
 use dasp_graph::{BoxedNodeSend, Buffer, Node, NodeData, node::Sum};
 use petgraph::stable_graph::NodeIndex;
 use shared::model::Project;
@@ -19,6 +20,8 @@ use effect_info::*;
 use generator_info::*;
 use graph_manager::*;
 use sample_placement_info::*;
+
+pub use graph_manager::{GraphDebugInfo, NodeLabel};
 
 /// The mixer is responsible for creating, storing and manipulating mixer channels,
 /// and the effects and generators they contain.
@@ -74,8 +77,11 @@ pub struct Mixer {
 }
 
 impl Mixer {
-    pub fn new(project: &Project) -> Self {
+    pub fn new(project: &Project, debug_tx: Option<Sender<GraphDebugInfo>>) -> Self {
         let mut graph_manager = GraphManager::new(make_graph());
+        if let Some(debug_tx) = debug_tx {
+            graph_manager.set_debug_tx(debug_tx);
+        }
 
         let channels: Vec<ChannelInfo> = (0..project.mixer.channels.len())
             .map(|channel_index| ChannelInfo::new(&mut graph_manager, project, channel_index))
@@ -137,6 +143,14 @@ impl Mixer {
             .add_edge(self.main_sum, self.main_amp, EdgeLabel::MainSumToMainAmp);
     }
 
+    pub fn get_debug_tx(&self) -> Option<Sender<GraphDebugInfo>> {
+        self.graph_manager.get_debug_tx()
+    }
+
+    pub fn set_debug_tx(&mut self, debug_tx: Sender<GraphDebugInfo>) {
+        self.graph_manager.set_debug_tx(debug_tx);
+    }
+
     /// Applies the given action, updating the underlying graph accordingly.
     /// If the graph changes, edges are refreshed.
     /// TODO: consider processing multiple actions at once, and only refreshing the edges a single
@@ -164,6 +178,7 @@ impl Mixer {
                     TypeField::EffectId(effect_id),
                     IndexField::EffectId(index),
                 ) => {
+                    log::info!("Add child at index");
                     let effect = &store.project.effects[effect_id].it;
                     self.channels[*mixer_index].add_effect(
                         &mut self.graph_manager,
@@ -288,7 +303,7 @@ mod tests {
             effect_ids: vec![EffectId(0)],
         });
 
-        let mixer = Mixer::new(&project);
+        let mixer = Mixer::new(&project, None);
 
         let mut node_counts = HashMap::new();
         node_counts.insert(NodeLabel::Generator, 1);
@@ -367,7 +382,7 @@ mod tests {
             },
         ]);
 
-        let mixer = Mixer::new(&project);
+        let mixer = Mixer::new(&project, None);
 
         let mut node_counts = HashMap::new();
         node_counts.insert(NodeLabel::Generator, 3);

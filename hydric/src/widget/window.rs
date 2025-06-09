@@ -37,6 +37,29 @@ impl<'a> StateWindow<'a> {
         )
     }
 
+    // TODO: factor this so that we can just pass in the window we want, rather than needing a new
+    // method for the resizable version!
+    pub fn show_from_window_state_resizable<R>(
+        ui: &mut Ui,
+        window_state: &WindowState,
+        window_kind: WindowKind,
+        title: &'a str,
+        add_contents: impl FnOnce(&mut Ui) -> R,
+    ) -> Option<InnerResponse<Option<R>>> {
+        Self(
+            default_window(title)
+                .id(window_state.get_id(window_kind))
+                .default_pos(window_state.get_pos(window_kind))
+                .resizable(true),
+        )
+        .show_with_closure(
+            ui,
+            window_state.get_visible(window_kind),
+            move |_| window_state.set_visible(window_kind, false),
+            add_contents,
+        )
+    }
+
     /// Shows a window that calls a closure when it is closed.
     pub fn show_with_closure<R>(
         self,
