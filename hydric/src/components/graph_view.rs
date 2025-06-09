@@ -33,9 +33,39 @@ impl<'a> GraphView<'a> {
     }
 }
 
+const fn default_style() -> SnarlStyle {
+    SnarlStyle {
+        node_layout: Some(NodeLayout::coil()),
+        pin_placement: Some(PinPlacement::Edge),
+        pin_size: Some(7.0),
+        node_frame: Some(egui::Frame {
+            inner_margin: egui::Margin::same(8),
+            outer_margin: egui::Margin {
+                left: 0,
+                right: 0,
+                top: 0,
+                bottom: 4,
+            },
+            corner_radius: egui::CornerRadius::same(8),
+            fill: egui::Color32::from_gray(30),
+            stroke: egui::Stroke::NONE,
+            shadow: egui::Shadow::NONE,
+        }),
+        bg_frame: Some(egui::Frame {
+            inner_margin: egui::Margin::ZERO,
+            outer_margin: egui::Margin::same(2),
+            corner_radius: egui::CornerRadius::ZERO,
+            fill: egui::Color32::from_gray(40),
+            stroke: egui::Stroke::NONE,
+            shadow: egui::Shadow::NONE,
+        }),
+        ..SnarlStyle::new()
+    }
+}
+
 impl View for GraphView<'_> {
     fn ui(&mut self, ui: &mut Ui) {
-        StateWindow::show_from_window_state(
+        StateWindow::show_from_window_state_resizable(
             ui,
             &self.local_state.window_state,
             WindowKind::GraphDebug,
@@ -45,22 +75,32 @@ impl View for GraphView<'_> {
                     *self.snarl = Snarl::new();
 
                     if let Some(info) = self.player.get_graph_debug_info() {
+                        // Maps mesic's node IDs to snarl's.
+                        let mut id_map = HashMap::new();
+
                         for (node_index, label) in info.node_labels {
-                            //log::info!("Label: {:?}", label);
-                            self.snarl
+                            let snarl_id = self
+                                .snarl
                                 .insert_node(pos2(0.0, 0.0), GraphViewNode { label, node_index });
+                            id_map.insert(node_index, snarl_id);
                         }
-                        for edge in info.edges {
-                            //log::info!("Edge: {:?}", edge);
+                        for (first, second) in info.edges {
+                            let from = OutPinId {
+                                node: id_map[&first],
+                                output: 0,
+                            };
+                            let to = InPinId {
+                                node: id_map[&second],
+                                input: 0,
+                            };
+                            self.snarl.connect(from, to);
                         }
                     }
                 }
 
-                log::info!("{:?}", self.snarl);
-
                 SnarlWidget::new()
                     .id(Id::new("graph-debug"))
-                    .style(self.style)
+                    .style(default_style())
                     .show(&mut self.snarl, &mut GraphViewer, ui);
             },
         );
@@ -89,8 +129,8 @@ impl SnarlViewer<GraphViewNode> for GraphViewer {
     fn inputs(&mut self, node: &GraphViewNode) -> usize {
         match node.label {
             NodeLabel::Generator | NodeLabel::Sample | NodeLabel::Buffer => 0,
-            NodeLabel::Effect | NodeLabel::Amp => 1,
-            NodeLabel::WetDry | NodeLabel::Sum => 2,
+            _ => 1, // just use a single input, even if we technically allow multiple (e.g. sum
+                    // node).
         }
     }
 
