@@ -1,6 +1,6 @@
-use crate::{LocalState, WindowKind, view::View, widget::StateWindow};
+use crate::{LocalState, WindowKind, playback::AudioPlayer, view::View, widget::StateWindow};
 use eframe::{App, CreationContext};
-use egui::{Color32, Id, Ui};
+use egui::{Color32, Id, Ui, pos2};
 use egui_snarl::{
     InPin, InPinId, NodeId, OutPin, OutPinId, Snarl,
     ui::{
@@ -14,6 +14,7 @@ pub struct GraphView<'a> {
     local_state: &'a LocalState,
     snarl: &'a mut Snarl<GraphViewNode>,
     style: SnarlStyle,
+    player: &'a AudioPlayer,
 }
 
 impl<'a> GraphView<'a> {
@@ -21,11 +22,13 @@ impl<'a> GraphView<'a> {
         local_state: &'a LocalState,
         snarl: &'a mut Snarl<GraphViewNode>,
         style: SnarlStyle,
+        player: &'a AudioPlayer,
     ) -> Self {
         Self {
             local_state,
             snarl,
             style,
+            player,
         }
     }
 }
@@ -38,8 +41,25 @@ impl View for GraphView<'_> {
             WindowKind::GraphDebug,
             "Mixer graph debug",
             |ui| {
+                if ui.button("Refresh").clicked() {
+                    *self.snarl = Snarl::new();
+
+                    if let Some(info) = self.player.get_graph_debug_info() {
+                        for (node_index, label) in info.node_labels {
+                            //log::info!("Label: {:?}", label);
+                            self.snarl
+                                .insert_node(pos2(0.0, 0.0), GraphViewNode { label, node_index });
+                        }
+                        for edge in info.edges {
+                            //log::info!("Edge: {:?}", edge);
+                        }
+                    }
+                }
+
+                log::info!("{:?}", self.snarl);
+
                 SnarlWidget::new()
-                    .id(Id::new("snarl-demo"))
+                    .id(Id::new("graph-debug"))
                     .style(self.style)
                     .show(&mut self.snarl, &mut GraphViewer, ui);
             },
@@ -47,7 +67,9 @@ impl View for GraphView<'_> {
     }
 }
 
+#[derive(Debug)]
 pub struct GraphViewNode {
+    node_index: usize,
     label: NodeLabel,
 }
 

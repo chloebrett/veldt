@@ -5,10 +5,11 @@ use dasp_graph::{BoxedNodeSend, NodeData};
 use petgraph::stable_graph::NodeIndex;
 use std::collections::HashMap;
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct GraphDebugInfo {
-    pub node_labels: HashMap<NodeIndex, NodeLabel>,
-    pub edges: Vec<(NodeIndex, NodeIndex)>,
+    // usize = node index
+    pub node_labels: HashMap<usize, NodeLabel>,
+    pub edges: Vec<(usize, usize)>,
 }
 
 /// Holds a graph and tracks node and edges with extra metadata.
@@ -98,8 +99,15 @@ impl GraphManager {
             .filter_map(|edge| self.graph.edge_endpoints(edge))
             .collect();
         tx.send(GraphDebugInfo {
-            node_labels: self.node_labels.clone(),
-            edges,
+            node_labels: self
+                .node_labels
+                .iter()
+                .map(|(key, value)| (key.index(), value.clone()))
+                .collect(),
+            edges: edges
+                .iter()
+                .map(|(first, second)| (first.index(), second.index()))
+                .collect(),
         })
         .unwrap();
     }

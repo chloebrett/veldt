@@ -174,6 +174,12 @@ impl View for App {
         )
         .ui(ui);
         TrackRoll::new(&self.store, &self.local_state).ui(ui);
-        GraphView::new(&self.local_state, &mut self.snarl, self.snarl_style.clone()).ui(ui);
+        GraphView::new(
+            &self.local_state,
+            &mut self.snarl,
+            self.snarl_style.clone(),
+            &self.player,
+        )
+        .ui(ui);
     }
 }

@@ -51,6 +51,8 @@ pub struct AudioPlayer {
     // For sending graph debug information from the mixer to the UI.
     graph_debug_tx: Sender<GraphDebugInfo>,
     graph_debug_rx: Receiver<GraphDebugInfo>,
+    // Most recent graph structure to display for debugging.
+    graph_debug_info: Option<GraphDebugInfo>,
 
     // Ring buffer with the most recently played audio.
     recent_buf: AllocRingBuffer<Stereo<f32>>,
@@ -109,6 +111,7 @@ impl AudioPlayer {
             recent_rx,
             graph_debug_tx,
             graph_debug_rx,
+            graph_debug_info: None,
             recent_buf: AllocRingBuffer::from([[0.0; 2]; RECENT_AUDIO_SAMPLE_COUNT]),
             recent_buf_offset: 0,
             stream: None,
@@ -233,7 +236,12 @@ impl AudioPlayer {
 
         while let Ok(graph_debug) = self.graph_debug_rx.try_recv() {
             log::info!("Received graph debug info: {:?}", graph_debug);
+            self.graph_debug_info = Some(graph_debug);
         }
+    }
+
+    pub fn get_graph_debug_info(&self) -> Option<GraphDebugInfo> {
+        self.graph_debug_info.clone()
     }
 
     pub fn init_processor(&mut self) {
