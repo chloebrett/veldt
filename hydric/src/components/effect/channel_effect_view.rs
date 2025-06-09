@@ -1,10 +1,20 @@
 use egui_fancy_knob::add_knob;
 use shared::model::{Effect, EffectInstance, EffectMeta};
-use state::{Action, EffectSelector, FloatField, IndexField, MixerSelector, MoveField, Store, TypeField};
+use state::{
+    Action, EffectSelector, FloatField, IndexField, MixerSelector, MoveField, Store, TypeField,
+};
 use strum::IntoEnumIterator;
 
-use crate::{local_state::{GetSet, LocalState}, view::View, widget::styled_knob, window_state::WindowKind};
-use egui::{Button, Color32, CornerRadius, Frame, InnerResponse, Layout, Response, Shape, Stroke, Ui, Widget};
+use crate::{
+    local_state::{GetSet, LocalState},
+    view::View,
+    widget::styled_knob,
+    window_state::WindowKind,
+};
+use egui::{
+    Button, Color32, CornerRadius, Frame, InnerResponse, Layout, Response, Shape, Stroke, Ui,
+    Widget,
+};
 
 use super::effect_name;
 
@@ -15,16 +25,22 @@ pub struct ChannelEffectView<'a> {
 }
 
 impl<'a> ChannelEffectView<'a> {
-    pub fn new(store: &'a Store, local_state: &'a LocalState, selector: MixerSelector ) -> Self {
+    pub fn new(store: &'a Store, local_state: &'a LocalState, selector: MixerSelector) -> Self {
         Self {
-            store,local_state, selector
+            store,
+            local_state,
+            selector,
         }
     }
 }
 
 impl View for ChannelEffectView<'_> {
     fn ui(&mut self, ui: &mut Ui) {
-        let Self { store, local_state, selector } = *self;
+        let Self {
+            store,
+            local_state,
+            selector,
+        } = *self;
         let mixer = &store.select(&selector);
         let dispatch_mixer = |action| store.dispatch(&selector, action);
         let on_release = || store.dispatchr(Action::Release);
@@ -40,8 +56,7 @@ impl View for ChannelEffectView<'_> {
                 ui.dnd_drop_zone::<EffectLocation, ()>(Frame::default(), |ui| {
                     for effect_index in 0..mixer.effects.len() {
                         let effect_sel = selector.downcast_effect(effect_index);
-                        let dispatch_effect =
-                            |action: Action| store.dispatch(&effect_sel, action);
+                        let dispatch_effect = |action: Action| store.dispatch(&effect_sel, action);
                         // TODO Determine if this is the best way to do this.
                         // There seems to be no way to render an object once then pass the
                         // response into the `dnd_drag_zone` if `edit_state` is true.
@@ -68,9 +83,7 @@ impl View for ChannelEffectView<'_> {
                                 .response;
                             // Update `from_to` if an object has been dragged and
                             // released.
-                            if let Some(new_from_to) =
-                                handle_drag(ui, response, effect_index)
-                            {
+                            if let Some(new_from_to) = handle_drag(ui, response, effect_index) {
                                 from_to = Some(new_from_to)
                             };
                         } else {
@@ -101,9 +114,7 @@ impl View for ChannelEffectView<'_> {
                                 it: effect,
                                 meta: EffectMeta::default(),
                             };
-                            dispatch_mixer(Action::AddChild(TypeField::Effect(
-                                instance,
-                            )));
+                            dispatch_mixer(Action::AddChild(TypeField::Effect(instance)));
                         }
                     }
                 });
@@ -140,7 +151,6 @@ impl View for ChannelEffectView<'_> {
         }
     }
 }
-
 
 /// A widget to display and edit basic effect controls in the MixerView
 /// Being a widget that returns a `Response` makes it easier to drag and drop.
@@ -179,7 +189,7 @@ impl<F: Fn(Action), G: Fn()> Widget for EffectWidget<'_, F, G> {
             dispatch,
             on_release,
         } = self;
-        let InnerResponse {response, .. } = ui.horizontal(|ui| {
+        let InnerResponse { response, .. } = ui.horizontal(|ui| {
             let show = local_state
                 .window_state
                 .get_visible(WindowKind::Effect(effect_sel));

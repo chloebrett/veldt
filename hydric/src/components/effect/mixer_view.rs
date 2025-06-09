@@ -130,4 +130,3 @@ impl View for MixerView<'_> {
         );
     }
 }
-
