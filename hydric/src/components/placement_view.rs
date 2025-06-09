@@ -92,7 +92,7 @@ impl<'a> PlacementView<'a> {
                         get_set(&sample_placement.sample_id, |it| {
                             store.dispatch(sel, Action::SetChild(TypeField::SampleId(*it)))
                         }),
-                        &sample_id,
+                        sample_id,
                         sample_id.to_string(),
                     );
                 }

@@ -102,7 +102,7 @@ impl GraphManager {
             node_labels: self
                 .node_labels
                 .iter()
-                .map(|(key, value)| (key.index(), value.clone()))
+                .map(|(key, value)| (key.index(), *value))
                 .collect(),
             edges: edges
                 .iter()

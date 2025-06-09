@@ -48,7 +48,7 @@ impl View for ChannelEffectView<'_> {
         let title = if channel_index > 0 {
             format!("Channel {channel_index} effects")
         } else {
-            format!("Main channel effects")
+            "Main channel effects".to_string()
         };
         StateWindow::show_from_window_state(
             ui,
@@ -73,7 +73,7 @@ impl View for ChannelEffectView<'_> {
                                     ui.add_enabled(
                                         !edit_state,
                                         EffectWidget::new(
-                                            &store.select(&effect_sel),
+                                            store.select(&effect_sel),
                                             effect_sel,
                                             local_state,
                                             dispatch_effect,

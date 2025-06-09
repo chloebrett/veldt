@@ -127,7 +127,7 @@ pub struct NodeLayout {
 impl NodeLayout {
     /// Creates new [`NodeLayout`] with `Coil` kind and flexible pin heights.
     #[inline]
-    pub const fn coil() -> Self {
+    #[must_use] pub const fn coil() -> Self {
         NodeLayout {
             kind: NodeLayoutKind::Coil,
             min_pin_row_height: 0.0,
@@ -137,7 +137,7 @@ impl NodeLayout {
 
     /// Creates new [`NodeLayout`] with `Sandwich` kind and flexible pin heights.
     #[inline]
-    pub const fn sandwich() -> Self {
+    #[must_use] pub const fn sandwich() -> Self {
         NodeLayout {
             kind: NodeLayoutKind::Sandwich,
             min_pin_row_height: 0.0,
@@ -147,7 +147,7 @@ impl NodeLayout {
 
     /// Creates new [`NodeLayout`] with `FlippedSandwich` kind and flexible pin heights.
     #[inline]
-    pub const fn flipped_sandwich() -> Self {
+    #[must_use] pub const fn flipped_sandwich() -> Self {
         NodeLayout {
             kind: NodeLayoutKind::FlippedSandwich,
             min_pin_row_height: 0.0,
@@ -156,7 +156,7 @@ impl NodeLayout {
     }
 
     /// Returns new [`NodeLayout`] with same `kind` and specified pin heights.
-    pub const fn with_equal_pin_rows(self) -> Self {
+    #[must_use] pub const fn with_equal_pin_rows(self) -> Self {
         NodeLayout {
             kind: self.kind,
             min_pin_row_height: self.min_pin_row_height,
@@ -165,7 +165,7 @@ impl NodeLayout {
     }
 
     /// Returns new [`NodeLayout`] with same `kind` and specified minimum pin row height.
-    pub const fn with_min_pin_row_height(self, min_pin_row_height: f32) -> Self {
+    #[must_use] pub const fn with_min_pin_row_height(self, min_pin_row_height: f32) -> Self {
         NodeLayout {
             kind: self.kind,
             min_pin_row_height,
