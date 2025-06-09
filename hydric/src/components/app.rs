@@ -1,5 +1,5 @@
 use super::{
-    KeyView, NoteRoll, NoteView, PlacementView, TrackRoll,
+    ChannelEffectView, KeyView, NoteRoll, NoteView, PlacementView, TrackRoll,
     effect::{EffectView, MixerView},
     generator::{GeneratorView, generators_control},
     menu::MenuBar,
@@ -150,6 +150,8 @@ impl View for App {
             let scale = self.store.get().scale;
             KeyView::new(dispatch, &self.local_state, key, scale).ui(ui);
         }
+
+        ChannelEffectView::new(&self.store, &self.local_state).ui(ui);
 
         NoteView::new(&self.store, &self.local_state).ui(ui);
         NoteRoll::new(&self.store, &self.local_state, &mut self.player).ui(ui);
