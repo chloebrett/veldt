@@ -6,28 +6,22 @@ use strum::{Display, EnumString};
 
 /// Fields that index into a list.
 /// Used to distinguish *which* index is being referred to, and also contains the index value.
+/// Note that this is only for *indexes* - most entities have an *id* type, and so will use
+/// e.g. TypeField::GeneratorId instead of IndexField.
 #[derive(EnumString, Display, PartialEq, Clone, Debug)]
 pub enum IndexField {
-    // TODO: remove unused, there are several.
-    Track(usize),
     PlacedNote(usize),
-    Placement(usize),
+    // Index of an effect ID within a mixer channel.
     EffectId(usize),
     Mixer(usize),
-    Generator(usize),
-    Sample(usize),
 }
 
 impl From<IndexFieldProto> for IndexField {
     fn from(other: IndexFieldProto) -> Self {
         match other.kind.unwrap() {
-            IndexFieldKind::Track(it) => IndexField::Track(it as usize),
             IndexFieldKind::PlacedNote(it) => IndexField::PlacedNote(it as usize),
-            IndexFieldKind::Placement(it) => IndexField::Placement(it as usize),
             IndexFieldKind::EffectId(it) => IndexField::EffectId(it as usize),
             IndexFieldKind::Mixer(it) => IndexField::Mixer(it as usize),
-            IndexFieldKind::Generator(it) => IndexField::Generator(it as usize),
-            IndexFieldKind::Sample(it) => IndexField::Sample(it as usize),
         }
     }
 }
@@ -36,13 +30,9 @@ impl From<IndexField> for IndexFieldProto {
     fn from(other: IndexField) -> Self {
         IndexFieldProto {
             kind: Some(match other {
-                IndexField::Track(it) => IndexFieldKind::Track(it as u32),
                 IndexField::PlacedNote(it) => IndexFieldKind::PlacedNote(it as u32),
-                IndexField::Placement(it) => IndexFieldKind::Placement(it as u32),
                 IndexField::EffectId(it) => IndexFieldKind::EffectId(it as u32),
                 IndexField::Mixer(it) => IndexFieldKind::Mixer(it as u32),
-                IndexField::Generator(it) => IndexFieldKind::Generator(it as u32),
-                IndexField::Sample(it) => IndexFieldKind::Sample(it as u32),
             }),
         }
     }
@@ -50,13 +40,7 @@ impl From<IndexField> for IndexFieldProto {
 
 #[derive(EnumString, Display, PartialEq, Clone, Debug)]
 pub enum MultiIndexField {
-    Track(Vec<usize>),
     PlacedNote(Vec<usize>),
-    Placement(Vec<usize>),
-    EffectId(Vec<usize>),
-    Mixer(Vec<usize>),
-    Generator(Vec<usize>),
-    Sample(Vec<usize>),
 }
 
 impl From<MultiIndexFieldProto> for MultiIndexField {
@@ -64,13 +48,7 @@ impl From<MultiIndexFieldProto> for MultiIndexField {
         let indexes = object.values.iter().map(|value| *value as usize).collect();
         match object.kind() {
             MultiIndexFieldKind::UnknownIndexFieldKind => panic!(),
-            MultiIndexFieldKind::TrackIndexFieldKind => Self::Track(indexes),
             MultiIndexFieldKind::PlacedNoteIndexFieldKind => Self::PlacedNote(indexes),
-            MultiIndexFieldKind::PlacementIndexFieldKind => Self::Placement(indexes),
-            MultiIndexFieldKind::EffectIdIndexFieldKind => Self::EffectId(indexes),
-            MultiIndexFieldKind::MixerIndexFieldKind => Self::Mixer(indexes),
-            MultiIndexFieldKind::GeneratorIndexFieldKind => Self::Generator(indexes),
-            MultiIndexFieldKind::SampleIndexFieldKind => Self::Sample(indexes),
         }
     }
 }
@@ -78,32 +56,8 @@ impl From<MultiIndexFieldProto> for MultiIndexField {
 impl From<MultiIndexField> for MultiIndexFieldProto {
     fn from(object: MultiIndexField) -> Self {
         match object {
-            MultiIndexField::Track(indexes) => MultiIndexFieldProto {
-                kind: MultiIndexFieldKind::TrackIndexFieldKind.into(),
-                values: to_u32s(indexes),
-            },
             MultiIndexField::PlacedNote(indexes) => MultiIndexFieldProto {
                 kind: MultiIndexFieldKind::PlacedNoteIndexFieldKind.into(),
-                values: to_u32s(indexes),
-            },
-            MultiIndexField::Placement(indexes) => MultiIndexFieldProto {
-                kind: MultiIndexFieldKind::PlacementIndexFieldKind.into(),
-                values: to_u32s(indexes),
-            },
-            MultiIndexField::EffectId(indexes) => MultiIndexFieldProto {
-                kind: MultiIndexFieldKind::EffectIdIndexFieldKind.into(),
-                values: to_u32s(indexes),
-            },
-            MultiIndexField::Mixer(indexes) => MultiIndexFieldProto {
-                kind: MultiIndexFieldKind::MixerIndexFieldKind.into(),
-                values: to_u32s(indexes),
-            },
-            MultiIndexField::Generator(indexes) => MultiIndexFieldProto {
-                kind: MultiIndexFieldKind::GeneratorIndexFieldKind.into(),
-                values: to_u32s(indexes),
-            },
-            MultiIndexField::Sample(indexes) => MultiIndexFieldProto {
-                kind: MultiIndexFieldKind::SampleIndexFieldKind.into(),
                 values: to_u32s(indexes),
             },
         }
