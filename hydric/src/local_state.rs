@@ -1,10 +1,10 @@
+use crate::WindowState;
 use egui::Pos2;
+use shared::model::{PlacementId, Sample};
 use state::{MixerSelector, TrackSelector};
 use std::cell::RefCell;
-use std::collections::HashSet;
+use std::collections::{HashMap, HashSet};
 use std::rc::Rc;
-
-use crate::WindowState;
 
 type RcOption<T> = Rc<RefCell<Option<T>>>;
 
@@ -12,11 +12,11 @@ type RcOption<T> = Rc<RefCell<Option<T>>>;
 pub struct LocalState {
     pub active_track: RcOption<TrackSelector>,
     pub active_note: RcOption<usize>,
-    pub active_placement: RcOption<usize>,
+    pub active_placement: RcOption<PlacementId>,
     pub active_mixer_channel: RcOption<MixerSelector>,
 
     pub selected_notes: Rc<RefCell<HashSet<usize>>>,
-    pub selected_placements: Rc<RefCell<HashSet<usize>>>,
+    pub selected_placements: Rc<RefCell<HashSet<PlacementId>>>,
 
     pub mixer_edit_state: Rc<RefCell<bool>>,
 
@@ -31,6 +31,8 @@ pub struct LocalState {
     pub note_roll_select_enabled: Rc<RefCell<bool>>,
 
     pub window_state: WindowState,
+
+    pub sample_cache: Rc<RefCell<HashMap<String, Sample>>>,
 }
 
 pub trait GetSet<T: Clone> {

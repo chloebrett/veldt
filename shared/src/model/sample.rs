@@ -6,6 +6,7 @@ pub struct Sample {
     pub left: Vec<f32>,
     pub right: Vec<f32>,
     pub sample_rate: f32,
+    pub sample_name: String,
 }
 
 impl From<SampleProto> for Sample {
@@ -14,6 +15,7 @@ impl From<SampleProto> for Sample {
             left: as_floats(&item.left),
             right: as_floats(&item.right),
             sample_rate: item.sample_rate,
+            sample_name: item.sample_name,
         }
     }
 }
@@ -24,6 +26,7 @@ impl From<Sample> for SampleProto {
             left: as_bytes(&item.left),
             right: as_bytes(&item.right),
             sample_rate: item.sample_rate,
+            sample_name: item.sample_name,
         }
     }
 }

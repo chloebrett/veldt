@@ -78,6 +78,17 @@ impl<F: Fn(Action), G: Fn()> View for CompressorView<'_, F, G> {
                     &self.on_release,
                 );
             });
+            add_knob(
+                ui,
+                styled_knob(
+                    "Gain",
+                    config.gain,
+                    |it| dispatch(Action::SetFloat(FloatField::Gain, it)),
+                    0.0..=20.0,
+                )
+                .with_neutral(0.0),
+                &self.on_release,
+            );
         });
     }
 }
@@ -100,10 +111,13 @@ impl<'a> CompressorDisplay<'a> {
 impl Widget for CompressorDisplay<'_> {
     fn ui(self, ui: &mut Ui) -> Response {
         let CompressorDisplay { size, config } = self;
-        // TODO: Add gain and knee when implemented.
+        // TODO: Add knee when implemented.
         // TODO: Add live level to show compression.
         let CompressorConfig {
-            threshold, ratio, ..
+            threshold,
+            ratio,
+            gain,
+            ..
         } = *config;
         let max_db = 0.0;
         let min_db = -60.0;
@@ -117,7 +131,9 @@ impl Widget for CompressorDisplay<'_> {
                 let knee = pos2(threshold, threshold);
                 // Level post compression over threshold.
                 let max = pos2(max_db, threshold + (max_db - threshold) / ratio);
-                let line = Shape::line(vec![min, knee, max], Stroke::new(1.0, Color32::WHITE));
+                let mut line = Shape::line(vec![min, knee, max], Stroke::new(1.0, Color32::WHITE));
+                line.translate(vec2(0.0, gain));
+                // TODO: Clamp values to y-range.
                 painter.add(line.transform(to_screen));
                 response
             })

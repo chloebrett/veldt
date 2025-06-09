@@ -1,6 +1,5 @@
 use dasp_graph::Buffer;
 use ringbuffer::{AllocRingBuffer, RingBuffer};
-use std::f32::consts::TAU;
 
 pub struct Mix {
     // Note: wet/dry below is independent from wet/dry on the mixer.
@@ -13,8 +12,8 @@ pub struct FilterState {
     y_buffer: AllocRingBuffer<f32>,
 }
 
-impl FilterState {
-    pub fn new() -> Self {
+impl Default for FilterState {
+    fn default() -> Self {
         // Ring buffers store up to two samples back.
         let x_buffer = AllocRingBuffer::from([0.0; 2]);
         let y_buffer = AllocRingBuffer::from([0.0; 2]);
@@ -38,6 +37,7 @@ pub struct Filter {
 }
 
 /// Helps to prevent typos in param names.
+#[derive(Default)]
 pub struct FilterConfig {
     pub a0: f32, // coefficient of x0.
     pub a1: f32, // coefficient of x1.
@@ -48,16 +48,6 @@ pub struct FilterConfig {
 
 /// Builder for FilterConfig
 impl FilterConfig {
-    pub fn new() -> Self {
-        Self {
-            a0: 0.0,
-            a1: 0.0,
-            a2: 0.0,
-            b1: 0.0,
-            b2: 0.0,
-        }
-    }
-
     pub fn a0(mut self, val: f32) -> Self {
         self.a0 = val;
         self
@@ -94,7 +84,7 @@ impl Filter {
     }
 
     fn new_internal(config: FilterConfig, mix: Option<Mix>) -> Self {
-        let state = FilterState::new();
+        let state = FilterState::default();
         Self { config, mix, state }
     }
 

@@ -13,9 +13,8 @@ pub struct Project {
     #[proto_repeated]
     pub tracks: Vec<Track>,
 
-    /// Ordered based on start_position.
-    #[proto_repeated]
-    pub placements: Vec<Placement>,
+    #[proto_hashmap]
+    pub placements: HashMap<PlacementId, Placement>,
 
     #[proto_repeated]
     pub samples: Vec<Sample>,
@@ -29,19 +28,18 @@ pub struct Project {
     pub bpm: Beats,
 }
 
-// TODO: implement/derive deref/derefmut.
 #[derive(Hash, Default, PartialEq, Eq, Ord, PartialOrd, Debug, Clone, Copy)]
 pub struct GeneratorId(pub usize);
 
 impl From<u32> for GeneratorId {
     fn from(other: u32) -> Self {
-        GeneratorId(other as usize)
+        Self(other as usize)
     }
 }
 
 impl From<GeneratorId> for u32 {
     fn from(other: GeneratorId) -> Self {
-        other.0 as u32
+        *other as u32
     }
 }
 
@@ -53,10 +51,33 @@ impl Deref for GeneratorId {
     }
 }
 
+#[derive(Hash, Default, PartialEq, Eq, Ord, PartialOrd, Debug, Clone, Copy)]
+pub struct PlacementId(pub usize);
+
+impl From<u32> for PlacementId {
+    fn from(other: u32) -> Self {
+        Self(other as usize)
+    }
+}
+
+impl From<PlacementId> for u32 {
+    fn from(other: PlacementId) -> Self {
+        *other as u32
+    }
+}
+
+impl Deref for PlacementId {
+    type Target = usize;
+
+    fn deref(&self) -> &usize {
+        &self.0
+    }
+}
+
 impl Project {
     pub fn duration(&self) -> OrderedFloat<f32> {
         let mut max = OrderedFloat(0.0);
-        for placement in &self.placements {
+        for placement in self.placements.values() {
             if let &Ok(&TrackPlacement { track_index, .. }) = &placement.try_into() {
                 let track = &self.tracks[track_index];
                 let offset = &placement.offset;
@@ -103,19 +124,23 @@ mod tests {
                 }],
                 offset: OrderedFloat(0.0),
             }],
-            placements: vec![Placement {
-                kind: PlacementType::Track(TrackPlacement {
-                    track_index: 3,
-                    generator_index: 3,
-                }),
-                offset: 2.5.into(),
-                clipped_duration: Some(5.2.into()),
-                visual_placement: 6,
-            }],
+            placements: HashMap::from([(
+                PlacementId(0),
+                Placement {
+                    kind: PlacementType::Track(TrackPlacement {
+                        track_index: 3,
+                        generator_id: 3.into(),
+                    }),
+                    offset: 2.5.into(),
+                    clipped_duration: Some(5.2.into()),
+                    visual_placement: 6,
+                },
+            )]),
             samples: vec![Sample {
                 left: vec![0.0, 1.0, 3.0],
                 right: vec![0.0, 1.0, 3.0],
                 sample_rate: 1.0,
+                sample_name: "default".to_string(),
             }],
             generators: HashMap::from([(
                 GeneratorId(0),

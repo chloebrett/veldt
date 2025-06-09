@@ -33,17 +33,14 @@ impl NoteTracker {
         for generator_id in project.generators.keys() {
             let placements: Vec<_> = project
                 .placements
-                .clone()
-                .into_iter()
-                .filter(|it| match &it.kind {
-                    // TODO: rename generator_index in track placement to GeneratorId!
-                    // This conversion is otherwise not necessarily correct.
-                    PlacementType::Track(it) => it.generator_index == **generator_id,
+                .values()
+                .filter(|placement| match &placement.kind {
+                    PlacementType::Track(it) => it.generator_id == *generator_id,
                     _ => false,
                 })
                 .collect();
 
-            for placement in &placements {
+            for placement in placements {
                 let &Ok(&TrackPlacement { track_index, .. }) = &placement.try_into() else {
                     continue;
                 };

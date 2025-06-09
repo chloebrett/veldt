@@ -7,7 +7,7 @@ use dasp_frame::Stereo;
 use dasp_graph::Buffer;
 use shared::model::{GeneratorId, PitchName, PlacementType, Project};
 use shared::types::Beats;
-use state::{Action, GeneratorSelector, IndexField, Selector, StoreData};
+use state::{Action, GeneratorSelector, Selector, StoreData, TypeField};
 use std::collections::HashMap;
 use std::sync::mpsc::Receiver;
 
@@ -117,22 +117,20 @@ impl RenderGraph {
     // If a track placement changes its generator index, stop the old generator from playing.
     fn maybe_stop_generator(&mut self, selector: &Selector, action: &Action) {
         let store = &self.process_context.store;
-        let Selector::Placement(placement_index) = selector else {
+        let Selector::Placement(placement_id) = selector else {
             return;
         };
 
-        let Action::SetIndex(IndexField::Generator(_)) = action else {
+        let Action::SetChild(TypeField::GeneratorId(_)) = action else {
             return;
         };
 
-        let PlacementType::Track(track_placement) =
-            &store.project.placements[*placement_index].kind
+        let PlacementType::Track(track_placement) = &store.project.placements[placement_id].kind
         else {
             return;
         };
 
-        // TODO: change track_placement.generator_index to generator_id.
-        let prev_generator_id = GeneratorId(track_placement.generator_index);
+        let prev_generator_id = track_placement.generator_id;
         let stop_generators = &mut self.process_context.stop_generators;
         stop_generators.insert(prev_generator_id, true);
         log::info!("Stopped generator: {:?}", stop_generators);
