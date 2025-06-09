@@ -1,23 +1,16 @@
-use super::{MixerMatrixView, effect_name};
+use super::MixerMatrixView;
 use crate::GetSet;
 use crate::local_state::LocalState;
 use crate::playback::AudioPlayer;
 use crate::view::View;
 use crate::widget::StateWindow;
 use crate::widget::int_slider;
-use crate::widget::{add_knob, styled_knob};
 use crate::window_state::WindowKind;
-use egui::CornerRadius;
-use egui::Shape;
-use egui::{Button, Color32, Frame, InnerResponse, Layout, Response, Stroke, Ui, Widget};
+use egui::{Button, Ui};
 use egui_fader::Fader;
 use mesic::from_db;
 use mesic::to_db;
-use shared::model::{Effect, EffectInstance, EffectMeta};
-use state::{
-    Action, EffectSelector, FloatField, IndexField, MixerSelector, MoveField, Store, TypeField,
-};
-use strum::IntoEnumIterator;
+use state::{Action, FloatField, MixerSelector, Store};
 
 pub struct MixerView<'a> {
     store: &'a Store,
@@ -52,7 +45,6 @@ impl View for MixerView<'_> {
         let mixer = &store.select(&mixer_sel);
         let dispatch_mixer = |action| store.dispatch(&mixer_sel, action);
         let on_release = || store.dispatchr(Action::Release);
-        let edit_state = local_state.mixer_edit_state.get();
 
         StateWindow::show_from_window_state(
             ui,
@@ -113,19 +105,29 @@ impl View for MixerView<'_> {
                 });
 
                 ui.separator();
-                ui.horizontal(|ui| {
-                    let dispatch_volume =
-                        |it| dispatch_mixer(Action::SetFloat(FloatField::Volume, from_db(it)));
-                    let mut level = to_db(mixer.volume);
-                    ui.add(
-                        Fader::stereo(&mut level, player.level())
-                            .rect_handle_shape(0.5)
-                            .text_size(12.0),
-                    );
-                    if level != to_db(mixer.volume) {
-                        dispatch_volume(level)
-                    }
-                });
+                let dispatch_volume =
+                    |it| dispatch_mixer(Action::SetFloat(FloatField::Volume, from_db(it)));
+                let mut level = to_db(mixer.volume);
+                ui.add(
+                    Fader::stereo(&mut level, player.level())
+                        .rect_handle_shape(0.5)
+                        .text_size(12.0),
+                );
+                if level != to_db(mixer.volume) {
+                    dispatch_volume(level)
+                }
+                let show_effect = local_state
+                    .window_state
+                    .get_visible(WindowKind::ChannelEffect);
+                if ui
+                    .add(Button::new("Effects").selected(show_effect))
+                    .clicked()
+                {
+                    local_state
+                        .window_state
+                        .set_visible(WindowKind::ChannelEffect, !show_effect);
+                };
+                log::debug!("!{:?}", show_effect);
             },
         );
     }

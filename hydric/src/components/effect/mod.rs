@@ -7,7 +7,7 @@ mod mixer_matrix;
 mod mixer_view;
 mod mod_delay_view;
 
-use channel_effect_view::*;
+pub use channel_effect_view::*;
 use compressor_view::*;
 use delay_view::*;
 pub use effect_view::*;

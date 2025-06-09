@@ -8,7 +8,7 @@ use strum::IntoEnumIterator;
 use crate::{
     local_state::{GetSet, LocalState},
     view::View,
-    widget::styled_knob,
+    widget::{StateWindow, styled_knob},
     window_state::WindowKind,
 };
 use egui::{
@@ -21,134 +21,145 @@ use super::effect_name;
 pub struct ChannelEffectView<'a> {
     store: &'a Store,
     local_state: &'a LocalState,
-    selector: MixerSelector,
 }
 
 impl<'a> ChannelEffectView<'a> {
-    pub fn new(store: &'a Store, local_state: &'a LocalState, selector: MixerSelector) -> Self {
-        Self {
-            store,
-            local_state,
-            selector,
-        }
+    pub fn new(store: &'a Store, local_state: &'a LocalState) -> Self {
+        Self { store, local_state }
     }
 }
 
 impl View for ChannelEffectView<'_> {
     fn ui(&mut self, ui: &mut Ui) {
         let Self {
-            store,
-            local_state,
-            selector,
+            store, local_state, ..
         } = *self;
+        let selector = local_state
+            .active_mixer_channel
+            .get()
+            .unwrap_or(MixerSelector(0));
         let mixer = &store.select(&selector);
         let dispatch_mixer = |action| store.dispatch(&selector, action);
         let on_release = || store.dispatchr(Action::Release);
         let edit_state = local_state.mixer_edit_state.get();
         // Keep track of an object being dragged.
         let mut from_to = None;
-
-        ui.vertical(|ui| {
-            ui.with_layout(Layout::default(), |ui| {
-                // Set background to transparent to avoid a lightened background caused by drag
-                // and drop.
-                ui.visuals_mut().widgets.inactive.bg_fill = Color32::TRANSPARENT;
-                ui.dnd_drop_zone::<EffectLocation, ()>(Frame::default(), |ui| {
-                    for effect_index in 0..mixer.effects.len() {
-                        let effect_sel = selector.downcast_effect(effect_index);
-                        let dispatch_effect = |action: Action| store.dispatch(&effect_sel, action);
-                        // TODO Determine if this is the best way to do this.
-                        // There seems to be no way to render an object once then pass the
-                        // response into the `dnd_drag_zone` if `edit_state` is true.
-                        let render_effect_widget = |ui: &mut Ui| {
-                            ui.add_enabled(
-                                !edit_state,
-                                EffectWidget::new(
-                                    &mixer.effects[effect_index],
-                                    effect_sel,
-                                    local_state,
-                                    dispatch_effect,
-                                    on_release,
-                                ),
-                            )
+        let MixerSelector(channel_index) = selector;
+        let title = format!("Channel {channel_index} effects");
+        StateWindow::show_from_window_state(
+            ui,
+            &local_state.window_state,
+            WindowKind::ChannelEffect,
+            &title,
+            |ui| {
+                ui.vertical(|ui| {
+                    ui.with_layout(Layout::default(), |ui| {
+                        // Set background to transparent to avoid a lightened background caused by drag
+                        // and drop.
+                        ui.visuals_mut().widgets.inactive.bg_fill = Color32::TRANSPARENT;
+                        ui.dnd_drop_zone::<EffectLocation, ()>(Frame::default(), |ui| {
+                            for effect_index in 0..mixer.effects.len() {
+                                let effect_sel = selector.downcast_effect(effect_index);
+                                let dispatch_effect =
+                                    |action: Action| store.dispatch(&effect_sel, action);
+                                // TODO Determine if this is the best way to do this.
+                                // There seems to be no way to render an object once then pass the
+                                // response into the `dnd_drag_zone` if `edit_state` is true.
+                                let render_effect_widget = |ui: &mut Ui| {
+                                    ui.add_enabled(
+                                        !edit_state,
+                                        EffectWidget::new(
+                                            &mixer.effects[effect_index],
+                                            effect_sel,
+                                            local_state,
+                                            dispatch_effect,
+                                            on_release,
+                                        ),
+                                    )
+                                };
+                                if edit_state {
+                                    let id = egui::Id::new(("effect_config", effect_index));
+                                    let response = ui
+                                        .dnd_drag_source(
+                                            id,
+                                            EffectLocation::Index(effect_index),
+                                            render_effect_widget,
+                                        )
+                                        .response;
+                                    // Update `from_to` if an object has been dragged and
+                                    // released.
+                                    if let Some(new_from_to) =
+                                        handle_drag(ui, response, effect_index)
+                                    {
+                                        from_to = Some(new_from_to)
+                                    };
+                                } else {
+                                    render_effect_widget(ui);
+                                }
+                            }
+                        });
+                    });
+                    if edit_state {
+                        // Delete drag zone.
+                        let response = ui
+                            .vertical_centered(|ui| {
+                                ui.label("🗑");
+                                ui.separator();
+                            })
+                            .response;
+                        if let Some(new_from_to) = handle_delete_drag(ui, response) {
+                            from_to = Some(new_from_to)
                         };
-                        if edit_state {
-                            let id = egui::Id::new(("effect_config", effect_index));
-                            let response = ui
-                                .dnd_drag_source(
-                                    id,
-                                    EffectLocation::Index(effect_index),
-                                    render_effect_widget,
-                                )
-                                .response;
-                            // Update `from_to` if an object has been dragged and
-                            // released.
-                            if let Some(new_from_to) = handle_drag(ui, response, effect_index) {
-                                from_to = Some(new_from_to)
-                            };
-                        } else {
-                            render_effect_widget(ui);
-                        }
                     }
-                });
-            });
-            if edit_state {
-                // Delete drag zone.
-                let response = ui
-                    .vertical_centered(|ui| {
-                        ui.label("🗑");
-                        ui.separator();
+
+                    ui.horizontal(|ui| {
+                        ui.menu_button("Add new effect", |ui| {
+                            for effect in Effect::iter() {
+                                let text = effect_name(&effect);
+                                if ui.button(text).clicked() {
+                                    let instance = EffectInstance {
+                                        it: effect,
+                                        meta: EffectMeta::default(),
+                                    };
+                                    dispatch_mixer(Action::AddChild(TypeField::Effect(instance)));
+                                }
+                            }
+                        });
+                        // Disable edit state and button if there are no effects.
+                        let has_effects = !mixer.effects.is_empty();
+                        if !has_effects {
+                            local_state.mixer_edit_state.set(false);
+                        }
+                        if ui
+                            .add_enabled(has_effects, Button::new("Edit").selected(edit_state))
+                            .clicked()
+                        {
+                            local_state.mixer_edit_state.set(!edit_state);
+                        };
                     })
-                    .response;
-                if let Some(new_from_to) = handle_delete_drag(ui, response) {
-                    from_to = Some(new_from_to)
-                };
-            }
-
-            ui.horizontal(|ui| {
-                ui.menu_button("Add new effect", |ui| {
-                    for effect in Effect::iter() {
-                        let text = effect_name(&effect);
-                        if ui.button(text).clicked() {
-                            let instance = EffectInstance {
-                                it: effect,
-                                meta: EffectMeta::default(),
-                            };
-                            dispatch_mixer(Action::AddChild(TypeField::Effect(instance)));
-                        }
-                    }
                 });
-                // Disable edit state and button if there are no effects.
-                let has_effects = !mixer.effects.is_empty();
-                if !has_effects {
-                    local_state.mixer_edit_state.set(false);
-                }
-                if ui
-                    .add_enabled(has_effects, Button::new("Edit").selected(edit_state))
-                    .clicked()
-                {
-                    local_state.mixer_edit_state.set(!edit_state);
-                };
-            })
-        });
 
-        // Update effects based on drag and drop.
-        if let Some((from, to)) = from_to {
-            match (from, to) {
-                // Object has been deleted.
-                (EffectLocation::Index(from_index), EffectLocation::Delete) => {
-                    dispatch_mixer(Action::DeleteChild(state::IndexField::Effect(from_index)))
+                // Update effects based on drag and drop.
+                if let Some((from, to)) = from_to {
+                    match (from, to) {
+                        // Object has been deleted.
+                        (EffectLocation::Index(from_index), EffectLocation::Delete) => {
+                            dispatch_mixer(Action::DeleteChild(state::IndexField::Effect(
+                                from_index,
+                            )))
+                        }
+                        // Object has been moved.
+                        (EffectLocation::Index(from_index), EffectLocation::Index(to_index)) => {
+                            dispatch_mixer(Action::MoveChild(MoveField {
+                                from_field: IndexField::Effect(from_index),
+                                to_field: IndexField::Effect(to_index),
+                            }));
+                        }
+                        _ => {}
+                    }
                 }
-                // Object has been moved.
-                (EffectLocation::Index(from_index), EffectLocation::Index(to_index)) => {
-                    dispatch_mixer(Action::MoveChild(MoveField {
-                        from_field: IndexField::Effect(from_index),
-                        to_field: IndexField::Effect(to_index),
-                    }));
-                }
-                _ => {}
-            }
-        }
+            },
+        );
     }
 }
 
