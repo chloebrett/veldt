@@ -277,28 +277,6 @@ impl PlacedTrack {
         });
     }
 
-    fn add_new(&self, store: &Store) {
-        store.dispatchr(Action::AddChild(TypeField::Placement(
-            self.placement.clone(),
-        )));
-    }
-
-    fn from_pos(pos: Pos2, range: Rect) -> PlacedTrack {
-        let offset = range.left() + pos.x;
-        PlacedTrack {
-            placement: Placement {
-                kind: PlacementType::Track(TrackPlacement {
-                    track_id: 0.into(),
-                    generator_id: 0.into(),
-                }),
-                offset: offset.into(),
-                clipped_duration: None,
-                visual_placement: 0,
-            },
-            unclipped_duration: 0.0.into(),
-        }
-    }
-
     fn delete_selected(store: &Store, local_state: &LocalState) {
         local_state
             .active_placement
@@ -551,9 +529,22 @@ impl Widget for TrackSequencer<'_> {
                     PlacedTrack::set_selected(self.local_state, None);
                 }
             } else if response.interact(Sense::click()).clicked() {
-                let pos = response.interact_pointer_pos().unwrap();
-                let object = PlacedTrack::from_pos(pos.transform(to_screen.inverse()), range);
-                object.add_new(store);
+                let pos = response
+                    .interact_pointer_pos()
+                    .unwrap()
+                    .transform(to_screen.inverse());
+
+                let offset = range.left() + pos.x;
+                let placement = Placement {
+                    kind: PlacementType::Track(TrackPlacement {
+                        track_id: 0.into(),
+                        generator_id: 0.into(),
+                    }),
+                    offset: offset.into(),
+                    clipped_duration: None,
+                    visual_placement: pos.y as u32,
+                };
+                store.dispatchr(Action::AddChild(TypeField::Placement(placement)));
             }
 
             self.interact(ui, &response);
