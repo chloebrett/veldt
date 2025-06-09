@@ -14,6 +14,7 @@ use strum::{Display, EnumIter};
 pub enum WindowKind {
     Mixer,
     Effect(EffectSelector),
+    ChannelEffect,
     GeneratorList,
     Generator(GeneratorSelector),
     Scale,
@@ -41,6 +42,7 @@ impl WindowData {
             WindowKind::Effect(EffectSelector(effect_id)) => {
                 pos2(1000.0, 150.0) + vec2(50.0 * *effect_id as f32, 50.0 * *effect_id as f32)
             }
+            WindowKind::ChannelEffect => pos2(800.0, 150.0),
             WindowKind::GeneratorList => pos2(1100.0, 20.0),
             WindowKind::Generator(..) => pos2(1000.0, 150.0),
             WindowKind::Save => pos2(150.0, 150.0),
