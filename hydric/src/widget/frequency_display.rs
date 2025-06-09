@@ -1,8 +1,8 @@
 use std::ops::RangeInclusive;
 
 use egui::{
-    Align2, CornerRadius, FontId, Pos2, Rangef, Rect, Response, Sense, Stroke, Ui, Vec2,
-    Widget, lerp, pos2, remap, remap_clamp, vec2,
+    Align2, CornerRadius, FontId, Pos2, Rangef, Rect, Response, Sense, Stroke, Ui, Vec2, Widget,
+    lerp, pos2, remap, remap_clamp, vec2,
 };
 
 struct FrequencySpec {
