@@ -175,46 +175,48 @@ impl View for MixerView<'_> {
                                 }
                             });
                         });
+                        if edit_state {
+                            // Delete drag zone.
+                            let response = ui
+                                .vertical_centered(|ui| {
+                                    ui.label("🗑");
+                                    ui.separator();
+                                })
+                                .response;
+                            if let Some(new_from_to) = handle_delete_drag(ui, response) {
+                                from_to = Some(new_from_to)
+                            };
+                        }
+
+                        ui.horizontal(|ui| {
+                            ui.menu_button("Add new effect", |ui| {
+                                for effect in Effect::iter() {
+                                    let text = effect_name(&effect);
+                                    if ui.button(text).clicked() {
+                                        let instance = EffectInstance {
+                                            it: effect,
+                                            meta: EffectMeta::default(),
+                                        };
+                                        dispatch_mixer(Action::AddChild(TypeField::Effect(
+                                            instance,
+                                        )));
+                                    }
+                                }
+                            });
+                            // Disable edit state and button if there are no effects.
+                            let has_effects = !mixer.effects.is_empty();
+                            if !has_effects {
+                                local_state.mixer_edit_state.set(false);
+                            }
+                            if ui
+                                .add_enabled(has_effects, Button::new("Edit").selected(edit_state))
+                                .clicked()
+                            {
+                                local_state.mixer_edit_state.set(!edit_state);
+                            };
+                        })
                     });
                 });
-                if edit_state {
-                    // Delete drag zone.
-                    let response = ui
-                        .vertical_centered(|ui| {
-                            ui.label("🗑");
-                            ui.separator();
-                        })
-                        .response;
-                    if let Some(new_from_to) = handle_delete_drag(ui, response) {
-                        from_to = Some(new_from_to)
-                    };
-                }
-
-                ui.horizontal(|ui| {
-                    ui.menu_button("Add new effect", |ui| {
-                        for effect in Effect::iter() {
-                            let text = effect_name(&effect);
-                            if ui.button(text).clicked() {
-                                let instance = EffectInstance {
-                                    it: effect,
-                                    meta: EffectMeta::default(),
-                                };
-                                dispatch_mixer(Action::AddChild(TypeField::Effect(instance)));
-                            }
-                        }
-                    });
-                    // Disable edit state and button if there are no effects.
-                    let has_effects = !mixer.effects.is_empty();
-                    if !has_effects {
-                        local_state.mixer_edit_state.set(false);
-                    }
-                    if ui
-                        .add_enabled(has_effects, Button::new("Edit").selected(edit_state))
-                        .clicked()
-                    {
-                        local_state.mixer_edit_state.set(!edit_state);
-                    };
-                })
             },
         );
 
