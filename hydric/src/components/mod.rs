@@ -2,6 +2,7 @@ mod app;
 mod effect;
 mod frame_history;
 mod generator;
+mod graph_view;
 mod key_view;
 mod menu;
 mod mod_matrix;
@@ -13,7 +14,9 @@ mod play;
 mod track_roll;
 
 pub use app::*;
+use effect::*;
 use frame_history::*;
+use graph_view::*;
 use key_view::*;
 use mod_matrix::*;
 use note_roll::*;

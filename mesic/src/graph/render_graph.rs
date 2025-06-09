@@ -2,7 +2,8 @@ use super::{
     NoteEvent, NoteEventType, NoteTracker, PlaybackMode, ProcessContext, Processor, make_processor,
 };
 use crate::convert::beats_to_samples;
-use crate::mixer::Mixer;
+use crate::mixer::{GraphDebugInfo, Mixer};
+use crossbeam_channel::Sender;
 use dasp_frame::Stereo;
 use dasp_graph::Buffer;
 use shared::model::{GeneratorId, PitchName, PlacementType, Project};
@@ -39,7 +40,7 @@ impl RenderGraph {
         let main_playback_len = beats_to_samples(duration_ceil(project), project.bpm) as usize;
 
         Self {
-            mixer: Mixer::new(project),
+            mixer: Mixer::new(project, None),
             processor: make_processor(),
             process_context: ProcessContext::new(store.clone()),
             rx,
@@ -89,7 +90,14 @@ impl RenderGraph {
         self.main_playback_index = 0;
         self.preview_playback_index = 0;
         self.process_context.playback_mode = PlaybackMode::Main;
-        self.mixer = Mixer::new(project);
+
+        let debug_tx = self.mixer.get_debug_tx();
+        self.mixer = Mixer::new(project, debug_tx);
+    }
+
+    pub fn set_debug_tx(&mut self, debug_tx: Sender<GraphDebugInfo>) {
+        log::info!("Set debug tx");
+        self.mixer.set_debug_tx(debug_tx);
     }
 
     fn update_store(&mut self) {

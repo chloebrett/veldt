@@ -1,5 +1,5 @@
 use crate::view::View;
-use crate::widget::{add_knob, get_set, log_slider, selectable_value, styled_knob};
+use crate::widget::{add_knob, get_set, selectable_value, styled_knob};
 use egui::Ui;
 use shared::model::{ModDelayConfig, WaveType};
 use state::{Action, FloatField, TypeField, UintField};
@@ -54,13 +54,16 @@ impl<F: Fn(Action), G: Fn()> View for ModDelayView<'_, F, G> {
             .with_step(1.0),
             &self.on_release,
         );
-        // TODO: replace this with a knob once we have logarithmic knobs.
-        log_slider(
+        add_knob(
             ui,
-            "LFO frequency (Hz)",
-            config.freq as f64,
-            |it| dispatch(Action::SetFloat(FloatField::LfoFreq, it as f32)),
-            0.1..=100.0,
+            styled_knob(
+                "LFO frequency (Hz)",
+                config.freq,
+                |it| dispatch(Action::SetFloat(FloatField::LfoFreq, it)),
+                0.1..=100.0,
+            )
+            .logarithmic(true)
+            .with_neutral(1.0),
             &self.on_release,
         );
 

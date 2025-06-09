@@ -10,7 +10,7 @@ use egui::{
 use mesic::create_scale_values;
 use shared::types::Beats;
 use shared::{
-    model::{Note, PitchName, PlacedNote, PlacementType, Scale, ScaleValue},
+    model::{Note, PitchName, PlacedNote, PlacementType, Scale, ScaleValue, TrackId},
     types::PitchValue,
 };
 use state::{
@@ -120,7 +120,7 @@ impl View for NoteRoll<'_> {
         if !select {
             local_state.selected_notes.set(HashSet::default());
         }
-        let title = format!("Track {}", track_sel.0);
+        let title = format!("Track {}", *track_sel.0);
         StateWindow::show_from_window_state(
             ui,
             &local_state.window_state,
@@ -150,7 +150,7 @@ impl View for NoteRoll<'_> {
                                 .placements
                                 .values()
                                 .filter_map(|placement| match &placement.kind {
-                                    PlacementType::Track(it) if it.track_index == track_sel.0 => {
+                                    PlacementType::Track(it) if it.track_id == track_sel.0 => {
                                         Some(it.generator_id)
                                     }
                                     _ => None,
@@ -290,9 +290,9 @@ impl NoteSequencerObject {
         local_state.selected_notes.set(notes);
     }
 
-    fn add_new(&self, store: &Store, parent_index: usize) {
+    fn add_new(&self, store: &Store, track_id: TrackId) {
         store.dispatch(
-            &TrackSelector(parent_index),
+            &TrackSelector(track_id),
             Action::AddChild(TypeField::PlacedNote(self.0.clone())),
         );
     }
@@ -309,14 +309,14 @@ impl NoteSequencerObject {
         })
     }
 
-    fn delete_selected(store: &Store, local_state: &LocalState, parent_index: usize) {
+    fn delete_selected(store: &Store, local_state: &LocalState, track_id: TrackId) {
         local_state.active_note.update(|note| match note {
             // If the active note is selected, "de-activate" it.
             Some(index) if local_state.selected_notes.get().contains(&index) => None,
             _ => note,
         });
         store.dispatch(
-            &TrackSelector(parent_index),
+            &TrackSelector(track_id),
             Action::DeleteChildren(MultiIndexField::PlacedNote(
                 local_state.selected_notes.get().into_iter().collect(),
             )),
@@ -332,7 +332,7 @@ pub struct NoteSequencer<'a> {
     objects: Vec<NoteSequencerObject>,
     quantise_level: Beats,
     background_shapes: Vec<Shape>,
-    parent_index: usize,
+    track_id: TrackId,
     select: bool,
 }
 
@@ -341,7 +341,7 @@ impl<'a> NoteSequencer<'a> {
         store: &'a Store,
         local_state: &'a LocalState,
         range: Rect,
-        parent_index: usize,
+        track_id: TrackId,
     ) -> Self {
         NoteSequencer {
             store,
@@ -351,7 +351,7 @@ impl<'a> NoteSequencer<'a> {
             objects: vec![],
             quantise_level: 0.125,
             background_shapes: vec![],
-            parent_index,
+            track_id,
             select: false,
         }
     }
@@ -447,7 +447,7 @@ impl<'a> NoteSequencer<'a> {
             }
             let edit_object = |action: Action| {
                 self.store
-                    .dispatch(&NoteSelector(self.parent_index, index), action)
+                    .dispatch(&NoteSelector(self.track_id, index), action)
             };
             let release = self.move_object(movable_resp, to_sequencer, &edit_object)
                 || self.resize_object(index, resize_resp, to_sequencer, &edit_object);
@@ -564,18 +564,14 @@ impl Widget for NoteSequencer<'_> {
                 if ui.input(|input| {
                     input.key_pressed(egui::Key::Delete) || input.key_pressed(egui::Key::Backspace)
                 }) {
-                    NoteSequencerObject::delete_selected(
-                        store,
-                        self.local_state,
-                        self.parent_index,
-                    );
+                    NoteSequencerObject::delete_selected(store, self.local_state, self.track_id);
                     NoteSequencerObject::set_selected(self.local_state, None);
                 }
             } else if response.interact(Sense::click()).clicked() {
                 let pos = response.interact_pointer_pos().unwrap();
                 let object =
                     NoteSequencerObject::from_pos(pos.transform(to_screen.inverse()), range);
-                object.add_new(store, self.parent_index);
+                object.add_new(store, self.track_id);
             }
 
             self.interact(ui, &response);

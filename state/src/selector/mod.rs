@@ -3,7 +3,7 @@ use shared::action_proto::selector_proto::IndexTriple;
 use shared::action_proto::{
     SelectorProto, selector_proto::IndexPair, selector_proto::Kind as SelectorKind,
 };
-use shared::model::{GeneratorId, PlacementId};
+use shared::model::{EffectId, GeneratorId, PlacementId, SampleId, TrackId};
 
 mod effect;
 mod envelope;
@@ -58,13 +58,13 @@ pub trait SelectorTrait {
 #[derive(Clone, Debug, PartialEq)]
 pub enum Selector {
     Root,
-    Track(/* track_index */ usize),
-    Note(/* track_index */ usize, /* note_index */ usize),
+    Track(TrackId),
+    Note(TrackId, /* note_index */ usize),
     Mixer(/* mixer_index */ usize),
-    Effect(/* mixer_index */ usize, /* effect_index */ usize),
+    Effect(EffectId),
     Generator(GeneratorId),
     Placement(PlacementId),
-    Sample(/* sample_index */ usize),
+    Sample(SampleId),
     Oscillator(GeneratorId, /* oscillator_index */ usize),
     MixerMatrixCell(/* row */ usize, /* col */ usize),
     Lfo(GeneratorId, /* lfo_index */ usize),
@@ -78,13 +78,13 @@ impl From<Selector> for SelectorProto {
         SelectorProto {
             kind: Some(match other {
                 Selector::Root => SelectorKind::Root(0),
-                Selector::Track(it) => SelectorKind::Track(it as u32),
-                Selector::Note(first, second) => SelectorKind::Note(pair(first, second)),
+                Selector::Track(it) => SelectorKind::Track(it.into()),
+                Selector::Note(first, second) => SelectorKind::Note(pair(*first, second)),
                 Selector::Mixer(it) => SelectorKind::Mixer(it as u32),
-                Selector::Effect(first, second) => SelectorKind::Effect(pair(first, second)),
+                Selector::Effect(it) => SelectorKind::Effect(it.into()),
                 Selector::Generator(it) => SelectorKind::Generator(it.into()),
                 Selector::Placement(it) => SelectorKind::Placement(it.into()),
-                Selector::Sample(it) => SelectorKind::Sample(it as u32),
+                Selector::Sample(it) => SelectorKind::Sample(it.into()),
                 Selector::Oscillator(first, second) => {
                     SelectorKind::Oscillator(pair(*first, second))
                 }
@@ -108,17 +108,15 @@ impl From<SelectorProto> for Selector {
     fn from(other: SelectorProto) -> Selector {
         match other.kind.unwrap() {
             SelectorKind::Root(..) => Selector::Root,
-            SelectorKind::Track(it) => Selector::Track(it as usize),
+            SelectorKind::Track(it) => Selector::Track(it.into()),
             SelectorKind::Note(IndexPair { first, second }) => {
-                Selector::Note(first as usize, second as usize)
+                Selector::Note(first.into(), second as usize)
             }
             SelectorKind::Mixer(it) => Selector::Mixer(it as usize),
-            SelectorKind::Effect(IndexPair { first, second }) => {
-                Selector::Effect(first as usize, second as usize)
-            }
+            SelectorKind::Effect(it) => Selector::Effect(it.into()),
             SelectorKind::Generator(it) => Selector::Generator(it.into()),
             SelectorKind::Placement(it) => Selector::Placement(it.into()),
-            SelectorKind::Sample(it) => Selector::Sample(it as usize),
+            SelectorKind::Sample(it) => Selector::Sample(it.into()),
             SelectorKind::Oscillator(IndexPair { first, second }) => {
                 Selector::Oscillator(first.into(), second as usize)
             }
