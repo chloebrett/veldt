@@ -5,7 +5,7 @@ package pmodel;
 message ProjectProto {
   string name = 1;
 
-  repeated TrackProto tracks = 2;
+  map<uint32, TrackProto> tracks = 2;
 
   map<uint32, PlacementProto> placements = 3;
 
@@ -59,7 +59,7 @@ message PlacementProto {
 }
 
 message TrackPlacementProto {
-  uint32 track_index = 1;
+  uint32 track_id = 1;
 
   uint32 generator_id = 2;
 }

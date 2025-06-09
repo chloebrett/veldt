@@ -1,6 +1,6 @@
 use crate::receiver::ActionReceiver;
 use crate::{Action, FloatField, IndexField, MultiTypeField, TypeField};
-use shared::model::{Placement, PlacementId, Project, SampleId};
+use shared::model::{Placement, PlacementId, Project, SampleId, TrackId};
 use std::collections::HashMap;
 
 impl ActionReceiver for Project {
@@ -44,17 +44,18 @@ impl ActionReceiver for Project {
                 Action::NonReversible
             }
             Action::AddChild(TypeField::Track(track)) => {
-                let prev = self.tracks.len();
-                self.tracks.push(track.clone());
-                Action::DeleteChild(IndexField::Track(prev))
+                let max_id = self.tracks.keys().max().unwrap_or(&TrackId(0));
+                let id = TrackId((**max_id) + 1);
+                self.tracks.insert(id, track.clone());
+                Action::DeleteChildById(TypeField::TrackId(id))
             }
-            Action::DeleteChild(IndexField::Track(index)) => {
+            Action::DeleteChildById(TypeField::TrackId(id)) => {
                 let prev = self
                     .tracks
-                    .get(*index)
+                    .get(id)
                     .expect("Can't delete non-existent track")
                     .clone();
-                self.tracks.remove(*index);
+                self.tracks.remove(id);
                 Action::AddChild(TypeField::Track(prev))
             }
             Action::DeleteChildrenById(MultiTypeField::PlacementId(ids)) => {

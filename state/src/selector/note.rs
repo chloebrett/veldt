@@ -1,10 +1,10 @@
 use super::{Selector, SelectorTrait, TrackSelector};
 use crate::StoreData;
-use shared::model::PlacedNote;
+use shared::model::{PlacedNote, TrackId};
 
 #[derive(Eq, PartialEq, Ord, PartialOrd, Copy, Clone, Debug, Hash)]
 pub struct NoteSelector(
-    /* track_index */ pub usize,
+    pub TrackId,
     /* note_index */ pub usize,
 );
 
@@ -21,7 +21,7 @@ impl SelectorTrait for NoteSelector {
         store
             .project
             .tracks
-            .get(self.0)
+            .get(&self.0)
             .and_then(|it| it.notes.get(self.1))
     }
 
@@ -29,7 +29,7 @@ impl SelectorTrait for NoteSelector {
         store
             .project
             .tracks
-            .get_mut(self.0)
+            .get_mut(&self.0)
             .and_then(|it| it.notes.get_mut(self.1))
     }
 

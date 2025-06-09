@@ -3,7 +3,7 @@ use shared::action_proto::selector_proto::IndexTriple;
 use shared::action_proto::{
     SelectorProto, selector_proto::IndexPair, selector_proto::Kind as SelectorKind,
 };
-use shared::model::{GeneratorId, PlacementId, SampleId};
+use shared::model::{GeneratorId, PlacementId, SampleId, TrackId};
 
 mod effect;
 mod envelope;
@@ -58,8 +58,8 @@ pub trait SelectorTrait {
 #[derive(Clone, Debug, PartialEq)]
 pub enum Selector {
     Root,
-    Track(/* track_index */ usize),
-    Note(/* track_index */ usize, /* note_index */ usize),
+    Track(TrackId),
+    Note(TrackId, /* note_index */ usize),
     Mixer(/* mixer_index */ usize),
     Effect(/* mixer_index */ usize, /* effect_index */ usize),
     Generator(GeneratorId),
@@ -78,8 +78,8 @@ impl From<Selector> for SelectorProto {
         SelectorProto {
             kind: Some(match other {
                 Selector::Root => SelectorKind::Root(0),
-                Selector::Track(it) => SelectorKind::Track(it as u32),
-                Selector::Note(first, second) => SelectorKind::Note(pair(first, second)),
+                Selector::Track(it) => SelectorKind::Track(it.into()),
+                Selector::Note(first, second) => SelectorKind::Note(pair(*first, second)),
                 Selector::Mixer(it) => SelectorKind::Mixer(it as u32),
                 Selector::Effect(first, second) => SelectorKind::Effect(pair(first, second)),
                 Selector::Generator(it) => SelectorKind::Generator(it.into()),
@@ -108,9 +108,9 @@ impl From<SelectorProto> for Selector {
     fn from(other: SelectorProto) -> Selector {
         match other.kind.unwrap() {
             SelectorKind::Root(..) => Selector::Root,
-            SelectorKind::Track(it) => Selector::Track(it as usize),
+            SelectorKind::Track(it) => Selector::Track(it.into()),
             SelectorKind::Note(IndexPair { first, second }) => {
-                Selector::Note(first as usize, second as usize)
+                Selector::Note(first.into(), second as usize)
             }
             SelectorKind::Mixer(it) => Selector::Mixer(it as usize),
             SelectorKind::Effect(IndexPair { first, second }) => {

@@ -83,6 +83,7 @@ message TypeFieldProto {
     uint32 generator_id = 23;
     uint32 placement_id = 24;
     uint32 sample_id = 25;
+    uint32 track_id = 26;
   }
 }
 

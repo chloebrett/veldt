@@ -1,6 +1,6 @@
 use crate::model::{
     GeneratorId, GeneratorInstance, Mixer, Placement, PlacementId, Sample, SampleId, Track,
-    TrackPlacement,
+    TrackId, TrackPlacement,
 };
 use crate::pmodel::*;
 use crate::types::Beats;
@@ -12,8 +12,8 @@ use std::collections::HashMap;
 pub struct Project {
     pub name: String,
 
-    #[proto_repeated]
-    pub tracks: Vec<Track>,
+    #[proto_hashmap]
+    pub tracks: HashMap<TrackId, Track>,
 
     #[proto_hashmap]
     pub placements: HashMap<PlacementId, Placement>,
@@ -34,8 +34,8 @@ impl Project {
     pub fn duration(&self) -> OrderedFloat<f32> {
         let mut max = OrderedFloat(0.0);
         for placement in self.placements.values() {
-            if let &Ok(&TrackPlacement { track_index, .. }) = &placement.try_into() {
-                let track = &self.tracks[track_index];
+            if let &Ok(&TrackPlacement { track_id, .. }) = &placement.try_into() {
+                let track = &self.tracks[&track_id];
                 let offset = &placement.offset;
                 let duration = placement
                     .clipped_duration
@@ -67,24 +67,27 @@ mod tests {
         // Project must be fully populated for sufficient testing.
         let project = Project {
             name: "My Project".to_string(),
-            tracks: vec![Track {
-                notes: vec![PlacedNote {
-                    note: Note {
-                        pitch_name: PitchName {
-                            scale_value: ScaleValue::A,
-                            octave: 4,
+            tracks: HashMap::from([(
+                TrackId(0),
+                Track {
+                    notes: vec![PlacedNote {
+                        note: Note {
+                            pitch_name: PitchName {
+                                scale_value: ScaleValue::A,
+                                octave: 4,
+                            },
+                            beats: 1.0,
                         },
-                        beats: 1.0,
-                    },
+                        offset: OrderedFloat(0.0),
+                    }],
                     offset: OrderedFloat(0.0),
-                }],
-                offset: OrderedFloat(0.0),
-            }],
+                },
+            )]),
             placements: HashMap::from([(
                 PlacementId(0),
                 Placement {
                     kind: PlacementType::Track(TrackPlacement {
-                        track_index: 3,
+                        track_id: 3.into(),
                         generator_id: 3.into(),
                     }),
                     offset: 2.5.into(),
