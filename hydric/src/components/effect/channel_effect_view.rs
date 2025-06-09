@@ -34,6 +34,7 @@ impl View for ChannelEffectView<'_> {
         let Self {
             store, local_state, ..
         } = *self;
+        // TODO: Should only the active Mixer channel be shown?
         let selector = local_state
             .active_mixer_channel
             .get()
