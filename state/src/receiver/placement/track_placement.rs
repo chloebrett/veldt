@@ -1,5 +1,5 @@
 use crate::receiver::ActionReceiver;
-use crate::{Action, IndexField, TypeField};
+use crate::{Action, TypeField};
 use shared::model::TrackPlacement;
 
 impl ActionReceiver for TrackPlacement {

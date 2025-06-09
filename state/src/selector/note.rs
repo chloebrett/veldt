@@ -3,10 +3,7 @@ use crate::StoreData;
 use shared::model::{PlacedNote, TrackId};
 
 #[derive(Eq, PartialEq, Ord, PartialOrd, Copy, Clone, Debug, Hash)]
-pub struct NoteSelector(
-    pub TrackId,
-    /* note_index */ pub usize,
-);
+pub struct NoteSelector(pub TrackId, /* note_index */ pub usize);
 
 impl NoteSelector {
     pub fn upcast(&self) -> TrackSelector {

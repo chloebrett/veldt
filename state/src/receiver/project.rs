@@ -1,5 +1,5 @@
 use crate::receiver::ActionReceiver;
-use crate::{Action, FloatField, IndexField, MultiTypeField, TypeField};
+use crate::{Action, FloatField, MultiTypeField, TypeField};
 use shared::model::{Placement, PlacementId, Project, SampleId, TrackId};
 use std::collections::HashMap;
 

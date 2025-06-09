@@ -5,7 +5,7 @@ use shared::model::{
     AdsrEnvelope, AntiAliasingMode, FileTreeConfig, FilenameTree, Generator, GeneratorId,
     GeneratorInstance, GeneratorMeta, Mixer, MixerChannel, MixerMatrix, NoiseConfig, Note,
     PitchName, PlacedNote, Placement, PlacementId, PlacementType, PolyphonyMode, Project, Scale,
-    ScaleValue, SimpleWaveConfig, StingrayConfig, Track, TrackPlacement, WaveType, TrackId,
+    ScaleValue, SimpleWaveConfig, StingrayConfig, Track, TrackId, TrackPlacement, WaveType,
 };
 use shared::types::Volume;
 use std::collections::HashMap;
