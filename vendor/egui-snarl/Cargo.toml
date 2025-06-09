@@ -1,0 +1,32 @@
+[package]
+rust-version = "1.85"
+edition = "2024"
+license = "MIT OR Apache-2.0"
+documentation = "https://docs.rs/egui-snarl"
+repository = "https://github.com/zakarumych/egui-snarl"
+name = "egui-snarl"
+version = "0.8.0"
+description = "Node-graphs for egui"
+readme = "README.md"
+keywords = ["egui", "node", "graph", "ui", "node-graph"]
+categories = ["gui", "visualization"]
+
+[dependencies]
+egui = { version = "0.31" }
+eframe = { version = "0.31" }
+egui_extras = { version = "0.31" }
+syn = { version = "2" }
+serde = { version = "1" }
+serde_json = { version = "1" }
+
+egui-probe = { version = "0.8.0", git = "https://github.com/zakarumych/egui-probe" }
+egui-scale = { version = "0.1.0" }
+wasm-bindgen-futures = "0.4"
+web-sys = "0.3.70"
+
+slab = { version = "0.4" }
+smallvec = { version = "1.15", features = ["const_new"] }
+
+[features]
+egui-probe = []
+serde = []
