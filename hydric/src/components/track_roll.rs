@@ -43,8 +43,8 @@ impl View for TrackRoll<'_> {
                 (
                     id,
                     match placement.kind {
-                        PlacementType::Track(TrackPlacement { track_index, .. }) => PlacedTrack {
-                            unclipped_duration: project.tracks[track_index].unclipped_duration(),
+                        PlacementType::Track(TrackPlacement { track_id, .. }) => PlacedTrack {
+                            unclipped_duration: project.tracks[&track_id].unclipped_duration(),
                             placement: placement.clone(),
                         },
                         PlacementType::Sample(SamplePlacement { sample_id }) => {
@@ -187,7 +187,7 @@ impl PlacedTrack {
             unclipped_duration: track_placement
                 .map(|it| {
                     store
-                        .select(&TrackSelector(it.track_index))
+                        .select(&TrackSelector(it.track_id))
                         .unclipped_duration()
                 })
                 .unwrap_or(1.0.into()),
@@ -221,7 +221,7 @@ impl PlacedTrack {
                 let track_placement: &TrackPlacement = placement.try_into().unwrap();
                 PlacedTrack {
                     unclipped_duration: store
-                        .select(&TrackSelector(track_placement.track_index))
+                        .select(&TrackSelector(track_placement.track_id))
                         .unclipped_duration(),
                     placement: placement.clone(),
                 }
@@ -255,7 +255,7 @@ impl PlacedTrack {
             .set_visible(WindowKind::Placement, true);
         local_state
             .active_track
-            .set(track_placement.map(|it| TrackSelector(it.track_index)));
+            .set(track_placement.map(|it| TrackSelector(it.track_id)));
         local_state.active_placement.set(Some(id));
     }
 
@@ -275,29 +275,6 @@ impl PlacedTrack {
             }
             it
         });
-    }
-
-    fn add_new(&self, store: &Store) {
-        store.dispatchr(Action::AddChild(TypeField::Placement(
-            self.placement.clone(),
-        )));
-    }
-
-    fn from_pos(pos: Pos2, range: Rect) -> PlacedTrack {
-        let track_index = pos.y as usize;
-        let offset = range.left() + pos.x;
-        PlacedTrack {
-            placement: Placement {
-                kind: PlacementType::Track(TrackPlacement {
-                    track_index,
-                    generator_id: 0.into(),
-                }),
-                offset: offset.into(),
-                clipped_duration: None,
-                visual_placement: 0,
-            },
-            unclipped_duration: 0.0.into(),
-        }
     }
 
     fn delete_selected(store: &Store, local_state: &LocalState) {
@@ -552,9 +529,22 @@ impl Widget for TrackSequencer<'_> {
                     PlacedTrack::set_selected(self.local_state, None);
                 }
             } else if response.interact(Sense::click()).clicked() {
-                let pos = response.interact_pointer_pos().unwrap();
-                let object = PlacedTrack::from_pos(pos.transform(to_screen.inverse()), range);
-                object.add_new(store);
+                let pos = response
+                    .interact_pointer_pos()
+                    .unwrap()
+                    .transform(to_screen.inverse());
+
+                let offset = range.left() + pos.x;
+                let placement = Placement {
+                    kind: PlacementType::Track(TrackPlacement {
+                        track_id: 0.into(),
+                        generator_id: 0.into(),
+                    }),
+                    offset: offset.into(),
+                    clipped_duration: None,
+                    visual_placement: pos.y as u32,
+                };
+                store.dispatchr(Action::AddChild(TypeField::Placement(placement)));
             }
 
             self.interact(ui, &response);

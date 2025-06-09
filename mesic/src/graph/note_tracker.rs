@@ -41,10 +41,10 @@ impl NoteTracker {
                 .collect();
 
             for placement in placements {
-                let &Ok(&TrackPlacement { track_index, .. }) = &placement.try_into() else {
+                let &Ok(&TrackPlacement { track_id, .. }) = &placement.try_into() else {
                     continue;
                 };
-                let track = &project.tracks[track_index];
+                let track = &project.tracks[&track_id];
                 let track_offset = *placement.offset;
                 let track_duration = *placement
                     .clipped_duration
