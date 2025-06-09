@@ -27,36 +27,6 @@ impl<'a> GraphView<'a> {
     }
 }
 
-const fn default_style() -> SnarlStyle {
-    SnarlStyle {
-        node_layout: Some(NodeLayout::coil()),
-        pin_placement: Some(PinPlacement::Edge),
-        pin_size: Some(7.0),
-        node_frame: Some(egui::Frame {
-            inner_margin: egui::Margin::same(8),
-            outer_margin: egui::Margin {
-                left: 0,
-                right: 0,
-                top: 0,
-                bottom: 4,
-            },
-            corner_radius: egui::CornerRadius::same(8),
-            fill: egui::Color32::from_gray(30),
-            stroke: egui::Stroke::NONE,
-            shadow: egui::Shadow::NONE,
-        }),
-        bg_frame: Some(egui::Frame {
-            inner_margin: egui::Margin::ZERO,
-            outer_margin: egui::Margin::same(2),
-            corner_radius: egui::CornerRadius::ZERO,
-            fill: egui::Color32::from_gray(40),
-            stroke: egui::Stroke::NONE,
-            shadow: egui::Shadow::NONE,
-        }),
-        ..SnarlStyle::new()
-    }
-}
-
 impl View for GraphView<'_> {
     fn ui(&mut self, ui: &mut Ui) {
         StateWindow::show_from_window_state_resizable(
@@ -94,7 +64,7 @@ impl View for GraphView<'_> {
 
                 SnarlWidget::new()
                     .id(Id::new("graph-debug"))
-                    .style(default_style())
+                    .style(SnarlStyle::new())
                     .show(self.snarl, &mut GraphViewer, ui);
             },
         );
