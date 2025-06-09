@@ -21,7 +21,7 @@ use generator_info::*;
 use graph_manager::*;
 use sample_placement_info::*;
 
-pub use graph_manager::GraphDebugInfo;
+pub use graph_manager::{GraphDebugInfo, NodeLabel};
 
 /// The mixer is responsible for creating, storing and manipulating mixer channels,
 /// and the effects and generators they contain.
