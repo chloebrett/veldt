@@ -6,7 +6,7 @@ use super::{
 use crate::node::AmpNode;
 use dasp_graph::node::Sum;
 use petgraph::stable_graph::NodeIndex;
-use shared::model::{Effect, GeneratorId, MatrixCell, PlacementType, Project, EffectId};
+use shared::model::{Effect, EffectId, GeneratorId, MatrixCell, PlacementType, Project};
 use state::{
     EffectSelector, GeneratorSelector, MixerMatrixCellSelector, MixerSelector, PlacementSelector,
     move_elem,
@@ -81,8 +81,8 @@ impl ChannelInfo {
             .effect_ids
             .iter()
             .map(|effect_id| {
-                let effect = &project.effects[&effect_id].it;
-                EffectInfo::new(graph_manager, &effect, &EffectSelector(*effect_id))
+                let effect = &project.effects[effect_id].it;
+                EffectInfo::new(graph_manager, effect, &EffectSelector(*effect_id))
             })
             .collect();
 

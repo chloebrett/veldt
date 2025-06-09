@@ -1,6 +1,6 @@
 use crate::receiver::ActionReceiver;
 use crate::{Action, FloatField, MultiTypeField, TypeField};
-use shared::model::{Placement, PlacementId, Project, SampleId, TrackId};
+use shared::model::{EffectId, Placement, PlacementId, Project, SampleId, TrackId};
 use std::collections::HashMap;
 
 impl ActionReceiver for Project {
@@ -26,6 +26,27 @@ impl ActionReceiver for Project {
                     .clone();
                 self.placements.remove(id);
                 Action::AddChild(TypeField::Placement(prev))
+            }
+            Action::AddChild(TypeField::Effect(effect)) => {
+                let next_id = *self
+                    .effects
+                    .clone()
+                    .into_keys()
+                    .max()
+                    .unwrap_or(EffectId(0))
+                    + 1;
+                let next_id = EffectId(next_id);
+                self.effects.insert(next_id, effect.clone());
+                Action::DeleteChildById(TypeField::EffectId(next_id))
+            }
+            Action::DeleteChildById(TypeField::EffectId(id)) => {
+                let prev = self
+                    .effects
+                    .get(id)
+                    .expect("Can't delete non-existent effect!")
+                    .clone();
+                self.effects.remove(id);
+                Action::AddChild(TypeField::Effect(prev))
             }
             Action::SetChild(TypeField::ProjectName(name)) => {
                 let prev = self.name.clone();

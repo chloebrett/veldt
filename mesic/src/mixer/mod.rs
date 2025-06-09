@@ -164,7 +164,7 @@ impl Mixer {
                     TypeField::EffectId(effect_id),
                     IndexField::EffectId(index),
                 ) => {
-                    let effect = &store.project.effects[&effect_id].it;
+                    let effect = &store.project.effects[effect_id].it;
                     self.channels[*mixer_index].add_effect(
                         &mut self.graph_manager,
                         effect,

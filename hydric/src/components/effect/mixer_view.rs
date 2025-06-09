@@ -13,7 +13,7 @@ use egui::{Button, Color32, Frame, InnerResponse, Layout, Response, Stroke, Ui, 
 use egui_fader::Fader;
 use mesic::from_db;
 use mesic::to_db;
-use shared::model::{Effect, EffectInstance, EffectMeta};
+use shared::model::{Effect, EffectId, EffectInstance, EffectMeta};
 use state::{
     Action, EffectSelector, FloatField, IndexField, MixerSelector, MoveField, Store, TypeField,
 };
@@ -134,8 +134,9 @@ impl View for MixerView<'_> {
                             // and drop.
                             ui.visuals_mut().widgets.inactive.bg_fill = Color32::TRANSPARENT;
                             ui.dnd_drop_zone::<EffectLocation, ()>(Frame::default(), |ui| {
-                                for effect_index in 0..mixer.effects.len() {
-                                    let effect_sel = mixer_sel.downcast_effect(effect_index);
+                                for (effect_index, effect_id) in mixer.effect_ids.iter().enumerate()
+                                {
+                                    let effect_sel = EffectSelector(*effect_id);
                                     let dispatch_effect =
                                         |action: Action| store.dispatch(&effect_sel, action);
                                     // TODO Determine if this is the best way to do this.
@@ -145,7 +146,7 @@ impl View for MixerView<'_> {
                                         ui.add_enabled(
                                             !edit_state,
                                             EffectWidget::new(
-                                                &mixer.effects[effect_index],
+                                                &store.select(&effect_sel),
                                                 effect_sel,
                                                 local_state,
                                                 dispatch_effect,
@@ -197,14 +198,32 @@ impl View for MixerView<'_> {
                                             it: effect,
                                             meta: EffectMeta::default(),
                                         };
-                                        dispatch_mixer(Action::AddChild(TypeField::Effect(
+                                        store.dispatchr(Action::AddChild(TypeField::Effect(
                                             instance,
                                         )));
+                                        // Hack: use the same logic as the receiver to work out
+                                        // what the ID of the just-added effect was (or more
+                                        // accurately, will be in the next frame, since dispatches are lazy).
+                                        let next_id = *store
+                                            .get()
+                                            .project
+                                            .effects
+                                            .clone()
+                                            .into_keys()
+                                            .max()
+                                            .unwrap_or(EffectId(0))
+                                            + 1;
+                                        let next_id = EffectId(next_id);
+                                        let next_index = mixer.effect_ids.len();
+                                        dispatch_mixer(Action::AddChildAtIndex(
+                                            TypeField::EffectId(next_id),
+                                            IndexField::EffectId(next_index),
+                                        ));
                                     }
                                 }
                             });
                             // Disable edit state and button if there are no effects.
-                            let has_effects = !mixer.effects.is_empty();
+                            let has_effects = !mixer.effect_ids.is_empty();
                             if !has_effects {
                                 local_state.mixer_edit_state.set(false);
                             }
@@ -225,13 +244,14 @@ impl View for MixerView<'_> {
             match (from, to) {
                 // Object has been deleted.
                 (EffectLocation::Index(from_index), EffectLocation::Delete) => {
-                    dispatch_mixer(Action::DeleteChild(IndexField::Effect(from_index)))
+                    let effect_id = mixer.effect_ids[from_index];
+                    dispatch_mixer(Action::DeleteChildById(TypeField::EffectId(effect_id)))
                 }
                 // Object has been moved.
                 (EffectLocation::Index(from_index), EffectLocation::Index(to_index)) => {
                     dispatch_mixer(Action::MoveChild(MoveField {
-                        from_field: IndexField::Effect(from_index),
-                        to_field: IndexField::Effect(to_index),
+                        from_field: IndexField::EffectId(from_index),
+                        to_field: IndexField::EffectId(to_index),
                     }));
                 }
                 _ => {}
@@ -240,7 +260,7 @@ impl View for MixerView<'_> {
     }
 }
 
-/// A widget to display and edit basic effect controls in the MixerView
+/// A widget to display and edit basic effect controls in the MixerView.
 /// Being a widget that returns a `Response` makes it easier to drag and drop.
 struct EffectWidget<'a, F: Fn(Action), G: Fn()> {
     effect: &'a EffectInstance,
