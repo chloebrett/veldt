@@ -1,7 +1,8 @@
 use super::{
-    ChannelEffectView, KeyView, NoteRoll, NoteView, PlacementView, TrackRoll,
+    ChannelEffectView, GraphView, KeyView, NoteRoll, NoteView, PlacementView, TrackRoll,
     effect::{EffectView, MixerView},
     generator::{GeneratorView, generators_control},
+    graph_view::GraphViewNode,
     menu::MenuBar,
     play::{MicrophoneView, SampleTreeView, ToolbarView},
 };
@@ -13,6 +14,7 @@ use crate::view::View;
 use crate::{AsyncState, LocalState, playback::AudioPlayer};
 use crate::{promise::spawn, window_state::WindowKind};
 use egui::{ScrollArea, Ui, scroll_area::ScrollBarVisibility};
+use egui_snarl::{Snarl, ui::SnarlStyle};
 use mesic::graph::RenderGraph;
 use poll_promise::Promise;
 use state::{Action, EffectSelector, GeneratorSelector, Store};
@@ -29,6 +31,8 @@ pub struct App {
     pub async_state: AsyncState,
     pub player: AudioPlayer,
     pub mic: Microphone,
+    pub snarl: Snarl<GraphViewNode>,
+    pub snarl_style: SnarlStyle,
 }
 impl Default for App {
     fn default() -> Self {
@@ -46,6 +50,8 @@ impl Default for App {
             async_state: AsyncState::default(),
             player: AudioPlayer::new(graph),
             mic: Microphone::new(),
+            snarl: Snarl::new(),
+            snarl_style: SnarlStyle::new(),
         }
     }
 }
@@ -168,5 +174,6 @@ impl View for App {
         )
         .ui(ui);
         TrackRoll::new(&self.store, &self.local_state).ui(ui);
+        GraphView::new(&self.local_state, &mut self.snarl, self.snarl_style.clone()).ui(ui);
     }
 }

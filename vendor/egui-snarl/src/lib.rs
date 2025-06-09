@@ -20,7 +20,7 @@ pub mod ui;
 
 use std::ops::{Index, IndexMut};
 
-use egui::{ahash::HashSet, Pos2};
+use egui::{Pos2, ahash::HashSet};
 use slab::Slab;
 
 impl<T> Default for Snarl<T> {

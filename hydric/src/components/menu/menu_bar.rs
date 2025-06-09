@@ -151,6 +151,11 @@ impl View for MenuBar<'_> {
                 if ui.button("Init mixer graph debug").clicked() {
                     self.player.init_mixer_debug();
                 }
+                if ui.button("Show mixer graph debug").clicked() {
+                    self.local_state
+                        .window_state
+                        .set_visible(WindowKind::GraphDebug, true);
+                }
             });
             let mut window_icon = |icon, label, window_kind| {
                 let state = self.local_state.window_state.get_visible(window_kind);
