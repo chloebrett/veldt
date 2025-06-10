@@ -2,7 +2,7 @@ use std::ops::RangeInclusive;
 
 use egui::{
     Align2, CornerRadius, FontId, Pos2, Rangef, Rect, Response, Sense, Stroke, Ui, Vec2, Widget,
-    lerp, pos2, remap, remap_clamp, vec2,
+    lerp, pos2, remap_clamp, vec2,
 };
 
 struct FrequencySpec {
@@ -10,14 +10,24 @@ struct FrequencySpec {
     // For logarithmic frequency displays.
     // The minimum frequency to display.
     min_frequency: f32,
+    // X ticks when plot is made logarithmic.
+    log_x_ticks: Vec<f32>,
 }
 
+/// Display the frequency response of a signal on a 2D plot.
+/// X-axis plots frequencies in Hz, y-axis plots response in dB.
+/// Display can plot multiple frequency response lines.
+/// X axis can be set to a logarithmic range.
+/// Default y range is -60 to 10 dB.
+/// Default x range is 0 to 21500 Hz.
 pub struct FrequencyDisplay<'a> {
     primary_freqs: &'a Vec<Pos2>,
     secondary_freqs: Vec<&'a Vec<Pos2>>,
     size: Vec2,
     x_range: RangeInclusive<f32>,
     y_range: RangeInclusive<f32>,
+    x_ticks: Vec<f32>,
+    y_ticks: Vec<f32>,
     spec: FrequencySpec,
     text_size: f32,
     axis_line_stroke: Option<Stroke>,
@@ -26,21 +36,30 @@ pub struct FrequencyDisplay<'a> {
 #[allow(dead_code)]
 impl<'a> FrequencyDisplay<'a> {
     pub fn new(frequencies: &'a Vec<Pos2>) -> Self {
+        let (x_min, x_max) = (0, 21500);
+        let (y_min, y_max) = (10, -60);
+        let x_ticks = (x_min..=x_max).step_by(2000).map(|it| it as f32).collect();
+        let y_ticks= (y_max..=y_min).step_by(10).map(|it| it as f32).collect();
         Self {
             primary_freqs: frequencies,
             secondary_freqs: vec![],
             size: vec2(500.0, 250.0),
-            x_range: 0.0..=21500.0,
-            y_range: 10.0..=-60.0,
+            x_range: x_min as f32..=x_max as f32,
+            y_range: y_min as f32..=y_max as f32,
+            x_ticks,
+            y_ticks,
             spec: FrequencySpec {
                 logarithmic: false,
                 min_frequency: 10.0,
+                log_x_ticks: vec![10.0, 50.0, 200.0, 500.0, 1000.0, 2000.0, 5000.0, 10000.0, 21500.0],
             },
             text_size: 12.0,
             axis_line_stroke: None,
         }
     }
 
+    /// Add secondary frequency responses to the display.
+    /// E.g. peak response.
     #[inline]
     pub fn add_secondary_frequencies(mut self, frequencies: &'a Vec<Pos2>) -> Self {
         self.secondary_freqs.push(frequencies);
@@ -65,21 +84,31 @@ impl<'a> FrequencyDisplay<'a> {
         self
     }
 
+    /// Plot the frequency axis with a logarithmic scale.
     #[inline]
     pub fn logarithmic(mut self, logarithmic: bool) -> Self {
         self.spec.logarithmic = logarithmic;
         self
     }
 
+    /// For logarithmic plots.
+    /// The minimum frequency that will be displayed. Default is 10.0 Hz.
     #[inline]
     pub fn min_frequency(mut self, min_frequency: f32) -> Self {
         self.spec.min_frequency = min_frequency;
         self
     }
 
+    /// Set the stroke of the grid lines on the plot. 
     #[inline]
     pub fn set_axis_line_stroke(mut self, stroke: Stroke) -> Self {
         self.axis_line_stroke = Some(stroke);
+        self
+    }
+
+    #[inline]
+    pub fn text_size(mut self, text_size: f32) -> Self {
+        self.text_size = text_size;
         self
     }
 
@@ -102,6 +131,7 @@ impl<'a> FrequencyDisplay<'a> {
         self.y_range.clone()
     }
 
+    // Convert a `Pos2` in units (Hz, dB) to the raw (x, y) position on the plot.
     fn position_from_pos(
         &self,
         pos: Pos2,
@@ -122,6 +152,7 @@ impl<'a> FrequencyDisplay<'a> {
 
     fn plot_ui(&self, ui: &Ui, response: &Response) {
         let rect = response.rect;
+        // Background shape.
         ui.painter().rect(
             rect,
             CornerRadius::ZERO,
@@ -139,23 +170,25 @@ impl<'a> FrequencyDisplay<'a> {
 
     fn y_axis_ui(&self, ui: &Ui, response: &Response) {
         let rect = response.rect;
-        let range = self.y_range();
-        let (min, max) = (*range.start() as i32, *range.end() as i32);
+        let x_range = self.x_range();
         let font_id = FontId::proportional(self.text_size);
         let text_color = ui.style().visuals.text_color();
-        for y in (max..=min).step_by(10) {
-            let y = y as f32;
-            let height = remap_clamp(y, self.y_range(), rect.y_range());
-            let pos = pos2(rect.left(), height);
+        for y in &self.y_ticks {
+            let pos = pos2(*x_range.start(), *y);
+            let position = self.position_from_pos(pos, rect.x_range(), rect.y_range());
+            // Add padding so values do not sit directly on axis.
+            let position = position - vec2(self.text_size * 0.5, 0.0);
+            // Y tick label.
             ui.painter().text(
-                pos,
+                position,
                 Align2::RIGHT_CENTER,
                 format!("{y}"),
                 font_id.clone(),
                 text_color,
             );
+            // Y tick axis line
             ui.painter().line(
-                vec![pos2(rect.left(), height), pos2(rect.right(), height)],
+                vec![pos2(rect.left(), position.y), pos2(rect.right(), position.y)],
                 self.axis_line_stroke(ui),
             );
         }
@@ -163,51 +196,32 @@ impl<'a> FrequencyDisplay<'a> {
 
     fn x_axis_ui(&self, ui: &Ui, response: &Response) {
         let rect = response.rect;
+        let y_range = self.y_range();
         let font_id = FontId::proportional(self.text_size);
         let text_color = ui.style().visuals.text_color();
-        let range = self.x_range();
-        if !self.spec.logarithmic {
-            let (min, max) = (*range.start() as i32, *range.end() as i32);
-            for x in (min..=max).step_by(2000) {
-                let x = x as f32;
-                let x_pos = remap_clamp(x, self.x_range(), rect.x_range());
-                let pos = pos2(x_pos, rect.bottom());
-                ui.painter().text(
-                    pos,
-                    Align2::CENTER_TOP,
-                    format!("{x}"),
-                    font_id.clone(),
-                    text_color,
-                );
-                ui.painter().line(
-                    vec![pos2(x_pos, rect.bottom()), pos2(x_pos, rect.top())],
-                    self.axis_line_stroke(ui),
-                );
-            }
+        let x_ticks = if self.spec.logarithmic {
+            &self.spec.log_x_ticks
         } else {
-            let min = self.spec.min_frequency.log10();
-            let max = range.end().log10();
-            let size = max - min;
-            let step = size * 0.1;
-            for x in 0..=10 {
-                let x_pos = remap(x as f32, 0.0..=10.0, response.rect.x_range());
-                let pos = pos2(x_pos, rect.bottom());
-                ui.painter().text(
-                    pos,
-                    Align2::CENTER_TOP,
-                    format!(
-                        "{:.0?}",
-                        10f32.powf(x as f32 * step) * self.spec.min_frequency
-                    ),
-                    font_id.clone(),
-                    text_color,
-                );
-                let points = vec![
-                    pos2(x_pos, response.rect.bottom()),
-                    pos2(x_pos, response.rect.top()),
-                ];
-                ui.painter().line(points, self.axis_line_stroke(ui));
-            }
+            &self.x_ticks
+        };
+        for x in x_ticks {
+            let pos = pos2(*x, *y_range.end());
+            let position = self.position_from_pos(pos, rect.x_range(), rect.y_range());
+            // Add padding so values do not sit directly on axis.
+            let position = position + vec2(0.0, self.text_size * 0.5);
+            // X tick label. 
+            ui.painter().text(
+                position,
+                Align2::CENTER_TOP,
+                format!("{x}"),
+                font_id.clone(),
+                text_color,
+            );
+            // X tick axis line
+            ui.painter().line(
+                vec![pos2(position.x, rect.bottom()), pos2(position.x, rect.top())],
+                self.axis_line_stroke(ui),
+            );
         }
     }
 
@@ -233,6 +247,9 @@ impl Widget for FrequencyDisplay<'_> {
         self.add_contents(ui)
     }
 }
+
+// Helper functions to convert Pos2 to and from the [0, 1] x and y range.
+// Also accounts for logarithmic x axis.
 
 fn normalised_from_pos(
     pos: Pos2,
