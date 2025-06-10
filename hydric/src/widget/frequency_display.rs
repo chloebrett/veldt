@@ -39,7 +39,7 @@ impl<'a> FrequencyDisplay<'a> {
         let (x_min, x_max) = (0, 21500);
         let (y_min, y_max) = (10, -60);
         let x_ticks = (x_min..=x_max).step_by(2000).map(|it| it as f32).collect();
-        let y_ticks= (y_max..=y_min).step_by(10).map(|it| it as f32).collect();
+        let y_ticks = (y_max..=y_min).step_by(10).map(|it| it as f32).collect();
         Self {
             primary_freqs: frequencies,
             secondary_freqs: vec![],
@@ -51,7 +51,9 @@ impl<'a> FrequencyDisplay<'a> {
             spec: FrequencySpec {
                 logarithmic: false,
                 min_frequency: 10.0,
-                log_x_ticks: vec![10.0, 50.0, 200.0, 500.0, 1000.0, 2000.0, 5000.0, 10000.0, 21500.0],
+                log_x_ticks: vec![
+                    10.0, 50.0, 200.0, 500.0, 1000.0, 2000.0, 5000.0, 10000.0, 21500.0,
+                ],
             },
             text_size: 12.0,
             axis_line_stroke: None,
@@ -99,7 +101,7 @@ impl<'a> FrequencyDisplay<'a> {
         self
     }
 
-    /// Set the stroke of the grid lines on the plot. 
+    /// Set the stroke of the grid lines on the plot.
     #[inline]
     pub fn set_axis_line_stroke(mut self, stroke: Stroke) -> Self {
         self.axis_line_stroke = Some(stroke);
@@ -188,7 +190,10 @@ impl<'a> FrequencyDisplay<'a> {
             );
             // Y tick axis line
             ui.painter().line(
-                vec![pos2(rect.left(), position.y), pos2(rect.right(), position.y)],
+                vec![
+                    pos2(rect.left(), position.y),
+                    pos2(rect.right(), position.y),
+                ],
                 self.axis_line_stroke(ui),
             );
         }
@@ -209,7 +214,7 @@ impl<'a> FrequencyDisplay<'a> {
             let position = self.position_from_pos(pos, rect.x_range(), rect.y_range());
             // Add padding so values do not sit directly on axis.
             let position = position + vec2(0.0, self.text_size * 0.5);
-            // X tick label. 
+            // X tick label.
             ui.painter().text(
                 position,
                 Align2::CENTER_TOP,
@@ -219,7 +224,10 @@ impl<'a> FrequencyDisplay<'a> {
             );
             // X tick axis line
             ui.painter().line(
-                vec![pos2(position.x, rect.bottom()), pos2(position.x, rect.top())],
+                vec![
+                    pos2(position.x, rect.bottom()),
+                    pos2(position.x, rect.top()),
+                ],
                 self.axis_line_stroke(ui),
             );
         }
