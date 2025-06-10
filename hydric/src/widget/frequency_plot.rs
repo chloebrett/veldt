@@ -20,7 +20,7 @@ struct FrequencySpec {
 /// X axis can be set to a logarithmic range.
 /// Default y range is -60 to 10 dB.
 /// Default x range is 0 to 21500 Hz.
-pub struct FrequencyDisplay<'a> {
+pub struct FrequencyPlot<'a> {
     primary_freqs: &'a Vec<Pos2>,
     secondary_freqs: Vec<&'a Vec<Pos2>>,
     size: Vec2,
@@ -34,7 +34,7 @@ pub struct FrequencyDisplay<'a> {
 }
 
 #[allow(dead_code)]
-impl<'a> FrequencyDisplay<'a> {
+impl<'a> FrequencyPlot<'a> {
     pub fn new(frequencies: &'a Vec<Pos2>) -> Self {
         let (x_min, x_max) = (0, 21500);
         let (y_min, y_max) = (10, -60);
@@ -250,7 +250,7 @@ impl<'a> FrequencyDisplay<'a> {
     }
 }
 
-impl Widget for FrequencyDisplay<'_> {
+impl Widget for FrequencyPlot<'_> {
     fn ui(self, ui: &mut Ui) -> Response {
         self.add_contents(ui)
     }

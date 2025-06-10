@@ -1,5 +1,5 @@
 use crate::local_state::{GetSet, LocalState};
-use crate::widget::FrequencyDisplay as FreqDisplay2;
+use crate::widget::FrequencyPlot;
 use crate::{playback::AudioPlayer, view::View};
 use egui::{Button, pos2};
 use egui::{
@@ -97,7 +97,7 @@ impl View for FrequencyDisplay<'_> {
             plot_shapes.push(Line::new("Response", points).color(Color32::WHITE));
         };
         let log = self.local_state.log_frequency_display.get();
-        ui.add(FreqDisplay2::new(&plot_points).logarithmic(log));
+        ui.add(FrequencyPlot::new(&plot_points).logarithmic(log));
         if ui
             .add(Button::new("Log Frequencies").selected(log))
             .clicked()
