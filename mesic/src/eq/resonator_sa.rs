@@ -1,9 +1,9 @@
-use super::filter::{SecondOrderFilter, SecondOrderFilterConfig};
+use super::filter::{Filter, FilterConfig};
 use crate::consts::SAMPLE_RATE;
 use shared::model::EqConfig;
 use std::f32::consts::TAU;
 
-pub fn resonator_smith_angell(config: &EqConfig) -> SecondOrderFilter {
+pub fn resonator_smith_angell(config: &EqConfig) -> Filter {
     let fs = SAMPLE_RATE as f32;
     let theta = TAU * config.fc / fs;
     let bandwidth = config.fc / config.q;
@@ -15,5 +15,5 @@ pub fn resonator_smith_angell(config: &EqConfig) -> SecondOrderFilter {
     let a1 = 0.0;
     let a2 = -a0;
 
-    SecondOrderFilter::new_wet(SecondOrderFilterConfig { a0, a1, a2, b1, b2 })
+    Filter::new_wet(FilterConfig { a0, a1, a2, b1, b2 })
 }

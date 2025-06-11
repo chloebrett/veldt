@@ -3,6 +3,7 @@ use shared::action_proto::selector_proto::IndexTriple;
 use shared::action_proto::{
     SelectorProto, selector_proto::IndexPair, selector_proto::Kind as SelectorKind,
 };
+use shared::model::{EffectId, GeneratorId, PlacementId, SampleId, TrackId};
 
 mod effect;
 mod envelope;
@@ -57,32 +58,19 @@ pub trait SelectorTrait {
 #[derive(Clone, Debug, PartialEq)]
 pub enum Selector {
     Root,
-    Track(/* track_index */ usize),
-    Note(/* track_index */ usize, /* note_index */ usize),
+    Track(TrackId),
+    Note(TrackId, /* note_index */ usize),
     Mixer(/* mixer_index */ usize),
-    Effect(/* mixer_index */ usize, /* effect_index */ usize),
-    Generator(/* generator_index */ usize),
-    Placement(/* placement_index */ usize),
-    Sample(/* sample_index */ usize),
-    Oscillator(
-        /* generator_index */ usize,
-        /* oscillator_index */ usize,
-    ),
+    Effect(EffectId),
+    Generator(GeneratorId),
+    Placement(PlacementId),
+    Sample(SampleId),
+    Oscillator(GeneratorId, /* oscillator_index */ usize),
     MixerMatrixCell(/* row */ usize, /* col */ usize),
-    Lfo(/* generator_index */ usize, /* lfo_index */ usize),
-    Envelope(
-        /* generator_index */ usize,
-        /* envelope_index */ usize,
-    ),
-    GeneratorEffect(
-        /* generator_index */ usize,
-        /* oscillator_index */ usize,
-    ),
-    ModMatrixCell(
-        /* generator_index */ usize,
-        /* row */ usize,
-        /* col */ usize,
-    ),
+    Lfo(GeneratorId, /* lfo_index */ usize),
+    Envelope(GeneratorId, /* envelope_index */ usize),
+    GeneratorEffect(GeneratorId, /* oscillator_index */ usize),
+    ModMatrixCell(GeneratorId, /* row */ usize, /* col */ usize),
 }
 
 impl From<Selector> for SelectorProto {
@@ -90,26 +78,26 @@ impl From<Selector> for SelectorProto {
         SelectorProto {
             kind: Some(match other {
                 Selector::Root => SelectorKind::Root(0),
-                Selector::Track(it) => SelectorKind::Track(it as u32),
-                Selector::Note(first, second) => SelectorKind::Note(pair(first, second)),
+                Selector::Track(it) => SelectorKind::Track(it.into()),
+                Selector::Note(first, second) => SelectorKind::Note(pair(*first, second)),
                 Selector::Mixer(it) => SelectorKind::Mixer(it as u32),
-                Selector::Effect(first, second) => SelectorKind::Effect(pair(first, second)),
-                Selector::Generator(it) => SelectorKind::Generator(it as u32),
-                Selector::Placement(it) => SelectorKind::Placement(it as u32),
-                Selector::Sample(it) => SelectorKind::Sample(it as u32),
+                Selector::Effect(it) => SelectorKind::Effect(it.into()),
+                Selector::Generator(it) => SelectorKind::Generator(it.into()),
+                Selector::Placement(it) => SelectorKind::Placement(it.into()),
+                Selector::Sample(it) => SelectorKind::Sample(it.into()),
                 Selector::Oscillator(first, second) => {
-                    SelectorKind::Oscillator(pair(first, second))
+                    SelectorKind::Oscillator(pair(*first, second))
                 }
                 Selector::MixerMatrixCell(first, second) => {
                     SelectorKind::MixerMatrixCell(pair(first, second))
                 }
-                Selector::Lfo(first, second) => SelectorKind::Lfo(pair(first, second)),
+                Selector::Lfo(first, second) => SelectorKind::Lfo(pair(*first, second)),
                 Selector::GeneratorEffect(first, second) => {
-                    SelectorKind::GeneratorEffect(pair(first, second))
+                    SelectorKind::GeneratorEffect(pair(*first, second))
                 }
-                Selector::Envelope(first, second) => SelectorKind::Envelope(pair(first, second)),
+                Selector::Envelope(first, second) => SelectorKind::Envelope(pair(*first, second)),
                 Selector::ModMatrixCell(first, second, third) => {
-                    SelectorKind::ModMatrixCell(triple(first, second, third))
+                    SelectorKind::ModMatrixCell(triple(*first, second, third))
                 }
             }),
         }
@@ -120,37 +108,35 @@ impl From<SelectorProto> for Selector {
     fn from(other: SelectorProto) -> Selector {
         match other.kind.unwrap() {
             SelectorKind::Root(..) => Selector::Root,
-            SelectorKind::Track(it) => Selector::Track(it as usize),
+            SelectorKind::Track(it) => Selector::Track(it.into()),
             SelectorKind::Note(IndexPair { first, second }) => {
-                Selector::Note(first as usize, second as usize)
+                Selector::Note(first.into(), second as usize)
             }
             SelectorKind::Mixer(it) => Selector::Mixer(it as usize),
-            SelectorKind::Effect(IndexPair { first, second }) => {
-                Selector::Effect(first as usize, second as usize)
-            }
-            SelectorKind::Generator(it) => Selector::Generator(it as usize),
-            SelectorKind::Placement(it) => Selector::Placement(it as usize),
-            SelectorKind::Sample(it) => Selector::Sample(it as usize),
+            SelectorKind::Effect(it) => Selector::Effect(it.into()),
+            SelectorKind::Generator(it) => Selector::Generator(it.into()),
+            SelectorKind::Placement(it) => Selector::Placement(it.into()),
+            SelectorKind::Sample(it) => Selector::Sample(it.into()),
             SelectorKind::Oscillator(IndexPair { first, second }) => {
-                Selector::Oscillator(first as usize, second as usize)
+                Selector::Oscillator(first.into(), second as usize)
             }
             SelectorKind::MixerMatrixCell(IndexPair { first, second }) => {
                 Selector::MixerMatrixCell(first as usize, second as usize)
             }
             SelectorKind::Lfo(IndexPair { first, second }) => {
-                Selector::Lfo(first as usize, second as usize)
+                Selector::Lfo(first.into(), second as usize)
             }
             SelectorKind::GeneratorEffect(IndexPair { first, second }) => {
-                Selector::GeneratorEffect(first as usize, second as usize)
+                Selector::GeneratorEffect(first.into(), second as usize)
             }
             SelectorKind::Envelope(IndexPair { first, second }) => {
-                Selector::Envelope(first as usize, second as usize)
+                Selector::Envelope(first.into(), second as usize)
             }
             SelectorKind::ModMatrixCell(IndexTriple {
                 first,
                 second,
                 third,
-            }) => Selector::ModMatrixCell(first as usize, second as usize, third as usize),
+            }) => Selector::ModMatrixCell(first.into(), second as usize, third as usize),
         }
     }
 }

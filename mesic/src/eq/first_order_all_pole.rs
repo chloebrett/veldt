@@ -1,9 +1,9 @@
-use super::filter::{FirstOrderFilter, FirstOrderFilterConfig};
+use super::filter::{Filter, FilterConfig};
 use crate::consts::SAMPLE_RATE;
 use shared::model::EqConfig;
 use std::f32::consts::TAU;
 
-pub fn first_order_all_pole(config: &EqConfig) -> FirstOrderFilter {
+pub fn first_order_all_pole(config: &EqConfig) -> Filter {
     // See "Designing Audio Effect Plugins in C++", W. Pirkle, p282
     let theta = TAU * config.fc / SAMPLE_RATE as f32;
     let gamma = 2.0 - theta.cos();
@@ -11,5 +11,5 @@ pub fn first_order_all_pole(config: &EqConfig) -> FirstOrderFilter {
     let a0 = 1.0 + b1;
     let a1 = 0.0;
 
-    FirstOrderFilter::new_wet(FirstOrderFilterConfig { a0, a1, b1 })
+    Filter::new_wet(FilterConfig::default().a0(a0).a1(a1).b1(b1))
 }

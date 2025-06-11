@@ -1,17 +1,20 @@
 use super::{
-    KeyView, NoteRoll, NoteView, PlacementView, TrackRoll,
+    ChannelEffectView, GraphView, KeyView, NoteRoll, NoteView, PlacementView, TrackRoll,
     effect::{EffectView, MixerView},
     generator::{GeneratorView, generators_control},
+    graph_view::GraphViewNode,
     menu::MenuBar,
-    play::{SampleTreeView, ToolbarView},
+    play::{MicrophoneView, SampleTreeView, ToolbarView},
 };
+use crate::components::FrameHistory;
+use crate::playback::Microphone;
 use crate::rpc::broadcast_actions;
 use crate::rpc::load_project_list;
 use crate::view::View;
-use crate::{AsyncState, LocalState, WindowState, playback::AudioPlayer};
-use crate::{components::FrameHistory, window_state::WindowState2};
+use crate::{AsyncState, LocalState, playback::AudioPlayer};
 use crate::{promise::spawn, window_state::WindowKind};
 use egui::{ScrollArea, Ui, scroll_area::ScrollBarVisibility};
+use egui_snarl::Snarl;
 use mesic::graph::RenderGraph;
 use poll_promise::Promise;
 use state::{Action, EffectSelector, GeneratorSelector, Store};
@@ -27,10 +30,9 @@ pub struct App {
     pub frame_history: FrameHistory,
     pub async_state: AsyncState,
     pub player: AudioPlayer,
-    pub window_state: WindowState,
-    pub window_state2: WindowState2,
+    pub mic: Microphone,
+    pub snarl: Snarl<GraphViewNode>,
 }
-
 impl Default for App {
     fn default() -> Self {
         let broadcast = |actions| {
@@ -46,8 +48,8 @@ impl Default for App {
             frame_history: FrameHistory::default(),
             async_state: AsyncState::default(),
             player: AudioPlayer::new(graph),
-            window_state: WindowState::default(),
-            window_state2: WindowState2::default(),
+            mic: Microphone::new(),
+            snarl: Snarl::new(),
         }
     }
 }
@@ -68,11 +70,11 @@ impl App {
     }
 
     fn visible_generators(&self) -> Vec<GeneratorSelector> {
-        self.window_state.generators.clone().as_vec()
+        self.local_state.window_state.visible_generators()
     }
 
     fn visible_effects(&self) -> Vec<EffectSelector> {
-        self.window_state2.visible_effect()
+        self.local_state.window_state.visible_effects()
     }
 }
 
@@ -86,16 +88,15 @@ impl eframe::App for App {
             .on_new_frame(ctx.input(|i| i.time), frame.info().cpu_usage);
 
         self.player.maybe_update();
+        self.mic.update_mic_recording();
 
-        self.window_state2.update(&self.store);
+        self.local_state.window_state.update(&self.store);
 
         egui::TopBottomPanel::top("veldt_menu").show(ctx, |ui| {
             MenuBar::new(
                 &mut self.store,
                 &self.local_state,
                 &mut self.player,
-                &mut self.window_state,
-                &self.window_state2,
                 &mut self.async_state,
             )
             .ui(ui);
@@ -117,31 +118,19 @@ impl eframe::App for App {
 
 impl View for App {
     fn ui(&mut self, ui: &mut Ui) {
-        if self.window_state.generator_list {
-            generators_control(ui.ctx(), &mut self.window_state, &self.store);
+        if self
+            .local_state
+            .window_state
+            .get_visible(WindowKind::GeneratorList)
+        {
+            generators_control(ui, &self.local_state, &self.store);
         }
 
         for sel in self.visible_generators() {
-            let generators = &mut self.window_state.generators;
-            let visible = generators.get(sel);
-            GeneratorView::new(
-                &self.store,
-                &sel,
-                &self.local_state,
-                &mut self.player,
-                visible,
-                || generators.set(sel, false),
-            )
-            .ui(ui);
+            GeneratorView::new(&self.store, &sel, &self.local_state, &mut self.player).ui(ui);
         }
-        if self.window_state2.get_visible(WindowKind::Mixer) {
-            MixerView::new(
-                &self.window_state2,
-                &self.store,
-                &self.local_state,
-                &self.player,
-            )
-            .ui(ui);
+        if self.local_state.window_state.get_visible(WindowKind::Mixer) {
+            MixerView::new(&self.store, &self.local_state, &self.player).ui(ui);
         }
 
         ToolbarView::new(&mut self.store, &mut self.async_state, &mut self.player).ui(ui);
@@ -149,33 +138,40 @@ impl View for App {
         for effect_selector in self.visible_effects() {
             let dispatch = |action| self.store.dispatch(&effect_selector, action);
             let on_release = || self.store.dispatchr(Action::Release);
+
             if let Some(mut it) = EffectView::new(
                 &self.store,
                 &effect_selector,
-                &self.window_state2,
+                &self.local_state,
                 dispatch,
                 on_release,
             ) {
                 it.ui(ui)
             }
         }
-        if self.window_state.scale {
+        if self.local_state.window_state.get_visible(WindowKind::Scale) {
             let dispatch = |action| self.store.dispatchr(action);
             let key = self.store.get().key;
             let scale = self.store.get().scale;
-            KeyView::new(dispatch, &mut self.window_state.scale, key, scale).ui(ui);
+            KeyView::new(dispatch, &self.local_state, key, scale).ui(ui);
         }
+
+        ChannelEffectView::new(&self.store, &self.local_state).ui(ui);
 
         NoteView::new(&self.store, &self.local_state).ui(ui);
         NoteRoll::new(&self.store, &self.local_state, &mut self.player).ui(ui);
+
+        MicrophoneView::new(&self.local_state, &mut self.mic).ui(ui);
         PlacementView::new(&self.store, &self.local_state).ui(ui);
 
         SampleTreeView::new(
             &self.store,
             &mut self.async_state,
-            &mut self.window_state.sample_tree,
+            &mut self.player,
+            &self.local_state,
         )
         .ui(ui);
-        TrackRoll::new(&self.store, &mut self.window_state2, &self.local_state).ui(ui);
+        TrackRoll::new(&self.store, &self.local_state).ui(ui);
+        GraphView::new(&self.local_state, &mut self.snarl, &self.player).ui(ui);
     }
 }

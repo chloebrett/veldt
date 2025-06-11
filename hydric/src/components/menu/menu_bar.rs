@@ -1,11 +1,11 @@
 use crate::{
-    AsyncState, WindowState,
+    AsyncState,
     local_state::LocalState,
     playback::AudioPlayer,
     promise::{poll, spawn},
     rpc::{export, load_project, load_project_list, save_project},
     view::View,
-    window_state::{WindowKind, WindowState2},
+    window_state::WindowKind,
 };
 use egui::{Button, Ui, menu::bar};
 use state::{Action, Store, TypeField};
@@ -16,8 +16,6 @@ pub struct MenuBar<'a> {
     store: &'a mut Store,
     local_state: &'a LocalState,
     player: &'a mut AudioPlayer,
-    window_state: &'a mut WindowState,
-    window_state2: &'a WindowState2,
     async_state: &'a mut AsyncState,
 }
 
@@ -26,16 +24,12 @@ impl<'a> MenuBar<'a> {
         store: &'a mut Store,
         local_state: &'a LocalState,
         player: &'a mut AudioPlayer,
-        window_state: &'a mut WindowState,
-        window_state2: &'a WindowState2,
         async_state: &'a mut AsyncState,
     ) -> Self {
         Self {
             store,
             local_state,
             player,
-            window_state,
-            window_state2,
             async_state,
         }
     }
@@ -57,7 +51,7 @@ impl<'a> MenuBar<'a> {
         };
 
         let name = &self.store.get().project.name;
-        SaveAs::new(self.window_state2, name, dispatch, save_click).ui(ui);
+        SaveAs::new(self.local_state, name, dispatch, save_click).ui(ui);
     }
 
     fn load_options(&mut self, ui: &mut Ui) {
@@ -101,7 +95,9 @@ impl View for MenuBar<'_> {
                     });
                 }
                 if ui.button("Save As").clicked() {
-                    self.window_state2.set_visible(WindowKind::Save, true);
+                    self.local_state
+                        .window_state
+                        .set_visible(WindowKind::Save, true);
                 }
                 ui.menu_button("Load", |ui| {
                     self.load_options(ui);
@@ -130,10 +126,12 @@ impl View for MenuBar<'_> {
             });
             ui.menu_button("Windows", |ui| {
                 let mut button_with_tick = |label, window_kind: WindowKind| {
-                    let state = self.window_state2.get_visible(window_kind);
+                    let state = self.local_state.window_state.get_visible(window_kind);
                     let suffix = if state { " ✅" } else { "" };
                     if ui.button(format!("{}{}", label, suffix)).clicked() {
-                        self.window_state2.set_visible(window_kind, !state)
+                        self.local_state
+                            .window_state
+                            .set_visible(window_kind, !state)
                     }
                 };
                 button_with_tick("Mixers", WindowKind::Mixer);
@@ -143,41 +141,39 @@ impl View for MenuBar<'_> {
                 button_with_tick("Track Roll", WindowKind::TrackRoll);
             });
             ui.menu_button("Effects", |ui| {
-                EffectMenuOptions::new(self.store, self.local_state, self.window_state2).ui(ui);
+                EffectMenuOptions::new(self.store, self.local_state).ui(ui);
             });
             // TODO: create an "add generator" dropdown similar to the effects one.
             ui.menu_button("Debug", |ui| {
                 if ui.button("Recreate mixer").clicked() {
                     self.player.refresh_mixer();
                 }
-            });
-            let sample_response = ui.add(Button::new("📂").selected(self.window_state.sample_tree));
-            if sample_response.clicked() {
-                self.window_state.sample_tree ^= true;
-            }
-            sample_response.on_hover_ui(|ui| {
-                ui.label("Samples");
-            });
-            let sound_response =
-                ui.add(Button::new("🎷").selected(self.window_state.generator_list));
-            if sound_response.clicked() {
-                self.window_state.generator_list ^= true;
-            }
-            sound_response.on_hover_ui(|ui| {
-                ui.label("Generators");
+                if ui.button("Init mixer graph debug").clicked() {
+                    self.player.init_mixer_debug();
+                }
+                if ui.button("Show mixer graph debug").clicked() {
+                    self.local_state
+                        .window_state
+                        .set_visible(WindowKind::GraphDebug, true);
+                }
             });
             let mut window_icon = |icon, label, window_kind| {
-                let state = self.window_state2.get_visible(window_kind);
+                let state = self.local_state.window_state.get_visible(window_kind);
                 let icon_response = ui.add(Button::new(icon).selected(state));
                 if icon_response.clicked() {
-                    self.window_state2.set_visible(window_kind, !state);
+                    self.local_state
+                        .window_state
+                        .set_visible(window_kind, !state);
                 }
                 icon_response.on_hover_ui(|ui| {
                     ui.label(label);
                 });
             };
+            window_icon("📂", "Samples", WindowKind::SampleTree);
+            window_icon("🎷", "Generators", WindowKind::GeneratorList);
             window_icon("🎨", "Mixer", WindowKind::Mixer);
             window_icon("📄", "Track Roll", WindowKind::TrackRoll);
+            window_icon("🎤", "Record Microphone", WindowKind::Microphone);
         });
     }
 }

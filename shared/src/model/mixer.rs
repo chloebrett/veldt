@@ -1,4 +1,4 @@
-use crate::model::EffectInstance;
+use crate::model::EffectId;
 use crate::pmodel::*;
 use crate::types::Volume;
 use local_macro::{FromProto, IntoProto};
@@ -18,7 +18,7 @@ pub struct MixerChannel {
     pub volume: Volume,
 
     #[proto_repeated]
-    pub effects: Vec<EffectInstance>,
+    pub effect_ids: Vec<EffectId>,
 }
 
 /// Note: distinct from ModMatrix because the mixer's matrix is somewhat symmetrical -

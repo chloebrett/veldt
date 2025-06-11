@@ -1,16 +1,14 @@
 use super::{EdgeLabel, GraphManager, NodeLabel, make_node};
 use crate::node::{CompressorNode, DelayNode, EqNode, ModDelayNode, WetDryNode};
 use petgraph::stable_graph::NodeIndex;
-use shared::model::Effect;
+use shared::model::{Effect, EffectId};
 use state::EffectSelector;
 
 /// Describes an effect + wet/dry mixer from the viewpoint of the graph.
 /// Contains references to the effect node and the wet/dry mixer node.
-#[expect(dead_code)] // Will need to read fields to manipulate later.
 #[derive(Debug, Clone)]
 pub struct EffectInfo {
-    // Effect index within the project model.
-    effect_index: usize,
+    effect_id: EffectId,
 
     pub effect_node: NodeIndex,
     pub wet_dry_node: NodeIndex,
@@ -29,13 +27,17 @@ impl EffectInfo {
 
         let effect_node = graph_manager.add_node(effect_node, NodeLabel::Effect);
         let wet_dry_node = graph_manager.add_node(wet_dry_node, NodeLabel::WetDry);
-        let EffectSelector(_, effect_index) = *sel;
+        let EffectSelector(effect_id) = *sel;
 
         Self {
-            effect_index,
+            effect_id,
             effect_node,
             wet_dry_node,
         }
+    }
+
+    pub fn effect_id(&self) -> EffectId {
+        self.effect_id
     }
 
     /// Removes the effect and its wet/dry mixer from the graph.

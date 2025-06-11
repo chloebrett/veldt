@@ -7,26 +7,17 @@ use crate::{
     components::effect::effect_name,
     local_state::{GetSet, LocalState},
     view::View,
-    window_state::{WindowKind, WindowState2},
+    window_state::WindowKind,
 };
 
 pub struct EffectMenuOptions<'a> {
     store: &'a Store,
     local_state: &'a LocalState,
-    window_state: &'a WindowState2,
 }
 
 impl<'a> EffectMenuOptions<'a> {
-    pub fn new(
-        store: &'a Store,
-        local_state: &'a LocalState,
-        window_state: &'a WindowState2,
-    ) -> Self {
-        Self {
-            store,
-            local_state,
-            window_state,
-        }
+    pub fn new(store: &'a Store, local_state: &'a LocalState) -> Self {
+        Self { store, local_state }
     }
 }
 
@@ -48,7 +39,9 @@ impl View for EffectMenuOptions<'_> {
                             );
                             // Open mixer window.
                             self.local_state.active_mixer_channel.set(Some(mixer_sel));
-                            self.window_state.set_visible(WindowKind::Mixer, true);
+                            self.local_state
+                                .window_state
+                                .set_visible(WindowKind::ChannelEffect, true);
                         }
                     }
                 });
