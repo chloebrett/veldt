@@ -19,7 +19,7 @@ struct FrequencySpec {
 /// Display can plot multiple frequency response lines.
 /// X axis can be set to a logarithmic range.
 /// Default y range is -60 to 10 dB.
-/// Default x range is 0 to 21500 Hz.
+/// Default x range is 0 to 22050 Hz.
 pub struct FrequencyPlot<'a> {
     primary_freqs: &'a Vec<Pos2>,
     secondary_freqs: Vec<&'a Vec<Pos2>>,
@@ -36,7 +36,7 @@ pub struct FrequencyPlot<'a> {
 #[allow(dead_code)]
 impl<'a> FrequencyPlot<'a> {
     pub fn new(frequencies: &'a Vec<Pos2>) -> Self {
-        let (x_min, x_max) = (0, 21500);
+        let (x_min, x_max) = (0, 22050);
         let (y_min, y_max) = (10, -60);
         let x_ticks = (x_min..=x_max).step_by(2000).map(|it| it as f32).collect();
         let y_ticks = (y_max..=y_min).step_by(10).map(|it| it as f32).collect();
@@ -52,7 +52,7 @@ impl<'a> FrequencyPlot<'a> {
                 logarithmic: false,
                 min_frequency: 10.0,
                 log_x_ticks: vec![
-                    10.0, 50.0, 200.0, 500.0, 1000.0, 2000.0, 5000.0, 10000.0, 21500.0,
+                    10.0, 50.0, 200.0, 500.0, 1000.0, 2000.0, 5000.0, 10000.0, 22050.0,
                 ],
             },
             text_size: 12.0,
