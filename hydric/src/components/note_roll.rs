@@ -331,10 +331,14 @@ impl NoteSequencerObject {
             &track_sel,
             Action::DeleteChild(IndexField::PlacedNote(note_index)),
         );
-        local_state.active_note.set(None);
-        local_state
-            .window_state
-            .set_visible(WindowKind::Note, false);
+        if let Some(active_note) = local_state.active_note.get() {
+            if active_note == note_index {
+                local_state.active_note.set(None);
+                local_state
+                    .window_state
+                    .set_visible(WindowKind::Note, false);
+            }
+        }
         local_state.selected_notes.update(|mut it| {
             it.remove(&note_index);
             it

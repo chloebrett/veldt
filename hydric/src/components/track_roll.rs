@@ -294,10 +294,14 @@ impl PlacedTrack {
         store.dispatchr(Action::DeleteChildById(TypeField::PlacementId(
             placement_id,
         )));
-        local_state
-            .window_state
-            .set_visible(WindowKind::Placement, false);
-        local_state.active_placement.set(None);
+        if let Some(active_placement) = local_state.active_placement.get() {
+            if active_placement == placement_id {
+            local_state
+                .window_state
+                .set_visible(WindowKind::Placement, false);
+            local_state.active_placement.set(None);
+            }
+        }
         local_state.selected_placements.update(|mut it| {
             it.remove(&placement_id);
             it
