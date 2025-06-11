@@ -323,10 +323,7 @@ impl NoteSequencerObject {
         );
     }
 
-    fn delete_self(&self, store: &Store, local_state: &LocalState) {
-        let Some(note_index): Option<usize> = local_state.active_note.get() else {
-            return;
-        };
+    fn delete_self(&self, store: &Store, local_state: &LocalState, note_index: usize) {
         let Some(track_sel): Option<TrackSelector> = local_state.active_track.get() else {
             return;
         };
@@ -466,8 +463,7 @@ impl<'a> NoteSequencer<'a> {
                 .interact(Sense::click())
                 .clicked_by(egui::PointerButton::Secondary)
             {
-                object.set_active(self.local_state, index);
-                object.delete_self(self.store, self.local_state);
+                object.delete_self(self.store, self.local_state, index);
             }
             if resize_resp.hovered() {
                 ui.ctx().set_cursor_icon(CursorIcon::ResizeColumn);

@@ -290,10 +290,7 @@ impl PlacedTrack {
         )));
     }
 
-    fn delete_self(&self, store: &Store, local_state: &LocalState) {
-        let Some(placement_id): Option<PlacementId> = local_state.active_placement.get() else {
-            return;
-        };
+    fn delete_self(&self, store: &Store, local_state: &LocalState, placement_id: PlacementId) {
         store.dispatchr(Action::DeleteChildById(TypeField::PlacementId(
             placement_id,
         )));
@@ -427,8 +424,7 @@ impl<'a> TrackSequencer<'a> {
                 .interact(Sense::click())
                 .clicked_by(egui::PointerButton::Secondary)
             {
-                object.set_active(self.local_state, *id);
-                object.delete_self(self.store, self.local_state);
+                object.delete_self(self.store, self.local_state, *id);
             }
             if resize_resp.hovered() {
                 ui.ctx().set_cursor_icon(CursorIcon::ResizeColumn);
