@@ -291,7 +291,7 @@ impl PlacedTrack {
         )));
     }
 
-    fn delete(&self, store: &Store, local_state: &LocalState, placement_id: PlacementId) {
+    fn delete_self(&self, store: &Store, local_state: &LocalState, placement_id: PlacementId) {
         local_state.active_placement.update(|placement| {
             if placement == Some(placement_id) {
                 None
@@ -419,10 +419,10 @@ impl<'a> TrackSequencer<'a> {
                     PlacedTrack::set_selected(self.local_state, Some(*id));
                 }
             } else if movable_resp.interact(Sense::click()).secondary_clicked() {
-                object.delete(self.store, self.local_state, *id);
+                object.delete_self(self.store, self.local_state, *id);
             } else if movable_resp.interact(Sense::click()).double_clicked() {
                 object.set_active(self.local_state, *id);
-            };
+            }
             if resize_resp.hovered() {
                 ui.ctx().set_cursor_icon(CursorIcon::ResizeColumn);
             }

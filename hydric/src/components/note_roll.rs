@@ -324,7 +324,7 @@ impl NoteSequencerObject {
         );
     }
 
-    fn delete(
+    fn delete_self(
         &self,
         store: &Store,
         local_state: &LocalState,
@@ -461,7 +461,7 @@ impl<'a> NoteSequencer<'a> {
             } else if movable_resp.interact(Sense::click()).double_clicked() {
                 object.set_active(self.local_state, index);
             } else if movable_resp.interact(Sense::click()).secondary_clicked() {
-                object.delete(self.store, self.local_state, self.track_id, index);
+                object.delete_self(self.store, self.local_state, self.track_id, index);
             };
             if resize_resp.hovered() {
                 ui.ctx().set_cursor_icon(CursorIcon::ResizeColumn);
