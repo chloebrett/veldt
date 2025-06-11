@@ -14,8 +14,7 @@ use shared::{
     types::PitchValue,
 };
 use state::{
-    Action, FloatField, GeneratorSelector, MultiIndexField, NoteSelector, Store, TrackSelector,
-    TypeField,
+    Action, FloatField, GeneratorSelector, IndexField, MultiIndexField, NoteSelector, Store, TrackSelector, TypeField
 };
 use std::collections::HashSet;
 
@@ -322,6 +321,15 @@ impl NoteSequencerObject {
             )),
         );
     }
+
+    fn delete(&self, store: &Store, local_state: &LocalState, track_id: TrackId, note_index: usize) {
+        local_state.active_note.update(|note| match note {
+            // If the active note is being deleted, "de-activate" it.
+            Some(..) => None,
+            _ => note
+        });
+        store.dispatch(&TrackSelector(track_id),Action::DeleteChild(IndexField::PlacedNote(note_index)))
+    }
 }
 
 pub struct NoteSequencer<'a> {
@@ -441,7 +449,9 @@ impl<'a> NoteSequencer<'a> {
                 }
             } else if movable_resp.interact(Sense::click()).double_clicked() {
                 object.set_active(self.local_state, index);
-            }
+            } else if movable_resp.interact(Sense::click()).secondary_clicked() {
+                object.delete(self.store, self.local_state, self.track_id, index);
+            };
             if resize_resp.hovered() {
                 ui.ctx().set_cursor_icon(CursorIcon::ResizeColumn);
             }
@@ -470,10 +480,10 @@ impl<'a> NoteSequencer<'a> {
         to_sequencer: RectTransform,
         edit_object: &impl Fn(Action),
     ) -> bool {
-        let drag_pos = response.interact_pointer_pos();
-        let drag_delta = response.drag_delta();
-        if let Some(drag_pos) = drag_pos {
+        if response.dragged_by(egui::PointerButton::Primary) {
             // Keep track of the delta between object and cursor position at drag start.
+            let drag_pos = response.interact_pointer_pos().unwrap();
+            let drag_delta = response.drag_delta();
             if response.interact(Sense::drag()).drag_started() {
                 self.local_state
                     .drag_cursor_delta
@@ -488,7 +498,8 @@ impl<'a> NoteSequencer<'a> {
                 .transform(to_sequencer.inverse())
                 .clamp(
                     pos2(0.0, 0.0),
-                    // Clamp to `y` range - 1 so that object cannot be dragged beyond bottom of sequencer.
+                    // Clamp to `y` range - 1 so that object cannot be dragged beyond bottom of 
+                    // sequencer.
                     vec2(f32::INFINITY, self.range.size().y - 1.0).to_pos2(),
                 );
             if drag_delta.y != 0.0 {
