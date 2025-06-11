@@ -289,6 +289,24 @@ impl PlacedTrack {
             local_state.selected_placements.get().into_iter().collect(),
         )));
     }
+
+    fn delete_self(&self, store: &Store, local_state: &LocalState, placement_id: PlacementId) {
+        store.dispatchr(Action::DeleteChildById(TypeField::PlacementId(
+            placement_id,
+        )));
+        if let Some(active_placement) = local_state.active_placement.get() {
+            if active_placement == placement_id {
+                local_state
+                    .window_state
+                    .set_visible(WindowKind::Placement, false);
+                local_state.active_placement.set(None);
+            }
+        }
+        local_state.selected_placements.update(|mut it| {
+            it.remove(&placement_id);
+            it
+        });
+    }
 }
 
 struct TrackSequencer<'a> {
@@ -406,6 +424,11 @@ impl<'a> TrackSequencer<'a> {
                 }
             } else if movable_resp.interact(Sense::click()).double_clicked() {
                 object.set_active(self.local_state, *id);
+            } else if movable_resp
+                .interact(Sense::click())
+                .clicked_by(egui::PointerButton::Secondary)
+            {
+                object.delete_self(self.store, self.local_state, *id);
             }
             if resize_resp.hovered() {
                 ui.ctx().set_cursor_icon(CursorIcon::ResizeColumn);
