@@ -312,7 +312,7 @@ impl NoteSequencerObject {
 
     fn delete_selected(store: &Store, local_state: &LocalState, track_id: TrackId) {
         // De-activate active note.
-        // TODO: correctly handle the active note. 
+        // TODO: correctly handle the active note.
         // Currently if the deleted note index is less than the active note index, the active note
         // will either change or the index will be out of bounds and panic.
         local_state.active_note.update(|_| None);
@@ -332,7 +332,7 @@ impl NoteSequencerObject {
         note_index: usize,
     ) {
         // De-activate active note.
-        // TODO: correctly handle the active note. 
+        // TODO: correctly handle the active note.
         // Currently if the deleted note index is less than the active note index, the active note
         // will either change or the index will be out of bounds and panic.
         local_state.active_note.update(|_| None);
