@@ -312,7 +312,8 @@ impl NoteSequencerObject {
 
     fn delete_selected(store: &Store, local_state: &LocalState, track_id: TrackId) {
         // De-activate active note.
-        // TODO: Fix this. The local state stores the active by index.
+        // TODO: Only set active note to none if that note is deleted. 
+        // This is currently necessary as the local state stores the active by index.
         // If the active note is greater than the deleted note it either changes the active note or
         // is an index out of range and panics.
         local_state.active_note.update(|_| None);
