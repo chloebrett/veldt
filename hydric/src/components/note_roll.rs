@@ -3,6 +3,7 @@ use crate::{GetSet, LocalState, transform::Transform};
 use crate::{
     playback::AudioPlayer, transform::Yx, view::View, widget::StateWindow, window_state::WindowKind,
 };
+use egui::PointerButton;
 use egui::{
     Color32, CornerRadius, CursorIcon, Frame, Pos2, Rect, Response, ScrollArea, Sense, Shape,
     Stroke, StrokeKind, Ui, Vec2, Widget, emath::RectTransform, pos2, vec2,
@@ -490,7 +491,7 @@ impl<'a> NoteSequencer<'a> {
         to_sequencer: RectTransform,
         edit_object: &impl Fn(Action),
     ) -> bool {
-        if response.dragged_by(egui::PointerButton::Primary) {
+        if response.dragged_by(PointerButton::Primary) {
             // Keep track of the delta between object and cursor position at drag start.
             let drag_pos = response.interact_pointer_pos().unwrap();
             let drag_delta = response.drag_delta();

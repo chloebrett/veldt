@@ -1,5 +1,6 @@
 use crate::{GetSet, LocalState, transform::Transform};
 use crate::{view::View, widget::StateWindow, window_state::WindowKind};
+use egui::PointerButton;
 use egui::{
     Color32, CornerRadius, CursorIcon, Frame, Pos2, Rect, Response, ScrollArea, Sense, Shape,
     Stroke, StrokeKind, Ui, Vec2, Widget, emath::RectTransform, pos2, vec2,
@@ -298,7 +299,9 @@ impl PlacedTrack {
                 placement
             }
         });
-        store.dispatchr(Action::DeleteChildById(TypeField::PlacementId(placement_id)));
+        store.dispatchr(Action::DeleteChildById(TypeField::PlacementId(
+            placement_id,
+        )));
     }
 }
 
@@ -415,9 +418,11 @@ impl<'a> TrackSequencer<'a> {
                 if movable_resp.interact(Sense::click()).clicked() {
                     PlacedTrack::set_selected(self.local_state, Some(*id));
                 }
+            } else if movable_resp.interact(Sense::click()).secondary_clicked() {
+                object.delete(self.store, self.local_state, *id);
             } else if movable_resp.interact(Sense::click()).double_clicked() {
                 object.set_active(self.local_state, *id);
-            }
+            };
             if resize_resp.hovered() {
                 ui.ctx().set_cursor_icon(CursorIcon::ResizeColumn);
             }
@@ -443,9 +448,10 @@ impl<'a> TrackSequencer<'a> {
         to_sequencer: RectTransform,
         edit_object: &impl Fn(Action),
     ) -> bool {
-        let drag_delta = response.drag_delta();
-        if let Some(drag_pos) = response.interact_pointer_pos() {
+        if response.dragged_by(PointerButton::Primary) {
             // Keep track of the delta between object and cursor position at drag start.
+            let drag_delta = response.drag_delta();
+            let drag_pos = response.interact_pointer_pos().unwrap();
             if response.interact(Sense::drag()).drag_started() {
                 self.local_state
                     .drag_cursor_delta
