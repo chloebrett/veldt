@@ -14,8 +14,8 @@ use shared::{
     types::PitchValue,
 };
 use state::{
-    Action, FloatField, GeneratorSelector, MultiIndexField, NoteSelector, Store, TrackSelector,
-    TypeField,
+    Action, FloatField, GeneratorSelector, IndexField, MultiIndexField, NoteSelector, Store,
+    TrackSelector, TypeField,
 };
 use std::collections::HashSet;
 
@@ -322,6 +322,27 @@ impl NoteSequencerObject {
             )),
         );
     }
+
+    fn delete_self(&self, store: &Store, local_state: &LocalState) {
+        let Some(note_index): Option<usize> = local_state.active_note.get() else {
+            return;
+        };
+        let Some(track_sel): Option<TrackSelector> = local_state.active_track.get() else {
+            return;
+        };
+        store.dispatch(
+            &track_sel,
+            Action::DeleteChild(IndexField::PlacedNote(note_index)),
+        );
+        local_state.active_note.set(None);
+        local_state
+            .window_state
+            .set_visible(WindowKind::Note, false);
+        local_state.selected_notes.update(|mut it| {
+            it.remove(&note_index);
+            it
+        });
+    }
 }
 
 pub struct NoteSequencer<'a> {
@@ -441,6 +462,12 @@ impl<'a> NoteSequencer<'a> {
                 }
             } else if movable_resp.interact(Sense::click()).double_clicked() {
                 object.set_active(self.local_state, index);
+            } else if movable_resp
+                .interact(Sense::click())
+                .clicked_by(egui::PointerButton::Secondary)
+            {
+                object.set_active(self.local_state, index);
+                object.delete_self(self.store, self.local_state);
             }
             if resize_resp.hovered() {
                 ui.ctx().set_cursor_icon(CursorIcon::ResizeColumn);
