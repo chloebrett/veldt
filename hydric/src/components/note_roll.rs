@@ -314,7 +314,7 @@ impl NoteSequencerObject {
         // De-activate active note.
         // TODO: Fix this. The local state stores the active by index.
         // If the active note is greater than the deleted note it either changes the active note or
-        // is an index out of bounds and panics.
+        // is an index out of range and panics.
         local_state.active_note.update(|_| None);
         store.dispatch(
             &TrackSelector(track_id),
@@ -334,7 +334,7 @@ impl NoteSequencerObject {
         // De-activate active note.
         // TODO: Fix this. The local state stores the active by index.
         // If the active note is greater than the deleted note it either changes the active note or
-        // is an index out of bounds and panics.
+        // is an index out of range and panics.
         local_state.active_note.update(|_| None);
         store.dispatch(
             &TrackSelector(track_id),
