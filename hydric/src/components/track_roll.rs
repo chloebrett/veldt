@@ -289,6 +289,17 @@ impl PlacedTrack {
             local_state.selected_placements.get().into_iter().collect(),
         )));
     }
+
+    fn delete(&self, store: &Store, local_state: &LocalState, placement_id: PlacementId) {
+        local_state.active_placement.update(|placement| {
+            if placement == Some(placement_id) {
+                None
+            } else {
+                placement
+            }
+        });
+        store.dispatchr(Action::DeleteChildById(TypeField::PlacementId(placement_id)));
+    }
 }
 
 struct TrackSequencer<'a> {

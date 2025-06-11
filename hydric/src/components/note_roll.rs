@@ -14,7 +14,8 @@ use shared::{
     types::PitchValue,
 };
 use state::{
-    Action, FloatField, GeneratorSelector, IndexField, MultiIndexField, NoteSelector, Store, TrackSelector, TypeField
+    Action, FloatField, GeneratorSelector, IndexField, MultiIndexField, NoteSelector, Store,
+    TrackSelector, TypeField,
 };
 use std::collections::HashSet;
 
@@ -309,11 +310,11 @@ impl NoteSequencerObject {
     }
 
     fn delete_selected(store: &Store, local_state: &LocalState, track_id: TrackId) {
-        local_state.active_note.update(|note| match note {
-            // If the active note is selected, "de-activate" it.
-            Some(index) if local_state.selected_notes.get().contains(&index) => None,
-            _ => note,
-        });
+        // De-activate active note.
+        // TODO: Fix this. The local state stores the active by index.
+        // If the active note is greater than the deleted note it either changes the active note or
+        // is an index out of bounds and panics.
+        local_state.active_note.update(|_| None);
         store.dispatch(
             &TrackSelector(track_id),
             Action::DeleteChildren(MultiIndexField::PlacedNote(
@@ -322,13 +323,22 @@ impl NoteSequencerObject {
         );
     }
 
-    fn delete(&self, store: &Store, local_state: &LocalState, track_id: TrackId, note_index: usize) {
-        local_state.active_note.update(|note| match note {
-            // If the active note is being deleted, "de-activate" it.
-            Some(..) => None,
-            _ => note
-        });
-        store.dispatch(&TrackSelector(track_id),Action::DeleteChild(IndexField::PlacedNote(note_index)))
+    fn delete(
+        &self,
+        store: &Store,
+        local_state: &LocalState,
+        track_id: TrackId,
+        note_index: usize,
+    ) {
+        // De-activate active note.
+        // TODO: Fix this. The local state stores the active by index.
+        // If the active note is greater than the deleted note it either changes the active note or
+        // is an index out of bounds and panics.
+        local_state.active_note.update(|_| None);
+        store.dispatch(
+            &TrackSelector(track_id),
+            Action::DeleteChild(IndexField::PlacedNote(note_index)),
+        )
     }
 }
 
@@ -498,7 +508,7 @@ impl<'a> NoteSequencer<'a> {
                 .transform(to_sequencer.inverse())
                 .clamp(
                     pos2(0.0, 0.0),
-                    // Clamp to `y` range - 1 so that object cannot be dragged beyond bottom of 
+                    // Clamp to `y` range - 1 so that object cannot be dragged beyond bottom of
                     // sequencer.
                     vec2(f32::INFINITY, self.range.size().y - 1.0).to_pos2(),
                 );
