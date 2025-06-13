@@ -1199,24 +1199,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "96a6ac251f4a2aca6b3f91340350eab87ae57c3f127ffeb585e92bd336717991"
 
 [[package]]
-name = "dasp"
-version = "0.11.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "7381b67da416b639690ac77c73b86a7b5e64a29e31d1f75fb3b1102301ef355a"
-dependencies = [
- "dasp_envelope",
- "dasp_frame",
- "dasp_interpolate",
- "dasp_peak",
- "dasp_ring_buffer",
- "dasp_rms",
- "dasp_sample",
- "dasp_signal",
- "dasp_slice",
- "dasp_window",
-]
-
-[[package]]
 name = "dasp_envelope"
 version = "0.11.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1560,13 +1542,10 @@ dependencies = [
 
 [[package]]
 name = "egui_fader"
-version = "0.1.1"
+version = "0.1.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "3b3437ba82730555a635af593915123954bc03f3e8481d55931141fb2d0b4f05"
+checksum = "a19c1b5f9f93dcae80327d27226bfa526f249986d8469ece84e6fce9bc53412e"
 dependencies = [
- "dasp",
- "dasp_frame",
- "dasp_signal",
  "egui",
 ]
 

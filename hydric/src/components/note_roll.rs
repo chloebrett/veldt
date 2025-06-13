@@ -106,13 +106,14 @@ impl View for NoteRoll<'_> {
         let notes = store.select(&track_sel).notes.clone();
         let white_note_pattern = self.make_white_note_pattern(max_note);
         let unclipped_duration = store.select(&track_sel).unclipped_duration();
+        let max_bars = 16.0;
         let range = Rect::from_min_max(
             pos2(offset, min_note as f32 - 1.0),
             // NoteRoll is at least 1 bar long
             // Extends when notes are dragged or set beyond 1 bar.
             // Add 0.5 to X as a small buffer after max note.
             pos2(
-                f32::max(bar_length, *unclipped_duration) + 0.5,
+                f32::max(bar_length * max_bars, *unclipped_duration) + 0.5,
                 max_note as f32,
             ),
         );
@@ -137,8 +138,9 @@ impl View for NoteRoll<'_> {
                     ui.checkbox(&mut select, "Select")
                 });
                 ui.separator();
-                ScrollArea::vertical()
+                ScrollArea::both()
                     .min_scrolled_height(200.0)
+                    .min_scrolled_width(400.0)
                     .show(ui, |ui| {
                         ui.horizontal(|ui| {
                             // TODO: use the correct generator for the track placement that
@@ -369,7 +371,7 @@ impl<'a> NoteSequencer<'a> {
             store,
             local_state,
             range,
-            size: vec2(400.0, 600.0),
+            size: vec2(4000.0, 600.0),
             objects: vec![],
             quantise_level: 0.125,
             background_shapes: vec![],
