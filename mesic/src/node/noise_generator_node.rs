@@ -2,9 +2,7 @@ use crate::eq::pink::PinkFilter;
 use crate::graph::{NoteEvent, NoteEventType, ProcessContext};
 use dasp_graph::{Buffer, Input, Node};
 use rand::Rng;
-use shared::model::{
-    Generator, GeneratorInstance, GeneratorMeta, NoiseConfig, NoiseType,
-};
+use shared::model::{Generator, GeneratorInstance, GeneratorMeta, NoiseConfig, NoiseType};
 use state::GeneratorSelector;
 
 pub struct NoiseGeneratorNode {
