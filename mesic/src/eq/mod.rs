@@ -13,6 +13,7 @@ mod parametric_second_order;
 mod resonator_sa;
 mod resonator_simple;
 mod shelf_first_order;
+mod pink;
 
 use apf_first_order::*;
 use apf_second_order::*;
