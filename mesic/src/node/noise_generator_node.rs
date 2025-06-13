@@ -1,11 +1,9 @@
-use crate::consts::SAMPLE_RATE;
-use crate::eq::eq_filter;
-use crate::eq::filter::Filter;
+use crate::eq::pink::PinkFilter;
 use crate::graph::{NoteEvent, NoteEventType, ProcessContext};
 use dasp_graph::{Buffer, Input, Node};
 use rand::Rng;
 use shared::model::{
-    EqConfig, EqType, Generator, GeneratorInstance, GeneratorMeta, NoiseConfig, NoiseType,
+    Generator, GeneratorInstance, GeneratorMeta, NoiseConfig, NoiseType,
 };
 use state::GeneratorSelector;
 
@@ -20,8 +18,6 @@ struct NodeState {
     config: NoiseConfig,
     meta: GeneratorMeta,
     playing: bool,
-    pink_filters: Vec<Filter>,
-    brown_filter: Filter,
 }
 
 impl Default for NodeState {
@@ -31,13 +27,6 @@ impl Default for NodeState {
             config: config.clone(),
             meta: GeneratorMeta::default(),
             playing: false,
-            pink_filters: Self::initialise_pink_filters(),
-            brown_filter: eq_filter(&EqConfig {
-                kind: EqType::SimpleFirstOrderLowPass,
-                fc: 20.0,
-                q: 0.707, // See "Designing Audio Effect Plugins in C++", W. Pirkle, p273
-                gain: 0.0,
-            }),
         }
     }
 }
@@ -57,47 +46,6 @@ impl NodeState {
                 self.meta = meta.clone();
             }
         }
-    }
-
-    fn initialise_pink_filters() -> Vec<Filter> {
-        let mut filters = Vec::new();
-
-        filters.push(eq_filter(&EqConfig {
-            kind: EqType::SimpleFirstOrderLowPass,
-            fc: SAMPLE_RATE as f32 / 4.0,
-            q: 0.707,
-            gain: 0.0,
-        }));
-
-        filters.push(eq_filter(&EqConfig {
-            kind: EqType::SimpleFirstOrderLowPass,
-            fc: SAMPLE_RATE as f32 / 8.0,
-            q: 0.707,
-            gain: 0.0,
-        }));
-
-        filters.push(eq_filter(&EqConfig {
-            kind: EqType::SimpleFirstOrderLowPass,
-            fc: SAMPLE_RATE as f32 / 16.0,
-            q: 0.707,
-            gain: 0.0,
-        }));
-
-        filters.push(eq_filter(&EqConfig {
-            kind: EqType::SimpleFirstOrderLowPass,
-            fc: SAMPLE_RATE as f32 / 32.0,
-            q: 0.707,
-            gain: 0.0,
-        }));
-
-        filters.push(eq_filter(&EqConfig {
-            kind: EqType::SimpleFirstOrderLowPass,
-            fc: SAMPLE_RATE as f32 / 64.0,
-            q: 0.707,
-            gain: 0.0,
-        }));
-
-        filters
     }
 }
 
@@ -122,13 +70,15 @@ impl NoiseGeneratorNode {
     }
 
     fn generate_pink_noise(&mut self, buffer: &mut Buffer) {
-        for filter in &mut self.state.pink_filters {
-            filter.apply(buffer);
-        }
+        let mut filter = PinkFilter::new();
+        filter.apply(buffer);
     }
 
     fn generate_brown_noise(&mut self, buffer: &mut Buffer) {
-        self.state.brown_filter.apply(buffer);
+        for _ in 0..2 {
+            let mut filter = PinkFilter::new();
+            filter.apply(buffer);
+        }
     }
 }
 

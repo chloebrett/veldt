@@ -1,10 +1,7 @@
-use crate::eq::filter::FilterState;
 use dasp_graph::Buffer;
-use ringbuffer::RingBuffer;
 
 pub struct PinkFilter {
     pub config: PinkFilterConfig,
-    pub state: FilterState,
 }
 
 pub struct PinkFilterConfig {
@@ -34,32 +31,27 @@ impl PinkFilterConfig {
 impl PinkFilter {
     pub fn new() -> Self {
         let config = PinkFilterConfig::default();
-        let state = FilterState::default();
-        Self { config, state }
+        Self { config }
     }
 
     pub fn apply(&mut self, buffer: &mut Buffer) {
-        let PinkFilterConfig {
-            mut b0,
-            mut b1,
-            mut b2,
-            mut b3,
-            mut b4,
-            mut b5,
-            mut b6,
-        } = self.config;
-
         for xn in buffer.iter_mut() {
-            b0 = 0.99886 * b0 + *xn * 0.0555179;
-            b1 = 0.99332 * b1 + *xn * 0.0750759;
-            b2 = 0.96900 * b2 + *xn * 0.1538520;
-            b3 = 0.86650 * b3 + *xn * 0.3104856;
-            b4 = 0.55000 * b4 + *xn * 0.5329522;
-            b5 = -0.7616 * b5 - *xn * 0.0168980;
-            let yn = b0 + b1 + b2 + b3 + b4 + b5 + b6 + *xn * 0.5362;
-            b6 = *xn * 0.115926;
-            self.state.x_buffer.push(*xn);
-            self.state.y_buffer.push(yn);
+            self.config.b0 = 0.99886 * self.config.b0 + *xn * 0.0555179;
+            self.config.b1 = 0.99332 * self.config.b1 + *xn * 0.0750759;
+            self.config.b2 = 0.96900 * self.config.b2 + *xn * 0.1538520;
+            self.config.b3 = 0.86650 * self.config.b3 + *xn * 0.3104856;
+            self.config.b4 = 0.55000 * self.config.b4 + *xn * 0.5329522;
+            self.config.b5 = -0.7616 * self.config.b5 - *xn * 0.0168980;
+            let yn = self.config.b0
+                + self.config.b1
+                + self.config.b2
+                + self.config.b3
+                + self.config.b4
+                + self.config.b5
+                + self.config.b6
+                + *xn * 0.5362;
+            self.config.b6 = *xn * 0.115926;
+            *xn = yn * 0.115830421;
         }
     }
 }
