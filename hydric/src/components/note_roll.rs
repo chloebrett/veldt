@@ -105,7 +105,6 @@ impl View for NoteRoll<'_> {
         };
         let notes = store.select(&track_sel).notes.clone();
         let white_note_pattern = self.make_white_note_pattern(max_note);
-        let unclipped_duration = store.select(&track_sel).unclipped_duration();
         let max_bars = 16.0;
         let range = Rect::from_min_max(
             pos2(offset, min_note as f32 - 1.0),
@@ -113,7 +112,7 @@ impl View for NoteRoll<'_> {
             // Extends when notes are dragged or set beyond 1 bar.
             // Add 0.5 to X as a small buffer after max note.
             pos2(
-                f32::max(bar_length * max_bars, *unclipped_duration) + 0.5,
+                bar_length * max_bars,
                 max_note as f32,
             ),
         );
@@ -518,7 +517,7 @@ impl<'a> NoteSequencer<'a> {
                 .clamp(
                     pos2(0.0, 0.0),
                     // Clamp to `y` range - 1 so that object cannot be dragged beyond bottom of sequencer.
-                    vec2(f32::INFINITY, self.range.size().y - 1.0).to_pos2(),
+                    vec2(self.range.right(), self.range.size().y - 1.0).to_pos2(),
                 );
             if drag_delta.y != 0.0 {
                 edit_object(Action::SetChild(TypeField::PitchName(PitchName::from(
