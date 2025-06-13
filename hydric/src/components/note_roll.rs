@@ -19,6 +19,10 @@ use state::{
 };
 use std::collections::HashSet;
 
+// The max number of bars the NoteSequencer will allow placement on.
+// TODO: Where is the best place for this definiton? Should it be user changeable?
+const MAX_BARS: f32 = 16.0;
+
 pub struct NoteRoll<'a> {
     store: &'a Store,
     local_state: &'a LocalState,
@@ -105,16 +109,12 @@ impl View for NoteRoll<'_> {
         };
         let notes = store.select(&track_sel).notes.clone();
         let white_note_pattern = self.make_white_note_pattern(max_note);
-        let max_bars = 16.0;
         let range = Rect::from_min_max(
             pos2(offset, min_note as f32 - 1.0),
             // NoteRoll is at least 1 bar long
             // Extends when notes are dragged or set beyond 1 bar.
             // Add 0.5 to X as a small buffer after max note.
-            pos2(
-                bar_length * max_bars,
-                max_note as f32,
-            ),
+            pos2(bar_length * MAX_BARS, max_note as f32),
         );
         let mut select = local_state.note_roll_select_enabled.get();
         if !select {
@@ -137,9 +137,8 @@ impl View for NoteRoll<'_> {
                     ui.checkbox(&mut select, "Select")
                 });
                 ui.separator();
-                ScrollArea::both()
+                ScrollArea::vertical()
                     .min_scrolled_height(200.0)
-                    .min_scrolled_width(400.0)
                     .show(ui, |ui| {
                         ui.horizontal(|ui| {
                             // TODO: use the correct generator for the track placement that
@@ -168,18 +167,30 @@ impl View for NoteRoll<'_> {
                                 gen_sel,
                             )
                             .ui(ui);
-                            ui.add(
-                                NoteSequencer::new(store, local_state, range, track_sel.0)
-                                    .objects(notes.into_iter().map(NoteSequencerObject).collect())
-                                    .select(select)
-                                    .horizontal_rects(
-                                        white_note_pattern,
-                                        Color32::from_white_alpha(4),
-                                    )
-                                    .vertical_bars(bar_length, Color32::from_white_alpha(6))
-                                    .vertical_bars(1.0, Color32::from_white_alpha(3))
-                                    .vertical_bars(1.0 / bar_length, Color32::from_white_alpha(1)),
-                            );
+                            ScrollArea::horizontal()
+                                .min_scrolled_width(400.0)
+                                .show(ui, |ui| {
+                                    ui.add(
+                                        NoteSequencer::new(store, local_state, range, track_sel.0)
+                                            .objects(
+                                                notes
+                                                    .into_iter()
+                                                    .map(NoteSequencerObject)
+                                                    .collect(),
+                                            )
+                                            .select(select)
+                                            .horizontal_rects(
+                                                white_note_pattern,
+                                                Color32::from_white_alpha(4),
+                                            )
+                                            .vertical_bars(bar_length, Color32::from_white_alpha(6))
+                                            .vertical_bars(1.0, Color32::from_white_alpha(3))
+                                            .vertical_bars(
+                                                1.0 / bar_length,
+                                                Color32::from_white_alpha(1),
+                                            ),
+                                    );
+                                });
                         });
                     });
             },
