@@ -41,7 +41,7 @@ impl View for EffectMenuOptions<'_> {
                             self.local_state.active_mixer_channel.set(Some(mixer_sel));
                             self.local_state
                                 .window_state
-                                .set_visible(WindowKind::Mixer, true);
+                                .set_visible(WindowKind::ChannelEffect, true);
                         }
                     }
                 });

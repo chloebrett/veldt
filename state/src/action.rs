@@ -2,7 +2,7 @@ use crate::{
     FloatField, IndexField, MoveField, MultiIndexField, MultiTypeField, TypeField, UintField,
 };
 use shared::action_proto::{
-    ActionProto, SetFloatProto, SetUintProto, action_proto::Kind as ActionKind,
+    ActionProto, ChildIndexPairProto, SetFloatProto, SetUintProto, action_proto::Kind as ActionKind,
 };
 use std::str::FromStr;
 
@@ -14,14 +14,21 @@ pub enum Action {
     SetUint(UintField, u32),
     // Set a child field that happens to be an index.
     SetIndex(IndexField),
-    // Delete a child object *by* index.
+    // Delete a child object by index.
     DeleteChild(IndexField),
-    // Delete multiple children "by" index.
+    // Delete a child object by ID.
+    // TODO: ID types live on TypeField, maybe they should have their own enum?
+    DeleteChildById(TypeField),
+    // Delete multiple children by index.
     DeleteChildren(MultiIndexField),
+    // Delete multiple children by ID.
+    // TODO: ID types live on TypeField, maybe they should have their own enum?
+    DeleteChildrenById(MultiTypeField),
     // Set a child object by type.
     SetChild(TypeField),
     // Add a child object by type.
     AddChild(TypeField),
+    AddChildAtIndex(TypeField, IndexField),
     // Set children of an object by type.
     AddChildren(MultiTypeField),
     SetChildren(MultiTypeField),
@@ -53,8 +60,13 @@ impl From<ActionProto> for Action {
             ),
             ActionKind::SetIndex(index) => Action::SetIndex(index.into()),
             ActionKind::DeleteChild(index) => Action::DeleteChild(index.into()),
+            ActionKind::DeleteChildById(id) => Action::DeleteChildById(id.into()),
             ActionKind::DeleteChildren(indexes) => Action::DeleteChildren(indexes.into()),
+            ActionKind::DeleteChildrenById(ids) => Action::DeleteChildrenById(ids.into()),
             ActionKind::AddChild(child) => Action::AddChild(child.into()),
+            ActionKind::AddChildAtIndex(ChildIndexPairProto { child, index }) => {
+                Action::AddChildAtIndex(child.unwrap().into(), index.unwrap().into())
+            }
             ActionKind::SetChild(child) => Action::SetChild(child.into()),
             ActionKind::SetChildren(children) => Action::SetChildren(children.into()),
             ActionKind::AddChildren(children) => Action::AddChildren(children.into()),
@@ -77,8 +89,16 @@ impl From<Action> for ActionProto {
                 Action::SetIndex(index) => ActionKind::SetIndex(index.into()),
                 Action::SetChild(child) => ActionKind::SetChild(child.into()),
                 Action::AddChild(child) => ActionKind::AddChild(child.into()),
+                Action::AddChildAtIndex(child, index) => {
+                    ActionKind::AddChildAtIndex(ChildIndexPairProto {
+                        child: Some(child.into()),
+                        index: Some(index.into()),
+                    })
+                }
                 Action::DeleteChild(index) => ActionKind::DeleteChild(index.into()),
+                Action::DeleteChildById(id) => ActionKind::DeleteChildById(id.into()),
                 Action::DeleteChildren(indexes) => ActionKind::DeleteChildren(indexes.into()),
+                Action::DeleteChildrenById(ids) => ActionKind::DeleteChildrenById(ids.into()),
                 Action::MoveChild(it) => ActionKind::MoveChild(it.into()),
                 Action::SetChildren(it) => ActionKind::SetChildren(it.into()),
                 Action::AddChildren(it) => ActionKind::AddChildren(it.into()),

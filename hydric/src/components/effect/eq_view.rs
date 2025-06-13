@@ -84,7 +84,8 @@ impl<F: Fn(Action), G: Fn()> View for EqView<'_, F, G> {
                     |it| dispatch(Action::SetFloat(FloatField::Fc, it)),
                     20.0..=20000.0,
                 )
-                .with_neutral(2000.0), // TODO: logarithmic
+                .logarithmic(true)
+                .with_neutral(2000.0),
                 &self.on_release,
             );
 
@@ -96,7 +97,8 @@ impl<F: Fn(Action), G: Fn()> View for EqView<'_, F, G> {
                     |it| dispatch(Action::SetFloat(FloatField::Q, it)),
                     0.1..=100.0,
                 )
-                .with_neutral(1.0), // TODO: logarithmic
+                .logarithmic(true)
+                .with_neutral(1.0),
                 &self.on_release,
             );
 

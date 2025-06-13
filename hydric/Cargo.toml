@@ -47,7 +47,9 @@ ringbuffer = "0.15.0"
 dasp_rms = "0.11.0"
 dasp_ring_buffer = "0.11.0"
 tonic = { version = "0.13.1", default-features = false }
-egui_fancy_knob = "0.1.0"
+egui_fancy_knob = "0.2.0"
+egui_fader = "0.1.1"
+egui-snarl = { path = "../vendor/egui-snarl" }
 
 [features]
 # Displays some extra debug information in the UI.

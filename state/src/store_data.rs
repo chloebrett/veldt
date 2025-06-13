@@ -4,8 +4,8 @@ use ordered_float::OrderedFloat;
 use shared::model::{
     AdsrEnvelope, AntiAliasingMode, FileTreeConfig, FilenameTree, Generator, GeneratorId,
     GeneratorInstance, GeneratorMeta, Mixer, MixerChannel, MixerMatrix, NoiseConfig, Note,
-    PitchName, PlacedNote, Placement, PlacementType, PolyphonyMode, Project, Scale, ScaleValue,
-    SimpleWaveConfig, StingrayConfig, Track, TrackPlacement, WaveType,
+    PitchName, PlacedNote, Placement, PlacementId, PlacementType, PolyphonyMode, Project, Scale,
+    ScaleValue, SimpleWaveConfig, StingrayConfig, Track, TrackId, TrackPlacement, WaveType,
 };
 use shared::types::Volume;
 use std::collections::HashMap;
@@ -53,35 +53,41 @@ impl Default for StoreData {
     fn default() -> Self {
         const EMPTY_CHANNEL: MixerChannel = MixerChannel {
             volume: 1.0,
-            effects: vec![],
+            effect_ids: vec![],
         };
 
         StoreData {
             project: Project {
                 name: "My Project".to_string(),
-                tracks: vec![Track {
-                    notes: vec![PlacedNote {
-                        note: Note {
-                            pitch_name: PitchName {
-                                scale_value: ScaleValue::A,
-                                octave: 4,
+                tracks: HashMap::from([(
+                    TrackId(0),
+                    Track {
+                        notes: vec![PlacedNote {
+                            note: Note {
+                                pitch_name: PitchName {
+                                    scale_value: ScaleValue::A,
+                                    octave: 4,
+                                },
+                                beats: 1.0,
                             },
-                            beats: 1.0,
-                        },
+                            offset: OrderedFloat(0.0),
+                        }],
                         offset: OrderedFloat(0.0),
-                    }],
-                    offset: OrderedFloat(0.0),
-                }],
-                placements: vec![Placement {
-                    kind: PlacementType::Track(TrackPlacement {
-                        track_index: 0,
-                        generator_id: 0.into(),
-                    }),
-                    offset: 0.0.into(),
-                    clipped_duration: None,
-                    visual_placement: 0,
-                }],
-                samples: vec![],
+                    },
+                )]),
+                placements: HashMap::from([(
+                    PlacementId(0),
+                    Placement {
+                        kind: PlacementType::Track(TrackPlacement {
+                            track_id: 0.into(),
+                            generator_id: 0.into(),
+                        }),
+                        offset: 0.0.into(),
+                        clipped_duration: None,
+                        visual_placement: 0,
+                    },
+                )]),
+                samples: HashMap::new(),
                 generators: HashMap::from([
                     (
                         GeneratorId(0),
@@ -138,6 +144,7 @@ impl Default for StoreData {
                     matrix: MixerMatrix::with_channels(3),
                     channels: vec![EMPTY_CHANNEL; 3],
                 },
+                effects: HashMap::new(),
                 bpm: 120.0,
             },
             volume: 1.0,
