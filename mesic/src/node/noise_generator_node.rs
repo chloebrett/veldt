@@ -67,16 +67,16 @@ impl NoiseGeneratorNode {
         generate_random_number_in_range(rng, min, max)
     }
 
+    fn generate_brown_noise(&mut self, buffer: &mut Buffer) {
+        let mut filter1 = PinkFilter::new();
+        let mut filter2 = PinkFilter::new();
+        filter1.apply(buffer);
+        filter2.apply(buffer);
+    }
+
     fn generate_pink_noise(&mut self, buffer: &mut Buffer) {
         let mut filter = PinkFilter::new();
         filter.apply(buffer);
-    }
-
-    fn generate_brown_noise(&mut self, buffer: &mut Buffer) {
-        for _ in 0..2 {
-            let mut filter = PinkFilter::new();
-            filter.apply(buffer);
-        }
     }
 }
 

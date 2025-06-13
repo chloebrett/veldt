@@ -35,6 +35,7 @@ impl PinkFilter {
     }
 
     pub fn apply(&mut self, buffer: &mut Buffer) {
+        // From Paul Kellet's implementation: https://www.musicdsp.org/en/latest/Filters/76-pink-noise-filter.html
         for xn in buffer.iter_mut() {
             self.config.b0 = 0.99886 * self.config.b0 + *xn * 0.0555179;
             self.config.b1 = 0.99332 * self.config.b1 + *xn * 0.0750759;
@@ -51,7 +52,7 @@ impl PinkFilter {
                 + self.config.b6
                 + *xn * 0.5362;
             self.config.b6 = *xn * 0.115926;
-            *xn = yn * 0.115830421;
+            *xn = (yn * 0.11).clamp(-1.0, 1.0);
         }
     }
 }
