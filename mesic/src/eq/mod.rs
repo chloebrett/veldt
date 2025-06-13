@@ -10,10 +10,10 @@ mod lhp_second_order_lr;
 mod low_high;
 mod parametric_constant_second_order;
 mod parametric_second_order;
+mod pink;
 mod resonator_sa;
 mod resonator_simple;
 mod shelf_first_order;
-mod pink;
 
 use apf_first_order::*;
 use apf_second_order::*;

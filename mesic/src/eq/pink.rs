@@ -19,7 +19,15 @@ pub struct PinkFilterConfig {
 
 impl PinkFilterConfig {
     pub fn default() -> Self {
-        Self { b0: 0.0, b1: 0.0, b2: 0.0, b3: 0.0, b4: 0.0, b5: 0.0, b6: 0.0 }
+        Self {
+            b0: 0.0,
+            b1: 0.0,
+            b2: 0.0,
+            b3: 0.0,
+            b4: 0.0,
+            b5: 0.0,
+            b6: 0.0,
+        }
     }
 }
 
@@ -31,7 +39,15 @@ impl PinkFilter {
     }
 
     pub fn apply(&mut self, buffer: &mut Buffer) {
-        let PinkFilterConfig { mut b0, mut b1, mut b2, mut b3, mut b4, mut b5, mut b6 } = self.config;
+        let PinkFilterConfig {
+            mut b0,
+            mut b1,
+            mut b2,
+            mut b3,
+            mut b4,
+            mut b5,
+            mut b6,
+        } = self.config;
 
         for xn in buffer.iter_mut() {
             b0 = 0.99886 * b0 + *xn * 0.0555179;
