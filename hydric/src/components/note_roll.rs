@@ -7,6 +7,7 @@ use egui::{
     Color32, CornerRadius, CursorIcon, Frame, Pos2, Rect, Response, ScrollArea, Sense, Shape,
     Stroke, StrokeKind, Ui, Vec2, Widget, emath::RectTransform, pos2, vec2,
 };
+use egui::{Event, LayerId, Modifiers, Order};
 use mesic::create_scale_values;
 use shared::types::Beats;
 use shared::{
@@ -374,11 +375,12 @@ impl<'a> NoteSequencer<'a> {
         range: Rect,
         track_id: TrackId,
     ) -> Self {
+        let x_size = 4000.0 * 2f32.powf(local_state.note_roll_zoom.get());
         NoteSequencer {
             store,
             local_state,
             range,
-            size: vec2(4000.0, 600.0),
+            size: vec2(x_size as f32, 600.0),
             objects: vec![],
             quantise_level: 0.125,
             background_shapes: vec![],
@@ -584,6 +586,7 @@ impl Widget for NoteSequencer<'_> {
                 range,
                 size,
                 select,
+                local_state,
                 ..
             } = self;
             let (response, painter) = ui.allocate_painter(size, Sense::drag());
@@ -591,6 +594,30 @@ impl Widget for NoteSequencer<'_> {
                 Rect::from_min_size(Pos2::ZERO, range.size()),
                 response.rect,
             );
+            let window_id = local_state.window_state.get_id(WindowKind::NoteRoll);
+            // Only allow zoom when NoteRoll is the top layer window.
+            if Some(LayerId {
+                id: window_id,
+                order: Order::Middle,
+            }) == ui.ctx().top_layer_id()
+            {
+                ui.input(|input| {
+                    for event in &input.events {
+                        if let Event::MouseWheel {
+                            modifiers: Modifiers { ctrl: true, .. },
+                            delta,
+                            ..
+                        } = event
+                        {
+                            local_state
+                                .note_roll_zoom
+                                .update(|zoom| (zoom + delta.y * 0.05).clamp(-3.0, 5.0))
+                        } else {
+                            continue;
+                        };
+                    }
+                });
+            }
 
             // If user double clicks outside of an object remove all objects from selection.
             if select {

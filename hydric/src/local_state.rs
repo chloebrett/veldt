@@ -6,14 +6,6 @@ use std::cell::RefCell;
 use std::collections::{HashMap, HashSet};
 use std::rc::Rc;
 
-struct ZoomFactor(f32);
-
-impl Default for ZoomFactor {
-    fn default() -> Self {
-        Self(1.0)
-    }
-}
-
 type RcOption<T> = Rc<RefCell<Option<T>>>;
 
 #[derive(Default)]
@@ -41,8 +33,8 @@ pub struct LocalState {
     pub window_state: WindowState,
 
     pub sample_cache: Rc<RefCell<HashMap<String, Sample>>>,
-    
-    pub note_roll_zoom: Rc<RefCell<ZoomFactor>>,
+
+    pub note_roll_zoom: Rc<RefCell<f32>>,
 }
 
 pub trait GetSet<T: Clone> {
