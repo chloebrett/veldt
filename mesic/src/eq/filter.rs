@@ -8,8 +8,8 @@ pub struct Mix {
 }
 
 pub struct FilterState {
-    pub x_buffer: AllocRingBuffer<f32>,
-    pub y_buffer: AllocRingBuffer<f32>,
+    x_buffer: AllocRingBuffer<f32>,
+    y_buffer: AllocRingBuffer<f32>,
 }
 
 impl Default for FilterState {
