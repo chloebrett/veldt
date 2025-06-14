@@ -1,9 +1,11 @@
 use dasp_graph::Buffer;
 
+#[derive(Clone, Default)]
 pub struct PinkFilter {
     pub config: PinkFilterConfig,
 }
 
+#[derive(Clone)]
 pub struct PinkFilterConfig {
     pub b0: f32,
     pub b1: f32,
@@ -14,8 +16,8 @@ pub struct PinkFilterConfig {
     pub b6: f32,
 }
 
-impl PinkFilterConfig {
-    pub fn default() -> Self {
+impl Default for PinkFilterConfig {
+    fn default() -> Self {
         Self {
             b0: 0.0,
             b1: 0.0,
@@ -32,6 +34,10 @@ impl PinkFilter {
     pub fn new() -> Self {
         let config = PinkFilterConfig::default();
         Self { config }
+    }
+
+    pub fn reset(&mut self) {
+        self.config = PinkFilterConfig::default();
     }
 
     pub fn apply(&mut self, buffer: &mut Buffer) {

@@ -16,15 +16,20 @@ struct NodeState {
     config: NoiseConfig,
     meta: GeneratorMeta,
     playing: bool,
+    pink_filter: PinkFilter,
+    brown_sum: f32,
 }
 
 impl Default for NodeState {
     fn default() -> Self {
         let config = NoiseConfig::default();
+        let filter = PinkFilter::new();
         Self {
             config: config.clone(),
             meta: GeneratorMeta::default(),
             playing: false,
+            pink_filter: filter.clone(),
+            brown_sum: 0.0,
         }
     }
 }
@@ -68,15 +73,15 @@ impl NoiseGeneratorNode {
     }
 
     fn generate_brown_noise(&mut self, buffer: &mut Buffer) {
-        let mut filter1 = PinkFilter::new();
-        let mut filter2 = PinkFilter::new();
-        filter1.apply(buffer);
-        filter2.apply(buffer);
+        let leak = 0.02;
+        for i in 0..buffer.len() {
+            self.state.brown_sum = self.state.brown_sum * 0.98 + buffer[i] * leak;
+            buffer[i] = self.state.brown_sum;
+        }
     }
 
     fn generate_pink_noise(&mut self, buffer: &mut Buffer) {
-        let mut filter = PinkFilter::new();
-        filter.apply(buffer);
+        self.state.pink_filter.apply(buffer);
     }
 }
 
@@ -92,6 +97,8 @@ impl Node<ProcessContext> for NoiseGeneratorNode {
         if payload.stop_generators.get(&generator_id) == Some(&true) {
             log::info!("Stopped noise: {:?}", generator_id);
             self.state.playing = false;
+            self.state.pink_filter.reset();
+            self.state.brown_sum = 0.0;
         }
 
         for i in 0..buffer.len() {
