@@ -595,11 +595,13 @@ impl Widget for NoteSequencer<'_> {
                 response.rect,
             );
             let window_id = local_state.window_state.get_id(WindowKind::NoteRoll);
-            // Only allow zoom when NoteRoll is the top layer window.
+            // Only allow zoom when NoteRoll is the top layer window
+            // or if pointer is on the NoteRoll.
             if Some(LayerId {
                 id: window_id,
                 order: Order::Middle,
             }) == ui.ctx().top_layer_id()
+                || response.hover_pos().is_some()
             {
                 ui.input(|input| {
                     for event in &input.events {
@@ -611,10 +613,9 @@ impl Widget for NoteSequencer<'_> {
                         {
                             local_state
                                 .note_roll_zoom
-                                .update(|zoom| (zoom + delta.y * 0.05).clamp(-3.0, 5.0))
-                        } else {
-                            continue;
-                        };
+                                .update(|zoom| (zoom + delta.y * 0.05).clamp(-2.0, 5.0));
+                            break;
+                        }
                     }
                 });
             }
