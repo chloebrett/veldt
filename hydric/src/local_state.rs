@@ -1,14 +1,18 @@
 use crate::WindowState;
 use egui::Pos2;
+use mesic::FFT_SAMPLE_SIZE;
+use ring_buffer_max::MaxDetector;
 use shared::model::{PlacementId, Sample};
+use smart_default::SmartDefault;
 use state::{MixerSelector, TrackSelector};
 use std::cell::RefCell;
 use std::collections::{HashMap, HashSet};
+use std::iter::repeat_with;
 use std::rc::Rc;
 
 type RcOption<T> = Rc<RefCell<Option<T>>>;
 
-#[derive(Default)]
+#[derive(SmartDefault)]
 pub struct LocalState {
     pub active_track: RcOption<TrackSelector>,
     pub active_note: RcOption<usize>,
@@ -35,6 +39,8 @@ pub struct LocalState {
     pub sample_cache: Rc<RefCell<HashMap<String, Sample>>>,
 
     pub log_frequency_display: Rc<RefCell<bool>>,
+    #[default(Rc::new(RefCell::new(vec![MaxDetector::default(); FFT_SAMPLE_SIZE])))]
+    pub frequency_peaks: Rc<RefCell<Vec<MaxDetector<f32>>>>,
 }
 
 pub trait GetSet<T: Clone> {
