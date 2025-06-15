@@ -99,7 +99,7 @@ impl EnvelopeGenerator {
         osc_index: usize,
         envelopes: &[AdsrEnvelope],
         matrix: &ModMatrix,
-    ) -> AdsrEnvelope {
+    ) {
         let mut new_env = AdsrEnvelope {
             attack: 0.0,
             decay: 0.0,
@@ -123,7 +123,7 @@ impl EnvelopeGenerator {
         new_env.sustain = new_env.sustain.clamp(0.0, 1.0);
         new_env.release = new_env.release.clamp(0.0, 1000.0);
 
-        new_env
+        self.config = new_env;
     }
 }
 
@@ -153,9 +153,8 @@ impl Iterator for EnvelopeGenerator {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use shared::model::{EqConfig, ModMatrix};
-    use state::StoreData;
-
+    use shared::model::{ModMatrix};
+    
     const FLOAT_THRES: f32 = 1e-6;
 
     #[test]
@@ -268,7 +267,7 @@ mod tests {
         mod_matrix.get_mut(0, 0).unwrap().set(a);
         mod_matrix.get_mut(1, 0).unwrap().set(b);
 
-        let result = eg.update_envelope(0, &envelopes, &mod_matrix);
+        eg.update_envelope(0, &envelopes, &mod_matrix);
 
         let expected_attack =
             (a * envelopes[0].attack + b * envelopes[1].attack).clamp(0.0, 1000.0);
@@ -278,9 +277,10 @@ mod tests {
         let expected_release =
             (a * envelopes[0].release + b * envelopes[1].release).clamp(0.0, 1000.0);
 
-        assert!((result.attack - expected_attack).abs() < 1e-6);
-        assert!((result.decay - expected_decay).abs() < 1e-6);
-        assert!((result.sustain - expected_sustain).abs() < 1e-6);
-        assert!((result.release - expected_release).abs() < 1e-6);
+        let env = eg.config;
+        assert!((env.attack - expected_attack).abs() < 1e-6);
+        assert!((env.decay - expected_decay).abs() < 1e-6);
+        assert!((env.sustain - expected_sustain).abs() < 1e-6);
+        assert!((env.release - expected_release).abs() < 1e-6);
     }
 }
