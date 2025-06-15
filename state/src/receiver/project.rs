@@ -1,6 +1,6 @@
 use crate::receiver::ActionReceiver;
-use crate::{Action, FloatField, IndexField, MultiTypeField, TypeField};
-use shared::model::{Placement, PlacementId, Project};
+use crate::{Action, FloatField, MultiTypeField, TypeField};
+use shared::model::{EffectId, Placement, PlacementId, Project, SampleId, TrackId};
 use std::collections::HashMap;
 
 impl ActionReceiver for Project {
@@ -27,6 +27,27 @@ impl ActionReceiver for Project {
                 self.placements.remove(id);
                 Action::AddChild(TypeField::Placement(prev))
             }
+            Action::AddChild(TypeField::Effect(effect)) => {
+                let next_id = *self
+                    .effects
+                    .clone()
+                    .into_keys()
+                    .max()
+                    .unwrap_or(EffectId(0))
+                    + 1;
+                let next_id = EffectId(next_id);
+                self.effects.insert(next_id, effect.clone());
+                Action::DeleteChildById(TypeField::EffectId(next_id))
+            }
+            Action::DeleteChildById(TypeField::EffectId(id)) => {
+                let prev = self
+                    .effects
+                    .get(id)
+                    .expect("Can't delete non-existent effect!")
+                    .clone();
+                self.effects.remove(id);
+                Action::AddChild(TypeField::Effect(prev))
+            }
             Action::SetChild(TypeField::ProjectName(name)) => {
                 let prev = self.name.clone();
                 self.name = name.to_string();
@@ -38,21 +59,24 @@ impl ActionReceiver for Project {
                 Action::SetFloat(FloatField::Bpm, prev)
             }
             Action::AddChild(TypeField::Sample(sample)) => {
-                self.samples.push(sample.clone());
+                let max_id = self.samples.keys().max().unwrap_or(&SampleId(0));
+                self.samples
+                    .insert(SampleId((**max_id) + 1), sample.clone());
                 Action::NonReversible
             }
             Action::AddChild(TypeField::Track(track)) => {
-                let prev = self.tracks.len();
-                self.tracks.push(track.clone());
-                Action::DeleteChild(IndexField::Track(prev))
+                let max_id = self.tracks.keys().max().unwrap_or(&TrackId(0));
+                let id = TrackId((**max_id) + 1);
+                self.tracks.insert(id, track.clone());
+                Action::DeleteChildById(TypeField::TrackId(id))
             }
-            Action::DeleteChild(IndexField::Track(index)) => {
+            Action::DeleteChildById(TypeField::TrackId(id)) => {
                 let prev = self
                     .tracks
-                    .get(*index)
+                    .get(id)
                     .expect("Can't delete non-existent track")
                     .clone();
-                self.tracks.remove(*index);
+                self.tracks.remove(id);
                 Action::AddChild(TypeField::Track(prev))
             }
             Action::DeleteChildrenById(MultiTypeField::PlacementId(ids)) => {

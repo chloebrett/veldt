@@ -7,6 +7,7 @@ use cpal::{OutputCallbackInfo, Stream};
 use crossbeam_channel::{Receiver, Sender};
 use dasp_frame::Stereo;
 use log::error;
+use mesic::GraphDebugInfo;
 use mesic::graph::RenderGraph;
 use mesic::{SAMPLE_RATE, to_db};
 use ringbuffer::{AllocRingBuffer, RingBuffer};
@@ -46,6 +47,12 @@ pub struct AudioPlayer {
     // 44100 samples/sec / 60fps = approx 700 samples/frame.
     recent_tx: Sender<Stereo<f32>>,
     recent_rx: Receiver<Stereo<f32>>,
+
+    // For sending graph debug information from the mixer to the UI.
+    graph_debug_tx: Sender<GraphDebugInfo>,
+    graph_debug_rx: Receiver<GraphDebugInfo>,
+    // Most recent graph structure to display for debugging.
+    graph_debug_info: Option<GraphDebugInfo>,
 
     // Ring buffer with the most recently played audio.
     recent_buf: AllocRingBuffer<Stereo<f32>>,
@@ -90,6 +97,7 @@ impl AudioPlayer {
         let (playback_tx, playback_rx) = crossbeam_channel::unbounded();
         let (update_tx, update_rx) = crossbeam_channel::unbounded();
         let (recent_tx, recent_rx) = crossbeam_channel::unbounded();
+        let (graph_debug_tx, graph_debug_rx) = crossbeam_channel::unbounded();
 
         Self {
             graph: Some(graph),
@@ -101,6 +109,9 @@ impl AudioPlayer {
             update_rx,
             recent_tx,
             recent_rx,
+            graph_debug_tx,
+            graph_debug_rx,
+            graph_debug_info: None,
             recent_buf: AllocRingBuffer::from([[0.0; 2]; RECENT_AUDIO_SAMPLE_COUNT]),
             recent_buf_offset: 0,
             stream: None,
@@ -150,6 +161,14 @@ impl AudioPlayer {
     pub fn refresh_mixer(&mut self) {
         self.maybe_init();
         self.send(PlaybackMessage::RecreateMixer);
+    }
+
+    /// Creates a debug channel and passes it to the mixer.
+    pub fn init_mixer_debug(&mut self) {
+        self.maybe_init();
+        self.send(PlaybackMessage::PassDebugChannelToMixer(
+            self.graph_debug_tx.clone(),
+        ));
     }
 
     pub fn set_audio(&mut self, audio: Vec<Stereo<f32>>) {
@@ -214,6 +233,15 @@ impl AudioPlayer {
             self.recent_buf.push(update);
             self.recent_buf_offset += 1;
         }
+
+        while let Ok(graph_debug) = self.graph_debug_rx.try_recv() {
+            log::info!("Received graph debug info: {:?}", graph_debug);
+            self.graph_debug_info = Some(graph_debug);
+        }
+    }
+
+    pub fn get_graph_debug_info(&self) -> Option<GraphDebugInfo> {
+        self.graph_debug_info.clone()
     }
 
     pub fn init_processor(&mut self) {

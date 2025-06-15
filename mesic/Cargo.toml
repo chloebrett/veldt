@@ -22,6 +22,7 @@ rustfft = { version = "6.3.0", features = ["wasm_simd"] }
 shared = { path = "../shared" }
 state = { version = "0.1.0", path = "../state" }
 rand = "0.8"
+crossbeam-channel = "0.5.15"
 
 [dependencies.getrandom]
 version = "0.2"

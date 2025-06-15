@@ -19,7 +19,7 @@ pub fn reducer(data: &mut StoreData, selector: &Selector, action: &Action) -> Op
         Selector::Track(a) => reducer_internal(TrackSelector(a), data, action),
         Selector::Note(a, b) => reducer_internal(NoteSelector(a, b), data, action),
         Selector::Mixer(a) => reducer_internal(MixerSelector(a), data, action),
-        Selector::Effect(a, b) => reducer_internal(EffectSelector(a, b), data, action),
+        Selector::Effect(a) => reducer_internal(EffectSelector(a), data, action),
         Selector::Placement(a) => reducer_internal(PlacementSelector(a), data, action),
         Selector::Sample(a) => reducer_internal(SampleSelector(a), data, action),
         Selector::Generator(a) => reducer_internal(GeneratorSelector(a), data, action),
