@@ -153,8 +153,8 @@ impl Iterator for EnvelopeGenerator {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use shared::model::{ModMatrix};
-    
+    use shared::model::ModMatrix;
+
     const FLOAT_THRES: f32 = 1e-6;
 
     #[test]
