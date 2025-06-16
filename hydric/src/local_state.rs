@@ -7,7 +7,6 @@ use smart_default::SmartDefault;
 use state::{MixerSelector, TrackSelector};
 use std::cell::RefCell;
 use std::collections::{HashMap, HashSet};
-use std::iter::repeat_with;
 use std::rc::Rc;
 
 type RcOption<T> = Rc<RefCell<Option<T>>>;
@@ -39,7 +38,7 @@ pub struct LocalState {
     pub sample_cache: Rc<RefCell<HashMap<String, Sample>>>,
 
     pub log_frequency_display: Rc<RefCell<bool>>,
-    #[default(Rc::new(RefCell::new(vec![MaxDetector::default(); FFT_SAMPLE_SIZE])))]
+    #[default(Rc::new(RefCell::new(vec![MaxDetector::new(64); FFT_SAMPLE_SIZE])))]
     pub frequency_peaks: Rc<RefCell<Vec<MaxDetector<f32>>>>,
 }
 
