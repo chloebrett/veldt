@@ -78,20 +78,18 @@ impl View for FrequencyDisplay<'_> {
         // Cast as `OrderedFloat` so that values implement `Eq` required for hashing in cache.
         let ordered_audio: Vec<OrderedFloat<f32>> = map_vec(audio.to_vec());
         let points = if let Some(response) = self.render_display(ui, ordered_audio) {
-            let freq_window = SAMPLE_RATE as f64 / FFT_SAMPLE_SIZE as f64;
+            let freq_window = SAMPLE_RATE as f32 / FFT_SAMPLE_SIZE as f32;
             response
                 .into_iter()
                 .enumerate()
                 // Only keep first half of results.
                 .filter(|(index, _it)| *index < FFT_SAMPLE_SIZE / 2)
-                .map(|(index, it)| {
-                    let [x, y] = [freq_window * index as f64, to_db(it) as f64];
-                    pos2(x as f32, y as f32)
-                })
+                .map(|(index, it)| pos2(freq_window * index as f32, to_db(it)))
                 .collect()
         } else {
             vec![]
         };
+        // Update and find peak responses from recent audio.
         let mut detectors = self.local_state.frequency_peaks.get();
         let peaks: Vec<_> = points
             .iter()
