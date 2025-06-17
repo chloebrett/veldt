@@ -436,14 +436,21 @@ impl<'a> NoteSequencer<'a> {
             if ui.input(|input| input.modifiers.shift_only())
                 && movable_resp.interact(Sense::click()).clicked()
             {
+                // Add note to selected notes
                 NoteSequencerObject::set_selected(self.local_state, Some(index));
             } else if movable_resp.interact(Sense::click()).double_clicked() {
+                // Make active note.
                 NoteSequencerObject::set_selected(self.local_state, None);
                 object.set_active(self.local_state, index);
             } else if movable_resp.interact(Sense::click()).secondary_clicked() {
+                // Delete note
+                NoteSequencerObject::set_selected(self.local_state, None);
                 object.delete_self(self.store, self.local_state, self.track_id, index);
             }
-            if resize_resp.hovered() {
+            // Change cursor icon if cursor over shape.
+            if movable_resp.hovered() {
+                ui.ctx().set_cursor_icon(CursorIcon::Move);
+            } else if resize_resp.hovered() {
                 ui.ctx().set_cursor_icon(CursorIcon::ResizeColumn);
             }
             let edit_object = |action: Action| {
@@ -589,9 +596,12 @@ impl Widget for NoteSequencer<'_> {
             }) {
                 NoteSequencerObject::delete_selected(store, self.local_state, self.track_id);
                 NoteSequencerObject::set_selected(self.local_state, None);
-            } else if response.interact(Sense::click()).clicked() {
+            } else if response.interact(Sense::click()).clicked()
+                && !ui.input(|input| input.modifiers.shift)
+            {
                 // Remove any selected notes.
                 NoteSequencerObject::set_selected(self.local_state, None);
+                // Create a new note where note roll was clicked.
                 let pos = response.interact_pointer_pos().unwrap();
                 let object =
                     NoteSequencerObject::from_pos(pos.transform(to_screen.inverse()), range);

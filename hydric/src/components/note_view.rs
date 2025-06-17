@@ -3,7 +3,7 @@ use crate::local_state::GetSet;
 use crate::view::View;
 use crate::widget::{StateWindow, get_set, int_slider, selectable_value, slider};
 use crate::window_state::WindowKind;
-use egui::Ui;
+use egui::{Ui, Window};
 use shared::model::ScaleValue;
 use shared::types::{Beats, Octave};
 use state::{Action, FloatField, IndexField, Store, TrackSelector, TypeField};
@@ -32,11 +32,20 @@ impl View for NoteView<'_> {
         let on_release = || store.dispatchr(Action::Release);
         let sel = track_sel.downcast_note(note_index);
         let note = &store.select(&sel);
-        StateWindow::show_from_window_state(
+        StateWindow(
+            Window::new("Note")
+                .default_pos(local_state.window_state.get_pos(WindowKind::Note))
+                .id(local_state.window_state.get_id(WindowKind::Note)),
+        )
+        .show_with_closure(
             ui,
-            &local_state.window_state,
-            WindowKind::Note,
-            "Notes",
+            local_state.window_state.get_visible(WindowKind::Note),
+            |_| {
+                local_state.active_note.set(None);
+                local_state
+                    .window_state
+                    .set_visible(WindowKind::Note, false);
+            },
             |ui| {
                 egui::ComboBox::from_id_salt(format!("note_{note_index}"))
                     .selected_text(note.note.pitch_name.scale_value.to_string())
