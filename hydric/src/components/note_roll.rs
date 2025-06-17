@@ -436,15 +436,14 @@ impl<'a> NoteSequencer<'a> {
                 resize_id,
                 Sense::drag(),
             );
-            if ui.input(|input| input.modifiers.ctrl) && movable_resp.interact(Sense::click()).clicked() {
+            if ui.input(|input| input.modifiers.ctrl)
+                && movable_resp.interact(Sense::click()).clicked()
+            {
                 NoteSequencerObject::set_selected(self.local_state, Some(index));
             } else if movable_resp.interact(Sense::click()).double_clicked() {
                 NoteSequencerObject::set_selected(self.local_state, None);
                 object.set_active(self.local_state, index);
-            } else if movable_resp
-                .interact(Sense::click())
-                .secondary_clicked()
-            {
+            } else if movable_resp.interact(Sense::click()).secondary_clicked() {
                 object.delete_self(self.store, self.local_state, index);
             }
             if resize_resp.hovered() {
@@ -592,8 +591,7 @@ impl Widget for NoteSequencer<'_> {
             }) {
                 NoteSequencerObject::delete_selected(store, self.local_state, self.track_id);
                 NoteSequencerObject::set_selected(self.local_state, None);
-            }
-            else if response.interact(Sense::click()).clicked() {
+            } else if response.interact(Sense::click()).clicked() {
                 // Remove any selected notes.
                 NoteSequencerObject::set_selected(self.local_state, None);
                 let pos = response.interact_pointer_pos().unwrap();
