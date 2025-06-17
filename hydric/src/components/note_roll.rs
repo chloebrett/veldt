@@ -98,26 +98,12 @@ impl View for NoteRoll<'_> {
             return;
         };
 
-        let default_note = PlacedNote {
-            note: Note {
-                pitch_name: PitchName {
-                    scale_value: store.get().key,
-                    octave: 4,
-                },
-                beats: 1.0,
-            },
-            offset: offset.into(),
-        };
         let notes = store.select(&track_sel).notes.clone();
         let white_note_pattern = self.make_white_note_pattern(max_note);
         let range = Rect::from_min_max(
             pos2(offset, min_note as f32 - 1.0),
             pos2(bar_length * MAX_BARS, max_note as f32),
         );
-        let mut select = local_state.note_roll_select_enabled.get();
-        if !select {
-            local_state.selected_notes.set(HashSet::default());
-        }
         let title = format!("Track {}", *track_sel.0);
         StateWindow::show_from_window_state(
             ui,
@@ -125,15 +111,6 @@ impl View for NoteRoll<'_> {
             WindowKind::NoteRoll,
             &title,
             |ui| {
-                ui.horizontal(|ui| {
-                    if ui.button("New note").clicked() {
-                        store.dispatch(
-                            &track_sel,
-                            Action::AddChild(TypeField::PlacedNote(default_note)),
-                        );
-                    }
-                    ui.checkbox(&mut select, "Select")
-                });
                 ui.separator();
                 ScrollArea::vertical()
                     .min_scrolled_height(200.0)
@@ -176,7 +153,6 @@ impl View for NoteRoll<'_> {
                                                     .map(NoteSequencerObject)
                                                     .collect(),
                                             )
-                                            .select(select)
                                             .horizontal_rects(
                                                 white_note_pattern,
                                                 Color32::from_white_alpha(4),
@@ -193,7 +169,6 @@ impl View for NoteRoll<'_> {
                     });
             },
         );
-        local_state.note_roll_select_enabled.set(select);
     }
 }
 
@@ -365,7 +340,6 @@ pub struct NoteSequencer<'a> {
     quantise_level: Beats,
     background_shapes: Vec<Shape>,
     track_id: TrackId,
-    select: bool,
 }
 
 impl<'a> NoteSequencer<'a> {
@@ -385,18 +359,12 @@ impl<'a> NoteSequencer<'a> {
             quantise_level: 0.125,
             background_shapes: vec![],
             track_id,
-            select: false,
         }
     }
 
     #[inline]
     pub fn objects(mut self, objects: Vec<NoteSequencerObject>) -> Self {
         self.objects = objects;
-        self
-    }
-
-    pub fn select(mut self, select: bool) -> Self {
-        self.select = select;
         self
     }
 
@@ -468,15 +436,14 @@ impl<'a> NoteSequencer<'a> {
                 resize_id,
                 Sense::drag(),
             );
-            if self.select {
-                if movable_resp.interact(Sense::click()).clicked() {
-                    NoteSequencerObject::set_selected(self.local_state, Some(index));
-                }
+            if ui.input(|input| input.modifiers.ctrl) && movable_resp.interact(Sense::click()).clicked() {
+                NoteSequencerObject::set_selected(self.local_state, Some(index));
             } else if movable_resp.interact(Sense::click()).double_clicked() {
+                NoteSequencerObject::set_selected(self.local_state, None);
                 object.set_active(self.local_state, index);
             } else if movable_resp
                 .interact(Sense::click())
-                .clicked_by(egui::PointerButton::Secondary)
+                .secondary_clicked()
             {
                 object.delete_self(self.store, self.local_state, index);
             }
@@ -585,7 +552,6 @@ impl Widget for NoteSequencer<'_> {
                 store,
                 range,
                 size,
-                select,
                 local_state,
                 ..
             } = self;
@@ -620,18 +586,16 @@ impl Widget for NoteSequencer<'_> {
                 });
             }
 
-            // If user double clicks outside of an object remove all objects from selection.
-            if select {
-                if response.interact(Sense::click()).double_clicked() {
-                    NoteSequencerObject::set_selected(self.local_state, None)
-                }
-                if ui.input(|input| {
-                    input.key_pressed(egui::Key::Delete) || input.key_pressed(egui::Key::Backspace)
-                }) {
-                    NoteSequencerObject::delete_selected(store, self.local_state, self.track_id);
-                    NoteSequencerObject::set_selected(self.local_state, None);
-                }
-            } else if response.interact(Sense::click()).clicked() {
+            // If user inputs delete or backspace, delete any selected notes.
+            if ui.input(|input| {
+                input.key_pressed(egui::Key::Delete) || input.key_pressed(egui::Key::Backspace)
+            }) {
+                NoteSequencerObject::delete_selected(store, self.local_state, self.track_id);
+                NoteSequencerObject::set_selected(self.local_state, None);
+            }
+            else if response.interact(Sense::click()).clicked() {
+                // Remove any selected notes.
+                NoteSequencerObject::set_selected(self.local_state, None);
                 let pos = response.interact_pointer_pos().unwrap();
                 let object =
                     NoteSequencerObject::from_pos(pos.transform(to_screen.inverse()), range);
