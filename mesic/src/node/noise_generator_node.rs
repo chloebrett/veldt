@@ -79,10 +79,6 @@ impl NoiseGeneratorNode {
             buffer[i] = self.state.brown_sum;
         }
     }
-
-    fn generate_pink_noise(&mut self, buffer: &mut Buffer) {
-        self.state.pink_filter.apply(buffer);
-    }
 }
 
 impl Node<ProcessContext> for NoiseGeneratorNode {
@@ -131,7 +127,7 @@ impl Node<ProcessContext> for NoiseGeneratorNode {
 
         match kind {
             NoiseType::White => {}
-            NoiseType::Pink => self.generate_pink_noise(&mut buffer),
+            NoiseType::Pink => self.state.pink_filter.apply(&mut buffer),
             NoiseType::Brown => self.generate_brown_noise(&mut buffer),
         }
 

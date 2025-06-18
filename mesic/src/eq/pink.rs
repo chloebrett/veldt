@@ -2,6 +2,7 @@ use dasp_graph::Buffer;
 
 /// Pink noise filter using Paul Kellet's implementation (https://www.musicdsp.org/en/latest/Filters/76-pink-noise-filter.html)
 /// -3 dB/octave (or -10 dB/decade) rolloff
+/// Inspired by FunDSP (https://github.com/SamiPerttu/fundsp/blob/master/src/filter.rs)
 #[derive(Clone, Default)]
 pub struct PinkFilter {
     pub config: PinkFilterConfig,
