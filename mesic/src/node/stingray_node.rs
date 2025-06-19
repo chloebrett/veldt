@@ -146,6 +146,11 @@ impl Node<ProcessContext> for StingrayNode {
                 events.retain(|it| it.kind == NoteEventType::On);
             }
 
+            // update LFOs here so we can use their values else where
+            for lfo in state.voice.lfos.iter_mut() {
+                lfo.next();
+            }
+
             for note_event in events {
                 match &note_event.kind {
                     NoteEventType::On => {
@@ -209,7 +214,7 @@ impl Node<ProcessContext> for StingrayNode {
                             lfo_active = true;
                         }
 
-                        lfo_value += state.voice.lfos[k].next() * matrix_value;
+                        lfo_value += state.voice.lfos[k].current_value * matrix_value;
                     }
 
                     let amp = eg.next().unwrap_or(0.0);
