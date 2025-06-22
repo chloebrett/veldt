@@ -21,6 +21,7 @@ enum FrequencySpec {
 /// X axis can be set to a logarithmic range.
 /// Default y range is -60 to 10 dB.
 /// Default x range is 0 to 22050 Hz.
+// TODO: Add axis labels.
 pub struct FrequencyPlot<'a> {
     primary_freqs: &'a Vec<Pos2>,
     secondary_freqs: Vec<&'a Vec<Pos2>>,
@@ -127,14 +128,10 @@ impl<'a> FrequencyPlot<'a> {
     }
 
     fn axis_line_stroke(&self, ui: &Ui) -> Stroke {
-        if let Some(stroke) = self.axis_line_stroke {
-            stroke
-        } else {
-            Stroke {
-                width: 0.15,
-                color: ui.style().visuals.widgets.active.fg_stroke.color,
-            }
-        }
+        self.axis_line_stroke.unwrap_or(Stroke {
+            width: 0.15,
+            color: ui.style().visuals.widgets.active.fg_stroke.color,
+        })
     }
 
     fn x_range(&self) -> RangeInclusive<f32> {
@@ -163,7 +160,7 @@ impl<'a> FrequencyPlot<'a> {
         lerp_pos(x_position_range, y_position_range, normalised)
     }
 
-    fn line_ui(&self, ui: &Ui, rect: &Rect, line: &Vec<Pos2>, stroke: &Stroke) {
+    fn line_ui(&self, ui: &Ui, rect: &Rect, line: &[Pos2], stroke: &Stroke) {
         let points: Vec<Pos2> = line
             .iter()
             .map(|&pos| self.position_from_pos(pos, rect.x_range(), rect.y_range()))
