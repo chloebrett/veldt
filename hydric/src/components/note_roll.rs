@@ -20,7 +20,7 @@ use state::{
 use std::collections::HashSet;
 
 // The max number of bars the NoteSequencer will allow placement on.
-// TODO: Where is the best place for this definiton? Should it be user changeable?
+// TODO: Where is the best place for this definition? Should it be user changeable?
 const MAX_BARS: f32 = 16.0;
 
 pub struct NoteRoll<'a> {
