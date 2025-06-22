@@ -133,7 +133,13 @@ impl View for App {
             MixerView::new(&self.store, &self.local_state, &self.player).ui(ui);
         }
 
-        ToolbarView::new(&mut self.store, &mut self.async_state, &mut self.player).ui(ui);
+        ToolbarView::new(
+            &mut self.store,
+            &self.local_state,
+            &mut self.async_state,
+            &mut self.player,
+        )
+        .ui(ui);
 
         for effect_selector in self.visible_effects() {
             let dispatch = |action| self.store.dispatch(&effect_selector, action);
