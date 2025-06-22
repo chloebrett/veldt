@@ -28,7 +28,6 @@ pub struct LocalState {
     pub stingray_lfo_tab: Rc<RefCell<usize>>,
 
     pub track_roll_select_enabled: Rc<RefCell<bool>>,
-    pub note_roll_select_enabled: Rc<RefCell<bool>>,
 
     pub window_state: WindowState,
 
