@@ -1,6 +1,7 @@
 mod checkbox;
 mod for_each_with_separator;
 mod frame;
+mod frequency_plot;
 mod get_set;
 mod knob;
 mod selectable_value;
@@ -12,6 +13,7 @@ mod window;
 pub use checkbox::*;
 pub use for_each_with_separator::*;
 pub use frame::*;
+pub use frequency_plot::*;
 pub use get_set::*;
 pub use knob::*;
 pub use selectable_value::*;
