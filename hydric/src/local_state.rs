@@ -35,6 +35,8 @@ pub struct LocalState {
     pub sample_cache: Rc<RefCell<HashMap<String, Sample>>>,
 
     pub note_roll_zoom: Rc<RefCell<f32>>,
+
+    pub log_frequency_display: Rc<RefCell<bool>>,
 }
 
 pub trait GetSet<T: Clone> {

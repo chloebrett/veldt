@@ -10,6 +10,7 @@ mod lhp_second_order_lr;
 mod low_high;
 mod parametric_constant_second_order;
 mod parametric_second_order;
+pub mod pink;
 mod resonator_sa;
 mod resonator_simple;
 mod shelf_first_order;

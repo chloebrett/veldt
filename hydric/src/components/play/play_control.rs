@@ -1,4 +1,5 @@
 use super::{FrequencyDisplay, audio_vis::audio_vis};
+use crate::local_state::LocalState;
 use crate::promise::{poll, spawn};
 use crate::rpc::render as server_render;
 use crate::view::View;
@@ -10,6 +11,7 @@ use state::Store;
 
 pub fn play_control(
     store: &Store,
+    local_state: &LocalState,
     async_state: &mut AsyncState,
     player: &mut AudioPlayer,
     ui: &mut Ui,
@@ -57,5 +59,5 @@ pub fn play_control(
 
     audio_vis(player, /* sample_count= */ None, ui);
     audio_vis(player, /* sample_count= */ Some(100), ui);
-    FrequencyDisplay::new(player).ui(ui)
+    FrequencyDisplay::new(player, local_state).ui(ui)
 }

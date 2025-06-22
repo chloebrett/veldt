@@ -1,4 +1,7 @@
+use crate::local_state::{GetSet, LocalState};
+use crate::widget::FrequencyPlot;
 use crate::{playback::AudioPlayer, view::View};
+use egui::{Button, pos2};
 use egui::{
     Color32, Ui,
     cache::{ComputerMut, FrameCache},
@@ -16,11 +19,15 @@ use std::cmp::max;
 
 pub struct FrequencyDisplay<'a> {
     player: &'a AudioPlayer,
+    local_state: &'a LocalState,
 }
 
 impl<'a> FrequencyDisplay<'a> {
-    pub fn new(player: &'a AudioPlayer) -> Self {
-        FrequencyDisplay { player }
+    pub fn new(player: &'a AudioPlayer, local_state: &'a LocalState) -> Self {
+        FrequencyDisplay {
+            player,
+            local_state,
+        }
     }
 
     /// Create frequency display shapes synced with playing audio.
@@ -72,6 +79,7 @@ impl View for FrequencyDisplay<'_> {
         // Cast as `OrderedFloat` so that values implement `Eq` required for hashing in cache.
         let ordered_audio: Vec<OrderedFloat<f32>> = map_vec(audio.to_vec());
         let mut plot_shapes = vec![];
+        let mut plot_points = vec![];
         if let Some(response) = self.render_display(ui, ordered_audio) {
             let freq_window = SAMPLE_RATE as f64 / FFT_SAMPLE_SIZE as f64;
             let points: PlotPoints = response
@@ -80,10 +88,22 @@ impl View for FrequencyDisplay<'_> {
                 // Only keep first half of results.
                 .filter(|(index, _it)| *index < FFT_SAMPLE_SIZE / 2)
                 // Take log of values to make dB.
-                .map(|(index, it)| [freq_window * index as f64, to_db(it) as f64])
+                .map(|(index, it)| {
+                    let [x, y] = [freq_window * index as f64, to_db(it) as f64];
+                    plot_points.push(pos2(x as f32, y as f32));
+                    [x, y]
+                })
                 .collect();
-            plot_shapes.push(Line::new("Response", points).color(Color32::WHITE))
+            plot_shapes.push(Line::new("Response", points).color(Color32::WHITE));
         };
+        let log = self.local_state.log_frequency_display.get();
+        ui.add(FrequencyPlot::new(&plot_points).logarithmic(log));
+        if ui
+            .add(Button::new("Log Frequencies").selected(log))
+            .clicked()
+        {
+            self.local_state.log_frequency_display.set(!log);
+        }
         // TODO: investigate logarithmic x axis.
         Plot::new("Frequency Response")
             .view_aspect(2.0)

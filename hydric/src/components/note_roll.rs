@@ -3,6 +3,7 @@ use crate::{GetSet, LocalState, transform::Transform};
 use crate::{
     playback::AudioPlayer, transform::Yx, view::View, widget::StateWindow, window_state::WindowKind,
 };
+use egui::PointerButton;
 use egui::{
     Color32, CornerRadius, CursorIcon, Frame, Pos2, Rect, Response, ScrollArea, Sense, Shape,
     Stroke, StrokeKind, Ui, Vec2, Widget, emath::RectTransform, pos2, vec2,
@@ -21,7 +22,7 @@ use state::{
 use std::collections::HashSet;
 
 // The max number of bars the NoteSequencer will allow placement on.
-// TODO: Where is the best place for this definiton? Should it be user changeable?
+// TODO: Where is the best place for this definition? Should it be user changeable?
 const MAX_BARS: f32 = 16.0;
 
 pub struct NoteRoll<'a> {
@@ -320,11 +321,11 @@ impl NoteSequencerObject {
     }
 
     fn delete_selected(store: &Store, local_state: &LocalState, track_id: TrackId) {
-        local_state.active_note.update(|note| match note {
-            // If the active note is selected, "de-activate" it.
-            Some(index) if local_state.selected_notes.get().contains(&index) => None,
-            _ => note,
-        });
+        // De-activate active note.
+        // TODO: correctly handle the active note.
+        // Currently if the deleted note index is less than the active note index, the active note
+        // will either change or the index will be out of bounds and panic.
+        local_state.active_note.update(|_| None);
         store.dispatch(
             &TrackSelector(track_id),
             Action::DeleteChildren(MultiIndexField::PlacedNote(
@@ -333,26 +334,22 @@ impl NoteSequencerObject {
         );
     }
 
-    fn delete_self(&self, store: &Store, local_state: &LocalState, note_index: usize) {
-        let Some(track_sel): Option<TrackSelector> = local_state.active_track.get() else {
-            return;
-        };
+    fn delete_self(
+        &self,
+        store: &Store,
+        local_state: &LocalState,
+        track_id: TrackId,
+        note_index: usize,
+    ) {
+        // De-activate active note.
+        // TODO: correctly handle the active note.
+        // Currently if the deleted note index is less than the active note index, the active note
+        // will either change or the index will be out of bounds and panic.
+        local_state.active_note.update(|_| None);
         store.dispatch(
-            &track_sel,
+            &TrackSelector(track_id),
             Action::DeleteChild(IndexField::PlacedNote(note_index)),
-        );
-        if let Some(active_note) = local_state.active_note.get() {
-            if active_note == note_index {
-                local_state.active_note.set(None);
-                local_state
-                    .window_state
-                    .set_visible(WindowKind::Note, false);
-            }
-        }
-        local_state.selected_notes.update(|mut it| {
-            it.remove(&note_index);
-            it
-        });
+        )
     }
 }
 
@@ -474,12 +471,9 @@ impl<'a> NoteSequencer<'a> {
                 }
             } else if movable_resp.interact(Sense::click()).double_clicked() {
                 object.set_active(self.local_state, index);
-            } else if movable_resp
-                .interact(Sense::click())
-                .clicked_by(egui::PointerButton::Secondary)
-            {
-                object.delete_self(self.store, self.local_state, index);
-            }
+            } else if movable_resp.interact(Sense::click()).secondary_clicked() {
+                object.delete_self(self.store, self.local_state, self.track_id, index);
+            };
             if resize_resp.hovered() {
                 ui.ctx().set_cursor_icon(CursorIcon::ResizeColumn);
             }
@@ -508,10 +502,10 @@ impl<'a> NoteSequencer<'a> {
         to_sequencer: RectTransform,
         edit_object: &impl Fn(Action),
     ) -> bool {
-        let drag_pos = response.interact_pointer_pos();
-        let drag_delta = response.drag_delta();
-        if let Some(drag_pos) = drag_pos {
+        if response.dragged_by(PointerButton::Primary) {
             // Keep track of the delta between object and cursor position at drag start.
+            let drag_pos = response.interact_pointer_pos().unwrap();
+            let drag_delta = response.drag_delta();
             if response.interact(Sense::drag()).drag_started() {
                 self.local_state
                     .drag_cursor_delta
