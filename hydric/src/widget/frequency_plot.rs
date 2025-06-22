@@ -178,12 +178,14 @@ impl<'a> FrequencyPlot<'a> {
             ui.style().visuals.window_stroke(),
             egui::StrokeKind::Middle,
         );
-        let primary_stroke = ui.style().visuals.widgets.active.fg_stroke;
-        self.line_ui(ui, &rect, self.primary_freqs, &primary_stroke);
-        let secondary_stroke = ui.style().visuals.widgets.inactive.fg_stroke;
+        let mut secondary_stroke = ui.style().visuals.widgets.inactive.fg_stroke;
+        secondary_stroke.color = secondary_stroke.color.gamma_multiply(0.5);
+
         for freq in &self.secondary_freqs {
             self.line_ui(ui, &rect, freq, &secondary_stroke);
         }
+        let primary_stroke = ui.style().visuals.widgets.active.fg_stroke;
+        self.line_ui(ui, &rect, self.primary_freqs, &primary_stroke);
     }
 
     fn y_axis_ui(&self, ui: &Ui, response: &Response) {
