@@ -5,7 +5,7 @@ package pmodel;
 message ProjectProto {
   string name = 1;
 
-  repeated TrackProto tracks = 2;
+  map<uint32, TrackProto> tracks = 2;
 
   map<uint32, PlacementProto> placements = 3;
 
@@ -16,6 +16,8 @@ message ProjectProto {
   MixerProto mixer = 6;
 
   float bpm = 7;
+
+  map<uint32, EffectInstanceProto> effects = 8;
 }
 
 message MixerProto {
@@ -59,7 +61,7 @@ message PlacementProto {
 }
 
 message TrackPlacementProto {
-  uint32 track_index = 1;
+  uint32 track_id = 1;
 
   uint32 generator_id = 2;
 }
@@ -81,7 +83,7 @@ message SampleProto {
 message MixerChannelProto {
   float volume = 1;
 
-  repeated EffectInstanceProto effects = 2;
+  repeated uint32 effect_ids = 2;
 }
 
 message PlacedNoteProto {

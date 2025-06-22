@@ -1,5 +1,5 @@
 use egui_fancy_knob::add_knob;
-use shared::model::{Effect, EffectInstance, EffectMeta};
+use shared::model::{Effect, EffectId, EffectInstance, EffectMeta};
 use state::{
     Action, EffectSelector, FloatField, IndexField, MixerSelector, MoveField, Store, TypeField,
 };
@@ -48,7 +48,7 @@ impl View for ChannelEffectView<'_> {
         let title = if channel_index > 0 {
             format!("Channel {channel_index} effects")
         } else {
-            format!("Main channel effects")
+            "Main channel effects".to_string()
         };
         StateWindow::show_from_window_state(
             ui,
@@ -62,8 +62,8 @@ impl View for ChannelEffectView<'_> {
                         // and drop.
                         ui.visuals_mut().widgets.inactive.bg_fill = Color32::TRANSPARENT;
                         ui.dnd_drop_zone::<EffectLocation, ()>(Frame::default(), |ui| {
-                            for effect_index in 0..mixer.effects.len() {
-                                let effect_sel = selector.downcast_effect(effect_index);
+                            for (effect_index, effect_id) in mixer.effect_ids.iter().enumerate() {
+                                let effect_sel = EffectSelector(*effect_id);
                                 let dispatch_effect =
                                     |action: Action| store.dispatch(&effect_sel, action);
                                 // TODO Determine if this is the best way to do this.
@@ -73,7 +73,7 @@ impl View for ChannelEffectView<'_> {
                                     ui.add_enabled(
                                         !edit_state,
                                         EffectWidget::new(
-                                            &mixer.effects[effect_index],
+                                            store.select(&effect_sel),
                                             effect_sel,
                                             local_state,
                                             dispatch_effect,
@@ -125,12 +125,30 @@ impl View for ChannelEffectView<'_> {
                                         it: effect,
                                         meta: EffectMeta::default(),
                                     };
-                                    dispatch_mixer(Action::AddChild(TypeField::Effect(instance)));
+                                    store.dispatchr(Action::AddChild(TypeField::Effect(instance)));
+                                    // Hack: use the same logic as the receiver to work out
+                                    // what the ID of the just-added effect was (or more
+                                    // accurately, will be in the next frame, since dispatches are lazy).
+                                    let next_id = *store
+                                        .get()
+                                        .project
+                                        .effects
+                                        .clone()
+                                        .into_keys()
+                                        .max()
+                                        .unwrap_or(EffectId(0))
+                                        + 1;
+                                    let next_id = EffectId(next_id);
+                                    let next_index = mixer.effect_ids.len();
+                                    dispatch_mixer(Action::AddChildAtIndex(
+                                        TypeField::EffectId(next_id),
+                                        IndexField::EffectId(next_index),
+                                    ));
                                 }
                             }
                         });
                         // Disable edit state and button if there are no effects.
-                        let has_effects = !mixer.effects.is_empty();
+                        let has_effects = !mixer.effect_ids.is_empty();
                         if !has_effects {
                             local_state.mixer_edit_state.set(false);
                         }
@@ -148,15 +166,14 @@ impl View for ChannelEffectView<'_> {
                     match (from, to) {
                         // Object has been deleted.
                         (EffectLocation::Index(from_index), EffectLocation::Delete) => {
-                            dispatch_mixer(Action::DeleteChild(state::IndexField::Effect(
-                                from_index,
-                            )))
+                            let effect_id = mixer.effect_ids[from_index];
+                            dispatch_mixer(Action::DeleteChildById(TypeField::EffectId(effect_id)))
                         }
                         // Object has been moved.
                         (EffectLocation::Index(from_index), EffectLocation::Index(to_index)) => {
                             dispatch_mixer(Action::MoveChild(MoveField {
-                                from_field: IndexField::Effect(from_index),
-                                to_field: IndexField::Effect(to_index),
+                                from_field: IndexField::EffectId(from_index),
+                                to_field: IndexField::EffectId(to_index),
                             }));
                         }
                         _ => {}

@@ -10,8 +10,8 @@ use shared::model::{
 };
 use shared::types::Beats;
 use state::{
-    Action, FloatField, IndexField, PlacementSelector, SampleSelector, Store, TrackSelector,
-    TypeField, UintField,
+    Action, FloatField, PlacementSelector, SampleSelector, Store, TrackSelector, TypeField,
+    UintField,
 };
 use std::cmp::max;
 
@@ -30,21 +30,20 @@ impl<'a> PlacementView<'a> {
         placement_id: PlacementId,
         placement: &Placement,
         track_placement: &TrackPlacement,
-        tracks_length: usize,
         sel: &PlacementSelector,
         store: &Store,
     ) {
         egui::ComboBox::from_id_salt(format!("placement_{:?}_track", placement_id))
-            .selected_text(format!("Track {}", track_placement.track_index))
+            .selected_text(format!("Track ID {}", *track_placement.track_id))
             .show_ui(ui, |ui| {
-                for track_index in 0..tracks_length {
+                for track_id in store.get().project.tracks.keys() {
                     selectable_value(
                         ui,
-                        get_set(&track_placement.track_index, |it| {
-                            store.dispatch(sel, Action::SetIndex(IndexField::Track(*it)))
+                        get_set(&track_placement.track_id, |it| {
+                            store.dispatch(sel, Action::SetChild(TypeField::TrackId(*it)))
                         }),
-                        &track_index,
-                        track_index.to_string(),
+                        track_id,
+                        track_id.to_string(),
                     );
                 }
             });
@@ -67,7 +66,7 @@ impl<'a> PlacementView<'a> {
                 }
             });
 
-        let track_sel = TrackSelector(track_placement.track_index);
+        let track_sel = TrackSelector(track_placement.track_id);
         let track: &Track = store.select(&track_sel);
         let max_duration = *(track.unclipped_duration());
         let duration = *placement
@@ -93,7 +92,7 @@ impl<'a> PlacementView<'a> {
                         get_set(&sample_placement.sample_id, |it| {
                             store.dispatch(sel, Action::SetChild(TypeField::SampleId(*it)))
                         }),
-                        &sample_id,
+                        sample_id,
                         sample_id.to_string(),
                     );
                 }
@@ -154,7 +153,6 @@ impl View for PlacementView<'_> {
         };
         let on_release = || store.dispatchr(Action::Release);
         let placement = &store.get().project.placements[&placement_id];
-        let tracks_length = store.get().project.tracks.len();
         let sel = PlacementSelector(placement_id);
         let title = format!("Placement {:?}", placement_id);
         StateWindow::show_from_window_state(
@@ -170,7 +168,6 @@ impl View for PlacementView<'_> {
                             placement_id,
                             placement,
                             track_placement,
-                            tracks_length,
                             &sel,
                             store,
                         );

@@ -11,6 +11,7 @@ message ActionProto {
     IndexFieldProto set_index = 5;
     TypeFieldProto set_child = 6;
     TypeFieldProto add_child = 7;
+    ChildIndexPairProto add_child_at_index = 15;
     IndexFieldProto delete_child = 8;
     MoveFieldProto move_child = 9;
     MultiIndexFieldProto delete_children = 10;
@@ -21,15 +22,17 @@ message ActionProto {
   }
 }
 
+message ChildIndexPairProto {
+  TypeFieldProto child = 1;
+
+  IndexFieldProto index = 2;
+}
+
 message IndexFieldProto {
   oneof kind {
-    uint32 track = 1;
-    uint32 placed_note = 2;
-    uint32 placement = 3;
-    uint32 effect = 4;
-    uint32 mixer = 7;
-    uint32 generator = 5;
-    uint32 sample = 6;
+    uint32 placed_note = 1;
+    uint32 effect_id = 2;
+    uint32 mixer = 3;
   }
 }
 
@@ -42,13 +45,7 @@ message MultiIndexFieldProto {
 
 enum MultiIndexFieldKind {
   UnknownIndexFieldKind = 0;
-  TrackIndexFieldKind = 1;
   PlacedNoteIndexFieldKind = 2;
-  PlacementIndexFieldKind = 3;
-  EffectIndexFieldKind = 4;
-  MixerIndexFieldKind = 7;
-  GeneratorIndexFieldKind = 5;
-  SampleIndexFieldKind = 6;
 }
 
 message MoveFieldProto {
@@ -83,6 +80,8 @@ message TypeFieldProto {
     uint32 generator_id = 23;
     uint32 placement_id = 24;
     uint32 sample_id = 25;
+    uint32 track_id = 26;
+    uint32 effect_id = 27;
   }
 }
 
@@ -126,7 +125,7 @@ message SelectorProto {
     uint32 track = 2;
     IndexPair note = 3;
     uint32 mixer = 4;
-    IndexPair effect = 5;
+    uint32 effect = 5;
     uint32 generator = 6;
     uint32 placement = 7;
     IndexPair oscillator = 8;

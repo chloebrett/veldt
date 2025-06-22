@@ -46,30 +46,18 @@ impl<F: Fn(Action), G: Fn()> View for EffectView<'_, F, G> {
         let dispatch = &self.dispatch;
         let on_release = &self.on_release;
         let title = effect_name(effect);
-        let EffectSelector(mixer_index, effect_index) = self.selector;
         StateWindow::show_from_window_state(
             ui,
             &local_state.window_state,
             WindowKind::Effect(self.selector),
             title,
-            |ui| {
-                match effect {
-                    Effect::SimpleEq(config) => EqView::new(config, dispatch, on_release).ui(ui),
-                    Effect::Delay(config) => DelayView::new(config, dispatch, on_release).ui(ui),
-                    Effect::Compressor(config) => {
-                        CompressorView::new(config, dispatch, on_release).ui(ui)
-                    }
-                    Effect::ModDelay(config) => {
-                        ModDelayView::new(config, dispatch, on_release).ui(ui)
-                    }
+            |ui| match effect {
+                Effect::SimpleEq(config) => EqView::new(config, dispatch, on_release).ui(ui),
+                Effect::Delay(config) => DelayView::new(config, dispatch, on_release).ui(ui),
+                Effect::Compressor(config) => {
+                    CompressorView::new(config, dispatch, on_release).ui(ui)
                 }
-
-                ui.separator();
-                ui.label(format!(
-                    "Mixer {} | Effect {}",
-                    mixer_index + 1,
-                    effect_index + 1
-                ));
+                Effect::ModDelay(config) => ModDelayView::new(config, dispatch, on_release).ui(ui),
             },
         );
     }

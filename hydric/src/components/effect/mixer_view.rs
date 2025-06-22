@@ -105,6 +105,7 @@ impl View for MixerView<'_> {
                 });
 
                 ui.separator();
+
                 let dispatch_volume =
                     |it| dispatch_mixer(Action::SetFloat(FloatField::Volume, from_db(it)));
                 let mut level = to_db(mixer.volume);

@@ -1,6 +1,6 @@
 use crate::local_state::GetSet;
 use egui::{Id, Pos2, pos2, vec2};
-use state::{EffectSelector, GeneratorSelector, MixerSelector, Store};
+use state::{EffectSelector, GeneratorSelector, Store};
 use std::cell::RefCell;
 use std::cmp::Eq;
 use std::collections::{HashMap, HashSet};
@@ -25,6 +25,7 @@ pub enum WindowKind {
     NoteRoll,
     Placement,
     Note,
+    GraphDebug,
 }
 
 /// Information about a window needed to render on the UI.
@@ -39,8 +40,8 @@ impl WindowData {
     pub fn default_from_window(window: WindowKind) -> Self {
         let pos = match window {
             WindowKind::Mixer => pos2(1000.0, 150.0),
-            WindowKind::Effect(EffectSelector(.., index)) => {
-                pos2(1000.0, 150.0) + vec2(50.0 * index as f32, 50.0 * index as f32)
+            WindowKind::Effect(EffectSelector(effect_id)) => {
+                pos2(1000.0, 150.0) + vec2(50.0 * *effect_id as f32, 50.0 * *effect_id as f32)
             }
             WindowKind::ChannelEffect => pos2(800.0, 150.0),
             WindowKind::GeneratorList => pos2(1100.0, 20.0),
@@ -53,14 +54,15 @@ impl WindowData {
             WindowKind::NoteRoll => pos2(600.0, 20.0),
             WindowKind::Placement => pos2(100.0, 20.0),
             WindowKind::Note => pos2(600.0, 20.0),
+            WindowKind::GraphDebug => pos2(600.0, 20.0),
         };
         // Create unique IDs for `WindowKind` that could have multiple variants.
         let id_string = match window {
-            WindowKind::Effect(EffectSelector(mixer_index, effect_index)) => {
-                format!("{}_{}", mixer_index, effect_index)
+            WindowKind::Effect(EffectSelector(effect_id)) => {
+                format!("{}", *effect_id)
             }
-            WindowKind::Generator(GeneratorSelector(id)) => {
-                format!("{:?}", id)
+            WindowKind::Generator(GeneratorSelector(generator_id)) => {
+                format!("{}", *generator_id)
             }
             _ => "".to_string(),
         };
@@ -107,37 +109,25 @@ impl WindowState {
     pub fn update(&mut self, store: &Store) {
         // Update effect windows based on the store.
         // Get all effects from the store
-        let effects: Vec<EffectSelector> = store
+        let effects: HashSet<EffectSelector> = store
             .get()
             .project
-            .mixer
-            .channels
-            .iter()
-            .enumerate()
-            .flat_map(|(index, channel)| {
-                let mixer_sel = MixerSelector(index);
-                let effect_sels: Vec<EffectSelector> = channel
-                    .effects
-                    .iter()
-                    .enumerate()
-                    .map(|(effect_index, _)| mixer_sel.downcast_effect(effect_index))
-                    .collect();
-                effect_sels
-            })
+            .effects
+            .keys()
+            .map(|id| EffectSelector(*id))
             .collect();
-        let store_effects: HashSet<EffectSelector> = HashSet::from_iter(effects);
         let effect_windows = self.effect_windows.clone();
         // Remove effects no longer on the store.
         for effect in effect_windows.keys() {
             let WindowKind::Effect(effect_sel) = effect else {
                 continue;
             };
-            if !store_effects.contains(effect_sel) {
+            if !effects.contains(effect_sel) {
                 self.effect_windows.remove(effect);
             }
         }
         // Add effects new to the store.
-        for effect in store_effects {
+        for effect in effects {
             let window = WindowKind::Effect(effect);
             self.effect_windows
                 .entry(window)

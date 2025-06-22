@@ -1,4 +1,4 @@
-use crate::model::{GeneratorId, SampleId};
+use crate::model::{GeneratorId, SampleId, TrackId};
 use crate::pmodel::{placement_proto::Kind as PlacementTypeProto, *};
 use crate::types::Beats;
 use local_macro::{FromProto, IntoProto};
@@ -34,9 +34,8 @@ impl Default for PlacementType {
 
 #[derive(Clone, Debug, PartialEq, Eq, FromProto, IntoProto, Default)]
 pub struct TrackPlacement {
-    /// TODO: use a more stable ID instead of the index.
-    #[proto_type_u32]
-    pub track_index: usize,
+    #[proto_into]
+    pub track_id: TrackId,
 
     /// The generator this track placement is associated with.
     #[proto_into]

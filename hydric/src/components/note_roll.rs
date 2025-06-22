@@ -3,6 +3,7 @@ use crate::{GetSet, LocalState, transform::Transform};
 use crate::{
     playback::AudioPlayer, transform::Yx, view::View, widget::StateWindow, window_state::WindowKind,
 };
+use egui::PointerButton;
 use egui::{
     Color32, CornerRadius, CursorIcon, Frame, Pos2, Rect, Response, ScrollArea, Sense, Shape,
     Stroke, StrokeKind, Ui, Vec2, Widget, emath::RectTransform, pos2, vec2,
@@ -10,14 +11,18 @@ use egui::{
 use mesic::create_scale_values;
 use shared::types::Beats;
 use shared::{
-    model::{Note, PitchName, PlacedNote, PlacementType, Scale, ScaleValue},
+    model::{Note, PitchName, PlacedNote, PlacementType, Scale, ScaleValue, TrackId},
     types::PitchValue,
 };
 use state::{
-    Action, FloatField, GeneratorSelector, MultiIndexField, NoteSelector, Store, TrackSelector,
-    TypeField,
+    Action, FloatField, GeneratorSelector, IndexField, MultiIndexField, NoteSelector, Store,
+    TrackSelector, TypeField,
 };
 use std::collections::HashSet;
+
+// The max number of bars the NoteSequencer will allow placement on.
+// TODO: Where is the best place for this definition? Should it be user changeable?
+const MAX_BARS: f32 = 16.0;
 
 pub struct NoteRoll<'a> {
     store: &'a Store,
@@ -105,22 +110,15 @@ impl View for NoteRoll<'_> {
         };
         let notes = store.select(&track_sel).notes.clone();
         let white_note_pattern = self.make_white_note_pattern(max_note);
-        let unclipped_duration = store.select(&track_sel).unclipped_duration();
         let range = Rect::from_min_max(
             pos2(offset, min_note as f32 - 1.0),
-            // NoteRoll is at least 1 bar long
-            // Extends when notes are dragged or set beyond 1 bar.
-            // Add 0.5 to X as a small buffer after max note.
-            pos2(
-                f32::max(bar_length, *unclipped_duration) + 0.5,
-                max_note as f32,
-            ),
+            pos2(bar_length * MAX_BARS, max_note as f32),
         );
         let mut select = local_state.note_roll_select_enabled.get();
         if !select {
             local_state.selected_notes.set(HashSet::default());
         }
-        let title = format!("Track {}", track_sel.0);
+        let title = format!("Track {}", *track_sel.0);
         StateWindow::show_from_window_state(
             ui,
             &local_state.window_state,
@@ -150,7 +148,7 @@ impl View for NoteRoll<'_> {
                                 .placements
                                 .values()
                                 .filter_map(|placement| match &placement.kind {
-                                    PlacementType::Track(it) if it.track_index == track_sel.0 => {
+                                    PlacementType::Track(it) if it.track_id == track_sel.0 => {
                                         Some(it.generator_id)
                                     }
                                     _ => None,
@@ -167,18 +165,30 @@ impl View for NoteRoll<'_> {
                                 gen_sel,
                             )
                             .ui(ui);
-                            ui.add(
-                                NoteSequencer::new(store, local_state, range, track_sel.0)
-                                    .objects(notes.into_iter().map(NoteSequencerObject).collect())
-                                    .select(select)
-                                    .horizontal_rects(
-                                        white_note_pattern,
-                                        Color32::from_white_alpha(4),
-                                    )
-                                    .vertical_bars(bar_length, Color32::from_white_alpha(6))
-                                    .vertical_bars(1.0, Color32::from_white_alpha(3))
-                                    .vertical_bars(1.0 / bar_length, Color32::from_white_alpha(1)),
-                            );
+                            ScrollArea::horizontal()
+                                .min_scrolled_width(400.0)
+                                .show(ui, |ui| {
+                                    ui.add(
+                                        NoteSequencer::new(store, local_state, range, track_sel.0)
+                                            .objects(
+                                                notes
+                                                    .into_iter()
+                                                    .map(NoteSequencerObject)
+                                                    .collect(),
+                                            )
+                                            .select(select)
+                                            .horizontal_rects(
+                                                white_note_pattern,
+                                                Color32::from_white_alpha(4),
+                                            )
+                                            .vertical_bars(bar_length, Color32::from_white_alpha(6))
+                                            .vertical_bars(1.0, Color32::from_white_alpha(3))
+                                            .vertical_bars(
+                                                1.0 / bar_length,
+                                                Color32::from_white_alpha(1),
+                                            ),
+                                    );
+                                });
                         });
                     });
             },
@@ -290,9 +300,9 @@ impl NoteSequencerObject {
         local_state.selected_notes.set(notes);
     }
 
-    fn add_new(&self, store: &Store, parent_index: usize) {
+    fn add_new(&self, store: &Store, track_id: TrackId) {
         store.dispatch(
-            &TrackSelector(parent_index),
+            &TrackSelector(track_id),
             Action::AddChild(TypeField::PlacedNote(self.0.clone())),
         );
     }
@@ -309,18 +319,36 @@ impl NoteSequencerObject {
         })
     }
 
-    fn delete_selected(store: &Store, local_state: &LocalState, parent_index: usize) {
-        local_state.active_note.update(|note| match note {
-            // If the active note is selected, "de-activate" it.
-            Some(index) if local_state.selected_notes.get().contains(&index) => None,
-            _ => note,
-        });
+    fn delete_selected(store: &Store, local_state: &LocalState, track_id: TrackId) {
+        // De-activate active note.
+        // TODO: correctly handle the active note.
+        // Currently if the deleted note index is less than the active note index, the active note
+        // will either change or the index will be out of bounds and panic.
+        local_state.active_note.update(|_| None);
         store.dispatch(
-            &TrackSelector(parent_index),
+            &TrackSelector(track_id),
             Action::DeleteChildren(MultiIndexField::PlacedNote(
                 local_state.selected_notes.get().into_iter().collect(),
             )),
         );
+    }
+
+    fn delete_self(
+        &self,
+        store: &Store,
+        local_state: &LocalState,
+        track_id: TrackId,
+        note_index: usize,
+    ) {
+        // De-activate active note.
+        // TODO: correctly handle the active note.
+        // Currently if the deleted note index is less than the active note index, the active note
+        // will either change or the index will be out of bounds and panic.
+        local_state.active_note.update(|_| None);
+        store.dispatch(
+            &TrackSelector(track_id),
+            Action::DeleteChild(IndexField::PlacedNote(note_index)),
+        )
     }
 }
 
@@ -332,7 +360,7 @@ pub struct NoteSequencer<'a> {
     objects: Vec<NoteSequencerObject>,
     quantise_level: Beats,
     background_shapes: Vec<Shape>,
-    parent_index: usize,
+    track_id: TrackId,
     select: bool,
 }
 
@@ -341,17 +369,17 @@ impl<'a> NoteSequencer<'a> {
         store: &'a Store,
         local_state: &'a LocalState,
         range: Rect,
-        parent_index: usize,
+        track_id: TrackId,
     ) -> Self {
         NoteSequencer {
             store,
             local_state,
             range,
-            size: vec2(400.0, 600.0),
+            size: vec2(4000.0, 600.0),
             objects: vec![],
             quantise_level: 0.125,
             background_shapes: vec![],
-            parent_index,
+            track_id,
             select: false,
         }
     }
@@ -441,13 +469,15 @@ impl<'a> NoteSequencer<'a> {
                 }
             } else if movable_resp.interact(Sense::click()).double_clicked() {
                 object.set_active(self.local_state, index);
-            }
+            } else if movable_resp.interact(Sense::click()).secondary_clicked() {
+                object.delete_self(self.store, self.local_state, self.track_id, index);
+            };
             if resize_resp.hovered() {
                 ui.ctx().set_cursor_icon(CursorIcon::ResizeColumn);
             }
             let edit_object = |action: Action| {
                 self.store
-                    .dispatch(&NoteSelector(self.parent_index, index), action)
+                    .dispatch(&NoteSelector(self.track_id, index), action)
             };
             let release = self.move_object(movable_resp, to_sequencer, &edit_object)
                 || self.resize_object(index, resize_resp, to_sequencer, &edit_object);
@@ -470,10 +500,10 @@ impl<'a> NoteSequencer<'a> {
         to_sequencer: RectTransform,
         edit_object: &impl Fn(Action),
     ) -> bool {
-        let drag_pos = response.interact_pointer_pos();
-        let drag_delta = response.drag_delta();
-        if let Some(drag_pos) = drag_pos {
+        if response.dragged_by(PointerButton::Primary) {
             // Keep track of the delta between object and cursor position at drag start.
+            let drag_pos = response.interact_pointer_pos().unwrap();
+            let drag_delta = response.drag_delta();
             if response.interact(Sense::drag()).drag_started() {
                 self.local_state
                     .drag_cursor_delta
@@ -489,7 +519,7 @@ impl<'a> NoteSequencer<'a> {
                 .clamp(
                     pos2(0.0, 0.0),
                     // Clamp to `y` range - 1 so that object cannot be dragged beyond bottom of sequencer.
-                    vec2(f32::INFINITY, self.range.size().y - 1.0).to_pos2(),
+                    vec2(self.range.right(), self.range.size().y - 1.0).to_pos2(),
                 );
             if drag_delta.y != 0.0 {
                 edit_object(Action::SetChild(TypeField::PitchName(PitchName::from(
@@ -564,18 +594,14 @@ impl Widget for NoteSequencer<'_> {
                 if ui.input(|input| {
                     input.key_pressed(egui::Key::Delete) || input.key_pressed(egui::Key::Backspace)
                 }) {
-                    NoteSequencerObject::delete_selected(
-                        store,
-                        self.local_state,
-                        self.parent_index,
-                    );
+                    NoteSequencerObject::delete_selected(store, self.local_state, self.track_id);
                     NoteSequencerObject::set_selected(self.local_state, None);
                 }
             } else if response.interact(Sense::click()).clicked() {
                 let pos = response.interact_pointer_pos().unwrap();
                 let object =
                     NoteSequencerObject::from_pos(pos.transform(to_screen.inverse()), range);
-                object.add_new(store, self.parent_index);
+                object.add_new(store, self.track_id);
             }
 
             self.interact(ui, &response);
