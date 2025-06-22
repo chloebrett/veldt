@@ -37,9 +37,14 @@ pub struct LocalState {
 
     pub sample_cache: Rc<RefCell<HashMap<String, Sample>>>,
 
+    #[default(Rc::new(RefCell::new(true)))]
     pub log_frequency_display: Rc<RefCell<bool>>,
+
     #[default(Rc::new(RefCell::new(vec![MaxDetector::new(64); FFT_SAMPLE_SIZE])))]
     pub frequency_peaks: Rc<RefCell<Vec<MaxDetector<f32>>>>,
+
+    #[default(Rc::new(RefCell::new(true)))]
+    pub show_frequency_peaks: Rc<RefCell<bool>>,
 }
 
 pub trait GetSet<T: Clone> {

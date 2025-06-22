@@ -33,6 +33,7 @@ pub struct FrequencyPlot<'a> {
     spec: FrequencySpec,
     text_size: f32,
     axis_line_stroke: Option<Stroke>,
+    show_peaks: bool,
 }
 
 #[allow(dead_code)]
@@ -53,6 +54,7 @@ impl<'a> FrequencyPlot<'a> {
             spec: FrequencySpec::Linear,
             text_size: 12.0,
             axis_line_stroke: None,
+            show_peaks: true,
         }
     }
 
@@ -127,6 +129,12 @@ impl<'a> FrequencyPlot<'a> {
         self
     }
 
+    #[inline]
+    pub fn show_peaks(mut self, show_peaks: bool) -> Self {
+        self.show_peaks = show_peaks;
+        self
+    }
+
     fn axis_line_stroke(&self, ui: &Ui) -> Stroke {
         self.axis_line_stroke.unwrap_or(Stroke {
             width: 0.15,
@@ -178,11 +186,12 @@ impl<'a> FrequencyPlot<'a> {
             ui.style().visuals.window_stroke(),
             egui::StrokeKind::Middle,
         );
-        let mut secondary_stroke = ui.style().visuals.widgets.inactive.fg_stroke;
-        secondary_stroke.color = secondary_stroke.color.gamma_multiply(0.5);
-
-        for freq in &self.secondary_freqs {
-            self.line_ui(ui, &rect, freq, &secondary_stroke);
+        if self.show_peaks {
+            let mut secondary_stroke = ui.style().visuals.widgets.inactive.fg_stroke;
+            secondary_stroke.color = secondary_stroke.color.gamma_multiply(0.5);
+            for freq in &self.secondary_freqs {
+                self.line_ui(ui, &rect, freq, &secondary_stroke);
+            }
         }
         let primary_stroke = ui.style().visuals.widgets.active.fg_stroke;
         self.line_ui(ui, &rect, self.primary_freqs, &primary_stroke);

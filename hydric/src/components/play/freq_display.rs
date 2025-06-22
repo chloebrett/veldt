@@ -98,16 +98,26 @@ impl View for FrequencyDisplay<'_> {
             .collect();
         self.local_state.frequency_peaks.set(detectors);
         let log = self.local_state.log_frequency_display.get();
+        let show_peaks = self.local_state.show_frequency_peaks.get();
         ui.add(
             FrequencyPlot::new(&points)
                 .add_secondary_frequencies(&peaks)
-                .logarithmic(log),
+                .logarithmic(log)
+                .show_peaks(show_peaks),
         );
-        if ui
-            .add(Button::new("Log Frequencies").selected(log))
-            .clicked()
-        {
-            self.local_state.log_frequency_display.set(!log);
-        }
+        ui.horizontal(|ui| {
+            if ui
+                .add(Button::new("Log frequencies").selected(log))
+                .clicked()
+            {
+                self.local_state.log_frequency_display.set(!log);
+            }
+            if ui
+                .add(Button::new("Show peaks").selected(show_peaks))
+                .clicked()
+            {
+                self.local_state.show_frequency_peaks.set(!show_peaks);
+            }
+        });
     }
 }
