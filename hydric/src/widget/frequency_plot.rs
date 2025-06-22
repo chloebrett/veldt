@@ -5,13 +5,14 @@ use egui::{
     lerp, pos2, remap_clamp, vec2,
 };
 
-struct FrequencySpec {
-    logarithmic: bool,
-    // For logarithmic frequency displays.
-    // The minimum frequency to display.
-    min_frequency: f32,
-    // X ticks when plot is made logarithmic.
-    log_x_ticks: Vec<f32>,
+enum FrequencySpec {
+    Linear,
+    Logarithmic {
+        // The minimum frequency to display.
+        min_frequency: f32,
+        // X ticks when plot is made logarithmic.
+        x_ticks: Vec<f32>,
+    },
 }
 
 /// Display the frequency response of a signal on a 2D plot.
@@ -48,13 +49,7 @@ impl<'a> FrequencyPlot<'a> {
             y_range: y_min as f32..=y_max as f32,
             x_ticks,
             y_ticks,
-            spec: FrequencySpec {
-                logarithmic: false,
-                min_frequency: 10.0,
-                log_x_ticks: vec![
-                    10.0, 50.0, 200.0, 500.0, 1000.0, 2000.0, 5000.0, 10000.0, 22050.0,
-                ],
-            },
+            spec: FrequencySpec::Linear,
             text_size: 12.0,
             axis_line_stroke: None,
         }
@@ -89,7 +84,16 @@ impl<'a> FrequencyPlot<'a> {
     /// Plot the frequency axis with a logarithmic scale.
     #[inline]
     pub fn logarithmic(mut self, logarithmic: bool) -> Self {
-        self.spec.logarithmic = logarithmic;
+        self.spec = if logarithmic {
+            FrequencySpec::Logarithmic {
+                min_frequency: 10.0,
+                x_ticks: vec![
+                    10.0, 50.0, 200.0, 500.0, 1000.0, 2000.0, 5000.0, 10000.0, 22050.0,
+                ],
+            }
+        } else {
+            FrequencySpec::Linear
+        };
         self
     }
 
@@ -97,7 +101,15 @@ impl<'a> FrequencyPlot<'a> {
     /// The minimum frequency that will be displayed. Default is 10.0 Hz.
     #[inline]
     pub fn min_frequency(mut self, min_frequency: f32) -> Self {
-        self.spec.min_frequency = min_frequency;
+        self.spec = match self.spec {
+            FrequencySpec::Logarithmic { x_ticks, .. } => FrequencySpec::Logarithmic {
+                min_frequency,
+                x_ticks,
+            },
+            FrequencySpec::Linear => {
+                panic!("`min_frequency can only be set when Plot is logarithmic.")
+            }
+        };
         self
     }
 
@@ -131,6 +143,13 @@ impl<'a> FrequencyPlot<'a> {
 
     fn y_range(&self) -> RangeInclusive<f32> {
         self.y_range.clone()
+    }
+
+    fn get_x_ticks(&self) -> &[f32] {
+        match &self.spec {
+            FrequencySpec::Linear => &self.x_ticks,
+            FrequencySpec::Logarithmic { x_ticks, .. } => x_ticks,
+        }
     }
 
     // Convert a `Pos2` in units (Hz, dB) to the raw (x, y) position on the plot.
@@ -204,11 +223,7 @@ impl<'a> FrequencyPlot<'a> {
         let y_range = self.y_range();
         let font_id = FontId::proportional(self.text_size);
         let text_color = ui.style().visuals.text_color();
-        let x_ticks = if self.spec.logarithmic {
-            &self.spec.log_x_ticks
-        } else {
-            &self.x_ticks
-        };
+        let x_ticks = self.get_x_ticks();
         for x in x_ticks {
             let pos = pos2(*x, *y_range.end());
             let position = self.position_from_pos(pos, rect.x_range(), rect.y_range());
@@ -265,19 +280,19 @@ fn normalised_from_pos(
     y_range: RangeInclusive<f32>,
     spec: &FrequencySpec,
 ) -> Pos2 {
-    if spec.logarithmic {
-        let min_frequency = spec.min_frequency;
-        let (x_min, x_max) = (*x_range.start(), *x_range.end());
-        let log_pos = pos2(pos.x.max(min_frequency).log10(), pos.y);
-        remap_clamp_pos(
-            log_pos,
-            x_min.max(min_frequency).log10()..=x_max.log10(),
-            y_range,
-            0.0..=1.0,
-            0.0..=1.0,
-        )
-    } else {
-        remap_clamp_pos(pos, x_range, y_range, 0.0..=1.0, 0.0..=1.0)
+    match spec {
+        FrequencySpec::Logarithmic { min_frequency, .. } => {
+            let (x_min, x_max) = (*x_range.start(), *x_range.end());
+            let log_pos = pos2(pos.x.max(*min_frequency).log10(), pos.y);
+            remap_clamp_pos(
+                log_pos,
+                x_min.max(*min_frequency).log10()..=x_max.log10(),
+                y_range,
+                0.0..=1.0,
+                0.0..=1.0,
+            )
+        }
+        FrequencySpec::Linear => remap_clamp_pos(pos, x_range, y_range, 0.0..=1.0, 0.0..=1.0),
     }
 }
 
