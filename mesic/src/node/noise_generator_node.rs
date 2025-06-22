@@ -1,3 +1,4 @@
+use crate::eq::pink::PinkFilter;
 use crate::graph::{NoteEvent, NoteEventType, ProcessContext};
 use dasp_graph::{Buffer, Input, Node};
 use rand::Rng;
@@ -15,15 +16,20 @@ struct NodeState {
     config: NoiseConfig,
     meta: GeneratorMeta,
     playing: bool,
+    pink_filter: PinkFilter,
+    brown_sum: f32,
 }
 
 impl Default for NodeState {
     fn default() -> Self {
         let config = NoiseConfig::default();
+        let filter = PinkFilter::new();
         Self {
             config: config.clone(),
             meta: GeneratorMeta::default(),
             playing: false,
+            pink_filter: filter.clone(),
+            brown_sum: 0.0,
         }
     }
 }
@@ -60,20 +66,25 @@ impl NoiseGeneratorNode {
         }
     }
 
-    fn generate_noise_sample(rng: &mut impl Rng, kind: NoiseType) -> f32 {
-        match kind {
-            NoiseType::White => generate_white_noise(rng),
-            NoiseType::Pink => todo!(),
-            NoiseType::Brown => todo!(),
+    fn generate_white_noise(&self, rng: &mut impl Rng) -> f32 {
+        let min = -1.0;
+        let max = 1.0;
+        generate_random_number_in_range(rng, min, max)
+    }
+
+    fn generate_brown_noise(&mut self, buffer: &mut Buffer) {
+        let leak = 0.02;
+        for i in 0..buffer.len() {
+            self.state.brown_sum = self.state.brown_sum * 0.98 + buffer[i] * leak;
+            buffer[i] = self.state.brown_sum;
         }
     }
 }
 
 impl Node<ProcessContext> for NoiseGeneratorNode {
     fn process(&mut self, _inputs: &[Input], output: &mut [Buffer], payload: &ProcessContext) {
-        let state = &mut self.state;
-        let kind = state.config.kind;
-        state.update(payload, self.selector);
+        let kind = self.state.config.kind;
+        self.state.update(payload, self.selector);
 
         let mut buffer = Buffer::SILENT;
         let mut rng = rand::thread_rng();
@@ -81,7 +92,9 @@ impl Node<ProcessContext> for NoiseGeneratorNode {
 
         if payload.stop_generators.get(&generator_id) == Some(&true) {
             log::info!("Stopped noise: {:?}", generator_id);
-            state.playing = false;
+            self.state.playing = false;
+            self.state.pink_filter.reset();
+            self.state.brown_sum = 0.0;
         }
 
         for i in 0..buffer.len() {
@@ -102,19 +115,25 @@ impl Node<ProcessContext> for NoiseGeneratorNode {
 
             for note_event in events {
                 match note_event.kind {
-                    NoteEventType::On => state.playing = true,
-                    NoteEventType::Off => state.playing = false,
+                    NoteEventType::On => self.state.playing = true,
+                    NoteEventType::Off => self.state.playing = false,
                 }
             }
 
-            if state.playing {
-                buffer[i] = Self::generate_noise_sample(&mut rng, kind);
+            if self.state.playing {
+                buffer[i] = self.generate_white_noise(&mut rng);
             }
+        }
+
+        match kind {
+            NoiseType::White => {}
+            NoiseType::Pink => self.state.pink_filter.apply(&mut buffer),
+            NoiseType::Brown => self.generate_brown_noise(&mut buffer),
         }
 
         for out_buf in output.iter_mut() {
             out_buf.copy_from_slice(&buffer);
-            Self::apply_volume(state, out_buf);
+            Self::apply_volume(&self.state, out_buf);
         }
     }
 }
@@ -122,10 +141,4 @@ impl Node<ProcessContext> for NoiseGeneratorNode {
 // Generates random number between [min, max]
 pub fn generate_random_number_in_range(rng: &mut impl Rng, min: f32, max: f32) -> f32 {
     rng.gen_range(min..=max)
-}
-
-fn generate_white_noise(rng: &mut impl Rng) -> f32 {
-    let min = -1.0;
-    let max = 1.0;
-    generate_random_number_in_range(rng, min, max)
 }
