@@ -1,4 +1,5 @@
 use super::play_control::*;
+use crate::local_state::LocalState;
 use crate::promise::spawn;
 use crate::rpc::upload_sample;
 use crate::view::View;
@@ -12,6 +13,7 @@ use tonic::Status;
 
 pub struct ToolbarView<'a> {
     store: &'a mut Store,
+    local_state: &'a LocalState,
     async_state: &'a mut AsyncState,
     player: &'a mut AudioPlayer,
 }
@@ -19,11 +21,13 @@ pub struct ToolbarView<'a> {
 impl<'a> ToolbarView<'a> {
     pub fn new(
         store: &'a mut Store,
+        local_state: &'a LocalState,
         async_state: &'a mut AsyncState,
         player: &'a mut AudioPlayer,
     ) -> Self {
         ToolbarView {
             store,
+            local_state,
             async_state,
             player,
         }
@@ -67,7 +71,13 @@ impl View for ToolbarView<'_> {
                     );
                 });
                 ui.separator();
-                play_control(self.store, self.async_state, self.player, ui);
+                play_control(
+                    self.store,
+                    self.local_state,
+                    self.async_state,
+                    self.player,
+                    ui,
+                );
                 ui.separator();
 
                 ui.horizontal(|ui| {
