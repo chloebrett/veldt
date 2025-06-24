@@ -4,7 +4,6 @@ use crate::local_state::LocalState;
 use crate::playback::AudioPlayer;
 use crate::view::View;
 use crate::widget::StateWindow;
-use crate::widget::int_slider;
 use crate::window_state::WindowKind;
 use egui::{Button, Ui};
 use egui_fader::Fader;
@@ -36,14 +35,12 @@ impl View for MixerView<'_> {
             player,
             ..
         } = self;
-        let mixer_sel = local_state
+        let active_mixer_sel = local_state
             .active_mixer_channel
             .get()
             .unwrap_or(MixerSelector(0));
-        let MixerSelector(mixer_index) = mixer_sel;
+        let MixerSelector(active_mixer_index) = active_mixer_sel;
 
-        let mixer = &store.select(&mixer_sel);
-        let dispatch_mixer = |action| store.dispatch(&mixer_sel, action);
         let on_release = || store.dispatchr(Action::Release);
 
         StateWindow::show_from_window_state(
@@ -76,58 +73,55 @@ impl View for MixerView<'_> {
                 });
 
                 ui.add_space(8.0);
-
-                // TODO: better UI than a slider for this!
-                let max_channel_index = (store.get().project.mixer.channels.len() - 1) as i32;
-                int_slider(
-                    ui,
-                    "Selected channel",
-                    mixer_index as f64,
-                    |it| {
-                        local_state
-                            .active_mixer_channel
-                            .set(Some(MixerSelector(it as usize)))
-                    },
-                    0..=max_channel_index,
-                    /* on_release= */
-                    || {}, // no-op on_release since this doesn't use the store.
-                );
-
                 ui.separator();
+                ui.columns(store.get().project.mixer.channels.len(), |columns| {
+                    for (mixer_index, mixer) in
+                        store.get().project.mixer.channels.iter().enumerate()
+                    {
+                        let mixer_sel = MixerSelector(mixer_index);
+                        let dispatch_mixer = |action| store.dispatch(&mixer_sel, action);
+                        columns[mixer_index].vertical(|ui| {
+                            let heading = if mixer_index == 0 {
+                                "Main"
+                            } else {
+                                &format!("Ch{mixer_index}")
+                            };
+                            ui.heading(heading);
 
-                ui.horizontal(|ui| {
-                    let heading = if mixer_index == 0 {
-                        "Main channel"
-                    } else {
-                        &format!("Channel {mixer_index}")
-                    };
-                    ui.heading(heading);
+                            let dispatch_volume = |it| {
+                                dispatch_mixer(Action::SetFloat(FloatField::Volume, from_db(it)))
+                            };
+                            let mut level = to_db(mixer.volume);
+                            ui.add(
+                                Fader::stereo(&mut level, player.level())
+                                    .rect_handle_shape(0.5)
+                                    .text_size(12.0),
+                            );
+                            if level != to_db(mixer.volume) {
+                                dispatch_volume(level)
+                            }
+                            let mut show_effect = local_state
+                                .window_state
+                                .get_visible(WindowKind::ChannelEffect);
+                            if ui
+                                .add(
+                                    Button::new("Effects")
+                                        .selected(show_effect && mixer_index == active_mixer_index),
+                                )
+                                .clicked()
+                            {
+                                if mixer_index != active_mixer_index {
+                                    // Update active mixer to what was just selected.
+                                    local_state.active_mixer_channel.set(Some(mixer_sel));
+                                    show_effect = false;
+                                }
+                                local_state
+                                    .window_state
+                                    .set_visible(WindowKind::ChannelEffect, !show_effect);
+                            };
+                        });
+                    }
                 });
-
-                ui.separator();
-
-                let dispatch_volume =
-                    |it| dispatch_mixer(Action::SetFloat(FloatField::Volume, from_db(it)));
-                let mut level = to_db(mixer.volume);
-                ui.add(
-                    Fader::stereo(&mut level, player.level())
-                        .rect_handle_shape(0.5)
-                        .text_size(12.0),
-                );
-                if level != to_db(mixer.volume) {
-                    dispatch_volume(level)
-                }
-                let show_effect = local_state
-                    .window_state
-                    .get_visible(WindowKind::ChannelEffect);
-                if ui
-                    .add(Button::new("Effects").selected(show_effect))
-                    .clicked()
-                {
-                    local_state
-                        .window_state
-                        .set_visible(WindowKind::ChannelEffect, !show_effect);
-                };
             },
         );
     }
