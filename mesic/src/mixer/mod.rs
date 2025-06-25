@@ -300,6 +300,7 @@ mod tests {
         project.effects.insert(EffectId(0), some_effect());
         project.mixer.channels.push(MixerChannel {
             volume: 1.0,
+            mute: false,
             effect_ids: vec![EffectId(0)],
         });
 
@@ -374,10 +375,12 @@ mod tests {
         project.mixer.channels.extend([
             MixerChannel {
                 volume: 1.0,
+                mute: false,
                 effect_ids: vec![EffectId(0)],
             },
             MixerChannel {
                 volume: 1.0,
+                mute: false,
                 effect_ids: vec![EffectId(1), EffectId(2)],
             },
         ]);
