@@ -61,7 +61,11 @@ impl Node<ProcessContext> for AmpNode {
         let volume = match self.selector {
             AmpNodeSelector::Main => payload.store.volume,
             AmpNodeSelector::Channel(MixerSelector(channel)) => {
-                payload.store.project.mixer.channels[channel].volume
+                if payload.store.project.mixer.channels[channel].mute {
+                    0.0
+                } else {
+                    payload.store.project.mixer.channels[channel].volume
+                }
             }
             AmpNodeSelector::Route(MixerMatrixCellSelector(row, col)) => {
                 (*payload.store.project.mixer.matrix.get(row, col).unwrap()).into()
