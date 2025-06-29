@@ -31,11 +31,12 @@ pub struct LocalState {
     pub stingray_lfo_tab: Rc<RefCell<usize>>,
 
     pub track_roll_select_enabled: Rc<RefCell<bool>>,
-    pub note_roll_select_enabled: Rc<RefCell<bool>>,
 
     pub window_state: WindowState,
 
     pub sample_cache: Rc<RefCell<HashMap<String, Sample>>>,
+
+    pub note_roll_zoom: Rc<RefCell<f32>>,
 
     #[default(Rc::new(RefCell::new(true)))]
     pub log_frequency_display: Rc<RefCell<bool>>,
