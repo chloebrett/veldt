@@ -9,6 +9,7 @@ use egui::{Button, Ui};
 use egui_fader::Fader;
 use mesic::from_db;
 use mesic::to_db;
+use state::TypeField;
 use state::{Action, FloatField, MixerSelector, Store};
 
 pub struct MixerView<'a> {
@@ -100,25 +101,39 @@ impl View for MixerView<'_> {
                             if level != to_db(mixer.volume) {
                                 dispatch_volume(level)
                             }
-                            let mut show_effect = local_state
+                            let show_effect = local_state
                                 .window_state
                                 .get_visible(WindowKind::ChannelEffect);
-                            if ui
-                                .add(
-                                    Button::new("Effects")
-                                        .selected(show_effect && mixer_index == active_mixer_index),
-                                )
-                                .clicked()
-                            {
-                                if mixer_index != active_mixer_index {
-                                    // Update active mixer to what was just selected.
-                                    local_state.active_mixer_channel.set(Some(mixer_sel));
-                                    show_effect = false;
+                            ui.horizontal(|ui| {
+                                if ui.add(Button::new("M").selected(mixer.mute)).clicked() {
+                                    store.dispatch(
+                                        &mixer_sel,
+                                        Action::SetChild(TypeField::Mute(!mixer.mute)),
+                                    );
                                 }
-                                local_state
-                                    .window_state
-                                    .set_visible(WindowKind::ChannelEffect, !show_effect);
-                            };
+                                if ui
+                                    .add(
+                                        Button::new("Effects").selected(
+                                            show_effect && mixer_index == active_mixer_index,
+                                        ),
+                                    )
+                                    .clicked()
+                                {
+                                    if mixer_index != active_mixer_index {
+                                        // Update active mixer to what was just selected.
+                                        local_state.active_mixer_channel.set(Some(mixer_sel));
+                                        if !show_effect {
+                                            local_state
+                                                .window_state
+                                                .set_visible(WindowKind::ChannelEffect, true);
+                                        }
+                                    } else {
+                                        local_state
+                                            .window_state
+                                            .set_visible(WindowKind::ChannelEffect, !show_effect);
+                                    }
+                                };
+                            });
                         });
                     }
                 });

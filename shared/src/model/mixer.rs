@@ -16,6 +16,7 @@ pub struct Mixer {
 #[derive(Clone, Debug, PartialEq, FromProto, IntoProto)]
 pub struct MixerChannel {
     pub volume: Volume,
+    pub mute: bool,
 
     #[proto_repeated]
     pub effect_ids: Vec<EffectId>,

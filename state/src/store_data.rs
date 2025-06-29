@@ -53,6 +53,7 @@ impl Default for StoreData {
     fn default() -> Self {
         const EMPTY_CHANNEL: MixerChannel = MixerChannel {
             volume: 1.0,
+            mute: false,
             effect_ids: vec![],
         };
 
