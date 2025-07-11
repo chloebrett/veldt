@@ -125,20 +125,20 @@ impl View for MenuBar<'_> {
                 }
             });
             ui.menu_button("Windows", |ui| {
-                let mut button_with_tick = |label, window_kind: WindowKind| {
+                let mut window_button = |label, window_kind: WindowKind| {
                     let state = self.local_state.window_state.get_visible(window_kind);
-                    let suffix = if state { " ✅" } else { "" };
-                    if ui.button(format!("{}{}", label, suffix)).clicked() {
+                    if ui.add(Button::new(label).selected(state)).clicked() {
                         self.local_state
                             .window_state
                             .set_visible(window_kind, !state)
                     }
                 };
-                button_with_tick("Mixers", WindowKind::Mixer);
-                button_with_tick("Generators", WindowKind::GeneratorList);
-                button_with_tick("Scale", WindowKind::Scale);
-                button_with_tick("Samples", WindowKind::SampleTree);
-                button_with_tick("Track Roll", WindowKind::TrackRoll);
+                window_button("Mixer", WindowKind::Mixer);
+                window_button("Generators", WindowKind::GeneratorList);
+                window_button("Scale", WindowKind::Scale);
+                window_button("Samples", WindowKind::SampleTree);
+                window_button("Track Roll", WindowKind::TrackRoll);
+                window_button("Microphone", WindowKind::Microphone);
                 ui.separator();
                 if ui.button("Close all".to_string()).clicked() {
                     self.local_state.window_state.close_all();
