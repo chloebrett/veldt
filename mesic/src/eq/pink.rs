@@ -47,7 +47,7 @@ impl PinkFilter {
         for xn in buffer.iter_mut() {
             self.config.b0 = 0.99886 * self.config.b0 + *xn * 0.0555179;
             self.config.b1 = 0.99332 * self.config.b1 + *xn * 0.0750759;
-            self.config.b2 = 0.96900 * self.config.b2 + *xn * 0.1538520;
+            self.config.b2 = 0.96900 * self.config.b2 + *xn * 0.153852;
             self.config.b3 = 0.86650 * self.config.b3 + *xn * 0.3104856;
             self.config.b4 = 0.55000 * self.config.b4 + *xn * 0.5329522;
             self.config.b5 = -0.7616 * self.config.b5 - *xn * 0.0168980;
