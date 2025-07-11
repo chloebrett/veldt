@@ -223,6 +223,15 @@ impl WindowState {
             .pos
     }
 
+    pub fn close_all(&self) {
+        let mut all_windows: Vec<&WindowKind> = self.windows.keys().collect();
+        all_windows.extend(self.effect_windows.keys().collect::<Vec<&WindowKind>>());
+        all_windows.extend(self.generator_windows.keys().collect::<Vec<&WindowKind>>());
+        for window in all_windows {
+            self.set_visible(*window, false);
+        }
+    }
+
     pub fn visible_effects(&self) -> Vec<EffectSelector> {
         self.visible_effects.get().into_iter().collect()
     }
