@@ -140,7 +140,7 @@ impl View for MenuBar<'_> {
                 button_with_tick("Samples", WindowKind::SampleTree);
                 button_with_tick("Track Roll", WindowKind::TrackRoll);
                 ui.separator();
-                if ui.button(format!("Close all")).clicked() {
+                if ui.button("Close all".to_string()).clicked() {
                     self.local_state.window_state.close_all();
                 };
             });
