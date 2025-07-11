@@ -139,6 +139,10 @@ impl View for MenuBar<'_> {
                 button_with_tick("Scale", WindowKind::Scale);
                 button_with_tick("Samples", WindowKind::SampleTree);
                 button_with_tick("Track Roll", WindowKind::TrackRoll);
+                ui.separator();
+                if ui.button(format!("Close all")).clicked() {
+                    self.local_state.window_state.close_all();
+                };
             });
             ui.menu_button("Effects", |ui| {
                 EffectMenuOptions::new(self.store, self.local_state).ui(ui);
