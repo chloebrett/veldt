@@ -50,30 +50,49 @@ impl View for MixerView<'_> {
             WindowKind::Mixer,
             "Mixer",
             |ui| {
-                ui.add_space(8.0);
-
-                ui.horizontal(|ui| {
-                    ui.add_space(8.0);
-
-                    ui.vertical(|ui| {
-                        let matrix = &store.get().project.mixer.matrix;
-                        let row_titles: Vec<String> =
-                            (0..matrix.channels).map(|i| format!("Ch{i}")).collect();
-                        let col_titles: Vec<String> = (0..matrix.channels)
-                            .map(|i| {
-                                if i == 0 {
-                                    "Main in".to_string()
-                                } else {
-                                    format!("Ch{i} in")
-                                }
-                            })
-                            .collect();
-                        MixerMatrixView::new(matrix, row_titles, col_titles, store, on_release)
-                            .ui(ui);
-                    });
-                });
-
-                ui.add_space(8.0);
+                let matrix_open = local_state
+                    .window_state
+                    .get_visible(WindowKind::MixerMatrix);
+                if ui
+                    .add(Button::new("Matrix").selected(matrix_open))
+                    .clicked()
+                {
+                    local_state
+                        .window_state
+                        .set_visible(WindowKind::MixerMatrix, !matrix_open);
+                }
+                StateWindow::show_from_window_state(
+                    ui,
+                    &local_state.window_state,
+                    WindowKind::MixerMatrix,
+                    "Mixer Matrix",
+                    |ui| {
+                        ui.add_space(8.0);
+                        ui.horizontal(|ui| {
+                            ui.add_space(8.0);
+                            ui.vertical(|ui| {
+                                let matrix = &store.get().project.mixer.matrix;
+                                let row_titles: Vec<String> =
+                                    (0..matrix.channels).map(|i| format!("Ch{i}")).collect();
+                                let col_titles: Vec<String> = (0..matrix.channels)
+                                    .map(|i| {
+                                        if i == 0 {
+                                            "Main in".to_string()
+                                        } else {
+                                            format!("Ch{i} in")
+                                        }
+                                    })
+                                    .collect();
+                                MixerMatrixView::new(
+                                    matrix, row_titles, col_titles, store, on_release,
+                                )
+                                .ui(ui);
+                            });
+                            ui.add_space(8.0);
+                        });
+                        ui.add_space(8.0);
+                    },
+                );
                 ui.separator();
                 ui.columns(store.get().project.mixer.channels.len(), |columns| {
                     for (mixer_index, mixer) in
