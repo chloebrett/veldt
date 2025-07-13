@@ -61,6 +61,7 @@ impl Export for ExportContext {
                 .map_err(|e| tonic::Status::invalid_argument(format!("{}", e)))?;
 
             for frame in graph {
+                let frame = frame[0];
                 for channel in 0..2 {
                     let sample = *frame.channel(channel).unwrap();
 

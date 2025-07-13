@@ -258,15 +258,23 @@ impl Mixer {
         }
     }
 
-    /// Returns the buffers corresponding to the output node, which are filled after a processing
-    /// run.
-    pub fn output_buffers(&self) -> &[Buffer] {
-        &self
-            .graph_manager
-            .graph
-            .node_weight(self.main_amp)
-            .unwrap()
-            .buffers
+    /// Returns the a vec of buffers corresponding to the output node at index 0 and all other mixer
+    /// channels, which are filled after a processing run.
+    /// Non-main channel outputs are used for showing levels on the mixer in Hydric.
+    pub fn output_buffers(&self) -> Vec<&Vec<Buffer>> {
+        let mut channels: Vec<_> = self
+            .channels
+            .iter()
+            .map(|channel| channel.output_node)
+            .collect();
+        // Set channel 0 to main amp.
+        // TODO: Consider if the pre-amp main channel (channel 0) should be added as well as the main amp.
+        channels[0] = self.main_amp;
+        let buffers = channels
+            .into_iter()
+            .map(|node| &self.graph_manager.graph.node_weight(node).unwrap().buffers)
+            .collect();
+        buffers
     }
 
     /// Processes the graph.

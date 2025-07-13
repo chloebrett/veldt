@@ -4,7 +4,7 @@ use super::{
 };
 use crossbeam_channel::{Receiver, Sender};
 use dasp_frame::Stereo;
-use mesic::graph::RenderGraph;
+use mesic::{consts::MAX_MIXER_CHANNELS, graph::RenderGraph};
 
 /// Audio processor which runs in its own thread and communicates with the UI thread via crossbeam channels.
 pub struct AudioProcessor {
@@ -13,12 +13,11 @@ pub struct AudioProcessor {
     audio_tx: Sender<AudioBuffer>,
     playback_rx: Receiver<PlaybackMessage>,
     update_tx: Sender<PlaybackUpdate>,
-    recent_tx: Sender<Stereo<f32>>,
-
+    recent_tx: [Sender<Stereo<f32>>; MAX_MIXER_CHANNELS],
     state: PlaybackState,
     graph: RenderGraph,
     is_looping: bool,
-    buffer: AudioBuffer,
+    main_buffer: AudioBuffer,
 }
 
 impl AudioProcessor {
@@ -26,7 +25,7 @@ impl AudioProcessor {
         audio_tx: Sender<AudioBuffer>,
         playback_rx: Receiver<PlaybackMessage>,
         update_tx: Sender<PlaybackUpdate>,
-        recent_tx: Sender<Stereo<f32>>,
+        recent_tx: [Sender<Stereo<f32>>; MAX_MIXER_CHANNELS],
         is_looping: bool,
         graph: RenderGraph,
     ) -> Self {
@@ -38,7 +37,7 @@ impl AudioProcessor {
             is_looping,
             state: PlaybackState::Pause,
             graph,
-            buffer: EMPTY_BUFFER,
+            main_buffer: EMPTY_BUFFER,
         }
     }
 
@@ -102,7 +101,7 @@ impl AudioProcessor {
 
     fn process_chunk(&mut self) {
         let mut got_samples = false;
-        self.buffer.copy_from_slice(&EMPTY_BUFFER);
+        self.main_buffer.copy_from_slice(&EMPTY_BUFFER);
         for i in 0..BUFFER_SIZE {
             let mut next = self.graph.next();
             if next.is_none() && self.is_looping {
@@ -110,11 +109,12 @@ impl AudioProcessor {
                 self.graph.seek(0);
                 next = self.graph.next();
             }
-
             match next {
-                Some(value) => {
-                    self.buffer[i] = value;
-                    self.recent_tx.try_send(value).unwrap();
+                Some(channels) => {
+                    self.main_buffer[i] = channels[0];
+                    for (index, value) in channels.iter().enumerate() {
+                        self.recent_tx[index].try_send(*value).unwrap();
+                    }
                     got_samples = true;
                 }
                 None => {
@@ -130,7 +130,7 @@ impl AudioProcessor {
         }
 
         if got_samples {
-            self.audio_tx.try_send(self.buffer).unwrap();
+            self.audio_tx.try_send(self.main_buffer).unwrap();
             self.update_tx
                 .try_send(PlaybackUpdate::Pos(PlaybackPosition {
                     samples: self.graph.pos(),

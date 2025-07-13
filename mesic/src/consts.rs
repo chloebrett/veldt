@@ -7,6 +7,7 @@ pub const SECONDS_PER_MINUTE: f32 = 60.0;
 pub const MS_PER_SECOND: f32 = 1000.0;
 pub const FFT_SAMPLE_SIZE: usize = 4096;
 pub const CHANNEL_COUNT: usize = 2;
+pub const MAX_MIXER_CHANNELS: usize = 16;
 
 pub const RECIP_PI: f32 = PI.recip();
 pub const DOUBLE_RECIP_PI: f32 = 2.0 * RECIP_PI;
