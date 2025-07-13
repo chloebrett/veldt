@@ -258,7 +258,7 @@ impl Mixer {
         }
     }
 
-    /// Returns the a vec of buffers corresponding to the output node at index 0 and all other mixer
+    /// Returns a vec of buffers corresponding to the main amp node at index 0 and all other mixer
     /// channels, which are filled after a processing run.
     /// Non-main channel outputs are used for visualising their level on the UI.
     pub fn output_buffers(&self) -> Vec<&Vec<Buffer>> {
