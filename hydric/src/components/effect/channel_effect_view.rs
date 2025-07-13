@@ -16,7 +16,7 @@ use egui::{
     Widget,
 };
 
-use super::effect_name;
+use super::{channel_name, effect_name};
 
 pub struct ChannelEffectView<'a> {
     store: &'a Store,
@@ -45,11 +45,7 @@ impl View for ChannelEffectView<'_> {
         // Keep track of an object being dragged.
         let mut from_to = None;
         let MixerSelector(channel_index) = selector;
-        let title = if channel_index > 0 {
-            format!("Channel {channel_index} effects")
-        } else {
-            "Main channel effects".to_string()
-        };
+        let title = format!("{} effects", channel_name(channel_index));
         StateWindow::show_from_window_state(
             ui,
             &local_state.window_state,

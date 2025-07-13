@@ -101,12 +101,7 @@ impl View for MixerView<'_> {
                         let mixer_sel = MixerSelector(mixer_index);
                         let dispatch_mixer = |action| store.dispatch(&mixer_sel, action);
                         columns[mixer_index].vertical(|ui| {
-                            let heading = if mixer_index == 0 {
-                                "Main"
-                            } else {
-                                &format!("Ch{mixer_index}")
-                            };
-                            ui.heading(heading);
+                            ui.heading(channel_name(mixer_index));
 
                             let dispatch_volume = |it| {
                                 dispatch_mixer(Action::SetFloat(FloatField::Volume, from_db(it)))
@@ -158,5 +153,13 @@ impl View for MixerView<'_> {
                 });
             },
         );
+    }
+}
+
+pub fn channel_name(index: usize) -> String {
+    if index == 0 {
+        "Main".to_string()
+    } else {
+        format!("Ch{index}")
     }
 }
