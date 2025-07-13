@@ -17,7 +17,7 @@ pub struct AudioProcessor {
     state: PlaybackState,
     graph: RenderGraph,
     is_looping: bool,
-    main_buffer: AudioBuffer,
+    buffer: AudioBuffer,
 }
 
 impl AudioProcessor {
@@ -37,7 +37,7 @@ impl AudioProcessor {
             is_looping,
             state: PlaybackState::Pause,
             graph,
-            main_buffer: EMPTY_BUFFER,
+            buffer: EMPTY_BUFFER,
         }
     }
 
@@ -101,7 +101,7 @@ impl AudioProcessor {
 
     fn process_chunk(&mut self) {
         let mut got_samples = false;
-        self.main_buffer.copy_from_slice(&EMPTY_BUFFER);
+        self.buffer.copy_from_slice(&EMPTY_BUFFER);
         for i in 0..BUFFER_SIZE {
             let mut next = self.graph.next();
             if next.is_none() && self.is_looping {
@@ -111,7 +111,7 @@ impl AudioProcessor {
             }
             match next {
                 Some(channels) => {
-                    self.main_buffer[i] = channels[0];
+                    self.buffer[i] = channels[0];
                     for (index, value) in channels.iter().enumerate() {
                         self.recent_tx[index].try_send(*value).unwrap();
                     }
@@ -130,7 +130,7 @@ impl AudioProcessor {
         }
 
         if got_samples {
-            self.audio_tx.try_send(self.main_buffer).unwrap();
+            self.audio_tx.try_send(self.buffer).unwrap();
             self.update_tx
                 .try_send(PlaybackUpdate::Pos(PlaybackPosition {
                     samples: self.graph.pos(),

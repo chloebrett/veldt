@@ -46,12 +46,10 @@ pub struct AudioPlayer {
     update_tx: Sender<PlaybackUpdate>,
     update_rx: Receiver<PlaybackUpdate>,
 
-    // For sending recently played/processed audio messages from processor -> UI, for visualising.
+    // For sending recently played/processed audio messages from processor -> UI, for visualising
+    // each channel's output.
     // TODO: consider sending more than one sample at a time.
     // 44100 samples/sec / 60fps = approx 700 samples/frame.
-
-    // For sending recent audio from the processor -> UI for visualisaing the output of each
-    // channels.
     recent_tx: [Sender<Stereo<f32>>; MAX_MIXER_CHANNELS],
     recent_rx: [Receiver<Stereo<f32>>; MAX_MIXER_CHANNELS],
 
@@ -103,11 +101,10 @@ impl AudioPlayer {
         // Other channels are used for message passing and are unbounded.
         let (playback_tx, playback_rx) = crossbeam_channel::unbounded();
         let (update_tx, update_rx) = crossbeam_channel::unbounded();
-        let recents: Vec<_> = repeat_with(crossbeam_channel::unbounded)
-            .take(MAX_MIXER_CHANNELS)
-            .collect();
         let (recent_tx, recent_rx): (ChannelSenders, ChannelReceivers) =
-            recents.into_iter().unzip();
+            repeat_with(crossbeam_channel::unbounded)
+                .take(MAX_MIXER_CHANNELS)
+                .unzip();
         let recent_tx = recent_tx.try_into().unwrap();
         let recent_rx = recent_rx.try_into().unwrap();
         let (graph_debug_tx, graph_debug_rx) = crossbeam_channel::unbounded();
