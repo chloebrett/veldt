@@ -1,8 +1,9 @@
 use super::generator_name;
+use crate::components::effect::channel_name;
 use crate::local_state::LocalState;
-use crate::widget::{StateWindow, add_knob, int_slider, styled_knob};
+use crate::widget::{StateWindow, add_knob, get_set, selectable_value, styled_knob};
 use crate::window_state::WindowKind;
-use egui::{Button, Ui};
+use egui::{Button, ComboBox, Ui};
 use shared::model::{GeneratorId, GeneratorInstance};
 use state::{Action, FloatField, GeneratorSelector, IndexField, Store, TypeField};
 
@@ -66,16 +67,20 @@ pub fn generators_control(ui: &mut Ui, local_state: &LocalState, store: &Store) 
                     );
                 });
 
-                // TODO: better UI than a slider for this!
-                let max_channel_index = (store.get().project.mixer.channels.len() - 1) as i32;
-                int_slider(
-                    ui,
-                    "Mixer channel",
-                    meta.mixer_channel as f64,
-                    |it| store.dispatch(&sel, Action::SetIndex(IndexField::Mixer(it as usize))),
-                    0..=max_channel_index,
-                    on_release,
-                );
+                ComboBox::from_id_salt(format!("generator_{:?}_channel", generator_id))
+                    .selected_text(channel_name(meta.mixer_channel))
+                    .show_ui(ui, |ui| {
+                        for channel in 0..store.get().project.mixer.channels.len() {
+                            selectable_value(
+                                ui,
+                                get_set(meta.mixer_channel, |it| {
+                                    store.dispatch(&sel, Action::SetIndex(IndexField::Mixer(it)))
+                                }),
+                                channel,
+                                channel_name(channel),
+                            );
+                        }
+                    });
 
                 if index < store.get().project.generators.len() - 1 {
                     ui.separator();
