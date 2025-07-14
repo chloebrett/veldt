@@ -5,10 +5,13 @@ use crate::playback::AudioPlayer;
 use crate::view::View;
 use crate::widget::StateWindow;
 use crate::window_state::WindowKind;
+use egui::{Align2, FontId, Sense};
 use egui::{Button, Ui};
 use egui_fader::Fader;
+use mesic::consts::MAX_MIXER_CHANNELS;
 use mesic::from_db;
 use mesic::to_db;
+use shared::model::MixerChannel;
 use state::TypeField;
 use state::{Action, FloatField, MixerSelector, Store};
 
@@ -94,7 +97,8 @@ impl View for MixerView<'_> {
                     },
                 );
                 ui.separator();
-                ui.columns(store.get().project.mixer.channels.len(), |columns| {
+                let channel_count = store.get().project.mixer.channels.len();
+                ui.columns(channel_count, |columns| {
                     for (mixer_index, mixer) in
                         store.get().project.mixer.channels.iter().enumerate()
                     {
@@ -149,6 +153,36 @@ impl View for MixerView<'_> {
                                 };
                             });
                         });
+                    }
+                    if channel_count < MAX_MIXER_CHANNELS {
+                        // Add new channel button appears when cursors hovers at rightmost of the current channels.
+                        let last_col = &columns[channel_count - 1];
+                        let (_, add_rect) =
+                            last_col.response().rect.split_left_right_at_fraction(0.8);
+                        let add_response = last_col.interact(
+                            add_rect,
+                            egui::Id::new("add_mixer_channel"),
+                            Sense::click(),
+                        );
+                        if add_response.hovered() {
+                            last_col.painter().rect_filled(
+                                add_response.rect,
+                                last_col.style().visuals.widgets.active.corner_radius,
+                                last_col.style().visuals.selection.bg_fill,
+                            );
+                            last_col.painter().text(
+                                add_response.rect.center(),
+                                Align2::CENTER_CENTER,
+                                "➕",
+                                FontId::default(),
+                                last_col.visuals().text_color(),
+                            );
+                        }
+                        if add_response.clicked() {
+                            store.dispatchr(Action::AddChild(TypeField::MixerChannel(
+                                MixerChannel::default(),
+                            )))
+                        }
                     }
                 });
             },
