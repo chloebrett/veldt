@@ -249,6 +249,18 @@ impl Mixer {
                 }
                 _ => false,
             },
+            Selector::Root => match action {
+                Action::AddChild(TypeField::MixerChannel(..)) => {
+                    let new_channel = ChannelInfo::new(
+                        &mut self.graph_manager,
+                        &store.project,
+                        store.project.mixer.channels.len() - 1,
+                    );
+                    self.channels.push(new_channel);
+                    true
+                }
+                _ => false,
+            },
             // TODO: handle adding and deleting generators (not just changing their mixer channel).
             _ => false,
         };

@@ -181,7 +181,6 @@ impl View for MixerView<'_> {
                             );
                         }
                         if add_response.clicked() {
-                            //TODO: Fix the graph so that these new channels can be playable.
                             store.dispatchr(Action::AddChild(TypeField::MixerChannel(
                                 MixerChannel::default(),
                             )))
