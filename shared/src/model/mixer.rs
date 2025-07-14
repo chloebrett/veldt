@@ -13,7 +13,7 @@ pub struct Mixer {
     pub channels: Vec<MixerChannel>,
 }
 
-#[derive(Clone, Debug, PartialEq, FromProto, IntoProto)]
+#[derive(Clone, Default, Debug, PartialEq, FromProto, IntoProto)]
 pub struct MixerChannel {
     pub volume: Volume,
     pub mute: bool,
