@@ -113,7 +113,7 @@ impl View for MixerView<'_> {
                             };
                             let mut level = to_db(mixer.volume);
                             ui.add(
-                                Fader::stereo(&mut level, player.level())
+                                Fader::stereo(&mut level, player.level(mixer_index))
                                     .rect_handle_shape(0.5)
                                     .text_size(12.0),
                             );

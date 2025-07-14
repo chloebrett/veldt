@@ -154,7 +154,7 @@ mod tests {
         );
 
         // ACT
-        let output: Vec<_> = graph.collect();
+        let output: Vec<_> = graph.collect_main();
 
         // ASSERT
         assert_signals_approx_eq(output, input);
@@ -182,7 +182,7 @@ mod tests {
         );
 
         // ACT
-        let output: Vec<_> = graph.collect();
+        let output: Vec<_> = graph.collect_main();
         // Output should be equivalent to applying the compressor function straight to the input.
         let expected: Vec<_> = input
             .iter()
@@ -214,7 +214,7 @@ mod tests {
         );
 
         // ACT
-        let output: Vec<_> = graph.collect();
+        let output: Vec<_> = graph.collect_main();
 
         // ASSERT
         for (y, x) in output.into_iter().zip(input.into_iter()) {
@@ -247,7 +247,7 @@ mod tests {
         );
 
         // ACT
-        let output: Vec<_> = graph.collect();
+        let output: Vec<_> = graph.collect_main();
 
         // ASSERT
         for (y, x) in output.into_iter().zip(input.into_iter()) {
@@ -286,7 +286,7 @@ mod tests {
         );
 
         // ACT
-        let output: Vec<_> = graph.collect();
+        let output: Vec<_> = graph.collect_main();
 
         // ASSERT
         for ((i, y), x) in output.into_iter().enumerate().zip(input.into_iter()) {
