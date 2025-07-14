@@ -98,6 +98,8 @@ impl View for MixerView<'_> {
                 );
                 ui.separator();
                 let channel_count = store.get().project.mixer.channels.len();
+                //TODO: Make the window wrap to a resizable horizontal size and horizontally
+                //scrollable.
                 ui.columns(channel_count, |columns| {
                     for (mixer_index, mixer) in
                         store.get().project.mixer.channels.iter().enumerate()
@@ -179,6 +181,7 @@ impl View for MixerView<'_> {
                             );
                         }
                         if add_response.clicked() {
+                            //TODO: Fix the graph so that these new channels can be playable.
                             store.dispatchr(Action::AddChild(TypeField::MixerChannel(
                                 MixerChannel::default(),
                             )))
