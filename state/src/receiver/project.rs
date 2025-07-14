@@ -1,5 +1,5 @@
 use crate::receiver::ActionReceiver;
-use crate::{Action, FloatField, MultiTypeField, TypeField};
+use crate::{Action, FloatField, IndexField, MultiTypeField, TypeField};
 use shared::model::{EffectId, Placement, PlacementId, Project, SampleId, TrackId};
 use std::collections::HashMap;
 
@@ -113,6 +113,17 @@ impl ActionReceiver for Project {
                     id += 1;
                 }
                 Action::AddChildren(MultiTypeField::Placement(prev))
+            }
+            Action::AddChild(TypeField::MixerChannel(channel)) => {
+                let new_index = self.mixer.channels.len();
+                self.mixer.channels.push(channel.clone());
+
+                Action::DeleteChild(IndexField::Mixer(new_index))
+            }
+            Action::DeleteChild(IndexField::Mixer(index)) => {
+                let prev = self.mixer.channels[*index].clone();
+                self.mixer.channels.remove(*index);
+                Action::AddChild(TypeField::MixerChannel(prev))
             }
             _ => return None,
         })
