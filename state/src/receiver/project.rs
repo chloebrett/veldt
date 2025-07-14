@@ -117,12 +117,14 @@ impl ActionReceiver for Project {
             Action::AddChild(TypeField::MixerChannel(channel)) => {
                 let new_index = self.mixer.channels.len();
                 self.mixer.channels.push(channel.clone());
+                self.mixer.matrix.add_channel(new_index);
 
                 Action::DeleteChild(IndexField::Mixer(new_index))
             }
             Action::DeleteChild(IndexField::Mixer(index)) => {
                 let prev = self.mixer.channels[*index].clone();
                 self.mixer.channels.remove(*index);
+                self.mixer.matrix.delete_channel(*index);
                 Action::AddChild(TypeField::MixerChannel(prev))
             }
             _ => return None,

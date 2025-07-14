@@ -86,6 +86,34 @@ impl MixerMatrix {
         matrix
     }
 
+    pub fn add_channel(&mut self, channel: usize) {
+        // Add new channel input for each existing channel.
+        for row in (0..self.channels).rev() {
+            self.matrix
+                .insert(row * self.channels + channel, MatrixCell(0.0))
+        }
+        self.channels += 1;
+        // Add row with new channel outputs.
+        for col in 0..self.channels {
+            self.matrix
+                .insert(channel * self.channels + col, MatrixCell(0.0));
+        }
+        // Set input to the main channel to 1.0.
+        self.get_mut(channel, 0).unwrap().set(1.0);
+    }
+
+    pub fn delete_channel(&mut self, channel: usize) {
+        // Remove channel inputs for each other channel.
+        for row in (0..self.channels).rev() {
+            self.matrix.remove(row * self.channels + channel);
+        }
+        self.channels -= 1;
+        // Remove row with channel inputs.
+        for col in (0..self.channels).rev() {
+            self.matrix.remove(channel * self.channels + col);
+        }
+    }
+
     // TODO: return an owned value, to make the caller ergonomics better.
     pub fn get(&self, row: usize, col: usize) -> Option<&MatrixCell> {
         self.matrix.get(row * self.channels + col)
@@ -93,5 +121,21 @@ impl MixerMatrix {
 
     pub fn get_mut(&mut self, row: usize, col: usize) -> Option<&mut MatrixCell> {
         self.matrix.get_mut(row * self.channels + col)
+    }
+}
+
+#[cfg(test)]
+mod test {
+    use super::*;
+
+    #[test]
+    fn new_channel_add_and_delete_to_matrix() {
+        let mut matrix = MixerMatrix::with_channels(3);
+        matrix.get_mut(1, 2).unwrap().set(0.25);
+        matrix.get_mut(2, 0).unwrap().set(0.5);
+        let cells = matrix.matrix.clone();
+        matrix.add_channel(1);
+        matrix.delete_channel(1);
+        assert_eq!(matrix.matrix, cells)
     }
 }
