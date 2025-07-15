@@ -13,13 +13,23 @@ pub struct Mixer {
     pub channels: Vec<MixerChannel>,
 }
 
-#[derive(Clone, Default, Debug, PartialEq, FromProto, IntoProto)]
+#[derive(Clone, Debug, PartialEq, FromProto, IntoProto)]
 pub struct MixerChannel {
     pub volume: Volume,
     pub mute: bool,
 
     #[proto_repeated]
     pub effect_ids: Vec<EffectId>,
+}
+
+impl Default for MixerChannel {
+    fn default() -> Self {
+        Self {
+            volume: 1.0,
+            mute: false,
+            effect_ids: vec![],
+        }
+    }
 }
 
 /// Note: distinct from ModMatrix because the mixer's matrix is somewhat symmetrical -
