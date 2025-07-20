@@ -135,8 +135,9 @@ impl Store {
         self.dispatch(&RootSelector, action)
     }
 
-    /// Creates a new ID type object and dispatches it to the appropriate part of the project.
-    /// This centralises were IDs are creates and distributed.
+    /// Creates a new ID type object and dispatches it to the appropriate component of the project.
+    /// This centralises where IDs are created and distributed and avoids the front-end having to
+    /// track and calculate IDs.
     // TODO: This still creates two separate actions
     //  1. New ID object is created.
     //  2. New object is added to the project.
@@ -157,7 +158,7 @@ impl Store {
                 self.dispatch(selector, Action::AddChild(child));
             }
             _ => {
-                panic!("Action must add a new ID type object to the appropriate project component.")
+                panic!("Action dispatch a new ID type object to the appropriate project component.")
             } // TODO: Add action for other ID types.
         };
     }

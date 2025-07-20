@@ -30,7 +30,7 @@ pub enum Action {
     // Add a child object by type.
     AddChild(TypeField),
     // Add a child with a specific ID. (e.g. adding a new effect).
-    // This allows IDs to be created in a single place annd then communicated to the receivers.
+    // This allows IDs to be created in a single place and then distributed to the receivers.
     AddChildWithId(TypeField, TypeField),
     AddChildAtIndex(TypeField, IndexField),
     // Set children of an object by type.

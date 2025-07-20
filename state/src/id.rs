@@ -2,7 +2,7 @@ use shared::model::{EffectId, EffectInstance};
 
 use crate::Store;
 
-/// Determine how fields on the Project stored by ID are handled.
+/// An abstraction for handling fields on the Project stored by ID in the store.
 pub trait Id<T> {
     /// Receive the next ID for a project field.
     fn next_id(store: &Store) -> T;
