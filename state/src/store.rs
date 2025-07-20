@@ -1,8 +1,11 @@
+use crate::TypeField;
+use crate::id::Id;
 use crate::{
     Action, ReversibleAction, RootSelector, Selector, SelectorTrait, StoreData, UndoStack,
     receiver::ActionReceiver,
 };
 use log::info;
+use shared::model::EffectInstance;
 use std::cell::RefCell;
 use std::sync::mpsc::Sender;
 
@@ -130,5 +133,32 @@ impl Store {
     /// Shorthand for dispatch(Selector::Root, ..)
     pub fn dispatchr(&self, action: Action) {
         self.dispatch(&RootSelector, action)
+    }
+
+    /// Creates a new ID type object and dispatches it to the appropriate part of the project.
+    /// This centralises were IDs are creates and distributed.
+    // TODO: This still creates two separate actions
+    //  1. New ID object is created.
+    //  2. New object is added to the project.
+    //  These actions should be linked together for the undo redo stack.
+    pub fn dispatch_new<T: ActionReceiver, S: SelectorTrait<Item = T>>(
+        &self,
+        selector: &S,
+        action: Action,
+    ) {
+        match action {
+            Action::AddChild(TypeField::Effect(effect)) => {
+                let new_id = EffectInstance::next_id(self);
+                self.dispatchr(Action::AddChildWithId(
+                    TypeField::Effect(effect),
+                    TypeField::EffectId(new_id),
+                ));
+                let child = TypeField::EffectId(new_id);
+                self.dispatch(selector, Action::AddChild(child));
+            }
+            _ => {
+                panic!("Action must add a new ID type object to the appropriate project component.")
+            } // TODO: Add action for other ID types.
+        };
     }
 }

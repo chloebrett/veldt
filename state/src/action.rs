@@ -2,7 +2,8 @@ use crate::{
     FloatField, IndexField, MoveField, MultiIndexField, MultiTypeField, TypeField, UintField,
 };
 use shared::action_proto::{
-    ActionProto, ChildIndexPairProto, SetFloatProto, SetUintProto, action_proto::Kind as ActionKind,
+    ActionProto, ChildIdPairProto, ChildIndexPairProto, SetFloatProto, SetUintProto,
+    action_proto::Kind as ActionKind,
 };
 use std::str::FromStr;
 
@@ -28,6 +29,9 @@ pub enum Action {
     SetChild(TypeField),
     // Add a child object by type.
     AddChild(TypeField),
+    // Add a child with a specific ID. (e.g. adding a new effect).
+    // This allows IDs to be created in a single place annd then communicated to the receivers.
+    AddChildWithId(TypeField, TypeField),
     AddChildAtIndex(TypeField, IndexField),
     // Set children of an object by type.
     AddChildren(MultiTypeField),
@@ -70,6 +74,9 @@ impl From<ActionProto> for Action {
             ActionKind::SetChild(child) => Action::SetChild(child.into()),
             ActionKind::SetChildren(children) => Action::SetChildren(children.into()),
             ActionKind::AddChildren(children) => Action::AddChildren(children.into()),
+            ActionKind::AddChildWithId(ChildIdPairProto { child, id }) => {
+                Action::AddChildWithId(child.unwrap().into(), id.unwrap().into())
+            }
         }
     }
 }
@@ -102,7 +109,10 @@ impl From<Action> for ActionProto {
                 Action::MoveChild(it) => ActionKind::MoveChild(it.into()),
                 Action::SetChildren(it) => ActionKind::SetChildren(it.into()),
                 Action::AddChildren(it) => ActionKind::AddChildren(it.into()),
-
+                Action::AddChildWithId(child, id) => ActionKind::AddChildWithId(ChildIdPairProto {
+                    child: Some(child.into()),
+                    id: Some(id.into()),
+                }),
                 // Non-serializable actions
                 Action::Release => panic!(),
                 Action::NonReversible => panic!(),

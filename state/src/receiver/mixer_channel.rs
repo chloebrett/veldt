@@ -42,6 +42,10 @@ impl ActionReceiver for MixerChannel {
                 self.effect_ids.insert(*index, *effect_id);
                 Action::DeleteChildById(TypeField::EffectId(*effect_id))
             }
+            Action::AddChild(TypeField::EffectId(effect_id)) => {
+                self.effect_ids.push(*effect_id);
+                Action::DeleteChildById(TypeField::EffectId(*effect_id))
+            }
             Action::SetChild(TypeField::Mute(mute)) => {
                 let prev = self.mute;
                 self.mute = *mute;

@@ -1,5 +1,5 @@
 use egui_fancy_knob::add_knob;
-use shared::model::{Effect, EffectId, EffectInstance, EffectMeta};
+use shared::model::{Effect, EffectInstance, EffectMeta};
 use state::{
     Action, EffectSelector, FloatField, IndexField, MixerSelector, MoveField, Store, TypeField,
 };
@@ -121,25 +121,10 @@ impl View for ChannelEffectView<'_> {
                                         it: effect,
                                         meta: EffectMeta::default(),
                                     };
-                                    store.dispatchr(Action::AddChild(TypeField::Effect(instance)));
-                                    // Hack: use the same logic as the receiver to work out
-                                    // what the ID of the just-added effect was (or more
-                                    // accurately, will be in the next frame, since dispatches are lazy).
-                                    let next_id = *store
-                                        .get()
-                                        .project
-                                        .effects
-                                        .clone()
-                                        .into_keys()
-                                        .max()
-                                        .unwrap_or(EffectId(0))
-                                        + 1;
-                                    let next_id = EffectId(next_id);
-                                    let next_index = mixer.effect_ids.len();
-                                    dispatch_mixer(Action::AddChildAtIndex(
-                                        TypeField::EffectId(next_id),
-                                        IndexField::EffectId(next_index),
-                                    ));
+                                    store.dispatch_new(
+                                        &selector,
+                                        Action::AddChild(TypeField::Effect(instance)),
+                                    );
                                 }
                             }
                         });

@@ -12,6 +12,7 @@ message ActionProto {
     TypeFieldProto set_child = 6;
     TypeFieldProto add_child = 7;
     ChildIndexPairProto add_child_at_index = 15;
+    ChildIdPairProto add_child_with_id = 16;
     IndexFieldProto delete_child = 8;
     MoveFieldProto move_child = 9;
     MultiIndexFieldProto delete_children = 10;
@@ -26,6 +27,12 @@ message ChildIndexPairProto {
   TypeFieldProto child = 1;
 
   IndexFieldProto index = 2;
+}
+
+message ChildIdPairProto {
+  TypeFieldProto child = 1;
+
+  TypeFieldProto id = 2;
 }
 
 message IndexFieldProto {
