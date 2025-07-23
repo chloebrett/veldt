@@ -2,7 +2,7 @@ use shared::model::{EffectId, EffectInstance};
 
 use crate::{Store, TypeField};
 
-/// An trait for handling fields on the Project stored by ID in the store.
+/// A trait for handling fields on the Project stored by ID in the store.
 pub trait Id<T> {
     /// Receive the next ID for a project field.
     fn next_id(store: &Store) -> T;
