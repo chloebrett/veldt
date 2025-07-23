@@ -121,9 +121,10 @@ impl View for ChannelEffectView<'_> {
                                         it: effect,
                                         meta: EffectMeta::default(),
                                     };
-                                    store.dispatch_new(
+                                    let id = store.dispatch_new(instance);
+                                    store.dispatch(
                                         &selector,
-                                        Action::AddChild(TypeField::Effect(instance)),
+                                        Action::AddChild(TypeField::EffectId(id)),
                                     );
                                 }
                             }

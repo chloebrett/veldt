@@ -33,10 +33,9 @@ impl View for EffectMenuOptions<'_> {
                                 meta: EffectMeta::default(),
                             };
                             let mixer_sel = MixerSelector(mixer_index);
-                            self.store.dispatch_new(
-                                &mixer_sel,
-                                Action::AddChild(TypeField::Effect(instance)),
-                            );
+                            let id = self.store.dispatch_new(instance);
+                            self.store
+                                .dispatch(&mixer_sel, Action::AddChild(TypeField::EffectId(id)));
                             self.local_state.active_mixer_channel.set(Some(mixer_sel));
                             self.local_state
                                 .window_state
