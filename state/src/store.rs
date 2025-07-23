@@ -133,7 +133,7 @@ impl Store {
         self.dispatch(&RootSelector, action)
     }
 
-    /// Add a new ID type object to the store and return the ID of that added type..
+    /// Add a new ID type object to the store and return the ID of that added type.
     pub fn dispatch_new<I, T: Id<I>>(&self, item: T) -> I {
         let new_id = T::next_id(self);
         let type_id = T::get_id_type_field(&new_id);
