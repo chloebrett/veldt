@@ -249,6 +249,18 @@ impl Mixer {
                 }
                 _ => false,
             },
+            Selector::Root => match action {
+                Action::AddChild(TypeField::MixerChannel(..)) => {
+                    let new_channel = ChannelInfo::new(
+                        &mut self.graph_manager,
+                        &store.project,
+                        store.project.mixer.channels.len() - 1,
+                    );
+                    self.channels.push(new_channel);
+                    true
+                }
+                _ => false,
+            },
             // TODO: handle adding and deleting generators (not just changing their mixer channel).
             _ => false,
         };
@@ -258,15 +270,23 @@ impl Mixer {
         }
     }
 
-    /// Returns the buffers corresponding to the output node, which are filled after a processing
-    /// run.
-    pub fn output_buffers(&self) -> &[Buffer] {
-        &self
-            .graph_manager
-            .graph
-            .node_weight(self.main_amp)
-            .unwrap()
-            .buffers
+    /// Returns a vec of buffers corresponding to the main amp node at index 0 and all other mixer
+    /// channels, which are filled after a processing run.
+    /// Non-main channel outputs are used for visualising their level on the UI.
+    pub fn output_buffers(&self) -> Vec<&Vec<Buffer>> {
+        let mut channels: Vec<_> = self
+            .channels
+            .iter()
+            .map(|channel| channel.output_node)
+            .collect();
+        // Set channel 0 to main amp.
+        // TODO: Consider if the pre-amp main channel (channel 0) should be added as well as the main amp.
+        channels[0] = self.main_amp;
+        let buffers = channels
+            .into_iter()
+            .map(|node| &self.graph_manager.graph.node_weight(node).unwrap().buffers)
+            .collect();
+        buffers
     }
 
     /// Processes the graph.
@@ -300,6 +320,7 @@ mod tests {
         project.effects.insert(EffectId(0), some_effect());
         project.mixer.channels.push(MixerChannel {
             volume: 1.0,
+            mute: false,
             effect_ids: vec![EffectId(0)],
         });
 
@@ -374,10 +395,12 @@ mod tests {
         project.mixer.channels.extend([
             MixerChannel {
                 volume: 1.0,
+                mute: false,
                 effect_ids: vec![EffectId(0)],
             },
             MixerChannel {
                 volume: 1.0,
+                mute: false,
                 effect_ids: vec![EffectId(1), EffectId(2)],
             },
         ]);

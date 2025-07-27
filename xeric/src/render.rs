@@ -30,7 +30,7 @@ impl Render for RenderContext {
 
         let graph = RenderGraph::without_rx(&store);
 
-        let audio: Vec<_> = graph.collect();
+        let audio: Vec<_> = graph.collect_main();
         let left = as_bytes(&audio.iter().map(|it| *it.channel(0).unwrap()).collect());
         let right = as_bytes(&audio.iter().map(|it| *it.channel(1).unwrap()).collect());
 

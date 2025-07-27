@@ -26,6 +26,7 @@ pub enum WindowKind {
     Placement,
     Note,
     GraphDebug,
+    MixerMatrix,
 }
 
 /// Information about a window needed to render on the UI.
@@ -55,6 +56,7 @@ impl WindowData {
             WindowKind::Placement => pos2(100.0, 20.0),
             WindowKind::Note => pos2(600.0, 20.0),
             WindowKind::GraphDebug => pos2(600.0, 20.0),
+            WindowKind::MixerMatrix => pos2(700.0, 40.0),
         };
         // Create unique IDs for `WindowKind` that could have multiple variants.
         let id_string = match window {
@@ -219,6 +221,15 @@ impl WindowState {
             .expect("Windows should have been initialised.")
             .get()
             .pos
+    }
+
+    pub fn close_all(&self) {
+        let mut all_windows: Vec<&WindowKind> = self.windows.keys().collect();
+        all_windows.extend(self.effect_windows.keys().collect::<Vec<&WindowKind>>());
+        all_windows.extend(self.generator_windows.keys().collect::<Vec<&WindowKind>>());
+        for window in all_windows {
+            self.set_visible(*window, false);
+        }
     }
 
     pub fn visible_effects(&self) -> Vec<EffectSelector> {

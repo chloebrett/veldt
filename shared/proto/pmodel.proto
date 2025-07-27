@@ -84,6 +84,8 @@ message MixerChannelProto {
   float volume = 1;
 
   repeated uint32 effect_ids = 2;
+
+  bool mute = 3;
 }
 
 message PlacedNoteProto {

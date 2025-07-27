@@ -51,11 +51,6 @@ impl StoreData {
 
 impl Default for StoreData {
     fn default() -> Self {
-        const EMPTY_CHANNEL: MixerChannel = MixerChannel {
-            volume: 1.0,
-            effect_ids: vec![],
-        };
-
         StoreData {
             project: Project {
                 name: "My Project".to_string(),
@@ -142,7 +137,7 @@ impl Default for StoreData {
                 ]),
                 mixer: Mixer {
                     matrix: MixerMatrix::with_channels(3),
-                    channels: vec![EMPTY_CHANNEL; 3],
+                    channels: vec![MixerChannel::default(); 3],
                 },
                 effects: HashMap::new(),
                 bpm: 120.0,
