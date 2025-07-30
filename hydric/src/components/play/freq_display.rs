@@ -1,9 +1,11 @@
+use crate::local_state::{GetSet, LocalState};
+use crate::widget::FrequencyPlot;
 use crate::{playback::AudioPlayer, view::View};
+use egui::{Button, Pos2, pos2};
 use egui::{
-    Color32, Ui,
+    Ui,
     cache::{ComputerMut, FrameCache},
 };
-use egui_plot::{Line, Plot, PlotPoints};
 use mesic::{
     FFT_SAMPLE_SIZE, SAMPLE_RATE,
     fft::{fft, hann_window},
@@ -16,11 +18,15 @@ use std::cmp::max;
 
 pub struct FrequencyDisplay<'a> {
     player: &'a AudioPlayer,
+    local_state: &'a LocalState,
 }
 
 impl<'a> FrequencyDisplay<'a> {
-    pub fn new(player: &'a AudioPlayer) -> Self {
-        FrequencyDisplay { player }
+    pub fn new(player: &'a AudioPlayer, local_state: &'a LocalState) -> Self {
+        FrequencyDisplay {
+            player,
+            local_state,
+        }
     }
 
     /// Create frequency display shapes synced with playing audio.
@@ -71,31 +77,47 @@ impl View for FrequencyDisplay<'_> {
 
         // Cast as `OrderedFloat` so that values implement `Eq` required for hashing in cache.
         let ordered_audio: Vec<OrderedFloat<f32>> = map_vec(audio.to_vec());
-        let mut plot_shapes = vec![];
-        if let Some(response) = self.render_display(ui, ordered_audio) {
-            let freq_window = SAMPLE_RATE as f64 / FFT_SAMPLE_SIZE as f64;
-            let points: PlotPoints = response
+        let points = if let Some(response) = self.render_display(ui, ordered_audio) {
+            let freq_window = SAMPLE_RATE as f32 / FFT_SAMPLE_SIZE as f32;
+            response
                 .into_iter()
                 .enumerate()
                 // Only keep first half of results.
                 .filter(|(index, _it)| *index < FFT_SAMPLE_SIZE / 2)
-                // Take log of values to make dB.
-                .map(|(index, it)| [freq_window * index as f64, to_db(it) as f64])
-                .collect();
-            plot_shapes.push(Line::new("Response", points).color(Color32::WHITE))
+                .map(|(index, it)| pos2(freq_window * index as f32, to_db(it)))
+                .collect()
+        } else {
+            vec![]
         };
-        // TODO: investigate logarithmic x axis.
-        Plot::new("Frequency Response")
-            .view_aspect(2.0)
-            .default_x_bounds(0.0, SAMPLE_RATE as f64 / 2.0)
-            .default_y_bounds(-60.0, 6.0)
-            .allow_drag(false)
-            .x_axis_label("Frequency (Hz)")
-            .y_axis_label("Response (dB)")
-            .show(ui, |plot_ui| {
-                for shape in plot_shapes {
-                    plot_ui.line(shape)
-                }
-            });
+        // Update and find peak responses from recent audio.
+        let mut detectors = self.local_state.frequency_peaks.get();
+        let peaks: Vec<_> = points
+            .iter()
+            .enumerate()
+            .map(|(index, &Pos2 { x, y })| pos2(x, detectors[index].next(y)))
+            .collect();
+        self.local_state.frequency_peaks.set(detectors);
+        let log = self.local_state.log_frequency_display.get();
+        let show_peaks = self.local_state.show_frequency_peaks.get();
+        ui.add(
+            FrequencyPlot::new(&points)
+                .add_secondary_frequencies(&peaks)
+                .logarithmic(log)
+                .show_peaks(show_peaks),
+        );
+        ui.horizontal(|ui| {
+            if ui
+                .add(Button::new("Log frequencies").selected(log))
+                .clicked()
+            {
+                self.local_state.log_frequency_display.set(!log);
+            }
+            if ui
+                .add(Button::new("Show peaks").selected(show_peaks))
+                .clicked()
+            {
+                self.local_state.show_frequency_peaks.set(!show_peaks);
+            }
+        });
     }
 }

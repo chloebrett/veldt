@@ -2,7 +2,8 @@ use super::{
     NoteEvent, NoteEventType, NoteTracker, PlaybackMode, ProcessContext, Processor, make_processor,
 };
 use crate::convert::beats_to_samples;
-use crate::mixer::Mixer;
+use crate::mixer::{GraphDebugInfo, Mixer};
+use crossbeam_channel::Sender;
 use dasp_frame::Stereo;
 use dasp_graph::Buffer;
 use shared::model::{GeneratorId, PitchName, PlacementType, Project};
@@ -39,7 +40,7 @@ impl RenderGraph {
         let main_playback_len = beats_to_samples(duration_ceil(project), project.bpm) as usize;
 
         Self {
-            mixer: Mixer::new(project),
+            mixer: Mixer::new(project, None),
             processor: make_processor(),
             process_context: ProcessContext::new(store.clone()),
             rx,
@@ -89,7 +90,14 @@ impl RenderGraph {
         self.main_playback_index = 0;
         self.preview_playback_index = 0;
         self.process_context.playback_mode = PlaybackMode::Main;
-        self.mixer = Mixer::new(project);
+
+        let debug_tx = self.mixer.get_debug_tx();
+        self.mixer = Mixer::new(project, debug_tx);
+    }
+
+    pub fn set_debug_tx(&mut self, debug_tx: Sender<GraphDebugInfo>) {
+        log::info!("Set debug tx");
+        self.mixer.set_debug_tx(debug_tx);
     }
 
     fn update_store(&mut self) {
@@ -117,7 +125,7 @@ impl RenderGraph {
     // If a track placement changes its generator index, stop the old generator from playing.
     fn maybe_stop_generator(&mut self, selector: &Selector, action: &Action) {
         let store = &self.process_context.store;
-        let Selector::Placement(placement_index) = selector else {
+        let Selector::Placement(placement_id) = selector else {
             return;
         };
 
@@ -125,8 +133,7 @@ impl RenderGraph {
             return;
         };
 
-        let PlacementType::Track(track_placement) =
-            &store.project.placements[*placement_index].kind
+        let PlacementType::Track(track_placement) = &store.project.placements[placement_id].kind
         else {
             return;
         };
@@ -193,6 +200,11 @@ impl RenderGraph {
             PlaybackMode::Preview => &mut self.preview_playback_index,
         }
     }
+
+    // Return only the main channel audio from the graph.
+    pub fn collect_main(self) -> Vec<[f32; 2]> {
+        self.map(|it| it[0]).collect()
+    }
 }
 
 // TODO: account for sample placements.
@@ -203,7 +215,7 @@ fn duration_ceil(project: &Project) -> Beats {
 }
 
 impl Iterator for RenderGraph {
-    type Item = Stereo<f32>;
+    type Item = Vec<Stereo<f32>>;
 
     fn next(&mut self) -> Option<Self::Item> {
         let index = self.pos();
@@ -234,14 +246,18 @@ impl Iterator for RenderGraph {
         }
 
         let buffers = &self.mixer.output_buffers();
-
-        let left = buffers[0][index % Buffer::LEN];
-        let right = buffers[1][index % Buffer::LEN];
-        let output = Some([left, right]);
+        let output = buffers
+            .iter()
+            .map(|&buffer| {
+                let left = buffer[0][index % Buffer::LEN];
+                let right = buffer[1][index % Buffer::LEN];
+                [left, right]
+            })
+            .collect();
 
         *self.pos_mut() += 1;
 
-        output
+        Some(output)
     }
 }
 
@@ -260,7 +276,7 @@ mod tests {
         // TODO Fix. This test does not terminate.
         let graph = RenderGraph::without_rx(&empty_store_data());
         // Iterator should be empty.
-        let output: Vec<Stereo<f32>> = graph.collect();
+        let output: Vec<Stereo<f32>> = graph.collect_main();
         assert!(output.is_empty())
     }
 
@@ -284,7 +300,7 @@ mod tests {
         // Act
         let mut graph = RenderGraph::without_rx(&empty_store_data());
         graph.set_audio(&input);
-        let output: Vec<Stereo<f32>> = graph.collect();
+        let output: Vec<Stereo<f32>> = graph.collect_main();
 
         // Assert
         assert_eq!(output, input)

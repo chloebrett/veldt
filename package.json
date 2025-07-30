@@ -27,7 +27,7 @@
     "sb": "cargo build -p shared",
     "sf": "cargo fmt -p shared",
     "sl": "cargo clippy -p shared -- -W clippy::all",
-    "st": "cargo test -p state",
+    "st": "cargo test -p shared",
     "stb": "cargo build -p state",
     "stf": "cargo fmt -p state",
     "stl": "cargo clippy -p state -- -W clippy::all",

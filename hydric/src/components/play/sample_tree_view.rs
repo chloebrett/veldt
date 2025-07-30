@@ -1,17 +1,20 @@
-use crate::AsyncState;
+use crate::WindowKind;
+use crate::local_state::LocalState;
 use crate::promise::{poll, spawn};
-use crate::rpc::load_sample_tree;
+use crate::rpc::{load_sample, load_sample_tree};
 use crate::view::View;
 use crate::widget::{StateWindow, checkbox};
-use crate::{LocalState, WindowKind};
+use crate::{AsyncState, playback::AudioPlayer};
 use egui::{Checkbox, ScrollArea, Ui};
-use egui_ltreeview::{TreeView, TreeViewBuilder};
-use shared::model::{FileTreeConfig, FilenameTree};
+use egui_ltreeview::{Action as TreeAction, TreeView, TreeViewBuilder};
+use mesic::interleave_stereo;
+use shared::model::{FileTree, FileTreeConfig, FilenameTree};
 use state::{Action, Store, TypeField};
 
 pub struct SampleTreeView<'a> {
     store: &'a Store,
     async_state: &'a mut AsyncState,
+    player: &'a mut AudioPlayer,
     local_state: &'a LocalState,
 }
 
@@ -19,11 +22,13 @@ impl<'a> SampleTreeView<'a> {
     pub fn new(
         store: &'a Store,
         async_state: &'a mut AsyncState,
+        player: &'a mut AudioPlayer,
         local_state: &'a LocalState,
     ) -> Self {
         SampleTreeView {
             store,
             async_state,
+            player,
             local_state,
         }
     }
@@ -58,6 +63,32 @@ fn add_node(
             next_id
         }
     }
+}
+
+pub fn interacted_sample_file_name(
+    actions: Vec<TreeAction<usize>>,
+    tree: &FileTree<String, String>,
+) -> Option<String> {
+    let FileTree::Directory(_, sample_files) = tree else {
+        return None;
+    };
+
+    let action = actions.iter().find_map(|it| {
+        if let TreeAction::Activate(activate) = it {
+            Some(activate)
+        } else {
+            None
+        }
+    })?;
+
+    let node_id = action.selected.first()?;
+    // TODO: support samples nested in directories
+    let sample_node = sample_files.get(*node_id - 1)?;
+    let FileTree::File(file_name) = sample_node else {
+        return None;
+    };
+
+    Some(file_name.to_string())
 }
 
 impl View for SampleTreeView<'_> {
@@ -137,11 +168,45 @@ impl View for SampleTreeView<'_> {
                         .min_scrolled_height(200.0)
                         .show(ui, |ui| {
                             let id = ui.make_persistent_id("sample_tree");
-                            TreeView::new(id).show(ui, |builder| {
+                            let (_response, actions) = TreeView::new(id).show(ui, |builder| {
                                 add_node(
                                     builder, tree, /* start_id= */ 0,
                                     /* ignore_top= */ true,
                                 );
+                            });
+                            let selected_sample = interacted_sample_file_name(actions, tree);
+                            if let Some(selected_sample) = selected_sample {
+                                let cached_sample = self
+                                    .local_state
+                                    .sample_cache
+                                    .borrow()
+                                    .get(&selected_sample)
+                                    .cloned();
+                                if let Some(sample) = cached_sample {
+                                    // if sample is already loaded in local state then play it
+                                    let sample_audio = interleave_stereo(
+                                        sample.left.clone(),
+                                        sample.right.clone(),
+                                    );
+                                    self.player.set_audio(sample_audio);
+                                    self.player.play();
+                                } else {
+                                    spawn(&mut self.async_state.load_sample, async move {
+                                        load_sample(selected_sample).await
+                                    });
+                                }
+                            }
+
+                            poll(&mut self.async_state.load_sample, |sample| {
+                                let sample_audio =
+                                    interleave_stereo(sample.left.clone(), sample.right.clone());
+                                self.player.set_audio(sample_audio);
+                                self.player.play();
+                                // cache into local state
+                                self.local_state
+                                    .sample_cache
+                                    .borrow_mut()
+                                    .insert(sample.sample_name.clone(), sample.clone());
                             });
                         });
                 }

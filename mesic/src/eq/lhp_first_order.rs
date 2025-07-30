@@ -22,5 +22,5 @@ pub fn lhp_first_order(config: &EqConfig, low_high: LowHigh) -> Filter {
     };
     let b1 = -gamma;
 
-    Filter::new_wet(FilterConfig::new().a0(a0).a1(a1).b1(b1))
+    Filter::new_wet(FilterConfig::default().a0(a0).a1(a1).b1(b1))
 }
