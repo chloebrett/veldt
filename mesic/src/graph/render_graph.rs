@@ -200,6 +200,11 @@ impl RenderGraph {
             PlaybackMode::Preview => &mut self.preview_playback_index,
         }
     }
+
+    // Return only the main channel audio from the graph.
+    pub fn collect_main(self) -> Vec<[f32; 2]> {
+        self.map(|it| it[0]).collect()
+    }
 }
 
 // TODO: account for sample placements.
@@ -210,7 +215,7 @@ fn duration_ceil(project: &Project) -> Beats {
 }
 
 impl Iterator for RenderGraph {
-    type Item = Stereo<f32>;
+    type Item = Vec<Stereo<f32>>;
 
     fn next(&mut self) -> Option<Self::Item> {
         let index = self.pos();
@@ -241,14 +246,18 @@ impl Iterator for RenderGraph {
         }
 
         let buffers = &self.mixer.output_buffers();
-
-        let left = buffers[0][index % Buffer::LEN];
-        let right = buffers[1][index % Buffer::LEN];
-        let output = Some([left, right]);
+        let output = buffers
+            .iter()
+            .map(|&buffer| {
+                let left = buffer[0][index % Buffer::LEN];
+                let right = buffer[1][index % Buffer::LEN];
+                [left, right]
+            })
+            .collect();
 
         *self.pos_mut() += 1;
 
-        output
+        Some(output)
     }
 }
 
@@ -267,7 +276,7 @@ mod tests {
         // TODO Fix. This test does not terminate.
         let graph = RenderGraph::without_rx(&empty_store_data());
         // Iterator should be empty.
-        let output: Vec<Stereo<f32>> = graph.collect();
+        let output: Vec<Stereo<f32>> = graph.collect_main();
         assert!(output.is_empty())
     }
 
@@ -291,7 +300,7 @@ mod tests {
         // Act
         let mut graph = RenderGraph::without_rx(&empty_store_data());
         graph.set_audio(&input);
-        let output: Vec<Stereo<f32>> = graph.collect();
+        let output: Vec<Stereo<f32>> = graph.collect_main();
 
         // Assert
         assert_eq!(output, input)

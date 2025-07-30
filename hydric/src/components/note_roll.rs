@@ -351,7 +351,7 @@ impl<'a> NoteSequencer<'a> {
             store,
             local_state,
             range,
-            size: vec2(x_size as f32, 600.0),
+            size: vec2(x_size, 600.0),
             objects: vec![],
             quantise_level: 0.125,
             background_shapes: vec![],

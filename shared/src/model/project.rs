@@ -182,6 +182,7 @@ mod tests {
                 matrix: MixerMatrix::with_channels(3),
                 channels: vec![MixerChannel {
                     volume: 1.0,
+                    mute: false,
                     effect_ids: vec![0.into(), 1.into(), 2.into()],
                 }],
             },
