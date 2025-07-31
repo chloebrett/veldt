@@ -87,10 +87,6 @@ impl NodeState {
             if self.meta != *meta {
                 self.meta = meta.clone();
             }
-
-            for i in 0..self.voice.egs.len() {
-                self.voice.egs[i].update_envelope(i, &self.config.envelopes, &self.config.matrix);
-            }
         }
     }
 }
