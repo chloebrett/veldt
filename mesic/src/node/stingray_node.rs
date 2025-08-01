@@ -84,7 +84,7 @@ impl NodeState {
 
                 if self.config.envelopes != config.envelopes {
                     for (i, eg) in self.voice.egs.iter_mut().enumerate() {
-                        eg.config = config.envelopes[i].clone();
+                        eg.set_envelope(config.envelopes[i].clone());
                     }
                 }
 
@@ -234,12 +234,12 @@ impl Node<ProcessContext> for StingrayNode {
                         amp *= matrix_value;
 
                         // Apply combined modulation
-                        amp_mod[0] += amp * wave[0];
-                        amp_mod[1] += amp * wave[1];
+                        amp_mod[0] += amp;
+                        amp_mod[1] += amp;
                     }
 
-                    buffers[0][i] += amp_mod[0];
-                    buffers[1][i] += amp_mod[1];
+                    buffers[0][i] += amp_mod[0] * wave[0];
+                    buffers[1][i] += amp_mod[1] * wave[1];
                 }
             }
         }

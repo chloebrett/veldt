@@ -14,7 +14,7 @@ enum EnvelopeState {
 #[derive(Debug, Clone)]
 pub struct EnvelopeGenerator {
     state: EnvelopeState,
-    pub config: AdsrEnvelope,
+    config: AdsrEnvelope,
     last_output: f32,
     attack_per_sample: f32,
     decay_per_sample: f32,
