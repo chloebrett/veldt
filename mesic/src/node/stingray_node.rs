@@ -82,6 +82,12 @@ impl NodeState {
                     }
                 }
 
+                if self.config.envelopes != config.envelopes {
+                    for (i, eg) in self.voice.egs.iter_mut().enumerate() {
+                        eg.config = config.envelopes[i].clone();
+                    }
+                }
+
                 self.config = config.clone();
             }
             if self.meta != *meta {
@@ -186,11 +192,8 @@ impl Node<ProcessContext> for StingrayNode {
             }
 
             if let Some(sources) = &mut state.voice.sources {
-                for (j, (eg, source)) in state
-                    .voice
-                    .egs
+                for (j, source) in sources
                     .iter_mut()
-                    .zip(sources.iter_mut())
                     .enumerate()
                 {
                     let mut lfo_value = 0.0;
@@ -211,12 +214,35 @@ impl Node<ProcessContext> for StingrayNode {
 
                         lfo_value += state.voice.lfos[k].next() * matrix_value;
                     }
-
-                    let amp = eg.next().unwrap_or(0.0);
+                    
+                    // Envelope-oscillator modulation
                     let wave = source.next(&mut self.cache, lfo_value, lfo_active);
+                    let mut amp_mod = [0.0, 0.0];
+                    
+                    // Iterate through each envelope and accumulate modulation
+                    for l in 0..state.voice.egs.len() {
+                        let matrix_value = state
+                            .config
+                            .matrix
+                            .get(l, j) // row = EG index, column = oscillator index
+                            .map_or(0.0, |cell_ref| (*cell_ref).into());
 
-                    buffers[0][i] += amp * wave[0];
-                    buffers[1][i] += amp * wave[1];
+                        let mut amp = state
+                            .voice
+                            .egs
+                            .get_mut(l)
+                            .and_then(|eg| eg.next())
+                            .unwrap_or(0.0);
+
+                        amp *= matrix_value;
+
+                        // Apply combined modulation
+                        amp_mod[0] += amp * wave[0];
+                        amp_mod[1] += amp * wave[1];
+                    }
+                    
+                    buffers[0][i] += amp_mod[0];
+                    buffers[1][i] += amp_mod[1];
                 }
             }
         }
