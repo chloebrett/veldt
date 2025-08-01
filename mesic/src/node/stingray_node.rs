@@ -233,7 +233,7 @@ impl Node<ProcessContext> for StingrayNode {
 
                         amp *= matrix_value;
 
-                        // Apply combined modulation
+                        // Calculate combined modulation
                         amp_mod[0] += amp;
                         amp_mod[1] += amp;
                     }
