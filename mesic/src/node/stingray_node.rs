@@ -192,10 +192,7 @@ impl Node<ProcessContext> for StingrayNode {
             }
 
             if let Some(sources) = &mut state.voice.sources {
-                for (j, source) in sources
-                    .iter_mut()
-                    .enumerate()
-                {
+                for (j, source) in sources.iter_mut().enumerate() {
                     let mut lfo_value = 0.0;
                     let mut lfo_active = false;
                     const LFO_ROW_START: usize = 3;
@@ -214,11 +211,11 @@ impl Node<ProcessContext> for StingrayNode {
 
                         lfo_value += state.voice.lfos[k].next() * matrix_value;
                     }
-                    
+
                     // Envelope-oscillator modulation
                     let wave = source.next(&mut self.cache, lfo_value, lfo_active);
                     let mut amp_mod = [0.0, 0.0];
-                    
+
                     // Iterate through each envelope and accumulate modulation
                     for l in 0..state.voice.egs.len() {
                         let matrix_value = state
@@ -240,7 +237,7 @@ impl Node<ProcessContext> for StingrayNode {
                         amp_mod[0] += amp * wave[0];
                         amp_mod[1] += amp * wave[1];
                     }
-                    
+
                     buffers[0][i] += amp_mod[0];
                     buffers[1][i] += amp_mod[1];
                 }
