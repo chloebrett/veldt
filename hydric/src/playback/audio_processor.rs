@@ -4,7 +4,7 @@ use super::{
 };
 use crossbeam_channel::{Receiver, Sender};
 use dasp_frame::Stereo;
-use mesic::graph::RenderGraph;
+use mesic::{consts::MAX_MIXER_CHANNELS, graph::RenderGraph};
 
 /// Audio processor which runs in its own thread and communicates with the UI thread via crossbeam channels.
 pub struct AudioProcessor {
@@ -13,8 +13,7 @@ pub struct AudioProcessor {
     audio_tx: Sender<AudioBuffer>,
     playback_rx: Receiver<PlaybackMessage>,
     update_tx: Sender<PlaybackUpdate>,
-    recent_tx: Sender<Stereo<f32>>,
-
+    recent_tx: [Sender<Stereo<f32>>; MAX_MIXER_CHANNELS],
     state: PlaybackState,
     graph: RenderGraph,
     is_looping: bool,
@@ -26,7 +25,7 @@ impl AudioProcessor {
         audio_tx: Sender<AudioBuffer>,
         playback_rx: Receiver<PlaybackMessage>,
         update_tx: Sender<PlaybackUpdate>,
-        recent_tx: Sender<Stereo<f32>>,
+        recent_tx: [Sender<Stereo<f32>>; MAX_MIXER_CHANNELS],
         is_looping: bool,
         graph: RenderGraph,
     ) -> Self {
@@ -70,6 +69,9 @@ impl AudioProcessor {
             PlaybackMessage::RecreateMixer => {
                 self.graph.recreate_mixer();
             }
+            PlaybackMessage::PassDebugChannelToMixer(debug_tx) => {
+                self.graph.set_debug_tx(debug_tx);
+            }
             PlaybackMessage::SetAudio(audio) => {
                 self.graph.set_audio(&audio);
             }
@@ -107,11 +109,12 @@ impl AudioProcessor {
                 self.graph.seek(0);
                 next = self.graph.next();
             }
-
             match next {
-                Some(value) => {
-                    self.buffer[i] = value;
-                    self.recent_tx.try_send(value).unwrap();
+                Some(channels) => {
+                    self.buffer[i] = channels[0];
+                    for (index, value) in channels.iter().enumerate() {
+                        self.recent_tx[index].try_send(*value).unwrap();
+                    }
                     got_samples = true;
                 }
                 None => {

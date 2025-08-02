@@ -16,25 +16,36 @@ impl ActionReceiver for MixerChannel {
                 from_field,
                 to_field,
             }) => {
-                let (IndexField::Effect(from), IndexField::Effect(to)) = (from_field, to_field)
+                let (IndexField::EffectId(from), IndexField::EffectId(to)) = (from_field, to_field)
                 else {
-                    panic!("Action should have only received Effect IndexFields.")
+                    panic!("Action should have only received EffectId IndexFields.")
                 };
                 let prev = MoveField {
                     from_field: to_field.clone(),
                     to_field: from_field.clone(),
                 };
-                move_elem(&mut self.effects, *from, *to);
+                move_elem(&mut self.effect_ids, *from, *to);
                 Action::MoveChild(prev)
             }
-            Action::DeleteChild(IndexField::Effect(effect_index)) => {
-                let prev = self.effects[*effect_index].clone();
-                self.effects.remove(*effect_index);
-                Action::AddChild(TypeField::Effect(prev))
+            Action::DeleteChildById(TypeField::EffectId(effect_id)) => {
+                let index = self.effect_ids.iter().position(|it| it == effect_id)?;
+                self.effect_ids.remove(index);
+                Action::AddChildAtIndex(
+                    TypeField::EffectId(*effect_id),
+                    IndexField::EffectId(index),
+                )
             }
-            Action::AddChild(TypeField::Effect(effect)) => {
-                self.effects.push(effect.clone());
-                Action::DeleteChild(IndexField::Effect(self.effects.len() - 1))
+            Action::AddChildAtIndex(
+                TypeField::EffectId(effect_id),
+                IndexField::EffectId(index),
+            ) => {
+                self.effect_ids.insert(*index, *effect_id);
+                Action::DeleteChildById(TypeField::EffectId(*effect_id))
+            }
+            Action::SetChild(TypeField::Mute(mute)) => {
+                let prev = self.mute;
+                self.mute = *mute;
+                Action::SetChild(TypeField::Mute(prev))
             }
             _ => return None,
         })

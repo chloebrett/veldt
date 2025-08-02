@@ -7,19 +7,22 @@ use cpal::{OutputCallbackInfo, Stream};
 use crossbeam_channel::{Receiver, Sender};
 use dasp_frame::Stereo;
 use log::error;
+use mesic::GraphDebugInfo;
+use mesic::consts::MAX_MIXER_CHANNELS;
 use mesic::graph::RenderGraph;
-use mesic::{SAMPLE_RATE, StereoPeakDetector, to_db};
+use mesic::{SAMPLE_RATE, to_db};
 use ringbuffer::{AllocRingBuffer, RingBuffer};
 use shared::model::PitchName;
 use state::GeneratorSelector;
+use std::iter::repeat_with;
 use std::sync::{Arc, Mutex};
 use wasm_thread::JoinHandle;
 
 const RECENT_AUDIO_SECONDS: f32 = 5.0;
 const RECENT_AUDIO_SAMPLE_COUNT: usize = (RECENT_AUDIO_SECONDS * SAMPLE_RATE as f32) as usize;
 const RMS_BUFFER_SAMPLES: usize = 1024;
-const PEAK_BUFFER_SECOND: f32 = 1.0;
-const PEAK_BUFFER_SAMPLES: usize = (PEAK_BUFFER_SECOND * SAMPLE_RATE as f32) as usize;
+type ChannelSenders = Vec<Sender<[f32; 2]>>;
+type ChannelReceivers = Vec<Receiver<[f32; 2]>>;
 
 pub struct AudioPlayer {
     // The render graph, if we haven't given it to the processing thread yet.
@@ -43,11 +46,18 @@ pub struct AudioPlayer {
     update_tx: Sender<PlaybackUpdate>,
     update_rx: Receiver<PlaybackUpdate>,
 
-    // For sending recently played/processed audio messages from processor -> UI, for visualising.
+    // For sending recently played/processed audio messages from processor -> UI, for visualising
+    // each channel's output.
     // TODO: consider sending more than one sample at a time.
     // 44100 samples/sec / 60fps = approx 700 samples/frame.
-    recent_tx: Sender<Stereo<f32>>,
-    recent_rx: Receiver<Stereo<f32>>,
+    recent_tx: [Sender<Stereo<f32>>; MAX_MIXER_CHANNELS],
+    recent_rx: [Receiver<Stereo<f32>>; MAX_MIXER_CHANNELS],
+
+    // For sending graph debug information from the mixer to the UI.
+    graph_debug_tx: Sender<GraphDebugInfo>,
+    graph_debug_rx: Receiver<GraphDebugInfo>,
+    // Most recent graph structure to display for debugging.
+    graph_debug_info: Option<GraphDebugInfo>,
 
     // Ring buffer with the most recently played audio.
     recent_buf: AllocRingBuffer<Stereo<f32>>,
@@ -74,13 +84,10 @@ pub struct AudioPlayer {
     // arguments to be Send.
     output_delay: Arc<Mutex<usize>>,
 
-    // Root Mean Square of most recent window in audio.
+    // Root Mean Square of most recent window in audio for each channel.
     // Read with `level()`
     // Uses f64 because without it, the RMS glitches below -50dB or so.
-    rms: dasp_rms::Rms<Stereo<f64>, [Stereo<f64>; RMS_BUFFER_SAMPLES]>,
-
-    // Peak audio from recent window.
-    peak: StereoPeakDetector,
+    rms: [dasp_rms::Rms<Stereo<f64>, [Stereo<f64>; RMS_BUFFER_SAMPLES]>; MAX_MIXER_CHANNELS],
 }
 
 impl AudioPlayer {
@@ -94,7 +101,16 @@ impl AudioPlayer {
         // Other channels are used for message passing and are unbounded.
         let (playback_tx, playback_rx) = crossbeam_channel::unbounded();
         let (update_tx, update_rx) = crossbeam_channel::unbounded();
-        let (recent_tx, recent_rx) = crossbeam_channel::unbounded();
+        let (recent_tx, recent_rx): (ChannelSenders, ChannelReceivers) =
+            repeat_with(crossbeam_channel::unbounded)
+                .take(MAX_MIXER_CHANNELS)
+                .unzip();
+        let recent_tx = recent_tx.try_into().unwrap();
+        let recent_rx = recent_rx.try_into().unwrap();
+        let (graph_debug_tx, graph_debug_rx) = crossbeam_channel::unbounded();
+        let rms: Vec<_> = repeat_with(|| dasp_rms::Rms::new(rms_buffer))
+            .take(MAX_MIXER_CHANNELS)
+            .collect();
 
         Self {
             graph: Some(graph),
@@ -106,6 +122,9 @@ impl AudioPlayer {
             update_rx,
             recent_tx,
             recent_rx,
+            graph_debug_tx,
+            graph_debug_rx,
+            graph_debug_info: None,
             recent_buf: AllocRingBuffer::from([[0.0; 2]; RECENT_AUDIO_SAMPLE_COUNT]),
             recent_buf_offset: 0,
             stream: None,
@@ -115,8 +134,7 @@ impl AudioPlayer {
             position: PlaybackPosition { samples: 0 },
             buffer_delay: 0,
             output_delay: Arc::new(Mutex::new(0)),
-            rms: dasp_rms::Rms::new(rms_buffer),
-            peak: StereoPeakDetector::new(PEAK_BUFFER_SAMPLES),
+            rms: rms.try_into().unwrap(),
         }
     }
 
@@ -156,6 +174,14 @@ impl AudioPlayer {
     pub fn refresh_mixer(&mut self) {
         self.maybe_init();
         self.send(PlaybackMessage::RecreateMixer);
+    }
+
+    /// Creates a debug channel and passes it to the mixer.
+    pub fn init_mixer_debug(&mut self) {
+        self.maybe_init();
+        self.send(PlaybackMessage::PassDebugChannelToMixer(
+            self.graph_debug_tx.clone(),
+        ));
     }
 
     pub fn set_audio(&mut self, audio: Vec<Stereo<f32>>) {
@@ -214,13 +240,25 @@ impl AudioPlayer {
                 }
             }
         }
-
-        while let Ok(update) = self.recent_rx.try_recv() {
-            let next = self.rms.next([update[0] as f64, update[1] as f64]);
-            self.peak.next([next[0] as f32, next[1] as f32]);
-            self.recent_buf.push(update);
-            self.recent_buf_offset += 1;
+        for (index, channel) in self.recent_rx.iter().enumerate() {
+            while let Ok(update) = channel.try_recv() {
+                self.rms[index].next([update[0] as f64, update[1] as f64]);
+                if index == 0 {
+                    self.recent_buf();
+                    self.recent_buf.push(update);
+                    self.recent_buf_offset += 1;
+                }
+            }
         }
+
+        while let Ok(graph_debug) = self.graph_debug_rx.try_recv() {
+            log::info!("Received graph debug info: {:?}", graph_debug);
+            self.graph_debug_info = Some(graph_debug);
+        }
+    }
+
+    pub fn get_graph_debug_info(&self) -> Option<GraphDebugInfo> {
+        self.graph_debug_info.clone()
     }
 
     pub fn init_processor(&mut self) {
@@ -338,14 +376,9 @@ impl AudioPlayer {
         self.send(PlaybackMessage::Seek(self.position));
     }
 
-    pub fn level(&self) -> Stereo<f32> {
-        let [left, right] = self.rms.current();
+    pub fn level(&self, channel: usize) -> Stereo<f32> {
+        let [left, right] = self.rms[channel].current();
         [to_db(left as f32), to_db(right as f32)]
-    }
-
-    pub fn peak(&self) -> Stereo<f32> {
-        let [left, right] = self.peak.current();
-        [to_db(left), to_db(right)]
     }
 }
 

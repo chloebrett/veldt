@@ -97,6 +97,7 @@ fn export_wav(project: &Project) -> Result<Response<ExportReply>, Status> {
             .map_err(|e| tonic::Status::invalid_argument(format!("{e}")))?;
 
         for frame in graph {
+            let frame = frame[0];
             for channel in 0..2 {
                 let sample = *frame.channel(channel).unwrap();
 
@@ -195,8 +196,8 @@ fn export_mp3(project: &Project) -> Result<Response<ExportReply>, Status> {
 
     // Note that docs specify u16, but this is incorrect.
     for frame in graph {
-        left_channel.push(float_to_i16(frame[0]));
-        right_channel.push(float_to_i16(frame[1]));
+        left_channel.push(float_to_i16(frame[0][0]));
+        right_channel.push(float_to_i16(frame[0][1]));
     }
 
     let input = DualPcm {

@@ -1,7 +1,8 @@
 use super::{
-    KeyView, NoteRoll, NoteView, PlacementView, TrackRoll,
+    ChannelEffectView, GraphView, KeyView, NoteRoll, NoteView, PlacementView, TrackRoll,
     effect::{EffectView, MixerView},
     generator::{GeneratorView, generators_control},
+    graph_view::GraphViewNode,
     menu::MenuBar,
     play::{MicrophoneView, SampleTreeView, ToolbarView},
 };
@@ -13,6 +14,7 @@ use crate::view::View;
 use crate::{AsyncState, LocalState, playback::AudioPlayer};
 use crate::{promise::spawn, window_state::WindowKind};
 use egui::{ScrollArea, Ui, scroll_area::ScrollBarVisibility};
+use egui_snarl::Snarl;
 use mesic::graph::RenderGraph;
 use poll_promise::Promise;
 use state::{Action, EffectSelector, GeneratorSelector, Store};
@@ -29,6 +31,7 @@ pub struct App {
     pub async_state: AsyncState,
     pub player: AudioPlayer,
     pub mic: Microphone,
+    pub snarl: Snarl<GraphViewNode>,
 }
 impl Default for App {
     fn default() -> Self {
@@ -46,6 +49,7 @@ impl Default for App {
             async_state: AsyncState::default(),
             player: AudioPlayer::new(graph),
             mic: Microphone::new(),
+            snarl: Snarl::new(),
         }
     }
 }
@@ -129,11 +133,18 @@ impl View for App {
             MixerView::new(&self.store, &self.local_state, &self.player).ui(ui);
         }
 
-        ToolbarView::new(&mut self.store, &mut self.async_state, &mut self.player).ui(ui);
+        ToolbarView::new(
+            &mut self.store,
+            &self.local_state,
+            &mut self.async_state,
+            &mut self.player,
+        )
+        .ui(ui);
 
         for effect_selector in self.visible_effects() {
             let dispatch = |action| self.store.dispatch(&effect_selector, action);
             let on_release = || self.store.dispatchr(Action::Release);
+
             if let Some(mut it) = EffectView::new(
                 &self.store,
                 &effect_selector,
@@ -151,13 +162,22 @@ impl View for App {
             KeyView::new(dispatch, &self.local_state, key, scale).ui(ui);
         }
 
+        ChannelEffectView::new(&self.store, &self.local_state).ui(ui);
+
         NoteView::new(&self.store, &self.local_state).ui(ui);
         NoteRoll::new(&self.store, &self.local_state, &mut self.player).ui(ui);
 
         MicrophoneView::new(&self.local_state, &mut self.mic).ui(ui);
         PlacementView::new(&self.store, &self.local_state).ui(ui);
 
-        SampleTreeView::new(&self.store, &mut self.async_state, &self.local_state).ui(ui);
+        SampleTreeView::new(
+            &self.store,
+            &mut self.async_state,
+            &mut self.player,
+            &self.local_state,
+        )
+        .ui(ui);
         TrackRoll::new(&self.store, &self.local_state).ui(ui);
+        GraphView::new(&self.local_state, &mut self.snarl, &self.player).ui(ui);
     }
 }
