@@ -71,7 +71,7 @@ impl Export for ExportContext {
 }
 
 // TODO: Work out how to either box the status cleanly, or implement custom error types for export_wav and export_mp3
-// to resolve this linting warning. Currently tonic is quite specific on the result it wants, which causes issues when using 
+// to resolve this linting warning. Currently tonic is quite specific on the result it wants, which causes issues when using
 // https://docs.rs/anyhow/latest/anyhow/ or a box. However, error is only 170 bytes, so not huge performance loss.
 // Clickup bug bounty: https://app.clickup.com/t/86czvkxj9
 #[allow(clippy::result_large_err)]
