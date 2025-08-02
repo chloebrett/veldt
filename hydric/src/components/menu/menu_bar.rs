@@ -103,12 +103,20 @@ impl View for MenuBar<'_> {
                     self.load_options(ui);
                 });
 
-                if ui.button("Export").clicked() {
-                    let project = self.store.get().project.clone();
-                    spawn(&mut self.async_state.export, async move {
-                        export(project).await
-                    });
-                }
+                ui.menu_button("Export", |ui| {
+                    if ui.button("WAV").clicked() {
+                        let project = self.store.get().project.clone();
+                        spawn(&mut self.async_state.export, async move {
+                            export(project, "wav".to_string()).await
+                        });
+                    }
+                    if ui.button("MP3").clicked() {
+                        let project = self.store.get().project.clone();
+                        spawn(&mut self.async_state.export, async move {
+                            export(project, "mp3".to_string()).await
+                        });
+                    }
+                });
             });
             ui.menu_button("Edit", |ui| {
                 if ui
