@@ -206,7 +206,7 @@ impl Node<ProcessContext> for StingrayNode {
                     let mut lfo_active = false;
                     // Access the column for this oscillator in the matrix
                     for k in 0..state.config.lfos.len() {
-                        // Get matrix value for this LPF and LFO
+                        // Get matrix value for this OSC and LFO
                         let matrix_value = state
                             .config
                             .matrix
@@ -251,6 +251,9 @@ impl Node<ProcessContext> for StingrayNode {
             new_lpf_freq = new_lpf_freq.clamp(LPF_MIN_FREQ, LPF_MAX_FREQ);
             let mut new_eq_config = state.config.lpf.clone();
             new_eq_config.fc = new_lpf_freq.into();
+
+            state.filter_left.update_config(new_eq_config.clone());
+            state.filter_right.update_config(new_eq_config.clone());
         }
 
         for (channel_index, out_buf) in output.iter_mut().enumerate() {
@@ -259,8 +262,8 @@ impl Node<ProcessContext> for StingrayNode {
             Self::apply_volume_and_pan(out_buf, channel_index, meta.volume, meta.pan);
         }
 
-        // self.state.filter_left.apply(&mut output[0]);
-        // self.state.filter_right.apply(&mut output[1]);
+        self.state.filter_left.apply(&mut output[0]);
+        self.state.filter_right.apply(&mut output[1]);
     }
 }
 

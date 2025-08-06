@@ -1,5 +1,9 @@
 use dasp_graph::Buffer;
 use ringbuffer::{AllocRingBuffer, RingBuffer};
+use shared::model::EqConfig;
+
+use crate::eq::eq_filter;
+
 
 pub struct Mix {
     // Note: wet/dry below is independent from wet/dry on the mixer.
@@ -86,6 +90,11 @@ impl Filter {
     fn new_internal(config: FilterConfig, mix: Option<Mix>) -> Self {
         let state = FilterState::default();
         Self { config, mix, state }
+    }
+
+    pub fn update_config(&mut self, config: EqConfig) {
+        let filter = eq_filter(&config);
+        self.config = filter.config;
     }
 
     pub fn apply(&mut self, buffer: &mut Buffer) {
