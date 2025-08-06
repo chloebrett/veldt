@@ -4,7 +4,6 @@ use shared::model::EqConfig;
 
 use crate::eq::eq_filter;
 
-
 pub struct Mix {
     // Note: wet/dry below is independent from wet/dry on the mixer.
     pub wet: f32,
