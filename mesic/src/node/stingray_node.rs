@@ -150,7 +150,7 @@ impl Node<ProcessContext> for StingrayNode {
                 events.retain(|it| it.kind == NoteEventType::On);
             }
 
-            // update LFOs here so we can use their values else where
+            // Update LFOs here so we can use their values else where
             for lfo in state.voice.lfos.iter_mut() {
                 lfo.next();
             }
@@ -206,7 +206,7 @@ impl Node<ProcessContext> for StingrayNode {
                     let mut lfo_active = false;
                     // Access the column for this oscillator in the matrix
                     for k in 0..state.config.lfos.len() {
-                        // Get matrix value for this OSC and LFO
+                        // Get matrix value for this oscillator and LFO
                         let matrix_value = state
                             .config
                             .matrix
@@ -236,7 +236,7 @@ impl Node<ProcessContext> for StingrayNode {
 
             let mut lfo_value = 0.0;
             for k in 0..state.config.lfos.len() {
-                // Get matrix value for this oscillator and LFO
+                // Get matrix value for this LPF and LFO
                 let matrix_value = state
                     .config
                     .matrix
