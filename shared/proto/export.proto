@@ -10,6 +10,7 @@ service Export {
 
 message ExportRequest {
   pmodel.ProjectProto project = 1;
+  pmodel.ExportConfigProto config = 2;
 }
 
 message ExportReply {
