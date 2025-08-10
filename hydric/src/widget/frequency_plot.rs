@@ -1,9 +1,10 @@
 use std::ops::RangeInclusive;
 
 use egui::{
-    Align2, CornerRadius, FontId, Pos2, Rangef, Rect, Response, Sense, Stroke, Ui, Vec2, Widget,
-    lerp, pos2, remap_clamp, vec2,
+    lerp, pos2, remap_clamp, vec2, Align2, Color32, CornerRadius, FontId, Pos2, Rangef, Rect, Response, Sense, Stroke, Ui, Vec2, Widget
 };
+
+use crate::widget::text_rotator;
 
 enum FrequencySpec {
     Linear,
@@ -75,12 +76,14 @@ impl<'a> FrequencyPlot<'a> {
     #[inline]
     pub fn set_x_range(mut self, x_range: impl Into<RangeInclusive<f32>>) -> Self {
         self.x_range = x_range.into();
+        self.x_ticks = (*self.x_range.start() as i32..=*self.x_range.end() as i32).step_by(2000).map(|it| it as f32).collect();
         self
     }
 
     #[inline]
     pub fn set_y_range(mut self, y_range: impl Into<RangeInclusive<f32>>) -> Self {
         self.y_range = y_range.into();
+        self.y_ticks = (*self.y_range.end() as i32..=*self.y_range.start() as i32).step_by(10).map(|it| it as f32).collect();
         self
     }
 
@@ -266,16 +269,35 @@ impl<'a> FrequencyPlot<'a> {
             .translate(vec2(shrink_amount, -shrink_amount));
         let id = response.id.with("plot");
         let response = ui.interact(rect, id, Sense::focusable_noninteractive());
+
         self.plot_ui(ui, &response);
         self.y_axis_ui(ui, &response);
         self.x_axis_ui(ui, &response);
         response
     }
+
+    fn draw_plot(&self, ui: &mut Ui) -> Response {
+        ui.vertical(|ui| {
+            ui.horizontal(|ui| {
+                ui.vertical(|ui| {
+                    ui.add_space(80.0);
+                    text_rotator(ui, "Response (dB)", 12.0, super::TextRotation::Anticlockwise90, Color32::GRAY);
+                });
+                self.add_contents(ui);
+                ui.add_space(18.0);
+            });
+            ui.horizontal(|ui| {
+                ui.add_space(230.0);
+                text_rotator(ui, "Frequency (Hz)", 12.0, super::TextRotation::Neutral, Color32::GRAY);
+                ui.add_space(190.0);
+            });
+        }).response
+    }
 }
 
 impl Widget for FrequencyPlot<'_> {
     fn ui(self, ui: &mut Ui) -> Response {
-        self.add_contents(ui)
+        self.draw_plot(ui)
     }
 }
 
