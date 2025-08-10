@@ -1,6 +1,6 @@
 use crate::view::View;
-use crate::widget::{add_knob, get_set, selectable_value, styled_knob};
 use crate::widget::FrequencyPlot;
+use crate::widget::{add_knob, get_set, selectable_value, styled_knob};
 use egui::{Ui, pos2};
 use mesic::consts::NYQUIST;
 use mesic::eq::eq_display::{FrequencyResponsePoint, calculate_frequency_response};
@@ -35,7 +35,6 @@ impl<'a, F: Fn(Action), G: Fn()> EqView<'a, F, G> {
             calculate_frequency_response(&biquad_coeffs.unwrap(), num_points, MIN_FREQ, MAX_FREQ);
         eq_response_points
     }
-
 }
 
 impl<F: Fn(Action), G: Fn()> View for EqView<'_, F, G> {
@@ -101,15 +100,18 @@ impl<F: Fn(Action), G: Fn()> View for EqView<'_, F, G> {
                 }
             });
 
-        let freq_plot_points: Vec<egui::Pos2> = self.calculate_eq_points()
+        let freq_plot_points: Vec<egui::Pos2> = self
+            .calculate_eq_points()
             .into_iter()
             .map(|point| pos2(point.frequency, point.gain))
             .collect();
 
         ui.add_space(12.0);
 
-        ui.add(FrequencyPlot::new(&freq_plot_points).logarithmic(true).set_y_range(std::ops::RangeInclusive::new(60.0, -60.0)));
-
-
+        ui.add(
+            FrequencyPlot::new(&freq_plot_points)
+                .logarithmic(true)
+                .set_y_range(std::ops::RangeInclusive::new(60.0, -60.0)),
+        );
     }
 }
