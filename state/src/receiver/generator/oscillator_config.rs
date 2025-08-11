@@ -20,10 +20,15 @@ impl ActionReceiver for Oscillator {
                 self.pan = *pan;
                 Action::SetFloat(FloatField::Pan, prev)
             }
-            Action::SetFloat(FloatField::OscillatorDetune, detune) => {
-                let prev = self.osc_detune;
-                self.osc_detune = *detune;
-                Action::SetFloat(FloatField::OscillatorDetune, prev)
+            Action::SetFloat(FloatField::OscillatorCoarseDetune, detune) => {
+                let prev = self.coarse_detune;
+                self.coarse_detune = *detune;
+                Action::SetFloat(FloatField::OscillatorCoarseDetune, prev)
+            }
+            Action::SetFloat(FloatField::OscillatorFineDetune, detune) => {
+                let prev = self.fine_detune;
+                self.fine_detune = *detune;
+                Action::SetFloat(FloatField::OscillatorFineDetune, prev)
             }
             Action::SetFloat(FloatField::UnisonDetune, detune) => {
                 let prev = self.unison_detune;

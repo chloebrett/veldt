@@ -26,7 +26,8 @@ const BASE_OSC: Oscillator = Oscillator {
     wave: WaveType::Sine,
     volume: 1.0,
     pan: 0.0,
-    osc_detune: 0.0,
+    coarse_detune: 0.0,
+    fine_detune: 0.0,
     osc_count: 1,
     unison_detune: 0.0,
 };
