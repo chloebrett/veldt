@@ -11,8 +11,8 @@ pub struct Oscillator {
     pub volume: Volume,
 
     pub pan: KnobPosition,
-    
-    pub coarse_detune: f32, 
+
+    pub coarse_detune: f32,
 
     pub fine_detune: f32,
 

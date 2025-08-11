@@ -148,12 +148,7 @@ impl<F: Fn(Action), G: Fn()> View for StingrayOscillatorView<'_, F, G> {
                         styled_knob(
                             "Fine",
                             config.fine_detune,
-                            |it| {
-                                dispatch(Action::SetFloat(
-                                    FloatField::OscillatorFineDetune,
-                                    it,
-                                ))
-                            },
+                            |it| dispatch(Action::SetFloat(FloatField::OscillatorFineDetune, it)),
                             -100.0..=100.0,
                         )
                         .with_neutral(0.0),
