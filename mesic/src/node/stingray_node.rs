@@ -225,17 +225,17 @@ impl Node<ProcessContext> for StingrayNode {
                     let mut amp_mod = [0.0, 0.0];
 
                     // Iterate through each envelope and accumulate modulation
-                    for l in 0..state.voice.egs.len() {
+                    for eg_idx in 0..state.voice.egs.len() {
                         let matrix_value = state
                             .config
                             .matrix
-                            .get(l, j) // row = EG index, column = oscillator index
+                            .get(eg_idx, j) // row = EG index, column = oscillator index
                             .map_or(0.0, |cell_ref| (*cell_ref).into());
 
                         let mut amp = state
                             .voice
                             .egs
-                            .get_mut(l)
+                            .get_mut(eg_idx)
                             .and_then(|eg| eg.next())
                             .unwrap_or(0.0);
 
@@ -251,12 +251,33 @@ impl Node<ProcessContext> for StingrayNode {
                 }
             }
 
-            // Applying the LFO to the LPF
-            // This implementation of the LFO LPF relation is based on the the ableton synth version
-            // https://learningsynths.ableton.com/en/playground
+            // LPF modulation
             const LPF_MIN_FREQ: f32 = 20.0;
             const LPF_MAX_FREQ: f32 = 20000.0;
 
+            // Normalize cutoff frequency
+            let mut lpf_norm = (state.config.lpf.fc as f32 - LPF_MIN_FREQ) / (LPF_MAX_FREQ - LPF_MIN_FREQ);
+
+            // Applying envelopes to LPF
+            for eg_idx in 0..state.voice.egs.len() {
+                let matrix_value = state
+                    .config
+                    .matrix
+                    .get(eg_idx, LPF_COL_START) 
+                    .map_or(0.0, |cell_ref| (*cell_ref).into());
+
+                let eg_val = state.voice.egs[eg_idx].peek();
+
+                // Accumulate modulation scaled by matrix value
+                lpf_norm += eg_val * matrix_value;
+            }
+
+            lpf_norm = lpf_norm.clamp(0.0, 1.0);
+            let mut new_lpf_freq = LPF_MIN_FREQ + lpf_norm * (LPF_MAX_FREQ - LPF_MIN_FREQ);
+
+            // Applying the LFO to the LPF
+            // This implementation of the LFO LPF relation is based on the the ableton synth version
+            // https://learningsynths.ableton.com/en/playground
             let mut lfo_value = 0.0;
             for k in 0..state.config.lfos.len() {
                 // Get matrix value for this LPF and LFO
@@ -270,8 +291,9 @@ impl Node<ProcessContext> for StingrayNode {
             }
 
             // The modified LPF frequency should go to max freq at LFO value 1.0 and min freq at -1.0.
-            let mut new_lpf_freq = state.config.lpf.fc + (LPF_MAX_FREQ - LPF_MIN_FREQ) * lfo_value;
+            new_lpf_freq += (LPF_MAX_FREQ - LPF_MIN_FREQ) * lfo_value;
             new_lpf_freq = new_lpf_freq.clamp(LPF_MIN_FREQ, LPF_MAX_FREQ);
+
             let mut new_eq_config = state.config.lpf.clone();
             new_eq_config.fc = new_lpf_freq.into();
 
