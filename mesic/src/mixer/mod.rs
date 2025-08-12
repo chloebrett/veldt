@@ -28,6 +28,7 @@ pub use graph_manager::{GraphDebugInfo, NodeLabel};
 ///
 /// The mixer arrangement looks like this:
 ///
+/// ```text
 /// g  g // generators linked to mixer channel 1
 /// |  |
 /// |---
@@ -50,6 +51,7 @@ pub use graph_manager::{GraphDebugInfo, NodeLabel};
 /// |
 /// v
 /// a // main out
+/// ```
 ///
 /// Note: the diagram above does not account for mixers routing to each other!
 ///
