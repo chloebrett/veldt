@@ -6,6 +6,7 @@ use shared::model::{AntiAliasingMode, LfoConfig};
 pub struct LfoGenerator {
     pub config: LfoConfig,
     pub sample_index: usize,
+    pub current_value: f32,
 }
 
 impl LfoGenerator {
@@ -13,6 +14,7 @@ impl LfoGenerator {
         Self {
             config,
             sample_index: 0,
+            current_value: 0.0,
         }
     }
 
@@ -25,6 +27,7 @@ impl LfoGenerator {
 
         self.sample_index += 1;
 
-        make_wave(phase, wave, frequency, AntiAliasingMode::Off)
+        self.current_value = make_wave(phase, wave, frequency, AntiAliasingMode::Off);
+        self.current_value
     }
 }
