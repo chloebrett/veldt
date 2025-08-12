@@ -1,5 +1,5 @@
 use super::envelope_line;
-use crate::transform::Transform;
+use crate::transform::{Transform};
 use crate::view::View;
 use crate::widget::{TabDisplay, TabOrientation, add_knob, inner_frame, outer_frame, styled_knob};
 use crate::{GetSet, LocalState};
@@ -10,11 +10,19 @@ use egui::{
     epaint::{PathStroke, Shape},
     pos2, vec2,
 };
-use egui::{Pos2, Sense};
-use log::info;
+use egui::{Sense, Stroke};
 use shared::model::StingrayConfig;
 use state::{Action, FloatField};
-use std::env;
+use crate::components::generator::stingray::opacity_percentage_to_alpha;
+use lazy_static::lazy_static;
+
+const CHART_FILL_ALPHA: u8 = opacity_percentage_to_alpha(20.0);
+
+lazy_static! {
+    pub static ref BLUE_OUTLINE: Color32 = Color32::from_rgb(79, 176, 255);
+    pub static ref BLUE_FILL: Color32 =
+        Color32::from_rgba_unmultiplied(79, 176, 255, CHART_FILL_ALPHA);
+}
 
 pub struct StingrayEnvelopeView<'a, F: Fn(Action), G: Fn()> {
     config: &'a StingrayConfig,
@@ -66,7 +74,10 @@ impl<F: Fn(Action), G: Fn()> View for StingrayEnvelopeView<'_, F, G> {
                 inner_frame().inner_margin(15.0).show(ui, |ui| {
                     ui.vertical(|ui| {
                         // Envelope graph
-                        Frame::canvas(ui.style()).show(ui, |ui| {
+                        Frame::canvas(ui.style())
+                        .fill(Color32::from_gray(30))
+                        .stroke(Stroke::NONE)
+                        .show(ui, |ui| {
                             ui.ctx().request_repaint();
                             let desired_size = vec2(300.0, 160.0);
                             let (_id, rect) = ui.allocate_space(desired_size);
@@ -78,13 +89,19 @@ impl<F: Fn(Action), G: Fn()> View for StingrayEnvelopeView<'_, F, G> {
                                 rect,
                             );
 
-                            let thickness = 2.0;
+                            let thickness = 2.5;
+                            let envelope_points = envelope_line(&envelope, x_size);
                             let shape = Shape::line(
-                                envelope_line(&envelope, x_size),
-                                PathStroke::new(thickness, Color32::WHITE),
+                                envelope_points.clone(),
+                                PathStroke::new(thickness, *BLUE_OUTLINE),
                             );
 
                             ui.painter().add(shape.transform(to_screen));
+
+                            let transformed_envelope_points = envelope_points.into_iter().map(|point| {
+                                to_screen.transform_pos(point)
+                            }).collect();
+                            ui.painter().add(Shape::convex_polygon(transformed_envelope_points, *BLUE_FILL, Stroke::NONE));
 
                             let attack_handle_id = ui.id().with("attack_handle");
                             let attack_handle_pos =
@@ -92,7 +109,7 @@ impl<F: Fn(Action), G: Fn()> View for StingrayEnvelopeView<'_, F, G> {
                             let attack_handle_rect =
                                 Rect::from_center_size(attack_handle_pos, vec2(12.0, 12.0));
                             let attack_drag =
-                                Shape::rect_filled(attack_handle_rect, 4.0, Color32::BLUE);
+                                Shape::rect_filled(attack_handle_rect, 6.0, *BLUE_OUTLINE);
                             let attack_response =
                                 ui.interact(attack_handle_rect, attack_handle_id, Sense::drag());
                             ui.painter().add(attack_drag);
@@ -118,7 +135,7 @@ impl<F: Fn(Action), G: Fn()> View for StingrayEnvelopeView<'_, F, G> {
                             let decay_handle_rect =
                                 Rect::from_center_size(decay_handle_pos, vec2(12.0, 12.0));
                             let decay_drag =
-                                Shape::rect_filled(decay_handle_rect, 4.0, Color32::BLUE);
+                                Shape::rect_filled(decay_handle_rect, 6.0, *BLUE_OUTLINE);
                             let decay_response =
                                 ui.interact(decay_handle_rect, decay_handle_id, Sense::drag());
                             ui.painter().add(decay_drag);
@@ -157,7 +174,7 @@ impl<F: Fn(Action), G: Fn()> View for StingrayEnvelopeView<'_, F, G> {
                                 .transform_pos(pos2(x_size - envelope.release, envelope.sustain));
                             let sr_handle_rect =
                                 Rect::from_center_size(sr_handle_pos, vec2(12.0, 12.0));
-                            let sr_drag = Shape::rect_filled(sr_handle_rect, 4.0, Color32::BLUE);
+                            let sr_drag = Shape::rect_filled(sr_handle_rect, 6.0, *BLUE_OUTLINE);
                             let sr_response =
                                 ui.interact(sr_handle_rect, sr_handle_id, Sense::drag());
                             ui.painter().add(sr_drag);
