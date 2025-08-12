@@ -256,14 +256,15 @@ impl Node<ProcessContext> for StingrayNode {
             const LPF_MAX_FREQ: f32 = 20000.0;
 
             // Normalize cutoff frequency
-            let mut lpf_norm = (state.config.lpf.fc as f32 - LPF_MIN_FREQ) / (LPF_MAX_FREQ - LPF_MIN_FREQ);
+            let mut lpf_norm =
+                (state.config.lpf.fc as f32 - LPF_MIN_FREQ) / (LPF_MAX_FREQ - LPF_MIN_FREQ);
 
             // Applying envelopes to LPF
             for eg_idx in 0..state.voice.egs.len() {
                 let matrix_value = state
                     .config
                     .matrix
-                    .get(eg_idx, LPF_COL_START) 
+                    .get(eg_idx, LPF_COL_START)
                     .map_or(0.0, |cell_ref| (*cell_ref).into());
 
                 let eg_val = state.voice.egs[eg_idx].peek();
