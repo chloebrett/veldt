@@ -292,7 +292,6 @@ impl StingrayWaveSource {
         let phases = linspace(0.0, 1.0, unison + 1);
 
         let mut output_mono = 0.0;
-        let unison_amp = (unison as f32).recip();
         for (i, &detune) in detunes.iter().enumerate() {
             let freq = freq * detune_multiplier(detune);
             let step = freq / (SAMPLE_RATE as f32);
@@ -307,7 +306,7 @@ impl StingrayWaveSource {
                 freq: freq.into(),
             };
 
-            output_mono += cache.get(&key, phase) * unison_amp;
+            output_mono += cache.get(&key, phase);
         }
 
         // Add soft clipping to lessen the peaks in volume.
