@@ -12,7 +12,9 @@ pub struct Oscillator {
 
     pub pan: KnobPosition,
 
-    pub osc_detune: f32,
+    pub coarse_detune: f32,
+
+    pub fine_detune: f32,
 
     pub osc_count: u32,
 
