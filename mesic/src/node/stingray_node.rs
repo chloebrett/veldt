@@ -278,7 +278,7 @@ impl StingrayWaveSource {
     fn next(&mut self, cache: &mut WaveCache, lfo_value: f32, lfo_active: bool) -> Stereo<f32> {
         let osc = &self.oscillator;
         let freq: Freq = self.pitch.into();
-        let freq = freq * detune_multiplier(osc.osc_detune);
+        let freq = freq * detune_multiplier(osc.coarse_detune + osc.fine_detune);
 
         let unison = if osc.unison_detune == 0.0 {
             1
