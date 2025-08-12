@@ -8,10 +8,13 @@ use egui::{
     containers::Frame,
     emath::RectTransform,
     epaint::{PathStroke, Shape},
-    vec2,
+    pos2, vec2,
 };
+use egui::{Pos2, Sense};
+use log::info;
 use shared::model::StingrayConfig;
 use state::{Action, FloatField};
+use std::env;
 
 pub struct StingrayEnvelopeView<'a, F: Fn(Action), G: Fn()> {
     config: &'a StingrayConfig,
@@ -82,6 +85,99 @@ impl<F: Fn(Action), G: Fn()> View for StingrayEnvelopeView<'_, F, G> {
                             );
 
                             ui.painter().add(shape.transform(to_screen));
+
+                            let attack_handle_id = ui.id().with("attack_handle");
+                            let attack_handle_pos =
+                                to_screen.transform_pos(pos2(envelope.attack, 1.0));
+                            let attack_handle_rect =
+                                Rect::from_center_size(attack_handle_pos, vec2(12.0, 12.0));
+                            let attack_drag =
+                                Shape::rect_filled(attack_handle_rect, 4.0, Color32::BLUE);
+                            let attack_response =
+                                ui.interact(attack_handle_rect, attack_handle_id, Sense::drag());
+                            ui.painter().add(attack_drag);
+                            if attack_response.dragged() {
+                                if let Some(pointer_pos_screen) =
+                                    attack_response.interact_pointer_pos()
+                                {
+                                    let pointer_pos_model =
+                                        to_screen.inverse().transform_pos(pointer_pos_screen);
+                                    let new_attack_time = pointer_pos_model.x.max(0.0).min(x_size);
+                                    dispatch(Action::SetFloat(
+                                        FloatField::AdsrAttack,
+                                        f32::min(1000.0, new_attack_time),
+                                    ));
+                                }
+                            }
+
+                            let decay_handle_id = ui.id().with("decay_handle");
+                            let decay_handle_pos = to_screen.transform_pos(pos2(
+                                envelope.attack + envelope.decay,
+                                envelope.sustain,
+                            ));
+                            let decay_handle_rect =
+                                Rect::from_center_size(decay_handle_pos, vec2(12.0, 12.0));
+                            let decay_drag =
+                                Shape::rect_filled(decay_handle_rect, 4.0, Color32::BLUE);
+                            let decay_response =
+                                ui.interact(decay_handle_rect, decay_handle_id, Sense::drag());
+                            ui.painter().add(decay_drag);
+                            if decay_response.dragged() {
+                                if let Some(pointer_pos_screen) =
+                                    decay_response.interact_pointer_pos()
+                                {
+                                    let pointer_pos_model =
+                                        to_screen.inverse().transform_pos(pointer_pos_screen);
+                                    let new_decay_time = pointer_pos_model.x.max(0.0).min(x_size);
+                                    let new_sustain = pointer_pos_model.y.max(0.0).min(1.0);
+                                    dispatch(Action::SetFloat(
+                                        FloatField::AdsrSustain,
+                                        new_sustain,
+                                    ));
+                                    if new_decay_time <= envelope.attack {
+                                        dispatch(Action::SetFloat(
+                                            FloatField::AdsrAttack,
+                                            f32::min(1000.0, new_decay_time),
+                                        ));
+                                        dispatch(Action::SetFloat(FloatField::AdsrDecay, 0.0));
+                                    } else {
+                                        dispatch(Action::SetFloat(
+                                            FloatField::AdsrDecay,
+                                            f32::max(
+                                                0.0,
+                                                f32::min(1000.0, new_decay_time - envelope.attack),
+                                            ),
+                                        ));
+                                    }
+                                }
+                            }
+
+                            let sr_handle_id = ui.id().with("sr_handle");
+                            let sr_handle_pos = to_screen
+                                .transform_pos(pos2(x_size - envelope.release, envelope.sustain));
+                            let sr_handle_rect =
+                                Rect::from_center_size(sr_handle_pos, vec2(12.0, 12.0));
+                            let sr_drag = Shape::rect_filled(sr_handle_rect, 4.0, Color32::BLUE);
+                            let sr_response =
+                                ui.interact(sr_handle_rect, sr_handle_id, Sense::drag());
+                            ui.painter().add(sr_drag);
+                            if sr_response.dragged() {
+                                if let Some(pointer_pos_screen) = sr_response.interact_pointer_pos()
+                                {
+                                    let pointer_pos_model =
+                                        to_screen.inverse().transform_pos(pointer_pos_screen);
+                                    let new_release_time = pointer_pos_model.x.max(0.0).min(x_size);
+                                    let new_sustain = pointer_pos_model.y.max(0.0).min(1.0);
+                                    dispatch(Action::SetFloat(
+                                        FloatField::AdsrSustain,
+                                        new_sustain,
+                                    ));
+                                    dispatch(Action::SetFloat(
+                                        FloatField::AdsrRelease,
+                                        f32::min(x_size - new_release_time, 1000.0),
+                                    ))
+                                }
+                            }
                         });
                         ui.add_space(10.0);
                         // All the knobs for envelope modification
