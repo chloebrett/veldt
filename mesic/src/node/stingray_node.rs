@@ -255,9 +255,27 @@ impl Node<ProcessContext> for StingrayNode {
             const LPF_MIN_FREQ: f32 = 20.0;
             const LPF_MAX_FREQ: f32 = 20000.0;
 
+            // Applying the LFO to the LPF
+            // This implementation of the LFO LPF relation is based on the the ableton synth version
+            // https://learningsynths.ableton.com/en/playground
+            let mut lfo_value = 0.0;
+            for k in 0..state.config.lfos.len() {
+                // Get matrix value for this LPF and LFO
+                let matrix_value = state
+                    .config
+                    .matrix
+                    .get(k + LFO_ROW_START, LPF_COL_START)
+                    .map_or(0.0, |cell_ref| (*cell_ref).into());
+
+                lfo_value += state.voice.lfos[k].current_value * matrix_value;
+            }
+
+            // The modified LPF frequency should go to max freq at LFO value 1.0 and min freq at -1.0.
+            let new_lpf_freq = state.config.lpf.fc + (LPF_MAX_FREQ - LPF_MIN_FREQ) * lfo_value;
+
             // Normalize cutoff frequency
             let mut lpf_norm =
-                (state.config.lpf.fc as f32 - LPF_MIN_FREQ) / (LPF_MAX_FREQ - LPF_MIN_FREQ);
+                (new_lpf_freq as f32 - LPF_MIN_FREQ) / (LPF_MAX_FREQ - LPF_MIN_FREQ);
 
             // Applying envelopes to LPF
             for eg_idx in 0..state.voice.egs.len() {
@@ -275,24 +293,7 @@ impl Node<ProcessContext> for StingrayNode {
 
             lpf_norm = lpf_norm.clamp(0.0, 1.0);
             let mut new_lpf_freq = LPF_MIN_FREQ + lpf_norm * (LPF_MAX_FREQ - LPF_MIN_FREQ);
-
-            // Applying the LFO to the LPF
-            // This implementation of the LFO LPF relation is based on the the ableton synth version
-            // https://learningsynths.ableton.com/en/playground
-            let mut lfo_value = 0.0;
-            for k in 0..state.config.lfos.len() {
-                // Get matrix value for this LPF and LFO
-                let matrix_value = state
-                    .config
-                    .matrix
-                    .get(k + LFO_ROW_START, LPF_COL_START)
-                    .map_or(0.0, |cell_ref| (*cell_ref).into());
-
-                lfo_value += state.voice.lfos[k].current_value * matrix_value;
-            }
-
-            // The modified LPF frequency should go to max freq at LFO value 1.0 and min freq at -1.0.
-            new_lpf_freq += (LPF_MAX_FREQ - LPF_MIN_FREQ) * lfo_value;
+            
             new_lpf_freq = new_lpf_freq.clamp(LPF_MIN_FREQ, LPF_MAX_FREQ);
 
             let mut new_eq_config = state.config.lpf.clone();
