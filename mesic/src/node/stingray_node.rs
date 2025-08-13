@@ -271,11 +271,10 @@ impl Node<ProcessContext> for StingrayNode {
             }
 
             // The modified LPF frequency should go to max freq at LFO value 1.0 and min freq at -1.0.
-            let new_lpf_freq = state.config.lpf.fc + (LPF_MAX_FREQ - LPF_MIN_FREQ) * lfo_value;
+            let mut new_lpf_freq = state.config.lpf.fc + (LPF_MAX_FREQ - LPF_MIN_FREQ) * lfo_value;
 
             // Normalize cutoff frequency
-            let mut lpf_norm =
-                (new_lpf_freq as f32 - LPF_MIN_FREQ) / (LPF_MAX_FREQ - LPF_MIN_FREQ);
+            let mut env_mod = 0.0;
 
             // Applying envelopes to LPF
             for eg_idx in 0..state.voice.egs.len() {
@@ -288,12 +287,12 @@ impl Node<ProcessContext> for StingrayNode {
                 let eg_val = state.voice.egs[eg_idx].peek();
 
                 // Accumulate modulation scaled by matrix value
-                lpf_norm += eg_val * matrix_value;
+                env_mod += eg_val * matrix_value;
             }
 
-            lpf_norm = lpf_norm.clamp(0.0, 1.0);
-            let mut new_lpf_freq = LPF_MIN_FREQ + lpf_norm * (LPF_MAX_FREQ - LPF_MIN_FREQ);
-            
+            env_mod = env_mod.clamp(0.0, 1.0);
+            new_lpf_freq = LPF_MIN_FREQ + env_mod * (new_lpf_freq - LPF_MIN_FREQ);
+
             new_lpf_freq = new_lpf_freq.clamp(LPF_MIN_FREQ, LPF_MAX_FREQ);
 
             let mut new_eq_config = state.config.lpf.clone();
