@@ -233,10 +233,7 @@ impl Node<ProcessContext> for StingrayNode {
                             .map_or(0.0, |cell_ref| (*cell_ref).into());
 
                         if matrix_value != 0.0 {
-                            let amp = state.voice.egs[eg_idx]
-                                .next()
-                                .unwrap_or(0.0)
-                                * matrix_value;
+                            let amp = state.voice.egs[eg_idx].next().unwrap_or(0.0) * matrix_value;
                             amp_mod += amp;
                         }
                     }
