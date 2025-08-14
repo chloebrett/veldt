@@ -246,6 +246,10 @@ impl Node<ProcessContext> for StingrayNode {
                         amp_mod[1] += amp;
                     }
 
+                    // If no modulation, set to 1 to play the sample normally
+                    if amp_mod[0] == 0.0 { amp_mod[0] = 1.0; }
+                    if amp_mod[1] == 0.0 { amp_mod[1] = 1.0; }
+
                     buffers[0][i] += amp_mod[0] * wave[0];
                     buffers[1][i] += amp_mod[1] * wave[1];
                 }
@@ -289,6 +293,9 @@ impl Node<ProcessContext> for StingrayNode {
                 // Accumulate modulation scaled by matrix value
                 env_mod += eg_val * matrix_value;
             }
+
+            // If no modulation, set to 1 so that sound is not cut off
+            if env_mod == 0.0 { env_mod = 1.0; }
 
             env_mod = env_mod.clamp(0.0, 1.0);
             new_lpf_freq = LPF_MIN_FREQ + env_mod * (new_lpf_freq - LPF_MIN_FREQ);
