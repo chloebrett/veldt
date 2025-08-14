@@ -222,40 +222,30 @@ impl Node<ProcessContext> for StingrayNode {
 
                     // Envelope-oscillator modulation
                     let wave = source.next(&mut self.cache, lfo_value, lfo_active);
-                    let mut amp_mod = [0.0, 0.0];
+                    let mut amp_mod = 0.0;
 
                     // Iterate through each envelope and accumulate modulation
                     for eg_idx in 0..state.voice.egs.len() {
                         let matrix_value = state
                             .config
                             .matrix
-                            .get(eg_idx, j) // row = EG index, column = oscillator index
+                            .get(eg_idx, j)
                             .map_or(0.0, |cell_ref| (*cell_ref).into());
 
-                        let mut amp = state
-                            .voice
-                            .egs
-                            .get_mut(eg_idx)
-                            .and_then(|eg| eg.next())
-                            .unwrap_or(0.0);
-
-                        amp *= matrix_value;
-
-                        // Calculate combined modulation
-                        amp_mod[0] += amp;
-                        amp_mod[1] += amp;
+                        if matrix_value != 0.0 {
+                            let amp = state.voice.egs[eg_idx]
+                                .next()
+                                .unwrap_or(0.0)
+                                * matrix_value;
+                            amp_mod += amp;
+                        }
                     }
 
-                    // If no modulation, set to 1 to play the sample normally
-                    if amp_mod[0] == 0.0 {
-                        amp_mod[0] = 1.0;
-                    }
-                    if amp_mod[1] == 0.0 {
-                        amp_mod[1] = 1.0;
-                    }
+                    // If no modulation, set to 1.0 to play sample normally
+                    let amp_mod = if amp_mod == 0.0 { 1.0 } else { amp_mod };
 
-                    buffers[0][i] += amp_mod[0] * wave[0];
-                    buffers[1][i] += amp_mod[1] * wave[1];
+                    buffers[0][i] += amp_mod * wave[0];
+                    buffers[1][i] += amp_mod * wave[1];
                 }
             }
 
@@ -303,7 +293,6 @@ impl Node<ProcessContext> for StingrayNode {
                 env_mod = 1.0;
             }
 
-            env_mod = env_mod.clamp(0.0, 1.0);
             new_lpf_freq = LPF_MIN_FREQ + env_mod * (new_lpf_freq - LPF_MIN_FREQ);
 
             new_lpf_freq = new_lpf_freq.clamp(LPF_MIN_FREQ, LPF_MAX_FREQ);
