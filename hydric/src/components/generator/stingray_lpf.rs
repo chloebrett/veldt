@@ -35,7 +35,9 @@ impl<F: Fn(Action), G: Fn()> View for StingrayLpfView<'_, F, G> {
                 ui.label("Low Pass Filter");
                 ui.add_space(4.0);
             });
-            add_knob(
+
+            ui.horizontal(|ui| {
+                add_knob(
                 ui,
                 styled_knob(
                     "Freq",
@@ -46,7 +48,7 @@ impl<F: Fn(Action), G: Fn()> View for StingrayLpfView<'_, F, G> {
                 .with_neutral(2000.0),
                 on_release,
             );
-
+            ui.add_space(10.0);
             add_knob(
                 ui,
                 styled_knob(
@@ -58,6 +60,8 @@ impl<F: Fn(Action), G: Fn()> View for StingrayLpfView<'_, F, G> {
                 .with_neutral(1.0),
                 on_release,
             );
+            ui.add_space(100.0);
+            });
         });
     }
 }
