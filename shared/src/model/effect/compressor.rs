@@ -19,7 +19,7 @@ impl Default for CompressorConfig {
             attack_ms: 30.0,
             release_ms: 30.0,
             ratio: 1.5,
-            gain: 1.0,
+            gain: 0.0,
         }
     }
 }

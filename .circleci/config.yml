@@ -4,33 +4,97 @@ version: 2.1
 jobs:
   test-rust:
     docker:
-      - image: cimg/rust:1.70
+      - image: cimg/rust:1.87.0
+    resource_class: medium
     steps:
       - checkout
       - restore_cache:
           key: cargo-{{ checksum "Cargo.lock" }}
       - run:
-          command: cargo test
+          name: check-format
+          command: cargo fmt --check
+
+        # Restore all caches
+      - restore_cache:
+          keys:
+            - cargo-deps-{{ checksum "Cargo.lock" }}
+            - sys-deps-{{ checksum "Cargo.lock" }}
+            - wasm-tools-v0.2.87
+            - rustup-components-{{ checksum "Cargo.lock" }}
+      
+      # Install Rust components
+      - run:
+          name: Install nightly rustfmt
+          command: |
+            if [ ! -d ~/.rustup/toolchains/nightly-x86_64-unknown-linux-gnu ]; then
+              rustup toolchain install nightly --component rustfmt --no-self-update
+              rustup set profile minimal
+            fi
+      
+      # Install system dependencies (protobuf)
+      - run:
+          name: Install system dependencies
+          command: |
+            if ! command -v protoc &> /dev/null; then
+              sudo apt-get update
+              sudo apt-get install -y protobuf-compiler
+              sudo apt-get clean
+            fi
+      
+      # Install wasm-bindgen-cli
+      - run:
+          name: Install wasm tools
+          command: |
+            if ! command -v wasm-bindgen &> /dev/null; then
+              cargo install wasm-bindgen-cli
+            fi
+      
+      # Save all caches
+      - save_cache:
+          key: rustup-components-{{ checksum "Cargo.lock" }}
+          paths:
+            - ~/.rustup/toolchains/nightly-x86_64-unknown-linux-gnu
+            - ~/.rustup/settings.toml
+      
+      - save_cache:
+          key: sys-deps-{{ checksum "Cargo.lock" }}
+          paths:
+            - /usr/bin/protoc
+            - /usr/include/google/protobuf
+      
+      - save_cache:
+          key: wasm-tools-v0.2.87
+          paths:
+            - /usr/local/cargo/bin/wasm-bindgen*
+            - /usr/local/cargo/.crates*
+      
+      - save_cache:
+          key: cargo-deps-{{ checksum "Cargo.lock" }}
+          paths:
+            - /usr/local/cargo/registry
+            - /usr/local/cargo/git
+            - target
+
+      - run:
+          name: test-shared
+          command: cargo test -p shared
+      - run:
+          name: test-mesic
+          command: cargo test -p mesic
+      - run:
+          name: test-state
+          command: cargo test -p state
+      - run:
+          name: test-xeric
+          command: cargo test -p xeric
+      - run:
+          name: verify-hydric-build
+          command: ./hydric/build.py
       - save_cache:
           key: cargo-{{ checksum "Cargo.lock" }}
           paths:
             - ~/.cargo
-  deploy:
-    # This is an example deploy job, not actually used by the workflow
-    docker:
-      - image: cimg/base:stable
-    steps:
-      # Replace this with steps to deploy to users
-      - run:
-          name: deploy
-          command: '#e.g. ./deploy.sh'
-      - run:
-          name: found github actions config
-          command: ':'
 workflows:
   build-and-test:
     jobs:
       - test-rust
-    # - deploy:
-    #     requires:
-    #       - test-rust

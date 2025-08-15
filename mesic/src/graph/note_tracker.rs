@@ -1,10 +1,8 @@
 use crate::convert::beats_to_samples;
 use dasp_graph::Buffer;
-use shared::model::{PitchName, PlacementType, Project, TrackPlacement};
+use shared::model::{GeneratorId, PitchName, PlacementType, Project, TrackPlacement};
 use std::cmp::min;
-
-// Outer index is generator index.
-pub type NoteEventsByGenerator = Vec<Vec<NoteEvent>>;
+use std::collections::HashMap;
 
 #[derive(Clone, Debug)]
 pub struct NoteEvent {
@@ -23,28 +21,30 @@ pub enum NoteEventType {
 pub struct NoteTracker;
 
 impl NoteTracker {
-    pub fn track(project: &Project, global_sample_index: usize) -> NoteEventsByGenerator {
-        let mut result: NoteEventsByGenerator = vec![vec![]; project.generators.len()];
+    pub fn track(
+        project: &Project,
+        global_sample_index: usize,
+    ) -> HashMap<GeneratorId, Vec<NoteEvent>> {
+        let mut result: HashMap<GeneratorId, Vec<NoteEvent>> = HashMap::new();
 
         let bpm = project.bpm;
 
         // TODO: make this loop more efficient, instead of looping over generators one by one.
-        for (generator_index, result) in result.iter_mut().enumerate() {
+        for generator_id in project.generators.keys() {
             let placements: Vec<_> = project
                 .placements
-                .clone()
-                .into_iter()
-                .filter(|it| match &it.kind {
-                    PlacementType::Track(it) => it.generator_index == generator_index,
+                .values()
+                .filter(|placement| match &placement.kind {
+                    PlacementType::Track(it) => it.generator_id == *generator_id,
                     _ => false,
                 })
                 .collect();
 
-            for placement in &placements {
-                let &Ok(&TrackPlacement { track_index, .. }) = &placement.try_into() else {
+            for placement in placements {
+                let &Ok(&TrackPlacement { track_id, .. }) = &placement.try_into() else {
                     continue;
                 };
-                let track = &project.tracks[track_index];
+                let track = &project.tracks[&track_id];
                 let track_offset = *placement.offset;
                 let track_duration = *placement
                     .clipped_duration
@@ -66,7 +66,7 @@ impl NoteTracker {
 
                     let start_sample = note_start_sample as isize - global_sample_index as isize;
                     if buf_range.contains(&start_sample) {
-                        result.push({
+                        result.entry(*generator_id).or_default().push({
                             NoteEvent {
                                 kind: NoteEventType::On,
                                 sample_index: start_sample as usize,
@@ -77,7 +77,7 @@ impl NoteTracker {
 
                     let end_sample = note_end_sample as isize - global_sample_index as isize;
                     if buf_range.contains(&end_sample) {
-                        result.push({
+                        result.entry(*generator_id).or_default().push({
                             NoteEvent {
                                 kind: NoteEventType::Off,
                                 sample_index: end_sample as usize,

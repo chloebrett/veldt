@@ -1,8 +1,8 @@
 use crate::{
+    components::note_roll::NoteSequencerObject,
     playback::AudioPlayer,
     transform::{Transform, Yx},
     view::View,
-    widget::SequencerObject,
 };
 use egui::{
     Color32, CornerRadius, Frame, Pos2, Rect, Sense, Shape, Stroke, StrokeKind, Ui, Vec2,
@@ -113,7 +113,7 @@ impl<'a> Piano<'a> {
 
     fn make_white_key(&self, note: PlacedNote, offset: f32, note_size: f32) -> Shape {
         let note_pos = if self.orientation == PianoOrientation::Vertical {
-            note.to_pos(self.range()) + vec2(offset, 0.0)
+            NoteSequencerObject(note).to_pos(self.range()) + vec2(offset, 0.0)
         } else {
             self.to_horizontal_pos(self.range(), note) + vec2(offset, 0.0)
         };
@@ -130,7 +130,7 @@ impl<'a> Piano<'a> {
 
     fn make_black_key(&self, note: PlacedNote) -> Shape {
         let note_pos = if self.orientation == PianoOrientation::Vertical {
-            note.to_pos(self.range())
+            NoteSequencerObject(note).to_pos(self.range())
         } else {
             self.to_horizontal_pos(self.range(), note)
         };

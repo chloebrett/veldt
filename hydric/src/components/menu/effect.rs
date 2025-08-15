@@ -3,19 +3,21 @@ use shared::model::{Effect, EffectInstance, EffectMeta};
 use state::{Action, MixerSelector, Store, TypeField};
 use strum::IntoEnumIterator;
 
-use crate::{components::effect::effect_name, view::View, window_state::WindowState};
+use crate::{
+    components::effect::effect_name,
+    local_state::{GetSet, LocalState},
+    view::View,
+    window_state::WindowKind,
+};
 
 pub struct EffectMenuOptions<'a> {
     store: &'a Store,
-    window_state: &'a mut WindowState,
+    local_state: &'a LocalState,
 }
 
 impl<'a> EffectMenuOptions<'a> {
-    pub fn new(store: &'a Store, window_state: &'a mut WindowState) -> Self {
-        Self {
-            store,
-            window_state,
-        }
+    pub fn new(store: &'a Store, local_state: &'a LocalState) -> Self {
+        Self { store, local_state }
     }
 }
 
@@ -36,8 +38,10 @@ impl View for EffectMenuOptions<'_> {
                                 Action::AddChild(TypeField::Effect(instance)),
                             );
                             // Open mixer window.
-                            self.window_state.mixer.channel = mixer_sel;
-                            self.window_state.mixer.visible = true;
+                            self.local_state.active_mixer_channel.set(Some(mixer_sel));
+                            self.local_state
+                                .window_state
+                                .set_visible(WindowKind::ChannelEffect, true);
                         }
                     }
                 });

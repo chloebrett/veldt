@@ -1,9 +1,9 @@
-use super::filter::{SecondOrderFilter, SecondOrderFilterConfig};
+use super::filter::{Filter, FilterConfig};
 use crate::consts::SAMPLE_RATE;
 use shared::model::EqConfig;
 use std::f32::consts::PI;
 
-pub fn parametric_constant_q(config: &EqConfig) -> SecondOrderFilter {
+pub fn parametric_constant_q(config: &EqConfig) -> Filter {
     let fs = SAMPLE_RATE as f32;
     let fc = config.fc;
     let q = config.q;
@@ -30,5 +30,5 @@ pub fn parametric_constant_q(config: &EqConfig) -> SecondOrderFilter {
         (d0 * e0, beta * e0, delta * e0, beta * e0, eta * e0)
     };
 
-    SecondOrderFilter::new_wet(SecondOrderFilterConfig { a0, a1, a2, b1, b2 })
+    Filter::new_wet(FilterConfig { a0, a1, a2, b1, b2 })
 }

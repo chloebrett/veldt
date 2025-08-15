@@ -1,22 +1,24 @@
+use crate::local_state::LocalState;
 use crate::view::View;
-use crate::widget::{default_window, get_set, selectable_value};
-use egui::{ComboBox, Pos2, Ui};
+use crate::widget::{StateWindow, get_set, selectable_value};
+use crate::window_state::WindowKind;
+use egui::{ComboBox, Ui};
 use shared::model::{Scale, ScaleValue};
 use state::{Action, TypeField};
 use strum::IntoEnumIterator;
 
 pub struct KeyView<'a, F: Fn(Action)> {
     dispatch: F,
-    visible: &'a mut bool,
+    local_state: &'a LocalState,
     key: ScaleValue,
     scale: Scale,
 }
 
 impl<'a, F: Fn(Action)> KeyView<'a, F> {
-    pub fn new(dispatch: F, visible: &'a mut bool, key: ScaleValue, scale: Scale) -> Self {
+    pub fn new(dispatch: F, local_state: &'a LocalState, key: ScaleValue, scale: Scale) -> Self {
         Self {
             dispatch,
-            visible,
+            local_state,
             key,
             scale,
         }
@@ -27,17 +29,18 @@ impl<F: Fn(Action)> View for KeyView<'_, F> {
     fn ui(&mut self, ui: &mut Ui) {
         let Self {
             ref dispatch,
+            local_state,
             key,
             scale,
             ..
         } = *self;
 
-        let visible = &mut self.visible;
-
-        default_window("Scale")
-            .open(visible)
-            .default_pos(Pos2 { x: 600.0, y: 20.0 })
-            .show(ui.ctx(), |ui| {
+        StateWindow::show_from_window_state(
+            ui,
+            &local_state.window_state,
+            WindowKind::Scale,
+            "Scale",
+            |ui| {
                 ComboBox::from_label("Key")
                     .selected_text(key.to_string())
                     .show_ui(ui, |ui| {
@@ -64,6 +67,7 @@ impl<F: Fn(Action)> View for KeyView<'_, F> {
                             );
                         }
                     });
-            });
+            },
+        );
     }
 }

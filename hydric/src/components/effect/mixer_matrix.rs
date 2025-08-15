@@ -1,5 +1,7 @@
 use crate::view::View;
-use crate::widget::{TextRotation, for_each_with_separator, knob, knob_disabled, text_rotator};
+use crate::widget::{
+    TextRotation, add_knob, disabled_knob, for_each_with_separator, styled_knob, text_rotator,
+};
 use eframe::egui;
 use egui::{Color32, Ui};
 use shared::model::{MatrixCell, MixerMatrix};
@@ -101,20 +103,22 @@ impl<G: Fn()> View for MixerMatrixView<'_, G> {
 
                                 ui.push_id(id, |ui| {
                                     if disabled {
-                                        knob_disabled(ui, "", 0.0, 0.0..=1.0);
+                                        add_knob(ui, disabled_knob("", 0.0, 0.0..=1.0), on_release);
                                     } else {
-                                        knob(
+                                        add_knob(
                                             ui,
-                                            "",
-                                            value,
-                                            |it| {
-                                                store.dispatch(
-                                                    &sel,
-                                                    Action::SetFloat(FloatField::ModFactor, it),
-                                                )
-                                            }, // TODO need a selector for each knob
-                                            0.0..=1.0,
-                                            0.0,
+                                            styled_knob(
+                                                "",
+                                                value,
+                                                |it| {
+                                                    store.dispatch(
+                                                        &sel,
+                                                        Action::SetFloat(FloatField::ModFactor, it),
+                                                    )
+                                                },
+                                                0.0..=1.0,
+                                            )
+                                            .with_neutral(0.0),
                                             on_release,
                                         );
                                     }

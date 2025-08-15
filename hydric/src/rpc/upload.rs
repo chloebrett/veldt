@@ -3,9 +3,8 @@ use shared::upload::UploadChunkRequest;
 use shared::upload::upload_client::UploadClient;
 use tonic_web_wasm_client::Client;
 
-pub async fn upload_sample(file_name: String, bytes: Vec<u8>) -> Result<(), String> {
+pub async fn upload_sample(file_name: String, bytes: Vec<u8>) -> Result<String, tonic::Status> {
     // Streams chunks of data now.
-
     let client = Client::new(XERIC_URL.to_string());
     let mut grpc = UploadClient::new(client);
 
@@ -22,6 +21,7 @@ pub async fn upload_sample(file_name: String, bytes: Vec<u8>) -> Result<(), Stri
         .collect();
 
     let total_chunks = owned_chunks.len() as u32;
+    let file_name_clone = file_name.clone();
 
     // Create stream.
     let stream =
@@ -33,9 +33,5 @@ pub async fn upload_sample(file_name: String, bytes: Vec<u8>) -> Result<(), Stri
                 total_chunks,
             }
         }));
-
-    grpc.upload_sample(stream)
-        .await
-        .map(|_| ()) //Currently discarding response.
-        .map_err(|e| format!("Upload failed: {:?}", e))
+    grpc.upload_sample(stream).await.map(|_| file_name_clone)
 }

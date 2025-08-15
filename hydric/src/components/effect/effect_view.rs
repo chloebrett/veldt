@@ -1,14 +1,14 @@
 use super::{CompressorView, DelayView, EqView, ModDelayView};
-use crate::WindowState;
+use crate::local_state::LocalState;
 use crate::view::View;
-use crate::widget::{StateWindow, default_window};
-use egui::{Pos2, Ui};
+use crate::widget::StateWindow;
+use crate::window_state::WindowKind;
+use egui::Ui;
 use shared::model::Effect;
 use state::{Action, EffectSelector, Store};
 
 pub struct EffectView<'a, F: Fn(Action), G: Fn()> {
-    visible: bool,
-    on_close: Box<dyn FnMut() + 'a>,
+    local_state: &'a LocalState,
     effect: &'a Effect,
     selector: EffectSelector,
     dispatch: F,
@@ -19,18 +19,15 @@ impl<'a, F: Fn(Action), G: Fn()> EffectView<'a, F, G> {
     pub fn new(
         store: &'a Store,
         selector: &'a EffectSelector,
-        window_state: &'a mut WindowState,
+        local_state: &'a LocalState,
         dispatch: F,
         on_release: G,
     ) -> Option<Self> {
         let effect = store.try_select(selector)?;
         let effect: &'a Effect = &effect.it;
-        let visible = window_state.effects.get(*selector);
-        let on_close = Box::new(move || window_state.effects.set(*selector, false));
 
         Some(Self {
-            visible,
-            on_close,
+            local_state,
             effect,
             selector: *selector,
             dispatch,
@@ -42,46 +39,25 @@ impl<'a, F: Fn(Action), G: Fn()> EffectView<'a, F, G> {
 impl<F: Fn(Action), G: Fn()> View for EffectView<'_, F, G> {
     fn ui(&mut self, ui: &mut Ui) {
         let Self {
-            visible,
-            on_close,
             effect,
+            local_state,
             ..
         } = self;
         let dispatch = &self.dispatch;
         let on_release = &self.on_release;
         let title = effect_name(effect);
-        let EffectSelector(mixer_index, effect_index) = self.selector;
-
-        StateWindow(
-            default_window(title)
-                .id(format!("effects_{}_{}", mixer_index, effect_index).into())
-                .default_pos(Pos2 {
-                    x: 1000.0 + 50.0 * effect_index as f32,
-                    y: 150.0 + 50.0 * effect_index as f32,
-                }),
-        )
-        .show_with_closure(
+        StateWindow::show_from_window_state(
             ui,
-            *visible,
-            |_| on_close(),
-            |ui| {
-                match effect {
-                    Effect::SimpleEq(config) => EqView::new(config, dispatch, on_release).ui(ui),
-                    Effect::Delay(config) => DelayView::new(config, dispatch, on_release).ui(ui),
-                    Effect::Compressor(config) => {
-                        CompressorView::new(config, dispatch, on_release).ui(ui)
-                    }
-                    Effect::ModDelay(config) => {
-                        ModDelayView::new(config, dispatch, on_release).ui(ui)
-                    }
+            &local_state.window_state,
+            WindowKind::Effect(self.selector),
+            title,
+            |ui| match effect {
+                Effect::SimpleEq(config) => EqView::new(config, dispatch, on_release).ui(ui),
+                Effect::Delay(config) => DelayView::new(config, dispatch, on_release).ui(ui),
+                Effect::Compressor(config) => {
+                    CompressorView::new(config, dispatch, on_release).ui(ui)
                 }
-
-                ui.separator();
-                ui.label(format!(
-                    "Mixer {} | Effect {}",
-                    mixer_index + 1,
-                    effect_index + 1
-                ));
+                Effect::ModDelay(config) => ModDelayView::new(config, dispatch, on_release).ui(ui),
             },
         );
     }

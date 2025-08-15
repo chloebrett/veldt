@@ -1,4 +1,5 @@
 use super::{extract_inputs, extract_outputs};
+use crate::from_db;
 use crate::graph::ProcessContext;
 use crate::{consts::SAMPLE_RATE, to_db};
 use dasp_graph::{Buffer, Input, Node};
@@ -36,8 +37,7 @@ impl CompressorNode {
             // TODO: also support using the compressor as a downward expander.
             let pre_gain = compress(*x, db_rms, threshold, ratio_recip);
 
-            // TODO: use dB for makeup gain.
-            *x = pre_gain * self.config.gain
+            *x = pre_gain * from_db(self.config.gain)
         }
     }
 
@@ -70,7 +70,7 @@ fn compress(input: f32, detector: f32, threshold: f32, ratio_recip: f32) -> f32 
     } else {
         detector
     };
-    let compress_gain = 10f32.powf((y_out - detector) / 20.0);
+    let compress_gain = from_db(y_out - detector);
     // Scale output by compression amount
     input * compress_gain
 }
@@ -154,7 +154,7 @@ mod tests {
         );
 
         // ACT
-        let output: Vec<_> = graph.collect();
+        let output: Vec<_> = graph.collect_main();
 
         // ASSERT
         assert_signals_approx_eq(output, input);
@@ -182,7 +182,7 @@ mod tests {
         );
 
         // ACT
-        let output: Vec<_> = graph.collect();
+        let output: Vec<_> = graph.collect_main();
         // Output should be equivalent to applying the compressor function straight to the input.
         let expected: Vec<_> = input
             .iter()
@@ -214,7 +214,7 @@ mod tests {
         );
 
         // ACT
-        let output: Vec<_> = graph.collect();
+        let output: Vec<_> = graph.collect_main();
 
         // ASSERT
         for (y, x) in output.into_iter().zip(input.into_iter()) {
@@ -247,7 +247,7 @@ mod tests {
         );
 
         // ACT
-        let output: Vec<_> = graph.collect();
+        let output: Vec<_> = graph.collect_main();
 
         // ASSERT
         for (y, x) in output.into_iter().zip(input.into_iter()) {
@@ -286,7 +286,7 @@ mod tests {
         );
 
         // ACT
-        let output: Vec<_> = graph.collect();
+        let output: Vec<_> = graph.collect_main();
 
         // ASSERT
         for ((i, y), x) in output.into_iter().enumerate().zip(input.into_iter()) {

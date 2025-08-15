@@ -2,12 +2,13 @@ use crate::receiver::ActionReceiver;
 use crate::{Action, Selector, SelectorTrait, reducer};
 use ordered_float::OrderedFloat;
 use shared::model::{
-    AdsrEnvelope, AntiAliasingMode, FileTreeConfig, FilenameTree, Generator, GeneratorInstance,
-    GeneratorMeta, Mixer, MixerChannel, MixerMatrix, ModMatrix, NoiseConfig, Note, PitchName,
-    PlacedNote, Placement, PlacementType, PolyphonyMode, Project, Scale, ScaleValue,
-    SimpleWaveConfig, StingrayConfig, Track, TrackPlacement, WaveType,
+    AdsrEnvelope, AntiAliasingMode, FileTreeConfig, FilenameTree, Generator, GeneratorId,
+    GeneratorInstance, GeneratorMeta, Mixer, MixerChannel, MixerMatrix, NoiseConfig, Note,
+    PitchName, PlacedNote, Placement, PlacementId, PlacementType, PolyphonyMode, Project, Scale,
+    ScaleValue, SimpleWaveConfig, StingrayConfig, Track, TrackId, TrackPlacement, WaveType,
 };
 use shared::types::Volume;
+use std::collections::HashMap;
 
 #[derive(Debug, Clone)]
 pub struct StoreData {
@@ -50,86 +51,96 @@ impl StoreData {
 
 impl Default for StoreData {
     fn default() -> Self {
-        const EMPTY_CHANNEL: MixerChannel = MixerChannel {
-            volume: 1.0,
-            effects: vec![],
-        };
-
         StoreData {
             project: Project {
                 name: "My Project".to_string(),
-                tracks: vec![Track {
-                    notes: vec![PlacedNote {
-                        note: Note {
-                            pitch_name: PitchName {
-                                scale_value: ScaleValue::A,
-                                octave: 4,
+                tracks: HashMap::from([(
+                    TrackId(0),
+                    Track {
+                        notes: vec![PlacedNote {
+                            note: Note {
+                                pitch_name: PitchName {
+                                    scale_value: ScaleValue::A,
+                                    octave: 4,
+                                },
+                                beats: 1.0,
                             },
-                            beats: 1.0,
-                        },
+                            offset: OrderedFloat(0.0),
+                        }],
                         offset: OrderedFloat(0.0),
-                    }],
-                    offset: OrderedFloat(0.0),
-                }],
-                placements: vec![Placement {
-                    kind: PlacementType::Track(TrackPlacement {
-                        track_index: 0,
-                        generator_index: 0,
-                    }),
-                    offset: 0.0.into(),
-                    clipped_duration: None,
-                    visual_placement: 0,
-                }],
-                samples: vec![],
-                generators: vec![
-                    GeneratorInstance {
-                        it: Generator::SimpleWave(SimpleWaveConfig {
-                            wave: WaveType::Sine,
-                            envelope: AdsrEnvelope {
-                                attack: 100.0,
-                                decay: 100.0,
-                                sustain: 0.8,
-                                release: 100.0,
-                            },
-                            osc_count: 4,
-                            detune_cents: 5.0,
-                            anti_aliasing_mode: AntiAliasingMode::Off,
-                            oversample_factor: 2,
-                            polyphony_mode: PolyphonyMode::Polyphonic,
-                            polyphony_limit: 2,
+                    },
+                )]),
+                placements: HashMap::from([(
+                    PlacementId(0),
+                    Placement {
+                        kind: PlacementType::Track(TrackPlacement {
+                            track_id: 0.into(),
+                            generator_id: 0.into(),
                         }),
-                        meta: GeneratorMeta {
-                            volume: 1.0,
-                            mute: false,
-                            pan: 0.0,
-                            mixer_channel: 2,
-                        },
+                        offset: 0.0.into(),
+                        clipped_duration: None,
+                        visual_placement: 0,
                     },
-                    GeneratorInstance {
-                        it: Generator::Stingray(StingrayConfig::default()),
-                        meta: GeneratorMeta {
-                            volume: 1.0,
-                            mute: false,
-                            pan: 0.0,
-                            mixer_channel: 2,
+                )]),
+                samples: HashMap::new(),
+                generators: HashMap::from([
+                    (
+                        GeneratorId(0),
+                        GeneratorInstance {
+                            it: Generator::SimpleWave(SimpleWaveConfig {
+                                wave: WaveType::Sine,
+                                envelope: AdsrEnvelope {
+                                    attack: 100.0,
+                                    decay: 100.0,
+                                    sustain: 0.8,
+                                    release: 100.0,
+                                },
+                                osc_count: 4,
+                                detune_cents: 5.0,
+                                anti_aliasing_mode: AntiAliasingMode::Off,
+                                oversample_factor: 2,
+                                polyphony_mode: PolyphonyMode::Polyphonic,
+                                polyphony_limit: 2,
+                            }),
+                            meta: GeneratorMeta {
+                                volume: 1.0,
+                                mute: false,
+                                pan: 0.0,
+                                mixer_channel: 2,
+                            },
                         },
-                    },
-                    GeneratorInstance {
-                        it: Generator::Noise(NoiseConfig::default()),
-                        meta: GeneratorMeta {
-                            volume: 1.0,
-                            mute: false,
-                            pan: 0.0,
-                            mixer_channel: 2,
+                    ),
+                    (
+                        GeneratorId(1),
+                        GeneratorInstance {
+                            it: Generator::Stingray(StingrayConfig::default()),
+                            meta: GeneratorMeta {
+                                volume: 1.0,
+                                mute: false,
+                                pan: 0.0,
+                                mixer_channel: 2,
+                            },
                         },
-                    },
-                ],
+                    ),
+                    (
+                        GeneratorId(2),
+                        GeneratorInstance {
+                            it: Generator::Noise(NoiseConfig::default()),
+                            meta: GeneratorMeta {
+                                volume: 1.0,
+                                mute: false,
+                                pan: 0.0,
+                                mixer_channel: 2,
+                            },
+                        },
+                    ),
+                ]),
                 mixer: Mixer {
                     matrix: MixerMatrix::with_channels(3),
-                    channels: vec![EMPTY_CHANNEL; 3],
+                    channels: vec![MixerChannel::default(); 3],
                 },
+                effects: HashMap::new(),
                 bpm: 120.0,
-                mod_matrix: ModMatrix::default(),
             },
             volume: 1.0,
             key: ScaleValue::A,

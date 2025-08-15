@@ -1,10 +1,10 @@
-use super::filter::{SecondOrderFilter, SecondOrderFilterConfig};
+use super::filter::{Filter, FilterConfig};
 use super::low_high::LowHigh;
 use crate::consts::SAMPLE_RATE;
 use shared::model::EqConfig;
 use std::f32::consts::PI;
 
-pub fn lhp_second_order_lr(config: &EqConfig, low_high: LowHigh) -> SecondOrderFilter {
+pub fn lhp_second_order_lr(config: &EqConfig, low_high: LowHigh) -> Filter {
     let fs = SAMPLE_RATE as f32;
 
     // See "Designing Audio Effect Plugins in C++", W. Pirkle, p275 (Linkwitz-Riley)
@@ -27,5 +27,5 @@ pub fn lhp_second_order_lr(config: &EqConfig, low_high: LowHigh) -> SecondOrderF
     let b1 = (2.0 * (omega2 - kappa2)) * delta_reciprocal;
     let b2 = (-2.0 * kappa * omega + kappa2 + omega2) * delta_reciprocal;
 
-    SecondOrderFilter::new_wet(SecondOrderFilterConfig { a0, a1, a2, b1, b2 })
+    Filter::new_wet(FilterConfig { a0, a1, a2, b1, b2 })
 }

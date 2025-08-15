@@ -1,5 +1,5 @@
 use crate::view::View;
-use crate::widget::{get_set, knob, selectable_value};
+use crate::widget::{add_knob, get_set, selectable_value, styled_knob};
 use egui::{Color32, Rect, Sense, Shape, Stroke, Ui, Vec2, pos2};
 use egui_plot::{Line, Plot, PlotPoints};
 use mesic::consts::NYQUIST;
@@ -76,33 +76,41 @@ impl<F: Fn(Action), G: Fn()> View for EqView<'_, F, G> {
             config, dispatch, ..
         } = self;
         ui.horizontal(|ui| {
-            knob(
+            add_knob(
                 ui,
-                "Freq",
-                config.fc,
-                |it| dispatch(Action::SetFloat(FloatField::Fc, it)),
-                20.0..=20000.0, // TODO: logarithmic
-                /* neutral= */ 2000.0,
+                styled_knob(
+                    "Freq",
+                    config.fc,
+                    |it| dispatch(Action::SetFloat(FloatField::Fc, it)),
+                    20.0..=20000.0,
+                )
+                .logarithmic(true)
+                .with_neutral(2000.0),
                 &self.on_release,
             );
 
-            knob(
+            add_knob(
                 ui,
-                "Q",
-                config.q,
-                |it| dispatch(Action::SetFloat(FloatField::Q, it)),
-                0.1..=100.0, // TODO: logarithmic
-                /* neutral= */ 1.0,
+                styled_knob(
+                    "Q",
+                    config.q,
+                    |it| dispatch(Action::SetFloat(FloatField::Q, it)),
+                    0.1..=100.0,
+                )
+                .logarithmic(true)
+                .with_neutral(1.0),
                 &self.on_release,
             );
 
-            knob(
+            add_knob(
                 ui,
-                "Gain",
-                config.gain,
-                |it| dispatch(Action::SetFloat(FloatField::Gain, it)),
-                -60.0..=60.0,
-                /* neutral= */ 0.0,
+                styled_knob(
+                    "Gain",
+                    config.gain,
+                    |it| dispatch(Action::SetFloat(FloatField::Gain, it)),
+                    -60.0..=60.0,
+                )
+                .with_neutral(0.0),
                 &self.on_release,
             );
         });
