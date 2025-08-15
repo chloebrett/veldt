@@ -46,7 +46,7 @@ pub struct LocalState {
 
     #[default(Rc::new(RefCell::new(true)))]
     pub show_frequency_peaks: Rc<RefCell<bool>>,
-    
+
     pub new_selected_generator: Rc<RefCell<String>>,
 }
 

@@ -1,9 +1,13 @@
 use super::generator_name;
 use crate::components::effect::channel_name;
-use crate::local_state::LocalState;
+use crate::local_state::{GetSet, LocalState};
 use crate::widget::{StateWindow, add_knob, get_set, selectable_value, styled_knob};
 use crate::window_state::WindowKind;
 use egui::{Button, ComboBox, Ui};
+use shared::model::{
+    AdsrEnvelope, AntiAliasingMode, Generator, GeneratorMeta, NoiseConfig, PolyphonyMode,
+    SimpleWaveConfig, StingrayConfig, WaveType,
+};
 use shared::model::{GeneratorId, GeneratorInstance};
 use state::{Action, FloatField, GeneratorSelector, IndexField, Store, TypeField};
 
@@ -93,17 +97,28 @@ pub fn generators_control(ui: &mut Ui, local_state: &LocalState, store: &Store) 
                 egui::ComboBox::from_label("Select one!")
                     .selected_text(format!("{:?}", selected))
                     .show_ui(ui, |ui| {
-                        ui.selectable_value(&mut selected, "Simple Wave".to_string(), "Simple Wave Generator");
-                        ui.selectable_value(&mut selected, "Subtractive Synth".to_string(), "Stringray (Subtrative Synth)");
-                        ui.selectable_value(&mut selected, "Noise Generator".to_string(), "Noise Generator");
-                    }
-                );
+                        ui.selectable_value(
+                            &mut selected,
+                            "Simple Wave".to_string(),
+                            "Simple Wave Generator",
+                        );
+                        ui.selectable_value(
+                            &mut selected,
+                            "Subtractive Synth".to_string(),
+                            "Stringray (Subtrative Synth)",
+                        );
+                        ui.selectable_value(
+                            &mut selected,
+                            "Noise Generator".to_string(),
+                            "Noise Generator",
+                        );
+                    });
 
                 local_state.new_selected_generator.set(selected.clone());
 
-                if ui.button("Add Generator").clicked(){
-                    match selected.as_str()  {
-                        "Simple Wave" => { 
+                if ui.button("Add Generator").clicked() {
+                    match selected.as_str() {
+                        "Simple Wave" => {
                             let new_generator = GeneratorInstance {
                                 it: Generator::SimpleWave(SimpleWaveConfig {
                                     wave: WaveType::Sine,
@@ -125,9 +140,9 @@ pub fn generators_control(ui: &mut Ui, local_state: &LocalState, store: &Store) 
                                     mute: false,
                                     pan: 0.0,
                                     mixer_channel: 2,
-                                }
+                                },
                             };
-                        },
+                        }
                         "Subtractive Synth" => {
                             let new_generator = GeneratorInstance {
                                 it: Generator::Stingray(StingrayConfig::default()),
@@ -136,9 +151,9 @@ pub fn generators_control(ui: &mut Ui, local_state: &LocalState, store: &Store) 
                                     mute: false,
                                     pan: 0.0,
                                     mixer_channel: 2,
-                                }
+                                },
                             };
-                        },
+                        }
                         "Noise Generator" => {
                             let new_generator = GeneratorInstance {
                                 it: Generator::Noise(NoiseConfig::default()),
@@ -147,12 +162,13 @@ pub fn generators_control(ui: &mut Ui, local_state: &LocalState, store: &Store) 
                                     mute: false,
                                     pan: 0.0,
                                     mixer_channel: 2,
-                                }
+                                },
                             };
-                        },
-                        &_ => todo!()
+                        }
+                        &_ => todo!(),
                     };
                 }
             });
-        });
+        },
+    );
 }

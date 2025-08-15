@@ -49,4 +49,3 @@ impl View for EffectMenuOptions<'_> {
         });
     }
 }
-

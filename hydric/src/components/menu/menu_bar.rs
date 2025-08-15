@@ -10,8 +10,8 @@ use crate::{
 use egui::{Button, Ui, menu::bar};
 use state::{Action, Store, TypeField};
 
+use super::generator::GeneratorMenuOptions;
 use super::{effect::EffectMenuOptions, save_as::SaveAs};
-use super::{generator::GeneratorMenuOptions};
 
 pub struct MenuBar<'a> {
     store: &'a mut Store,
@@ -188,8 +188,8 @@ impl View for MenuBar<'_> {
             window_icon("📄", "Track Roll", WindowKind::TrackRoll);
             window_icon("🎤", "Record Microphone", WindowKind::Microphone);
 
-            ui.menu_button("Generators", |ui | {
-                GeneratorMenuOptions::new(self.store, &mut self.local_state.window_state).ui(ui);
+            ui.menu_button("Generators", |ui| {
+                GeneratorMenuOptions::new(self.store, self.local_state).ui(ui);
             });
         });
     }
