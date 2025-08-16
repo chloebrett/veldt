@@ -200,7 +200,10 @@ impl Node<ProcessContext> for StingrayNode {
                 }
             }
 
-            let eg_values: Vec<f32> = state.voice.egs.iter_mut()
+            let eg_values: Vec<f32> = state
+                .voice
+                .egs
+                .iter_mut()
                 .map(|eg| eg.next().unwrap_or(0.0))
                 .collect();
 
