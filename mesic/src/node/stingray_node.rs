@@ -200,6 +200,10 @@ impl Node<ProcessContext> for StingrayNode {
                 }
             }
 
+            let eg_values: Vec<f32> = state.voice.egs.iter_mut()
+                .map(|eg| eg.next().unwrap_or(0.0))
+                .collect();
+
             if let Some(sources) = &mut state.voice.sources {
                 for (j, source) in sources.iter_mut().enumerate() {
                     let mut lfo_value = 0.0;
@@ -233,8 +237,7 @@ impl Node<ProcessContext> for StingrayNode {
                             .map_or(0.0, |cell_ref| (*cell_ref).into());
 
                         if matrix_value != 0.0 {
-                            let amp = state.voice.egs[eg_idx].next().unwrap_or(0.0) * matrix_value;
-                            amp_mod += amp;
+                            amp_mod += eg_values[eg_idx] * matrix_value;
                         }
                     }
 
