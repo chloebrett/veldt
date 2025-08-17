@@ -330,7 +330,7 @@ impl Microphone {
         *self.playing_status.lock().unwrap()
     }
 
-    pub fn get_sample_bytes(&mut self) -> Vec<u8>{
+    pub fn get_sample_bytes(&mut self) -> Vec<u8> {
         let _ = self._convert_audio();
         let intermediate = Arc::clone(&self.intermediate_data);
         (*intermediate.lock().unwrap().clone()).to_vec()
