@@ -4,16 +4,25 @@ use crate::view::View;
 use crate::widget::StateWindow;
 use crate::window_state::WindowKind;
 use egui::Ui;
+use crate::rpc::upload_sample;
+use crate::promise::spawn;
+use crate::AsyncState;
+use log::error;
 
 pub struct MicrophoneView<'a> {
     local_state: &'a LocalState,
+    async_state: &'a mut AsyncState,
     mic: &'a mut Microphone,
 }
 
 impl<'a> MicrophoneView<'a> {
-    pub fn new(local_state: &'a LocalState, app_mic: &'a mut Microphone) -> Self {
+    pub fn new(
+            local_state: &'a LocalState,
+            async_state: &'a mut AsyncState, 
+            app_mic: &'a mut Microphone) -> Self {
         MicrophoneView {
             local_state,
+            async_state,
             mic: app_mic,
         }
     }
@@ -21,6 +30,7 @@ impl<'a> MicrophoneView<'a> {
 
 impl View for MicrophoneView<'_> {
     fn ui(&mut self, ui: &mut Ui) {
+        
         StateWindow::show_from_window_state(
             ui,
             &self.local_state.window_state,
@@ -61,6 +71,32 @@ impl View for MicrophoneView<'_> {
 
                     if ui.button("clear").clicked() {
                         let _ = self.mic.clear_mic();
+                    }
+                });
+
+                ui.horizontal(|ui|{
+                    // text input
+                    //let mut text = String::new();
+                    //let mut output = egui::TextEdit::singleline(&mut text).show(ui);
+                    if ui.button("Save Sample").clicked(){
+                        // read text input
+
+
+                        // call convert_audio to get bytes (MAY NEED TO AWAIT)
+                        let file_data = self.mic.get_sample_bytes();
+                        
+                        // call hydric upload method w bytes + file name
+                        spawn(&mut self.async_state.upload_mic_sample, async move {
+
+                            // Upload our sample
+                            let result = upload_sample("test.ogg".to_string(), file_data).await;
+                            if let Err(ref e) = result {
+                                error!("[5] Upload failed: {:?}", e);
+                            }
+                            result
+                        });
+
+                        //todo!()
                     }
                 });
             },

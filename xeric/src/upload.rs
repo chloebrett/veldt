@@ -27,7 +27,7 @@ impl Upload for UploadContext {
 
                 // Use tokio as it has better async handling of files.
                 let f = tokio::fs::File::create(&path).await.map_err(|e| {
-                    tonic::Status::internal(format!("Failed to create file: {}", e))
+                    tonic::Status::internal(format!("Failed to create file: {e}"))
                 })?;
 
                 file = Some(f);
