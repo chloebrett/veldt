@@ -26,7 +26,7 @@ struct NodeState {
 
 struct Voice {
     eg: EnvelopeGenerator,
-    source: Option<SimpleWaveSource>,
+    sources: Vec<SimpleWaveSource>,
 }
 
 impl Default for NodeState {
@@ -37,7 +37,7 @@ impl Default for NodeState {
             meta: GeneratorMeta::default(),
             voice: Voice {
                 eg: EnvelopeGenerator::new(config.envelope.clone()),
-                source: None,
+                sources: Vec::new(),
             },
         }
     }
@@ -119,10 +119,14 @@ impl Node<ProcessContext> for SimpleWaveGeneratorNode {
                         state.voice.eg.note_on();
                         state.voice.eg.set_envelope(state.config.envelope.clone());
                         // TODO: update config dynamically, not just when starting a new note.
-                        state.voice.source = Some(SimpleWaveSource::new(
+                        state.voice.sources.push(SimpleWaveSource::new(
                             note_event.pitch_name.into(),
                             state.config.clone(),
                         ));
+                        // state.voice.source = Some(SimpleWaveSource::new(
+                        //     note_event.pitch_name.into(),
+                        //     state.config.clone(),
+                        // ));
                     }
                     NoteEventType::Off => {
                         log::info!(
@@ -131,24 +135,37 @@ impl Node<ProcessContext> for SimpleWaveGeneratorNode {
                             state.config
                         );
                         // TODO: check against start/stop time too?
-                        if let Some(source) = &state.voice.source {
-                            if source.same_pitch(note_event.pitch_name) {
-                                state.voice.eg.note_off();
+                        if state.voice.sources.len() > 0 {
+                            for i in (0..state.voice.sources.len()).rev() {
+                                if state.voice.sources[i].same_pitch(note_event.pitch_name) {
+                                    // TODO sources may need to be a hashmap with key pitchname and sample index
+                                    state.voice.sources.remove(i);
+                                    state.voice.eg.note_off();
+                                }
                             }
                         }
+                        // if let Some(source) = &state.voice.source {
+                        //     if source.same_pitch(note_event.pitch_name) {
+                        //         state.voice.eg.note_off();
+                        //     }
+                        // }
                     }
                 }
             }
 
             let amp = state.voice.eg.next().unwrap_or(0.0);
-            let wave = state
+            let wave: Vec<f32> = state
                 .voice
-                .source
-                .as_mut()
+                .sources
+                .iter_mut()
                 .map(|it| it.next(&mut self.cache))
-                .unwrap_or(0.0);
+                .collect();
+            // .as_mut()
+            // .map(|it| it.next(&mut self.cache))
+            // .unwrap_or(0.0);
+            // let all_notes_as_wave =
 
-            buffer[i] = amp * wave;
+            buffer[i] = amp * wave.into_iter().sum::<f32>();
         }
 
         for (channel_index, out_buf) in output.iter_mut().enumerate() {
