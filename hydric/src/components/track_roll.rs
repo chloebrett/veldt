@@ -78,12 +78,12 @@ impl View for TrackRoll<'_> {
                 .unwrap_or(0),
             min_rows,
         );
-        let range = Rect::from_min_max(Pos2::ZERO, pos2(16.0, max_visual_placement as f32));
+
         let mut select = self.local_state.track_roll_select_enabled.get();
         if !select {
             self.local_state.selected_placements.set(HashSet::default());
         }
-        StateWindow::show_from_window_state(
+        StateWindow::show_from_window_state_resizable(
             ui,
             &self.local_state.window_state,
             WindowKind::TrackRoll,
@@ -109,13 +109,15 @@ impl View for TrackRoll<'_> {
                     ui.checkbox(&mut select, "Select")
                 });
                 ui.separator();
+                let window_size = ui.available_size();
+                let range = Rect::from_min_max(Pos2::ZERO, pos2(((window_size.x - 6.0).max(600.0)/37.5).ceil(), max_visual_placement as f32));
                 ScrollArea::vertical()
                     .min_scrolled_height(400.0)
                     .show(ui, |ui| {
                         ui.add(
                             TrackSequencer::new(store, self.local_state, range)
                                 .objects(placed_tracks)
-                                .size(vec2(600.0, 100.0 * max_visual_placement as f32))
+                                .size(vec2((window_size.x - 6.0).max(600.0), 100.0 * max_visual_placement as f32))
                                 .select(select)
                                 .vertical_bars(4.0, Color32::from_white_alpha(6))
                                 .vertical_bars(1.0, Color32::from_white_alpha(3))
@@ -348,7 +350,7 @@ impl<'a> TrackSequencer<'a> {
 
     #[inline]
     pub fn vertical_bars(mut self, increment: f32, colour: Color32) -> Self {
-        let steps = (self.range.size().x / increment) as i32;
+        let steps = (self.range.size().x / increment).ceil() as i32;
         let shapes: Vec<Shape> = (0..=steps)
             .map(|step| {
                 let x = (step as f32) * increment;
