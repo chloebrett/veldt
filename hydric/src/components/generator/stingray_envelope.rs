@@ -197,7 +197,7 @@ impl<F: Fn(Action), G: Fn()> View for StingrayEnvelopeView<'_, F, G> {
                                                 ));
                                             }
                                         }
-                                    ui.add_space(5.0); 
+                                    // ui.add_space(5.0); 
                                     }
                                     ui.add_space(3.0); 
                                     
