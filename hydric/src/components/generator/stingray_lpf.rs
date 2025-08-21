@@ -60,7 +60,7 @@ impl<F: Fn(Action), G: Fn()> View for StingrayLpfView<'_, F, G> {
                 .with_neutral(1.0),
                 on_release,
             );
-            ui.add_space(100.0);
+            ui.add_space(105.0);
             });
         });
     }
