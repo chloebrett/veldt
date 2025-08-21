@@ -4,7 +4,7 @@ use crate::widget::{
     add_knob, get_set, inner_frame, int_slider, outer_frame, selectable_value, styled_knob,
 };
 use eframe::egui;
-use egui::{Color32, Ui, Vec2};
+use egui::{Color32, Ui, Vec2, Margin};
 use shared::model::{Oscillator, WaveType};
 use state::{Action, FloatField, TypeField, UintField};
 use strum::IntoEnumIterator;
@@ -54,9 +54,9 @@ impl<F: Fn(Action), G: Fn()> View for StingrayOscillatorView<'_, F, G> {
         ) where
             F: Fn(Action),
         {
+            
             inner_frame().show(ui, |ui| {
                 ui.vertical(|ui| {
-                    ui.horizontal(|ui| {
                         egui::ComboBox::from_label("")
                             .selected_text(config.wave.to_string())
                             .show_ui(ui, |ui| {
@@ -71,17 +71,17 @@ impl<F: Fn(Action), G: Fn()> View for StingrayOscillatorView<'_, F, G> {
                                     );
                                 }
                             });
-                    });
-                    ui.add_space(10.0);
+                    ui.add_space(24.0);
                     let visualiser = SimpleWaveVisualiser::new(
                         config.wave,
                         line_colour,
                         fill_colour,
                         1.0,
-                        Vec2::new(130.0, 74.0),
+                        Vec2::new(130.0, 80.0),
                     );
 
                     visualiser.show(ui);
+                    ui.add_space(8.0);
                 });
             });
         }
@@ -95,7 +95,7 @@ impl<F: Fn(Action), G: Fn()> View for StingrayOscillatorView<'_, F, G> {
             F: Fn(Action),
             G: Fn(),
         {
-            const KNOB_SPACE: f32 = 2.0;
+            const KNOB_SPACE: f32 = 4.0;
             inner_frame().show(ui, |ui| {
                 ui.vertical(|ui| {
                     add_knob(
@@ -195,14 +195,19 @@ impl<F: Fn(Action), G: Fn()> View for StingrayOscillatorView<'_, F, G> {
             });
         }
 
-        outer_frame().show(ui, |ui| {
+        outer_frame()
+            .outer_margin(Margin {
+                    left: 5,
+                    right: 0,
+                    top: 10,
+                    bottom: 0,
+                })
+        .show(ui, |ui| {
             ui.horizontal(|ui| {
                 draw_wave_selection(ui, config, dispatch, line_colour, fill_colour);
-
                 draw_oscillator_controls(ui, config, dispatch, on_release);
-
                 draw_stacking_controls(ui, config, dispatch, on_release);
-            });
+            });        
         });
     }
 }
