@@ -55,7 +55,7 @@ impl<'a, G: Fn()> StingrayView<'a, G> {
             max_note + 1,
             min_note,
             PianoOrientation::Horizontal,
-            Vec2::new(1100.0, 50.0),
+            Vec2::new(1330.0, 100.0),
             Some(self.audio_player),
             Some(*self.generator_sel),
         )
@@ -104,12 +104,11 @@ impl<G: Fn()> View for StingrayView<'_, G> {
                             FILL_COLOURS[oscillator_id],
                         )
                         .ui(ui);
-                        ui.add_space(4.0);
                     });
                 }
             });
 
-            ui.add_space(HORIZONTAL_SPACE);
+            ui.add_space(HORIZONTAL_SPACE); // space btwn oscillator and env + lfo
 
             ui.vertical(|ui| {
                 let current_env_index = self.local_state.stingray_env_tab.get();
@@ -119,8 +118,6 @@ impl<G: Fn()> View for StingrayView<'_, G> {
                 StingrayEnvelopeView::new(config, env_dispatch, on_release, self.local_state)
                     .ui(ui);
 
-                ui.add_space(4.0);
-
                 let current_lfo_index = self.local_state.stingray_lfo_tab.get();
                 let lfo_sel = gen_sel.downcast_lfo(current_lfo_index);
                 let lfo_dispatch = |action| self.store.dispatch(&lfo_sel, action);
@@ -128,9 +125,8 @@ impl<G: Fn()> View for StingrayView<'_, G> {
                 StingrayLfoView::new(config, lfo_dispatch, on_release, self.local_state).ui(ui);
             });
 
-            ui.add_space(HORIZONTAL_SPACE);
-
             ui.vertical(|ui| {
+                ui.add_space(10.0); //adds spacing between osc, env, mod, and the top border
                 ModMatrixView::new(
                     &config.matrix,
                     vec!["ENV 1", "ENV 2", "ENV 3", "LFO 1", "LFO 2", "LFO 3"],
@@ -140,15 +136,18 @@ impl<G: Fn()> View for StingrayView<'_, G> {
                     on_release,
                 )
                 .ui(ui); // must wrap in ui.vertical to stop the matrix from unnecessarily stretching vertically
-
+                
                 let lpf_index = 0;
                 let lpf_sel = gen_sel.downcast_effect(lpf_index);
                 let lpf_dispatch = |action| self.store.dispatch(&lpf_sel, action);
 
-                ui.add_space(HORIZONTAL_SPACE);
+                ui.add_space(10.0); //space btwn mod and lpf
                 StingrayLpfView::new(&config.lpf, lpf_dispatch, on_release).ui(ui);
             });
+        ui.add_space(1.0); //spacing btwn osc + lpf and right border
         });
+
+        ui.add_space(10.0); // spacing btwn elements and piano roll
 
         self.draw_piano(ui);
     }

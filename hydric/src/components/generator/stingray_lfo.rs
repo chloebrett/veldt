@@ -4,7 +4,7 @@ use crate::widget::{
     TabDisplay, TabOrientation, get_set, inner_frame, outer_frame, selectable_value, slider,
 };
 use crate::{GetSet, LocalState};
-use egui::{Color32, Ui, Vec2};
+use egui::{Color32, Ui, Vec2, Margin};
 use shared::model::{StingrayConfig, WaveType};
 use state::{Action, FloatField, TypeField};
 use strum::IntoEnumIterator;
@@ -46,11 +46,19 @@ impl<F: Fn(Action), G: Fn()> View for StingrayLfoView<'_, F, G> {
             self.local_state.stingray_lfo_tab.set(index);
         };
 
-        outer_frame().show(ui, |ui| {
+        outer_frame()
+            .outer_margin(Margin {
+                left: 0,
+                right: 2,
+                top: 5,
+                bottom: 5,
+            })
+        .show(ui, |ui| {
             let original_spacing = ui.spacing().item_spacing; // store original spacing
             ui.spacing_mut().item_spacing = Vec2::ZERO; // set spacing to zero so that the tabs and associated content actually touch each other
 
             ui.horizontal(|ui| {
+                ui.add_space(2.0);
                 TabDisplay::new(
                     active_lfo_tab,
                     vec!["LFO 1", "LFO 2", "LFO 3"],
@@ -59,7 +67,9 @@ impl<F: Fn(Action), G: Fn()> View for StingrayLfoView<'_, F, G> {
                 )
                 .ui(ui);
 
-                inner_frame().show(ui, |ui| {
+                inner_frame()
+                    .inner_margin(Margin::same(20))
+                .show(ui, |ui| {
                     ui.vertical(|ui| {
                         let current_lfo_config = &config.lfos[active_lfo_tab];
 
@@ -89,7 +99,7 @@ impl<F: Fn(Action), G: Fn()> View for StingrayLfoView<'_, F, G> {
                         )
                         .show(ui);
 
-                        ui.add_space(20.0);
+                        ui.add_space(4.0);
 
                         ui.spacing_mut().item_spacing = original_spacing; // reset ui spacing back to original
 
