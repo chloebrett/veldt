@@ -113,7 +113,10 @@ impl View for TrackRoll<'_> {
                 });
                 ui.separator();
                 let window_size = ui.available_size();
-                let range = Rect::from_min_max(Pos2::ZERO, pos2(((window_size.x - 6.0).max(600.0)/37.5).ceil(), max_visual_placement as f32));
+                const PADDING_AROUND_TRACK_SQUENCER: f32 = 6.0;
+                const MINIMUM_SIZE: f32 = 600.0;
+                const INCREMENT_SIZE: f32 = 37.5;
+                let range = Rect::from_min_max(Pos2::ZERO, pos2(((window_size.x - PADDING_AROUND_TRACK_SQUENCER).max(MINIMUM_SIZE)/INCREMENT_SIZE).ceil(), max_visual_placement as f32));
                 ScrollArea::vertical()
                     .min_scrolled_height(400.0)
                     .show(ui, |ui| {
@@ -203,27 +206,25 @@ impl<'a> PlacedTrack<'a> {
     }
 
     fn map_notes_to_shapes(&self, range: Rect, notes: &Vec<PlacedNote>, track_length: f32) -> Shape{
+        const PITCH_RANGE: f32 = 4131.0;
         let note_positions: Vec<Pos2> = notes.into_iter().map(|note| {
             let x_pos = f32::from(note.offset);
             let y_pos: f32 = note.note.pitch_name.into();
-            Pos2::new(x_pos, 4168.0 - y_pos)
+            Pos2::new(x_pos, PITCH_RANGE - y_pos)
         }).collect();
-        log::info!("note positions: {:?}", note_positions);
+
         let note_shapes: Vec<Shape> = notes.into_iter().enumerate().map(|(i, note)| {
             let mut note_rect = Rect::from_pos(note_positions[i]);
             note_rect.set_width(note.note.beats);
-            note_rect.set_height(300.0);
-            let note_shape: Shape = RectShape::new(note_rect, 0.5, Color32::BLUE, Stroke::NONE, StrokeKind::Inside).into();
+            note_rect.set_height(250.0);
+            let note_shape: Shape = RectShape::new(note_rect, 1.5, Color32::BLUE, Stroke::NONE, StrokeKind::Inside).into();
             note_shape
         }
         ).collect();
-        log::info!("note shapes: {:?}", note_shapes);
-        // shrink if needed: .shrink2(Vec2::new(0.05, 0.05))
-        let track_transform = RectTransform::from_to(Rect::from_min_max(Pos2::ZERO, Pos2::new(track_length, 4131.0)), self.to_rect(range).shrink2(Vec2::new(0.0, 0.03)));
 
+        let track_transform = RectTransform::from_to(Rect::from_min_max(Pos2::ZERO, Pos2::new(track_length, PITCH_RANGE)), self.to_rect(range).shrink2(Vec2::new(0.0, 0.07)));
         let transformed_shapes = Shape::Vec(note_shapes.transform(track_transform));
-        log::info!("transformed shapes: {:?}", transformed_shapes);
-        log::info!("transform to this rect: {:?}", self.to_rect(range));
+
         transformed_shapes
     }
 
