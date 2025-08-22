@@ -98,6 +98,14 @@ impl View for TrackRoll<'_> {
                             Placement::default(),
                         )));
                     }
+                    if ui.button("New drum").clicked() {
+                        store.dispatchr(Action::AddChild(TypeField::Track(Track::default())));
+                    }
+                    if ui.button("New drum placement").clicked() {
+                        store.dispatchr(Action::AddChild(TypeField::Placement(
+                            Placement::default(),
+                        )));
+                    }
                     if ui.button("New sample placement").clicked() {
                         store.dispatchr(Action::AddChild(TypeField::Placement(Placement {
                             kind: PlacementType::Sample(SamplePlacement::default()),
