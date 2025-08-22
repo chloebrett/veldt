@@ -1,5 +1,6 @@
 use crate::{GetSet, LocalState, transform::Transform};
 use crate::{view::View, widget::StateWindow, window_state::WindowKind};
+use egui::epaint::RectShape;
 use egui::PointerButton;
 use egui::{
     Color32, CornerRadius, CursorIcon, Frame, Pos2, Rect, Response, ScrollArea, Sense, Shape,
@@ -8,7 +9,7 @@ use egui::{
 use mesic::samples_to_beats;
 use ordered_float::OrderedFloat;
 use shared::{
-    model::{Placement, PlacementId, PlacementType, SamplePlacement, Track, TrackPlacement},
+    model::{Placement, PlacementId, PlacedNote, PlacementType, SamplePlacement, Track, TrackPlacement},
     types::Beats,
 };
 use state::{
@@ -47,6 +48,7 @@ impl View for TrackRoll<'_> {
                         PlacementType::Track(TrackPlacement { track_id, .. }) => PlacedTrack {
                             unclipped_duration: project.tracks[&track_id].unclipped_duration(),
                             placement: placement.clone(),
+                            store: self.store
                         },
                         PlacementType::Sample(SamplePlacement { sample_id }) => {
                             let duration = store
@@ -61,6 +63,7 @@ impl View for TrackRoll<'_> {
                             PlacedTrack {
                                 unclipped_duration: duration.into(),
                                 placement: placement.clone(),
+                                store: self.store
                             }
                         }
                     },
@@ -133,12 +136,13 @@ impl View for TrackRoll<'_> {
     }
 }
 
-struct PlacedTrack {
+struct PlacedTrack<'a> {
     placement: Placement,
     unclipped_duration: OrderedFloat<f32>,
+    store: &'a Store
 }
 
-impl PlacedTrack {
+impl<'a> PlacedTrack<'a> {
     fn to_pos(&self, range: Rect) -> Pos2 {
         let y = self.placement.visual_placement as f32;
         let x = *self.placement.offset - range.left();
@@ -169,18 +173,61 @@ impl PlacedTrack {
     }
 
     fn shape(&self, range: Rect) -> Shape {
-        if *self.unclipped_duration == 0.0 {
-            Shape::rect_filled(
-                self.to_rect(range),
-                CornerRadius::same(1),
-                Color32::from_white_alpha(32),
-            )
-        } else {
-            Shape::rect_filled(self.to_rect(range), CornerRadius::same(1), Color32::WHITE)
-        }
+        Shape::Vec(vec![
+            // track background shape
+            if *self.unclipped_duration == 0.0 {
+                Shape::rect_filled(
+                    self.to_rect(range),
+                    CornerRadius::same(1),
+                    Color32::from_white_alpha(32),
+                )
+            } else {
+                Shape::rect_filled(self.to_rect(range), CornerRadius::same(1), Color32::WHITE)
+            },
+            match &self.placement.kind {
+                PlacementType::Track(track_placement) => {
+                    let track_id = track_placement.track_id;
+                    if let Some(track) = self.store.get().project.tracks.get(&track_id) {
+                        let notes = &track.notes;
+                        let track_length = track.unclipped_duration();
+                        self.map_notes_to_shapes(range, notes, f32::from(track_length))
+                    } else {
+                        Shape::Noop
+                    }
+                },
+                PlacementType::Sample(_) => {
+                    Shape::Noop
+                }
+            }
+        ])
     }
 
-    fn get_active(store: &Store, local_state: &LocalState) -> Option<PlacedTrack> {
+    fn map_notes_to_shapes(&self, range: Rect, notes: &Vec<PlacedNote>, track_length: f32) -> Shape{
+        let note_positions: Vec<Pos2> = notes.into_iter().map(|note| {
+            let x_pos = f32::from(note.offset);
+            let y_pos: f32 = note.note.pitch_name.into();
+            Pos2::new(x_pos, 4168.0 - y_pos)
+        }).collect();
+        log::info!("note positions: {:?}", note_positions);
+        let note_shapes: Vec<Shape> = notes.into_iter().enumerate().map(|(i, note)| {
+            let mut note_rect = Rect::from_pos(note_positions[i]);
+            note_rect.set_width(note.note.beats);
+            note_rect.set_height(300.0);
+            let note_shape: Shape = RectShape::new(note_rect, 0.5, Color32::BLUE, Stroke::NONE, StrokeKind::Inside).into();
+            note_shape
+        }
+        ).collect();
+        log::info!("note shapes: {:?}", note_shapes);
+        // shrink if needed: .shrink2(Vec2::new(0.05, 0.05))
+        let track_transform = RectTransform::from_to(Rect::from_min_max(Pos2::ZERO, Pos2::new(track_length, 4131.0)), self.to_rect(range).shrink2(Vec2::new(0.0, 0.03)));
+
+        let transformed_shapes = Shape::Vec(note_shapes.transform(track_transform));
+        log::info!("transformed shapes: {:?}", transformed_shapes);
+        log::info!("transform to this rect: {:?}", self.to_rect(range));
+        transformed_shapes
+    }
+
+    fn get_active(store: &'a Store, local_state: &LocalState) -> Option<PlacedTrack<'a>> {
         let id = local_state.active_placement.get()?;
         let selector = PlacementSelector(id);
         let placement = store.select(&selector);
@@ -195,6 +242,7 @@ impl PlacedTrack {
                 })
                 .unwrap_or(1.0.into()),
             placement: placement.clone(),
+            store: store
         })
     }
 
@@ -213,7 +261,7 @@ impl PlacedTrack {
         ])
     }
 
-    fn get_selected(store: &Store, local_state: &LocalState) -> Vec<PlacedTrack> {
+    fn get_selected(store: &'a Store, local_state: &LocalState) -> Vec<PlacedTrack<'a>> {
         local_state
             .selected_placements
             .get()
@@ -227,6 +275,7 @@ impl PlacedTrack {
                         .select(&TrackSelector(track_placement.track_id))
                         .unclipped_duration(),
                     placement: placement.clone(),
+                    store: store
                 }
             })
             .collect()
@@ -312,7 +361,7 @@ struct TrackSequencer<'a> {
     local_state: &'a LocalState,
     range: Rect,
     size: Vec2,
-    objects: HashMap<PlacementId, PlacedTrack>,
+    objects: HashMap<PlacementId, PlacedTrack<'a>>,
     quantise_level: Beats,
     background_shapes: Vec<Shape>,
     select: bool,
@@ -333,7 +382,7 @@ impl<'a> TrackSequencer<'a> {
     }
 
     #[inline]
-    pub fn objects(mut self, objects: HashMap<PlacementId, PlacedTrack>) -> Self {
+    pub fn objects(mut self, objects: HashMap<PlacementId, PlacedTrack<'a>>) -> Self {
         self.objects = objects;
         self
     }
