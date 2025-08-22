@@ -184,16 +184,6 @@ impl View for PlacementView<'_> {
                     }
                 }
 
-                let offset = *placement.offset as f64;
-                slider(
-                    ui,
-                    "Start position",
-                    offset,
-                    |it| store.dispatch(&sel, Action::SetFloat(FloatField::Offset, it as Beats)),
-                    0.0..=16.0,
-                    on_release,
-                );
-
                 int_slider(
                     ui,
                     "Visual placement",
