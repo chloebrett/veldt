@@ -20,6 +20,8 @@ pub struct StingrayConfig {
 
     #[proto_optional]
     pub lpf: EqConfig,
+
+    pub lpf_enabled: bool,
 }
 
 const BASE_OSC: Oscillator = Oscillator {
@@ -72,6 +74,7 @@ impl Default for StingrayConfig {
             envelopes: [BASE_ENV; 3],
             matrix: ModMatrix::new(6, 4),
             lpf: BASE_LPF,
+            lpf_enabled: true,
         }
     }
 }
@@ -106,6 +109,7 @@ impl From<StingrayConfigProto> for StingrayConfig {
             lfos,
             matrix,
             lpf,
+            lpf_enabled,
         } = proto;
 
         StingrayConfig {
@@ -118,6 +122,7 @@ impl From<StingrayConfigProto> for StingrayConfig {
             lfos: map_vec(lfos).try_into().expect("Expected 3 LFOs!"),
             matrix: matrix.unwrap().into(),
             lpf: lpf.unwrap().into(),
+            lpf_enabled: lpf_enabled,
         }
     }
 }

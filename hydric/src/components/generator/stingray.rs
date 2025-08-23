@@ -142,7 +142,7 @@ impl<G: Fn()> View for StingrayView<'_, G> {
                 let lpf_dispatch = |action| self.store.dispatch(&lpf_sel, action);
 
                 ui.add_space(10.0); //space btwn mod and lpf
-                StingrayLpfView::new(&config.lpf, lpf_dispatch, on_release).ui(ui);
+                StingrayLpfView::new(&config.lpf, &config.lpf_enabled, lpf_dispatch, on_release).ui(ui);
             });
         ui.add_space(1.0); //spacing btwn osc + lpf and right border
         });
