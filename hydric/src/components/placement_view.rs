@@ -197,18 +197,13 @@ impl View for PlacementView<'_> {
                     on_release,
                 );
 
-                let placement_colour = placement.colour;
-                let mut rgb_initial = [0; 3];
+                let rgb_initial = placement.colour.clone();
+                let mut initial_colour = Color32::from_rgb(rgb_initial[0], rgb_initial[1], rgb_initial[2]);
 
-                for i in 0..3 {
-                    rgb_initial[i] = placement_colour[i] as u8;
-                }
-
-                let mut initial_color = Color32::from_rgb(rgb_initial[0], rgb_initial[1], rgb_initial[2]);
                 ui.label("Placement Colour");
-                color_picker_color32(ui, &mut initial_color, Alpha::Opaque);
+                color_picker_color32(ui, &mut initial_colour, Alpha::Opaque);
 
-                let new_colour = [initial_color.r(), initial_color.g(), initial_color.b()];
+                let new_colour = [initial_colour.r(), initial_colour.g(), initial_colour.b()]; // initial colour gets modified by color picker
                 if rgb_initial != new_colour {
                     let mut new_rgb = [0; 3];
                     for i in 0..3 {
