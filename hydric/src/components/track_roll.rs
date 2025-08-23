@@ -1,6 +1,7 @@
 use crate::{GetSet, LocalState, transform::Transform};
 use crate::{view::View, widget::StateWindow, window_state::WindowKind};
 use egui::PointerButton;
+use egui::epaint::RectShape;
 use egui::{
     Color32, CornerRadius, CursorIcon, Frame, Pos2, Rect, Response, ScrollArea, Sense, Shape,
     Stroke, StrokeKind, Ui, Vec2, Widget, emath::RectTransform, pos2, vec2,
@@ -8,7 +9,9 @@ use egui::{
 use mesic::samples_to_beats;
 use ordered_float::OrderedFloat;
 use shared::{
-    model::{Placement, PlacementId, PlacementType, SamplePlacement, Track, TrackPlacement},
+    model::{
+        PlacedNote, Placement, PlacementId, PlacementType, SamplePlacement, Track, TrackPlacement,
+    },
     types::Beats,
 };
 use state::{
@@ -47,6 +50,7 @@ impl View for TrackRoll<'_> {
                         PlacementType::Track(TrackPlacement { track_id, .. }) => PlacedTrack {
                             unclipped_duration: project.tracks[&track_id].unclipped_duration(),
                             placement: placement.clone(),
+                            store: self.store,
                         },
                         PlacementType::Sample(SamplePlacement { sample_id }) => {
                             let duration = store
@@ -61,6 +65,7 @@ impl View for TrackRoll<'_> {
                             PlacedTrack {
                                 unclipped_duration: duration.into(),
                                 placement: placement.clone(),
+                                store: self.store,
                             }
                         }
                     },
@@ -78,12 +83,12 @@ impl View for TrackRoll<'_> {
                 .unwrap_or(0),
             min_rows,
         );
-        let range = Rect::from_min_max(Pos2::ZERO, pos2(16.0, max_visual_placement as f32));
+
         let mut select = self.local_state.track_roll_select_enabled.get();
         if !select {
             self.local_state.selected_placements.set(HashSet::default());
         }
-        StateWindow::show_from_window_state(
+        StateWindow::show_from_window_state_resizable(
             ui,
             &self.local_state.window_state,
             WindowKind::TrackRoll,
@@ -104,18 +109,35 @@ impl View for TrackRoll<'_> {
                             offset: 0.0.into(),
                             clipped_duration: None,
                             visual_placement: 0,
+                            colour: [67, 206, 222],
                         })));
                     }
                     ui.checkbox(&mut select, "Select")
                 });
                 ui.separator();
+                let window_size = ui.available_size();
+                const PADDING_AROUND_TRACK_SQUENCER: f32 = 6.0;
+                const MINIMUM_SIZE: f32 = 600.0;
+                const INCREMENT_SIZE: f32 = 37.5;
+                let range = Rect::from_min_max(
+                    Pos2::ZERO,
+                    pos2(
+                        ((window_size.x - PADDING_AROUND_TRACK_SQUENCER).max(MINIMUM_SIZE)
+                            / INCREMENT_SIZE)
+                            .ceil(),
+                        max_visual_placement as f32,
+                    ),
+                );
                 ScrollArea::vertical()
                     .min_scrolled_height(400.0)
                     .show(ui, |ui| {
                         ui.add(
                             TrackSequencer::new(store, self.local_state, range)
                                 .objects(placed_tracks)
-                                .size(vec2(600.0, 100.0 * max_visual_placement as f32))
+                                .size(vec2(
+                                    (window_size.x - 6.0).max(600.0),
+                                    100.0 * max_visual_placement as f32,
+                                ))
                                 .select(select)
                                 .vertical_bars(4.0, Color32::from_white_alpha(6))
                                 .vertical_bars(1.0, Color32::from_white_alpha(3))
@@ -131,12 +153,13 @@ impl View for TrackRoll<'_> {
     }
 }
 
-struct PlacedTrack {
+struct PlacedTrack<'a> {
     placement: Placement,
     unclipped_duration: OrderedFloat<f32>,
+    store: &'a Store,
 }
 
-impl PlacedTrack {
+impl<'a> PlacedTrack<'a> {
     fn to_pos(&self, range: Rect) -> Pos2 {
         let y = self.placement.visual_placement as f32;
         let x = *self.placement.offset - range.left();
@@ -167,18 +190,102 @@ impl PlacedTrack {
     }
 
     fn shape(&self, range: Rect) -> Shape {
-        if *self.unclipped_duration == 0.0 {
-            Shape::rect_filled(
-                self.to_rect(range),
-                CornerRadius::same(1),
-                Color32::from_white_alpha(32),
-            )
-        } else {
-            Shape::rect_filled(self.to_rect(range), CornerRadius::same(1), Color32::WHITE)
-        }
+        let rgb_values = self.placement.colour;
+        let background_colour = Color32::from_rgba_unmultiplied(
+            rgb_values[0] as u8,
+            rgb_values[1] as u8,
+            rgb_values[2] as u8,
+            20,
+        );
+        Shape::Vec(vec![
+            // track background shape
+            if *self.unclipped_duration == 0.0 {
+                Shape::rect_filled(
+                    self.to_rect(range),
+                    CornerRadius::same(1),
+                    background_colour,
+                )
+            } else {
+                Shape::rect_filled(
+                    self.to_rect(range),
+                    CornerRadius::same(1),
+                    background_colour,
+                )
+            },
+            match &self.placement.kind {
+                PlacementType::Track(track_placement) => {
+                    let track_id = track_placement.track_id;
+                    if let Some(track) = self.store.get().project.tracks.get(&track_id) {
+                        let notes = &track.notes;
+                        let track_length = track.unclipped_duration();
+                        self.map_notes_to_shapes(range, notes, f32::from(track_length))
+                    } else {
+                        Shape::rect_filled(
+                            self.to_rect(range),
+                            CornerRadius::same(1),
+                            background_colour,
+                        )
+                    }
+                }
+                PlacementType::Sample(_) => Shape::rect_filled(
+                    self.to_rect(range),
+                    CornerRadius::same(1),
+                    background_colour,
+                ),
+            },
+        ])
     }
 
-    fn get_active(store: &Store, local_state: &LocalState) -> Option<PlacedTrack> {
+    fn map_notes_to_shapes(
+        &self,
+        range: Rect,
+        notes: &Vec<PlacedNote>,
+        track_length: f32,
+    ) -> Shape {
+        const PITCH_RANGE: f32 = 4131.0;
+        let rgb_values = self.placement.colour;
+        let note_positions: Vec<Pos2> = notes
+            .into_iter()
+            .map(|note| {
+                let x_pos = f32::from(note.offset);
+                let y_pos: f32 = note.note.pitch_name.into();
+                Pos2::new(x_pos, PITCH_RANGE - y_pos)
+            })
+            .collect();
+
+        let note_shapes: Vec<Shape> = notes
+            .into_iter()
+            .enumerate()
+            .map(|(i, note)| {
+                let mut note_rect = Rect::from_pos(note_positions[i]);
+                note_rect.set_width(note.note.beats);
+                note_rect.set_height(250.0);
+                let note_shape: Shape = RectShape::new(
+                    note_rect,
+                    1.5,
+                    Color32::from_rgb_additive(
+                        rgb_values[0] as u8,
+                        rgb_values[1] as u8,
+                        rgb_values[2] as u8,
+                    ),
+                    Stroke::NONE,
+                    StrokeKind::Inside,
+                )
+                .into();
+                note_shape
+            })
+            .collect();
+
+        let track_transform = RectTransform::from_to(
+            Rect::from_min_max(Pos2::ZERO, Pos2::new(track_length, PITCH_RANGE)),
+            self.to_rect(range).shrink2(Vec2::new(0.0, 0.07)),
+        );
+        let transformed_shapes = Shape::Vec(note_shapes.transform(track_transform));
+
+        transformed_shapes
+    }
+
+    fn get_active(store: &'a Store, local_state: &LocalState) -> Option<PlacedTrack<'a>> {
         let id = local_state.active_placement.get()?;
         let selector = PlacementSelector(id);
         let placement = store.select(&selector);
@@ -193,25 +300,31 @@ impl PlacedTrack {
                 })
                 .unwrap_or(1.0.into()),
             placement: placement.clone(),
+            store: store,
         })
     }
 
     fn active_shape(&self, range: Rect) -> Shape {
+        let rgb_values = self.placement.colour;
         Shape::Vec(vec![
             self.shape(range),
             Shape::rect_stroke(
                 self.to_rect(range),
                 CornerRadius::same(0),
                 Stroke {
-                    width: 1.0,
-                    color: Color32::BLUE,
+                    width: 1.5,
+                    color: Color32::from_rgb_additive(
+                        rgb_values[0] as u8,
+                        rgb_values[1] as u8,
+                        rgb_values[2] as u8,
+                    ),
                 },
                 StrokeKind::Inside,
             ),
         ])
     }
 
-    fn get_selected(store: &Store, local_state: &LocalState) -> Vec<PlacedTrack> {
+    fn get_selected(store: &'a Store, local_state: &LocalState) -> Vec<PlacedTrack<'a>> {
         local_state
             .selected_placements
             .get()
@@ -225,20 +338,26 @@ impl PlacedTrack {
                         .select(&TrackSelector(track_placement.track_id))
                         .unclipped_duration(),
                     placement: placement.clone(),
+                    store: store,
                 }
             })
             .collect()
     }
 
     fn selected_shape(&self, range: Rect) -> Shape {
+        let rgb_values = self.placement.colour;
         Shape::Vec(vec![
             self.shape(range),
             Shape::rect_stroke(
                 self.to_rect(range),
                 CornerRadius::same(0),
                 Stroke {
-                    width: 1.0,
-                    color: Color32::RED,
+                    width: 1.5,
+                    color: Color32::from_rgb_additive(
+                        rgb_values[0] as u8,
+                        rgb_values[1] as u8,
+                        rgb_values[2] as u8,
+                    ),
                 },
                 StrokeKind::Inside,
             ),
@@ -310,7 +429,7 @@ struct TrackSequencer<'a> {
     local_state: &'a LocalState,
     range: Rect,
     size: Vec2,
-    objects: HashMap<PlacementId, PlacedTrack>,
+    objects: HashMap<PlacementId, PlacedTrack<'a>>,
     quantise_level: Beats,
     background_shapes: Vec<Shape>,
     select: bool,
@@ -331,7 +450,7 @@ impl<'a> TrackSequencer<'a> {
     }
 
     #[inline]
-    pub fn objects(mut self, objects: HashMap<PlacementId, PlacedTrack>) -> Self {
+    pub fn objects(mut self, objects: HashMap<PlacementId, PlacedTrack<'a>>) -> Self {
         self.objects = objects;
         self
     }
@@ -348,7 +467,7 @@ impl<'a> TrackSequencer<'a> {
 
     #[inline]
     pub fn vertical_bars(mut self, increment: f32, colour: Color32) -> Self {
-        let steps = (self.range.size().x / increment) as i32;
+        let steps = (self.range.size().x / increment).ceil() as i32;
         let shapes: Vec<Shape> = (0..=steps)
             .map(|step| {
                 let x = (step as f32) * increment;
@@ -560,6 +679,7 @@ impl Widget for TrackSequencer<'_> {
                     offset: offset.into(),
                     clipped_duration: None,
                     visual_placement: pos.y as u32,
+                    colour: [67, 206, 222],
                 };
                 store.dispatchr(Action::AddChild(TypeField::Placement(placement)));
             }

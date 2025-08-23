@@ -38,29 +38,29 @@ impl<F: Fn(Action), G: Fn()> View for StingrayLpfView<'_, F, G> {
 
             ui.horizontal(|ui| {
                 add_knob(
-                ui,
-                styled_knob(
-                    "Freq",
-                    config.fc,
-                    |it| dispatch(Action::SetFloat(FloatField::Fc, it)),
-                    20.0..=20000.0,
-                )
-                .with_neutral(2000.0),
-                on_release,
-            );
-            ui.add_space(10.0);
-            add_knob(
-                ui,
-                styled_knob(
-                    "Q",
-                    config.q,
-                    |it| dispatch(Action::SetFloat(FloatField::Q, it)),
-                    0.1..=100.0,
-                )
-                .with_neutral(1.0),
-                on_release,
-            );
-            ui.add_space(105.0);
+                    ui,
+                    styled_knob(
+                        "Freq",
+                        config.fc,
+                        |it| dispatch(Action::SetFloat(FloatField::Fc, it)),
+                        20.0..=20000.0,
+                    )
+                    .with_neutral(2000.0),
+                    on_release,
+                );
+                ui.add_space(10.0);
+                add_knob(
+                    ui,
+                    styled_knob(
+                        "Q",
+                        config.q,
+                        |it| dispatch(Action::SetFloat(FloatField::Q, it)),
+                        0.1..=100.0,
+                    )
+                    .with_neutral(1.0),
+                    on_release,
+                );
+                ui.add_space(105.0);
             });
         });
     }
