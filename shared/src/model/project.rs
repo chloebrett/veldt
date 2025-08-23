@@ -96,6 +96,7 @@ mod tests {
                     offset: 2.5.into(),
                     clipped_duration: Some(5.2.into()),
                     visual_placement: 6,
+                    colour: [67, 206, 222]
                 },
             )]),
             samples: HashMap::from([(

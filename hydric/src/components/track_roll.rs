@@ -107,6 +107,7 @@ impl View for TrackRoll<'_> {
                             offset: 0.0.into(),
                             clipped_duration: None,
                             visual_placement: 0,
+                            colour: [67, 206, 222]
                         })));
                     }
                     ui.checkbox(&mut select, "Select")
@@ -612,6 +613,7 @@ impl Widget for TrackSequencer<'_> {
                     offset: offset.into(),
                     clipped_duration: None,
                     visual_placement: pos.y as u32,
+                    colour: [67, 206, 222]
                 };
                 store.dispatchr(Action::AddChild(TypeField::Placement(placement)));
             }

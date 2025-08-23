@@ -18,6 +18,8 @@ pub struct Placement {
     /// Position that the track should be displayed visually, useful if there are overlapping tracks.
     /// Zero is the top.
     pub visual_placement: u32,
+
+    pub colour: [u32; 3] // RGB colour
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -84,6 +86,11 @@ impl Ord for Placement {
 
 impl From<PlacementProto> for Placement {
     fn from(item: PlacementProto) -> Self {
+        let colour_array: [u32; 3] = item.colour.try_into()
+            .unwrap_or_else(|_: Vec<u32>| {
+                [67, 206, 222] // Default blue color
+            });
+
         Self {
             kind: match item.kind.unwrap() {
                 PlacementTypeProto::Track(it) => PlacementType::Track(it.into()),
@@ -92,6 +99,7 @@ impl From<PlacementProto> for Placement {
             offset: item.offset.into(),
             clipped_duration: item.clipped_duration.map(OrderedFloat),
             visual_placement: item.visual_placement,
+            colour: colour_array,
         }
     }
 }
@@ -106,6 +114,7 @@ impl From<Placement> for PlacementProto {
             offset: *item.offset,
             clipped_duration: item.clipped_duration.map(|it| *it),
             visual_placement: item.visual_placement,
+            colour: item.colour.into(), // Arrays implement Into<Vec>
         }
     }
 }
