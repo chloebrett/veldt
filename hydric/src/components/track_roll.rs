@@ -191,29 +191,25 @@ impl<'a> PlacedTrack<'a> {
 
     fn shape(&self, range: Rect) -> Shape {
         let rgb_values = self.placement.colour;
+        let background_colour = Color32::from_rgba_unmultiplied(
+            rgb_values[0] as u8,
+            rgb_values[1] as u8,
+            rgb_values[2] as u8,
+            20,
+        );
         Shape::Vec(vec![
             // track background shape
             if *self.unclipped_duration == 0.0 {
                 Shape::rect_filled(
                     self.to_rect(range),
                     CornerRadius::same(1),
-                    Color32::from_rgba_unmultiplied(
-                        rgb_values[0] as u8,
-                        rgb_values[1] as u8,
-                        rgb_values[2] as u8,
-                        20,
-                    ),
+                    background_colour,
                 )
             } else {
                 Shape::rect_filled(
                     self.to_rect(range),
                     CornerRadius::same(1),
-                    Color32::from_rgba_unmultiplied(
-                        rgb_values[0] as u8,
-                        rgb_values[1] as u8,
-                        rgb_values[2] as u8,
-                        20,
-                    ),
+                    background_colour,
                 )
             },
             match &self.placement.kind {
@@ -224,10 +220,18 @@ impl<'a> PlacedTrack<'a> {
                         let track_length = track.unclipped_duration();
                         self.map_notes_to_shapes(range, notes, f32::from(track_length))
                     } else {
-                        Shape::Noop
+                        Shape::rect_filled(
+                            self.to_rect(range),
+                            CornerRadius::same(1),
+                            background_colour,
+                        )
                     }
                 }
-                PlacementType::Sample(_) => Shape::Noop,
+                PlacementType::Sample(_) => Shape::rect_filled(
+                    self.to_rect(range),
+                    CornerRadius::same(1),
+                    background_colour,
+                ),
             },
         ])
     }
