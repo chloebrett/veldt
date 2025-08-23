@@ -44,17 +44,10 @@ struct Voice {
 impl Default for NodeState {
     fn default() -> Self {
         let config = StingrayConfig::default();
-        let egs = config.envelopes.clone().map(EnvelopeGenerator::new);
-        let lfos = config.lfos.clone().map(LfoGenerator::new);
         Self {
             config: config.clone(),
             meta: GeneratorMeta::default(),
             voices: HashMap::new(),
-            // voice: Voice {
-            //     egs,
-            //     sources: None,
-            //     lfos,
-            // },
             filter_left: eq_filter(&config.lpf),
             filter_right: eq_filter(&config.lpf),
         }
@@ -127,6 +120,8 @@ impl StingrayNode {
 }
 
 impl Node<ProcessContext> for StingrayNode {
+    // TODO: stingray will eventually have different polyphony/monophone modes and polyphony limit and the process method will need to respect it.
+    // Currently the process method assumes polyphony and is not constrained by a polyphony limit
     fn process(&mut self, _inputs: &[Input], output: &mut [Buffer], payload: &ProcessContext) {
         // Locations of the LFOs and LPF in the matrix.
         const LFO_ROW_START: usize = 3;
@@ -145,7 +140,6 @@ impl Node<ProcessContext> for StingrayNode {
                     eg.note_off();
                 }
             }
-            // state.voices.clear()
         }
 
         // TODO: fix this, it's n^2 right now. (well, n*64).
@@ -172,7 +166,6 @@ impl Node<ProcessContext> for StingrayNode {
                 }
             }
 
-
             for note_event in events {
                 match &note_event.kind {
                     NoteEventType::On => {
@@ -193,25 +186,15 @@ impl Node<ProcessContext> for StingrayNode {
                         let mut new_voice = Voice {
                             egs: state.config.envelopes.clone().map(EnvelopeGenerator::new),
                             sources: sources.try_into().unwrap(),
-                            lfos: state.config.lfos.clone().map(LfoGenerator::new)
+                            lfos: state.config.lfos.clone().map(LfoGenerator::new),
                         };
 
                         for eg in new_voice.egs.iter_mut() {
                             eg.note_on();
-                        };
+                        }
 
                         let new_voice_key = note_event.pitch_name.to_string();
                         state.voices.insert(new_voice_key, new_voice);
-                        // for i in 0..state.config.envelopes.len() {
-                        //     let eg = &mut state.voice.egs[i];
-                        //     let osc = state.config.oscillators[i].clone();
-
-                        //     eg.note_on();
-
-                        //     // TODO: update config dynamically, not just when starting a new note.
-                        //     sources.push(StingrayWaveSource::new(note_event.pitch_name, osc));
-                        // }
-                        // state.voice.sources = Some(sources.try_into().unwrap());
                     }
                     NoteEventType::Off => {
                         log::info!(
@@ -224,16 +207,9 @@ impl Node<ProcessContext> for StingrayNode {
                         if let Some(voice_to_turn_off) = state.voices.get_mut(&voice_key) {
                             for eg in voice_to_turn_off.egs.iter_mut() {
                                 eg.note_off();
-                            };
+                            }
                             state.voices.remove(&voice_key);
                         }
-                        // if let Some(sources) = &state.voice.sources {
-                        //     for (eg, source) in state.voice.egs.iter_mut().zip(sources.iter()) {
-                        //         if source.same_pitch(note_event.pitch_name) {
-                        //             eg.note_off();
-                        //         }
-                        //     }
-                        // }
                     }
                 }
             }
@@ -283,52 +259,6 @@ impl Node<ProcessContext> for StingrayNode {
                     buffers[1][i] += amp_mod * wave[1];
                 }
             }
-
-            // if let Some(sources) = &mut state.voice.sources {
-            //     for (j, source) in sources.iter_mut().enumerate() {
-            //         let mut lfo_value = 0.0;
-            //         let mut lfo_active = false;
-            //         // Access the column for this oscillator in the matrix
-            //         for k in 0..state.config.lfos.len() {
-            //             // Get matrix value for this oscillator and LFO
-            //             let matrix_value = state
-            //                 .config
-            //                 .matrix
-            //                 .get(k + LFO_ROW_START, j)
-            //                 .map_or(0.0, |cell_ref| (*cell_ref).into());
-
-            //             if matrix_value != 0.0 {
-            //                 lfo_active = true;
-            //             }
-
-            //             lfo_value += state.voice.lfos[k].current_value * matrix_value;
-            //         }
-
-            //         // Envelope-oscillator modulation
-            //         let wave = source.next(&mut self.cache, lfo_value, lfo_active);
-            //         let mut amp_mod = 0.0;
-
-            //         // Iterate through each envelope and accumulate modulation
-            //         for eg_idx in 0..state.voice.egs.len() {
-            //             let matrix_value = state
-            //                 .config
-            //                 .matrix
-            //                 .get(eg_idx, j)
-            //                 .map_or(0.0, |cell_ref| (*cell_ref).into());
-
-            //             if matrix_value != 0.0 {
-            //                 let amp = state.voice.egs[eg_idx].next().unwrap_or(0.0) * matrix_value;
-            //                 amp_mod += amp;
-            //             }
-            //         }
-
-            //         // If no modulation, set to 1.0 to play sample normally
-            //         let amp_mod = if amp_mod == 0.0 { 1.0 } else { amp_mod };
-
-            //         buffers[0][i] += amp_mod * wave[0];
-            //         buffers[1][i] += amp_mod * wave[1];
-            //     }
-            // }
 
             // LPF modulation
             const LPF_MIN_FREQ: f32 = 20.0;
@@ -387,57 +317,6 @@ impl Node<ProcessContext> for StingrayNode {
             state.filter_left.update_config(new_eq_config.clone());
             state.filter_right.update_config(new_eq_config.clone());
         }
-
-        //     // Applying the LFO to the LPF
-        //     // This implementation of the LFO LPF relation is based on the the ableton synth version
-        //     // https://learningsynths.ableton.com/en/playground
-        //     let mut lfo_value = 0.0;
-        //     for k in 0..state.config.lfos.len() {
-        //         // Get matrix value for this LPF and LFO
-        //         let matrix_value = state
-        //             .config
-        //             .matrix
-        //             .get(k + LFO_ROW_START, LPF_COL_START)
-        //             .map_or(0.0, |cell_ref| (*cell_ref).into());
-
-        //         lfo_value += state.voice.lfos[k].current_value * matrix_value;
-        //     }
-
-        //     // The modified LPF frequency should go to max freq at LFO value 1.0 and min freq at -1.0.
-        //     let mut new_lpf_freq = state.config.lpf.fc + (LPF_MAX_FREQ - LPF_MIN_FREQ) * lfo_value;
-
-        //     // Normalize cutoff frequency
-        //     let mut env_mod = 0.0;
-
-        //     // Applying envelopes to LPF
-        //     for eg_idx in 0..state.voice.egs.len() {
-        //         let matrix_value = state
-        //             .config
-        //             .matrix
-        //             .get(eg_idx, LPF_COL_START)
-        //             .map_or(0.0, |cell_ref| (*cell_ref).into());
-
-        //         let eg_val = state.voice.egs[eg_idx].peek();
-
-        //         // Accumulate modulation scaled by matrix value
-        //         env_mod += eg_val * matrix_value;
-        //     }
-
-        //     // If no modulation, set to 1 so that sound is not cut off
-        //     if env_mod == 0.0 {
-        //         env_mod = 1.0;
-        //     }
-
-        //     new_lpf_freq = LPF_MIN_FREQ + env_mod * (new_lpf_freq - LPF_MIN_FREQ);
-
-        //     new_lpf_freq = new_lpf_freq.clamp(LPF_MIN_FREQ, LPF_MAX_FREQ);
-
-        //     let mut new_eq_config = state.config.lpf.clone();
-        //     new_eq_config.fc = new_lpf_freq.into();
-
-        //     state.filter_left.update_config(new_eq_config.clone());
-        //     state.filter_right.update_config(new_eq_config.clone());
-        // }
 
         for (channel_index, out_buf) in output.iter_mut().enumerate() {
             out_buf.copy_from_slice(&buffers[channel_index]);

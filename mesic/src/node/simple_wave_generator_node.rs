@@ -77,6 +77,8 @@ impl SimpleWaveGeneratorNode {
 }
 
 impl Node<ProcessContext> for SimpleWaveGeneratorNode {
+    // TODO: process method does not currently respect the polyphony limit, need to constrain voices/implement voice stealing
+    // TODO: process method also assumes generator is ALWAYS set to polyphony, needs to respect polyphony/monophone modes
     fn process(&mut self, _inputs: &[Input], output: &mut [Buffer], payload: &ProcessContext) {
         let state = &mut self.state;
         state.update(payload, self.selector);
@@ -120,11 +122,13 @@ impl Node<ProcessContext> for SimpleWaveGeneratorNode {
                         let new_voice_key = note_event.pitch_name.to_string();
                         let mut new_voice = Voice {
                             eg: EnvelopeGenerator::new(state.config.envelope.clone()),
-                            source: SimpleWaveSource::new(note_event.pitch_name.into(), state.config.clone()),
+                            source: SimpleWaveSource::new(
+                                note_event.pitch_name.into(),
+                                state.config.clone(),
+                            ),
                         };
                         new_voice.eg.note_on();
                         state.voices.insert(new_voice_key, new_voice);
-
                     }
                     NoteEventType::Off => {
                         log::info!(
@@ -148,7 +152,7 @@ impl Node<ProcessContext> for SimpleWaveGeneratorNode {
                 let amp = voice.eg.next().unwrap_or(0.0);
                 let wave = voice.source.next(&mut self.cache);
                 cumulative_wave_amp_product += amp * wave;
-            };
+            }
 
             buffer[i] = cumulative_wave_amp_product;
         }
