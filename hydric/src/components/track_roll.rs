@@ -32,6 +32,8 @@ impl<'a> TrackRoll<'a> {
     }
 }
 
+const PITCH_RANGE: f32 = 4131.0;
+
 impl View for TrackRoll<'_> {
     fn ui(&mut self, ui: &mut Ui) {
         let store = self.store;
@@ -217,8 +219,7 @@ impl<'a> PlacedTrack<'a> {
                     let track_id = track_placement.track_id;
                     if let Some(track) = self.store.get().project.tracks.get(&track_id) {
                         let notes = &track.notes;
-                        let track_length = track.unclipped_duration();
-                        self.map_notes_to_shapes(range, notes, f32::from(track_length))
+                        self.map_notes_to_shapes(range, notes)
                     } else {
                         Shape::rect_filled(
                             self.to_rect(range),
@@ -233,16 +234,11 @@ impl<'a> PlacedTrack<'a> {
                     background_colour,
                 ),
             },
+            self.create_header_shape(range),
         ])
     }
 
-    fn map_notes_to_shapes(
-        &self,
-        range: Rect,
-        notes: &Vec<PlacedNote>,
-        track_length: f32,
-    ) -> Shape {
-        const PITCH_RANGE: f32 = 4131.0;
+    fn map_notes_to_shapes(&self, range: Rect, notes: &Vec<PlacedNote>) -> Shape {
         let rgb_values = self.placement.colour;
         let note_positions: Vec<Pos2> = notes
             .into_iter()
@@ -277,12 +273,35 @@ impl<'a> PlacedTrack<'a> {
             .collect();
 
         let track_transform = RectTransform::from_to(
-            Rect::from_min_max(Pos2::ZERO, Pos2::new(track_length, PITCH_RANGE)),
+            Rect::from_min_max(Pos2::ZERO, Pos2::new(*self.unclipped_duration, PITCH_RANGE)),
             self.to_rect(range).shrink2(Vec2::new(0.0, 0.07)),
         );
         let transformed_shapes = Shape::Vec(note_shapes.transform(track_transform));
 
         transformed_shapes
+    }
+
+    fn create_header_shape(&self, range: Rect) -> Shape {
+        let rgb_values = self.placement.colour;
+        let header_brackground_colour = Color32::from_rgb_additive(
+            rgb_values[0] as u8,
+            rgb_values[1] as u8,
+            rgb_values[2] as u8,
+        );
+
+        let mut header_rect = Rect::from_pos(Pos2::ZERO);
+        header_rect.set_width(*self.unclipped_duration);
+        header_rect.set_height(500.0);
+
+        let placement_transform = RectTransform::from_to(
+            Rect::from_min_max(Pos2::ZERO, Pos2::new(*self.unclipped_duration, PITCH_RANGE)),
+            self.to_rect(range),
+        );
+
+        let header_shape = Shape::rect_filled(header_rect, 0.2, header_brackground_colour)
+            .transform(placement_transform);
+
+        header_shape
     }
 
     fn get_active(store: &'a Store, local_state: &LocalState) -> Option<PlacedTrack<'a>> {
