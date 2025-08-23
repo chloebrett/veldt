@@ -14,7 +14,7 @@ pub enum MultiTypeField {
     Effect(Vec<EffectInstance>),
     Generator(Vec<GeneratorInstance>),
     PlacementId(Vec<PlacementId>),
-    Colour([u32; 3])
+    Colour([u32; 3]),
 }
 
 impl From<MultiTypeFieldProto> for MultiTypeField {
@@ -112,9 +112,7 @@ impl From<MultiTypeFieldProto> for MultiTypeField {
                     })
                     .collect();
                 [rgb[0], rgb[1], rgb[2]]
-            }
-
-            )
+            }),
         }
     }
 }

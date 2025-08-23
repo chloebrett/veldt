@@ -80,7 +80,7 @@ impl Default for StoreData {
                         offset: 0.0.into(),
                         clipped_duration: None,
                         visual_placement: 0,
-                        colour: [67, 206, 222]
+                        colour: [67, 206, 222],
                     },
                 )]),
                 samples: HashMap::new(),

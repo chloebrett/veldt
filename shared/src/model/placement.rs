@@ -19,7 +19,7 @@ pub struct Placement {
     /// Zero is the top.
     pub visual_placement: u32,
 
-    pub colour: [u8; 3] // RGB colour
+    pub colour: [u8; 3], // RGB colour
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -90,7 +90,11 @@ impl From<PlacementProto> for Placement {
         //     .unwrap_or_else(|_: Vec<u8>| {
         //         [67, 206, 222] // Default blue color
         //     });
-        let colour_array: [u8; 3] = [item.colour[0] as u8, item.colour[1] as u8, item.colour[2] as u8];
+        let colour_array: [u8; 3] = [
+            item.colour[0] as u8,
+            item.colour[1] as u8,
+            item.colour[2] as u8,
+        ];
 
         Self {
             kind: match item.kind.unwrap() {
@@ -115,7 +119,11 @@ impl From<Placement> for PlacementProto {
             offset: *item.offset,
             clipped_duration: item.clipped_duration.map(|it| *it),
             visual_placement: item.visual_placement,
-            colour: vec![item.colour[0] as u32, item.colour[1] as u32, item.colour[2] as u32],
+            colour: vec![
+                item.colour[0] as u32,
+                item.colour[1] as u32,
+                item.colour[2] as u32,
+            ],
             // colour: item.colour.into(), // Arrays implement Into<Vec>
         }
     }

@@ -136,7 +136,7 @@ impl<G: Fn()> View for StingrayView<'_, G> {
                     on_release,
                 )
                 .ui(ui); // must wrap in ui.vertical to stop the matrix from unnecessarily stretching vertically
-                
+
                 let lpf_index = 0;
                 let lpf_sel = gen_sel.downcast_effect(lpf_index);
                 let lpf_dispatch = |action| self.store.dispatch(&lpf_sel, action);
@@ -144,7 +144,7 @@ impl<G: Fn()> View for StingrayView<'_, G> {
                 ui.add_space(10.0); //space btwn mod and lpf
                 StingrayLpfView::new(&config.lpf, lpf_dispatch, on_release).ui(ui);
             });
-        ui.add_space(1.0); //spacing btwn osc + lpf and right border
+            ui.add_space(1.0); //spacing btwn osc + lpf and right border
         });
 
         ui.add_space(10.0); // spacing btwn elements and piano roll
