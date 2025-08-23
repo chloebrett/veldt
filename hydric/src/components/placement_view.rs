@@ -2,7 +2,9 @@ use crate::view::View;
 use crate::widget::{StateWindow, get_set, int_slider, selectable_value, slider};
 use crate::window_state::WindowKind;
 use crate::{GetSet, LocalState};
-use egui::Ui;
+use egui::color_picker::Alpha;
+use egui::Color32;
+use egui::{Ui, widgets::{color_picker::{color_edit_button_rgb, color_picker_color32}}};
 use mesic::samples_to_beats;
 use ordered_float::OrderedFloat;
 use shared::model::{
@@ -10,7 +12,7 @@ use shared::model::{
 };
 use shared::types::Beats;
 use state::{
-    Action, FloatField, PlacementSelector, SampleSelector, Store, TrackSelector, TypeField,
+    Action, PlacementSelector, SampleSelector, Store, TrackSelector, TypeField,
     UintField,
 };
 use std::cmp::max;
@@ -194,6 +196,26 @@ impl View for PlacementView<'_> {
                     0..=3,
                     on_release,
                 );
+
+                let placement_colour = placement.colour;
+                let mut rgb_initial = [0; 3];
+
+                for i in 0..3 {
+                    rgb_initial[i] = placement_colour[i] as u8;
+                }
+
+                let mut initial_color = Color32::from_rgb(rgb_initial[0], rgb_initial[1], rgb_initial[2]);
+                ui.label("Placement Colour");
+                color_picker_color32(ui, &mut initial_color, Alpha::Opaque);
+
+                let new_colour = [initial_color.r(), initial_color.g(), initial_color.b()];
+                if rgb_initial != new_colour {
+                    let mut new_rgb = [0; 3];
+                    for i in 0..3 {
+                        new_rgb[i] = new_colour[i] as u32;
+                    }
+                    store.dispatch(&sel, Action::SetChildren(state::MultiTypeField::Colour(new_rgb)));
+                }
 
                 if ui.button("Delete").clicked() {
                     store.dispatchr(Action::DeleteChildById(TypeField::PlacementId(
