@@ -106,7 +106,7 @@ impl View for NoteRoll<'_> {
             pos2(bar_length * MAX_BARS, max_note as f32),
         );
         let title = format!("Track {}", *track_sel.0);
-        StateWindow::show_from_window_state(
+        StateWindow::show_from_window_state_resizable(
             ui,
             &local_state.window_state,
             WindowKind::NoteRoll,
