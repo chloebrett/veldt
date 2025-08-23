@@ -177,16 +177,17 @@ impl<'a> PlacedTrack<'a> {
     }
 
     fn shape(&self, range: Rect) -> Shape {
+        let rgb_values = self.placement.colour;
         Shape::Vec(vec![
             // track background shape
             if *self.unclipped_duration == 0.0 {
                 Shape::rect_filled(
                     self.to_rect(range),
                     CornerRadius::same(1),
-                    Color32::from_white_alpha(32),
+                    Color32::from_rgba_unmultiplied(rgb_values[0] as u8, rgb_values[1] as u8, rgb_values[2] as u8, 20),
                 )
             } else {
-                Shape::rect_filled(self.to_rect(range), CornerRadius::same(1), Color32::WHITE)
+                Shape::rect_filled(self.to_rect(range), CornerRadius::same(1), Color32::from_rgba_unmultiplied(rgb_values[0] as u8, rgb_values[1] as u8, rgb_values[2] as u8, 20))
             },
             match &self.placement.kind {
                 PlacementType::Track(track_placement) => {
@@ -208,6 +209,7 @@ impl<'a> PlacedTrack<'a> {
 
     fn map_notes_to_shapes(&self, range: Rect, notes: &Vec<PlacedNote>, track_length: f32) -> Shape{
         const PITCH_RANGE: f32 = 4131.0;
+        let rgb_values = self.placement.colour;
         let note_positions: Vec<Pos2> = notes.into_iter().map(|note| {
             let x_pos = f32::from(note.offset);
             let y_pos: f32 = note.note.pitch_name.into();
@@ -218,7 +220,7 @@ impl<'a> PlacedTrack<'a> {
             let mut note_rect = Rect::from_pos(note_positions[i]);
             note_rect.set_width(note.note.beats);
             note_rect.set_height(250.0);
-            let note_shape: Shape = RectShape::new(note_rect, 1.5, Color32::BLUE, Stroke::NONE, StrokeKind::Inside).into();
+            let note_shape: Shape = RectShape::new(note_rect, 1.5, Color32::from_rgb_additive(rgb_values[0] as u8, rgb_values[1] as u8, rgb_values[2] as u8), Stroke::NONE, StrokeKind::Inside).into();
             note_shape
         }
         ).collect();
@@ -249,14 +251,15 @@ impl<'a> PlacedTrack<'a> {
     }
 
     fn active_shape(&self, range: Rect) -> Shape {
+        let rgb_values = self.placement.colour;
         Shape::Vec(vec![
             self.shape(range),
             Shape::rect_stroke(
                 self.to_rect(range),
                 CornerRadius::same(0),
                 Stroke {
-                    width: 1.0,
-                    color: Color32::BLUE,
+                    width: 1.5,
+                    color: Color32::from_rgb_additive(rgb_values[0] as u8, rgb_values[1] as u8, rgb_values[2] as u8),
                 },
                 StrokeKind::Inside,
             ),
@@ -284,14 +287,15 @@ impl<'a> PlacedTrack<'a> {
     }
 
     fn selected_shape(&self, range: Rect) -> Shape {
+        let rgb_values = self.placement.colour;
         Shape::Vec(vec![
             self.shape(range),
             Shape::rect_stroke(
                 self.to_rect(range),
                 CornerRadius::same(0),
                 Stroke {
-                    width: 1.0,
-                    color: Color32::RED,
+                    width: 1.5,
+                    color: Color32::from_rgb_additive(rgb_values[0] as u8, rgb_values[1] as u8, rgb_values[2] as u8),
                 },
                 StrokeKind::Inside,
             ),

@@ -4,7 +4,7 @@ use crate::window_state::WindowKind;
 use crate::{GetSet, LocalState};
 use egui::color_picker::Alpha;
 use egui::Color32;
-use egui::{Ui, widgets::{color_picker::{color_edit_button_rgb, color_picker_color32}}};
+use egui::{Ui, widgets::{color_picker::color_picker_color32}};
 use mesic::samples_to_beats;
 use ordered_float::OrderedFloat;
 use shared::model::{
