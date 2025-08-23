@@ -1,5 +1,5 @@
 use crate::view::View;
-use crate::widget::{add_knob, outer_frame, styled_knob, checkbox};
+use crate::widget::{add_knob, checkbox, outer_frame, styled_knob};
 use eframe::egui;
 use egui::{Checkbox, Ui};
 use shared::model::EqConfig;
@@ -41,36 +41,36 @@ impl<F: Fn(Action), G: Fn()> View for StingrayLpfView<'_, F, G> {
 
             ui.horizontal(|ui| {
                 add_knob(
-                ui,
-                styled_knob(
-                    "Freq",
-                    config.fc,
-                    |it| dispatch(Action::SetFloat(FloatField::Fc, it)),
-                    20.0..=20000.0,
-                )
-                .with_neutral(2000.0),
-                on_release,
-            );
-            ui.add_space(10.0);
-            add_knob(
-                ui,
-                styled_knob(
-                    "Q",
-                    config.q,
-                    |it| dispatch(Action::SetFloat(FloatField::Q, it)),
-                    0.1..=100.0,
-                )
-                .with_neutral(1.0),
-                on_release,
-            );
-            ui.add_space(10.0);
-            checkbox(
-                ui,
-                |value| Checkbox::new(value, "Loop"),
-                **is_enabled,
-                |it| dispatch(Action::SetChild(TypeField::Mute(it))),
-            );
-            ui.add_space(105.0);
+                    ui,
+                    styled_knob(
+                        "Freq",
+                        config.fc,
+                        |it| dispatch(Action::SetFloat(FloatField::Fc, it)),
+                        20.0..=20000.0,
+                    )
+                    .with_neutral(2000.0),
+                    on_release,
+                );
+                ui.add_space(10.0);
+                add_knob(
+                    ui,
+                    styled_knob(
+                        "Q",
+                        config.q,
+                        |it| dispatch(Action::SetFloat(FloatField::Q, it)),
+                        0.1..=100.0,
+                    )
+                    .with_neutral(1.0),
+                    on_release,
+                );
+                ui.add_space(10.0);
+                checkbox(
+                    ui,
+                    |value| Checkbox::new(value, "Enable"),
+                    **is_enabled,
+                    |it| dispatch(Action::SetChild(TypeField::Mute(it))),
+                );
+                ui.add_space(105.0);
             });
         });
     }

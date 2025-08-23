@@ -122,10 +122,6 @@ impl StingrayNode {
 
 impl Node<ProcessContext> for StingrayNode {
     fn process(&mut self, _inputs: &[Input], output: &mut [Buffer], payload: &ProcessContext) {
-        // Locations of the LFOs and LPF in the matrix.
-        const LFO_ROW_START: usize = 3;
-        const LPF_COL_START: usize = 3;
-
         let state = &mut self.state;
         state.update(payload, self.selector);
 
@@ -157,6 +153,8 @@ impl Node<ProcessContext> for StingrayNode {
             }
 
             // Update LFOs here so we can use their values else where
+            // Location of the LFOs in the matrix.
+            const LFO_ROW_START: usize = 3;
             for lfo in state.voice.lfos.iter_mut() {
                 lfo.next();
             }
@@ -245,60 +243,63 @@ impl Node<ProcessContext> for StingrayNode {
                     buffers[1][i] += amp_mod * wave[1];
                 }
             }
-
+            
             // LPF modulation
             const LPF_MIN_FREQ: f32 = 20.0;
             const LPF_MAX_FREQ: f32 = 20000.0;
+            const LPF_COL_START: usize = 3;  // LPF location in the matrix
 
-            // Applying the LFO to the LPF
-            // This implementation of the LFO LPF relation is based on the the ableton synth version
-            // https://learningsynths.ableton.com/en/playground
-            let mut lfo_value = 0.0;
-            for k in 0..state.config.lfos.len() {
-                // Get matrix value for this LPF and LFO
-                let matrix_value = state
-                    .config
-                    .matrix
-                    .get(k + LFO_ROW_START, LPF_COL_START)
-                    .map_or(0.0, |cell_ref| (*cell_ref).into());
+            if state.config.lpf_enabled {
+                // Applying the LFO to the LPF
+                // This implementation of the LFO LPF relation is based on the the ableton synth version
+                // https://learningsynths.ableton.com/en/playground
+                let mut lfo_value = 0.0;
+                for k in 0..state.config.lfos.len() {
+                    // Get matrix value for this LPF and LFO
+                    let matrix_value = state
+                        .config
+                        .matrix
+                        .get(k + LFO_ROW_START, LPF_COL_START)
+                        .map_or(0.0, |cell_ref| (*cell_ref).into());
 
-                lfo_value += state.voice.lfos[k].current_value * matrix_value;
+                    lfo_value += state.voice.lfos[k].current_value * matrix_value;
+                }
+
+                // The modified LPF frequency should go to max freq at LFO value 1.0 and min freq at -1.0.
+                let mut new_lpf_freq = state.config.lpf.fc + (LPF_MAX_FREQ - LPF_MIN_FREQ) * lfo_value;
+
+                // Normalize cutoff frequency
+                let mut env_mod = 0.0;
+
+                // Applying envelopes to LPF
+                for eg_idx in 0..state.voice.egs.len() {
+                    let matrix_value = state
+                        .config
+                        .matrix
+                        .get(eg_idx, LPF_COL_START)
+                        .map_or(0.0, |cell_ref| (*cell_ref).into());
+
+                    let eg_val = state.voice.egs[eg_idx].peek();
+
+                    // Accumulate modulation scaled by matrix value
+                    env_mod += eg_val * matrix_value;
+                }
+
+                // If no modulation, set to 1 so that sound is not cut off
+                if env_mod == 0.0 {
+                    env_mod = 1.0;
+                }
+
+                new_lpf_freq = LPF_MIN_FREQ + env_mod * (new_lpf_freq - LPF_MIN_FREQ);
+
+                new_lpf_freq = new_lpf_freq.clamp(LPF_MIN_FREQ, LPF_MAX_FREQ);
+
+                let mut new_eq_config = state.config.lpf.clone();
+                new_eq_config.fc = new_lpf_freq.into();
+
+                state.filter_left.update_config(new_eq_config.clone());
+                state.filter_right.update_config(new_eq_config.clone());
             }
-
-            // The modified LPF frequency should go to max freq at LFO value 1.0 and min freq at -1.0.
-            let mut new_lpf_freq = state.config.lpf.fc + (LPF_MAX_FREQ - LPF_MIN_FREQ) * lfo_value;
-
-            // Normalize cutoff frequency
-            let mut env_mod = 0.0;
-
-            // Applying envelopes to LPF
-            for eg_idx in 0..state.voice.egs.len() {
-                let matrix_value = state
-                    .config
-                    .matrix
-                    .get(eg_idx, LPF_COL_START)
-                    .map_or(0.0, |cell_ref| (*cell_ref).into());
-
-                let eg_val = state.voice.egs[eg_idx].peek();
-
-                // Accumulate modulation scaled by matrix value
-                env_mod += eg_val * matrix_value;
-            }
-
-            // If no modulation, set to 1 so that sound is not cut off
-            if env_mod == 0.0 {
-                env_mod = 1.0;
-            }
-
-            new_lpf_freq = LPF_MIN_FREQ + env_mod * (new_lpf_freq - LPF_MIN_FREQ);
-
-            new_lpf_freq = new_lpf_freq.clamp(LPF_MIN_FREQ, LPF_MAX_FREQ);
-
-            let mut new_eq_config = state.config.lpf.clone();
-            new_eq_config.fc = new_lpf_freq.into();
-
-            state.filter_left.update_config(new_eq_config.clone());
-            state.filter_right.update_config(new_eq_config.clone());
         }
 
         for (channel_index, out_buf) in output.iter_mut().enumerate() {
