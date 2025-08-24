@@ -89,6 +89,7 @@ impl<G: Fn()> View for StingrayView<'_, G> {
         let config = self.config;
         let on_release = &self.on_release;
         let gen_sel = self.generator_sel;
+        let gen_dispatch = |action| self.store.dispatch(gen_sel, action);
 
         ui.horizontal(|ui| {
             ui.vertical(|ui| {
@@ -140,9 +141,9 @@ impl<G: Fn()> View for StingrayView<'_, G> {
                 let lpf_index = 0;
                 let lpf_sel = gen_sel.downcast_effect(lpf_index);
                 let lpf_dispatch = |action| self.store.dispatch(&lpf_sel, action);
-
+                
                 ui.add_space(10.0); //space btwn mod and lpf
-                StingrayLpfView::new(&config.lpf, &config.lpf_enabled, lpf_dispatch, on_release)
+                StingrayLpfView::new(&config.lpf, &config.lpf_enabled, lpf_dispatch, gen_dispatch, on_release)
                     .ui(ui);
             });
             ui.add_space(1.0); //spacing btwn osc + lpf and right border
