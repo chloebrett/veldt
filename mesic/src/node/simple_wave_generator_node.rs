@@ -6,7 +6,7 @@ use crate::maths::linspace;
 use crate::wave::detune_multiplier;
 use crate::wave_cache::{WaveCache, WaveKey};
 use dasp_graph::{Buffer, Input, Node};
-use shared::model::{Generator, GeneratorInstance, GeneratorMeta, PitchName, SimpleWaveConfig};
+use shared::model::{Generator, GeneratorInstance, GeneratorMeta, SimpleWaveConfig};
 use shared::types::Freq;
 use state::GeneratorSelector;
 use std::collections::HashMap;
@@ -95,7 +95,7 @@ impl Node<ProcessContext> for SimpleWaveGeneratorNode {
 
         // TODO: fix this, it's n^2 right now. (well, n*64).
         for i in 0..buffer.len() {
-            let mut events: Vec<NoteEvent> = payload
+            let events: Vec<NoteEvent> = payload
                 .note_events
                 .get(&generator_id)
                 .cloned()
@@ -103,12 +103,6 @@ impl Node<ProcessContext> for SimpleWaveGeneratorNode {
                 .into_iter()
                 .filter(|it| it.sample_index == i)
                 .collect();
-
-            // Special case: if there are both note_on and note_off events in a single sample,
-            // don't process the note_off events.
-            if events.iter().any(|it| it.kind == NoteEventType::On) {
-                events.retain(|it| it.kind == NoteEventType::On);
-            }
 
             for note_event in events {
                 match &note_event.kind {
@@ -177,10 +171,6 @@ impl SimpleWaveSource {
             config,
             sample_index: 0,
         }
-    }
-
-    fn same_pitch(&self, pitch: PitchName) -> bool {
-        self.freq == pitch.into()
     }
 
     fn next(&mut self, cache: &mut WaveCache) -> f32 {
