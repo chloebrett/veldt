@@ -361,7 +361,15 @@ impl<'a> PlacedTrack<'a> {
 
     fn create_label(&self, range: Rect, ui: &mut Ui) -> Shape {
         let font_id = egui::FontId::proportional(12.0);
-        let galley = ui.fonts(|fonts| fonts.layout_no_wrap(("Please I beg").to_string(), font_id.clone(), Color32::BLACK));
+        let label_text = match &self.placement.kind {
+            PlacementType::Track(track) => {
+                "Track: ".to_owned() + &track.track_id.to_string()
+            },
+            PlacementType::Sample(sample) => {
+                "Sample: ".to_owned() + &sample.sample_id.to_string()
+            }
+        };
+        let galley = ui.fonts(|fonts| fonts.layout_no_wrap(label_text, font_id.clone(), Color32::BLACK));
         let transform = RectTransform::from_to(
             Rect::from_min_max(Pos2::ZERO, Pos2::new(*self.unclipped_duration, PITCH_RANGE)),
             self.to_rect(range),
@@ -383,19 +391,24 @@ impl<'a> PlacedTrack<'a> {
         let id = local_state.active_placement.get()?;
         let selector = PlacementSelector(id);
         let placement = store.select(&selector);
-        let track_placement: Option<&TrackPlacement> = placement.try_into().ok();
+
+        let unclipped_duration = match &placement.kind {
+            PlacementType::Track(track_placement) => {
+                store
+                    .select(&TrackSelector(track_placement.track_id))
+                    .unclipped_duration()
+            }
+            PlacementType::Sample(_) => {
+                // TODO sample unclipped duration
+                ordered_float::OrderedFloat(0.0)
+            }
+        };
+
         Some(PlacedTrack {
-            // TODO: sample duration
-            unclipped_duration: track_placement
-                .map(|it| {
-                    store
-                        .select(&TrackSelector(it.track_id))
-                        .unclipped_duration()
-                })
-                .unwrap_or(1.0.into()),
+            unclipped_duration,
             placement: placement.clone(),
             store: store,
-            local_state: local_state
+            local_state: local_state,
         })
     }
 
