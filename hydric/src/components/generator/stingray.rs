@@ -10,6 +10,8 @@ use shared::{
     types::PitchValue,
 };
 use state::{GeneratorSelector, Store};
+use crate::components::opacity_percentage_to_alpha;
+
 
 pub struct StingrayView<'a, G: Fn()> {
     config: &'a StingrayConfig,
@@ -66,9 +68,9 @@ impl<'a, G: Fn()> StingrayView<'a, G> {
 const CHART_FILL_ALPHA: u8 = opacity_percentage_to_alpha(44.0);
 const HORIZONTAL_SPACE: f32 = 3.0;
 
-pub const fn opacity_percentage_to_alpha(opacity_percentage: f32) -> u8 {
-    ((opacity_percentage / 100.0) * 255.0) as u8
-}
+// pub const fn opacity_percentage_to_alpha(opacity_percentage: f32) -> u8 {
+//     ((opacity_percentage / 100.0) * 255.0) as u8
+// }
 
 lazy_static! {
     pub static ref GREEN_OUTLINE: Color32 = Color32::from_rgb(119, 167, 43);

@@ -1,5 +1,5 @@
 use super::envelope_line;
-use crate::components::generator::stingray::opacity_percentage_to_alpha;
+use crate::components::opacity_percentage_to_alpha;
 use crate::transform::Transform;
 use crate::view::View;
 use crate::widget::{TabDisplay, TabOrientation, add_knob, inner_frame, outer_frame, styled_knob};
