@@ -53,6 +53,7 @@ impl View for TrackRoll<'_> {
                             unclipped_duration: project.tracks[&track_id].unclipped_duration(),
                             placement: placement.clone(),
                             store: self.store,
+                            local_state: self.local_state
                         },
                         PlacementType::Sample(SamplePlacement { sample_id }) => {
                             let duration = store
@@ -68,6 +69,7 @@ impl View for TrackRoll<'_> {
                                 unclipped_duration: duration.into(),
                                 placement: placement.clone(),
                                 store: self.store,
+                                local_state: self.local_state
                             }
                         }
                     },
@@ -160,6 +162,7 @@ struct PlacedTrack<'a> {
     placement: Placement,
     unclipped_duration: OrderedFloat<f32>,
     store: &'a Store,
+    local_state:  &'a LocalState,
 }
 
 impl<'a> PlacedTrack<'a> {
@@ -239,44 +242,56 @@ impl<'a> PlacedTrack<'a> {
         ])
     }
 
-fn sample_shape(&self, range: Rect, sample_id: SampleId) -> Shape {
-    if let Some(sample) = self.store.get().project.samples.get(&sample_id) {
-        // TODO: cache points into local state
-        let sample_length = sample.left.len();
-        if sample_length == 0 {
-            return Shape::line(vec![Pos2::ZERO], Stroke::new(0.0, Color32::BLACK));
+    fn sample_shape(&self, range: Rect, sample_id: SampleId) -> Shape {
+        if let Some(sample) = self.store.get().project.samples.get(&sample_id) {
+            let sample_length = sample.left.len();
+            let colour = Color32::from_rgb_additive(
+                    self.placement.colour[0],
+                    self.placement.colour[1],
+                    self.placement.colour[2],
+                );
+            if sample_length == 0 {
+                return Shape::line(vec![Pos2::ZERO], Stroke::new(0.0, colour));
+            }
+            let sample_transform = RectTransform::from_to(
+                Rect::from_x_y_ranges(0.0..=(sample_length - 1) as f32, 1.0..=-1.0),
+                self.to_rect(range).shrink2(Vec2::new(0.0, 0.1)),
+            );
+            if let Some(points) = self.local_state.sample_visual_preview_cache.borrow().get(&sample_id) { // used cached points if available
+                Shape::line(
+                    points.transform(sample_transform),
+                    Stroke::new(0.1, colour),
+                )
+            } else {
+                let mut points: Vec<Pos2> = Vec::new();
+                // Always include the first point
+                points.push(pos2(0.0, (sample.left[0] + sample.right[0]) * 0.5));
+
+                // Sample every 15th point for better performance, from the second to the second-to-last. (Could probably get away with sampling even less)
+                for i in (1..sample_length - 1).step_by(15) {
+                    let x = i as f32;
+                    let y = (sample.left[i] + sample.right[i]) * 0.5;
+                    points.push(pos2(x, y));
+                }
+
+                // Always include the last point
+                points.push(pos2(
+                    (sample_length - 1) as f32,
+                    (sample.left[sample_length - 1] + sample.right[sample_length - 1]) * 0.5,
+                ));
+
+                // Cache points into local state
+                self.local_state.sample_visual_preview_cache.borrow_mut().insert(sample_id, points.clone());
+
+                Shape::line(
+                    points.clone().transform(sample_transform),
+                    Stroke::new(0.1, colour),
+                )
+            }
+        } else {
+            Shape::line(vec![Pos2::ZERO], Stroke::new(0.0, Color32::BLACK))
         }
-
-        let mut points: Vec<Pos2> = Vec::new();
-        // Always include the first point
-        points.push(pos2(0.0, (sample.left[0] + sample.right[0]) * 0.5));
-
-        // Sample every 15th point for better performance, from the second to the second-to-last
-        for i in (1..sample_length - 1).step_by(15) {
-            let x = i as f32;
-            let y = (sample.left[i] + sample.right[i]) * 0.5;
-            points.push(pos2(x, y));
-        }
-
-        // Always include the last point
-        points.push(pos2(
-            (sample_length - 1) as f32,
-            (sample.left[sample_length - 1] + sample.right[sample_length - 1]) * 0.5,
-        ));
-
-        let sample_transform = RectTransform::from_to(
-            Rect::from_x_y_ranges(0.0..=(sample_length - 1) as f32, 1.0..=-1.0),
-            self.to_rect(range),
-        );
-
-        Shape::line(
-            points.transform(sample_transform),
-            Stroke::new(0.1, Color32::BLUE),
-        )
-    } else {
-        Shape::line(vec![Pos2::ZERO], Stroke::new(0.0, Color32::BLACK))
     }
-}
 
     fn map_notes_to_shapes(&self, range: Rect, notes: &Vec<PlacedNote>) -> Shape {
         let rgb_values = self.placement.colour;
@@ -364,7 +379,7 @@ fn sample_shape(&self, range: Rect, sample_id: SampleId) -> Shape {
         text_shape
     }
 
-    fn get_active(store: &'a Store, local_state: &LocalState) -> Option<PlacedTrack<'a>> {
+    fn get_active(store: &'a Store, local_state: &'a LocalState) -> Option<PlacedTrack<'a>> {
         let id = local_state.active_placement.get()?;
         let selector = PlacementSelector(id);
         let placement = store.select(&selector);
@@ -380,6 +395,7 @@ fn sample_shape(&self, range: Rect, sample_id: SampleId) -> Shape {
                 .unwrap_or(1.0.into()),
             placement: placement.clone(),
             store: store,
+            local_state: local_state
         })
     }
 
@@ -403,7 +419,7 @@ fn sample_shape(&self, range: Rect, sample_id: SampleId) -> Shape {
         ])
     }
 
-    fn get_selected(store: &'a Store, local_state: &LocalState) -> Vec<PlacedTrack<'a>> {
+    fn get_selected(store: &'a Store, local_state: &'a LocalState) -> Vec<PlacedTrack<'a>> {
         local_state
             .selected_placements
             .get()
@@ -418,6 +434,7 @@ fn sample_shape(&self, range: Rect, sample_id: SampleId) -> Shape {
                         .unclipped_duration(),
                     placement: placement.clone(),
                     store: store,
+                    local_state: local_state
                 }
             })
             .collect()
