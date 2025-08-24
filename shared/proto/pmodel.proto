@@ -58,6 +58,8 @@ message PlacementProto {
 
     pmodel.SamplePlacementProto sample = 5;
   }
+
+  repeated uint32 colour = 6;
 }
 
 message TrackPlacementProto {

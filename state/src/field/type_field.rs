@@ -55,6 +55,7 @@ pub enum TypeField {
     Octave(i32),
     LpfOn(bool),
     // Note: when you add a new type, make sure to configure its broadcast behaviour in broadcast.rs as well.
+    Colour(u32),
 }
 
 impl From<TypeFieldProto> for TypeField {
@@ -97,6 +98,7 @@ impl From<TypeFieldProto> for TypeField {
             TypeFieldKind::SampleId(it) => TypeField::SampleId(it.into()),
             TypeFieldKind::TrackId(it) => TypeField::TrackId(it.into()),
             TypeFieldKind::EffectId(it) => TypeField::EffectId(it.into()),
+            TypeFieldKind::Colour(it) => TypeField::Colour(it.into()),
             TypeFieldKind::LpfOn(it) => TypeField::LpfOn(it),
         }
     }
@@ -148,6 +150,7 @@ impl From<TypeField> for TypeFieldProto {
                 TypeField::SampleId(it) => TypeFieldKind::SampleId(it.into()),
                 TypeField::TrackId(it) => TypeFieldKind::TrackId(it.into()),
                 TypeField::EffectId(it) => TypeFieldKind::EffectId(it.into()),
+                TypeField::Colour(it) => TypeFieldKind::Colour(it.into()),
                 TypeField::LpfOn(it) => TypeFieldKind::LpfOn(it),
             }),
         }

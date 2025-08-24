@@ -9,6 +9,7 @@ use dasp_graph::{Buffer, Input, Node};
 use shared::model::{Generator, GeneratorInstance, GeneratorMeta, PitchName, SimpleWaveConfig};
 use shared::types::Freq;
 use state::GeneratorSelector;
+use std::collections::HashMap;
 
 pub struct SimpleWaveGeneratorNode {
     selector: GeneratorSelector,
@@ -21,12 +22,12 @@ pub struct SimpleWaveGeneratorNode {
 struct NodeState {
     config: SimpleWaveConfig,
     meta: GeneratorMeta,
-    voice: Voice,
+    voices: HashMap<String, Voice>,
 }
 
 struct Voice {
     eg: EnvelopeGenerator,
-    source: Option<SimpleWaveSource>,
+    source: SimpleWaveSource,
 }
 
 impl Default for NodeState {
@@ -35,10 +36,7 @@ impl Default for NodeState {
         Self {
             config: config.clone(),
             meta: GeneratorMeta::default(),
-            voice: Voice {
-                eg: EnvelopeGenerator::new(config.envelope.clone()),
-                source: None,
-            },
+            voices: HashMap::new(),
         }
     }
 }
@@ -79,6 +77,8 @@ impl SimpleWaveGeneratorNode {
 }
 
 impl Node<ProcessContext> for SimpleWaveGeneratorNode {
+    // TODO: process method does not currently respect the polyphony limit, need to constrain voices/implement voice stealing
+    // TODO: process method also assumes generator is ALWAYS set to polyphony, needs to respect polyphony/monophone modes
     fn process(&mut self, _inputs: &[Input], output: &mut [Buffer], payload: &ProcessContext) {
         let state = &mut self.state;
         state.update(payload, self.selector);
@@ -88,7 +88,9 @@ impl Node<ProcessContext> for SimpleWaveGeneratorNode {
 
         if payload.stop_generators.get(&generator_id) == Some(&true) {
             log::info!("Stopped SWG: {:?}", generator_id);
-            state.voice.eg.note_off();
+            for voice in state.voices.values_mut() {
+                voice.eg.note_off();
+            }
         }
 
         // TODO: fix this, it's n^2 right now. (well, n*64).
@@ -116,13 +118,17 @@ impl Node<ProcessContext> for SimpleWaveGeneratorNode {
                             note_event.pitch_name,
                             state.config
                         );
-                        state.voice.eg.note_on();
-                        state.voice.eg.set_envelope(state.config.envelope.clone());
                         // TODO: update config dynamically, not just when starting a new note.
-                        state.voice.source = Some(SimpleWaveSource::new(
-                            note_event.pitch_name.into(),
-                            state.config.clone(),
-                        ));
+                        let new_voice_key = note_event.pitch_name.to_string();
+                        let mut new_voice = Voice {
+                            eg: EnvelopeGenerator::new(state.config.envelope.clone()),
+                            source: SimpleWaveSource::new(
+                                note_event.pitch_name.into(),
+                                state.config.clone(),
+                            ),
+                        };
+                        new_voice.eg.note_on();
+                        state.voices.insert(new_voice_key, new_voice);
                     }
                     NoteEventType::Off => {
                         log::info!(
@@ -130,25 +136,25 @@ impl Node<ProcessContext> for SimpleWaveGeneratorNode {
                             note_event.pitch_name,
                             state.config
                         );
-                        // TODO: check against start/stop time too?
-                        if let Some(source) = &state.voice.source {
-                            if source.same_pitch(note_event.pitch_name) {
-                                state.voice.eg.note_off();
-                            }
+                        // TODO: check against start/stop time too.
+                        // TODO: Right now if you delete a note on the note roll before it finishes playing, the note off event won't be processed so the deleted note will play forever
+                        let voice_key = note_event.pitch_name.to_string();
+                        if let Some(voice_to_turn_off) = state.voices.get_mut(&voice_key) {
+                            voice_to_turn_off.eg.note_off();
+                            state.voices.remove(&voice_key);
                         }
                     }
                 }
             }
 
-            let amp = state.voice.eg.next().unwrap_or(0.0);
-            let wave = state
-                .voice
-                .source
-                .as_mut()
-                .map(|it| it.next(&mut self.cache))
-                .unwrap_or(0.0);
+            let mut cumulative_wave_amp_product = 0.0;
+            for voice in state.voices.values_mut() {
+                let amp = voice.eg.next().unwrap_or(0.0);
+                let wave = voice.source.next(&mut self.cache);
+                cumulative_wave_amp_product += amp * wave;
+            }
 
-            buffer[i] = amp * wave;
+            buffer[i] = cumulative_wave_amp_product;
         }
 
         for (channel_index, out_buf) in output.iter_mut().enumerate() {
