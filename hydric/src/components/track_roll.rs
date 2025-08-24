@@ -239,12 +239,44 @@ impl<'a> PlacedTrack<'a> {
         ])
     }
 
-    fn sample_shape(&self, range: Rect, sample_id: SampleId) -> Shape{
-        if let Some(sample) = self.store.get().project.samples.get(&sample_id) {
-            
+fn sample_shape(&self, range: Rect, sample_id: SampleId) -> Shape {
+    if let Some(sample) = self.store.get().project.samples.get(&sample_id) {
+        // TODO: cache points into local state
+        let sample_length = sample.left.len();
+        if sample_length == 0 {
+            return Shape::line(vec![Pos2::ZERO], Stroke::new(0.0, Color32::BLACK));
         }
-        Shape::Noop
+
+        let mut points: Vec<Pos2> = Vec::new();
+        // Always include the first point
+        points.push(pos2(0.0, (sample.left[0] + sample.right[0]) * 0.5));
+
+        // Sample every 15th point for better performance, from the second to the second-to-last
+        for i in (1..sample_length - 1).step_by(15) {
+            let x = i as f32;
+            let y = (sample.left[i] + sample.right[i]) * 0.5;
+            points.push(pos2(x, y));
+        }
+
+        // Always include the last point
+        points.push(pos2(
+            (sample_length - 1) as f32,
+            (sample.left[sample_length - 1] + sample.right[sample_length - 1]) * 0.5,
+        ));
+
+        let sample_transform = RectTransform::from_to(
+            Rect::from_x_y_ranges(0.0..=(sample_length - 1) as f32, 1.0..=-1.0),
+            self.to_rect(range),
+        );
+
+        Shape::line(
+            points.transform(sample_transform),
+            Stroke::new(0.1, Color32::BLUE),
+        )
+    } else {
+        Shape::line(vec![Pos2::ZERO], Stroke::new(0.0, Color32::BLACK))
     }
+}
 
     fn map_notes_to_shapes(&self, range: Rect, notes: &Vec<PlacedNote>) -> Shape {
         let rgb_values = self.placement.colour;
