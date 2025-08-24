@@ -21,7 +21,7 @@ pub struct StingrayView<'a, F: Fn(Action), G: Fn()> {
     audio_player: &'a mut AudioPlayer,
 }
 
-impl<'a,F: Fn(Action), G: Fn()> StingrayView<'a, F, G> {
+impl<'a, F: Fn(Action), G: Fn()> StingrayView<'a, F, G> {
     pub fn new(
         config: &'a StingrayConfig,
         on_release: G,
