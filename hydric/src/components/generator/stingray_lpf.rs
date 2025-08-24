@@ -2,22 +2,28 @@ use crate::view::View;
 use crate::widget::{add_knob, checkbox, outer_frame, styled_knob};
 use eframe::egui;
 use egui::{Checkbox, Ui};
-use shared::model::{EqConfig};
+use shared::model::EqConfig;
 use state::{Action, FloatField, TypeField};
 
 pub struct StingrayLpfView<'a, F: Fn(Action), G: Fn(Action), H: Fn()> {
     config: &'a EqConfig,
-    lpf_enabled: &'a bool,
+    lpf_on: bool,
     dispatch: F,
     gen_dispatch: G,
     on_release: H,
 }
 
 impl<'a, F: Fn(Action), G: Fn(Action), H: Fn()> StingrayLpfView<'a, F, G, H> {
-    pub fn new(config: &'a EqConfig, lpf_enabled: &'a bool, dispatch: F, gen_dispatch: G, on_release: H) -> Self {
+    pub fn new(
+        config: &'a EqConfig,
+        lpf_on: bool,
+        dispatch: F,
+        gen_dispatch: G,
+        on_release: H,
+    ) -> Self {
         Self {
             config,
-            lpf_enabled,
+            lpf_on,
             dispatch,
             gen_dispatch,
             on_release,
@@ -29,7 +35,7 @@ impl<F: Fn(Action), G: Fn(Action), H: Fn()> View for StingrayLpfView<'_, F, G, H
     fn ui(&mut self, ui: &mut Ui) {
         let Self {
             config,
-            lpf_enabled,
+            lpf_on,
             dispatch,
             gen_dispatch,
             on_release,
@@ -70,8 +76,8 @@ impl<F: Fn(Action), G: Fn(Action), H: Fn()> View for StingrayLpfView<'_, F, G, H
                 checkbox(
                     ui,
                     |value| Checkbox::new(value, "Enable"),
-                    **lpf_enabled,
-                    |it| gen_dispatch(Action::SetChild(TypeField::Mute(it))),
+                    *lpf_on,
+                    |it| gen_dispatch(Action::SetChild(TypeField::LpfOn(it))),
                 );
                 ui.add_space(95.0);
             });

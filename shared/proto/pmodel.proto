@@ -168,7 +168,7 @@ message StingrayConfigProto {
   repeated AdsrEnvelopeProto envelopes = 3;
   ModMatrixProto matrix = 4;  
   EqConfigProto lpf = 5;
-  bool lpf_enabled = 6;
+  bool lpf_on = 6;
 }
 
 message OscillatorProto {

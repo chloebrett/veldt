@@ -5,6 +5,7 @@ use shared::model::{
     PlacementId, PolyphonyMode, Project, Sample, SampleId, Scale, ScaleValue, Track, TrackId,
     WaveType,
 };
+use shared::pmodel::effect_instance_proto::It;
 use shared::pmodel::{
     AntiAliasingModeProto, EqTypeProto, NoiseTypeProto, PolyphonyModeProto, ScaleProto,
     WaveTypeProto,
@@ -52,6 +53,7 @@ pub enum TypeField {
     // don't have to keep expanding the proto.
     Mute(bool),
     Octave(i32),
+    LpfOn(bool),
     // Note: when you add a new type, make sure to configure its broadcast behaviour in broadcast.rs as well.
 }
 
@@ -95,6 +97,7 @@ impl From<TypeFieldProto> for TypeField {
             TypeFieldKind::SampleId(it) => TypeField::SampleId(it.into()),
             TypeFieldKind::TrackId(it) => TypeField::TrackId(it.into()),
             TypeFieldKind::EffectId(it) => TypeField::EffectId(it.into()),
+            TypeFieldKind::LpfOn(it) => TypeField::LpfOn(it),
         }
     }
 }
@@ -145,6 +148,7 @@ impl From<TypeField> for TypeFieldProto {
                 TypeField::SampleId(it) => TypeFieldKind::SampleId(it.into()),
                 TypeField::TrackId(it) => TypeFieldKind::TrackId(it.into()),
                 TypeField::EffectId(it) => TypeFieldKind::EffectId(it.into()),
+                TypeField::LpfOn(it) => TypeFieldKind::LpfOn(it),
             }),
         }
     }
