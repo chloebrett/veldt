@@ -6,7 +6,7 @@ use egui::{
     Color32, CornerRadius, CursorIcon, Frame, Pos2, Rect, Response, ScrollArea, Sense, Shape,
     Stroke, StrokeKind, Ui, Vec2, Widget, emath::RectTransform, pos2, vec2,
 };
-use egui::{Galley, PointerButton};
+use egui::PointerButton;
 use mesic::samples_to_beats;
 use ordered_float::OrderedFloat;
 use shared::{
@@ -105,9 +105,13 @@ impl View for TrackRoll<'_> {
                         store.dispatchr(Action::AddChild(TypeField::Track(Track::default())));
                     }
                     if ui.button("New track placement").clicked() {
-                        store.dispatchr(Action::AddChild(TypeField::Placement(
-                            Placement::default(),
-                        )));
+                        store.dispatchr(Action::AddChild(TypeField::Placement(Placement {
+                            kind: PlacementType::Track(TrackPlacement::default()),
+                            offset: 0.0.into(),
+                            clipped_duration: None,
+                            visual_placement: 0,
+                            colour: [67, 206, 222],
+                        })));
                     }
                     if ui.button("New sample placement").clicked() {
                         store.dispatchr(Action::AddChild(TypeField::Placement(Placement {
@@ -115,7 +119,7 @@ impl View for TrackRoll<'_> {
                             offset: 0.0.into(),
                             clipped_duration: None,
                             visual_placement: 0,
-                            colour: [67, 206, 222],
+                            colour: [71, 44, 114],
                         })));
                     }
                     ui.checkbox(&mut select, "Select")
@@ -308,17 +312,36 @@ impl<'a> PlacedTrack<'a> {
                 Pos2::new(x_pos, PITCH_RANGE - y_pos)
             })
             .collect();
-
-        let note_shapes: Vec<Shape> = notes
+        
+        // placement_rect is the untransformed rect plane the notes will be initially mapped onto
+        let placement_rect = Rect::from_min_max(Pos2::ZERO, Pos2::new(*self.placement.clipped_duration.unwrap_or(self.unclipped_duration), PITCH_RANGE));
+        
+        let note_rects: Vec<Rect> = notes
             .into_iter()
             .enumerate()
             .map(|(i, note)| {
                 let mut note_rect = Rect::from_pos(note_positions[i]);
                 note_rect.set_width(note.note.beats);
-                note_rect.set_height(250.0);
+                note_rect.set_height(150.0);
+                note_rect
+            })
+            .filter(|note_rect| {
+                placement_rect.intersects(*note_rect) // placement may be clipped so only render notes that intersect with placement_rect 
+            })
+            .map(|mut note_rect| {
+                let allowable_width = placement_rect.right_bottom().x - note_rect.left_bottom().x;
+                let width = note_rect.width().min(allowable_width); // shrink note rect if it exceeds the bounds of the placement_rect
+                note_rect.set_width(width);
+                note_rect
+            })
+            .collect();
+        
+        let note_shapes: Vec<Shape> = note_rects
+            .into_iter()
+            .map(|note_rect| {
                 let note_shape: Shape = RectShape::new(
                     note_rect,
-                    1.5,
+                    1.0,
                     Color32::from_rgb_additive(rgb_values[0], rgb_values[1], rgb_values[2]),
                     Stroke::NONE,
                     StrokeKind::Inside,
@@ -329,7 +352,7 @@ impl<'a> PlacedTrack<'a> {
             .collect();
 
         let track_transform = RectTransform::from_to(
-            Rect::from_min_max(Pos2::ZERO, Pos2::new(*self.unclipped_duration, PITCH_RANGE)),
+            placement_rect,
             self.to_rect(range).shrink2(Vec2::new(0.0, 0.07)),
         );
         let transformed_shapes = Shape::Vec(note_shapes.transform(track_transform));
@@ -343,11 +366,12 @@ impl<'a> PlacedTrack<'a> {
             Color32::from_rgb_additive(rgb_values[0], rgb_values[1], rgb_values[2]);
 
         let mut header_rect = Rect::from_pos(Pos2::ZERO);
-        header_rect.set_width(*self.unclipped_duration);
+        let duration = *self.placement.clipped_duration.unwrap_or(self.unclipped_duration);
+        header_rect.set_width(duration);
         header_rect.set_height(500.0);
 
         let placement_transform = RectTransform::from_to(
-            Rect::from_min_max(Pos2::ZERO, Pos2::new(*self.unclipped_duration, PITCH_RANGE)),
+            Rect::from_min_max(Pos2::ZERO, Pos2::new(duration, PITCH_RANGE)),
             self.to_rect(range),
         );
 
@@ -368,7 +392,7 @@ impl<'a> PlacedTrack<'a> {
         let galley =
             ui.fonts(|fonts| fonts.layout_no_wrap(label_text, font_id.clone(), font_colour));
         let transform = RectTransform::from_to(
-            Rect::from_min_max(Pos2::ZERO, Pos2::new(*self.unclipped_duration, PITCH_RANGE)),
+            Rect::from_min_max(Pos2::ZERO, Pos2::new(*self.placement.clipped_duration.unwrap_or(self.unclipped_duration), PITCH_RANGE)),
             self.to_rect(range),
         );
         let position = Pos2::ZERO.transform(transform);
