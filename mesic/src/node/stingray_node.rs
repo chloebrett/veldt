@@ -320,12 +320,14 @@ impl Node<ProcessContext> for StingrayNode {
 
         for (channel_index, out_buf) in output.iter_mut().enumerate() {
             out_buf.copy_from_slice(&buffers[channel_index]);
-            let meta = &self.state.meta;
+            let meta = &state.meta;
             Self::apply_volume_and_pan(out_buf, channel_index, meta.volume, meta.pan);
         }
 
-        self.state.filter_left.apply(&mut output[0]);
-        self.state.filter_right.apply(&mut output[1]);
+        if state.config.lpf_on {
+            self.state.filter_left.apply(&mut output[0]);
+            self.state.filter_right.apply(&mut output[1]);
+        }
     }
 }
 
