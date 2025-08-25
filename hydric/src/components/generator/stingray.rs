@@ -1,4 +1,5 @@
 use super::{StingrayEnvelopeView, StingrayLfoView, StingrayLpfView, StingrayOscillatorView};
+use crate::components::opacity_percentage_to_alpha;
 use crate::components::{ModMatrixView, Piano, PianoOrientation};
 use crate::playback::AudioPlayer;
 use crate::view::View;
@@ -10,8 +11,6 @@ use shared::{
     types::PitchValue,
 };
 use state::{GeneratorSelector, Store};
-use crate::components::opacity_percentage_to_alpha;
-
 
 pub struct StingrayView<'a, G: Fn()> {
     config: &'a StingrayConfig,

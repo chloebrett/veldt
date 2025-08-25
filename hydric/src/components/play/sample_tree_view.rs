@@ -208,7 +208,8 @@ impl View for SampleTreeView<'_> {
                                     .borrow_mut()
                                     .insert(sample.sample_name.clone(), sample.clone());
                                 // load into project
-                                self.store.dispatchr(Action::AddChild(TypeField::Sample(sample.clone())));
+                                self.store
+                                    .dispatchr(Action::AddChild(TypeField::Sample(sample.clone())));
                             });
                         });
                 }

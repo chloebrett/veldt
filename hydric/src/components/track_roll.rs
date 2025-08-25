@@ -1,12 +1,12 @@
 use crate::components::utils::choose_black_white_based_on_contrast;
 use crate::{GetSet, LocalState, transform::Transform};
 use crate::{view::View, widget::StateWindow, window_state::WindowKind};
+use egui::PointerButton;
 use egui::epaint::{RectShape, TextShape};
 use egui::{
     Color32, CornerRadius, CursorIcon, Frame, Pos2, Rect, Response, ScrollArea, Sense, Shape,
     Stroke, StrokeKind, Ui, Vec2, Widget, emath::RectTransform, pos2, vec2,
 };
-use egui::PointerButton;
 use mesic::{beats_to_samples, samples_to_beats};
 use ordered_float::OrderedFloat;
 use shared::{
@@ -248,7 +248,16 @@ impl<'a> PlacedTrack<'a> {
 
     fn sample_shape(&self, range: Rect, sample_id: SampleId) -> Shape {
         if let Some(sample) = self.store.get().project.samples.get(&sample_id) {
-            let sample_length = min(max(sample.left.len(), sample.right.len()), beats_to_samples(*self.placement.clipped_duration.unwrap_or(self.unclipped_duration), self.store.get().project.bpm) as usize);
+            let sample_length = min(
+                max(sample.left.len(), sample.right.len()),
+                beats_to_samples(
+                    *self
+                        .placement
+                        .clipped_duration
+                        .unwrap_or(self.unclipped_duration),
+                    self.store.get().project.bpm,
+                ) as usize,
+            );
             let colour = Color32::from_rgb_additive(
                 self.placement.colour[0],
                 self.placement.colour[1],
@@ -257,19 +266,19 @@ impl<'a> PlacedTrack<'a> {
             if sample_length == 0 {
                 return Shape::line(vec![Pos2::ZERO], Stroke::new(0.0, colour));
             }
-            let sample_placement_rect = Rect::from_x_y_ranges(0.0..=(sample_length - 1) as f32, 1.0..=-1.0);
+            let sample_placement_rect =
+                Rect::from_x_y_ranges(0.0..=(sample_length - 1) as f32, 1.0..=-1.0);
             let sample_transform = RectTransform::from_to(
                 sample_placement_rect,
                 self.to_rect(range).shrink2(Vec2::new(0.0, 0.1)),
             );
 
             let mut points: Vec<Pos2> = Vec::new();
-            if let Some(cached_points) = 
-                self
-                    .local_state
-                    .sample_visual_preview_cache
-                    .borrow()
-                    .get(&sample_id)
+            if let Some(cached_points) = self
+                .local_state
+                .sample_visual_preview_cache
+                .borrow()
+                .get(&sample_id)
             {
                 points = cached_points.to_vec();
             } else {
@@ -296,7 +305,7 @@ impl<'a> PlacedTrack<'a> {
                     .insert(sample_id, points.clone());
             }
 
-            points = points[0..(sample_length/VISUAL_SAMPLING_RATE)].to_vec();
+            points = points[0..(sample_length / VISUAL_SAMPLING_RATE)].to_vec();
             Shape::line(points.transform(sample_transform), Stroke::new(0.1, colour))
         } else {
             Shape::line(vec![Pos2::ZERO], Stroke::new(0.0, Color32::BLACK))
@@ -313,10 +322,19 @@ impl<'a> PlacedTrack<'a> {
                 Pos2::new(x_pos, PITCH_RANGE - y_pos)
             })
             .collect();
-        
+
         // placement_rect is the untransformed rect plane the notes will be initially mapped onto
-        let placement_rect = Rect::from_min_max(Pos2::ZERO, Pos2::new(*self.placement.clipped_duration.unwrap_or(self.unclipped_duration), PITCH_RANGE));
-        
+        let placement_rect = Rect::from_min_max(
+            Pos2::ZERO,
+            Pos2::new(
+                *self
+                    .placement
+                    .clipped_duration
+                    .unwrap_or(self.unclipped_duration),
+                PITCH_RANGE,
+            ),
+        );
+
         let note_rects: Vec<Rect> = notes
             .into_iter()
             .enumerate()
@@ -336,7 +354,7 @@ impl<'a> PlacedTrack<'a> {
                 note_rect
             })
             .collect();
-        
+
         let note_shapes: Vec<Shape> = note_rects
             .into_iter()
             .map(|note_rect| {
@@ -367,7 +385,10 @@ impl<'a> PlacedTrack<'a> {
             Color32::from_rgb_additive(rgb_values[0], rgb_values[1], rgb_values[2]);
 
         let mut header_rect = Rect::from_pos(Pos2::ZERO);
-        let duration = *self.placement.clipped_duration.unwrap_or(self.unclipped_duration);
+        let duration = *self
+            .placement
+            .clipped_duration
+            .unwrap_or(self.unclipped_duration);
         header_rect.set_width(duration);
         header_rect.set_height(500.0);
 
@@ -393,7 +414,16 @@ impl<'a> PlacedTrack<'a> {
         let galley =
             ui.fonts(|fonts| fonts.layout_no_wrap(label_text, font_id.clone(), font_colour));
         let transform = RectTransform::from_to(
-            Rect::from_min_max(Pos2::ZERO, Pos2::new(*self.placement.clipped_duration.unwrap_or(self.unclipped_duration), PITCH_RANGE)),
+            Rect::from_min_max(
+                Pos2::ZERO,
+                Pos2::new(
+                    *self
+                        .placement
+                        .clipped_duration
+                        .unwrap_or(self.unclipped_duration),
+                    PITCH_RANGE,
+                ),
+            ),
             self.to_rect(range),
         );
         let position = Pos2::ZERO.transform(transform);
