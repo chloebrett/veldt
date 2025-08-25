@@ -7,7 +7,7 @@ use egui::{
     Stroke, StrokeKind, Ui, Vec2, Widget, emath::RectTransform, pos2, vec2,
 };
 use egui::PointerButton;
-use mesic::samples_to_beats;
+use mesic::{beats_to_samples, samples_to_beats};
 use ordered_float::OrderedFloat;
 use shared::{
     model::{
@@ -20,7 +20,7 @@ use state::{
     Action, FloatField, MultiTypeField, PlacementSelector, SampleSelector, Store, TrackSelector,
     TypeField, UintField,
 };
-use std::cmp::max;
+use std::cmp::{max, min};
 use std::collections::{HashMap, HashSet};
 
 pub struct TrackRoll<'a> {
@@ -35,6 +35,7 @@ impl<'a> TrackRoll<'a> {
 }
 
 const PITCH_RANGE: f32 = 4131.0;
+const VISUAL_SAMPLING_RATE: usize = 15;
 
 impl View for TrackRoll<'_> {
     fn ui(&mut self, ui: &mut Ui) {
@@ -247,7 +248,7 @@ impl<'a> PlacedTrack<'a> {
 
     fn sample_shape(&self, range: Rect, sample_id: SampleId) -> Shape {
         if let Some(sample) = self.store.get().project.samples.get(&sample_id) {
-            let sample_length = sample.left.len();
+            let sample_length = min(max(sample.left.len(), sample.right.len()), beats_to_samples(*self.placement.clipped_duration.unwrap_or(self.unclipped_duration), self.store.get().project.bpm) as usize);
             let colour = Color32::from_rgb_additive(
                 self.placement.colour[0],
                 self.placement.colour[1],
@@ -256,25 +257,27 @@ impl<'a> PlacedTrack<'a> {
             if sample_length == 0 {
                 return Shape::line(vec![Pos2::ZERO], Stroke::new(0.0, colour));
             }
+            let sample_placement_rect = Rect::from_x_y_ranges(0.0..=(sample_length - 1) as f32, 1.0..=-1.0);
             let sample_transform = RectTransform::from_to(
-                Rect::from_x_y_ranges(0.0..=(sample_length - 1) as f32, 1.0..=-1.0),
+                sample_placement_rect,
                 self.to_rect(range).shrink2(Vec2::new(0.0, 0.1)),
             );
-            if let Some(points) = self
-                .local_state
-                .sample_visual_preview_cache
-                .borrow()
-                .get(&sample_id)
+
+            let mut points: Vec<Pos2> = Vec::new();
+            if let Some(cached_points) = 
+                self
+                    .local_state
+                    .sample_visual_preview_cache
+                    .borrow()
+                    .get(&sample_id)
             {
-                // used cached points if available
-                Shape::line(points.transform(sample_transform), Stroke::new(0.1, colour))
+                points = cached_points.to_vec();
             } else {
-                let mut points: Vec<Pos2> = Vec::new();
                 // Always include the first point
                 points.push(pos2(0.0, (sample.left[0] + sample.right[0]) * 0.5));
 
-                // Sample every 15th point for better performance, from the second to the second-to-last. (Could probably get away with sampling even less)
-                for i in (1..sample_length - 1).step_by(15) {
+                // Sample every 15th point (VISUAL_SAMPLING_RATE) for better performance, from the second to the second-to-last. (Could probably get away with sampling even less)
+                for i in (1..sample_length - 1).step_by(VISUAL_SAMPLING_RATE) {
                     let x = i as f32;
                     let y = (sample.left[i] + sample.right[i]) * 0.5;
                     points.push(pos2(x, y));
@@ -291,12 +294,10 @@ impl<'a> PlacedTrack<'a> {
                     .sample_visual_preview_cache
                     .borrow_mut()
                     .insert(sample_id, points.clone());
-
-                Shape::line(
-                    points.clone().transform(sample_transform),
-                    Stroke::new(0.1, colour),
-                )
             }
+
+            points = points[0..(sample_length/VISUAL_SAMPLING_RATE)].to_vec();
+            Shape::line(points.transform(sample_transform), Stroke::new(0.1, colour))
         } else {
             Shape::line(vec![Pos2::ZERO], Stroke::new(0.0, Color32::BLACK))
         }
