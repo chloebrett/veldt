@@ -1,16 +1,18 @@
+use crate::components::utils::choose_black_white_based_on_contrast;
 use crate::{GetSet, LocalState, transform::Transform};
 use crate::{view::View, widget::StateWindow, window_state::WindowKind};
-use egui::{Galley, PointerButton};
 use egui::epaint::{RectShape, TextShape};
 use egui::{
     Color32, CornerRadius, CursorIcon, Frame, Pos2, Rect, Response, ScrollArea, Sense, Shape,
     Stroke, StrokeKind, Ui, Vec2, Widget, emath::RectTransform, pos2, vec2,
 };
+use egui::{Galley, PointerButton};
 use mesic::samples_to_beats;
 use ordered_float::OrderedFloat;
 use shared::{
     model::{
-        PlacedNote, Placement, PlacementId, PlacementType, SamplePlacement, Track, TrackPlacement, SampleId
+        PlacedNote, Placement, PlacementId, PlacementType, SampleId, SamplePlacement, Track,
+        TrackPlacement,
     },
     types::Beats,
 };
@@ -53,7 +55,7 @@ impl View for TrackRoll<'_> {
                             unclipped_duration: project.tracks[&track_id].unclipped_duration(),
                             placement: placement.clone(),
                             store: self.store,
-                            local_state: self.local_state
+                            local_state: self.local_state,
                         },
                         PlacementType::Sample(SamplePlacement { sample_id }) => {
                             let duration = store
@@ -69,7 +71,7 @@ impl View for TrackRoll<'_> {
                                 unclipped_duration: duration.into(),
                                 placement: placement.clone(),
                                 store: self.store,
-                                local_state: self.local_state
+                                local_state: self.local_state,
                             }
                         }
                     },
@@ -148,8 +150,7 @@ impl View for TrackRoll<'_> {
                                 .horizontal_rects(
                                     |index| index % 2 == 1,
                                     Color32::from_white_alpha(1),
-                            )
-
+                                ),
                         );
                     });
             },
@@ -162,7 +163,7 @@ struct PlacedTrack<'a> {
     placement: Placement,
     unclipped_duration: OrderedFloat<f32>,
     store: &'a Store,
-    local_state:  &'a LocalState,
+    local_state: &'a LocalState,
 }
 
 impl<'a> PlacedTrack<'a> {
@@ -236,9 +237,7 @@ impl<'a> PlacedTrack<'a> {
                     let sample_id = sample_placement.sample_id;
                     self.sample_shape(range, sample_id)
                 }
-,
             },
-            self.create_header_shape(range), // header label is created separately via create_label as textshape galley requires access to Ui
         ])
     }
 
@@ -246,10 +245,10 @@ impl<'a> PlacedTrack<'a> {
         if let Some(sample) = self.store.get().project.samples.get(&sample_id) {
             let sample_length = sample.left.len();
             let colour = Color32::from_rgb_additive(
-                    self.placement.colour[0],
-                    self.placement.colour[1],
-                    self.placement.colour[2],
-                );
+                self.placement.colour[0],
+                self.placement.colour[1],
+                self.placement.colour[2],
+            );
             if sample_length == 0 {
                 return Shape::line(vec![Pos2::ZERO], Stroke::new(0.0, colour));
             }
@@ -257,11 +256,14 @@ impl<'a> PlacedTrack<'a> {
                 Rect::from_x_y_ranges(0.0..=(sample_length - 1) as f32, 1.0..=-1.0),
                 self.to_rect(range).shrink2(Vec2::new(0.0, 0.1)),
             );
-            if let Some(points) = self.local_state.sample_visual_preview_cache.borrow().get(&sample_id) { // used cached points if available
-                Shape::line(
-                    points.transform(sample_transform),
-                    Stroke::new(0.1, colour),
-                )
+            if let Some(points) = self
+                .local_state
+                .sample_visual_preview_cache
+                .borrow()
+                .get(&sample_id)
+            {
+                // used cached points if available
+                Shape::line(points.transform(sample_transform), Stroke::new(0.1, colour))
             } else {
                 let mut points: Vec<Pos2> = Vec::new();
                 // Always include the first point
@@ -281,7 +283,10 @@ impl<'a> PlacedTrack<'a> {
                 ));
 
                 // Cache points into local state
-                self.local_state.sample_visual_preview_cache.borrow_mut().insert(sample_id, points.clone());
+                self.local_state
+                    .sample_visual_preview_cache
+                    .borrow_mut()
+                    .insert(sample_id, points.clone());
 
                 Shape::line(
                     points.clone().transform(sample_transform),
@@ -314,11 +319,7 @@ impl<'a> PlacedTrack<'a> {
                 let note_shape: Shape = RectShape::new(
                     note_rect,
                     1.5,
-                    Color32::from_rgb_additive(
-                        rgb_values[0],
-                        rgb_values[1],
-                        rgb_values[2],
-                    ),
+                    Color32::from_rgb_additive(rgb_values[0], rgb_values[1], rgb_values[2]),
                     Stroke::NONE,
                     StrokeKind::Inside,
                 )
@@ -338,11 +339,8 @@ impl<'a> PlacedTrack<'a> {
 
     fn create_header_shape(&self, range: Rect) -> Shape {
         let rgb_values = self.placement.colour;
-        let header_brackground_colour = Color32::from_rgb_additive(
-            rgb_values[0],
-            rgb_values[1],
-            rgb_values[2],
-        );
+        let header_brackground_colour =
+            Color32::from_rgb_additive(rgb_values[0], rgb_values[1], rgb_values[2]);
 
         let mut header_rect = Rect::from_pos(Pos2::ZERO);
         header_rect.set_width(*self.unclipped_duration);
@@ -360,16 +358,15 @@ impl<'a> PlacedTrack<'a> {
     }
 
     fn create_label(&self, range: Rect, ui: &mut Ui) -> Shape {
-        let font_id = egui::FontId::proportional(12.0);
+        let font_id = egui::FontId::proportional(11.0);
+        let font_rgb = choose_black_white_based_on_contrast(self.placement.colour);
+        let font_colour = Color32::from_rgb(font_rgb[0], font_rgb[1], font_rgb[2]);
         let label_text = match &self.placement.kind {
-            PlacementType::Track(track) => {
-                "Track: ".to_owned() + &track.track_id.to_string()
-            },
-            PlacementType::Sample(sample) => {
-                "Sample: ".to_owned() + &sample.sample_id.to_string()
-            }
+            PlacementType::Track(track) => "Track: ".to_owned() + &track.track_id.to_string(),
+            PlacementType::Sample(sample) => "Sample: ".to_owned() + &sample.sample_id.to_string(),
         };
-        let galley = ui.fonts(|fonts| fonts.layout_no_wrap(label_text, font_id.clone(), Color32::BLACK));
+        let galley =
+            ui.fonts(|fonts| fonts.layout_no_wrap(label_text, font_id.clone(), font_colour));
         let transform = RectTransform::from_to(
             Rect::from_min_max(Pos2::ZERO, Pos2::new(*self.unclipped_duration, PITCH_RANGE)),
             self.to_rect(range),
@@ -379,12 +376,12 @@ impl<'a> PlacedTrack<'a> {
             pos: position,
             galley,
             underline: Stroke::NONE,
-            override_text_color: Some(Color32::BLACK),
+            override_text_color: Some(font_colour),
             angle: 0.0,
-            fallback_color: Color32::BLACK,
+            fallback_color: font_colour,
             opacity_factor: 1.0,
         });
-        text_shape
+        Shape::Vec(vec![self.create_header_shape(range), text_shape])
     }
 
     fn get_active(store: &'a Store, local_state: &'a LocalState) -> Option<PlacedTrack<'a>> {
@@ -393,18 +390,18 @@ impl<'a> PlacedTrack<'a> {
         let placement = store.select(&selector);
 
         let unclipped_duration = match &placement.kind {
-            PlacementType::Track(track_placement) => {
-                store
-                    .select(&TrackSelector(track_placement.track_id))
-                    .unclipped_duration()
-            }
+            PlacementType::Track(track_placement) => store
+                .select(&TrackSelector(track_placement.track_id))
+                .unclipped_duration(),
             PlacementType::Sample(sample_placement) => {
                 if let Some(sample) = store.get().project.samples.get(&sample_placement.sample_id) {
-                    ordered_float::OrderedFloat(samples_to_beats(max(sample.left.len(), sample.right.len()), store.get().project.bpm))
+                    ordered_float::OrderedFloat(samples_to_beats(
+                        max(sample.left.len(), sample.right.len()),
+                        store.get().project.bpm,
+                    ))
                 } else {
                     ordered_float::OrderedFloat(1.0)
                 }
-
             }
         };
 
@@ -425,11 +422,7 @@ impl<'a> PlacedTrack<'a> {
                 CornerRadius::same(0),
                 Stroke {
                     width: 1.5,
-                    color: Color32::from_rgb_additive(
-                        rgb_values[0],
-                        rgb_values[1],
-                        rgb_values[2],
-                    ),
+                    color: Color32::from_rgb_additive(rgb_values[0], rgb_values[1], rgb_values[2]),
                 },
                 StrokeKind::Inside,
             ),
@@ -451,7 +444,7 @@ impl<'a> PlacedTrack<'a> {
                         .unclipped_duration(),
                     placement: placement.clone(),
                     store: store,
-                    local_state: local_state
+                    local_state: local_state,
                 }
             })
             .collect()
