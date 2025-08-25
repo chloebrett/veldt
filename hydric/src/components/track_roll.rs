@@ -398,9 +398,13 @@ impl<'a> PlacedTrack<'a> {
                     .select(&TrackSelector(track_placement.track_id))
                     .unclipped_duration()
             }
-            PlacementType::Sample(_) => {
-                // TODO sample unclipped duration
-                ordered_float::OrderedFloat(0.0)
+            PlacementType::Sample(sample_placement) => {
+                if let Some(sample) = store.get().project.samples.get(&sample_placement.sample_id) {
+                    ordered_float::OrderedFloat(samples_to_beats(max(sample.left.len(), sample.right.len()), store.get().project.bpm))
+                } else {
+                    ordered_float::OrderedFloat(1.0)
+                }
+
             }
         };
 
