@@ -8,7 +8,7 @@ use crate::{AsyncState, playback::AudioPlayer};
 use egui::{Checkbox, ScrollArea, Ui};
 use egui_ltreeview::{Action as TreeAction, TreeView, TreeViewBuilder};
 use mesic::interleave_stereo;
-use shared::model::{FileTree, FileTreeConfig, FilenameTree};
+use shared::model::{FileTree, FileTreeConfig, FilenameTree, Sample};
 use state::{Action, Store, TypeField};
 
 pub struct SampleTreeView<'a> {
@@ -207,6 +207,9 @@ impl View for SampleTreeView<'_> {
                                     .sample_cache
                                     .borrow_mut()
                                     .insert(sample.sample_name.clone(), sample.clone());
+                                // load into project
+                                self.store
+                                    .dispatchr(Action::AddChild(TypeField::Sample(sample.clone())));
                             });
                         });
                 }
