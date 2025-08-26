@@ -13,6 +13,7 @@ pub struct MicrophoneView<'a> {
     local_state: &'a LocalState,
     async_state: &'a mut AsyncState,
     mic: &'a mut Microphone,
+    mic_sample_name: &'a mut String,
 }
 
 impl<'a> MicrophoneView<'a> {
@@ -20,11 +21,13 @@ impl<'a> MicrophoneView<'a> {
         local_state: &'a LocalState,
         async_state: &'a mut AsyncState,
         app_mic: &'a mut Microphone,
+        mic_sample_name: &'a mut String,
     ) -> Self {
         MicrophoneView {
             local_state,
             async_state,
             mic: app_mic,
+            mic_sample_name,
         }
     }
 }
@@ -75,31 +78,41 @@ impl View for MicrophoneView<'_> {
                 });
 
                 ui.horizontal(|ui| {
-                    // text input
-                    //let mut text = String::new();
-                    //let mut output = egui::TextEdit::singleline(&mut text).show(ui);
-
-                    let mut file_data: Option<Vec<u8>> = None;
                     if ui.button("Process Sample").clicked() {
                         let _ = self.mic._convert_audio();
-                        file_data = Some(self.mic.get_sample_bytes());
                     }
+                });
+                
+                ui.horizontal(|ui| {
+            
+                    // Text input field for file name.
+                    ui.text_edit_singleline(self.mic_sample_name);
 
-                    if ui.button("Save Sample").clicked() && !file_data.is_none() {
-                        // read text input
+                    if ui.button("Save Sample").clicked(){
 
-                        // call convert_audio to get bytes (MAY NEED TO AWAIT)
+                        let file_data = self.mic.get_sample_bytes();
+                        let mut mic_sample_name_copy = self.mic_sample_name.clone();
 
-                        // call hydric upload method w bytes + file name
-                        spawn(&mut self.async_state.upload_mic_sample, async move {
-                            // Upload our sample
-                            let result =
-                                upload_sample("test.ogg".to_string(), file_data.unwrap()).await;
-                            if let Err(ref e) = result {
-                                error!("[5] Upload failed: {:?}", e);
-                            }
-                            result
-                        });
+                        // SQL injections are scary.
+                        if !mic_sample_name_copy.chars().all(|x| x.is_alphanumeric()){
+                            error!("No Special Characters thank you.");
+                            return;
+                        } else {
+                            // Add file extension. Hardcoded for now, while ogg is the only compatible option.
+                            mic_sample_name_copy = mic_sample_name_copy + ".ogg";
+                            
+                            // call hydric upload method w bytes + file name
+                            spawn(&mut self.async_state.upload_mic_sample, async move {
+                                // Upload our sample
+                                let result =
+                                    upload_sample(mic_sample_name_copy, file_data).await;
+                                if let Err(ref e) = result {
+                                    error!("[5] Upload failed: {:?}", e);
+                                }
+                                result
+                            });
+                        }
+
                     }
                 });
             },

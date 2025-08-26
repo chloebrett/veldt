@@ -32,6 +32,7 @@ pub struct App {
     pub player: AudioPlayer,
     pub mic: Microphone,
     pub snarl: Snarl<GraphViewNode>,
+    pub mic_sample_name: String,
 }
 impl Default for App {
     fn default() -> Self {
@@ -50,6 +51,7 @@ impl Default for App {
             player: AudioPlayer::new(graph),
             mic: Microphone::new(),
             snarl: Snarl::new(),
+            mic_sample_name: String::new(),
         }
     }
 }
@@ -167,7 +169,7 @@ impl View for App {
         NoteView::new(&self.store, &self.local_state).ui(ui);
         NoteRoll::new(&self.store, &self.local_state, &mut self.player).ui(ui);
 
-        MicrophoneView::new(&self.local_state, &mut self.async_state, &mut self.mic).ui(ui);
+        MicrophoneView::new(&self.local_state, &mut self.async_state, &mut self.mic, &mut self.mic_sample_name).ui(ui);
         PlacementView::new(&self.store, &self.local_state).ui(ui);
 
         SampleTreeView::new(
