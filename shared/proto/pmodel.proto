@@ -46,6 +46,10 @@ message TrackProto {
   float offset = 2;
 }
 
+message DrumPlacementProto {
+  uint32 track_id = 1;
+}
+
 message PlacementProto {
   float offset = 1;
 
@@ -57,6 +61,8 @@ message PlacementProto {
     pmodel.TrackPlacementProto track = 4;
 
     pmodel.SamplePlacementProto sample = 5;
+
+    pmodel.DrumPlacementProto drum = 6;
   }
 }
 

@@ -8,7 +8,7 @@ use egui::{
 use mesic::samples_to_beats;
 use ordered_float::OrderedFloat;
 use shared::{
-    model::{Placement, PlacementId, PlacementType, SamplePlacement, Track, TrackPlacement},
+    model::{Placement, PlacementId, PlacementType, SamplePlacement, Track, TrackPlacement, DrumPlacement},
     types::Beats,
 };
 use state::{
@@ -62,7 +62,11 @@ impl View for TrackRoll<'_> {
                                 unclipped_duration: duration.into(),
                                 placement: placement.clone(),
                             }
-                        }
+                        },
+                        PlacementType::Drum(DrumPlacement { track_id, .. }) => PlacedTrack {
+                            unclipped_duration: project.tracks[&track_id].unclipped_duration(),
+                            placement: placement.clone(),
+                        },
                     },
                 )
             })
@@ -102,9 +106,12 @@ impl View for TrackRoll<'_> {
                         store.dispatchr(Action::AddChild(TypeField::Track(Track::default())));
                     }
                     if ui.button("New drum placement").clicked() {
-                        store.dispatchr(Action::AddChild(TypeField::Placement(
-                            Placement::default(),
-                        )));
+                        store.dispatchr(Action::AddChild(TypeField::Placement(Placement {
+                            kind: PlacementType::Sample(SamplePlacement::default()),
+                            offset: 0.0.into(),
+                            clipped_duration: None,
+                            visual_placement: 0,
+                        })));
                     }
                     if ui.button("New sample placement").clicked() {
                         store.dispatchr(Action::AddChild(TypeField::Placement(Placement {

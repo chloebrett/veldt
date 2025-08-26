@@ -6,7 +6,7 @@ use egui::Ui;
 use mesic::samples_to_beats;
 use ordered_float::OrderedFloat;
 use shared::model::{
-    Placement, PlacementId, PlacementType, SamplePlacement, Track, TrackPlacement,
+    Placement, PlacementId, PlacementType, SamplePlacement, Track, TrackPlacement, DrumPlacement,
 };
 use shared::types::Beats;
 use state::{
@@ -113,6 +113,33 @@ impl<'a> PlacementView<'a> {
         Self::duration_ui(ui, sel, duration, max_duration, store);
     }
 
+    fn drum_placement_ui(
+        ui: &mut Ui,
+        placement_id: PlacementId,
+        placement: &Placement, 
+        drum_placement: &DrumPlacement,
+        sel: &PlacementSelector,
+        store: &Store,
+    ) {
+        ui.label("Drum Placement");
+        
+        egui::ComboBox::from_id_salt(format!("placement_{:?}_drum_track", placement_id))
+        .selected_text(format!("Track ID {}", *drum_placement.track_id))
+        .show_ui(ui, |ui| {
+            for track_id in store.get().project.tracks.keys() {
+                selectable_value(
+                    ui,
+                    get_set(&drum_placement.track_id, |it| {
+                        store.dispatch(sel, Action::SetChild(TypeField::TrackId(*it)))
+                    }),
+                    track_id,
+                    track_id.to_string(),
+                );
+            }
+        });
+
+    }
+
     fn duration_ui(
         ui: &mut Ui,
         sel: &PlacementSelector,
@@ -178,6 +205,16 @@ impl View for PlacementView<'_> {
                             placement_id,
                             placement,
                             sample_placement,
+                            &sel,
+                            store,
+                        );
+                    }
+                    PlacementType::Drum(drum_placement) => {
+                        Self::drum_placement_ui(
+                            ui,
+                            placement_id,
+                            placement,
+                            drum_placement,
                             &sel,
                             store,
                         );

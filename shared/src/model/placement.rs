@@ -24,6 +24,7 @@ pub struct Placement {
 pub enum PlacementType {
     Track(TrackPlacement),
     Sample(SamplePlacement),
+    Drum(DrumPlacement),
 }
 
 impl Default for PlacementType {
@@ -70,6 +71,23 @@ impl<'a> TryFrom<&'a Placement> for &'a SamplePlacement {
     }
 }
 
+#[derive(Clone, Debug, PartialEq, Eq, FromProto, IntoProto, Default)]
+pub struct DrumPlacement {
+    #[proto_into]
+    pub track_id: TrackId,
+}
+
+impl<'a> TryFrom<&'a Placement> for &'a DrumPlacement {
+    type Error = ();
+
+    fn try_from(item: &'a Placement) -> Result<Self, ()> {
+        match &item.kind {
+            PlacementType::Drum(it) => Ok(it),
+            _ => Err(()),
+        }
+    }
+}
+
 impl PartialOrd for Placement {
     fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
         Some(self.cmp(other))
@@ -88,6 +106,7 @@ impl From<PlacementProto> for Placement {
             kind: match item.kind.unwrap() {
                 PlacementTypeProto::Track(it) => PlacementType::Track(it.into()),
                 PlacementTypeProto::Sample(it) => PlacementType::Sample(it.into()),
+                PlacementTypeProto::Drum(it) => PlacementType::Drum(it.into()),
             },
             offset: item.offset.into(),
             clipped_duration: item.clipped_duration.map(OrderedFloat),
@@ -102,6 +121,7 @@ impl From<Placement> for PlacementProto {
             kind: Some(match item.kind {
                 PlacementType::Track(it) => PlacementTypeProto::Track(it.into()),
                 PlacementType::Sample(it) => PlacementTypeProto::Sample(it.into()),
+                PlacementType::Drum(it) => PlacementTypeProto::Drum(it.into()),
             }),
             offset: *item.offset,
             clipped_duration: item.clipped_duration.map(|it| *it),

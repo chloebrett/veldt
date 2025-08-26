@@ -1,5 +1,6 @@
 mod sample_placement;
 mod track_placement;
+mod drum_placement;
 
 use crate::receiver::ActionReceiver;
 use crate::{Action, FloatField, TypeField, UintField};
@@ -11,6 +12,7 @@ impl ActionReceiver for Placement {
         if let Some(undo) = match &mut self.kind {
             PlacementType::Track(track_placement) => track_placement.apply(action),
             PlacementType::Sample(sample_placement) => sample_placement.apply(action),
+            PlacementType::Drum(drum_placement) => drum_placement.apply(action),
         } {
             return Some(undo);
         }
