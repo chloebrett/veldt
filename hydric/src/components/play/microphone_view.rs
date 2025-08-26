@@ -82,37 +82,33 @@ impl View for MicrophoneView<'_> {
                         let _ = self.mic._convert_audio();
                     }
                 });
-                
+
                 ui.horizontal(|ui| {
-            
                     // Text input field for file name.
                     ui.text_edit_singleline(self.mic_sample_name);
 
-                    if ui.button("Save Sample").clicked(){
-
+                    if ui.button("Save Sample").clicked() {
                         let file_data = self.mic.get_sample_bytes();
                         let mut mic_sample_name_copy = self.mic_sample_name.clone();
 
                         // SQL injections are scary.
-                        if !mic_sample_name_copy.chars().all(|x| x.is_alphanumeric()){
+                        if !mic_sample_name_copy.chars().all(|x| x.is_alphanumeric()) {
                             error!("No Special Characters thank you.");
                             return;
                         } else {
                             // Add file extension. Hardcoded for now, while ogg is the only compatible option.
                             mic_sample_name_copy = mic_sample_name_copy + ".ogg";
-                            
+
                             // call hydric upload method w bytes + file name
                             spawn(&mut self.async_state.upload_mic_sample, async move {
                                 // Upload our sample
-                                let result =
-                                    upload_sample(mic_sample_name_copy, file_data).await;
+                                let result = upload_sample(mic_sample_name_copy, file_data).await;
                                 if let Err(ref e) = result {
                                     error!("[5] Upload failed: {:?}", e);
                                 }
                                 result
                             });
                         }
-
                     }
                 });
             },
