@@ -142,7 +142,6 @@ impl AudioProcessor {
 }
 
 fn sleep_ms(ms: u32) {
-    log::info!("Sleeping {} ms", ms);
     let secs = 0;
     let nanos = ms * 1000 * 1000;
     wasm_thread::sleep(std::time::Duration::new(secs, nanos));
