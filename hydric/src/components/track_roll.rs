@@ -35,7 +35,7 @@ impl<'a> TrackRoll<'a> {
 }
 
 const PITCH_RANGE: f32 = 4131.0;
-const VISUAL_SAMPLING_RATE: usize = 15;
+const VISUAL_SAMPLING_RATE: usize = 120;
 
 impl View for TrackRoll<'_> {
     fn ui(&mut self, ui: &mut Ui) {
@@ -285,7 +285,7 @@ impl<'a> PlacedTrack<'a> {
                 // Always include the first point
                 points.push(pos2(0.0, (sample.left[0] + sample.right[0]) * 0.5));
 
-                // Sample every 15th point (VISUAL_SAMPLING_RATE) for better performance, from the second to the second-to-last. (Could probably get away with sampling even less)
+                // Sample every VISUAL_SAMPLING_RATEth point for better performance
                 for i in (1..sample_length - 1).step_by(VISUAL_SAMPLING_RATE) {
                     let x = i as f32;
                     let y = (sample.left[i] + sample.right[i]) * 0.5;
