@@ -1,4 +1,5 @@
 use crate::components::utils::choose_black_white_based_on_contrast;
+use crate::playback::AudioPlayer;
 use crate::{GetSet, LocalState, transform::Transform};
 use crate::{view::View, widget::StateWindow, window_state::WindowKind};
 use egui::PointerButton;
@@ -26,11 +27,12 @@ use std::collections::{HashMap, HashSet};
 pub struct TrackRoll<'a> {
     store: &'a Store,
     local_state: &'a LocalState,
+    player: &'a AudioPlayer,
 }
 
 impl<'a> TrackRoll<'a> {
-    pub fn new(store: &'a Store, local_state: &'a LocalState) -> Self {
-        Self { store, local_state }
+    pub fn new(store: &'a Store, local_state: &'a LocalState, player: &'a AudioPlayer ) -> Self {
+        Self { store, local_state , player }
     }
 }
 
@@ -41,6 +43,7 @@ impl View for TrackRoll<'_> {
     fn ui(&mut self, ui: &mut Ui) {
         let store = self.store;
         let project = &store.get().project;
+        let audio_player = self.player;
 
         // TODO: rename PlacedTrack to something encompassing both tracks and samples.
         // They can be a single object, but just contain a tag/enum specifying which one they are.
@@ -139,11 +142,29 @@ impl View for TrackRoll<'_> {
                         max_visual_placement as f32,
                     ),
                 );
+
+                // Playhead
+                // get audio player
+                let playhead_samples = audio_player.effective_pos();
+                let playhead_beats = samples_to_beats(playhead_samples, project.bpm);
+                let playhead_x = (playhead_beats - range.left()).clamp(0.0, range.size().x);
+                // printing to console
+                println!("Playhead X: {}", playhead_x);
+
+                // let playhead_position = project.playhead;
+                // let playhead_x =
+                //     (playhead_position - window_size.x).clamp(0.0, self.range.size().x);
+                // let playhead_shape = Shape::line_segment(
+                //     [pos2(playhead_x, 0.0), pos2(playhead_x, range.size().y)],
+                //     Stroke::new(2.0, Color32::RED),
+                // );
+                // painter.add(playhead_shape.transform(to_screen));
+
                 ScrollArea::vertical()
                     .min_scrolled_height(400.0)
                     .show(ui, |ui| {
                         ui.add(
-                            TrackSequencer::new(store, self.local_state, range)
+                            TrackSequencer::new(store, self.local_state, range, playhead_x)
                                 .objects(placed_tracks)
                                 .size(vec2(
                                     (window_size.x - 6.0).max(600.0),
@@ -594,10 +615,11 @@ struct TrackSequencer<'a> {
     quantise_level: Beats,
     background_shapes: Vec<Shape>,
     select: bool,
+    playhead: f32,
 }
 
 impl<'a> TrackSequencer<'a> {
-    pub fn new(store: &'a Store, local_state: &'a LocalState, range: Rect) -> Self {
+    pub fn new(store: &'a Store, local_state: &'a LocalState, range: Rect, playhead: f32) -> Self {
         TrackSequencer {
             store,
             local_state,
@@ -607,6 +629,7 @@ impl<'a> TrackSequencer<'a> {
             quantise_level: 0.125,
             background_shapes: vec![],
             select: false,
+            playhead,
         }
     }
 
@@ -872,6 +895,13 @@ impl Widget for TrackSequencer<'_> {
                         .map(|object| object.selected_shape(range).transform(to_screen)),
                 );
             }
+            // Playhead
+            let playhead_x = self.playhead * range.size().x;
+            let playhead_shape = Shape::line_segment(
+                [pos2(playhead_x, 0.0), pos2(playhead_x, range.size().y)],
+                Stroke::new(2.0, Color32::RED),
+            );
+            painter.add(playhead_shape.transform(to_screen));
 
             res = Some(response.clone());
         });
