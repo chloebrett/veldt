@@ -55,7 +55,7 @@ impl AudioProcessor {
 
             if self.state == PlaybackState::Play && self.audio_tx.is_empty() {
                 self.process_chunk();
-            } else {
+            } else if self.state != PlaybackState::Play {
                 sleep_ms(10);
             }
             self.update_tx
