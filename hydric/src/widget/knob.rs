@@ -24,8 +24,7 @@ impl TypableKnob {
         range: RangeInclusive<f32>,
         setter: impl Fn(f32) + Copy,
         on_release: &G,
-    )
-    where
+    ) where
         G: Fn(),
     {
         let mut knob_value = self.value;
@@ -33,13 +32,23 @@ impl TypableKnob {
         ui.horizontal(|ui| {
             add_knob(
                 ui,
-                Knob::new(self.value, |v| {
-                    knob_value = v;
-                }, range.clone(), KnobStyle::Wiper)
+                Knob::new(
+                    self.value,
+                    |v| {
+                        knob_value = v;
+                    },
+                    range.clone(),
+                    KnobStyle::Wiper,
+                )
                 .with_size(20.0)
                 .with_font_size(12.0)
                 .with_stroke_width(2.0)
-                .with_colors(Color32::GRAY, Color32::WHITE, Color32::WHITE, Color32::WHITE),
+                .with_colors(
+                    Color32::GRAY,
+                    Color32::WHITE,
+                    Color32::WHITE,
+                    Color32::WHITE,
+                ),
                 on_release,
             );
 
