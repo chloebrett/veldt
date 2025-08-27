@@ -1,7 +1,7 @@
 use super::SimpleWaveVisualiser;
 use crate::view::View;
 use crate::widget::{
-    add_knob, get_set, inner_frame, int_slider, outer_frame, selectable_value, styled_knob,
+    add_knob, get_set, inner_frame, int_slider, outer_frame, selectable_value, styled_knob, TypableKnob,
 };
 use eframe::egui;
 use egui::{Color32, Margin, Ui, Vec2};
@@ -95,17 +95,14 @@ impl<F: Fn(Action), G: Fn()> View for StingrayOscillatorView<'_, F, G> {
             G: Fn(),
         {
             const KNOB_SPACE: f32 = 4.0;
+            let mut volume_knob = TypableKnob::new(config.volume);
             inner_frame().show(ui, |ui| {
                 ui.vertical(|ui| {
-                    add_knob(
+                    volume_knob.editable_knob(
                         ui,
-                        styled_knob(
-                            "Volume",
-                            config.volume,
-                            |it| dispatch(Action::SetFloat(FloatField::Volume, it)),
-                            0.0..=1.0,
-                        )
-                        .with_neutral(0.0),
+                        "Volume",
+                        0.0..=1.0,
+                        |it| dispatch(Action::SetFloat(FloatField::Volume, it)),
                         on_release,
                     );
                     ui.add_space(KNOB_SPACE);
