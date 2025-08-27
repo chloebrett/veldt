@@ -31,8 +31,12 @@ pub struct TrackRoll<'a> {
 }
 
 impl<'a> TrackRoll<'a> {
-    pub fn new(store: &'a Store, local_state: &'a LocalState, player: &'a AudioPlayer ) -> Self {
-        Self { store, local_state , player }
+    pub fn new(store: &'a Store, local_state: &'a LocalState, player: &'a AudioPlayer) -> Self {
+        Self {
+            store,
+            local_state,
+            player,
+        }
     }
 }
 
