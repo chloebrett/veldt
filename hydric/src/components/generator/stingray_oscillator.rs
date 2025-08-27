@@ -1,7 +1,8 @@
 use super::SimpleWaveVisualiser;
 use crate::view::View;
 use crate::widget::{
-    add_knob, get_set, inner_frame, int_slider, outer_frame, selectable_value, styled_knob, TypableKnob,
+    TypableKnob, add_knob, get_set, inner_frame, int_slider, outer_frame, selectable_value,
+    styled_knob,
 };
 use eframe::egui;
 use egui::{Color32, Margin, Ui, Vec2};

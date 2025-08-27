@@ -59,6 +59,7 @@ impl TypableKnob {
                 }
             }
 
+            // Update label value if not consistent if textbox is not focused
             if knob_value != self.value && !text_response.has_focus() {
                 self.value = knob_value;
                 self.text = format!("{:.2}", self.value);
