@@ -126,9 +126,14 @@ impl LoadSample for LoadSampleContext {
         file_path.push(filename.clone());
         info!("Loading sample from path: {}", file_path.clone().display());
 
+        let file = File::open(file_path).map_err(|_|{
+            tonic::Status::invalid_argument(format!("File {} could not be read.", filename))
+        })?;
+
         // Now using rodio library, it has support for wav, mp3, flac and ogg vorbis (Built on top of the previously used Hound).
-        let file = File::open(file_path).unwrap();
-        let decoder = Decoder::try_from(file).unwrap();
+        let decoder = Decoder::try_from(file).map_err(|_| {
+            tonic::Status::invalid_argument(format!("File {} could not be decoded. Ensure format is mp3, flac, wav or ogg.", filename))
+        })?;
 
         let sample_rate = decoder.sample_rate();
 
