@@ -1,5 +1,6 @@
 use itertools::Itertools;
 use log::info;
+use rodio::{Decoder, source::Source};
 use shared::load_sample::load_sample_server::LoadSample;
 use shared::load_sample::{
     LoadSampleReply, LoadSampleRequest, LoadSampleTreeReply, LoadSampleTreeRequest,
@@ -8,11 +9,10 @@ use shared::model::{FileTreeConfig, FilenameTree, Sample};
 use std::collections::HashSet;
 use std::env::current_dir;
 use std::ffi::OsStr;
-use std::fs::{read_dir, File, ReadDir};
+use std::fs::{File, ReadDir, read_dir};
 use std::io::Error;
 use std::path::{Path, PathBuf};
 use tonic::{Request, Response, Status, async_trait};
-use rodio::{Decoder, source::Source};
 
 const _PCM_MAX_I16: i16 = 0x7FFF; // 2^15 - 1
 const PCM_MAX_I24: i32 = 0x7FFFFF; // 2^23 - 1
@@ -129,7 +129,7 @@ impl LoadSample for LoadSampleContext {
         // Now using rodio library, it has support for wav, mp3, flac and ogg vorbis (Built on top of the previously used Hound).
         let file = File::open(file_path).unwrap();
         let decoder = Decoder::try_from(file).unwrap();
-        
+
         let sample_rate = decoder.sample_rate();
 
         info!("Load sample 1");
@@ -138,13 +138,13 @@ impl LoadSample for LoadSampleContext {
         let mut right: Vec<f32> = vec![];
 
         // Split samples, assumes stereo audio.
-        for sample in decoder{
-            if i % 2 != 0{
+        for sample in decoder {
+            if i % 2 != 0 {
                 left.push(sample);
-            } else if i % 2 == 0{
+            } else if i % 2 == 0 {
                 right.push(sample);
             }
-            i+=1;
+            i += 1;
         }
 
         info!("Load sample 2");
