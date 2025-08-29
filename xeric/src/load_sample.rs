@@ -129,7 +129,7 @@ impl LoadSample for LoadSampleContext {
             ))
         })?;
 
-        let sample_rate = decoder.sample_rate();
+        let sample_rate = decoder.sample_rate() as f32;
 
         info!("Load sample 1");
         let mut i = 1;
@@ -150,7 +150,7 @@ impl LoadSample for LoadSampleContext {
         let sample = Sample {
             left,
             right,
-            sample_rate: sample_rate as f32,
+            sample_rate,
             sample_name: filename.clone(),
         };
         info!("Loaded sample.");
