@@ -150,7 +150,8 @@ impl View for TrackRoll<'_> {
                 // Playhead location
                 let playhead_samples = audio_player.effective_pos();
                 let playhead_beats = samples_to_beats(playhead_samples, project.bpm);
-                let playhead_x = ((playhead_beats - range.left()) / range.size().x).clamp(0.0, range.size().x);
+                let playhead_x =
+                    ((playhead_beats - range.left()) / range.size().x).clamp(0.0, range.size().x);
 
                 ScrollArea::vertical()
                     .min_scrolled_height(400.0)
