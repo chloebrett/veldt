@@ -147,22 +147,10 @@ impl View for TrackRoll<'_> {
                     ),
                 );
 
-                // Playhead
-                // get audio player
+                // Playhead location
                 let playhead_samples = audio_player.effective_pos();
                 let playhead_beats = samples_to_beats(playhead_samples, project.bpm);
-                let playhead_x = (playhead_beats - range.left()).clamp(0.0, range.size().x);
-                // printing to console
-                println!("Playhead X: {}", playhead_x);
-
-                // let playhead_position = project.playhead;
-                // let playhead_x =
-                //     (playhead_position - window_size.x).clamp(0.0, self.range.size().x);
-                // let playhead_shape = Shape::line_segment(
-                //     [pos2(playhead_x, 0.0), pos2(playhead_x, range.size().y)],
-                //     Stroke::new(2.0, Color32::RED),
-                // );
-                // painter.add(playhead_shape.transform(to_screen));
+                let playhead_x = ((playhead_beats - range.left()) / range.size().x).clamp(0.0, range.size().x);
 
                 ScrollArea::vertical()
                     .min_scrolled_height(400.0)
@@ -899,6 +887,7 @@ impl Widget for TrackSequencer<'_> {
                         .map(|object| object.selected_shape(range).transform(to_screen)),
                 );
             }
+
             // Playhead
             let playhead_x = self.playhead * range.size().x;
             let playhead_shape = Shape::line_segment(
