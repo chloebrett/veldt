@@ -6,8 +6,9 @@ use crate::view::View;
 use crate::{GetSet, LocalState};
 use egui::{Color32, Ui, Vec2};
 use lazy_static::lazy_static;
+use shared::model::{GeneratorId, GeneratorInstance, GeneratorMeta};
 use shared::{
-    model::{PitchName, ScaleValue, StingrayConfig},
+    model::{PitchName, ScaleValue, StingrayConfig, Generator},
     types::PitchValue,
 };
 use state::{Action, GeneratorSelector, Store};
@@ -150,6 +151,15 @@ impl<F: Fn(Action), G: Fn()> View for StingrayView<'_, F, G> {
                     on_release,
                 )
                 .ui(ui);
+
+                let test = ui.button("test new generator");
+                if test.clicked() {
+                    let new_gen = GeneratorInstance {
+                        it: Generator::Stingray(StingrayConfig::default()),
+                        meta: GeneratorMeta::default()};
+                    self.store.dispatchr(Action::AddChild(state::TypeField::Generator(new_gen)));
+
+                }
             });
             ui.add_space(1.0); //spacing btwn osc + lpf and right border
         });

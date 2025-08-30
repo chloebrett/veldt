@@ -1,6 +1,6 @@
 use crate::receiver::ActionReceiver;
 use crate::{Action, FloatField, IndexField, MultiTypeField, TypeField};
-use shared::model::{EffectId, Placement, PlacementId, Project, SampleId, TrackId};
+use shared::model::{EffectId, Placement, PlacementId, Project, SampleId, TrackId, GeneratorId};
 use std::collections::HashMap;
 
 impl ActionReceiver for Project {
@@ -126,6 +126,27 @@ impl ActionReceiver for Project {
                 self.mixer.channels.remove(*index);
                 self.mixer.matrix.delete_channel(*index);
                 Action::AddChild(TypeField::MixerChannel(prev))
+            }
+            Action::AddChild(TypeField::Generator(generator)) => {
+                let next_id = *self
+                    .generators
+                    .clone()
+                    .into_keys()
+                    .max()
+                    .unwrap_or(GeneratorId(0))
+                    + 1;
+                let next_id = GeneratorId(next_id);
+                self.generators.insert(next_id, generator.clone());
+                Action::DeleteChildById(TypeField::GeneratorId(next_id))
+            }
+            Action::DeleteChildById(TypeField::GeneratorId(id)) => {
+                let prev = self
+                    .generators
+                    .get(id)
+                    .expect("Can't delete non-existent generator!")
+                    .clone();
+                self.generators.remove(id);
+                Action::AddChild(TypeField::Generator(prev))
             }
             _ => return None,
         })
