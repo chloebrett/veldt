@@ -860,7 +860,7 @@ impl Widget for TrackSequencer<'_> {
                     .transform(to_screen.inverse());
 
                 let offset = range.left() + pos.x;
-            
+
                 // Add a new track of No.1 to the track roll
                 // let placement = Placement {
                 //     kind: PlacementType::Track(TrackPlacement {
