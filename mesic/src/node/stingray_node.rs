@@ -144,7 +144,7 @@ impl Node<ProcessContext> for StingrayNode {
 
         // TODO: fix this, it's n^2 right now. (well, n*64).
         for i in 0..Buffer::LEN {
-            let mut events: Vec<NoteEvent> = payload
+            let events: Vec<NoteEvent> = payload
                 .note_events
                 .get(&generator_id)
                 .cloned()
@@ -152,12 +152,6 @@ impl Node<ProcessContext> for StingrayNode {
                 .into_iter()
                 .filter(|it| it.sample_index == i)
                 .collect();
-
-            // Special case: if there are both note_on and note_off events in a single sample,
-            // don't process the note_off events.
-            if events.iter().any(|it| it.kind == NoteEventType::On) {
-                events.retain(|it| it.kind == NoteEventType::On);
-            }
 
             // Update LFOs here so we can use their values else where
             for voice in state.voices.values_mut() {
@@ -320,12 +314,14 @@ impl Node<ProcessContext> for StingrayNode {
 
         for (channel_index, out_buf) in output.iter_mut().enumerate() {
             out_buf.copy_from_slice(&buffers[channel_index]);
-            let meta = &self.state.meta;
+            let meta = &state.meta;
             Self::apply_volume_and_pan(out_buf, channel_index, meta.volume, meta.pan);
         }
 
-        self.state.filter_left.apply(&mut output[0]);
-        self.state.filter_right.apply(&mut output[1]);
+        if state.config.lpf_on {
+            self.state.filter_left.apply(&mut output[0]);
+            self.state.filter_right.apply(&mut output[1]);
+        }
     }
 }
 
@@ -343,10 +339,6 @@ impl StingrayWaveSource {
             oscillator,
             sample_index: 0,
         }
-    }
-
-    pub fn same_pitch(&self, pitch: PitchName) -> bool {
-        self.pitch == pitch
     }
 
     fn next(&mut self, cache: &mut WaveCache, lfo_value: f32, lfo_active: bool) -> Stereo<f32> {
