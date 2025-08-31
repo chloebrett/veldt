@@ -8,7 +8,6 @@ use egui::{
     Color32, CornerRadius, CursorIcon, Frame, Pos2, Rect, Response, ScrollArea, Sense, Shape,
     Stroke, StrokeKind, Ui, Vec2, Widget, emath::RectTransform, pos2, vec2,
 };
-use log::info;
 use mesic::{beats_to_samples, samples_to_beats};
 use ordered_float::OrderedFloat;
 use shared::{
@@ -862,17 +861,17 @@ impl Widget for TrackSequencer<'_> {
                 let offset = range.left() + pos.x;
 
                 // Add a new track of No.1 to the track roll
-                // let placement = Placement {
-                //     kind: PlacementType::Track(TrackPlacement {
-                //         track_id: 0.into(),
-                //         generator_id: 0.into(),
-                //     }),
-                //     offset: offset.into(),
-                //     clipped_duration: None,
-                //     visual_placement: pos.y as u32,
-                //     colour: [67, 206, 222],
-                // };
-                // store.dispatchr(Action::AddChild(TypeField::Placement(placement)));
+                let placement = Placement {
+                    kind: PlacementType::Track(TrackPlacement {
+                        track_id: 0.into(),
+                        generator_id: 0.into(),
+                    }),
+                    offset: offset.into(),
+                    clipped_duration: None,
+                    visual_placement: pos.y as u32,
+                    colour: [67, 206, 222],
+                };
+                store.dispatchr(Action::AddChild(TypeField::Placement(placement)));
 
                 // Move playhead to the clicked location
                 // let new_playhead_x = pos.x.clamp(0.0, range.size().x);
@@ -882,7 +881,7 @@ impl Widget for TrackSequencer<'_> {
                 // self.audio_player.seek(new_samples as usize);
             }
 
-            // Interactions with the tracks rectangles
+            // Interactions with the track rectangles
             self.interact(ui, &response);
 
             painter.extend(self.background_shapes.clone().transform(to_screen));
@@ -902,46 +901,38 @@ impl Widget for TrackSequencer<'_> {
                 );
             }
 
-            // Playhead stuff
+            // Playhead visualisation and interaction
             let playhead_samples = self.audio_player.effective_pos();
             let playhead_beats = samples_to_beats(playhead_samples, project.bpm);
             let playhead_x = playhead_beats - range.left();
 
-            let playhead_dragger = Rect::from_min_max(
-                pos2(playhead_x - 0.15, 0.0),
-                pos2(playhead_x + 0.15, range.size().y),
-            );
-            let playhead_id = ui.id().with("playhead_dragger");
-            let playhead_response = ui.interact(playhead_dragger, playhead_id, Sense::click());
             let playhead_shape = Shape::line_segment(
                 [pos2(playhead_x, 0.0), pos2(playhead_x, range.size().y)],
                 Stroke::new(2.0, Color32::RED),
             );
-            painter.add(playhead_shape.transform(to_screen));
-            painter.add(Shape::rect_stroke(
+            let playhead_dragger = Rect::from_min_max(
+                pos2(playhead_x - 0.3, 0.0),
+                pos2(playhead_x + 0.3, range.size().y),
+            );
+            let playhead_id = ui.id().with("playhead_dragger");
+            let playhead_response = ui.interact(
                 playhead_dragger.transform(to_screen),
-                CornerRadius::ZERO,
-                Stroke::new(1.0, Color32::YELLOW),
-                StrokeKind::Inside,
-            ));
+                playhead_id,
+                Sense::drag(),
+            );
 
-            if playhead_response.clicked() {
-                info!("bruh");
+            painter.add(playhead_shape.transform(to_screen));
+
+            if playhead_response.dragged() {
+                if let Some(drag_pos) = playhead_response.interact_pointer_pos() {
+                    let local_pos = drag_pos.transform(to_screen.inverse());
+                    let new_playhead_x = local_pos.x.clamp(0.0, range.size().x);
+                    let new_playhead_beats = range.left() + new_playhead_x;
+                    let new_samples = beats_to_samples(new_playhead_beats, project.bpm);
+                    // Seek audio player
+                    self.audio_player.seek(new_samples as usize);
+                }
             }
-
-            // if playhead_response.dragged_by(PointerButton::Primary) {
-            //     self.audio_player.pause();
-            //     info!("dragging playhead");
-            //     if let Some(drag_pos) = playhead_response.interact_pointer_pos() {
-            //         let local_pos = drag_pos.transform(to_screen.inverse());
-            //         let new_playhead_x = local_pos.x.clamp(0.0, range.size().x);
-            //         let new_playhead_beats = range.left() + new_playhead_x;
-            //         let new_samples = beats_to_samples(new_playhead_beats, project.bpm);
-            //         // Seek audio player
-            //         self.audio_player.seek(new_samples as usize);
-            //     }
-            // }
-
             res = Some(response.clone());
         });
 
