@@ -82,6 +82,8 @@ message TypeFieldProto {
     uint32 sample_id = 25;
     uint32 track_id = 26;
     uint32 effect_id = 27;
+    uint32 colour = 28;
+    bool lpf_on = 29;
   }
 }
 
@@ -100,6 +102,7 @@ enum MultiTypeFieldKind {
   EffectTypeFieldKind = 4;
   GeneratorTypeFieldKind = 5;
   PlacementIdTypeFieldKind = 6;
+  ColourTypeFieldKind = 7;
 }
 
 message SetFloatProto {

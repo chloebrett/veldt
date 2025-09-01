@@ -1,5 +1,5 @@
 use crate::view::View;
-use crate::widget::{add_knob, get_set, selectable_value, styled_knob};
+use crate::widget::{add_typable_knob, get_set, selectable_value, styled_knob};
 use egui::Ui;
 use shared::model::{ModDelayConfig, WaveType};
 use state::{Action, FloatField, TypeField, UintField};
@@ -30,40 +30,52 @@ impl<F: Fn(Action), G: Fn()> View for ModDelayView<'_, F, G> {
         // TODO: support integer knobs.
         // TODO: clamp the value within each frame to prevent min_depth from exceeding max_depth.
         // Currently this is only clamped the following frame, which looks janky.
-        add_knob(
+        let min_depth_knob = styled_knob(
+            config.min_depth as f32,
+            |it| dispatch(Action::SetUint(UintField::MinDepth, it as u32)),
+            0.0..=1_000.0,
+        )
+        .with_neutral(100.0)
+        .with_step(1.0);
+        let max_depth_knob = styled_knob(
+            config.max_depth as f32,
+            |it| dispatch(Action::SetUint(UintField::MaxDepth, it as u32)),
+            0.0..=1_000.0,
+        )
+        .with_neutral(200.0)
+        .with_step(1.0);
+        let lfo_knob = styled_knob(
+            config.freq,
+            |it| dispatch(Action::SetFloat(FloatField::LfoFreq, it)),
+            0.1..=100.0,
+        )
+        .logarithmic(true)
+        .with_neutral(1.0);
+        add_typable_knob(
             ui,
-            styled_knob(
-                "Min depth (samples)",
-                config.min_depth as f32,
-                |it| dispatch(Action::SetUint(UintField::MinDepth, it as u32)),
-                0.0..=1_000.0,
-            )
-            .with_neutral(100.0)
-            .with_step(1.0),
+            min_depth_knob,
+            "Min depth (samples)",
+            config.min_depth as f32,
+            |it| dispatch(Action::SetUint(UintField::MinDepth, it as u32)),
+            0.0..=1_000.0,
             &self.on_release,
         );
-        add_knob(
+        add_typable_knob(
             ui,
-            styled_knob(
-                "Max depth (samples)",
-                config.max_depth as f32,
-                |it| dispatch(Action::SetUint(UintField::MaxDepth, it as u32)),
-                0.0..=1_000.0,
-            )
-            .with_neutral(200.0)
-            .with_step(1.0),
+            max_depth_knob,
+            "Max depth (samples)",
+            config.max_depth as f32,
+            |it| dispatch(Action::SetUint(UintField::MaxDepth, it as u32)),
+            0.0..=1_000.0,
             &self.on_release,
         );
-        add_knob(
+        add_typable_knob(
             ui,
-            styled_knob(
-                "LFO frequency (Hz)",
-                config.freq,
-                |it| dispatch(Action::SetFloat(FloatField::LfoFreq, it)),
-                0.1..=100.0,
-            )
-            .logarithmic(true)
-            .with_neutral(1.0),
+            lfo_knob,
+            "LFO frequency (Hz)",
+            config.freq,
+            |it| dispatch(Action::SetFloat(FloatField::LfoFreq, it)),
+            0.1..=100.0,
             &self.on_release,
         );
 

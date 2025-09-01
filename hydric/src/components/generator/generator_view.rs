@@ -63,6 +63,7 @@ impl View for GeneratorView<'_> {
                             self.store,
                             self.local_state,
                             self.selector,
+                            dispatch,
                             self.player,
                         )
                         .ui(ui);

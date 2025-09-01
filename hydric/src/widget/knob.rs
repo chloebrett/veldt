@@ -1,10 +1,67 @@
-use egui::Color32;
+use egui::{Color32, TextEdit, Ui};
 pub use egui_fancy_knob::add_knob;
-use egui_fancy_knob::{Knob, KnobStyle, LabelPosition};
+use egui_fancy_knob::{Knob, KnobStyle};
 use std::ops::RangeInclusive;
 
+// Struct for knob with typable input to hold an updated version of the value at all times, consolidated from both the knob input and textbox input
+pub struct TypableKnob {
+    pub value: f32,
+    pub text: String,
+}
+
+impl TypableKnob {
+    pub fn new(initial: f32) -> Self {
+        Self {
+            value: initial,
+            text: format!("{:.2}", initial),
+        }
+    }
+
+    /// NOTE: knob needs to be created fully outside and passed in
+    pub fn show<F, G, H>(
+        &mut self,
+        ui: &mut Ui,
+        knob: Knob<F>,
+        label: &str,
+        setter: G,
+        range: RangeInclusive<f32>,
+        on_release: &H,
+    ) where
+        F: Fn(f32),
+        G: Fn(f32),
+        H: Fn(),
+    {
+        let knob_value = self.value;
+
+        ui.horizontal(|ui| {
+            add_knob(ui, knob, on_release);
+
+            ui.label(format!("{label}:"));
+
+            // Input textbox
+            let text_response = ui.add(TextEdit::singleline(&mut self.text).desired_width(64.0));
+
+            if text_response.changed() {
+                if let Ok(mut v) = self.text.parse::<f32>() {
+                    v = v.clamp(*range.start(), *range.end());
+                    self.value = v;
+                    self.text = format!("{:.2}", v);
+                    setter(v);
+                } else {
+                    self.text = format!("{:.2}", self.value);
+                }
+            }
+
+            if knob_value != self.value && !text_response.has_focus() {
+                self.value = knob_value;
+                self.text = format!("{:.2}", self.value);
+                setter(self.value);
+            }
+        });
+    }
+}
+
 pub fn styled_knob(
-    label: &str,
     value: f32,
     setter: impl Fn(f32),
     range: RangeInclusive<f32>,
@@ -19,12 +76,10 @@ pub fn styled_knob(
             Color32::WHITE,
             Color32::WHITE,
         )
-        .with_label(label, LabelPosition::Right)
-        .with_label_offset(4.0)
 }
 
-pub fn disabled_knob(label: &str, value: f32, range: RangeInclusive<f32>) -> Knob<impl Fn(f32)> {
-    styled_knob(label, value, |_| {}, range)
+pub fn disabled_knob(value: f32, range: RangeInclusive<f32>) -> Knob<impl Fn(f32)> {
+    styled_knob(value, |_| {}, range)
         .with_colors(
             Color32::DARK_GRAY,
             Color32::GRAY,
@@ -32,4 +87,34 @@ pub fn disabled_knob(label: &str, value: f32, range: RangeInclusive<f32>) -> Kno
             Color32::GRAY,
         )
         .enabled(false)
+}
+
+pub fn add_typable_knob<F, G, H>(
+    ui: &mut Ui,
+    knob: Knob<F>,
+    label: &str,
+    value: f32,
+    setter: G,
+    range: RangeInclusive<f32>,
+    on_release: &H,
+) where
+    F: Fn(f32),
+    G: Fn(f32),
+    H: Fn(),
+{
+    TypableKnob::new(value).show(ui, knob, label, setter, range, on_release);
+}
+
+pub fn add_disabled_knob<F, G>(
+    ui: &mut Ui,
+    knob: Knob<F>,
+    label: &str,
+    value: f32,
+    range: RangeInclusive<f32>,
+    on_release: &G,
+) where
+    F: Fn(f32),
+    G: Fn(),
+{
+    TypableKnob::new(value).show(ui, knob, label, |_| {}, range, on_release);
 }

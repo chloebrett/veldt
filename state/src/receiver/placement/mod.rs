@@ -2,7 +2,7 @@ mod sample_placement;
 mod track_placement;
 
 use crate::receiver::ActionReceiver;
-use crate::{Action, FloatField, TypeField, UintField};
+use crate::{Action, FloatField, MultiTypeField, TypeField, UintField};
 use ordered_float::OrderedFloat;
 use shared::model::{Placement, PlacementType};
 
@@ -30,6 +30,19 @@ impl ActionReceiver for Placement {
                 let prev = self.visual_placement;
                 self.visual_placement = *position;
                 Action::SetUint(UintField::VisualPlacement, prev)
+            }
+            Action::SetChildren(MultiTypeField::Colour(new_colour)) => {
+                let prev = self.colour;
+                self.colour = [
+                    new_colour[0] as u8,
+                    new_colour[1] as u8,
+                    new_colour[2] as u8,
+                ];
+                Action::SetChildren(MultiTypeField::Colour([
+                    prev[0] as u32,
+                    prev[1] as u32,
+                    prev[2] as u32,
+                ]))
             }
             _ => return None,
         })
