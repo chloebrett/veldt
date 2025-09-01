@@ -1,5 +1,5 @@
 use crate::view::View;
-use crate::widget::{add_knob, styled_knob};
+use crate::widget::{add_typable_knob, styled_knob};
 use egui::Ui;
 use shared::model::DelayConfig;
 use state::{Action, FloatField};
@@ -25,28 +25,37 @@ impl<F: Fn(Action), G: Fn()> View for DelayView<'_, F, G> {
         let Self {
             config, dispatch, ..
         } = self;
-
-        add_knob(
+        let delay_knob = styled_knob(
+            config.delay_ms,
+            |it| dispatch(Action::SetFloat(FloatField::DelayMs, it)),
+            1.0..=1000.0,
+        )
+        .with_neutral(100.0);
+        let feedback_knob = styled_knob(
+            config.feedback,
+            |it| dispatch(Action::SetFloat(FloatField::Feedback, it)),
+            0.0..=0.99,
+        )
+        .with_neutral(0.5);
+        add_typable_knob(
             ui,
-            styled_knob(
-                "Delay ms",
-                config.delay_ms,
-                |it| dispatch(Action::SetFloat(FloatField::DelayMs, it)),
-                1.0..=1000.0,
-            )
-            .with_neutral(100.0),
+            delay_knob,
+            "Delay (ms)",
+            config.delay_ms,
+            |it| dispatch(Action::SetFloat(FloatField::DelayMs, it)),
+            1.0..=1000.0,
             &self.on_release,
+            50.0,
         );
-        add_knob(
+        add_typable_knob(
             ui,
-            styled_knob(
-                "Feedback",
-                config.feedback,
-                |it| dispatch(Action::SetFloat(FloatField::Feedback, it)),
-                0.0..=0.99,
-            )
-            .with_neutral(0.5),
+            feedback_knob,
+            "Feedback",
+            config.feedback,
+            |it| dispatch(Action::SetFloat(FloatField::Feedback, it)),
+            0.0..=0.99,
             &self.on_release,
+            40.0,
         );
     }
 }
