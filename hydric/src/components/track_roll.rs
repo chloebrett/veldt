@@ -872,13 +872,6 @@ impl Widget for TrackSequencer<'_> {
                     colour: [67, 206, 222],
                 };
                 store.dispatchr(Action::AddChild(TypeField::Placement(placement)));
-
-                // Move playhead to the clicked location
-                // let new_playhead_x = pos.x.clamp(0.0, range.size().x);
-                // let new_playhead_beats = range.left() + new_playhead_x;
-                // let new_samples = beats_to_samples(new_playhead_beats, project.bpm);
-                // // Seek audio player
-                // self.audio_player.seek(new_samples as usize);
             }
 
             // Interactions with the track rectangles
@@ -929,7 +922,6 @@ impl Widget for TrackSequencer<'_> {
                     let new_playhead_x = local_pos.x.clamp(0.0, range.size().x);
                     let new_playhead_beats = range.left() + new_playhead_x;
                     let new_samples = beats_to_samples(new_playhead_beats, project.bpm);
-                    // Seek audio player
                     self.audio_player.seek(new_samples as usize);
                 }
             }
