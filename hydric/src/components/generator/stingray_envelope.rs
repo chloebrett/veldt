@@ -83,7 +83,7 @@ impl<F: Fn(Action), G: Fn()> View for StingrayEnvelopeView<'_, F, G> {
 
                     inner_frame()
                         .inner_margin(Margin {
-                            left: 20,
+                            left: 10,
                             right: 0,
                             top: 20,
                             bottom: 20,
@@ -322,8 +322,9 @@ impl<F: Fn(Action), G: Fn()> View for StingrayEnvelopeView<'_, F, G> {
                                         },
                                         0.0..=1000.0,
                                         on_release,
-                                        50.0,
+                                        60.0,
                                     );
+                                    ui.add_space(10.0);
                                     add_typable_knob(
                                         ui,
                                         d_knob,
@@ -337,8 +338,9 @@ impl<F: Fn(Action), G: Fn()> View for StingrayEnvelopeView<'_, F, G> {
                                         },
                                         0.0..=1000.0,
                                         on_release,
-                                        50.0,
+                                        60.0,
                                     );
+                                    ui.add_space(10.0);
                                     add_typable_knob(
                                         ui,
                                         s_knob,
@@ -352,8 +354,9 @@ impl<F: Fn(Action), G: Fn()> View for StingrayEnvelopeView<'_, F, G> {
                                         },
                                         0.0..=1.0,
                                         on_release,
-                                        40.0,
+                                        60.0,
                                     );
+                                    ui.add_space(10.0);
                                     add_typable_knob(
                                         ui,
                                         r_knob,
@@ -367,8 +370,9 @@ impl<F: Fn(Action), G: Fn()> View for StingrayEnvelopeView<'_, F, G> {
                                         },
                                         0.0..=1000.0,
                                         on_release,
-                                        50.0,
+                                        60.0,
                                     );
+                                    ui.add_space(10.0);
                                 });
                             });
                         });

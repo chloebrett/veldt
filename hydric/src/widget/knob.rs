@@ -1,4 +1,4 @@
-use egui::{Color32, Response, TextEdit, Ui};
+use egui::{Color32, Ui};
 pub use egui_fancy_knob::add_knob;
 use egui_fancy_knob::{Knob, KnobStyle};
 use std::ops::RangeInclusive;
