@@ -35,34 +35,36 @@ impl TypableKnob {
         let old_value = self.value;
         let step = 0.01;
 
-        ui.horizontal(|ui| {
-            add_knob(ui, knob, on_release);
+        ui.vertical(|ui|) {
+            ui.horizontal(|ui| {
+                add_knob(ui, knob, on_release);
 
-            let value_changed_by_knob = self.value != old_value;
+                let value_changed_by_knob = self.value != old_value;
 
-            if !label.is_empty() {
-                ui.label(label);
-            }
+                if !label.is_empty() {
+                    ui.label(label);
+                }
 
-            let mut value_from_textbox = self.value;
-            let dv = egui::DragValue::new(&mut value_from_textbox)
-                .range(range.clone())
-                .speed(step)
-                .min_decimals(2)
-                .max_decimals_opt(Some(2));
+                let mut value_from_textbox = self.value;
+                let dv = egui::DragValue::new(&mut value_from_textbox)
+                    .range(range.clone())
+                    .speed(step)
+                    .min_decimals(2)
+                    .max_decimals_opt(Some(2));
 
-            let value_response = ui.add(dv);
+                let value_response = ui.add(dv);
 
-            if value_response.changed() {
-                self.value = value_from_textbox;
-                self.text = format!("{:.2}", self.value);
-                setter(self.value);
-            }
+                if value_response.changed() {
+                    self.value = value_from_textbox;
+                    self.text = format!("{:.2}", self.value);
+                    setter(self.value);
+                }
 
-            if value_changed_by_knob && !value_response.has_focus() {
-                self.text = format!("{:.2}", self.value);
-            }
-        });
+                if value_changed_by_knob && !value_response.has_focus() {
+                    self.text = format!("{:.2}", self.value);
+                }
+            });
+        }        
     }
 }
 
