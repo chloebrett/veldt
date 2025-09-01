@@ -30,7 +30,7 @@ impl TypableKnob {
         G: Fn(f32),
         H: Fn(),
     {
-        let mut knob_value = self.value;
+        let knob_value = self.value;
 
         ui.horizontal(|ui| {
             // Pass the fully configured knob in
@@ -105,7 +105,7 @@ pub fn add_typable_knob<F, G, H>(
     TypableKnob::new(value).show(ui, knob, label, setter, range, on_release);
 }
 
-pub fn add_disabled_knob<F, G> (
+pub fn add_disabled_knob<F, G>(
     ui: &mut Ui,
     knob: Knob<F>,
     label: &str,

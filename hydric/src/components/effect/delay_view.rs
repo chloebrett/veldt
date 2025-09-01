@@ -26,19 +26,26 @@ impl<F: Fn(Action), G: Fn()> View for DelayView<'_, F, G> {
             config, dispatch, ..
         } = self;
         let delay_knob = styled_knob(
-                config.delay_ms,
-                |it| dispatch(Action::SetFloat(FloatField::DelayMs, it)),
-                1.0..=1000.0,
-            )
-            .with_neutral(100.0);
+            config.delay_ms,
+            |it| dispatch(Action::SetFloat(FloatField::DelayMs, it)),
+            1.0..=1000.0,
+        )
+        .with_neutral(100.0);
         let feedback_knob = styled_knob(
-                config.feedback,
-                |it| dispatch(Action::SetFloat(FloatField::Feedback, it)),
-                0.0..=0.99,
-            )
-            .with_neutral(0.5);
-        add_typable_knob(ui, delay_knob, "Delay (ms)", config.delay_ms, |it| dispatch(Action::SetFloat(FloatField::DelayMs, it)),
-                1.0..=1000.0, &self.on_release);
+            config.feedback,
+            |it| dispatch(Action::SetFloat(FloatField::Feedback, it)),
+            0.0..=0.99,
+        )
+        .with_neutral(0.5);
+        add_typable_knob(
+            ui,
+            delay_knob,
+            "Delay (ms)",
+            config.delay_ms,
+            |it| dispatch(Action::SetFloat(FloatField::DelayMs, it)),
+            1.0..=1000.0,
+            &self.on_release,
+        );
         add_typable_knob(
             ui,
             feedback_knob,

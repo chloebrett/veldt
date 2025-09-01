@@ -1,4 +1,4 @@
-use crate::widget::{add_knob, styled_knob, add_typable_knob};
+use crate::widget::{add_typable_knob, styled_knob};
 use crate::{transform::Transform, view::View};
 use egui::Color32;
 use egui::{
@@ -28,38 +28,89 @@ impl<F: Fn(Action), G: Fn()> View for CompressorView<'_, F, G> {
         let Self {
             config, dispatch, ..
         } = self;
-        let mut threshold_knob = styled_knob(config.threshold,|it| dispatch(Action::SetFloat(FloatField::Threshold, it)), -60.0..=0.0).with_neutral(-10.0);
-        let mut ratio_knob = styled_knob(config.ratio, |it| dispatch(Action::SetFloat(FloatField::Ratio, it)), 1.0..=f32::INFINITY).logarithmic(true).largest_finite(100.0).with_neutral(3.0);
-        let mut attack_knob = styled_knob(
-                        config.attack_ms,
-                        |it| dispatch(Action::SetFloat(FloatField::AttackMs, it)),
-                        0.0..=1000.0,
-                    )
-                    .with_neutral(100.0);
+        let threshold_knob = styled_knob(
+            config.threshold,
+            |it| dispatch(Action::SetFloat(FloatField::Threshold, it)),
+            -60.0..=0.0,
+        )
+        .with_neutral(-10.0);
+        let ratio_knob = styled_knob(
+            config.ratio,
+            |it| dispatch(Action::SetFloat(FloatField::Ratio, it)),
+            1.0..=f32::INFINITY,
+        )
+        .logarithmic(true)
+        .largest_finite(100.0)
+        .with_neutral(3.0);
+        let attack_knob = styled_knob(
+            config.attack_ms,
+            |it| dispatch(Action::SetFloat(FloatField::AttackMs, it)),
+            0.0..=1000.0,
+        )
+        .with_neutral(100.0);
         let release_knob = styled_knob(
-                        config.release_ms,
-                        |it| dispatch(Action::SetFloat(FloatField::ReleaseMs, it)),
-                        0.0..=1000.0,
-                    ).with_neutral(100.0);
+            config.release_ms,
+            |it| dispatch(Action::SetFloat(FloatField::ReleaseMs, it)),
+            0.0..=1000.0,
+        )
+        .with_neutral(100.0);
         let gain_knob = styled_knob(
-                    config.gain,
-                    |it| dispatch(Action::SetFloat(FloatField::Gain, it)),
-                    0.0..=20.0,
-                )
-                .with_neutral(0.0);
+            config.gain,
+            |it| dispatch(Action::SetFloat(FloatField::Gain, it)),
+            0.0..=20.0,
+        )
+        .with_neutral(0.0);
         ui.horizontal(|ui| {
             ui.add(CompressorDisplay::new(config));
             ui.vertical(|ui| {
-                add_typable_knob(ui, threshold_knob, "Threshold", config.threshold, |it| dispatch(Action::SetFloat(FloatField::Threshold, it)), -60.0..=0.0, &self.on_release);
-                add_typable_knob(ui, ratio_knob, "Ratio", config.ratio, |it| dispatch(Action::SetFloat(FloatField::Ratio, it)), 1.0..=f32::INFINITY, &self.on_release);
+                add_typable_knob(
+                    ui,
+                    threshold_knob,
+                    "Threshold",
+                    config.threshold,
+                    |it| dispatch(Action::SetFloat(FloatField::Threshold, it)),
+                    -60.0..=0.0,
+                    &self.on_release,
+                );
+                add_typable_knob(
+                    ui,
+                    ratio_knob,
+                    "Ratio",
+                    config.ratio,
+                    |it| dispatch(Action::SetFloat(FloatField::Ratio, it)),
+                    1.0..=f32::INFINITY,
+                    &self.on_release,
+                );
             });
             ui.vertical(|ui| {
-                add_typable_knob(ui, attack_knob, "Atack (ms)", config.attack_ms, |it| dispatch(Action::SetFloat(FloatField::AttackMs, it)), 0.0..=1000.0, &self.on_release);
-                add_typable_knob(ui, release_knob, "Release (ms)", config.release_ms, |it| dispatch(Action::SetFloat(FloatField::ReleaseMs, it)),
-                        0.0..=1000.0, &self.on_release);
+                add_typable_knob(
+                    ui,
+                    attack_knob,
+                    "Atack (ms)",
+                    config.attack_ms,
+                    |it| dispatch(Action::SetFloat(FloatField::AttackMs, it)),
+                    0.0..=1000.0,
+                    &self.on_release,
+                );
+                add_typable_knob(
+                    ui,
+                    release_knob,
+                    "Release (ms)",
+                    config.release_ms,
+                    |it| dispatch(Action::SetFloat(FloatField::ReleaseMs, it)),
+                    0.0..=1000.0,
+                    &self.on_release,
+                );
             });
-            add_typable_knob(ui, gain_knob, "Gain", config.gain, |it| dispatch(Action::SetFloat(FloatField::Gain, it)),
-                    0.0..=20.0, &self.on_release);
+            add_typable_knob(
+                ui,
+                gain_knob,
+                "Gain",
+                config.gain,
+                |it| dispatch(Action::SetFloat(FloatField::Gain, it)),
+                0.0..=20.0,
+                &self.on_release,
+            );
         });
     }
 }

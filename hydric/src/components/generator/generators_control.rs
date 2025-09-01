@@ -43,18 +43,18 @@ pub fn generators_control(ui: &mut Ui, local_state: &LocalState, store: &Store) 
                     }
 
                     let volume_knob = styled_knob(
-                            meta.volume,
-                            |it| store.dispatch(&sel, Action::SetFloat(FloatField::Volume, it)),
-                            // TODO: let this go up a bit past 1?
-                            0.0..=1.0,
-                        )
-                        .with_neutral(0.8);
+                        meta.volume,
+                        |it| store.dispatch(&sel, Action::SetFloat(FloatField::Volume, it)),
+                        // TODO: let this go up a bit past 1?
+                        0.0..=1.0,
+                    )
+                    .with_neutral(0.8);
                     let pan_knob = styled_knob(
-                            meta.pan,
-                            |it| store.dispatch(&sel, Action::SetFloat(FloatField::Pan, it)),
-                            -1.0..=1.0,
-                        )
-                        .with_neutral(0.0);
+                        meta.pan,
+                        |it| store.dispatch(&sel, Action::SetFloat(FloatField::Pan, it)),
+                        -1.0..=1.0,
+                    )
+                    .with_neutral(0.0);
 
                     add_typable_knob(
                         ui,

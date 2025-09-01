@@ -43,25 +43,25 @@ impl<F: Fn(Action), G: Fn()> View for EqView<'_, F, G> {
             config, dispatch, ..
         } = self;
         let freq_knob = styled_knob(
-                    config.fc,
-                    |it| dispatch(Action::SetFloat(FloatField::Fc, it)),
-                    20.0..=20000.0,
-                )
-                .logarithmic(true)
-                .with_neutral(2000.0);
+            config.fc,
+            |it| dispatch(Action::SetFloat(FloatField::Fc, it)),
+            20.0..=20000.0,
+        )
+        .logarithmic(true)
+        .with_neutral(2000.0);
         let q_knob = styled_knob(
-                    config.q,
-                    |it| dispatch(Action::SetFloat(FloatField::Q, it)),
-                    0.1..=100.0,
-                )
-                .logarithmic(true)
-                .with_neutral(1.0);
+            config.q,
+            |it| dispatch(Action::SetFloat(FloatField::Q, it)),
+            0.1..=100.0,
+        )
+        .logarithmic(true)
+        .with_neutral(1.0);
         let gain_knob = styled_knob(
-                    config.gain,
-                    |it| dispatch(Action::SetFloat(FloatField::Gain, it)),
-                    -60.0..=60.0,
-                )
-                .with_neutral(0.0);
+            config.gain,
+            |it| dispatch(Action::SetFloat(FloatField::Gain, it)),
+            -60.0..=60.0,
+        )
+        .with_neutral(0.0);
         ui.horizontal(|ui| {
             add_typable_knob(
                 ui,

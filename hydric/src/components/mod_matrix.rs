@@ -1,5 +1,7 @@
 use crate::view::View;
-use crate::widget::{TextRotation, add_typable_knob, for_each_with_separator, styled_knob, text_rotator};
+use crate::widget::{
+    TextRotation, add_typable_knob, for_each_with_separator, styled_knob, text_rotator,
+};
 use eframe::egui;
 use egui::{Color32, Stroke, Ui};
 use shared::model::{MatrixCell, ModMatrix};
@@ -86,16 +88,16 @@ impl<G: Fn()> View for ModMatrixView<'_, G> {
                                 let value: &MatrixCell = store.select(&cell_sel);
                                 let value = **value;
                                 let cell_knob = styled_knob(
-                                            value,
-                                            |it| {
-                                                store.dispatch(
-                                                    &cell_sel,
-                                                    Action::SetFloat(FloatField::ModFactor, it),
-                                                );
-                                            },
-                                            0.0..=1.0,
-                                        )
-                                        .with_neutral(0.0);
+                                    value,
+                                    |it| {
+                                        store.dispatch(
+                                            &cell_sel,
+                                            Action::SetFloat(FloatField::ModFactor, it),
+                                        );
+                                    },
+                                    0.0..=1.0,
+                                )
+                                .with_neutral(0.0);
 
                                 ui.push_id(id, |ui| {
                                     add_typable_knob(

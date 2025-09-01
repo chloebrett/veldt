@@ -43,14 +43,14 @@ impl View for ToolbarView<'_> {
                 ui.horizontal(|ui| {
                     let volume = self.store.get().volume;
                     let volume_knob = styled_knob(
-                            volume,
-                            |it| {
-                                self.store
-                                    .dispatchr(Action::SetFloat(FloatField::Volume, it))
-                            },
-                            0.0..=1.0,
-                        )
-                        .with_neutral(1.0);
+                        volume,
+                        |it| {
+                            self.store
+                                .dispatchr(Action::SetFloat(FloatField::Volume, it))
+                        },
+                        0.0..=1.0,
+                    )
+                    .with_neutral(1.0);
                     add_typable_knob(
                         ui,
                         volume_knob,

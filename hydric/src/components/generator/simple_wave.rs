@@ -125,11 +125,11 @@ impl<F: Fn(Action), G: Fn()> View for SimpleWaveView<'_, F, G> {
                 );
 
                 let detune_knob = styled_knob(
-                        self.config.detune_cents,
-                        |it| (self.dispatch)(Action::SetFloat(FloatField::Detune, it)),
-                        0.0..=100.0,
-                    )
-                    .with_neutral(10.0);
+                    self.config.detune_cents,
+                    |it| (self.dispatch)(Action::SetFloat(FloatField::Detune, it)),
+                    0.0..=100.0,
+                )
+                .with_neutral(10.0);
                 add_typable_knob(
                     ui,
                     detune_knob,

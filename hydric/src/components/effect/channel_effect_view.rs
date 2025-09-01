@@ -7,7 +7,7 @@ use strum::IntoEnumIterator;
 use crate::{
     local_state::{GetSet, LocalState},
     view::View,
-    widget::{StateWindow, styled_knob, add_typable_knob},
+    widget::{StateWindow, add_typable_knob, styled_knob},
     window_state::WindowKind,
 };
 use egui::{
@@ -231,8 +231,17 @@ impl<F: Fn(Action), G: Fn()> Widget for EffectWidget<'_, F, G> {
                 meta.wet,
                 |it| dispatch(Action::SetFloat(FloatField::Wet, it)),
                 0.0..=1.0,
-            ).with_neutral(0.5);
-            add_typable_knob(ui, wet_knob, "Wet", meta.wet, |it| dispatch(Action::SetFloat(FloatField::Wet, it)), 0.0..=1.0, &on_release);
+            )
+            .with_neutral(0.5);
+            add_typable_knob(
+                ui,
+                wet_knob,
+                "Wet",
+                meta.wet,
+                |it| dispatch(Action::SetFloat(FloatField::Wet, it)),
+                0.0..=1.0,
+                &on_release,
+            );
 
             if ui.add(Button::new(text).selected(show)).clicked() {
                 local_state

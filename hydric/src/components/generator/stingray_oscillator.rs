@@ -1,8 +1,7 @@
 use super::SimpleWaveVisualiser;
 use crate::view::View;
 use crate::widget::{
-    add_typable_knob, get_set, inner_frame, int_slider, outer_frame, selectable_value,
-    styled_knob,
+    add_typable_knob, get_set, inner_frame, int_slider, outer_frame, selectable_value, styled_knob,
 };
 use eframe::egui;
 use egui::{Color32, Margin, Ui, Vec2};
@@ -96,27 +95,86 @@ impl<F: Fn(Action), G: Fn()> View for StingrayOscillatorView<'_, F, G> {
             G: Fn(),
         {
             const KNOB_SPACE: f32 = 4.0;
-            let mut volume_knob = styled_knob(config.volume, |it| dispatch(Action::SetFloat(FloatField::Volume, it)) , 0.0..=1.0).with_neutral(1.0);
-            let mut pan_knob = styled_knob(config.pan, |it| dispatch(Action::SetFloat(FloatField::Pan, it)), -1.0..=1.0).with_neutral(0.0);
-            let mut coarse_det_knob = styled_knob(config.coarse_detune as f32 / 100.0, |it| dispatch(Action::SetFloat(FloatField::OscillatorCoarseDetune, it * 100.0)), -24.0..=24.0).with_neutral(0.0).with_step(1.0);
-            let mut fine_det_knob = styled_knob(config.fine_detune, |it| dispatch(Action::SetFloat(FloatField::OscillatorFineDetune, it)), -100.0..=100.0).with_neutral(0.0);
+            let volume_knob = styled_knob(
+                config.volume,
+                |it| dispatch(Action::SetFloat(FloatField::Volume, it)),
+                0.0..=1.0,
+            )
+            .with_neutral(1.0);
+            let pan_knob = styled_knob(
+                config.pan,
+                |it| dispatch(Action::SetFloat(FloatField::Pan, it)),
+                -1.0..=1.0,
+            )
+            .with_neutral(0.0);
+            let coarse_det_knob = styled_knob(
+                config.coarse_detune as f32 / 100.0,
+                |it| {
+                    dispatch(Action::SetFloat(
+                        FloatField::OscillatorCoarseDetune,
+                        it * 100.0,
+                    ))
+                },
+                -24.0..=24.0,
+            )
+            .with_neutral(0.0)
+            .with_step(1.0);
+            let fine_det_knob = styled_knob(
+                config.fine_detune,
+                |it| dispatch(Action::SetFloat(FloatField::OscillatorFineDetune, it)),
+                -100.0..=100.0,
+            )
+            .with_neutral(0.0);
 
             inner_frame().show(ui, |ui| {
                 ui.vertical(|ui| {
-                    add_typable_knob(ui, volume_knob, "Volume", config.volume, |it| dispatch(Action::SetFloat(FloatField::Volume, it)), 0.0..=1.0,  on_release);
+                    add_typable_knob(
+                        ui,
+                        volume_knob,
+                        "Volume",
+                        config.volume,
+                        |it| dispatch(Action::SetFloat(FloatField::Volume, it)),
+                        0.0..=1.0,
+                        on_release,
+                    );
                     ui.add_space(KNOB_SPACE);
 
-                    add_typable_knob(ui, pan_knob, "Pan", config.pan, |it| dispatch(Action::SetFloat(FloatField::Pan, it)), -1.0..=1.0, on_release);
+                    add_typable_knob(
+                        ui,
+                        pan_knob,
+                        "Pan",
+                        config.pan,
+                        |it| dispatch(Action::SetFloat(FloatField::Pan, it)),
+                        -1.0..=1.0,
+                        on_release,
+                    );
                     ui.add_space(KNOB_SPACE);
 
-                    add_typable_knob(ui, coarse_det_knob, "Coarse", config.coarse_detune as f32 / 100.0, |it| {
-                        dispatch(Action::SetFloat(FloatField::OscillatorCoarseDetune, it * 100.0))
-                    }, -24.0..=24.0, on_release);
+                    add_typable_knob(
+                        ui,
+                        coarse_det_knob,
+                        "Coarse",
+                        config.coarse_detune as f32 / 100.0,
+                        |it| {
+                            dispatch(Action::SetFloat(
+                                FloatField::OscillatorCoarseDetune,
+                                it * 100.0,
+                            ))
+                        },
+                        -24.0..=24.0,
+                        on_release,
+                    );
                     ui.add_space(KNOB_SPACE);
 
-                    add_typable_knob(ui, fine_det_knob, "Fine", config.fine_detune, |it| {
-                        dispatch(Action::SetFloat(FloatField::OscillatorFineDetune, it))
-                    }, -100.0..=100.0, on_release);
+                    add_typable_knob(
+                        ui,
+                        fine_det_knob,
+                        "Fine",
+                        config.fine_detune,
+                        |it| dispatch(Action::SetFloat(FloatField::OscillatorFineDetune, it)),
+                        -100.0..=100.0,
+                        on_release,
+                    );
                 });
             });
         }
@@ -144,11 +202,11 @@ impl<F: Fn(Action), G: Fn()> View for StingrayOscillatorView<'_, F, G> {
                     );
                     ui.add_space(6.0);
                     let unison_det_knob = styled_knob(
-                            config.unison_detune,
-                            |it| dispatch(Action::SetFloat(FloatField::UnisonDetune, it)),
-                            0.0..=100.0,
-                        )
-                        .with_neutral(0.0);
+                        config.unison_detune,
+                        |it| dispatch(Action::SetFloat(FloatField::UnisonDetune, it)),
+                        0.0..=100.0,
+                    )
+                    .with_neutral(0.0);
                     add_typable_knob(
                         ui,
                         unison_det_knob,

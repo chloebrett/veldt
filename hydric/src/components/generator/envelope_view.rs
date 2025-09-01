@@ -43,49 +43,49 @@ impl<F: Fn(Action), G: Fn()> View for EnvelopeView<'_, F, G> {
         let dispatch = &self.dispatch;
         let on_release = &self.on_release;
         let attack_knob = styled_knob(
-                        envelope.attack,
-                        |attack| {
-                            dispatch(Action::SetChild(TypeField::Envelope(AdsrEnvelope {
-                                attack,
-                                ..envelope
-                            })))
-                        },
-                        0.0..=1000.0,
-                    )
-                    .with_neutral(100.0);
+            envelope.attack,
+            |attack| {
+                dispatch(Action::SetChild(TypeField::Envelope(AdsrEnvelope {
+                    attack,
+                    ..envelope
+                })))
+            },
+            0.0..=1000.0,
+        )
+        .with_neutral(100.0);
         let decay_knob = styled_knob(
-                    envelope.decay,
-                    |decay| {
-                        dispatch(Action::SetChild(TypeField::Envelope(AdsrEnvelope {
-                            decay,
-                            ..envelope
-                        })))
-                    },
-                    0.0..=1000.0,
-                )
-                .with_neutral(100.0);
+            envelope.decay,
+            |decay| {
+                dispatch(Action::SetChild(TypeField::Envelope(AdsrEnvelope {
+                    decay,
+                    ..envelope
+                })))
+            },
+            0.0..=1000.0,
+        )
+        .with_neutral(100.0);
         let sustain_knob = styled_knob(
-                        envelope.sustain,
-                        |sustain| {
-                            dispatch(Action::SetChild(TypeField::Envelope(AdsrEnvelope {
-                                sustain,
-                                ..envelope
-                            })))
-                        },
-                        0.0..=1.0,
-                    )
-                    .with_neutral(0.8);
+            envelope.sustain,
+            |sustain| {
+                dispatch(Action::SetChild(TypeField::Envelope(AdsrEnvelope {
+                    sustain,
+                    ..envelope
+                })))
+            },
+            0.0..=1.0,
+        )
+        .with_neutral(0.8);
         let release_knob = styled_knob(
-                        envelope.release,
-                        |release| {
-                            dispatch(Action::SetChild(TypeField::Envelope(AdsrEnvelope {
-                                release,
-                                ..envelope
-                            })))
-                        },
-                        0.0..=1000.0,
-                    )
-                    .with_neutral(100.0);
+            envelope.release,
+            |release| {
+                dispatch(Action::SetChild(TypeField::Envelope(AdsrEnvelope {
+                    release,
+                    ..envelope
+                })))
+            },
+            0.0..=1000.0,
+        )
+        .with_neutral(100.0);
         ui.horizontal(|ui| {
             Frame::canvas(ui.style()).show(ui, |ui| {
                 ui.ctx().request_repaint();

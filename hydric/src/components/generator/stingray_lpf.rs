@@ -50,17 +50,17 @@ impl<F: Fn(Action), G: Fn(Action), H: Fn()> View for StingrayLpfView<'_, F, G, H
 
             ui.horizontal(|ui| {
                 let freq_knob = styled_knob(
-                        config.fc,
-                        |it| dispatch(Action::SetFloat(FloatField::Fc, it)),
-                        20.0..=20000.0,
-                    )
-                    .with_neutral(2000.0);
+                    config.fc,
+                    |it| dispatch(Action::SetFloat(FloatField::Fc, it)),
+                    20.0..=20000.0,
+                )
+                .with_neutral(2000.0);
                 let q_knob = styled_knob(
-                        config.q,
-                        |it| dispatch(Action::SetFloat(FloatField::Q, it)),
-                        0.1..=100.0,
-                    )
-                    .with_neutral(1.0);
+                    config.q,
+                    |it| dispatch(Action::SetFloat(FloatField::Q, it)),
+                    0.1..=100.0,
+                )
+                .with_neutral(1.0);
                 add_typable_knob(
                     ui,
                     freq_knob,
