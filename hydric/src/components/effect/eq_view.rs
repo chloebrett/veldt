@@ -71,6 +71,7 @@ impl<F: Fn(Action), G: Fn()> View for EqView<'_, F, G> {
                 |it| dispatch(Action::SetFloat(FloatField::Fc, it)),
                 20.0..=20000.0,
                 &self.on_release,
+                50.0,
             );
 
             add_typable_knob(
@@ -81,6 +82,7 @@ impl<F: Fn(Action), G: Fn()> View for EqView<'_, F, G> {
                 |it| dispatch(Action::SetFloat(FloatField::Q, it)),
                 0.1..=100.0,
                 &self.on_release,
+                40.0,
             );
 
             add_typable_knob(
@@ -91,6 +93,7 @@ impl<F: Fn(Action), G: Fn()> View for EqView<'_, F, G> {
                 |it| dispatch(Action::SetFloat(FloatField::Gain, it)),
                 -60.0..=60.0,
                 &self.on_release,
+                40.0,
             );
         });
 

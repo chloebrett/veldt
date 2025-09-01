@@ -1,4 +1,4 @@
-use egui::{Color32, TextEdit, Ui};
+use egui::{Color32, TextEdit, Ui, Response};
 pub use egui_fancy_knob::add_knob;
 use egui_fancy_knob::{Knob, KnobStyle};
 use std::ops::RangeInclusive;
@@ -7,17 +7,18 @@ use std::ops::RangeInclusive;
 pub struct TypableKnob {
     pub value: f32,
     pub text: String,
+    desired_width: f32,
 }
 
 impl TypableKnob {
-    pub fn new(initial: f32) -> Self {
+    pub fn new(initial: f32, desired_width: f32) -> Self {
         Self {
             value: initial,
             text: format!("{:.2}", initial),
+            desired_width,
         }
     }
 
-    /// NOTE: knob needs to be created fully outside and passed in
     pub fn show<F, G, H>(
         &mut self,
         ui: &mut Ui,
@@ -31,31 +32,35 @@ impl TypableKnob {
         G: Fn(f32),
         H: Fn(),
     {
-        let knob_value = self.value;
+        let old_value = self.value;
+        let step = 0.01;
 
         ui.horizontal(|ui| {
             add_knob(ui, knob, on_release);
 
-            ui.label(format!("{label}:"));
+            let value_changed_by_knob = self.value != old_value;
 
-            // Input textbox
-            let text_response = ui.add(TextEdit::singleline(&mut self.text).desired_width(64.0));
-
-            if text_response.changed() {
-                if let Ok(mut v) = self.text.parse::<f32>() {
-                    v = v.clamp(*range.start(), *range.end());
-                    self.value = v;
-                    self.text = format!("{:.2}", v);
-                    setter(v);
-                } else {
-                    self.text = format!("{:.2}", self.value);
-                }
+            if !label.is_empty() {
+                ui.label(label);
             }
 
-            if knob_value != self.value && !text_response.has_focus() {
-                self.value = knob_value;
+            let mut value_from_textbox = self.value;
+            let dv = egui::DragValue::new(&mut value_from_textbox)
+                .range(range.clone())
+                .speed(step)
+                .min_decimals(2)
+                .max_decimals_opt(Some(2));
+
+            let value_response = ui.add(dv);
+
+            if value_response.changed() {
+                self.value = value_from_textbox;
                 self.text = format!("{:.2}", self.value);
                 setter(self.value);
+            }
+
+            if value_changed_by_knob && !value_response.has_focus() {
+                self.text = format!("{:.2}", self.value);
             }
         });
     }
@@ -97,12 +102,13 @@ pub fn add_typable_knob<F, G, H>(
     setter: G,
     range: RangeInclusive<f32>,
     on_release: &H,
+    desired_width: f32,
 ) where
     F: Fn(f32),
     G: Fn(f32),
     H: Fn(),
 {
-    TypableKnob::new(value).show(ui, knob, label, setter, range, on_release);
+    TypableKnob::new(value, desired_width).show(ui, knob, label, setter, range, on_release);
 }
 
 pub fn add_disabled_knob<F, G>(
@@ -112,9 +118,10 @@ pub fn add_disabled_knob<F, G>(
     value: f32,
     range: RangeInclusive<f32>,
     on_release: &G,
+    desired_width: f32,
 ) where
     F: Fn(f32),
     G: Fn(),
 {
-    TypableKnob::new(value).show(ui, knob, label, |_| {}, range, on_release);
+    TypableKnob::new(value, desired_width).show(ui, knob, label, |_| {}, range, on_release);
 }

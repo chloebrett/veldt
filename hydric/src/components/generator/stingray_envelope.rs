@@ -322,6 +322,7 @@ impl<F: Fn(Action), G: Fn()> View for StingrayEnvelopeView<'_, F, G> {
                                         },
                                         0.0..=1000.0,
                                         on_release,
+                                        50.0,
                                     );
                                     add_typable_knob(
                                         ui,
@@ -336,6 +337,7 @@ impl<F: Fn(Action), G: Fn()> View for StingrayEnvelopeView<'_, F, G> {
                                         },
                                         0.0..=1000.0,
                                         on_release,
+                                        50.0,
                                     );
                                     add_typable_knob(
                                         ui,
@@ -350,6 +352,7 @@ impl<F: Fn(Action), G: Fn()> View for StingrayEnvelopeView<'_, F, G> {
                                         },
                                         0.0..=1.0,
                                         on_release,
+                                        40.0,
                                     );
                                     add_typable_knob(
                                         ui,
@@ -364,6 +367,7 @@ impl<F: Fn(Action), G: Fn()> View for StingrayEnvelopeView<'_, F, G> {
                                         },
                                         0.0..=1000.0,
                                         on_release,
+                                        50.0,
                                     );
                                 });
                             });
