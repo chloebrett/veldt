@@ -34,7 +34,6 @@ impl TypableKnob {
         let knob_value = self.value;
 
         ui.horizontal(|ui| {
-            // Pass the fully configured knob in
             add_knob(ui, knob, on_release);
 
             ui.label(format!("{label}:"));
