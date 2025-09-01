@@ -1,6 +1,6 @@
 use crate::view::View;
 use crate::widget::{
-    TextRotation, add_knob, disabled_knob, for_each_with_separator, styled_knob, text_rotator,
+    TextRotation, add_typable_knob, add_disabled_knob, disabled_knob, for_each_with_separator, styled_knob, text_rotator,
 };
 use eframe::egui;
 use egui::{Color32, Ui};
@@ -101,14 +101,8 @@ impl<G: Fn()> View for MixerMatrixView<'_, G> {
                                 // TODO: also consider transitive cycles!
                                 let disabled = (row == col) || (transpose_value != 0.0);
 
-                                ui.push_id(id, |ui| {
-                                    if disabled {
-                                        add_knob(ui, disabled_knob("", 0.0, 0.0..=1.0), on_release);
-                                    } else {
-                                        add_knob(
-                                            ui,
-                                            styled_knob(
-                                                "",
+                                let disabled_knob = disabled_knob(0.0, 0.0..=1.0);
+                                let enabled_knob = styled_knob(
                                                 value,
                                                 |it| {
                                                     store.dispatch(
@@ -116,9 +110,23 @@ impl<G: Fn()> View for MixerMatrixView<'_, G> {
                                                         Action::SetFloat(FloatField::ModFactor, it),
                                                     )
                                                 },
-                                                0.0..=1.0,
-                                            )
-                                            .with_neutral(0.0),
+                                                0.0..=1.0).with_neutral(0.0);
+                                ui.push_id(id, |ui| {
+                                    if disabled {
+                                        add_disabled_knob(ui, disabled_knob, "", 0.0, 0.0..=1.0, on_release);
+                                    } else {
+                                        add_typable_knob(
+                                            ui,
+                                            enabled_knob,
+                                            "",
+                                            value,
+                                            |it| {
+                                                store.dispatch(
+                                                    &sel,
+                                                    Action::SetFloat(FloatField::ModFactor, it),
+                                                )
+                                            },
+                                            0.0..=1.0,
                                             on_release,
                                         );
                                     }
