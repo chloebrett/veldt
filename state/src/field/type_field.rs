@@ -5,7 +5,6 @@ use shared::model::{
     PlacementId, PolyphonyMode, Project, Sample, SampleId, Scale, ScaleValue, Track, TrackId,
     WaveType,
 };
-use shared::pmodel::effect_instance_proto::It;
 use shared::pmodel::{
     AntiAliasingModeProto, EqTypeProto, NoiseTypeProto, PolyphonyModeProto, ScaleProto,
     WaveTypeProto,
