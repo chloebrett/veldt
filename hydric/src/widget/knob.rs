@@ -3,6 +3,7 @@ pub use egui_fancy_knob::add_knob;
 use egui_fancy_knob::{Knob, KnobStyle};
 use std::ops::RangeInclusive;
 
+// Struct for knob with typable input to hold an updated version of the value at all times, consolidated from both the knob input and textbox input
 pub struct TypableKnob {
     pub value: f32,
     pub text: String,
@@ -16,7 +17,7 @@ impl TypableKnob {
         }
     }
 
-    /// knob needs to be created fully outside
+    /// NOTE: knob needs to be created fully outside and passed in
     pub fn show<F, G, H>(
         &mut self,
         ui: &mut Ui,
