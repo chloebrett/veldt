@@ -71,6 +71,7 @@ impl<F: Fn(Action), G: Fn()> View for CompressorView<'_, F, G> {
                     |it| dispatch(Action::SetFloat(FloatField::Threshold, it)),
                     -60.0..=0.0,
                     &self.on_release,
+                    40.0,
                 );
                 add_typable_knob(
                     ui,
@@ -80,6 +81,7 @@ impl<F: Fn(Action), G: Fn()> View for CompressorView<'_, F, G> {
                     |it| dispatch(Action::SetFloat(FloatField::Ratio, it)),
                     1.0..=f32::INFINITY,
                     &self.on_release,
+                    40.0,
                 );
             });
             ui.vertical(|ui| {
@@ -91,6 +93,7 @@ impl<F: Fn(Action), G: Fn()> View for CompressorView<'_, F, G> {
                     |it| dispatch(Action::SetFloat(FloatField::AttackMs, it)),
                     0.0..=1000.0,
                     &self.on_release,
+                    50.0,
                 );
                 add_typable_knob(
                     ui,
@@ -100,6 +103,7 @@ impl<F: Fn(Action), G: Fn()> View for CompressorView<'_, F, G> {
                     |it| dispatch(Action::SetFloat(FloatField::ReleaseMs, it)),
                     0.0..=1000.0,
                     &self.on_release,
+                    50.0,
                 );
             });
             add_typable_knob(
@@ -110,6 +114,7 @@ impl<F: Fn(Action), G: Fn()> View for CompressorView<'_, F, G> {
                 |it| dispatch(Action::SetFloat(FloatField::Gain, it)),
                 0.0..=20.0,
                 &self.on_release,
+                40.0,
             );
         });
     }

@@ -69,6 +69,7 @@ impl<F: Fn(Action), G: Fn(Action), H: Fn()> View for StingrayLpfView<'_, F, G, H
                     |it| dispatch(Action::SetFloat(FloatField::Fc, it)),
                     20.0..=20000.0,
                     &on_release,
+                    50.0,
                 );
                 ui.add_space(10.0);
                 add_typable_knob(
@@ -79,6 +80,7 @@ impl<F: Fn(Action), G: Fn(Action), H: Fn()> View for StingrayLpfView<'_, F, G, H
                     |it| dispatch(Action::SetFloat(FloatField::Q, it)),
                     0.1..=100.0,
                     &on_release,
+                    40.0,
                 );
                 ui.add_space(10.0);
                 checkbox(

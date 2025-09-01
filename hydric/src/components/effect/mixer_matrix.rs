@@ -123,6 +123,7 @@ impl<G: Fn()> View for MixerMatrixView<'_, G> {
                                             0.0,
                                             0.0..=1.0,
                                             on_release,
+                                            40.0,
                                         );
                                     } else {
                                         add_typable_knob(
@@ -138,6 +139,7 @@ impl<G: Fn()> View for MixerMatrixView<'_, G> {
                                             },
                                             0.0..=1.0,
                                             on_release,
+                                            40.0,
                                         );
                                     }
                                 });
