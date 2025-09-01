@@ -35,7 +35,7 @@ impl TypableKnob {
         let old_value = self.value;
         let step = 0.01;
 
-        ui.vertical(|ui|) {
+        ui.vertical(|ui| {
             ui.horizontal(|ui| {
                 add_knob(ui, knob, on_release);
 
@@ -64,7 +64,7 @@ impl TypableKnob {
                     self.text = format!("{:.2}", self.value);
                 }
             });
-        }        
+        });
     }
 }
 
