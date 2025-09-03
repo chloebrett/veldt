@@ -135,6 +135,7 @@ impl View for TrackRoll<'_> {
                             offset: 0.0.into(),
                             clipped_duration: None,
                             visual_placement: 0,
+                            colour: [225, 138, 9],
                         })));
                     }
                     if ui.button("New sample placement").clicked() {
