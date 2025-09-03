@@ -18,6 +18,8 @@ message ProjectProto {
   float bpm = 7;
 
   map<uint32, EffectInstanceProto> effects = 8;
+
+  map<uint32, DrumTrackProto> drum_tracks = 9;
 }
 
 message MixerProto {
@@ -58,7 +60,7 @@ message PlacementProto {
 
     pmodel.SamplePlacementProto sample = 5;
 
-    pmodel.DrumPlacementProto drum = 7;
+    pmodel.DrumTrackProto drum_track = 6;
   }
 
   repeated uint32 colour = 7;
@@ -74,10 +76,6 @@ message SamplePlacementProto {
   uint32 sample_id = 1;
 }
 
-message DrumPlacementProto {
-  uint32 track_id = 1;
-}
-
 message SampleProto {
   bytes left = 1;
 
@@ -86,6 +84,14 @@ message SampleProto {
   float sample_rate = 3;
 
   string sample_name = 4;
+}
+
+message DrumTrackProto {
+  uint32 sample_id = 1;
+
+  repeated PlacedDrumProto drums = 2;
+  
+  float offset = 3;
 }
 
 message MixerChannelProto {
@@ -106,6 +112,10 @@ message NoteProto {
   PitchNameProto pitch_name = 1;
 
   float beats = 2;
+}
+
+message PlacedDrumProto {
+  float offset = 1;
 }
 
 message AdsrEnvelopeProto {
