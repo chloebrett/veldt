@@ -261,6 +261,12 @@ impl Mixer {
                     self.channels.push(new_channel);
                     true
                 }
+                Action::AddChild(TypeField::Generator(gen_instance)) => {
+                    let mixer_index = gen_instance.meta.mixer_channel;
+                    self.channels[mixer_index]
+                        .add_new_generator(&mut self.graph_manager, gen_instance);
+                    true
+                }
                 _ => false,
             },
             // TODO: handle adding and deleting generators (not just changing their mixer channel).

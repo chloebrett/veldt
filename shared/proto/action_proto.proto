@@ -84,6 +84,7 @@ message TypeFieldProto {
     uint32 effect_id = 27;
     uint32 colour = 28;
     bool lpf_on = 29;
+    string generator_name = 30;
   }
 }
 
