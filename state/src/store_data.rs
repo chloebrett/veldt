@@ -142,6 +142,7 @@ impl Default for StoreData {
                 },
                 effects: HashMap::new(),
                 bpm: 120.0,
+                drum_tracks: HashMap::new(),
             },
             volume: 1.0,
             key: ScaleValue::A,
