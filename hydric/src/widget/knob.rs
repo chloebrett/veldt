@@ -7,15 +7,13 @@ use std::ops::RangeInclusive;
 pub struct TypableKnob {
     pub value: f32,
     pub text: String,
-    desired_width: f32,
 }
 
 impl TypableKnob {
-    pub fn new(initial: f32, desired_width: f32) -> Self {
+    pub fn new(initial: f32) -> Self {
         Self {
             value: initial,
             text: format!("{:.2}", initial),
-            desired_width,
         }
     }
 
@@ -104,13 +102,12 @@ pub fn add_typable_knob<F, G, H>(
     setter: G,
     range: RangeInclusive<f32>,
     on_release: &H,
-    desired_width: f32,
 ) where
     F: Fn(f32),
     G: Fn(f32),
     H: Fn(),
 {
-    TypableKnob::new(value, desired_width).show(ui, knob, label, setter, range, on_release);
+    TypableKnob::new(value).show(ui, knob, label, setter, range, on_release);
 }
 
 pub fn add_disabled_knob<F, G>(
@@ -120,10 +117,9 @@ pub fn add_disabled_knob<F, G>(
     value: f32,
     range: RangeInclusive<f32>,
     on_release: &G,
-    desired_width: f32,
 ) where
     F: Fn(f32),
     G: Fn(),
 {
-    TypableKnob::new(value, desired_width).show(ui, knob, label, |_| {}, range, on_release);
+    TypableKnob::new(value).show(ui, knob, label, |_| {}, range, on_release);
 }

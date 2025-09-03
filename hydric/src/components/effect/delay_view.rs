@@ -45,7 +45,6 @@ impl<F: Fn(Action), G: Fn()> View for DelayView<'_, F, G> {
             |it| dispatch(Action::SetFloat(FloatField::DelayMs, it)),
             1.0..=1000.0,
             &self.on_release,
-            50.0,
         );
         add_typable_knob(
             ui,
@@ -55,7 +54,6 @@ impl<F: Fn(Action), G: Fn()> View for DelayView<'_, F, G> {
             |it| dispatch(Action::SetFloat(FloatField::Feedback, it)),
             0.0..=0.99,
             &self.on_release,
-            40.0,
         );
     }
 }

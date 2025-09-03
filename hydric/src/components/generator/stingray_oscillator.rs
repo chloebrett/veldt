@@ -136,7 +136,6 @@ impl<F: Fn(Action), G: Fn()> View for StingrayOscillatorView<'_, F, G> {
                         |it| dispatch(Action::SetFloat(FloatField::Volume, it)),
                         0.0..=1.0,
                         on_release,
-                        40.0,
                     );
                     ui.add_space(KNOB_SPACE);
 
@@ -148,7 +147,6 @@ impl<F: Fn(Action), G: Fn()> View for StingrayOscillatorView<'_, F, G> {
                         |it| dispatch(Action::SetFloat(FloatField::Pan, it)),
                         -1.0..=1.0,
                         on_release,
-                        40.0,
                     );
                     ui.add_space(KNOB_SPACE);
 
@@ -165,7 +163,6 @@ impl<F: Fn(Action), G: Fn()> View for StingrayOscillatorView<'_, F, G> {
                         },
                         -24.0..=24.0,
                         on_release,
-                        40.0,
                     );
                     ui.add_space(KNOB_SPACE);
 
@@ -177,7 +174,6 @@ impl<F: Fn(Action), G: Fn()> View for StingrayOscillatorView<'_, F, G> {
                         |it| dispatch(Action::SetFloat(FloatField::OscillatorFineDetune, it)),
                         -100.0..=100.0,
                         on_release,
-                        40.0,
                     );
                 });
             });
@@ -219,7 +215,6 @@ impl<F: Fn(Action), G: Fn()> View for StingrayOscillatorView<'_, F, G> {
                         |it| dispatch(Action::SetFloat(FloatField::UnisonDetune, it)),
                         0.0..=100.0,
                         on_release,
-                        40.0,
                     );
                 });
             });
