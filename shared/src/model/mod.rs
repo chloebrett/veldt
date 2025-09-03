@@ -15,6 +15,7 @@ mod scale;
 mod scale_value;
 mod track;
 mod wave_type;
+mod drum;
 
 pub use adsr_envelope::*;
 pub use effect::*;
@@ -33,3 +34,4 @@ pub use scale::*;
 pub use scale_value::*;
 pub use track::*;
 pub use wave_type::*;
+pub use drum::*;
