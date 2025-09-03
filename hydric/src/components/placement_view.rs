@@ -8,7 +8,7 @@ use egui::{Ui, widgets::color_picker::color_picker_color32};
 use mesic::samples_to_beats;
 use ordered_float::OrderedFloat;
 use shared::model::{
-    DrumPlacement, Placement, PlacementId, PlacementType, SamplePlacement, Track, TrackPlacement,
+    Placement, PlacementId, PlacementType, SamplePlacement, Track, TrackPlacement,
 };
 use shared::types::Beats;
 use state::{
@@ -209,7 +209,7 @@ impl View for PlacementView<'_> {
                             store,
                         );
                     }
-                    PlacementType::Drum(drum_placement) => {
+                    PlacementType::DrumTrack(drum_placement) => {
                         Self::drum_placement_ui(
                             ui,
                             placement_id,
