@@ -8,7 +8,7 @@ use egui::{Ui, widgets::color_picker::color_picker_color32};
 use mesic::samples_to_beats;
 use ordered_float::OrderedFloat;
 use shared::model::{
-    Placement, PlacementId, PlacementType, SamplePlacement, Track, TrackPlacement, DrumPlacement,
+    DrumPlacement, Placement, PlacementId, PlacementType, SamplePlacement, Track, TrackPlacement,
 };
 use shared::types::Beats;
 use state::{
@@ -117,28 +117,27 @@ impl<'a> PlacementView<'a> {
     fn drum_placement_ui(
         ui: &mut Ui,
         placement_id: PlacementId,
-        placement: &Placement, 
+        _placement: &Placement,
         drum_placement: &DrumPlacement,
         sel: &PlacementSelector,
         store: &Store,
     ) {
         ui.label("Drum Placement");
-        
-        egui::ComboBox::from_id_salt(format!("placement_{:?}_drum_track", placement_id))
-        .selected_text(format!("Track ID {}", *drum_placement.track_id))
-        .show_ui(ui, |ui| {
-            for track_id in store.get().project.tracks.keys() {
-                selectable_value(
-                    ui,
-                    get_set(&drum_placement.track_id, |it| {
-                        store.dispatch(sel, Action::SetChild(TypeField::TrackId(*it)))
-                    }),
-                    track_id,
-                    track_id.to_string(),
-                );
-            }
-        });
 
+        egui::ComboBox::from_id_salt(format!("placement_{:?}_drum_track", placement_id))
+            .selected_text(format!("Track ID {}", *drum_placement.track_id))
+            .show_ui(ui, |ui| {
+                for track_id in store.get().project.tracks.keys() {
+                    selectable_value(
+                        ui,
+                        get_set(&drum_placement.track_id, |it| {
+                            store.dispatch(sel, Action::SetChild(TypeField::TrackId(*it)))
+                        }),
+                        track_id,
+                        track_id.to_string(),
+                    );
+                }
+            });
     }
 
     fn duration_ui(
