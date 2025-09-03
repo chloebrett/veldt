@@ -38,7 +38,7 @@ impl EnvelopeGenerator {
         } else {
             0.0
         };
-        
+
         Self {
             state: EnvelopeState::Off,
             config: envelope,
