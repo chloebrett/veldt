@@ -117,7 +117,7 @@ impl<'a> PlacementView<'a> {
     fn drum_placement_ui(
         ui: &mut Ui,
         placement_id: PlacementId,
-        placement: &Placement, 
+        _placement: &Placement, 
         drum_placement: &DrumPlacement,
         sel: &PlacementSelector,
         store: &Store,

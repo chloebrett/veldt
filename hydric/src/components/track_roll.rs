@@ -13,7 +13,7 @@ use ordered_float::OrderedFloat;
 use shared::{
     model::{
         PlacedNote, Placement, PlacementId, PlacementType, SampleId, SamplePlacement, Track,
-        TrackPlacement, DrumPlacement, 
+        TrackPlacement, 
     },
     types::Beats,
 };
@@ -81,10 +81,7 @@ impl View for TrackRoll<'_> {
                                 local_state: self.local_state,
                             }
                         },
-                        PlacementType::Drum(DrumPlacement { track_id, .. }) => PlacedTrack {
-                            unclipped_duration: project.tracks[&track_id].unclipped_duration(),
-                            placement: placement.clone(),
-                        },
+                        PlacementType::Drum(_) => todo!(),
                     },
                 )
             })
@@ -133,6 +130,7 @@ impl View for TrackRoll<'_> {
                             offset: 0.0.into(),
                             clipped_duration: None,
                             visual_placement: 0,
+                            colour: [255, 255, 255],
                         })));
                     }
                     if ui.button("New sample placement").clicked() {
@@ -264,6 +262,7 @@ impl<'a> PlacedTrack<'a> {
                     let sample_id = sample_placement.sample_id;
                     self.sample_shape(range, sample_id)
                 }
+                PlacementType::Drum(_) => todo!()
             },
         ])
     }
@@ -432,6 +431,7 @@ impl<'a> PlacedTrack<'a> {
         let label_text = match &self.placement.kind {
             PlacementType::Track(track) => "Track: ".to_owned() + &track.track_id.to_string(),
             PlacementType::Sample(sample) => "Sample: ".to_owned() + &sample.sample_id.to_string(),
+            PlacementType::Drum(_) => todo!(),
         };
         let galley =
             ui.fonts(|fonts| fonts.layout_no_wrap(label_text, font_id.clone(), font_colour));
@@ -479,7 +479,8 @@ impl<'a> PlacedTrack<'a> {
                 } else {
                     ordered_float::OrderedFloat(1.0)
                 }
-            }
+            },
+            PlacementType::Drum(_) => todo!(),
         };
 
         Some(PlacedTrack {
