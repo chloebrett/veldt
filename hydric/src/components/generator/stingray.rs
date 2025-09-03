@@ -155,7 +155,7 @@ impl<F: Fn(Action), G: Fn()> View for StingrayView<'_, F, G> {
                 )
                 .ui(ui);
 
-                let test = ui.button("test new generator");
+                let test = ui.button("Add new Stingray");
                 if test.clicked() {
                     let new_gen = GeneratorInstance {
                         it: Generator::Stingray(StingrayConfig::default()),

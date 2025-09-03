@@ -1,4 +1,3 @@
-use crate::model::GeneratorId;
 use crate::pmodel::{
     GeneratorInstanceProto, GeneratorMetaProto, NoiseProto, SimpleWaveProto, StingrayProto,
     generator_instance_proto::It as GeneratorProto,

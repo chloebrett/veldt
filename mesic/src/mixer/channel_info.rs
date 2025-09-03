@@ -6,7 +6,9 @@ use super::{
 use crate::node::AmpNode;
 use dasp_graph::node::Sum;
 use petgraph::stable_graph::NodeIndex;
-use shared::model::{Effect, EffectId, GeneratorId, MatrixCell, PlacementType, Project};
+use shared::model::{
+    Effect, EffectId, GeneratorId, GeneratorInstance, MatrixCell, PlacementType, Project,
+};
 use state::{
     EffectSelector, GeneratorSelector, MixerMatrixCellSelector, MixerSelector, PlacementSelector,
     move_elem,
@@ -250,7 +252,27 @@ impl ChannelInfo {
     /// between mixer channels.
     pub fn soft_add_generator(&mut self, generator: &GeneratorInfo) {
         let GeneratorSelector(generator_id) = generator.selector;
-        // can we safely assume that the max of self.generators ID plus one is the new generator ID?
+        self.generators.insert(generator_id, generator.clone());
+    }
+
+    pub fn add_new_generator(
+        &mut self,
+        graph_manager: &mut GraphManager,
+        generator_instance: &GeneratorInstance,
+    ) {
+        let all_ids: Vec<usize> = self
+            .generators
+            .keys()
+            .into_iter()
+            .map(|key| **key)
+            .collect();
+        let next_id = all_ids.iter().max().unwrap_or(&0).clone() + 1;
+        let generator = GeneratorInfo::new(
+            graph_manager,
+            generator_instance,
+            GeneratorSelector(GeneratorId(next_id)),
+        );
+        let GeneratorSelector(generator_id) = generator.selector;
         self.generators.insert(generator_id, generator.clone());
     }
 

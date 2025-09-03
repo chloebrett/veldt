@@ -3,7 +3,7 @@ use crate::node::{AmpNode, BufferNode};
 use crossbeam_channel::Sender;
 use dasp_graph::{BoxedNodeSend, Buffer, Node, NodeData, node::Sum};
 use petgraph::stable_graph::NodeIndex;
-use shared::model::{GeneratorId, Project};
+use shared::model::Project;
 use state::{
     Action, EffectSelector, FloatField, GeneratorSelector, IndexField, MoveField, Selector,
     StoreData, TypeField,
@@ -263,8 +263,8 @@ impl Mixer {
                 }
                 Action::AddChild(TypeField::Generator(gen_instance)) => {
                     let mixer_index = gen_instance.meta.mixer_channel;
-                    let selector = GeneratorSelector(GeneratorId(3));
-                    self.channels[mixer_index].soft_add_generator(&GeneratorInfo::new(&mut self.graph_manager, gen_instance, selector));
+                    self.channels[mixer_index]
+                        .add_new_generator(&mut self.graph_manager, gen_instance);
                     true
                 }
                 _ => false,
