@@ -1,6 +1,7 @@
 use crate::model::{
     EffectId, EffectInstance, GeneratorId, GeneratorInstance, Mixer, Placement, PlacementId,
-    Sample, SampleId, Track, TrackId, TrackPlacement,
+    Sample, SampleId, Track, TrackId, TrackPlacement, DrumTrack, DrumTrackId,
+
 };
 use crate::pmodel::*;
 use crate::types::Beats;
@@ -31,6 +32,9 @@ pub struct Project {
     pub mixer: Mixer,
 
     pub bpm: Beats,
+
+    #[proto_hashmap]
+    pub drum_tracks: HashMap<DrumTrackId, DrumTrack>,
 }
 
 impl Project {
@@ -188,6 +192,18 @@ mod tests {
                 }],
             },
             bpm: 120.0,
+            drum_tracks: HashMap::from([(
+                DrumTrackId(0),
+                DrumTrack {
+                    sample_id: SampleId(0),
+                    drums: vec![
+                        PlacedDrum { offset: 0.0.into() },
+                        PlacedDrum { offset: 1.0.into() },
+                        PlacedDrum { offset: 2.5.into() },
+                    ],
+                    offset: 0.0.into()
+                }
+            )])
         };
         assert_proto_round_trip::<Project, ProjectProto>(project);
     }

@@ -3,7 +3,7 @@ use shared::model::{
     AdsrEnvelope, AntiAliasingMode, EffectId, EffectInstance, EqType, FileTreeConfig, FilenameTree,
     GeneratorId, GeneratorInstance, MixerChannel, NoiseType, PitchName, PlacedNote, Placement,
     PlacementId, PolyphonyMode, Project, Sample, SampleId, Scale, ScaleValue, Track, TrackId,
-    WaveType,
+    WaveType, DrumTrack, DrumTrackId,
 };
 use shared::pmodel::{
     AntiAliasingModeProto, EqTypeProto, NoiseTypeProto, PolyphonyModeProto, ScaleProto,
@@ -40,6 +40,7 @@ pub enum TypeField {
     MixerChannel(MixerChannel),
     PolyphonyMode(PolyphonyMode),
     NoiseType(NoiseType),
+    DrumTrack(DrumTrack),
 
     // ID types.
     GeneratorId(GeneratorId),
@@ -47,6 +48,7 @@ pub enum TypeField {
     SampleId(SampleId),
     TrackId(TrackId),
     EffectId(EffectId),
+    DrumTrackId(DrumTrackId),
 
     // Note: if we end up with more bools/primitives, make dedicated types for them so that we
     // don't have to keep expanding the proto.
@@ -99,6 +101,8 @@ impl From<TypeFieldProto> for TypeField {
             TypeFieldKind::EffectId(it) => TypeField::EffectId(it.into()),
             TypeFieldKind::Colour(it) => TypeField::Colour(it.into()),
             TypeFieldKind::LpfOn(it) => TypeField::LpfOn(it),
+            TypeFieldKind::DrumTrack(it) => TypeField::DrumTrack(it.into()),
+            TypeFieldKind::DrumTrackId(it) => TypeField::DrumTrackId(it.into()),
         }
     }
 }
@@ -151,6 +155,8 @@ impl From<TypeField> for TypeFieldProto {
                 TypeField::EffectId(it) => TypeFieldKind::EffectId(it.into()),
                 TypeField::Colour(it) => TypeFieldKind::Colour(it.into()),
                 TypeField::LpfOn(it) => TypeFieldKind::LpfOn(it),
+                TypeField::DrumTrack(it) => TypeFieldKind::DrumTrack(it.into()),
+                TypeField::DrumTrackId(it) => TypeFieldKind::DrumTrackId(it.into()),
             }),
         }
     }
