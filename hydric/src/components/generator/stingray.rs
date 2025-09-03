@@ -1,4 +1,5 @@
 use super::{StingrayEnvelopeView, StingrayLfoView, StingrayLpfView, StingrayOscillatorView};
+use crate::components::opacity_percentage_to_alpha;
 use crate::components::{ModMatrixView, Piano, PianoOrientation};
 use crate::playback::AudioPlayer;
 use crate::view::View;
@@ -9,24 +10,26 @@ use shared::{
     model::{PitchName, ScaleValue, StingrayConfig},
     types::PitchValue,
 };
-use state::{GeneratorSelector, Store};
+use state::{Action, GeneratorSelector, Store};
 
-pub struct StingrayView<'a, G: Fn()> {
+pub struct StingrayView<'a, F: Fn(Action), G: Fn()> {
     config: &'a StingrayConfig,
     on_release: G,
     store: &'a Store,
     local_state: &'a LocalState,
     generator_sel: &'a GeneratorSelector,
+    dispatch: F,
     audio_player: &'a mut AudioPlayer,
 }
 
-impl<'a, G: Fn()> StingrayView<'a, G> {
+impl<'a, F: Fn(Action), G: Fn()> StingrayView<'a, F, G> {
     pub fn new(
         config: &'a StingrayConfig,
         on_release: G,
         store: &'a Store,
         local_state: &'a LocalState,
         generator_sel: &'a GeneratorSelector,
+        dispatch: F,
         audio_player: &'a mut AudioPlayer,
     ) -> Self {
         Self {
@@ -35,6 +38,7 @@ impl<'a, G: Fn()> StingrayView<'a, G> {
             store,
             local_state,
             generator_sel,
+            dispatch,
             audio_player,
         }
     }
@@ -66,10 +70,6 @@ impl<'a, G: Fn()> StingrayView<'a, G> {
 const CHART_FILL_ALPHA: u8 = opacity_percentage_to_alpha(44.0);
 const HORIZONTAL_SPACE: f32 = 3.0;
 
-pub const fn opacity_percentage_to_alpha(opacity_percentage: f32) -> u8 {
-    ((opacity_percentage / 100.0) * 255.0) as u8
-}
-
 lazy_static! {
     pub static ref GREEN_OUTLINE: Color32 = Color32::from_rgb(119, 167, 43);
     pub static ref GREEN_FILL: Color32 =
@@ -84,7 +84,7 @@ lazy_static! {
     pub static ref FILL_COLOURS: [Color32; 3] = [*GREEN_FILL, *PINK_FILL, *ORANGE_FILL];
 }
 
-impl<G: Fn()> View for StingrayView<'_, G> {
+impl<F: Fn(Action), G: Fn()> View for StingrayView<'_, F, G> {
     fn ui(&mut self, ui: &mut Ui) {
         let config = self.config;
         let on_release = &self.on_release;
@@ -136,15 +136,22 @@ impl<G: Fn()> View for StingrayView<'_, G> {
                     on_release,
                 )
                 .ui(ui); // must wrap in ui.vertical to stop the matrix from unnecessarily stretching vertically
-                
+
                 let lpf_index = 0;
                 let lpf_sel = gen_sel.downcast_effect(lpf_index);
                 let lpf_dispatch = |action| self.store.dispatch(&lpf_sel, action);
 
                 ui.add_space(10.0); //space btwn mod and lpf
-                StingrayLpfView::new(&config.lpf, lpf_dispatch, on_release).ui(ui);
+                StingrayLpfView::new(
+                    &config.lpf,
+                    config.lpf_on,
+                    lpf_dispatch,
+                    &self.dispatch,
+                    on_release,
+                )
+                .ui(ui);
             });
-        ui.add_space(1.0); //spacing btwn osc + lpf and right border
+            ui.add_space(1.0); //spacing btwn osc + lpf and right border
         });
 
         ui.add_space(10.0); // spacing btwn elements and piano roll

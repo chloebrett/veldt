@@ -64,6 +64,8 @@ message PlacementProto {
 
     pmodel.DrumPlacementProto drum = 6;
   }
+
+  repeated uint32 colour = 6;
 }
 
 message TrackPlacementProto {
@@ -174,6 +176,7 @@ message StingrayConfigProto {
   repeated AdsrEnvelopeProto envelopes = 3;
   ModMatrixProto matrix = 4;  
   EqConfigProto lpf = 5;
+  bool lpf_on = 6;
 }
 
 message OscillatorProto {

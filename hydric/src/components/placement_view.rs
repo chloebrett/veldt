@@ -2,7 +2,9 @@ use crate::view::View;
 use crate::widget::{StateWindow, get_set, int_slider, selectable_value, slider};
 use crate::window_state::WindowKind;
 use crate::{GetSet, LocalState};
-use egui::Ui;
+use egui::Color32;
+use egui::color_picker::Alpha;
+use egui::{Ui, widgets::color_picker::color_picker_color32};
 use mesic::samples_to_beats;
 use ordered_float::OrderedFloat;
 use shared::model::{
@@ -10,8 +12,7 @@ use shared::model::{
 };
 use shared::types::Beats;
 use state::{
-    Action, FloatField, PlacementSelector, SampleSelector, Store, TrackSelector, TypeField,
-    UintField,
+    Action, PlacementSelector, SampleSelector, Store, TrackSelector, TypeField, UintField,
 };
 use std::cmp::max;
 
@@ -221,16 +222,6 @@ impl View for PlacementView<'_> {
                     }
                 }
 
-                let offset = *placement.offset as f64;
-                slider(
-                    ui,
-                    "Start position",
-                    offset,
-                    |it| store.dispatch(&sel, Action::SetFloat(FloatField::Offset, it as Beats)),
-                    0.0..=16.0,
-                    on_release,
-                );
-
                 int_slider(
                     ui,
                     "Visual placement",
@@ -241,6 +232,25 @@ impl View for PlacementView<'_> {
                     0..=3,
                     on_release,
                 );
+
+                let rgb_initial = placement.colour.clone();
+                let mut initial_colour =
+                    Color32::from_rgb(rgb_initial[0], rgb_initial[1], rgb_initial[2]);
+
+                ui.label("Placement Colour");
+                color_picker_color32(ui, &mut initial_colour, Alpha::Opaque);
+
+                let new_colour = [initial_colour.r(), initial_colour.g(), initial_colour.b()]; // initial colour gets modified by color picker
+                if rgb_initial != new_colour {
+                    let mut new_rgb = [0; 3];
+                    for i in 0..3 {
+                        new_rgb[i] = new_colour[i] as u32;
+                    }
+                    store.dispatch(
+                        &sel,
+                        Action::SetChildren(state::MultiTypeField::Colour(new_rgb)),
+                    );
+                }
 
                 if ui.button("Delete").clicked() {
                     store.dispatchr(Action::DeleteChildById(TypeField::PlacementId(

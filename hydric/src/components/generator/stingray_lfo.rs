@@ -4,7 +4,7 @@ use crate::widget::{
     TabDisplay, TabOrientation, get_set, inner_frame, outer_frame, selectable_value, slider,
 };
 use crate::{GetSet, LocalState};
-use egui::{Color32, Ui, Vec2, Margin};
+use egui::{Color32, Margin, Ui, Vec2};
 use shared::model::{StingrayConfig, WaveType};
 use state::{Action, FloatField, TypeField};
 use strum::IntoEnumIterator;
@@ -53,67 +53,67 @@ impl<F: Fn(Action), G: Fn()> View for StingrayLfoView<'_, F, G> {
                 top: 5,
                 bottom: 5,
             })
-        .show(ui, |ui| {
-            let original_spacing = ui.spacing().item_spacing; // store original spacing
-            ui.spacing_mut().item_spacing = Vec2::ZERO; // set spacing to zero so that the tabs and associated content actually touch each other
+            .show(ui, |ui| {
+                let original_spacing = ui.spacing().item_spacing; // store original spacing
+                ui.spacing_mut().item_spacing = Vec2::ZERO; // set spacing to zero so that the tabs and associated content actually touch each other
 
-            ui.horizontal(|ui| {
-                ui.add_space(2.0);
-                TabDisplay::new(
-                    active_lfo_tab,
-                    vec!["LFO 1", "LFO 2", "LFO 3"],
-                    TabOrientation::Left,
-                    handle_lfo_tab_click,
-                )
-                .ui(ui);
+                ui.horizontal(|ui| {
+                    ui.add_space(2.0);
+                    TabDisplay::new(
+                        active_lfo_tab,
+                        vec!["LFO 1", "LFO 2", "LFO 3"],
+                        TabOrientation::Left,
+                        handle_lfo_tab_click,
+                    )
+                    .ui(ui);
 
-                inner_frame()
-                    .inner_margin(Margin::same(20))
-                .show(ui, |ui| {
-                    ui.vertical(|ui| {
-                        let current_lfo_config = &config.lfos[active_lfo_tab];
+                    inner_frame().inner_margin(Margin::same(20)).show(ui, |ui| {
+                        ui.vertical(|ui| {
+                            let current_lfo_config = &config.lfos[active_lfo_tab];
 
-                        egui::ComboBox::from_label("")
-                            .selected_text(current_lfo_config.wave.to_string())
-                            .show_ui(ui, |ui| {
-                                for wave in WaveType::iter() {
-                                    selectable_value(
-                                        ui,
-                                        get_set(current_lfo_config.wave, |wave_type| {
-                                            dispatch(Action::SetChild(TypeField::Wave(wave_type)))
-                                        }),
-                                        wave,
-                                        wave.to_string(),
-                                    );
-                                }
-                            });
+                            egui::ComboBox::from_label("")
+                                .selected_text(current_lfo_config.wave.to_string())
+                                .show_ui(ui, |ui| {
+                                    for wave in WaveType::iter() {
+                                        selectable_value(
+                                            ui,
+                                            get_set(current_lfo_config.wave, |wave_type| {
+                                                dispatch(Action::SetChild(TypeField::Wave(
+                                                    wave_type,
+                                                )))
+                                            }),
+                                            wave,
+                                            wave.to_string(),
+                                        );
+                                    }
+                                });
 
-                        ui.add_space(20.0);
+                            ui.add_space(20.0);
 
-                        SimpleWaveVisualiser::new(
-                            current_lfo_config.wave,
-                            LFO_LINE_COLOUR,
-                            LFO_FILL_COLOUR,
-                            current_lfo_config.frequency,
-                            Vec2::new(340.0, 140.0),
-                        )
-                        .show(ui);
+                            SimpleWaveVisualiser::new(
+                                current_lfo_config.wave,
+                                LFO_LINE_COLOUR,
+                                LFO_FILL_COLOUR,
+                                current_lfo_config.frequency,
+                                Vec2::new(340.0, 140.0),
+                            )
+                            .show(ui);
 
-                        ui.add_space(4.0);
+                            ui.add_space(4.0);
 
-                        ui.spacing_mut().item_spacing = original_spacing; // reset ui spacing back to original
+                            ui.spacing_mut().item_spacing = original_spacing; // reset ui spacing back to original
 
-                        slider(
-                            ui,
-                            "Frequency",
-                            current_lfo_config.frequency as f64,
-                            |it| dispatch(Action::SetFloat(FloatField::LfoFreq, it as f32)),
-                            1.0..=10.0,
-                            on_release,
-                        );
+                            slider(
+                                ui,
+                                "Frequency",
+                                current_lfo_config.frequency as f64,
+                                |it| dispatch(Action::SetFloat(FloatField::LfoFreq, it as f32)),
+                                1.0..=10.0,
+                                on_release,
+                            );
+                        })
                     })
-                })
+                });
             });
-        });
     }
 }

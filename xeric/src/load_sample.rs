@@ -1,5 +1,5 @@
-use itertools::Itertools;
 use log::info;
+use rodio::{Decoder, source::Source};
 use shared::load_sample::load_sample_server::LoadSample;
 use shared::load_sample::{
     LoadSampleReply, LoadSampleRequest, LoadSampleTreeReply, LoadSampleTreeRequest,
@@ -8,24 +8,17 @@ use shared::model::{FileTreeConfig, FilenameTree, Sample};
 use std::collections::HashSet;
 use std::env::current_dir;
 use std::ffi::OsStr;
-use std::fs::{ReadDir, read_dir};
+use std::fs::{File, ReadDir, read_dir};
 use std::io::Error;
 use std::path::{Path, PathBuf};
 use tonic::{Request, Response, Status, async_trait};
 
 const _PCM_MAX_I16: i16 = 0x7FFF; // 2^15 - 1
-const PCM_MAX_I24: i32 = 0x7FFFFF; // 2^23 - 1
+//const PCM_MAX_I24: i32 = 0x7FFFFF; // 2^23 - 1 Commented out for xl warning, however not removing in case needed in future.
 const _PCM_MAX_I32: i32 = 0x7FFFFFFF; // 2^31 - 1
 const _PCM_DIV_I16: f32 = 1.0 / _PCM_MAX_I16 as f32;
-const PCM_DIV_I24: f32 = 1.0 / PCM_MAX_I24 as f32;
+//const PCM_DIV_I24: f32 = 1.0 / PCM_MAX_I24 as f32; Commented out for xl warning, however not removing in case needed in future.
 const _PCM_DIV_I32: f32 = 1.0 / _PCM_MAX_I32 as f32;
-
-#[inline(always)]
-pub fn to_f32(sample: i32) -> f32 {
-    // I don't know where 128.0 comes from (other than that it's 2^7).
-    // Perhaps the sample I was testing with (89 BPM F# Minor.wav) is actually 24 bit audio?
-    PCM_DIV_I24 * sample as f32
-}
 
 // This is a stateless RPC, at least as far as in-memory state is concerned (it does
 // depend on filesystem state). Therefore the context can be empty.
@@ -125,24 +118,39 @@ impl LoadSample for LoadSampleContext {
         file_path.push(filename.clone());
         info!("Loading sample from path: {}", file_path.clone().display());
 
-        let mut reader = hound::WavReader::open(file_path).map_err(|_| {
-            tonic::Status::invalid_argument(format!("File {} could not be read.", filename))
+        let file = File::open(file_path).map_err(|_| {
+            tonic::Status::invalid_argument(format!("File {filename} could not be read."))
         })?;
+
+        // Now using rodio library, it has support for wav, mp3, flac and ogg vorbis (Built on top of the previously used Hound).
+        let decoder = Decoder::try_from(file).map_err(|_| {
+            tonic::Status::invalid_argument(format!(
+                "File {filename} could not be decoded. Ensure format is mp3, flac, wav or ogg."
+            ))
+        })?;
+
+        let sample_rate = decoder.sample_rate() as f32;
+
         info!("Load sample 1");
-        let chunks = reader.samples::<i32>().chunks(2);
-        let (left, right) = chunks
-            .into_iter()
-            .map(|mut data| {
-                let left = to_f32(data.next().unwrap().unwrap());
-                let right = to_f32(data.next().unwrap().unwrap());
-                (left, right)
-            })
-            .unzip();
+        let mut i = 1;
+        let mut left: Vec<f32> = vec![];
+        let mut right: Vec<f32> = vec![];
+
+        // Split samples, assumes stereo audio.
+        for sample in decoder {
+            if i % 2 != 0 {
+                left.push(sample);
+            } else if i % 2 == 0 {
+                right.push(sample);
+            }
+            i += 1;
+        }
+
         info!("Load sample 2");
         let sample = Sample {
             left,
             right,
-            sample_rate: reader.spec().sample_rate as f32,
+            sample_rate,
             sample_name: filename.clone(),
         };
         info!("Loaded sample.");
