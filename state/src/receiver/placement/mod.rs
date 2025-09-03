@@ -1,6 +1,6 @@
+mod drum_placement;
 mod sample_placement;
 mod track_placement;
-mod drum_placement;
 
 use crate::receiver::ActionReceiver;
 use crate::{Action, FloatField, MultiTypeField, TypeField, UintField};

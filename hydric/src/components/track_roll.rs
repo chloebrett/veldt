@@ -13,7 +13,7 @@ use ordered_float::OrderedFloat;
 use shared::{
     model::{
         PlacedNote, Placement, PlacementId, PlacementType, SampleId, SamplePlacement, Track,
-        TrackPlacement, 
+        TrackPlacement,
     },
     types::Beats,
 };
@@ -80,7 +80,7 @@ impl View for TrackRoll<'_> {
                                 store: self.store,
                                 local_state: self.local_state,
                             }
-                        },
+                        }
                         PlacementType::Drum(_) => todo!(),
                     },
                 )
@@ -262,7 +262,7 @@ impl<'a> PlacedTrack<'a> {
                     let sample_id = sample_placement.sample_id;
                     self.sample_shape(range, sample_id)
                 }
-                PlacementType::Drum(_) => todo!()
+                PlacementType::Drum(_) => todo!(),
             },
         ])
     }
@@ -479,7 +479,7 @@ impl<'a> PlacedTrack<'a> {
                 } else {
                     ordered_float::OrderedFloat(1.0)
                 }
-            },
+            }
             PlacementType::Drum(_) => todo!(),
         };
 
