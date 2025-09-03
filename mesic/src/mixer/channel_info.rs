@@ -250,6 +250,7 @@ impl ChannelInfo {
     /// between mixer channels.
     pub fn soft_add_generator(&mut self, generator: &GeneratorInfo) {
         let GeneratorSelector(generator_id) = generator.selector;
+        // can we safely assume that the max of self.generators ID plus one is the new generator ID?
         self.generators.insert(generator_id, generator.clone());
     }
 

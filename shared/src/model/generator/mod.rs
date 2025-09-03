@@ -1,3 +1,4 @@
+use crate::model::GeneratorId;
 use crate::pmodel::{
     GeneratorInstanceProto, GeneratorMetaProto, NoiseProto, SimpleWaveProto, StingrayProto,
     generator_instance_proto::It as GeneratorProto,
@@ -81,7 +82,7 @@ impl Default for GeneratorMeta {
             volume: 1.0,
             mute: false,
             pan: 0.0,
-            mixer_channel: 0,
+            mixer_channel: 2,
             name: "".to_string(),
         }
     }
