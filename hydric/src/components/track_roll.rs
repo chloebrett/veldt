@@ -1,4 +1,5 @@
 use crate::components::utils::choose_black_white_based_on_contrast;
+use crate::playback::AudioPlayer;
 use crate::{GetSet, LocalState, transform::Transform};
 use crate::{view::View, widget::StateWindow, window_state::WindowKind};
 use egui::PointerButton;
@@ -26,11 +27,16 @@ use std::collections::{HashMap, HashSet};
 pub struct TrackRoll<'a> {
     store: &'a Store,
     local_state: &'a LocalState,
+    player: &'a mut AudioPlayer,
 }
 
 impl<'a> TrackRoll<'a> {
-    pub fn new(store: &'a Store, local_state: &'a LocalState) -> Self {
-        Self { store, local_state }
+    pub fn new(store: &'a Store, local_state: &'a LocalState, player: &'a mut AudioPlayer) -> Self {
+        Self {
+            store,
+            local_state,
+            player,
+        }
     }
 }
 
@@ -139,11 +145,12 @@ impl View for TrackRoll<'_> {
                         max_visual_placement as f32,
                     ),
                 );
+
                 ScrollArea::vertical()
                     .min_scrolled_height(400.0)
                     .show(ui, |ui| {
                         ui.add(
-                            TrackSequencer::new(store, self.local_state, range)
+                            TrackSequencer::new(store, self.local_state, range, self.player)
                                 .objects(placed_tracks)
                                 .size(vec2(
                                     (window_size.x - 6.0).max(600.0),
@@ -594,10 +601,16 @@ struct TrackSequencer<'a> {
     quantise_level: Beats,
     background_shapes: Vec<Shape>,
     select: bool,
+    audio_player: &'a mut AudioPlayer,
 }
 
 impl<'a> TrackSequencer<'a> {
-    pub fn new(store: &'a Store, local_state: &'a LocalState, range: Rect) -> Self {
+    pub fn new(
+        store: &'a Store,
+        local_state: &'a LocalState,
+        range: Rect,
+        audio_player: &'a mut AudioPlayer,
+    ) -> Self {
         TrackSequencer {
             store,
             local_state,
@@ -607,6 +620,7 @@ impl<'a> TrackSequencer<'a> {
             quantise_level: 0.125,
             background_shapes: vec![],
             select: false,
+            audio_player,
         }
     }
 
@@ -664,6 +678,7 @@ impl<'a> TrackSequencer<'a> {
         self
     }
 
+    // Interactions with the placed tracks
     fn interact(&self, ui: &mut Ui, response: &Response) {
         let on_release = || self.store.dispatchr(Action::Release);
 
@@ -808,6 +823,8 @@ impl<'a> TrackSequencer<'a> {
 impl Widget for TrackSequencer<'_> {
     fn ui(self, ui: &mut Ui) -> Response {
         let mut res: Option<Response> = None;
+        let store = self.store;
+        let project = &store.get().project;
 
         Frame::canvas(ui.style()).show(ui, |ui| {
             let Self {
@@ -817,16 +834,17 @@ impl Widget for TrackSequencer<'_> {
                 select,
                 ..
             } = self;
-            let (response, painter) = ui.allocate_painter(size, Sense::drag());
+            let (response, painter) = ui.allocate_painter(size, Sense::empty());
             let to_screen = RectTransform::from_to(
                 Rect::from_min_size(Pos2::ZERO, range.size()),
                 response.rect,
             );
 
             // If user double clicks outside of an object remove all objects from selection.
+            // This is for clicks directly on the track roll
             if select {
                 if response.interact(Sense::click()).double_clicked() {
-                    PlacedTrack::set_selected(self.local_state, None)
+                    PlacedTrack::set_selected(self.local_state, None);
                 }
                 if ui.input(|input| {
                     input.key_pressed(egui::Key::Delete) || input.key_pressed(egui::Key::Backspace)
@@ -841,6 +859,8 @@ impl Widget for TrackSequencer<'_> {
                     .transform(to_screen.inverse());
 
                 let offset = range.left() + pos.x;
+
+                // Add a new track of No.1 to the track roll
                 let placement = Placement {
                     kind: PlacementType::Track(TrackPlacement {
                         track_id: 0.into(),
@@ -854,6 +874,7 @@ impl Widget for TrackSequencer<'_> {
                 store.dispatchr(Action::AddChild(TypeField::Placement(placement)));
             }
 
+            // Interactions with the track rectangles
             self.interact(ui, &response);
 
             painter.extend(self.background_shapes.clone().transform(to_screen));
@@ -873,6 +894,37 @@ impl Widget for TrackSequencer<'_> {
                 );
             }
 
+            // Playhead visualisation and interaction
+            let playhead_samples = self.audio_player.effective_pos();
+            let playhead_beats = samples_to_beats(playhead_samples, project.bpm);
+            let playhead_x = playhead_beats - range.left();
+
+            let playhead_shape = Shape::line_segment(
+                [pos2(playhead_x, 0.0), pos2(playhead_x, range.size().y)],
+                Stroke::new(2.0, Color32::RED),
+            );
+            let playhead_dragger = Rect::from_min_max(
+                pos2(playhead_x - 0.3, 0.0),
+                pos2(playhead_x + 0.3, range.size().y),
+            );
+            let playhead_id = ui.id().with("playhead_dragger");
+            let playhead_response = ui.interact(
+                playhead_dragger.transform(to_screen),
+                playhead_id,
+                Sense::drag(),
+            );
+
+            painter.add(playhead_shape.transform(to_screen));
+
+            if playhead_response.dragged() {
+                if let Some(drag_pos) = playhead_response.interact_pointer_pos() {
+                    let local_pos = drag_pos.transform(to_screen.inverse());
+                    let new_playhead_x = local_pos.x.clamp(0.0, range.size().x);
+                    let new_playhead_beats = range.left() + new_playhead_x;
+                    let new_samples = beats_to_samples(new_playhead_beats, project.bpm);
+                    self.audio_player.seek(new_samples as usize);
+                }
+            }
             res = Some(response.clone());
         });
 

@@ -2,7 +2,9 @@ use super::envelope_line;
 use crate::components::opacity_percentage_to_alpha;
 use crate::transform::Transform;
 use crate::view::View;
-use crate::widget::{TabDisplay, TabOrientation, add_knob, inner_frame, outer_frame, styled_knob};
+use crate::widget::{
+    TabDisplay, TabOrientation, add_typable_knob, inner_frame, outer_frame, styled_knob,
+};
 use crate::{GetSet, LocalState};
 use egui::{
     Color32, Margin, Rect, Ui, Vec2,
@@ -81,7 +83,7 @@ impl<F: Fn(Action), G: Fn()> View for StingrayEnvelopeView<'_, F, G> {
 
                     inner_frame()
                         .inner_margin(Margin {
-                            left: 20,
+                            left: 10,
                             right: 0,
                             top: 20,
                             bottom: 20,
@@ -263,70 +265,114 @@ impl<F: Fn(Action), G: Fn()> View for StingrayEnvelopeView<'_, F, G> {
                                 // All the knobs for envelope modification
                                 ui.add_space(20.0); // space btwn graph and knobs
                                 ui.horizontal(|ui| {
-                                    add_knob(
+                                    let a_knob = styled_knob(
+                                        config.envelopes[active_env_tab].attack,
+                                        |attack| {
+                                            dispatch(Action::SetFloat(
+                                                FloatField::AdsrAttack,
+                                                attack,
+                                            ));
+                                        },
+                                        0.0..=1000.0,
+                                    )
+                                    .with_neutral(100.0);
+                                    let d_knob = styled_knob(
+                                        config.envelopes[active_env_tab].decay,
+                                        |decay| {
+                                            dispatch(Action::SetFloat(
+                                                FloatField::AdsrDecay,
+                                                decay,
+                                            ));
+                                        },
+                                        0.0..=1000.0,
+                                    )
+                                    .with_neutral(100.0);
+                                    let s_knob = styled_knob(
+                                        config.envelopes[active_env_tab].sustain,
+                                        |sustain| {
+                                            dispatch(Action::SetFloat(
+                                                FloatField::AdsrSustain,
+                                                sustain,
+                                            ));
+                                        },
+                                        0.0..=1.0,
+                                    )
+                                    .with_neutral(0.8);
+                                    let r_knob = styled_knob(
+                                        config.envelopes[active_env_tab].release,
+                                        |release| {
+                                            dispatch(Action::SetFloat(
+                                                FloatField::AdsrRelease,
+                                                release,
+                                            ));
+                                        },
+                                        0.0..=1000.0,
+                                    )
+                                    .with_neutral(100.0);
+                                    add_typable_knob(
                                         ui,
-                                        styled_knob(
-                                            "A",
-                                            config.envelopes[active_env_tab].attack,
-                                            |attack| {
-                                                dispatch(Action::SetFloat(
-                                                    FloatField::AdsrAttack,
-                                                    attack,
-                                                ));
-                                            },
-                                            0.0..=1000.0,
-                                        )
-                                        .with_neutral(100.0),
+                                        a_knob,
+                                        "A",
+                                        config.envelopes[active_env_tab].attack,
+                                        |attack| {
+                                            dispatch(Action::SetFloat(
+                                                FloatField::AdsrAttack,
+                                                attack,
+                                            ));
+                                        },
+                                        0.0..=1000.0,
                                         on_release,
+                                        60.0,
                                     );
-                                    add_knob(
+                                    ui.add_space(10.0);
+                                    add_typable_knob(
                                         ui,
-                                        styled_knob(
-                                            "D",
-                                            config.envelopes[active_env_tab].decay,
-                                            |decay| {
-                                                dispatch(Action::SetFloat(
-                                                    FloatField::AdsrDecay,
-                                                    decay,
-                                                ));
-                                            },
-                                            0.0..=1000.0,
-                                        )
-                                        .with_neutral(100.0),
+                                        d_knob,
+                                        "D",
+                                        config.envelopes[active_env_tab].decay,
+                                        |decay| {
+                                            dispatch(Action::SetFloat(
+                                                FloatField::AdsrDecay,
+                                                decay,
+                                            ));
+                                        },
+                                        0.0..=1000.0,
                                         on_release,
+                                        60.0,
                                     );
-                                    add_knob(
+                                    ui.add_space(10.0);
+                                    add_typable_knob(
                                         ui,
-                                        styled_knob(
-                                            "S",
-                                            config.envelopes[active_env_tab].sustain,
-                                            |sustain| {
-                                                dispatch(Action::SetFloat(
-                                                    FloatField::AdsrSustain,
-                                                    sustain,
-                                                ));
-                                            },
-                                            0.0..=1.0,
-                                        )
-                                        .with_neutral(0.8),
+                                        s_knob,
+                                        "S",
+                                        config.envelopes[active_env_tab].sustain,
+                                        |sustain| {
+                                            dispatch(Action::SetFloat(
+                                                FloatField::AdsrSustain,
+                                                sustain,
+                                            ));
+                                        },
+                                        0.0..=1.0,
                                         on_release,
+                                        60.0,
                                     );
-                                    add_knob(
+                                    ui.add_space(10.0);
+                                    add_typable_knob(
                                         ui,
-                                        styled_knob(
-                                            "R",
-                                            config.envelopes[active_env_tab].release,
-                                            |release| {
-                                                dispatch(Action::SetFloat(
-                                                    FloatField::AdsrRelease,
-                                                    release,
-                                                ));
-                                            },
-                                            0.0..=1000.0,
-                                        )
-                                        .with_neutral(100.0),
+                                        r_knob,
+                                        "R",
+                                        config.envelopes[active_env_tab].release,
+                                        |release| {
+                                            dispatch(Action::SetFloat(
+                                                FloatField::AdsrRelease,
+                                                release,
+                                            ));
+                                        },
+                                        0.0..=1000.0,
                                         on_release,
+                                        60.0,
                                     );
+                                    ui.add_space(10.0);
                                 });
                             });
                         });

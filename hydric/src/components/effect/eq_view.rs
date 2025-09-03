@@ -1,6 +1,6 @@
 use crate::view::View;
 use crate::widget::FrequencyPlot;
-use crate::widget::{add_knob, get_set, selectable_value, styled_knob};
+use crate::widget::{add_typable_knob, get_set, selectable_value, styled_knob};
 use egui::{Ui, pos2};
 use mesic::consts::NYQUIST;
 use mesic::eq::eq_display::{FrequencyResponsePoint, calculate_frequency_response};
@@ -42,43 +42,58 @@ impl<F: Fn(Action), G: Fn()> View for EqView<'_, F, G> {
         let Self {
             config, dispatch, ..
         } = self;
+        let freq_knob = styled_knob(
+            config.fc,
+            |it| dispatch(Action::SetFloat(FloatField::Fc, it)),
+            20.0..=20000.0,
+        )
+        .logarithmic(true)
+        .with_neutral(2000.0);
+        let q_knob = styled_knob(
+            config.q,
+            |it| dispatch(Action::SetFloat(FloatField::Q, it)),
+            0.1..=100.0,
+        )
+        .logarithmic(true)
+        .with_neutral(1.0);
+        let gain_knob = styled_knob(
+            config.gain,
+            |it| dispatch(Action::SetFloat(FloatField::Gain, it)),
+            -60.0..=60.0,
+        )
+        .with_neutral(0.0);
         ui.horizontal(|ui| {
-            add_knob(
+            add_typable_knob(
                 ui,
-                styled_knob(
-                    "Freq",
-                    config.fc,
-                    |it| dispatch(Action::SetFloat(FloatField::Fc, it)),
-                    20.0..=20000.0,
-                )
-                .logarithmic(true)
-                .with_neutral(2000.0),
+                freq_knob,
+                "Freq",
+                config.fc,
+                |it| dispatch(Action::SetFloat(FloatField::Fc, it)),
+                20.0..=20000.0,
                 &self.on_release,
+                50.0,
             );
 
-            add_knob(
+            add_typable_knob(
                 ui,
-                styled_knob(
-                    "Q",
-                    config.q,
-                    |it| dispatch(Action::SetFloat(FloatField::Q, it)),
-                    0.1..=100.0,
-                )
-                .logarithmic(true)
-                .with_neutral(1.0),
+                q_knob,
+                "Q",
+                config.q,
+                |it| dispatch(Action::SetFloat(FloatField::Q, it)),
+                0.1..=100.0,
                 &self.on_release,
+                40.0,
             );
 
-            add_knob(
+            add_typable_knob(
                 ui,
-                styled_knob(
-                    "Gain",
-                    config.gain,
-                    |it| dispatch(Action::SetFloat(FloatField::Gain, it)),
-                    -60.0..=60.0,
-                )
-                .with_neutral(0.0),
+                gain_knob,
+                "Gain",
+                config.gain,
+                |it| dispatch(Action::SetFloat(FloatField::Gain, it)),
+                -60.0..=60.0,
                 &self.on_release,
+                40.0,
             );
         });
 
