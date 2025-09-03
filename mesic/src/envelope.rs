@@ -23,10 +23,22 @@ pub struct EnvelopeGenerator {
 
 impl EnvelopeGenerator {
     pub fn new(envelope: AdsrEnvelope) -> Self {
-        let attack_per_sample = MS_PER_SECOND / (envelope.attack * SAMPLE_RATE as f32);
-        let decay_per_sample = MS_PER_SECOND / (envelope.decay * SAMPLE_RATE as f32);
-        let release_per_sample = MS_PER_SECOND / (envelope.release * SAMPLE_RATE as f32);
-
+        let attack_per_sample = if envelope.attack > 0.0 {
+            1.0 / (envelope.attack * SAMPLE_RATE as f32 / MS_PER_SECOND)
+        } else {
+            1.0
+        };
+        let decay_per_sample = if envelope.decay > 0.0 {
+            (1.0 - envelope.sustain) / (envelope.decay * SAMPLE_RATE as f32 / MS_PER_SECOND)
+        } else {
+            1.0 - envelope.sustain
+        };
+        let release_per_sample = if envelope.release > 0.0 {
+            envelope.sustain / (envelope.release * SAMPLE_RATE as f32 / MS_PER_SECOND)
+        } else {
+            0.0
+        };
+        
         Self {
             state: EnvelopeState::Off,
             config: envelope,
