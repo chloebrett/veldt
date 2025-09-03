@@ -1,53 +1,55 @@
-use crate::model::Note;
-use crate::pmodel::{PlacedNoteProto, TrackProto};
+use crate::pmodel::{DrumTrackProto, PlacedDrumProto};
+use crate::model::SampleId;
 use crate::types::*;
 use local_macro::{FromProto, IntoProto};
 use ordered_float::OrderedFloat;
 use std::cmp::Ordering;
+use crate::serialize::map_vec;
 
 #[derive(Clone, Debug, PartialEq, FromProto, IntoProto, Default)]
-pub struct Track {
+pub struct Drum {
     /// Ordered by offset.
+    pub sample_id: SampleId,
     #[proto_repeated]
-    pub notes: Vec<PlacedNote>,
+    pub drums: Vec<PlacedDrum>,
     pub offset: OrderedFloat<Beats>,
 }
 
+/// Ordered by offset.
+#[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, FromProto, IntoProto)]
+pub struct PlacedDrum {
+    //represents a single drum hit
+    pub offset: OrderedFloat<Beats>,
+}
+
+
 impl Drum {
-    pub fn unclipped_duration(&self) -> OrderedFloat<f32> {
-        self.notes
+    pub fn unclipped_duration(&self) -> OrderedFloat<Beats> {
+        self.drums
             .iter()
-            .map(|note| note.offset + OrderedFloat(note.note.beats))
+            .map(|drum| drum.offset)
             .max_by(|x, y| x.cmp(y))
             .unwrap_or(OrderedFloat(0.0))
     }
 }
 
-/// Ordered by offset.
-#[derive(Clone, Debug, FromProto, IntoProto)]
-pub struct PlacedNote {
-    #[proto_optional]
-    pub note: Note,
-    pub offset: OrderedFloat<Beats>,
-}
-
-impl PartialOrd for PlacedNote {
-    fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
-        Some(self.cmp(other))
+impl From<DrumTrackProto> for Drum {
+    fn from(item: DrumTrackProto) -> Self {
+        Self {
+            sample_id: item.sample_id.into(),
+            drums: item.drums.into_iter().map(|d| d.into()).collect(),
+            offset: OrderedFloat(item.offset),
+        }
     }
 }
 
-impl Ord for PlacedNote {
-    fn cmp(&self, other: &Self) -> Ordering {
-        self.offset.cmp(&other.offset)
+impl From<Drum> for DrumTrackProto {
+    fn from(item: Drum) -> Self {
+        Self {
+            sample_id: item.sample_id.into(),
+            drums: item.drums.into_iter().map(|d| d.into()).collect(),
+            offset: *item.offset,
+        }
     }
 }
 
-// TODO: consider including note identity in this definition.
-impl PartialEq for PlacedNote {
-    fn eq(&self, other: &Self) -> bool {
-        (self.offset == other.offset) && (self.note == other.note)
-    }
-}
-
-impl Eq for PlacedNote {}
