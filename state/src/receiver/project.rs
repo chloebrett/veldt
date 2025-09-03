@@ -1,6 +1,6 @@
 use crate::receiver::ActionReceiver;
 use crate::{Action, FloatField, IndexField, MultiTypeField, TypeField};
-use shared::model::{EffectId, Placement, PlacementId, Project, SampleId, TrackId, GeneratorId};
+use shared::model::{EffectId, GeneratorId, Placement, PlacementId, Project, SampleId, TrackId};
 use std::collections::HashMap;
 
 impl ActionReceiver for Project {

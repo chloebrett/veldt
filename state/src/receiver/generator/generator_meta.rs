@@ -25,6 +25,11 @@ impl ActionReceiver for GeneratorMeta {
                 self.mixer_channel = *mixer_channel;
                 Action::SetIndex(IndexField::Mixer(prev))
             }
+            Action::SetChild(TypeField::GeneratorName(name)) => {
+                let prev = self.name.clone();
+                self.name = name.clone();
+                Action::SetChild(TypeField::GeneratorName(prev))
+            }
             _ => return None,
         })
     }
