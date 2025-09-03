@@ -6,12 +6,12 @@ use crate::view::View;
 use crate::{GetSet, LocalState};
 use egui::{Color32, Ui, Vec2};
 use lazy_static::lazy_static;
-use shared::model::{GeneratorId, GeneratorInstance, GeneratorMeta};
+use shared::model::{GeneratorInstance, GeneratorMeta};
 use shared::{
-    model::{PitchName, ScaleValue, StingrayConfig, Generator},
+    model::{Generator, PitchName, ScaleValue, StingrayConfig},
     types::PitchValue,
 };
-use state::{Action, GeneratorSelector, Store};
+use state::{Action, GeneratorSelector, Store, TypeField};
 
 pub struct StingrayView<'a, F: Fn(Action), G: Fn()> {
     config: &'a StingrayConfig,
@@ -21,6 +21,7 @@ pub struct StingrayView<'a, F: Fn(Action), G: Fn()> {
     generator_sel: &'a GeneratorSelector,
     dispatch: F,
     audio_player: &'a mut AudioPlayer,
+    meta: &'a GeneratorMeta,
 }
 
 impl<'a, F: Fn(Action), G: Fn()> StingrayView<'a, F, G> {
@@ -32,6 +33,7 @@ impl<'a, F: Fn(Action), G: Fn()> StingrayView<'a, F, G> {
         generator_sel: &'a GeneratorSelector,
         dispatch: F,
         audio_player: &'a mut AudioPlayer,
+        meta: &'a GeneratorMeta,
     ) -> Self {
         Self {
             config,
@@ -41,6 +43,7 @@ impl<'a, F: Fn(Action), G: Fn()> StingrayView<'a, F, G> {
             generator_sel,
             dispatch,
             audio_player,
+            meta,
         }
     }
 
@@ -156,9 +159,19 @@ impl<F: Fn(Action), G: Fn()> View for StingrayView<'_, F, G> {
                 if test.clicked() {
                     let new_gen = GeneratorInstance {
                         it: Generator::Stingray(StingrayConfig::default()),
-                        meta: GeneratorMeta::default()};
-                    self.store.dispatchr(Action::AddChild(state::TypeField::Generator(new_gen)));
-
+                        meta: GeneratorMeta::default(),
+                    };
+                    self.store
+                        .dispatchr(Action::AddChild(state::TypeField::Generator(new_gen)));
+                }
+                ui.label("Instrument/Patch Name");
+                let mut name = self.meta.name.clone();
+                let response = ui.text_edit_singleline(&mut name);
+                if response.changed() {
+                    self.store.dispatch(
+                        gen_sel,
+                        Action::SetChild(TypeField::GeneratorName(name.to_string())),
+                    );
                 }
             });
             ui.add_space(1.0); //spacing btwn osc + lpf and right border
