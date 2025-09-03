@@ -90,8 +90,6 @@ message DrumTrackProto {
   uint32 sample_id = 1;
 
   repeated PlacedDrumProto drums = 2;
-  
-  float offset = 3;
 }
 
 message MixerChannelProto {
