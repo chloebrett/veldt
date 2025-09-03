@@ -84,6 +84,8 @@ impl View for TrackRoll<'_> {
                         PlacementType::Drum(DrumPlacement { track_id, .. }) => PlacedTrack {
                             unclipped_duration: project.tracks[&track_id].unclipped_duration(),
                             placement: placement.clone(),
+                            store: self.store,
+                            local_state: self.local_state,
                         },
                     },
                 )
@@ -133,6 +135,7 @@ impl View for TrackRoll<'_> {
                             offset: 0.0.into(),
                             clipped_duration: None,
                             visual_placement: 0,
+                            colour: [225, 138, 9],
                         })));
                     }
                     if ui.button("New sample placement").clicked() {
