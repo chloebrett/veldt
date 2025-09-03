@@ -65,7 +65,6 @@ pub fn generators_control(ui: &mut Ui, local_state: &LocalState, store: &Store) 
                         // TODO: let this go up a bit past 1?
                         0.0..=1.0,
                         &on_release,
-                        40.0,
                     );
                     add_typable_knob(
                         ui,
@@ -75,7 +74,6 @@ pub fn generators_control(ui: &mut Ui, local_state: &LocalState, store: &Store) 
                         |it| store.dispatch(&sel, Action::SetFloat(FloatField::Pan, it)),
                         -1.0..=1.0,
                         &on_release,
-                        40.0,
                     );
                 });
 

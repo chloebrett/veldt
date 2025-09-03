@@ -138,7 +138,6 @@ impl<F: Fn(Action), G: Fn()> View for SimpleWaveView<'_, F, G> {
                     |it| (self.dispatch)(Action::SetFloat(FloatField::Detune, it)),
                     0.0..=100.0,
                     &self.on_release,
-                    40.0,
                 );
                 self.aliasing_combo_box(ui);
                 self.polyphony_combo_box(ui);
