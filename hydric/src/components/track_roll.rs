@@ -81,7 +81,7 @@ impl View for TrackRoll<'_> {
                                 local_state: self.local_state,
                             }
                         },
-                        PlacementType::Drum(_) => todo!(),
+                        PlacementType::DrumTrack(_) => todo!(),
                         },
                 )
             })
