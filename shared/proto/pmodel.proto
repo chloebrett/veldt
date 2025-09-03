@@ -60,7 +60,7 @@ message PlacementProto {
 
     pmodel.SamplePlacementProto sample = 5;
 
-    pmodel.DrumTrackProto drum_track = 6;
+    pmodel.DrumTrackPlacementProto drum_track = 6;
   }
 
   repeated uint32 colour = 7;
@@ -87,9 +87,13 @@ message SampleProto {
 }
 
 message DrumTrackProto {
-  uint32 sample_id = 1;
+  uint32 drum_track_id = 1;
+  uint32 sample_id = 2;
+  repeated PlacedDrumProto drums = 3;
+}
 
-  repeated PlacedDrumProto drums = 2;
+message DrumTrackPlacementProto {
+  uint32 drum_track_id = 1;
 }
 
 message MixerChannelProto {
