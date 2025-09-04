@@ -31,15 +31,16 @@ jobs:
               rustup set profile minimal
             fi
       
-      # Install system dependencies (protobuf)
+      # Install system dependencies (protobuf & ALSA)
       - run:
           name: Install system dependencies
           command: |
+            sudo apt-get update
             if ! command -v protoc &> /dev/null; then
-              sudo apt-get update
               sudo apt-get install -y protobuf-compiler
-              sudo apt-get clean
             fi
+            sudo apt-get install -y pkg-config libasound2-dev
+            sudo apt-get clean
       
       # Install wasm-bindgen-cli
       - run:

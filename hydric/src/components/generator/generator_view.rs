@@ -65,6 +65,7 @@ impl View for GeneratorView<'_> {
                             self.selector,
                             dispatch,
                             self.player,
+                            &instance.meta,
                         )
                         .ui(ui);
                     }
@@ -75,9 +76,13 @@ impl View for GeneratorView<'_> {
 }
 
 pub fn generator_name(instance: &GeneratorInstance) -> &str {
-    match &instance.it {
-        Generator::SimpleWave(_) => "Simple Wave Generator",
-        Generator::Noise(_) => "Noise Generator",
-        Generator::Stingray(_) => "Stingray (Subtractive Synth)",
+    if instance.meta.name != "" {
+        &instance.meta.name
+    } else {
+        match &instance.it {
+            Generator::SimpleWave(_) => "Simple Wave Generator",
+            Generator::Noise(_) => "Noise Generator",
+            Generator::Stingray(_) => "Stingray (Subtractive Synth)",
+        }
     }
 }

@@ -55,6 +55,7 @@ pub enum TypeField {
     LpfOn(bool),
     // Note: when you add a new type, make sure to configure its broadcast behaviour in broadcast.rs as well.
     Colour(u32),
+    GeneratorName(String),
 }
 
 impl From<TypeFieldProto> for TypeField {
@@ -99,6 +100,7 @@ impl From<TypeFieldProto> for TypeField {
             TypeFieldKind::EffectId(it) => TypeField::EffectId(it.into()),
             TypeFieldKind::Colour(it) => TypeField::Colour(it.into()),
             TypeFieldKind::LpfOn(it) => TypeField::LpfOn(it),
+            TypeFieldKind::GeneratorName(it) => TypeField::GeneratorName(it),
         }
     }
 }
@@ -151,6 +153,7 @@ impl From<TypeField> for TypeFieldProto {
                 TypeField::EffectId(it) => TypeFieldKind::EffectId(it.into()),
                 TypeField::Colour(it) => TypeFieldKind::Colour(it.into()),
                 TypeField::LpfOn(it) => TypeFieldKind::LpfOn(it),
+                TypeField::GeneratorName(it) => TypeFieldKind::GeneratorName(it),
             }),
         }
     }
