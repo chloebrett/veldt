@@ -7,7 +7,7 @@ use crate::view::View;
 use crate::widget::StateWindow;
 use crate::window_state::WindowKind;
 use egui::Ui;
-use log::{error};
+use log::error;
 
 // This enum is used to determine the current state of the microphone.
 // Allows us to handle synchronous function calls, with minimal additional user input.
