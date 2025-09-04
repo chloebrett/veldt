@@ -1,6 +1,6 @@
 use super::pan_multipliers;
 use crate::SAMPLE_RATE;
-use crate::envelope::{EnvelopeGenerator};
+use crate::envelope::EnvelopeGenerator;
 use crate::graph::{NoteEvent, NoteEventType, ProcessContext};
 use crate::maths::linspace;
 use crate::wave::detune_multiplier;
