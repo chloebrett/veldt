@@ -60,7 +60,7 @@ mod tests {
             AdsrEnvelope, AntiAliasingMode, DelayConfig, Effect, EffectInstance, EffectMeta,
             EqConfig, EqType, Generator, GeneratorMeta, MixerChannel, MixerMatrix, ModDelayConfig,
             Note, PitchName, PlacedNote, PlacementType, PolyphonyMode, ScaleValue,
-            SimpleWaveConfig, WaveType,
+            SimpleWaveConfig, WaveType, PlacedDrum,
         },
         testing::proto::proto_testing::assert_proto_round_trip,
     };
