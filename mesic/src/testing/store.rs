@@ -13,6 +13,7 @@ pub fn empty_store_data() -> StoreData {
             effects: HashMap::new(),
             mixer: Mixer::default(),
             bpm: 120.0,
+            drum_tracks: HashMap::new(),
         },
         ..Default::default()
     }

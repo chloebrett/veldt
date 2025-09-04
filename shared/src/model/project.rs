@@ -1,6 +1,6 @@
 use crate::model::{
     DrumTrack, DrumTrackId, EffectId, EffectInstance, GeneratorId, GeneratorInstance, Mixer,
-    Placement, PlacementId, Sample, SampleId, Track, TrackId, TrackPlacement,
+    Placement, PlacementId, Sample, SampleId, Track, TrackId, TrackPlacement, PlacedDrum,
 };
 use crate::pmodel::*;
 use crate::types::Beats;
@@ -201,7 +201,6 @@ mod tests {
                         PlacedDrum { offset: 1.0.into() },
                         PlacedDrum { offset: 2.5.into() },
                     ],
-                    offset: 0.0.into(),
                 },
             )]),
         };
