@@ -328,7 +328,7 @@ impl Microphone {
 
     pub fn has_converted_recording(&self) -> bool {
         let intermediate = Arc::clone(&self.intermediate_data);
-        (*intermediate.lock().unwrap().clone()).is_empty()
+        !(*intermediate.lock().unwrap().clone()).is_empty()
     }
 
     pub fn is_playing(&self) -> bool {
