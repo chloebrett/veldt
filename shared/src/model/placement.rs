@@ -30,7 +30,6 @@ pub enum PlacementType {
     DrumTrack(DrumTrackPlacement),
 }
 
-//make default based off last chosen enum?
 impl Default for PlacementType {
     fn default() -> Self {
         PlacementType::Track(TrackPlacement::default())

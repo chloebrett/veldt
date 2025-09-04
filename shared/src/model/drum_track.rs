@@ -16,7 +16,7 @@ pub struct DrumTrack {
 /// Ordered by offset.
 #[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, FromProto, IntoProto)]
 pub struct PlacedDrum {
-    //represents a single drum hit
+    // Represents a single drum hit
     pub offset: OrderedFloat<Beats>,
 }
 
