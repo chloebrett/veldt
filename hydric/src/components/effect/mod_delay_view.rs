@@ -59,7 +59,6 @@ impl<F: Fn(Action), G: Fn()> View for ModDelayView<'_, F, G> {
             |it| dispatch(Action::SetUint(UintField::MinDepth, it as u32)),
             0.0..=1_000.0,
             &self.on_release,
-            50.0,
         );
         add_typable_knob(
             ui,
@@ -69,7 +68,6 @@ impl<F: Fn(Action), G: Fn()> View for ModDelayView<'_, F, G> {
             |it| dispatch(Action::SetUint(UintField::MaxDepth, it as u32)),
             0.0..=1_000.0,
             &self.on_release,
-            50.0,
         );
         add_typable_knob(
             ui,
@@ -79,7 +77,6 @@ impl<F: Fn(Action), G: Fn()> View for ModDelayView<'_, F, G> {
             |it| dispatch(Action::SetFloat(FloatField::LfoFreq, it)),
             0.1..=100.0,
             &self.on_release,
-            40.0,
         );
 
         egui::ComboBox::from_label("LFO wave type")

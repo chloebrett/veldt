@@ -117,7 +117,6 @@ impl<F: Fn(Action), G: Fn()> View for EnvelopeView<'_, F, G> {
                     },
                     0.0..=1000.0,
                     on_release,
-                    60.0,
                 );
                 add_typable_knob(
                     ui,
@@ -132,7 +131,6 @@ impl<F: Fn(Action), G: Fn()> View for EnvelopeView<'_, F, G> {
                     },
                     0.0..=1000.0,
                     on_release,
-                    60.0,
                 );
                 add_typable_knob(
                     ui,
@@ -147,7 +145,6 @@ impl<F: Fn(Action), G: Fn()> View for EnvelopeView<'_, F, G> {
                     },
                     0.0..=1.0,
                     on_release,
-                    60.0,
                 );
                 add_typable_knob(
                     ui,
@@ -162,7 +159,6 @@ impl<F: Fn(Action), G: Fn()> View for EnvelopeView<'_, F, G> {
                     },
                     0.0..=1000.0,
                     on_release,
-                    60.0,
                 );
             });
         });

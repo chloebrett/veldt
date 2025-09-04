@@ -62,7 +62,6 @@ impl View for ToolbarView<'_> {
                         },
                         0.0..=1.0,
                         &on_release,
-                        40.0,
                     );
 
                     let bpm = self.store.get().project.bpm as f64;

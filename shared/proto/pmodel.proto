@@ -209,6 +209,8 @@ message GeneratorMetaProto {
   float pan = 3;
 
   uint32 mixer_channel = 4;
+
+  string name = 5;
 }
 
 message SimpleWaveProto {

@@ -241,7 +241,6 @@ impl<F: Fn(Action), G: Fn()> Widget for EffectWidget<'_, F, G> {
                 |it| dispatch(Action::SetFloat(FloatField::Wet, it)),
                 0.0..=1.0,
                 &on_release,
-                40.0,
             );
 
             if ui.add(Button::new(text).selected(show)).clicked() {

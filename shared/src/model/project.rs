@@ -135,6 +135,7 @@ mod tests {
                         mute: false,
                         pan: 0.0,
                         mixer_channel: 0,
+                        name: "".to_string(),
                     },
                 },
             )]),

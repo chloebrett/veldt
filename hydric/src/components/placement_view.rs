@@ -8,7 +8,7 @@ use egui::{Ui, widgets::color_picker::color_picker_color32};
 use mesic::samples_to_beats;
 use ordered_float::OrderedFloat;
 use shared::model::{
-    Placement, PlacementId, PlacementType, SamplePlacement, Track, TrackPlacement,
+    GeneratorId, Placement, PlacementId, PlacementType, SamplePlacement, Track, TrackPlacement,
 };
 use shared::types::Beats;
 use state::{
@@ -50,7 +50,10 @@ impl<'a> PlacementView<'a> {
             });
 
         egui::ComboBox::from_id_salt(format!("placement_{:?}_generator", placement_id))
-            .selected_text(format!("Generator ID {}", *track_placement.generator_id))
+            .selected_text(Self::get_generator_name(
+                store,
+                &track_placement.generator_id,
+            ))
             .show_ui(ui, |ui| {
                 let mut generators: Vec<_> = store.get().project.generators.keys().collect();
                 generators.sort();
@@ -62,7 +65,7 @@ impl<'a> PlacementView<'a> {
                             store.dispatch(sel, Action::SetChild(TypeField::GeneratorId(*it)))
                         }),
                         generator_id,
-                        generator_id.to_string(),
+                        Self::get_generator_name(store, generator_id),
                     );
                 }
             });
@@ -76,6 +79,15 @@ impl<'a> PlacementView<'a> {
         Self::duration_ui(ui, sel, duration, max_duration, store);
     }
 
+    fn get_generator_name(store: &Store, generator_id: &GeneratorId) -> String {
+        let mut generator_name = format!("Generator ID {}", **generator_id);
+        if let Some(generator_instance) = store.get().project.generators.get(generator_id) {
+            if generator_instance.meta.name != "" {
+                generator_name = generator_instance.meta.name.clone();
+            }
+        }
+        generator_name
+    }
     fn sample_placement_ui(
         ui: &mut Ui,
         placement_id: PlacementId,
@@ -181,7 +193,7 @@ impl View for PlacementView<'_> {
         let on_release = || store.dispatchr(Action::Release);
         let placement = &store.get().project.placements[&placement_id];
         let sel = PlacementSelector(placement_id);
-        let title = format!("Placement {:?}", placement_id);
+        let title = format!("Placement {:?}", *placement_id);
         StateWindow::show_from_window_state(
             ui,
             &self.local_state.window_state,

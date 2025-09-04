@@ -113,7 +113,6 @@ impl<G: Fn()> View for ModMatrixView<'_, G> {
                                         },
                                         0.0..=1.0,
                                         on_release,
-                                        40.0,
                                     );
                                 });
                             }
