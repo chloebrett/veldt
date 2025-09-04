@@ -1,4 +1,4 @@
-use crate::model::{SampleId};
+use crate::model::SampleId;
 use crate::pmodel::{DrumTrackProto, PlacedDrumProto};
 use crate::types::*;
 use local_macro::{FromProto, IntoProto};
