@@ -7,13 +7,26 @@ use crate::view::View;
 use crate::widget::StateWindow;
 use crate::window_state::WindowKind;
 use egui::Ui;
-use log::error;
+use log::{error};
+
+// This enum is used to determine the current state of the microphone.
+// Allows us to handle synchronous function calls, with minimal additional user input.
+#[derive(PartialEq)]
+#[derive(Debug)]
+pub enum MicState {
+    Idle,
+    RequestingPermissions,
+    ReadyToRecord,
+    Recording,
+    HasRecording
+}
 
 pub struct MicrophoneView<'a> {
     local_state: &'a LocalState,
     async_state: &'a mut AsyncState,
     mic: &'a mut Microphone,
     mic_sample_name: &'a mut String,
+    mic_state: &'a mut MicState,
 }
 
 impl<'a> MicrophoneView<'a> {
@@ -22,12 +35,14 @@ impl<'a> MicrophoneView<'a> {
         async_state: &'a mut AsyncState,
         app_mic: &'a mut Microphone,
         mic_sample_name: &'a mut String,
+        mic_state: &'a mut MicState
     ) -> Self {
         MicrophoneView {
             local_state,
             async_state,
             mic: app_mic,
             mic_sample_name,
+            mic_state,
         }
     }
 }
@@ -40,23 +55,37 @@ impl View for MicrophoneView<'_> {
             WindowKind::Microphone,
             "Microphone",
             |ui| {
-                if ui.button("Permissions").clicked() {
-                    let _ = self.mic.get_permissions();
-                }
-
-                if self.mic.has_permissions() {
-                    ui.label("Has permissions");
-                }
 
                 if ui.button("Record").clicked()
-                    && !self.mic.is_recording()
-                    && !self.mic.has_recording()
+                    && *self.mic_state == MicState::Idle
                 {
-                    let _ = self.mic.start();
+                    
+                    if self.mic.has_permissions() {
+                        if let Ok(()) = self.mic.start(){
+                            *self.mic_state = MicState::Recording;
+                        }
+                    } else {
+                        let _ = self.mic.get_permissions();
+                        *self.mic_state = MicState::RequestingPermissions;
+                    }
+                    
+                }
+
+                if *self.mic_state == MicState::RequestingPermissions && self.mic.has_permissions() {
+                    // Automatically start recording after user gives permissions.
+                    if let Ok(()) = self.mic.start() {
+                        *self.mic_state = MicState::Recording;
+                    } else {
+                        // Fail case.
+                        *self.mic_state = MicState::Idle;
+                    }
                 }
 
                 if ui.button("Stop Recording").clicked() {
+                    let state = &self.mic_state;
+                    error!("{:#?}",state);
                     self.mic.stop();
+                    *self.mic_state = MicState::HasRecording;
                 }
 
                 ui.horizontal(|ui| {
@@ -74,6 +103,7 @@ impl View for MicrophoneView<'_> {
 
                     if ui.button("clear").clicked() {
                         let _ = self.mic.clear_mic();
+                        *self.mic_state = MicState::Idle;
                     }
                 });
 

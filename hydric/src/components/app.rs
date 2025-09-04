@@ -6,7 +6,7 @@ use super::{
     menu::MenuBar,
     play::{MicrophoneView, SampleTreeView, ToolbarView},
 };
-use crate::components::FrameHistory;
+use crate::components::{play::MicState, FrameHistory};
 use crate::playback::Microphone;
 use crate::rpc::broadcast_actions;
 use crate::rpc::load_project_list;
@@ -33,6 +33,7 @@ pub struct App {
     pub mic: Microphone,
     pub snarl: Snarl<GraphViewNode>,
     pub mic_sample_name: String,
+    pub mic_state: MicState,
 }
 impl Default for App {
     fn default() -> Self {
@@ -52,6 +53,7 @@ impl Default for App {
             mic: Microphone::new(),
             snarl: Snarl::new(),
             mic_sample_name: String::new(),
+            mic_state: MicState::Idle,
         }
     }
 }
@@ -174,6 +176,7 @@ impl View for App {
             &mut self.async_state,
             &mut self.mic,
             &mut self.mic_sample_name,
+           &mut self.mic_state,
         )
         .ui(ui);
         PlacementView::new(&self.store, &self.local_state).ui(ui);
