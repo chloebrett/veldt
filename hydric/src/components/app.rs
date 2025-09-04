@@ -6,7 +6,7 @@ use super::{
     menu::MenuBar,
     play::{MicrophoneView, SampleTreeView, ToolbarView},
 };
-use crate::components::{play::MicState, FrameHistory};
+use crate::components::{FrameHistory, play::MicState};
 use crate::playback::Microphone;
 use crate::rpc::broadcast_actions;
 use crate::rpc::load_project_list;
@@ -176,7 +176,7 @@ impl View for App {
             &mut self.async_state,
             &mut self.mic,
             &mut self.mic_sample_name,
-           &mut self.mic_state,
+            &mut self.mic_state,
         )
         .ui(ui);
         PlacementView::new(&self.store, &self.local_state).ui(ui);
