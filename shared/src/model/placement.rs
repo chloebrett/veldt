@@ -1,4 +1,4 @@
-use crate::model::{GeneratorId, SampleId, TrackId, DrumTrackId};
+use crate::model::{DrumTrackId, GeneratorId, SampleId, TrackId};
 use crate::pmodel::{placement_proto::Kind as PlacementTypeProto, *};
 use crate::types::Beats;
 use local_macro::{FromProto, IntoProto};

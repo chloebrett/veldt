@@ -85,8 +85,8 @@ message TypeFieldProto {
     uint32 colour = 28;
     bool lpf_on = 29;
     string generator_name = 30;
-    pmodel.DrumTrackProto drum_track = 30;
-    uint32 drum_track_id = 31;
+    pmodel.DrumTrackProto drum_track = 31;
+    uint32 drum_track_id = 32;
   }
 }
 

@@ -80,9 +80,9 @@ impl View for TrackRoll<'_> {
                                 store: self.store,
                                 local_state: self.local_state,
                             }
-                        },
+                        }
                         PlacementType::DrumTrack(_) => todo!(),
-                        },
+                    },
                 )
             })
             .collect();
@@ -262,7 +262,7 @@ impl<'a> PlacedTrack<'a> {
                     let sample_id = sample_placement.sample_id;
                     self.sample_shape(range, sample_id)
                 }
-                PlacementType::Drum(_) => todo!(),
+                PlacementType::DrumTrack(_) => todo!(),
             },
         ])
     }
@@ -431,7 +431,7 @@ impl<'a> PlacedTrack<'a> {
         let label_text = match &self.placement.kind {
             PlacementType::Track(track) => "Track: ".to_owned() + &track.track_id.to_string(),
             PlacementType::Sample(sample) => "Sample: ".to_owned() + &sample.sample_id.to_string(),
-            PlacementType::Drum(_) => todo!(),
+            PlacementType::DrumTrack(_) => todo!(),
         };
         let galley =
             ui.fonts(|fonts| fonts.layout_no_wrap(label_text, font_id.clone(), font_colour));
@@ -480,7 +480,7 @@ impl<'a> PlacedTrack<'a> {
                     ordered_float::OrderedFloat(1.0)
                 }
             }
-            PlacementType::Drum(_) => todo!(),
+            PlacementType::DrumTrack(_) => todo!(),
         };
 
         Some(PlacedTrack {

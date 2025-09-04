@@ -1,5 +1,5 @@
+use crate::model::{DrumTrackId, SampleId};
 use crate::pmodel::{DrumTrackProto, PlacedDrumProto};
-use crate::model::{SampleId, DrumTrackId};
 use crate::types::*;
 use local_macro::{FromProto, IntoProto};
 use ordered_float::OrderedFloat;

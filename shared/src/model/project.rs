@@ -1,7 +1,6 @@
 use crate::model::{
-    EffectId, EffectInstance, GeneratorId, GeneratorInstance, Mixer, Placement, PlacementId,
-    Sample, SampleId, Track, TrackId, TrackPlacement, DrumTrack, DrumTrackId,
-
+    DrumTrack, DrumTrackId, EffectId, EffectInstance, GeneratorId, GeneratorInstance, Mixer,
+    Placement, PlacementId, Sample, SampleId, Track, TrackId, TrackPlacement,
 };
 use crate::pmodel::*;
 use crate::types::Beats;
@@ -202,9 +201,9 @@ mod tests {
                         PlacedDrum { offset: 1.0.into() },
                         PlacedDrum { offset: 2.5.into() },
                     ],
-                    offset: 0.0.into()
-                }
-            )])
+                    offset: 0.0.into(),
+                },
+            )]),
         };
         assert_proto_round_trip::<Project, ProjectProto>(project);
     }

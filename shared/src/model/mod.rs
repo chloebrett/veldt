@@ -1,4 +1,5 @@
 mod adsr_envelope;
+mod drum_track;
 mod effect;
 mod file_tree;
 mod generator;
@@ -15,9 +16,9 @@ mod scale;
 mod scale_value;
 mod track;
 mod wave_type;
-mod drum_track;
 
 pub use adsr_envelope::*;
+pub use drum_track::*;
 pub use effect::*;
 pub use file_tree::*;
 pub use generator::*;
@@ -34,4 +35,3 @@ pub use scale::*;
 pub use scale_value::*;
 pub use track::*;
 pub use wave_type::*;
-pub use drum_track::*; 
