@@ -59,8 +59,8 @@ mod tests {
         model::{
             AdsrEnvelope, AntiAliasingMode, DelayConfig, Effect, EffectInstance, EffectMeta,
             EqConfig, EqType, Generator, GeneratorMeta, MixerChannel, MixerMatrix, ModDelayConfig,
-            Note, PitchName, PlacedNote, PlacementType, PolyphonyMode, ScaleValue,
-            SimpleWaveConfig, WaveType, PlacedDrum,
+            Note, PitchName, PlacedDrum, PlacedNote, PlacementType, PolyphonyMode, ScaleValue,
+            SimpleWaveConfig, WaveType,
         },
         testing::proto::proto_testing::assert_proto_round_trip,
     };
