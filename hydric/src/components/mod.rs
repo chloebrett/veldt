@@ -12,6 +12,7 @@ mod piano;
 mod placement_view;
 mod play;
 mod track_roll;
+mod utils;
 
 pub use app::*;
 use effect::*;
@@ -24,3 +25,4 @@ use note_view::*;
 use piano::*;
 use placement_view::*;
 use track_roll::*;
+use utils::*;

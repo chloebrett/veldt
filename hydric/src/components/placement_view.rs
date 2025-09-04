@@ -2,16 +2,17 @@ use crate::view::View;
 use crate::widget::{StateWindow, get_set, int_slider, selectable_value, slider};
 use crate::window_state::WindowKind;
 use crate::{GetSet, LocalState};
-use egui::Ui;
+use egui::Color32;
+use egui::color_picker::Alpha;
+use egui::{Ui, widgets::color_picker::color_picker_color32};
 use mesic::samples_to_beats;
 use ordered_float::OrderedFloat;
 use shared::model::{
-    Placement, PlacementId, PlacementType, SamplePlacement, Track, TrackPlacement,
+    GeneratorId, Placement, PlacementId, PlacementType, SamplePlacement, Track, TrackPlacement,
 };
 use shared::types::Beats;
 use state::{
-    Action, FloatField, PlacementSelector, SampleSelector, Store, TrackSelector, TypeField,
-    UintField,
+    Action, PlacementSelector, SampleSelector, Store, TrackSelector, TypeField, UintField,
 };
 use std::cmp::max;
 
@@ -49,7 +50,10 @@ impl<'a> PlacementView<'a> {
             });
 
         egui::ComboBox::from_id_salt(format!("placement_{:?}_generator", placement_id))
-            .selected_text(format!("Generator ID {}", *track_placement.generator_id))
+            .selected_text(Self::get_generator_name(
+                store,
+                &track_placement.generator_id,
+            ))
             .show_ui(ui, |ui| {
                 let mut generators: Vec<_> = store.get().project.generators.keys().collect();
                 generators.sort();
@@ -61,7 +65,7 @@ impl<'a> PlacementView<'a> {
                             store.dispatch(sel, Action::SetChild(TypeField::GeneratorId(*it)))
                         }),
                         generator_id,
-                        generator_id.to_string(),
+                        Self::get_generator_name(store, generator_id),
                     );
                 }
             });
@@ -75,6 +79,15 @@ impl<'a> PlacementView<'a> {
         Self::duration_ui(ui, sel, duration, max_duration, store);
     }
 
+    fn get_generator_name(store: &Store, generator_id: &GeneratorId) -> String {
+        let mut generator_name = format!("Generator ID {}", **generator_id);
+        if let Some(generator_instance) = store.get().project.generators.get(generator_id) {
+            if generator_instance.meta.name != "" {
+                generator_name = generator_instance.meta.name.clone();
+            }
+        }
+        generator_name
+    }
     fn sample_placement_ui(
         ui: &mut Ui,
         placement_id: PlacementId,
@@ -154,7 +167,7 @@ impl View for PlacementView<'_> {
         let on_release = || store.dispatchr(Action::Release);
         let placement = &store.get().project.placements[&placement_id];
         let sel = PlacementSelector(placement_id);
-        let title = format!("Placement {:?}", placement_id);
+        let title = format!("Placement {:?}", *placement_id);
         StateWindow::show_from_window_state(
             ui,
             &self.local_state.window_state,
@@ -182,17 +195,8 @@ impl View for PlacementView<'_> {
                             store,
                         );
                     }
+                    PlacementType::DrumTrack(_) => todo!(),
                 }
-
-                let offset = *placement.offset as f64;
-                slider(
-                    ui,
-                    "Start position",
-                    offset,
-                    |it| store.dispatch(&sel, Action::SetFloat(FloatField::Offset, it as Beats)),
-                    0.0..=16.0,
-                    on_release,
-                );
 
                 int_slider(
                     ui,
@@ -204,6 +208,25 @@ impl View for PlacementView<'_> {
                     0..=3,
                     on_release,
                 );
+
+                let rgb_initial = placement.colour.clone();
+                let mut initial_colour =
+                    Color32::from_rgb(rgb_initial[0], rgb_initial[1], rgb_initial[2]);
+
+                ui.label("Placement Colour");
+                color_picker_color32(ui, &mut initial_colour, Alpha::Opaque);
+
+                let new_colour = [initial_colour.r(), initial_colour.g(), initial_colour.b()]; // initial colour gets modified by color picker
+                if rgb_initial != new_colour {
+                    let mut new_rgb = [0; 3];
+                    for i in 0..3 {
+                        new_rgb[i] = new_colour[i] as u32;
+                    }
+                    store.dispatch(
+                        &sel,
+                        Action::SetChildren(state::MultiTypeField::Colour(new_rgb)),
+                    );
+                }
 
                 if ui.button("Delete").clicked() {
                     store.dispatchr(Action::DeleteChildById(TypeField::PlacementId(

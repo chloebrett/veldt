@@ -71,6 +71,8 @@ pub struct GeneratorMeta {
 
     #[proto_type_u32]
     pub mixer_channel: usize,
+
+    pub name: String,
 }
 
 impl Default for GeneratorMeta {
@@ -80,6 +82,7 @@ impl Default for GeneratorMeta {
             mute: false,
             pan: 0.0,
             mixer_channel: 0,
+            name: "".to_string(),
         }
     }
 }

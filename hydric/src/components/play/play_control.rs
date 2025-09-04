@@ -57,7 +57,15 @@ pub fn play_control(
         },
     );
 
-    audio_vis(player, /* sample_count= */ None, ui);
-    audio_vis(player, /* sample_count= */ Some(100), ui);
+    ui.horizontal(|ui| {
+        ui.add_space(25.0);
+        ui.vertical(|ui| {
+            audio_vis(player, /* sample_count= */ None, ui);
+            audio_vis(player, /* sample_count= */ Some(100), ui);
+        })
+    });
+
+    ui.add_space(10.0);
+
     FrequencyDisplay::new(player, local_state).ui(ui)
 }

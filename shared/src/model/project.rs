@@ -1,6 +1,6 @@
 use crate::model::{
-    EffectId, EffectInstance, GeneratorId, GeneratorInstance, Mixer, Placement, PlacementId,
-    Sample, SampleId, Track, TrackId, TrackPlacement,
+    DrumTrack, DrumTrackId, EffectId, EffectInstance, GeneratorId, GeneratorInstance, Mixer,
+    Placement, PlacementId, Sample, SampleId, Track, TrackId, TrackPlacement,
 };
 use crate::pmodel::*;
 use crate::types::Beats;
@@ -31,6 +31,9 @@ pub struct Project {
     pub mixer: Mixer,
 
     pub bpm: Beats,
+
+    #[proto_hashmap]
+    pub drum_tracks: HashMap<DrumTrackId, DrumTrack>,
 }
 
 impl Project {
@@ -56,7 +59,7 @@ mod tests {
         model::{
             AdsrEnvelope, AntiAliasingMode, DelayConfig, Effect, EffectInstance, EffectMeta,
             EqConfig, EqType, Generator, GeneratorMeta, MixerChannel, MixerMatrix, ModDelayConfig,
-            Note, PitchName, PlacedNote, PlacementType, PolyphonyMode, ScaleValue,
+            Note, PitchName, PlacedDrum, PlacedNote, PlacementType, PolyphonyMode, ScaleValue,
             SimpleWaveConfig, WaveType,
         },
         testing::proto::proto_testing::assert_proto_round_trip,
@@ -96,6 +99,7 @@ mod tests {
                     offset: 2.5.into(),
                     clipped_duration: Some(5.2.into()),
                     visual_placement: 6,
+                    colour: [67, 206, 222],
                 },
             )]),
             samples: HashMap::from([(
@@ -130,6 +134,7 @@ mod tests {
                         mute: false,
                         pan: 0.0,
                         mixer_channel: 0,
+                        name: "".to_string(),
                     },
                 },
             )]),
@@ -187,6 +192,17 @@ mod tests {
                 }],
             },
             bpm: 120.0,
+            drum_tracks: HashMap::from([(
+                DrumTrackId(0),
+                DrumTrack {
+                    sample_id: SampleId(0),
+                    drums: vec![
+                        PlacedDrum { offset: 0.0.into() },
+                        PlacedDrum { offset: 1.0.into() },
+                        PlacedDrum { offset: 2.5.into() },
+                    ],
+                },
+            )]),
         };
         assert_proto_round_trip::<Project, ProjectProto>(project);
     }

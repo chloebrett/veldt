@@ -3,7 +3,7 @@ use crate::local_state::LocalState;
 use crate::promise::spawn;
 use crate::rpc::upload_sample;
 use crate::view::View;
-use crate::widget::{add_knob, default_window, slider, styled_knob};
+use crate::widget::{add_typable_knob, default_window, slider, styled_knob};
 use crate::{AsyncState, playback::AudioPlayer};
 use egui::{Pos2, Ui};
 use log::error;
@@ -42,19 +42,26 @@ impl View for ToolbarView<'_> {
                 let on_release = || self.store.dispatchr(Action::Release);
                 ui.horizontal(|ui| {
                     let volume = self.store.get().volume;
-                    add_knob(
+                    let volume_knob = styled_knob(
+                        volume,
+                        |it| {
+                            self.store
+                                .dispatchr(Action::SetFloat(FloatField::Volume, it))
+                        },
+                        0.0..=1.0,
+                    )
+                    .with_neutral(1.0);
+                    add_typable_knob(
                         ui,
-                        styled_knob(
-                            "Volume",
-                            volume,
-                            |it| {
-                                self.store
-                                    .dispatchr(Action::SetFloat(FloatField::Volume, it))
-                            },
-                            0.0..=1.0,
-                        )
-                        .with_neutral(1.0),
-                        on_release,
+                        volume_knob,
+                        "Volume",
+                        volume,
+                        |it| {
+                            self.store
+                                .dispatchr(Action::SetFloat(FloatField::Volume, it))
+                        },
+                        0.0..=1.0,
+                        &on_release,
                     );
 
                     let bpm = self.store.get().project.bpm as f64;

@@ -1,7 +1,7 @@
 use super::generator_name;
 use crate::components::effect::channel_name;
 use crate::local_state::LocalState;
-use crate::widget::{StateWindow, add_knob, get_set, selectable_value, styled_knob};
+use crate::widget::{StateWindow, add_typable_knob, get_set, selectable_value, styled_knob};
 use crate::window_state::WindowKind;
 use egui::{Button, ComboBox, Ui};
 use shared::model::{GeneratorId, GeneratorInstance};
@@ -42,28 +42,38 @@ pub fn generators_control(ui: &mut Ui, local_state: &LocalState, store: &Store) 
                             .set_visible(WindowKind::Generator(sel), !show);
                     }
 
-                    add_knob(
+                    let volume_knob = styled_knob(
+                        meta.volume,
+                        |it| store.dispatch(&sel, Action::SetFloat(FloatField::Volume, it)),
+                        // TODO: let this go up a bit past 1?
+                        0.0..=1.0,
+                    )
+                    .with_neutral(0.8);
+                    let pan_knob = styled_knob(
+                        meta.pan,
+                        |it| store.dispatch(&sel, Action::SetFloat(FloatField::Pan, it)),
+                        -1.0..=1.0,
+                    )
+                    .with_neutral(0.0);
+
+                    add_typable_knob(
                         ui,
-                        styled_knob(
-                            "Volume",
-                            meta.volume,
-                            |it| store.dispatch(&sel, Action::SetFloat(FloatField::Volume, it)),
-                            // TODO: let this go up a bit past 1?
-                            0.0..=1.0,
-                        )
-                        .with_neutral(0.8),
-                        on_release,
+                        volume_knob,
+                        "Volume",
+                        meta.volume,
+                        |it| store.dispatch(&sel, Action::SetFloat(FloatField::Volume, it)),
+                        // TODO: let this go up a bit past 1?
+                        0.0..=1.0,
+                        &on_release,
                     );
-                    add_knob(
+                    add_typable_knob(
                         ui,
-                        styled_knob(
-                            "Pan",
-                            meta.pan,
-                            |it| store.dispatch(&sel, Action::SetFloat(FloatField::Pan, it)),
-                            -1.0..=1.0,
-                        )
-                        .with_neutral(0.0),
-                        on_release,
+                        pan_knob,
+                        "Pan",
+                        meta.pan,
+                        |it| store.dispatch(&sel, Action::SetFloat(FloatField::Pan, it)),
+                        -1.0..=1.0,
+                        &on_release,
                     );
                 });
 

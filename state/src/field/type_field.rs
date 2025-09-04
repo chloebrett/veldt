@@ -1,9 +1,9 @@
 use shared::action_proto::{TypeFieldProto, type_field_proto::Kind as TypeFieldKind};
 use shared::model::{
-    AdsrEnvelope, AntiAliasingMode, EffectId, EffectInstance, EqType, FileTreeConfig, FilenameTree,
-    GeneratorId, GeneratorInstance, MixerChannel, NoiseType, PitchName, PlacedNote, Placement,
-    PlacementId, PolyphonyMode, Project, Sample, SampleId, Scale, ScaleValue, Track, TrackId,
-    WaveType,
+    AdsrEnvelope, AntiAliasingMode, DrumTrack, DrumTrackId, EffectId, EffectInstance, EqType,
+    FileTreeConfig, FilenameTree, GeneratorId, GeneratorInstance, MixerChannel, NoiseType,
+    PitchName, PlacedNote, Placement, PlacementId, PolyphonyMode, Project, Sample, SampleId, Scale,
+    ScaleValue, Track, TrackId, WaveType,
 };
 use shared::pmodel::{
     AntiAliasingModeProto, EqTypeProto, NoiseTypeProto, PolyphonyModeProto, ScaleProto,
@@ -40,6 +40,7 @@ pub enum TypeField {
     MixerChannel(MixerChannel),
     PolyphonyMode(PolyphonyMode),
     NoiseType(NoiseType),
+    DrumTrack(DrumTrack),
 
     // ID types.
     GeneratorId(GeneratorId),
@@ -47,12 +48,16 @@ pub enum TypeField {
     SampleId(SampleId),
     TrackId(TrackId),
     EffectId(EffectId),
+    DrumTrackId(DrumTrackId),
 
     // Note: if we end up with more bools/primitives, make dedicated types for them so that we
     // don't have to keep expanding the proto.
     Mute(bool),
     Octave(i32),
+    LpfOn(bool),
     // Note: when you add a new type, make sure to configure its broadcast behaviour in broadcast.rs as well.
+    Colour(u32),
+    GeneratorName(String),
 }
 
 impl From<TypeFieldProto> for TypeField {
@@ -95,6 +100,11 @@ impl From<TypeFieldProto> for TypeField {
             TypeFieldKind::SampleId(it) => TypeField::SampleId(it.into()),
             TypeFieldKind::TrackId(it) => TypeField::TrackId(it.into()),
             TypeFieldKind::EffectId(it) => TypeField::EffectId(it.into()),
+            TypeFieldKind::Colour(it) => TypeField::Colour(it.into()),
+            TypeFieldKind::LpfOn(it) => TypeField::LpfOn(it),
+            TypeFieldKind::GeneratorName(it) => TypeField::GeneratorName(it),
+            TypeFieldKind::DrumTrack(it) => TypeField::DrumTrack(it.into()),
+            TypeFieldKind::DrumTrackId(it) => TypeField::DrumTrackId(it.into()),
         }
     }
 }
@@ -145,6 +155,11 @@ impl From<TypeField> for TypeFieldProto {
                 TypeField::SampleId(it) => TypeFieldKind::SampleId(it.into()),
                 TypeField::TrackId(it) => TypeFieldKind::TrackId(it.into()),
                 TypeField::EffectId(it) => TypeFieldKind::EffectId(it.into()),
+                TypeField::Colour(it) => TypeFieldKind::Colour(it.into()),
+                TypeField::LpfOn(it) => TypeFieldKind::LpfOn(it),
+                TypeField::GeneratorName(it) => TypeFieldKind::GeneratorName(it),
+                TypeField::DrumTrack(it) => TypeFieldKind::DrumTrack(it.into()),
+                TypeField::DrumTrackId(it) => TypeFieldKind::DrumTrackId(it.into()),
             }),
         }
     }

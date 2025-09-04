@@ -188,7 +188,7 @@ impl View for App {
             &self.local_state,
         )
         .ui(ui);
-        TrackRoll::new(&self.store, &self.local_state).ui(ui);
+        TrackRoll::new(&self.store, &self.local_state, &mut self.player).ui(ui);
         GraphView::new(&self.local_state, &mut self.snarl, &self.player).ui(ui);
     }
 }
