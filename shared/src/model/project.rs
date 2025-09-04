@@ -1,6 +1,6 @@
 use crate::model::{
     DrumTrack, DrumTrackId, EffectId, EffectInstance, GeneratorId, GeneratorInstance, Mixer,
-    PlacedDrum, Placement, PlacementId, Sample, SampleId, Track, TrackId, TrackPlacement,
+    Placement, PlacementId, Sample, SampleId, Track, TrackId, TrackPlacement,
 };
 use crate::pmodel::*;
 use crate::types::Beats;
