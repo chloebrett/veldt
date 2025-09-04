@@ -195,6 +195,7 @@ impl View for PlacementView<'_> {
                             store,
                         );
                     }
+                    PlacementType::DrumTrack(_) => todo!(),
                 }
 
                 int_slider(

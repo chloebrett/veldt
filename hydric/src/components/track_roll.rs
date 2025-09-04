@@ -81,6 +81,7 @@ impl View for TrackRoll<'_> {
                                 local_state: self.local_state,
                             }
                         }
+                        PlacementType::DrumTrack(_) => todo!(),
                     },
                 )
             })
@@ -118,6 +119,18 @@ impl View for TrackRoll<'_> {
                             clipped_duration: None,
                             visual_placement: 0,
                             colour: [67, 206, 222],
+                        })));
+                    }
+                    if ui.button("New drum").clicked() {
+                        store.dispatchr(Action::AddChild(TypeField::Track(Track::default())));
+                    }
+                    if ui.button("New drum placement").clicked() {
+                        store.dispatchr(Action::AddChild(TypeField::Placement(Placement {
+                            kind: PlacementType::Sample(SamplePlacement::default()),
+                            offset: 0.0.into(),
+                            clipped_duration: None,
+                            visual_placement: 0,
+                            colour: [225, 138, 9],
                         })));
                     }
                     if ui.button("New sample placement").clicked() {
@@ -249,6 +262,7 @@ impl<'a> PlacedTrack<'a> {
                     let sample_id = sample_placement.sample_id;
                     self.sample_shape(range, sample_id)
                 }
+                PlacementType::DrumTrack(_) => todo!(),
             },
         ])
     }
@@ -417,6 +431,7 @@ impl<'a> PlacedTrack<'a> {
         let label_text = match &self.placement.kind {
             PlacementType::Track(track) => "Track: ".to_owned() + &track.track_id.to_string(),
             PlacementType::Sample(sample) => "Sample: ".to_owned() + &sample.sample_id.to_string(),
+            PlacementType::DrumTrack(_) => todo!(),
         };
         let galley =
             ui.fonts(|fonts| fonts.layout_no_wrap(label_text, font_id.clone(), font_colour));
@@ -465,6 +480,7 @@ impl<'a> PlacedTrack<'a> {
                     ordered_float::OrderedFloat(1.0)
                 }
             }
+            PlacementType::DrumTrack(_) => todo!(),
         };
 
         Some(PlacedTrack {

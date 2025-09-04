@@ -1,4 +1,4 @@
-use crate::model::{GeneratorId, SampleId, TrackId};
+use crate::model::{DrumTrackId, GeneratorId, SampleId, TrackId};
 use crate::pmodel::{placement_proto::Kind as PlacementTypeProto, *};
 use crate::types::Beats;
 use local_macro::{FromProto, IntoProto};
@@ -27,6 +27,7 @@ pub struct Placement {
 pub enum PlacementType {
     Track(TrackPlacement),
     Sample(SamplePlacement),
+    DrumTrack(DrumTrackPlacement),
 }
 
 impl Default for PlacementType {
@@ -73,6 +74,38 @@ impl<'a> TryFrom<&'a Placement> for &'a SamplePlacement {
     }
 }
 
+#[derive(Clone, Debug, PartialEq, Eq, Default)]
+pub struct DrumTrackPlacement {
+    pub drum_track_id: DrumTrackId,
+}
+
+impl<'a> TryFrom<&'a Placement> for &'a DrumTrackPlacement {
+    type Error = ();
+
+    fn try_from(item: &'a Placement) -> Result<Self, ()> {
+        match &item.kind {
+            PlacementType::DrumTrack(it) => Ok(it),
+            _ => Err(()),
+        }
+    }
+}
+
+impl From<DrumTrackPlacementProto> for DrumTrackPlacement {
+    fn from(item: DrumTrackPlacementProto) -> Self {
+        Self {
+            drum_track_id: item.drum_track_id.into(),
+        }
+    }
+}
+
+impl From<DrumTrackPlacement> for DrumTrackPlacementProto {
+    fn from(item: DrumTrackPlacement) -> Self {
+        Self {
+            drum_track_id: item.drum_track_id.into(),
+        }
+    }
+}
+
 impl PartialOrd for Placement {
     fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
         Some(self.cmp(other))
@@ -97,6 +130,7 @@ impl From<PlacementProto> for Placement {
             kind: match item.kind.unwrap() {
                 PlacementTypeProto::Track(it) => PlacementType::Track(it.into()),
                 PlacementTypeProto::Sample(it) => PlacementType::Sample(it.into()),
+                PlacementTypeProto::DrumTrack(it) => PlacementType::DrumTrack(it.into()),
             },
             offset: item.offset.into(),
             clipped_duration: item.clipped_duration.map(OrderedFloat),
@@ -112,6 +146,7 @@ impl From<Placement> for PlacementProto {
             kind: Some(match item.kind {
                 PlacementType::Track(it) => PlacementTypeProto::Track(it.into()),
                 PlacementType::Sample(it) => PlacementTypeProto::Sample(it.into()),
+                PlacementType::DrumTrack(it) => PlacementTypeProto::DrumTrack(it.into()),
             }),
             offset: *item.offset,
             clipped_duration: item.clipped_duration.map(|it| *it),

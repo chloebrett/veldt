@@ -81,7 +81,7 @@ impl Default for GeneratorMeta {
             volume: 1.0,
             mute: false,
             pan: 0.0,
-            mixer_channel: 2,
+            mixer_channel: 0,
             name: "".to_string(),
         }
     }
