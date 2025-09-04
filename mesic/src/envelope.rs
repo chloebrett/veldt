@@ -109,6 +109,13 @@ impl EnvelopeGenerator {
     pub fn peek(&self) -> f32 {
         self.last_output
     }
+
+    pub fn is_off(&self) -> bool {
+        match self.state {
+            EnvelopeState::Off => true,
+            _ => false,
+        }
+    }
 }
 
 const SHUTDOWN_MS: f32 = 1.0;

@@ -1,6 +1,6 @@
 use super::pan_multipliers;
 use crate::SAMPLE_RATE;
-use crate::envelope::EnvelopeGenerator;
+use crate::envelope::{EnvelopeGenerator};
 use crate::graph::{NoteEvent, NoteEventType, ProcessContext};
 use crate::maths::linspace;
 use crate::wave::detune_multiplier;
@@ -9,7 +9,7 @@ use dasp_graph::{Buffer, Input, Node};
 use shared::model::{Generator, GeneratorInstance, GeneratorMeta, SimpleWaveConfig};
 use shared::types::Freq;
 use state::GeneratorSelector;
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 
 pub struct SimpleWaveGeneratorNode {
     selector: GeneratorSelector,
@@ -54,6 +54,22 @@ impl NodeState {
             }
             if self.meta != *meta {
                 self.meta = meta.clone();
+            }
+            // Removing any voices that have finished playing
+            let voices = &mut self.voices;
+            let keys_to_remove: Vec<String> = voices
+                .iter()
+                .filter_map(|(voice_key, voice)| {
+                    if voice.eg.is_off() {
+                        Some(voice_key.clone())
+                    } else {
+                        None
+                    }
+                })
+                .collect();
+            for voice_key in keys_to_remove {
+                log::info!("Removing finished voice: {}", voice_key);
+                voices.remove(&voice_key);
             }
         }
     }
@@ -135,7 +151,6 @@ impl Node<ProcessContext> for SimpleWaveGeneratorNode {
                         let voice_key = note_event.pitch_name.to_string();
                         if let Some(voice_to_turn_off) = state.voices.get_mut(&voice_key) {
                             voice_to_turn_off.eg.note_off();
-                            state.voices.remove(&voice_key);
                         }
                     }
                 }
