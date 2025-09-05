@@ -12,8 +12,8 @@ use crate::wave_cache::{WaveCache, WaveKey};
 use dasp_frame::Stereo;
 use dasp_graph::{Buffer, Input, Node};
 use shared::model::{
-    AntiAliasingMode, Generator, GeneratorInstance, GeneratorMeta, Oscillator, PitchName,
-    StingrayConfig,
+    AntiAliasingMode, Generator, GeneratorInstance, GeneratorMeta, ModMatrix, Oscillator,
+    PitchName, StingrayConfig,
 };
 use shared::types::{Freq, KnobPosition, Volume};
 use state::GeneratorSelector;
@@ -124,6 +124,7 @@ impl Node<ProcessContext> for StingrayNode {
     // Currently the process method assumes polyphony and is not constrained by a polyphony limit
     fn process(&mut self, _inputs: &[Input], output: &mut [Buffer], payload: &ProcessContext) {
         // Locations of the LFOs and LPF in the matrix.
+        const ENV_ROW_START: usize = 0;
         const LFO_ROW_START: usize = 3;
         const LPF_COL_START: usize = 3;
 
@@ -208,101 +209,76 @@ impl Node<ProcessContext> for StingrayNode {
                 }
             }
 
+            // --- Oscillator modulation ---
             for voice in state.voices.values_mut() {
                 for (j, source) in voice.sources.iter_mut().enumerate() {
-                    let mut lfo_value = 0.0;
-                    let mut lfo_active = false;
-                    // Access the column for this oscillator in the matrix
-                    for k in 0..state.config.lfos.len() {
-                        // Get matrix value for this oscillator and LFO
-                        let matrix_value = state
-                            .config
-                            .matrix
-                            .get(k + LFO_ROW_START, j)
-                            .map_or(0.0, |cell_ref| (*cell_ref).into());
-
-                        if matrix_value != 0.0 {
-                            lfo_active = true;
-                        }
-
-                        lfo_value += voice.lfos[k].current_value * matrix_value;
-                    }
+                    // LFO-oscillator modulation
+                    let lfo_osc_mod = aggregate_values(
+                        &state.config.matrix,
+                        LFO_ROW_START,
+                        j,
+                        voice.lfos.iter().map(|lfo| lfo.current_value),
+                    );
 
                     // Envelope-oscillator modulation
-                    let wave = source.next(&mut self.cache, lfo_value, lfo_active);
-                    let mut amp_mod = 0.0;
-
-                    // Iterate through each envelope and accumulate modulation
-                    for eg_idx in 0..voice.egs.len() {
-                        let matrix_value = state
-                            .config
-                            .matrix
-                            .get(eg_idx, j)
-                            .map_or(0.0, |cell_ref| (*cell_ref).into());
-
-                        if matrix_value != 0.0 {
-                            let amp = voice.egs[eg_idx].next().unwrap_or(0.0) * matrix_value;
-                            amp_mod += amp;
-                        }
-                    }
+                    let env_osc_mod = aggregate_values(
+                        &state.config.matrix,
+                        ENV_ROW_START,
+                        j,
+                        voice.egs.iter_mut().map(|eg| eg.next().unwrap_or(0.0)),
+                    );
 
                     // If no modulation, set to 1.0 to play sample normally
-                    let amp_mod = if amp_mod == 0.0 { 1.0 } else { amp_mod };
+                    let lfo_osc_mod = if lfo_osc_mod == 0.0 { 1.0 } else { lfo_osc_mod };
+                    let env_osc_mod = if env_osc_mod == 0.0 { 1.0 } else { env_osc_mod };
 
-                    buffers[0][i] += amp_mod * wave[0];
-                    buffers[1][i] += amp_mod * wave[1];
+                    let wave = source.next(&mut self.cache, lfo_osc_mod);
+                    buffers[0][i] += env_osc_mod * wave[0];
+                    buffers[1][i] += env_osc_mod * wave[1];
                 }
             }
 
-            // LPF modulation
+            // --- LPF modulation ---
             const LPF_MIN_FREQ: f32 = 20.0;
             const LPF_MAX_FREQ: f32 = 20000.0;
 
-            let mut lfo_value = 0.0;
+            // Applying the LFO to the LPF
+            // This implementation of the LFO LPF relation is based on the the ableton synth version
+            // https://learningsynths.ableton.com/en/playground
+            let lfo_lpf_mod = state
+                .voices
+                .values()
+                .map(|voice| {
+                    aggregate_values(
+                        &state.config.matrix,
+                        LFO_ROW_START,
+                        LPF_COL_START,
+                        voice.lfos.iter().map(|lfo| lfo.current_value),
+                    )
+                })
+                .sum::<f32>();
+
+            // Applying envelopes to LPF
+            let env_lpf_mod = state
+                .voices
+                .values()
+                .map(|voice| {
+                    aggregate_values(
+                        &state.config.matrix,
+                        0,
+                        LPF_COL_START,
+                        voice.egs.iter().map(|eg| eg.peek()),
+                    )
+                })
+                .sum::<f32>();
+
+            // If no modulation, set to 1 so that sound is not cut off
+            let env_lpf_mod = if env_lpf_mod == 0.0 { 1.0 } else { env_lpf_mod };
 
             // The modified LPF frequency should go to max freq at LFO value 1.0 and min freq at -1.0.
-            let mut new_lpf_freq = state.config.lpf.fc + (LPF_MAX_FREQ - LPF_MIN_FREQ) * lfo_value;
-
-            // Normalize cutoff frequency
-            let mut env_mod = 0.0;
-
-            for voice in state.voices.values_mut() {
-                // Applying the LFO to the LPF
-                // This implementation of the LFO LPF relation is based on the the ableton synth version
-                // https://learningsynths.ableton.com/en/playground
-
-                for k in 0..state.config.lfos.len() {
-                    // Get matrix value for this LPF and LFO
-                    let matrix_value = state
-                        .config
-                        .matrix
-                        .get(k + LFO_ROW_START, LPF_COL_START)
-                        .map_or(0.0, |cell_ref| (*cell_ref).into());
-
-                    lfo_value += voice.lfos[k].current_value * matrix_value;
-                }
-
-                // Applying envelopes to LPF
-                for eg_idx in 0..voice.egs.len() {
-                    let matrix_value = state
-                        .config
-                        .matrix
-                        .get(eg_idx, LPF_COL_START)
-                        .map_or(0.0, |cell_ref| (*cell_ref).into());
-
-                    let eg_val = voice.egs[eg_idx].peek();
-
-                    // Accumulate modulation scaled by matrix value
-                    env_mod += eg_val * matrix_value;
-                }
-            }
-            // If no modulation, set to 1 so that sound is not cut off
-            if env_mod == 0.0 {
-                env_mod = 1.0;
-            }
-
-            new_lpf_freq = LPF_MIN_FREQ + env_mod * (new_lpf_freq - LPF_MIN_FREQ);
-
+            let mut new_lpf_freq =
+                state.config.lpf.fc + (LPF_MAX_FREQ - LPF_MIN_FREQ) * lfo_lpf_mod;
+            new_lpf_freq = LPF_MIN_FREQ + env_lpf_mod * (new_lpf_freq - LPF_MIN_FREQ);
             new_lpf_freq = new_lpf_freq.clamp(LPF_MIN_FREQ, LPF_MAX_FREQ);
 
             let mut new_eq_config = state.config.lpf.clone();
@@ -341,7 +317,7 @@ impl StingrayWaveSource {
         }
     }
 
-    fn next(&mut self, cache: &mut WaveCache, lfo_value: f32, lfo_active: bool) -> Stereo<f32> {
+    fn next(&mut self, cache: &mut WaveCache, lfo_value: f32) -> Stereo<f32> {
         let osc = &self.oscillator;
         let freq: Freq = self.pitch.into();
         let freq = freq * detune_multiplier(osc.coarse_detune + osc.fine_detune);
@@ -382,9 +358,7 @@ impl StingrayWaveSource {
 
         // Apply the low frequency oscillator to the output.
         // Currently only used for volume modulation.
-        if lfo_active {
-            output_mono *= lfo_value;
-        }
+        output_mono *= lfo_value;
 
         let mut output_stereo = [output_mono; CHANNEL_COUNT];
         for (channel_index, out) in output_stereo.iter_mut().enumerate() {
@@ -395,4 +369,16 @@ impl StingrayWaveSource {
         self.sample_index += 1;
         output_stereo
     }
+}
+
+fn aggregate_values<I>(matrix: &ModMatrix, row_offset: usize, col: usize, sources: I) -> f32
+where
+    I: Iterator<Item = f32>,
+{
+    sources.enumerate().fold(0.0, |acc, (i, v)| {
+        let weight = matrix
+            .get(i + row_offset, col)
+            .map_or(0.0, |cell_ref| (*cell_ref).into());
+        acc + v * weight
+    })
 }
