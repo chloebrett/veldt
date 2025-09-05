@@ -1,20 +1,47 @@
+use crate::AsyncState;
 use crate::local_state::LocalState;
 use crate::playback::Microphone;
+use crate::promise::spawn;
+use crate::rpc::upload_sample;
 use crate::view::View;
 use crate::widget::StateWindow;
 use crate::window_state::WindowKind;
 use egui::Ui;
+use log::error;
+
+// This enum is used to determine the current state of the microphone.
+// Allows us to handle synchronous function calls, with minimal additional user input.
+#[derive(PartialEq, Debug)]
+pub enum MicState {
+    Idle,
+    RequestingPermissions,
+    Recording,
+    HasRecording,
+    ProcessingRecording,
+}
 
 pub struct MicrophoneView<'a> {
     local_state: &'a LocalState,
+    async_state: &'a mut AsyncState,
     mic: &'a mut Microphone,
+    mic_sample_name: &'a mut String,
+    mic_state: &'a mut MicState,
 }
 
 impl<'a> MicrophoneView<'a> {
-    pub fn new(local_state: &'a LocalState, app_mic: &'a mut Microphone) -> Self {
+    pub fn new(
+        local_state: &'a LocalState,
+        async_state: &'a mut AsyncState,
+        app_mic: &'a mut Microphone,
+        mic_sample_name: &'a mut String,
+        mic_state: &'a mut MicState,
+    ) -> Self {
         MicrophoneView {
             local_state,
+            async_state,
             mic: app_mic,
+            mic_sample_name,
+            mic_state,
         }
     }
 }
@@ -27,40 +54,101 @@ impl View for MicrophoneView<'_> {
             WindowKind::Microphone,
             "Microphone",
             |ui| {
-                if ui.button("Permissions").clicked() {
-                    let _ = self.mic.get_permissions();
-                }
+                ui.horizontal(|ui| {
+                    if ui.button("Record").clicked() && *self.mic_state == MicState::Idle {
+                        if self.mic.has_permissions() {
+                            if let Ok(()) = self.mic.start() {
+                                *self.mic_state = MicState::Recording;
+                            }
+                        } else {
+                            let _ = self.mic.get_permissions();
+                            *self.mic_state = MicState::RequestingPermissions;
+                        }
+                    }
 
-                if self.mic.has_permissions() {
-                    ui.label("Has permissions");
-                }
+                    if *self.mic_state == MicState::RequestingPermissions
+                        && self.mic.has_permissions()
+                    {
+                        // Automatically start recording after user gives permissions.
+                        if let Ok(()) = self.mic.start() {
+                            *self.mic_state = MicState::Recording;
+                        } else {
+                            // Fail case.
+                            *self.mic_state = MicState::Idle;
+                        }
+                    }
 
-                if ui.button("Record").clicked()
-                    && !self.mic.is_recording()
-                    && !self.mic.has_recording()
-                {
-                    let _ = self.mic.start();
-                }
+                    if ui.button("Stop Recording").clicked() {
+                        self.mic.stop();
+                        *self.mic_state = MicState::HasRecording;
+                    }
+                });
 
-                if ui.button("Stop Recording").clicked() {
-                    self.mic.stop();
-                }
+                ui.separator();
 
                 ui.horizontal(|ui| {
-                    if ui.button("Play mic Audio").clicked() {
+                    if ui.button("Play").clicked() {
                         let _ = self.mic.play_mic_audio();
                     }
 
-                    if ui.button("pause").clicked() {
+                    if ui.button("Pause").clicked() {
                         let _ = self.mic.pause_mic_audio();
                     }
 
-                    if ui.button("stop").clicked() {
+                    if ui.button("Stop").clicked() {
                         let _ = self.mic.stop_mic_audio();
                     }
 
-                    if ui.button("clear").clicked() {
+                    if ui.button("Clear").clicked() {
                         let _ = self.mic.clear_mic();
+                        *self.mic_state = MicState::Idle;
+                    }
+                });
+
+                ui.separator();
+
+                ui.label("Enter desired sample name (No extensions).".to_string());
+                ui.horizontal(|ui| {
+                    // Text input field for file name.
+                    ui.text_edit_singleline(self.mic_sample_name);
+
+                    if ui.button("Save Sample").clicked() {
+                        // First convert the audio
+                        if *self.mic_state == MicState::HasRecording {
+                            let _ = self.mic._convert_audio();
+                            *self.mic_state = MicState::ProcessingRecording;
+                        } else {
+                            error!("Please record a sample first.")
+                        }
+                    }
+                    // Automatically start saving it.
+                    if *self.mic_state == MicState::ProcessingRecording
+                        && self.mic.has_converted_recording()
+                    {
+                        let file_data = self.mic.get_sample_bytes();
+                        let mut mic_sample_name_copy = self.mic_sample_name.clone();
+
+                        // SQL injections are scary.
+                        if !mic_sample_name_copy.chars().all(|x| x.is_alphanumeric()) {
+                            error!("No Special Characters thank you.");
+                        } else {
+                            // Add file extension. Hardcoded for now, while ogg is the only compatible option.
+                            mic_sample_name_copy += ".ogg";
+
+                            // Call hydric upload method with bytes + file name.
+                            spawn(&mut self.async_state.upload_mic_sample, async move {
+                                // Upload our sample.
+                                let result = upload_sample(mic_sample_name_copy, file_data).await;
+                                if let Err(ref e) = result {
+                                    error!("[5] Upload failed: {e:?}");
+                                }
+                                result
+                            });
+                            // Reset mic.
+                            let _ = self.mic.clear_mic();
+                            *self.mic_state = MicState::Idle;
+                            *self.mic_sample_name = String::new();
+                        }
                     }
                 });
             },

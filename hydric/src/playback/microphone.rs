@@ -326,7 +326,17 @@ impl Microphone {
         !self.audio_chunks.is_empty()
     }
 
+    pub fn has_converted_recording(&self) -> bool {
+        let intermediate = Arc::clone(&self.intermediate_data);
+        !(*intermediate.lock().unwrap().clone()).is_empty()
+    }
+
     pub fn is_playing(&self) -> bool {
         *self.playing_status.lock().unwrap()
+    }
+
+    pub fn get_sample_bytes(&mut self) -> Vec<u8> {
+        let intermediate = Arc::clone(&self.intermediate_data);
+        (*intermediate.lock().unwrap().clone()).to_vec()
     }
 }
