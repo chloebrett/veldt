@@ -6,9 +6,7 @@ use super::{
 use crate::node::AmpNode;
 use dasp_graph::node::Sum;
 use petgraph::stable_graph::NodeIndex;
-use shared::model::{
-    Effect, EffectId, GeneratorId, MatrixCell, PlacementType, Project,
-};
+use shared::model::{Effect, EffectId, GeneratorId, MatrixCell, PlacementType, Project};
 use state::{
     EffectSelector, GeneratorSelector, MixerMatrixCellSelector, MixerSelector, PlacementSelector,
     move_elem,

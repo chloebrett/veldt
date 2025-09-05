@@ -3,12 +3,12 @@ use crate::node::{AmpNode, BufferNode};
 use crossbeam_channel::Sender;
 use dasp_graph::{BoxedNodeSend, Buffer, Node, NodeData, node::Sum};
 use petgraph::stable_graph::NodeIndex;
+use shared::model::GeneratorId;
 use shared::model::Project;
 use state::{
     Action, EffectSelector, FloatField, GeneratorSelector, IndexField, MoveField, Selector,
     StoreData, TypeField,
 };
-use shared::model::GeneratorId;
 
 mod channel_info;
 mod effect_info;
@@ -80,7 +80,7 @@ pub struct Mixer {
 
     // Generator IDs need to be tracked for determining selectors when adding/deleting generators
     // Alternatively could pass generator ID through generator instance rather than separately computing like it's done here
-    generator_ids: Vec<GeneratorId>
+    generator_ids: Vec<GeneratorId>,
 }
 
 impl Mixer {
@@ -98,7 +98,12 @@ impl Mixer {
             graph_manager.add_node(make_node(BufferNode::default()), NodeLabel::Buffer);
         let main_sum = graph_manager.add_node(make_node(Sum), NodeLabel::Sum);
         let main_amp = graph_manager.add_node(make_node(AmpNode::new_main()), NodeLabel::Amp);
-        let generator_ids: Vec<GeneratorId> = project.generators.keys().into_iter().map(|key| key.clone()).collect();
+        let generator_ids: Vec<GeneratorId> = project
+            .generators
+            .keys()
+            .into_iter()
+            .map(|key| key.clone())
+            .collect();
 
         Self {
             graph_manager,
@@ -106,7 +111,7 @@ impl Mixer {
             main_buffer,
             main_sum,
             main_amp,
-            generator_ids
+            generator_ids,
         }
         .with_refreshed_edges()
     }
@@ -270,9 +275,18 @@ impl Mixer {
                 }
                 Action::AddChild(TypeField::Generator(gen_instance)) => {
                     let mixer_index = gen_instance.meta.mixer_channel;
-                    let all_ids: Vec<usize> = self.generator_ids.clone().into_iter().map(|key| *key).collect();
+                    let all_ids: Vec<usize> = self
+                        .generator_ids
+                        .clone()
+                        .into_iter()
+                        .map(|key| *key)
+                        .collect();
                     let next_id = all_ids.iter().max().unwrap_or(&0).clone() + 1;
-                    let generator_info = GeneratorInfo::new(&mut self.graph_manager, gen_instance, GeneratorSelector(GeneratorId(next_id)));
+                    let generator_info = GeneratorInfo::new(
+                        &mut self.graph_manager,
+                        gen_instance,
+                        GeneratorSelector(GeneratorId(next_id)),
+                    );
                     self.channels[mixer_index].soft_add_generator(&generator_info);
                     self.generator_ids.push(GeneratorId(next_id));
                     true
