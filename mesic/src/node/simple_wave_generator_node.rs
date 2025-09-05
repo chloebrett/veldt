@@ -55,22 +55,6 @@ impl NodeState {
             if self.meta != *meta {
                 self.meta = meta.clone();
             }
-            // Removing any voices that have finished playing
-            let voices = &mut self.voices;
-            let keys_to_remove: Vec<String> = voices
-                .iter()
-                .filter_map(|(voice_key, voice)| {
-                    if voice.eg.is_off() {
-                        Some(voice_key.clone())
-                    } else {
-                        None
-                    }
-                })
-                .collect();
-            for voice_key in keys_to_remove {
-                log::info!("Removing finished voice: {}", voice_key);
-                voices.remove(&voice_key);
-            }
         }
     }
 }
@@ -164,6 +148,22 @@ impl Node<ProcessContext> for SimpleWaveGeneratorNode {
             }
 
             buffer[i] = cumulative_wave_amp_product;
+            
+            // Removing any voices that have finished playing
+            let keys_to_remove: Vec<String> = state.voices
+                .iter()
+                .filter_map(|(voice_key, voice)| {
+                    if voice.eg.is_shutdown() {
+                        Some(voice_key.clone())
+                    } else {
+                        None
+                    }
+                })
+                .collect();
+            for voice_key in keys_to_remove {
+                log::info!("Removing finished voice: {}", voice_key);
+                state.voices.remove(&voice_key);
+            }
         }
 
         for (channel_index, out_buf) in output.iter_mut().enumerate() {

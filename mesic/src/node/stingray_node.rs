@@ -92,27 +92,6 @@ impl NodeState {
             if self.meta != *meta {
                 self.meta = meta.clone();
             }
-            // Removing any voices that have finished playing
-            let voices = &mut self.voices;
-            for voice in voices.values_mut() {
-                for eg in voice.egs.iter_mut() {
-                    log::info!("Voice EG peek: {}", eg.is_off());
-                }
-            }
-            let keys_to_remove: Vec<String> = voices
-                .iter()
-                .filter_map(|(voice_key, voice)| {
-                    if voice.egs.iter().all(|eg| eg.is_off()) {
-                        Some(voice_key.clone())
-                    } else {
-                        None
-                    }
-                })
-                .collect();
-            for voice_key in keys_to_remove {
-                log::info!("Removing finished voice: {}", voice_key);
-                voices.remove(&voice_key);
-            }
         }
     }
 }
@@ -340,8 +319,18 @@ impl Node<ProcessContext> for StingrayNode {
         }
 
         if state.config.lpf_on {
-            self.state.filter_left.apply(&mut output[0]);
-            self.state.filter_right.apply(&mut output[1]);
+            state.filter_left.apply(&mut output[0]);
+            state.filter_right.apply(&mut output[1]);
+        }
+
+        // Removing any voices that have finished playing
+        let finished_keys: Vec<String> = state.voices
+            .iter()
+            .filter(|(_key, voice)| voice.egs.iter().all(|eg| eg.is_shutdown()))
+            .map(|(key, _voice)| key.clone())
+            .collect();
+        for key in finished_keys {
+            state.voices.remove(&key);
         }
     }
 }
