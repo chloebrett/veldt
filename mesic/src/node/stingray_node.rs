@@ -324,7 +324,8 @@ impl Node<ProcessContext> for StingrayNode {
         }
 
         // Removing any voices that have finished playing
-        let finished_keys: Vec<String> = state.voices
+        let finished_keys: Vec<String> = state
+            .voices
             .iter()
             .filter(|(_key, voice)| voice.egs.iter().all(|eg| eg.is_shutdown()))
             .map(|(key, _voice)| key.clone())

@@ -148,9 +148,10 @@ impl Node<ProcessContext> for SimpleWaveGeneratorNode {
             }
 
             buffer[i] = cumulative_wave_amp_product;
-            
+
             // Removing any voices that have finished playing
-            let keys_to_remove: Vec<String> = state.voices
+            let keys_to_remove: Vec<String> = state
+                .voices
                 .iter()
                 .filter_map(|(voice_key, voice)| {
                     if voice.eg.is_shutdown() {
