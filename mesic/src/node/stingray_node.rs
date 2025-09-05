@@ -12,8 +12,8 @@ use crate::wave_cache::{WaveCache, WaveKey};
 use dasp_frame::Stereo;
 use dasp_graph::{Buffer, Input, Node};
 use shared::model::{
-    AntiAliasingMode, Generator, GeneratorInstance, GeneratorMeta, Oscillator, PitchName,
-    StingrayConfig, ModMatrix,
+    AntiAliasingMode, Generator, GeneratorInstance, GeneratorMeta, ModMatrix, Oscillator,
+    PitchName, StingrayConfig,
 };
 use shared::types::{Freq, KnobPosition, Volume};
 use state::GeneratorSelector;
@@ -223,7 +223,7 @@ impl Node<ProcessContext> for StingrayNode {
                     // Envelope-oscillator modulation
                     let env_osc_mod = aggregate_values(
                         &state.config.matrix,
-                        ENV_ROW_START, 
+                        ENV_ROW_START,
                         j,
                         voice.egs.iter_mut().map(|eg| eg.next().unwrap_or(0.0)),
                     );
@@ -245,30 +245,39 @@ impl Node<ProcessContext> for StingrayNode {
             // Applying the LFO to the LPF
             // This implementation of the LFO LPF relation is based on the the ableton synth version
             // https://learningsynths.ableton.com/en/playground
-            let lfo_lpf_mod = state.voices.values()
-                .map(|voice| aggregate_values(
-                    &state.config.matrix,
-                    LFO_ROW_START,
-                    LPF_COL_START,
-                    voice.lfos.iter().map(|lfo| lfo.current_value),
-                ))
+            let lfo_lpf_mod = state
+                .voices
+                .values()
+                .map(|voice| {
+                    aggregate_values(
+                        &state.config.matrix,
+                        LFO_ROW_START,
+                        LPF_COL_START,
+                        voice.lfos.iter().map(|lfo| lfo.current_value),
+                    )
+                })
                 .sum::<f32>();
 
             // Applying envelopes to LPF
-            let env_lpf_mod = state.voices.values()
-                .map(|voice| aggregate_values(
-                    &state.config.matrix,
-                    0,
-                    LPF_COL_START,
-                    voice.egs.iter().map(|eg| eg.peek()),
-                ))
+            let env_lpf_mod = state
+                .voices
+                .values()
+                .map(|voice| {
+                    aggregate_values(
+                        &state.config.matrix,
+                        0,
+                        LPF_COL_START,
+                        voice.egs.iter().map(|eg| eg.peek()),
+                    )
+                })
                 .sum::<f32>();
 
             // If no modulation, set to 1 so that sound is not cut off
             let env_lpf_mod = if env_lpf_mod == 0.0 { 1.0 } else { env_lpf_mod };
 
             // The modified LPF frequency should go to max freq at LFO value 1.0 and min freq at -1.0.
-            let mut new_lpf_freq = state.config.lpf.fc + (LPF_MAX_FREQ - LPF_MIN_FREQ) * lfo_lpf_mod;
+            let mut new_lpf_freq =
+                state.config.lpf.fc + (LPF_MAX_FREQ - LPF_MIN_FREQ) * lfo_lpf_mod;
             new_lpf_freq = LPF_MIN_FREQ + env_lpf_mod * (new_lpf_freq - LPF_MIN_FREQ);
             new_lpf_freq = new_lpf_freq.clamp(LPF_MIN_FREQ, LPF_MAX_FREQ);
 
@@ -362,12 +371,7 @@ impl StingrayWaveSource {
     }
 }
 
-fn aggregate_values<I>(
-    matrix: &ModMatrix,
-    row_offset: usize,
-    col: usize,
-    sources: I,
-) -> f32
+fn aggregate_values<I>(matrix: &ModMatrix, row_offset: usize, col: usize, sources: I) -> f32
 where
     I: Iterator<Item = f32>,
 {
