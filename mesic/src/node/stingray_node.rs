@@ -210,11 +210,10 @@ impl Node<ProcessContext> for StingrayNode {
 
             for voice in state.voices.values_mut() {
                 for (j, source) in voice.sources.iter_mut().enumerate() {
+                    // LFO-oscillator modulation
                     let mut lfo_value = 0.0;
                     let mut lfo_active = false;
-                    // Access the column for this oscillator in the matrix
                     for k in 0..state.config.lfos.len() {
-                        // Get matrix value for this oscillator and LFO
                         let matrix_value = state
                             .config
                             .matrix
@@ -232,7 +231,6 @@ impl Node<ProcessContext> for StingrayNode {
                     let wave = source.next(&mut self.cache, lfo_value, lfo_active);
                     let mut amp_mod = 0.0;
 
-                    // Iterate through each envelope and accumulate modulation
                     for eg_idx in 0..voice.egs.len() {
                         let matrix_value = state
                             .config
@@ -254,31 +252,23 @@ impl Node<ProcessContext> for StingrayNode {
                 }
             }
 
-            // LPF modulation
+            // --- LPF modulation ---
             const LPF_MIN_FREQ: f32 = 20.0;
             const LPF_MAX_FREQ: f32 = 20000.0;
 
             let mut lfo_value = 0.0;
-
-            // The modified LPF frequency should go to max freq at LFO value 1.0 and min freq at -1.0.
-            let mut new_lpf_freq = state.config.lpf.fc + (LPF_MAX_FREQ - LPF_MIN_FREQ) * lfo_value;
-
-            // Normalize cutoff frequency
             let mut env_mod = 0.0;
 
             for voice in state.voices.values_mut() {
                 // Applying the LFO to the LPF
                 // This implementation of the LFO LPF relation is based on the the ableton synth version
                 // https://learningsynths.ableton.com/en/playground
-
                 for k in 0..state.config.lfos.len() {
-                    // Get matrix value for this LPF and LFO
                     let matrix_value = state
                         .config
                         .matrix
                         .get(k + LFO_ROW_START, LPF_COL_START)
                         .map_or(0.0, |cell_ref| (*cell_ref).into());
-
                     lfo_value += voice.lfos[k].current_value * matrix_value;
                 }
 
@@ -289,10 +279,7 @@ impl Node<ProcessContext> for StingrayNode {
                         .matrix
                         .get(eg_idx, LPF_COL_START)
                         .map_or(0.0, |cell_ref| (*cell_ref).into());
-
                     let eg_val = voice.egs[eg_idx].peek();
-
-                    // Accumulate modulation scaled by matrix value
                     env_mod += eg_val * matrix_value;
                 }
             }
@@ -301,8 +288,9 @@ impl Node<ProcessContext> for StingrayNode {
                 env_mod = 1.0;
             }
 
+            // The modified LPF frequency should go to max freq at LFO value 1.0 and min freq at -1.0.
+            let mut new_lpf_freq = state.config.lpf.fc + (LPF_MAX_FREQ - LPF_MIN_FREQ) * lfo_value;
             new_lpf_freq = LPF_MIN_FREQ + env_mod * (new_lpf_freq - LPF_MIN_FREQ);
-
             new_lpf_freq = new_lpf_freq.clamp(LPF_MIN_FREQ, LPF_MAX_FREQ);
 
             let mut new_eq_config = state.config.lpf.clone();
