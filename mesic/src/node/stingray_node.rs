@@ -286,6 +286,17 @@ impl Node<ProcessContext> for StingrayNode {
 
             state.filter_left.update_config(new_eq_config.clone());
             state.filter_right.update_config(new_eq_config.clone());
+
+            // Removing any voices that have finished playing
+            let finished_keys: Vec<String> = state
+                .voices
+                .iter()
+                .filter(|(_key, voice)| voice.egs.iter().all(|eg| eg.is_shutdown()))
+                .map(|(key, _voice)| key.clone())
+                .collect();
+            for key in finished_keys {
+                state.voices.remove(&key);
+            }
         }
 
         for (channel_index, out_buf) in output.iter_mut().enumerate() {
@@ -297,17 +308,6 @@ impl Node<ProcessContext> for StingrayNode {
         if state.config.lpf_on {
             state.filter_left.apply(&mut output[0]);
             state.filter_right.apply(&mut output[1]);
-        }
-
-        // Removing any voices that have finished playing
-        let finished_keys: Vec<String> = state
-            .voices
-            .iter()
-            .filter(|(_key, voice)| voice.egs.iter().all(|eg| eg.is_shutdown()))
-            .map(|(key, _voice)| key.clone())
-            .collect();
-        for key in finished_keys {
-            state.voices.remove(&key);
         }
     }
 }
