@@ -34,7 +34,9 @@ impl<'a> PlacementView<'a> {
         sel: &PlacementSelector,
         store: &Store,
     ) {
-        egui::ComboBox::from_id_salt(format!("placement_{:?}_track", placement_id))
+        ui.horizontal(|ui| {
+
+            egui::ComboBox::from_id_salt(format!("placement_{:?}_track", placement_id))
             .selected_text(format!("Track ID {}", *track_placement.track_id))
             .show_ui(ui, |ui| {
                 for track_id in store.get().project.tracks.keys() {
@@ -69,7 +71,8 @@ impl<'a> PlacementView<'a> {
                     );
                 }
             });
-
+        });
+        
         let track_sel = TrackSelector(track_placement.track_id);
         let track: &Track = store.select(&track_sel);
         let max_duration = *(track.unclipped_duration());
