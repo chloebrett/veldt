@@ -9,7 +9,7 @@ use dasp_graph::{Buffer, Input, Node};
 use shared::model::{Generator, GeneratorInstance, GeneratorMeta, SimpleWaveConfig};
 use shared::types::Freq;
 use state::GeneratorSelector;
-use std::collections::{HashMap, HashSet};
+use std::collections::HashMap;
 
 pub struct SimpleWaveGeneratorNode {
     selector: GeneratorSelector,
