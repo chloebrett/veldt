@@ -63,7 +63,15 @@ message PlacementProto {
     pmodel.DrumTrackPlacementProto drum_track = 6;
   }
 
-  repeated uint32 colour = 7;
+  ColourProto colour = 7;
+}
+
+message ColourProto {
+  float r = 1;
+
+  float g = 2;
+
+  float b = 3;
 }
 
 message TrackPlacementProto {

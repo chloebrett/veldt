@@ -1,4 +1,4 @@
-use crate::components::utils::choose_black_white_based_on_contrast;
+use crate::components::utils::{ToEguiColour, choose_black_white_based_on_contrast};
 use crate::playback::AudioPlayer;
 use crate::{GetSet, LocalState, transform::Transform};
 use crate::{view::View, widget::StateWindow, window_state::WindowKind};
@@ -12,8 +12,8 @@ use mesic::{beats_to_samples, samples_to_beats};
 use ordered_float::OrderedFloat;
 use shared::{
     model::{
-        PlacedNote, Placement, PlacementId, PlacementType, SampleId, SamplePlacement, Track,
-        TrackPlacement,
+        Colour, PlacedNote, Placement, PlacementId, PlacementType, SampleId, SamplePlacement,
+        Track, TrackPlacement,
     },
     types::Beats,
 };
@@ -118,7 +118,7 @@ impl View for TrackRoll<'_> {
                             offset: 0.0.into(),
                             clipped_duration: None,
                             visual_placement: 0,
-                            colour: [67, 206, 222],
+                            colour: Colour::from_8bit(67, 206, 222),
                         })));
                     }
                     if ui.button("New drum").clicked() {
@@ -130,7 +130,7 @@ impl View for TrackRoll<'_> {
                             offset: 0.0.into(),
                             clipped_duration: None,
                             visual_placement: 0,
-                            colour: [225, 138, 9],
+                            colour: Colour::from_8bit(225, 138, 9),
                         })));
                     }
                     if ui.button("New sample placement").clicked() {
@@ -139,7 +139,7 @@ impl View for TrackRoll<'_> {
                             offset: 0.0.into(),
                             clipped_duration: None,
                             visual_placement: 0,
-                            colour: [71, 44, 114],
+                            colour: Colour::from_8bit(71, 44, 114),
                         })));
                     }
                     ui.checkbox(&mut select, "Select")
@@ -223,7 +223,7 @@ impl<'a> PlacedTrack<'a> {
 
     fn shape(&self, range: Rect) -> Shape {
         let rgb = self.placement.colour;
-        let background_colour = Color32::from_rgba_unmultiplied(rgb[0], rgb[1], rgb[2], 20);
+        let background_colour = rgb.to_egui_unmultiplied(/* alpha= */ 20);
         Shape::Vec(vec![
             // track background shape
             Shape::rect_filled(
@@ -266,11 +266,7 @@ impl<'a> PlacedTrack<'a> {
                     self.store.get().project.bpm,
                 ) as usize,
             );
-            let colour = Color32::from_rgb_additive(
-                self.placement.colour[0],
-                self.placement.colour[1],
-                self.placement.colour[2],
-            );
+            let colour = self.placement.colour.to_egui_additive();
             if sample_length == 0 {
                 return Shape::line(vec![Pos2::ZERO], Stroke::new(0.0, colour));
             }
@@ -369,7 +365,7 @@ impl<'a> PlacedTrack<'a> {
                 let note_shape: Shape = RectShape::new(
                     note_rect,
                     1.0,
-                    Color32::from_rgb_additive(rgb_values[0], rgb_values[1], rgb_values[2]),
+                    rgb_values.to_egui_additive(),
                     Stroke::NONE,
                     StrokeKind::Inside,
                 )
@@ -387,8 +383,7 @@ impl<'a> PlacedTrack<'a> {
 
     fn create_header_shape(&self, range: Rect) -> Shape {
         let rgb_values = self.placement.colour;
-        let header_brackground_colour =
-            Color32::from_rgb_additive(rgb_values[0], rgb_values[1], rgb_values[2]);
+        let header_brackground_colour = rgb_values.to_egui_additive();
 
         let mut header_rect = Rect::from_pos(Pos2::ZERO);
         let duration = *self
@@ -410,7 +405,7 @@ impl<'a> PlacedTrack<'a> {
     fn create_label(&self, range: Rect, ui: &mut Ui) -> Shape {
         let font_id = egui::FontId::proportional(11.0);
         let font_rgb = choose_black_white_based_on_contrast(self.placement.colour);
-        let font_colour = Color32::from_rgb(font_rgb[0], font_rgb[1], font_rgb[2]);
+        let font_colour = font_rgb.to_egui();
         let label_text = match &self.placement.kind {
             PlacementType::Track(track) => "Track: ".to_owned() + &track.track_id.to_string(),
             PlacementType::Sample(sample) => "Sample: ".to_owned() + &sample.sample_id.to_string(),
@@ -483,7 +478,7 @@ impl<'a> PlacedTrack<'a> {
                 CornerRadius::same(0),
                 Stroke {
                     width: 1.5,
-                    color: Color32::from_rgb_additive(rgb_values[0], rgb_values[1], rgb_values[2]),
+                    color: rgb_values.to_egui_additive(),
                 },
                 StrokeKind::Inside,
             ),
@@ -520,7 +515,7 @@ impl<'a> PlacedTrack<'a> {
                 CornerRadius::same(0),
                 Stroke {
                     width: 1.5,
-                    color: Color32::from_rgb_additive(rgb_values[0], rgb_values[1], rgb_values[2]),
+                    color: rgb_values.to_egui_additive(),
                 },
                 StrokeKind::Inside,
             ),
@@ -864,7 +859,7 @@ impl Widget for TrackSequencer<'_> {
                     offset: offset.into(),
                     clipped_duration: None,
                     visual_placement: pos.y as u32,
-                    colour: [67, 206, 222],
+                    colour: Colour::from_8bit(67, 206, 222),
                 };
                 store.dispatchr(Action::AddChild(TypeField::Placement(placement)));
             }
