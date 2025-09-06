@@ -191,9 +191,9 @@ impl<F: Fn(Action), G: Fn()> View for StingrayEnvelopeView<'_, F, G> {
                                                     .inverse()
                                                     .transform_pos(pointer_pos_screen);
                                                 let new_decay_time =
-                                                    pointer_pos_model.x.max(0.0).min(x_size);
+                                                    pointer_pos_model.x.clamp(0.0, x_size);
                                                 let new_sustain =
-                                                    pointer_pos_model.y.max(0.0).min(1.0);
+                                                    pointer_pos_model.y.clamp(0.0, 1.0);
                                                 dispatch(Action::SetFloat(
                                                     FloatField::AdsrSustain,
                                                     new_sustain,
@@ -208,15 +208,11 @@ impl<F: Fn(Action), G: Fn()> View for StingrayEnvelopeView<'_, F, G> {
                                                         0.0,
                                                     ));
                                                 } else {
+                                                    let decay = (new_decay_time - envelope.attack)
+                                                        .clamp(0.0, 1000.0);
                                                     dispatch(Action::SetFloat(
                                                         FloatField::AdsrDecay,
-                                                        f32::max(
-                                                            0.0,
-                                                            f32::min(
-                                                                1000.0,
-                                                                new_decay_time - envelope.attack,
-                                                            ),
-                                                        ),
+                                                        decay,
                                                     ));
                                                 }
                                             }
@@ -247,9 +243,9 @@ impl<F: Fn(Action), G: Fn()> View for StingrayEnvelopeView<'_, F, G> {
                                                     .inverse()
                                                     .transform_pos(pointer_pos_screen);
                                                 let new_release_time =
-                                                    pointer_pos_model.x.max(0.0).min(x_size);
+                                                    pointer_pos_model.x.clamp(0.0, x_size);
                                                 let new_sustain =
-                                                    pointer_pos_model.y.max(0.0).min(1.0);
+                                                    pointer_pos_model.y.clamp(0.0, 1.0);
                                                 dispatch(Action::SetFloat(
                                                     FloatField::AdsrSustain,
                                                     new_sustain,

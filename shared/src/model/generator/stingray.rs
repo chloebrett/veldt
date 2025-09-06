@@ -122,7 +122,7 @@ impl From<StingrayConfigProto> for StingrayConfig {
             lfos: map_vec(lfos).try_into().expect("Expected 3 LFOs!"),
             matrix: matrix.unwrap().into(),
             lpf: lpf.unwrap().into(),
-            lpf_on: lpf_on,
+            lpf_on,
         }
     }
 }
