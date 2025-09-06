@@ -196,13 +196,13 @@ mod tests {
         // Attack
         expected.extend([0.2, 0.4, 0.6, 0.8, 1.0]);
         // Decay
-        expected.extend([0.8, 0.6, 0.4]);
+        expected.extend([0.9, 0.8, 0.7, 0.6, 0.5]);
         // Sustain
-        expected.extend([0.5; 12]);
+        expected.extend([0.5; 10]);
         // Release
-        expected.extend([0.3, 0.1]);
+        expected.extend([0.4, 0.3, 0.2, 0.1, 0.0]);
         // Off
-        expected.extend([0.0; 8]);
+        expected.extend([0.0; 5]);
         assert_almost_equal(result, expected);
     }
 
