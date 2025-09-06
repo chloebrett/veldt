@@ -55,6 +55,8 @@ impl NodeState {
             if self.meta != *meta {
                 self.meta = meta.clone();
             }
+
+            
         }
     }
 }
@@ -154,7 +156,7 @@ impl Node<ProcessContext> for SimpleWaveGeneratorNode {
                 .voices
                 .iter()
                 .filter_map(|(voice_key, voice)| {
-                    if voice.eg.is_shutdown() {
+                    if voice.eg.is_off() {
                         Some(voice_key.clone())
                     } else {
                         None
@@ -162,7 +164,6 @@ impl Node<ProcessContext> for SimpleWaveGeneratorNode {
                 })
                 .collect();
             for voice_key in keys_to_remove {
-                log::info!("Removing finished voice: {}", voice_key);
                 state.voices.remove(&voice_key);
             }
         }

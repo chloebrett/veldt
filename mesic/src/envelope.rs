@@ -110,9 +110,9 @@ impl EnvelopeGenerator {
         self.last_output
     }
 
-    pub fn is_shutdown(&self) -> bool {
+    pub fn is_off(&self) -> bool {
         match self.state {
-            EnvelopeState::_Shutdown => true,
+            EnvelopeState::Off => true,
             _ => false,
         }
     }
