@@ -76,7 +76,7 @@ impl View for GeneratorView<'_> {
 }
 
 pub fn generator_name(instance: &GeneratorInstance) -> &str {
-    if instance.meta.name != "" {
+    if !instance.meta.name.is_empty() {
         &instance.meta.name
     } else {
         match &instance.it {

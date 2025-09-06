@@ -282,7 +282,7 @@ impl Node<ProcessContext> for StingrayNode {
             new_lpf_freq = new_lpf_freq.clamp(LPF_MIN_FREQ, LPF_MAX_FREQ);
 
             let mut new_eq_config = state.config.lpf.clone();
-            new_eq_config.fc = new_lpf_freq.into();
+            new_eq_config.fc = new_lpf_freq;
 
             state.filter_left.update_config(new_eq_config.clone());
             state.filter_right.update_config(new_eq_config.clone());
