@@ -203,7 +203,6 @@ impl Node<ProcessContext> for StingrayNode {
                             for eg in voice_to_turn_off.egs.iter_mut() {
                                 eg.note_off();
                             }
-                            // state.voices.remove(&voice_key);
                         }
                     }
                 }
