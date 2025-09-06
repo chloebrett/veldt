@@ -55,8 +55,6 @@ impl NodeState {
             if self.meta != *meta {
                 self.meta = meta.clone();
             }
-
-            
         }
     }
 }
