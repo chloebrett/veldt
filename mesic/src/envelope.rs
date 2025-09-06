@@ -36,7 +36,7 @@ impl EnvelopeGenerator {
         let release_per_sample = if envelope.release > 0.0 {
             envelope.sustain / (envelope.release * SAMPLE_RATE as f32 / MS_PER_SECOND)
         } else {
-            0.0
+            1.0
         };
 
         Self {
