@@ -108,7 +108,7 @@ impl<F: Fn(Action), G: Fn()> View for StingrayOscillatorView<'_, F, G> {
             )
             .with_neutral(0.0);
             let coarse_det_knob = styled_knob(
-                config.coarse_detune as f32 / 100.0,
+                config.coarse_detune / 100.0,
                 |it| {
                     dispatch(Action::SetFloat(
                         FloatField::OscillatorCoarseDetune,
@@ -154,7 +154,7 @@ impl<F: Fn(Action), G: Fn()> View for StingrayOscillatorView<'_, F, G> {
                         ui,
                         coarse_det_knob,
                         "Coarse",
-                        config.coarse_detune as f32 / 100.0,
+                        config.coarse_detune / 100.0,
                         |it| {
                             dispatch(Action::SetFloat(
                                 FloatField::OscillatorCoarseDetune,

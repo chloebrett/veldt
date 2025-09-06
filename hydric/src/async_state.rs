@@ -13,4 +13,5 @@ pub struct AsyncState {
     pub upload_sample: AsyncResult<String, tonic::Status>,
     pub load_sample_tree: AsyncResult<FilenameTree, tonic::Status>,
     pub export: AsyncResult<(), tonic::Status>,
+    pub upload_mic_sample: AsyncResult<String, tonic::Status>,
 }

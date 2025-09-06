@@ -222,28 +222,15 @@ impl<'a> PlacedTrack<'a> {
     }
 
     fn shape(&self, range: Rect) -> Shape {
-        let rgb_values = self.placement.colour;
-        let background_colour = Color32::from_rgba_unmultiplied(
-            rgb_values[0] as u8,
-            rgb_values[1] as u8,
-            rgb_values[2] as u8,
-            20,
-        );
+        let rgb = self.placement.colour;
+        let background_colour = Color32::from_rgba_unmultiplied(rgb[0], rgb[1], rgb[2], 20);
         Shape::Vec(vec![
             // track background shape
-            if *self.unclipped_duration == 0.0 {
-                Shape::rect_filled(
-                    self.to_rect(range),
-                    CornerRadius::same(1),
-                    background_colour,
-                )
-            } else {
-                Shape::rect_filled(
-                    self.to_rect(range),
-                    CornerRadius::same(1),
-                    background_colour,
-                )
-            },
+            Shape::rect_filled(
+                self.to_rect(range),
+                CornerRadius::same(1),
+                background_colour,
+            ),
             match &self.placement.kind {
                 PlacementType::Track(track_placement) => {
                     let track_id = track_placement.track_id;
@@ -333,12 +320,12 @@ impl<'a> PlacedTrack<'a> {
         }
     }
 
-    fn map_notes_to_shapes(&self, range: Rect, notes: &Vec<PlacedNote>) -> Shape {
+    fn map_notes_to_shapes(&self, range: Rect, notes: &[PlacedNote]) -> Shape {
         let rgb_values = self.placement.colour;
         let note_positions: Vec<Pos2> = notes
-            .into_iter()
+            .iter()
             .map(|note| {
-                let x_pos = f32::from(note.offset);
+                let x_pos: f32 = note.offset.into();
                 let y_pos: f32 = note.note.pitch_name.into();
                 Pos2::new(x_pos, PITCH_RANGE - y_pos)
             })
@@ -357,7 +344,7 @@ impl<'a> PlacedTrack<'a> {
         );
 
         let note_rects: Vec<Rect> = notes
-            .into_iter()
+            .iter()
             .enumerate()
             .map(|(i, note)| {
                 let mut note_rect = Rect::from_pos(note_positions[i]);
@@ -395,9 +382,7 @@ impl<'a> PlacedTrack<'a> {
             placement_rect,
             self.to_rect(range).shrink2(Vec2::new(0.0, 0.07)),
         );
-        let transformed_shapes = Shape::Vec(note_shapes.transform(track_transform));
-
-        transformed_shapes
+        Shape::Vec(note_shapes.transform(track_transform))
     }
 
     fn create_header_shape(&self, range: Rect) -> Shape {
@@ -418,10 +403,8 @@ impl<'a> PlacedTrack<'a> {
             self.to_rect(range),
         );
 
-        let header_shape = Shape::rect_filled(header_rect, 0.2, header_brackground_colour)
-            .transform(placement_transform);
-
-        header_shape
+        Shape::rect_filled(header_rect, 0.2, header_brackground_colour)
+            .transform(placement_transform)
     }
 
     fn create_label(&self, range: Rect, ui: &mut Ui) -> Shape {
@@ -486,8 +469,8 @@ impl<'a> PlacedTrack<'a> {
         Some(PlacedTrack {
             unclipped_duration,
             placement: placement.clone(),
-            store: store,
-            local_state: local_state,
+            store,
+            local_state,
         })
     }
 
@@ -521,8 +504,8 @@ impl<'a> PlacedTrack<'a> {
                         .select(&TrackSelector(track_placement.track_id))
                         .unclipped_duration(),
                     placement: placement.clone(),
-                    store: store,
-                    local_state: local_state,
+                    store,
+                    local_state,
                 }
             })
             .collect()
@@ -537,11 +520,7 @@ impl<'a> PlacedTrack<'a> {
                 CornerRadius::same(0),
                 Stroke {
                     width: 1.5,
-                    color: Color32::from_rgb_additive(
-                        rgb_values[0] as u8,
-                        rgb_values[1] as u8,
-                        rgb_values[2] as u8,
-                    ),
+                    color: Color32::from_rgb_additive(rgb_values[0], rgb_values[1], rgb_values[2]),
                 },
                 StrokeKind::Inside,
             ),

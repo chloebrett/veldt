@@ -105,7 +105,7 @@ impl From<MultiTypeFieldProto> for MultiTypeField {
                     .iter()
                     .filter_map(|value| {
                         if let Some(TypeFieldKind::Colour(colours)) = &value.kind {
-                            Some(colours.clone().into())
+                            Some(*colours)
                         } else {
                             None
                         }
@@ -179,7 +179,7 @@ impl From<MultiTypeField> for MultiTypeFieldProto {
                 values: colour
                     .into_iter()
                     .map(|value| TypeFieldProto {
-                        kind: Some(TypeFieldKind::Colour(value.into())),
+                        kind: Some(TypeFieldKind::Colour(value)),
                     })
                     .collect(),
             },

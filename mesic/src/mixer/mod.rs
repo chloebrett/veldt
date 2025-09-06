@@ -98,12 +98,7 @@ impl Mixer {
             graph_manager.add_node(make_node(BufferNode::default()), NodeLabel::Buffer);
         let main_sum = graph_manager.add_node(make_node(Sum), NodeLabel::Sum);
         let main_amp = graph_manager.add_node(make_node(AmpNode::new_main()), NodeLabel::Amp);
-        let generator_ids: Vec<GeneratorId> = project
-            .generators
-            .keys()
-            .into_iter()
-            .map(|key| key.clone())
-            .collect();
+        let generator_ids: Vec<GeneratorId> = project.generators.keys().copied().collect();
 
         Self {
             graph_manager,
@@ -281,7 +276,7 @@ impl Mixer {
                         .into_iter()
                         .map(|key| *key)
                         .collect();
-                    let next_id = all_ids.iter().max().unwrap_or(&0).clone() + 1;
+                    let next_id = *all_ids.iter().max().unwrap_or(&0) + 1;
                     let generator_info = GeneratorInfo::new(
                         &mut self.graph_manager,
                         gen_instance,

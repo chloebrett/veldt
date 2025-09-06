@@ -82,7 +82,7 @@ impl<'a> PlacementView<'a> {
     fn get_generator_name(store: &Store, generator_id: &GeneratorId) -> String {
         let mut generator_name = format!("Generator ID {}", **generator_id);
         if let Some(generator_instance) = store.get().project.generators.get(generator_id) {
-            if generator_instance.meta.name != "" {
+            if !generator_instance.meta.name.is_empty() {
                 generator_name = generator_instance.meta.name.clone();
             }
         }
@@ -209,15 +209,14 @@ impl View for PlacementView<'_> {
                     on_release,
                 );
 
-                let rgb_initial = placement.colour.clone();
-                let mut initial_colour =
-                    Color32::from_rgb(rgb_initial[0], rgb_initial[1], rgb_initial[2]);
+                let rgb = placement.colour;
+                let mut initial_colour = Color32::from_rgb(rgb[0], rgb[1], rgb[2]);
 
                 ui.label("Placement Colour");
                 color_picker_color32(ui, &mut initial_colour, Alpha::Opaque);
 
                 let new_colour = [initial_colour.r(), initial_colour.g(), initial_colour.b()]; // initial colour gets modified by color picker
-                if rgb_initial != new_colour {
+                if rgb != new_colour {
                     let mut new_rgb = [0; 3];
                     for i in 0..3 {
                         new_rgb[i] = new_colour[i] as u32;
