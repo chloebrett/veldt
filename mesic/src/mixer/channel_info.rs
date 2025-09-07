@@ -6,7 +6,9 @@ use super::{
 use crate::node::AmpNode;
 use dasp_graph::node::Sum;
 use petgraph::stable_graph::NodeIndex;
-use shared::model::{Effect, EffectId, GeneratorId, MatrixCell, PlacementId, PlacementType, Project};
+use shared::model::{
+    Effect, EffectId, GeneratorId, MatrixCell, PlacementId, PlacementType, Project,
+};
 use state::{
     EffectSelector, GeneratorSelector, MixerMatrixCellSelector, MixerSelector, PlacementSelector,
     move_elem,
@@ -21,7 +23,6 @@ pub struct ChannelInfo {
     // Generators that have been muted and so should not have edges.
     muted_generators: HashSet<GeneratorId>,
 
-    // samples: Vec<SamplePlacementInfo>,
     samples: HashMap<PlacementId, SamplePlacementInfo>,
     // Input sum node for this mixer channel.
     // Sums together the generators.
@@ -70,7 +71,12 @@ impl ChannelInfo {
                 .placements
                 .iter()
                 .filter(|(_, placement)| matches!(&placement.kind, PlacementType::Sample(..)))
-                .map(|(id, _)| samples.insert(*id, SamplePlacementInfo::new(graph_manager, PlacementSelector(*id))));
+                .map(|(id, _)| {
+                    samples.insert(
+                        *id,
+                        SamplePlacementInfo::new(graph_manager, PlacementSelector(*id)),
+                    )
+                });
         };
 
         let input_node = graph_manager.add_node(make_node(Sum), NodeLabel::Sum);
@@ -261,10 +267,9 @@ impl ChannelInfo {
     }
 
     pub fn soft_add_placement_sample(&mut self, graph_manager: &mut GraphManager, id: PlacementId) {
-        self.samples.insert(id, SamplePlacementInfo::new(graph_manager, PlacementSelector(id)));
-    }
-
-    pub fn get_sample_len(&self) -> usize{
-        self.samples.len()
+        self.samples.insert(
+            id,
+            SamplePlacementInfo::new(graph_manager, PlacementSelector(id)),
+        );
     }
 }

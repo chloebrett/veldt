@@ -242,12 +242,12 @@ impl Mixer {
             Selector::Placement(placement_id) => match action {
                 // TODO: handle adding, deleting and updating nodes when sample placements change.
                 Action::SetChild(TypeField::SampleId(_)) => {
-                    self.channels[0].soft_add_placement_sample(&mut self.graph_manager, *placement_id);
-                    log::info!("samples are: {:?}", self.channels[0].get_sample_len());
+                    self.channels[0]
+                        .soft_add_placement_sample(&mut self.graph_manager, *placement_id);
                     true
                 }
                 _ => false,
-            }
+            },
             Selector::MixerMatrixCell(..) => match action {
                 // If the matrix changes, reset the routes for each node, then refresh the edges.
                 // NOTE: in future, consider what happens if the size of the matrix changes too.

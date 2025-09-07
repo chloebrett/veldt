@@ -1,5 +1,7 @@
 use crate::model::{
-    DrumTrack, DrumTrackId, EffectId, EffectInstance, GeneratorId, GeneratorInstance, Mixer, Placement, PlacementId, PlacementType, Sample, SampleId, Track, TrackId, TrackPlacement, samples_to_beats
+    DrumTrack, DrumTrackId, EffectId, EffectInstance, GeneratorId, GeneratorInstance, Mixer,
+    Placement, PlacementId, PlacementType, Sample, SampleId, Track, TrackId, TrackPlacement,
+    samples_to_beats,
 };
 use crate::pmodel::*;
 use crate::types::Beats;
@@ -49,15 +51,21 @@ impl Project {
                 }
                 PlacementType::Sample(sample_placement) => {
                     if let Some(sample) = self.samples.get(&sample_placement.sample_id) {
-                        placement.clipped_duration.unwrap_or(OrderedFloat(samples_to_beats(std::cmp::max(sample.left.len(), sample.right.len()), self.bpm)))
+                        placement
+                            .clipped_duration
+                            .unwrap_or(OrderedFloat(samples_to_beats(
+                                std::cmp::max(sample.left.len(), sample.right.len()),
+                                self.bpm,
+                            )))
                     } else {
                         OrderedFloat(0.0)
                     }
-                    
                 }
-                PlacementType::DrumTrack(_) => 
-                    //TODO DRUM TRACK TIME
-                    todo!()   
+                PlacementType::DrumTrack(_) =>
+                //TODO DRUM TRACK TIME
+                {
+                    todo!()
+                }
             };
             max = std::cmp::max(max, offset + duration);
         }
