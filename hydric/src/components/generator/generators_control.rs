@@ -137,8 +137,14 @@ pub fn generators_control(ui: &mut Ui, local_state: &LocalState, store: &Store) 
                                 );
                             }
                         });
+
                     ui.add_space(4.0);
-                    ui.label(generator_name_from_type(&generator.it))
+                    ui.label(generator_name_from_type(&generator.it));
+
+                    let delete_btn = ui.button("Delete");
+                    if delete_btn.clicked() {
+                        store.dispatchr(Action::DeleteChildById(TypeField::GeneratorId(*generator_id)));
+                    }
                 });
                 
                 if index < store.get().project.generators.len() - 1 {

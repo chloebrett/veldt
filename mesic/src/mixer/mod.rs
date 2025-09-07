@@ -291,9 +291,15 @@ impl Mixer {
                     self.generator_ids.push(GeneratorId(next_id));
                     true
                 }
+                Action::DeleteChildById(TypeField::GeneratorId(gen_id)) => {
+                    for channel in self.channels.iter_mut() {
+                        channel.soft_delete_generator(GeneratorSelector(*gen_id));
+                    }
+                    self.generator_ids.retain(|id| id != gen_id);
+                    true
+                }
                 _ => false,
             },
-            // TODO: handle deleting generators (not just changing their mixer channel).
             _ => false,
         };
 
