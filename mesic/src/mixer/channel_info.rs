@@ -21,8 +21,8 @@ pub struct ChannelInfo {
     // Generators that have been muted and so should not have edges.
     muted_generators: HashSet<GeneratorId>,
 
-    samples: Vec<SamplePlacementInfo>,
-
+    // samples: Vec<SamplePlacementInfo>,
+    samples: HashMap<PlacementId, SamplePlacementInfo>,
     // Input sum node for this mixer channel.
     // Sums together the generators.
     pub input_node: NodeIndex,
@@ -64,15 +64,13 @@ impl ChannelInfo {
 
         // TODO: let each sample placement choose which mixer channel it is on, instead of putting
         // all sample placements on channel 0.
-        let samples: Vec<SamplePlacementInfo> = if channel_index == 0 {
-            project
+        let mut samples: HashMap<PlacementId, SamplePlacementInfo> = HashMap::new();
+        if channel_index == 0 {
+            let _ = project
                 .placements
                 .iter()
                 .filter(|(_, placement)| matches!(&placement.kind, PlacementType::Sample(..)))
-                .map(|(id, _)| SamplePlacementInfo::new(graph_manager, PlacementSelector(*id)))
-                .collect()
-        } else {
-            vec![]
+                .map(|(id, _)| samples.insert(*id, SamplePlacementInfo::new(graph_manager, PlacementSelector(*id))));
         };
 
         let input_node = graph_manager.add_node(make_node(Sum), NodeLabel::Sum);
@@ -148,7 +146,7 @@ impl ChannelInfo {
             }
         }
 
-        for sample in &self.samples {
+        for sample in self.samples.values() {
             graph_manager.add_edge(sample.node(), self.input_node, EdgeLabel::SampleToMixIn);
         }
 
@@ -262,8 +260,11 @@ impl ChannelInfo {
         }
     }
 
-    pub fn add_sample(&mut self, graph_manager: &mut GraphManager, id: PlacementId) {
-        let new_sample_placement_info = SamplePlacementInfo::new(graph_manager, PlacementSelector(id));
-        self.samples.push(new_sample_placement_info);
+    pub fn soft_add_placement_sample(&mut self, graph_manager: &mut GraphManager, id: PlacementId) {
+        self.samples.insert(id, SamplePlacementInfo::new(graph_manager, PlacementSelector(id)));
+    }
+
+    pub fn get_sample_len(&self) -> usize{
+        self.samples.len()
     }
 }

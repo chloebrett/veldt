@@ -242,7 +242,8 @@ impl Mixer {
             Selector::Placement(placement_id) => match action {
                 // TODO: handle adding, deleting and updating nodes when sample placements change.
                 Action::SetChild(TypeField::SampleId(_)) => {
-                    self.channels[0].add_sample(&mut self.graph_manager, *placement_id);
+                    self.channels[0].soft_add_placement_sample(&mut self.graph_manager, *placement_id);
+                    log::info!("samples are: {:?}", self.channels[0].get_sample_len());
                     true
                 }
                 _ => false,
