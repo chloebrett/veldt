@@ -6,7 +6,7 @@ use super::{
 use crate::node::AmpNode;
 use dasp_graph::node::Sum;
 use petgraph::stable_graph::NodeIndex;
-use shared::model::{Effect, EffectId, GeneratorId, MatrixCell, PlacementType, Project};
+use shared::model::{Effect, EffectId, GeneratorId, MatrixCell, PlacementId, PlacementType, Project, SampleId};
 use state::{
     EffectSelector, GeneratorSelector, MixerMatrixCellSelector, MixerSelector, PlacementSelector,
     move_elem,
@@ -260,5 +260,10 @@ impl ChannelInfo {
                 graph_manager.add_edge(*route_start, route_end, EdgeLabel::RouteToMixIn);
             }
         }
+    }
+
+    pub fn add_sample(&mut self, graph_manager: &mut GraphManager, id: PlacementId) {
+        let new_sample_placement_info = SamplePlacementInfo::new(graph_manager, PlacementSelector(id));
+        self.samples.push(new_sample_placement_info);
     }
 }

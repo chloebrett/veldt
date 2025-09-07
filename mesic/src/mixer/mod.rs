@@ -239,9 +239,13 @@ impl Mixer {
                     _ => false,
                 }
             }
-            Selector::Placement(..) => {
+            Selector::Placement(placement_id) => match action {
                 // TODO: handle adding, deleting and updating nodes when sample placements change.
-                false
+                Action::SetChild(TypeField::SampleId(_)) => {
+                    self.channels[0].add_sample(&mut self.graph_manager, *placement_id);
+                    true
+                }
+                _ => false,
             }
             Selector::MixerMatrixCell(..) => match action {
                 // If the matrix changes, reset the routes for each node, then refresh the edges.
@@ -288,7 +292,7 @@ impl Mixer {
                 }
                 _ => false,
             },
-            // TODO: handle adding and deleting generators (not just changing their mixer channel).
+            // TODO: handle deleting generators (not just changing their mixer channel).
             _ => false,
         };
 
