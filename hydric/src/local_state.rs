@@ -2,7 +2,7 @@ use crate::WindowState;
 use egui::Pos2;
 use mesic::FFT_SAMPLE_SIZE;
 use ring_buffer_max::MaxDetector;
-use shared::model::{PlacementId, Sample, SampleId};
+use shared::model::{Generator, PlacementId, Sample, SampleId};
 use smart_default::SmartDefault;
 use state::{MixerSelector, TrackSelector};
 use std::cell::RefCell;
@@ -48,6 +48,9 @@ pub struct LocalState {
     pub show_frequency_peaks: Rc<RefCell<bool>>,
 
     pub sample_visual_preview_cache: Rc<RefCell<HashMap<SampleId, Vec<Pos2>>>>,
+
+    pub new_generator_type: Rc<RefCell<Generator>>,
+    pub new_generator_name: Rc<RefCell<String>>,
 }
 
 pub trait GetSet<T: Clone> {
