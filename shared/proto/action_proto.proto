@@ -141,6 +141,7 @@ message SelectorProto {
     IndexPair envelope = 12;
     IndexTriple mod_matrix_cell = 13;
     uint32 sample = 14;
+    IndexPair drum_sub_track = 15;
   }
 
   message IndexPair {
