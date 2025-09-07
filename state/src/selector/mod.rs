@@ -18,6 +18,7 @@ mod placement;
 mod root;
 mod sample;
 mod track;
+mod drum_sub_track;
 
 pub use effect::*;
 pub use envelope::*;
@@ -32,6 +33,7 @@ pub use placement::*;
 pub use root::*;
 pub use sample::*;
 pub use track::*;
+pub use drum_sub_track::*;
 
 pub trait SelectorTrait {
     type Item: ActionReceiver;
@@ -71,6 +73,7 @@ pub enum Selector {
     Envelope(GeneratorId, /* envelope_index */ usize),
     GeneratorEffect(GeneratorId, /* oscillator_index */ usize),
     ModMatrixCell(GeneratorId, /* row */ usize, /* col */ usize),
+    DrumSubTrack(PlacementId, SampleId),
 }
 
 impl From<Selector> for SelectorProto {
@@ -99,6 +102,7 @@ impl From<Selector> for SelectorProto {
                 Selector::ModMatrixCell(first, second, third) => {
                     SelectorKind::ModMatrixCell(triple(*first, second, third))
                 }
+                Selector::DrumSubTrack(first, second) => SelectorKind::DrumSubTrack(pair(*first, *second))
             }),
         }
     }
@@ -137,6 +141,9 @@ impl From<SelectorProto> for Selector {
                 second,
                 third,
             }) => Selector::ModMatrixCell(first.into(), second as usize, third as usize),
+            SelectorKind::DrumSubTrack(IndexPair {first, second}) => {
+                Selector::DrumSubTrack(first.into(),second.into())
+            }
         }
     }
 }

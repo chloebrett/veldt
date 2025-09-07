@@ -13,6 +13,7 @@ mod placement_view;
 mod play;
 mod track_roll;
 mod utils;
+mod drum_rack;
 
 pub use app::*;
 use effect::*;
@@ -26,3 +27,4 @@ use piano::*;
 use placement_view::*;
 use track_roll::*;
 use utils::*;
+use drum_rack::*;
