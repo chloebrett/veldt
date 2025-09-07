@@ -56,7 +56,9 @@ impl View for GeneratorView<'_> {
                         &instance.meta,
                     )
                     .ui(ui),
-                    Generator::Noise(config) => NoiseView::new(&config, dispatch).ui(ui),
+                    Generator::Noise(config) => {
+                        NoiseView::new(&config, dispatch, &instance.meta).ui(ui)
+                    }
                     Generator::Stingray(config) => {
                         StingrayView::new(
                             &config,
