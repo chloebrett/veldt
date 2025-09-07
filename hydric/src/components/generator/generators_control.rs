@@ -22,13 +22,14 @@ pub fn generators_control(ui: &mut Ui, local_state: &LocalState, store: &Store) 
             ui.add_space(4.0);
             ui.horizontal(|ui| {
                 ui.label("Type: ");
+                let curr_generator_type = &local_state.new_generator_type.get();
                 ComboBox::from_id_salt("add_generator_combobox")
-                    .selected_text(generator_name_from_type(&local_state.new_generator_type.get()))
+                    .selected_text(generator_name_from_type(curr_generator_type))
                     .show_ui(ui, |ui| {
                         for generator_type in Generator::iter() {
                             selectable_value(
                                 ui,
-                                get_set(local_state.new_generator_type.get().clone(), |new_gen_type| {
+                                get_set(curr_generator_type.clone(), |new_gen_type| {
                                     local_state.new_generator_type.set(new_gen_type);
                                 }),
                                 generator_type.clone(),
@@ -121,22 +122,25 @@ pub fn generators_control(ui: &mut Ui, local_state: &LocalState, store: &Store) 
                         &on_release,
                     );
                 });
-
-                ComboBox::from_id_salt(format!("generator_{:?}_channel", generator_id))
-                    .selected_text(channel_name(meta.mixer_channel))
-                    .show_ui(ui, |ui| {
-                        for channel in 0..store.get().project.mixer.channels.len() {
-                            selectable_value(
-                                ui,
-                                get_set(meta.mixer_channel, |it| {
-                                    store.dispatch(&sel, Action::SetIndex(IndexField::Mixer(it)))
-                                }),
-                                channel,
-                                channel_name(channel),
-                            );
-                        }
-                    });
-
+                ui.horizontal(|ui| {
+                    ComboBox::from_id_salt(format!("generator_{:?}_channel", generator_id))
+                        .selected_text(channel_name(meta.mixer_channel))
+                        .show_ui(ui, |ui| {
+                            for channel in 0..store.get().project.mixer.channels.len() {
+                                selectable_value(
+                                    ui,
+                                    get_set(meta.mixer_channel, |it| {
+                                        store.dispatch(&sel, Action::SetIndex(IndexField::Mixer(it)))
+                                    }),
+                                    channel,
+                                    channel_name(channel),
+                                );
+                            }
+                        });
+                    ui.add_space(4.0);
+                    ui.label(generator_name_from_type(&generator.it))
+                });
+                
                 if index < store.get().project.generators.len() - 1 {
                     ui.separator();
                 }
