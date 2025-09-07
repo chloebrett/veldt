@@ -128,13 +128,12 @@ impl ActionReceiver for Project {
                 Action::AddChild(TypeField::MixerChannel(prev))
             }
             Action::AddChild(TypeField::Generator(generator)) => {
-                let next_id = *self
-                    .generators
-                    .clone()
-                    .into_keys()
-                    .max()
-                    .unwrap_or(GeneratorId(0))
-                    + 1;
+                let all_ids: Vec<usize> = self.generators.keys().into_iter().map(|key| **key).collect();
+                let next_id = if all_ids.is_empty() {
+                    0
+                } else {
+                    *all_ids.iter().max().unwrap_or(&0) + 1
+                };
                 let next_id = GeneratorId(next_id);
                 self.generators.insert(next_id, generator.clone());
                 Action::DeleteChildById(TypeField::GeneratorId(next_id))

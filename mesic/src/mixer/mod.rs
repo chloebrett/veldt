@@ -281,7 +281,11 @@ impl Mixer {
                         .into_iter()
                         .map(|key| *key)
                         .collect();
-                    let next_id = *all_ids.iter().max().unwrap_or(&0) + 1;
+                    let next_id = if all_ids.is_empty() {
+                        0
+                    } else {
+                        *all_ids.iter().max().unwrap_or(&0) + 1
+                    };
                     let generator_info = GeneratorInfo::new(
                         &mut self.graph_manager,
                         gen_instance,
