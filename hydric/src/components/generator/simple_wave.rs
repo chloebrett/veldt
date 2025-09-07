@@ -6,7 +6,7 @@ use egui::{Button, Sense, Ui};
 use shared::model::{
     AntiAliasingMode, GeneratorMeta, PitchName, PolyphonyMode, ScaleValue, SimpleWaveConfig, WaveType
 };
-use state::{Action, FloatField, GeneratorSelector, TypeField, UintField, Store};
+use state::{Action, FloatField, GeneratorSelector, TypeField, UintField};
 use strum::IntoEnumIterator;
 
 pub struct SimpleWaveView<'a, F: Fn(Action), G: Fn()> {
@@ -16,7 +16,6 @@ pub struct SimpleWaveView<'a, F: Fn(Action), G: Fn()> {
     dispatch: F,
     on_release: G,
     meta: &'a GeneratorMeta,
-    store: &'a Store,
 }
 
 impl<'a, F: Fn(Action), G: Fn()> SimpleWaveView<'a, F, G> {
@@ -27,7 +26,6 @@ impl<'a, F: Fn(Action), G: Fn()> SimpleWaveView<'a, F, G> {
         dispatch: F,
         on_release: G,
         meta: &'a GeneratorMeta,
-        store: &'a Store,
     ) -> Self {
         Self {
             selector,
@@ -36,7 +34,6 @@ impl<'a, F: Fn(Action), G: Fn()> SimpleWaveView<'a, F, G> {
             dispatch,
             on_release,
             meta,
-            store
         }
     }
 
