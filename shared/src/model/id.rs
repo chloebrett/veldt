@@ -137,3 +137,26 @@ impl Deref for EffectId {
         &self.0
     }
 }
+
+#[derive(Hash, Default, PartialEq, Eq, Ord, PartialOrd, Debug, Clone, Copy)]
+pub struct PlacedDrumId(pub usize);
+
+impl From<u32> for PlacedDrumId {
+    fn from(other: u32) -> Self {
+        Self(other as usize)
+    }
+}
+
+impl From<PlacedDrumId> for u32 {
+    fn from(other: PlacedDrumId) -> Self {
+        *other as u32
+    }
+}
+
+impl Deref for PlacedDrumId {
+    type Target = usize;
+
+    fn deref(&self) -> &usize {
+        &self.0
+    }
+}

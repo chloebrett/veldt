@@ -86,13 +86,26 @@ message SampleProto {
   string sample_name = 4;
 }
 
-message DrumTrackProto {
-  uint32 sample_id = 1;
-  repeated PlacedDrumProto drums = 2;
-}
-
 message DrumTrackPlacementProto {
   uint32 drum_track_id = 1;
+
+  DrumTrackProto drum_track = 2;
+}
+
+message DrumTrackProto {
+  map<uint32, DrumSubTrackProto> drum_sub_tracks = 1;
+}
+
+message DrumSubTrackProto {
+  map<uint32, PlacedDrumProto> placed_drums = 1;
+}
+
+message PlacedDrumProto {
+  float offset = 1;
+
+  optional float clipped_duration = 2;
+
+  PitchNameProto pitch_name = 3;
 }
 
 message MixerChannelProto {
@@ -113,10 +126,6 @@ message NoteProto {
   PitchNameProto pitch_name = 1;
 
   float beats = 2;
-}
-
-message PlacedDrumProto {
-  float offset = 1;
 }
 
 message AdsrEnvelopeProto {
