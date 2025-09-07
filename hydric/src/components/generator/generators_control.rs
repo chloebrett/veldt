@@ -36,7 +36,7 @@ pub fn generators_control(ui: &mut Ui, local_state: &LocalState, store: &Store) 
                                 generator_name_from_type(&generator_type),
                             );
                         }
-                });
+                    });
             });
 
             ui.add_space(4.0);
@@ -55,7 +55,13 @@ pub fn generators_control(ui: &mut Ui, local_state: &LocalState, store: &Store) 
                 if add_gen_button.clicked() {
                     let new_gen = GeneratorInstance {
                         it: local_state.new_generator_type.get(),
-                        meta: GeneratorMeta { volume: 1.0, mute: false, pan: 0.0, mixer_channel: 0, name: local_state.new_generator_name.get() },
+                        meta: GeneratorMeta {
+                            volume: 1.0,
+                            mute: false,
+                            pan: 0.0,
+                            mixer_channel: 0,
+                            name: local_state.new_generator_name.get(),
+                        },
                     };
                     store.dispatchr(Action::AddChild(state::TypeField::Generator(new_gen)));
                     local_state.new_generator_name.set("".to_string());
@@ -130,7 +136,8 @@ pub fn generators_control(ui: &mut Ui, local_state: &LocalState, store: &Store) 
                                 selectable_value(
                                     ui,
                                     get_set(meta.mixer_channel, |it| {
-                                        store.dispatch(&sel, Action::SetIndex(IndexField::Mixer(it)))
+                                        store
+                                            .dispatch(&sel, Action::SetIndex(IndexField::Mixer(it)))
                                     }),
                                     channel,
                                     channel_name(channel),
@@ -143,10 +150,12 @@ pub fn generators_control(ui: &mut Ui, local_state: &LocalState, store: &Store) 
 
                     let delete_btn = ui.button("Delete");
                     if delete_btn.clicked() {
-                        store.dispatchr(Action::DeleteChildById(TypeField::GeneratorId(*generator_id)));
+                        store.dispatchr(Action::DeleteChildById(TypeField::GeneratorId(
+                            *generator_id,
+                        )));
                     }
                 });
-                
+
                 if index < store.get().project.generators.len() - 1 {
                     ui.separator();
                 }
@@ -162,5 +171,3 @@ pub fn generator_name_from_type(generator: &Generator) -> &str {
         Generator::Stingray(_) => "Stingray (Subtractive Synth)",
     }
 }
-
-

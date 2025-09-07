@@ -51,10 +51,7 @@ impl<'a> PlacementView<'a> {
             });
 
         egui::ComboBox::from_id_salt(format!("placement_{:?}_generator", placement_id))
-            .selected_text(self.get_generator_name(
-                store,
-                &track_placement.generator_id,
-            ))
+            .selected_text(self.get_generator_name(store, &track_placement.generator_id))
             .show_ui(ui, |ui| {
                 let mut generators: Vec<_> = store.get().project.generators.keys().collect();
                 if !generators.is_empty() {

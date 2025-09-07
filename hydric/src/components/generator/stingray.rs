@@ -173,7 +173,6 @@ impl<F: Fn(Action), G: Fn()> View for StingrayView<'_, F, G> {
                         );
                     }
                 });
-
             });
             ui.add_space(1.0); //spacing btwn osc + lpf and right border
         });

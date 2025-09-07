@@ -4,7 +4,8 @@ use crate::view::View;
 use crate::widget::{add_typable_knob, get_set, int_slider, selectable_value, styled_knob};
 use egui::{Button, Sense, Ui};
 use shared::model::{
-    AntiAliasingMode, GeneratorMeta, PitchName, PolyphonyMode, ScaleValue, SimpleWaveConfig, WaveType
+    AntiAliasingMode, GeneratorMeta, PitchName, PolyphonyMode, ScaleValue, SimpleWaveConfig,
+    WaveType,
 };
 use state::{Action, FloatField, GeneratorSelector, TypeField, UintField};
 use strum::IntoEnumIterator;
