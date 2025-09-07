@@ -92,12 +92,13 @@ impl<F: Fn(Action), G: Fn()> View for StingrayEnvelopeView<'_, F, G> {
                             ui.vertical(|ui| {
                                 // Envelope graph
                                 ui.add_space(2.0); // left border
-                                Frame::canvas(ui.style())
+                                ui.horizontal(|ui| {
+                                    Frame::canvas(ui.style())
                                     .fill(Color32::from_gray(30))
                                     .stroke(Stroke::NONE)
                                     .show(ui, |ui| {
                                         ui.ctx().request_repaint();
-                                        let desired_size = vec2(300.0, 160.0);
+                                        let desired_size = vec2(400.0, 128.0);
                                         let (_id, rect) = ui.allocate_space(desired_size);
                                         let envelope = config.envelopes[active_env_tab].clone();
                                         let x_size =
@@ -216,9 +217,7 @@ impl<F: Fn(Action), G: Fn()> View for StingrayEnvelopeView<'_, F, G> {
                                                     ));
                                                 }
                                             }
-                                            // ui.add_space(5.0);
                                         }
-                                        ui.add_space(3.0);
 
                                         let sr_handle_id = ui.id().with("sr_handle");
                                         let sr_handle_pos = to_screen.transform_pos(pos2(
@@ -257,7 +256,9 @@ impl<F: Fn(Action), G: Fn()> View for StingrayEnvelopeView<'_, F, G> {
                                             }
                                         }
                                     });
-
+                                    ui.add_space(8.0); // right border
+                                });
+                                
                                 // All the knobs for envelope modification
                                 ui.add_space(20.0); // space btwn graph and knobs
                                 ui.horizontal(|ui| {

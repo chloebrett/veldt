@@ -95,7 +95,7 @@ impl<F: Fn(Action), G: Fn()> View for StingrayLfoView<'_, F, G> {
                                 LFO_LINE_COLOUR,
                                 LFO_FILL_COLOUR,
                                 current_lfo_config.frequency,
-                                Vec2::new(340.0, 140.0),
+                                Vec2::new(380.0, 130.0),
                             )
                             .show(ui);
 
