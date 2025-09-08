@@ -63,32 +63,8 @@ pub struct DrumSubTrack {
     pub placed_drums: HashMap<PlacedDrumId, PlacedDrum>,
 }
 
-// impl From<DrumSubTrackProto> for DrumSubTrack {
-//     fn from(item: DrumSubTrackProto) -> Self {
-//         let mut placed_drums: HashMap<PlacedDrumId, PlacedDrum> = HashMap::new();
-//         for (key, proto) in item.placed_drums {
-//             placed_drums.insert(PlacedDrumId(key as usize), proto.into());
-//         }
-//         Self {
-//             placed_drums
-//         }
-//     }
-// }
-
-// impl From<DrumSubTrack> for DrumSubTrackProto {
-//     fn from(item: DrumSubTrack) -> Self {
-//         let mut placed_drums: HashMap<u32, PlacedDrumProto> = HashMap::new();
-//         for (key, placed_drum) in item.placed_drums {
-//             placed_drums.insert(*key as u32, placed_drum.into());
-//         }
-//         Self {
-//             placed_drums
-//         }
-//     }
-// }
-
 /// Ordered by offset.
-#[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Copy)]
 pub struct PlacedDrum {
     // Represents a single drum hit
     pub offset: OrderedFloat<Beats>,
@@ -123,11 +99,4 @@ impl From<PlacedDrum> for PlacedDrumProto {
 }
 
 impl DrumTrack {
-    // pub fn last_drum_offset(&self) -> OrderedFloat<Beats> {
-    //     self.drums
-    //         .iter()
-    //         .map(|drum| drum.offset)
-    //         .max_by(|x, y| x.cmp(y))
-    //         .unwrap_or(OrderedFloat(0.0))
-    // }
 }
