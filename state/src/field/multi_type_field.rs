@@ -52,7 +52,7 @@ impl From<MultiTypeFieldProto> for MultiTypeField {
                     .iter()
                     .filter_map(|value| {
                         if let Some(TypeFieldKind::Placement(placement)) = &value.kind {
-                            Some((*placement).into())
+                            Some((placement.clone()).into())
                         } else {
                             None
                         }

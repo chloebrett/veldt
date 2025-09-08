@@ -27,6 +27,7 @@ pub enum WindowKind {
     Note,
     GraphDebug,
     MixerMatrix,
+    DrumRack,
 }
 
 /// Information about a window needed to render on the UI.
@@ -57,6 +58,7 @@ impl WindowData {
             WindowKind::Note => pos2(600.0, 20.0),
             WindowKind::GraphDebug => pos2(600.0, 20.0),
             WindowKind::MixerMatrix => pos2(700.0, 40.0),
+            WindowKind::DrumRack => pos2(100.0, 100.0),
         };
         // Create unique IDs for `WindowKind` that could have multiple variants.
         let id_string = match window {

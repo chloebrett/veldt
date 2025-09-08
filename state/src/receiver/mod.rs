@@ -1,6 +1,7 @@
 use crate::Action;
 use std::cmp::min;
 
+mod drums;
 mod effect;
 mod generator;
 mod matrix_cell;

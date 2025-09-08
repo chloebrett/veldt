@@ -1,4 +1,5 @@
 mod app;
+mod drum_rack;
 mod effect;
 mod frame_history;
 mod generator;

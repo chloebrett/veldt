@@ -8,7 +8,8 @@ use egui::{Ui, widgets::color_picker::color_picker_color32};
 use mesic::samples_to_beats;
 use ordered_float::OrderedFloat;
 use shared::model::{
-    GeneratorId, Placement, PlacementId, PlacementType, SamplePlacement, Track, TrackPlacement,
+    DrumTrackPlacement, GeneratorId, Placement, PlacementId, PlacementType, SamplePlacement, Track,
+    TrackPlacement,
 };
 use shared::types::Beats;
 use state::{
@@ -157,6 +158,17 @@ impl<'a> PlacementView<'a> {
             );
         });
     }
+
+    fn drum_placement_ui(
+        ui: &mut Ui,
+        _placement_id: PlacementId,
+        _placement: &Placement,
+        _drum_placement: &DrumTrackPlacement,
+        _sel: &PlacementSelector,
+        _store: &Store,
+    ) {
+        ui.label("Placeholder for drum placement view");
+    }
 }
 
 impl View for PlacementView<'_> {
@@ -198,7 +210,16 @@ impl View for PlacementView<'_> {
                             store,
                         );
                     }
-                    PlacementType::DrumTrack(_) => todo!(),
+                    PlacementType::DrumTrack(drum_placement) => {
+                        Self::drum_placement_ui(
+                            ui,
+                            placement_id,
+                            placement,
+                            drum_placement,
+                            &sel,
+                            store,
+                        );
+                    }
                 }
 
                 int_slider(

@@ -3,8 +3,10 @@ use shared::action_proto::selector_proto::IndexTriple;
 use shared::action_proto::{
     SelectorProto, selector_proto::IndexPair, selector_proto::Kind as SelectorKind,
 };
-use shared::model::{EffectId, GeneratorId, PlacementId, SampleId, TrackId};
+use shared::model::{DrumTrackId, EffectId, GeneratorId, PlacementId, SampleId, TrackId};
 
+mod drum_sub_track;
+mod drum_track;
 mod effect;
 mod envelope;
 mod generator;
@@ -19,6 +21,8 @@ mod root;
 mod sample;
 mod track;
 
+pub use drum_sub_track::*;
+pub use drum_track::*;
 pub use effect::*;
 pub use envelope::*;
 pub use generator::*;
@@ -71,6 +75,8 @@ pub enum Selector {
     Envelope(GeneratorId, /* envelope_index */ usize),
     GeneratorEffect(GeneratorId, /* oscillator_index */ usize),
     ModMatrixCell(GeneratorId, /* row */ usize, /* col */ usize),
+    DrumSubTrack(DrumTrackId, SampleId),
+    DrumTrack(DrumTrackId),
 }
 
 impl From<Selector> for SelectorProto {
@@ -99,6 +105,10 @@ impl From<Selector> for SelectorProto {
                 Selector::ModMatrixCell(first, second, third) => {
                     SelectorKind::ModMatrixCell(triple(*first, second, third))
                 }
+                Selector::DrumSubTrack(first, second) => {
+                    SelectorKind::DrumSubTrack(pair(*first, *second))
+                }
+                Selector::DrumTrack(it) => SelectorKind::DrumTrack(it.into()),
             }),
         }
     }
@@ -137,6 +147,10 @@ impl From<SelectorProto> for Selector {
                 second,
                 third,
             }) => Selector::ModMatrixCell(first.into(), second as usize, third as usize),
+            SelectorKind::DrumSubTrack(IndexPair { first, second }) => {
+                Selector::DrumSubTrack(first.into(), second.into())
+            }
+            SelectorKind::DrumTrack(it) => Selector::DrumTrack(it.into()),
         }
     }
 }

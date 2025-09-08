@@ -1,9 +1,10 @@
-use crate::model::{DrumTrackId, GeneratorId, SampleId, TrackId};
+use crate::model::{DrumSubTrack, DrumTrack, DrumTrackId, GeneratorId, SampleId, TrackId};
 use crate::pmodel::{placement_proto::Kind as PlacementTypeProto, *};
 use crate::types::Beats;
 use local_macro::{FromProto, IntoProto};
 use ordered_float::OrderedFloat;
 use std::cmp::Ordering;
+use std::collections::HashMap;
 
 #[derive(Clone, Debug, PartialEq, Eq, Default)]
 pub struct Placement {
@@ -105,10 +106,14 @@ impl<'a> TryFrom<&'a Placement> for &'a SamplePlacement {
     }
 }
 
-#[derive(Clone, Debug, PartialEq, Eq, Default)]
+#[derive(Clone, Debug, Default, PartialEq)]
 pub struct DrumTrackPlacement {
     pub drum_track_id: DrumTrackId,
+
+    pub drum_track: DrumTrack,
 }
+
+impl Eq for DrumTrackPlacement {}
 
 impl<'a> TryFrom<&'a Placement> for &'a DrumTrackPlacement {
     type Error = ();
@@ -123,16 +128,26 @@ impl<'a> TryFrom<&'a Placement> for &'a DrumTrackPlacement {
 
 impl From<DrumTrackPlacementProto> for DrumTrackPlacement {
     fn from(item: DrumTrackPlacementProto) -> Self {
+        let mut drum_sub_tracks: HashMap<SampleId, DrumSubTrack> = HashMap::new();
+        for (id, drum_sub_track_proto) in item.drum_track.unwrap().drum_sub_tracks {
+            drum_sub_tracks.insert(SampleId(id as usize), drum_sub_track_proto.into());
+        }
         Self {
             drum_track_id: item.drum_track_id.into(),
+            drum_track: DrumTrack { drum_sub_tracks },
         }
     }
 }
 
 impl From<DrumTrackPlacement> for DrumTrackPlacementProto {
     fn from(item: DrumTrackPlacement) -> Self {
+        let mut drum_sub_tracks: HashMap<u32, DrumSubTrackProto> = HashMap::new();
+        for (sample_id, sub_track) in item.drum_track.drum_sub_tracks {
+            drum_sub_tracks.insert(*sample_id as u32, sub_track.into());
+        }
         Self {
             drum_track_id: item.drum_track_id.into(),
+            drum_track: Some(DrumTrackProto { drum_sub_tracks }),
         }
     }
 }
