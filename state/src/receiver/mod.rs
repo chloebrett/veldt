@@ -11,6 +11,7 @@ mod project;
 mod sample;
 mod store_data;
 mod track;
+mod drums;
 
 /// A model object that can receive actions.
 pub trait ActionReceiver {
