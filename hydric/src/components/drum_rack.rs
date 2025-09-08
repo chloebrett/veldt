@@ -1,18 +1,13 @@
 use crate::view::View;
-use crate::widget::{StateWindow, get_set, int_slider, selectable_value, slider};
+use crate::widget::StateWindow;
 use crate::window_state::WindowKind;
 use crate::{GetSet, LocalState};
-use egui::Color32;
-use egui::color_picker::Alpha;
-use egui::{Ui, widgets::color_picker::color_picker_color32};
-use mesic::samples_to_beats;
-use ordered_float::OrderedFloat;
+use egui::Ui;
 use shared::model::{
-    DrumTrackPlacement, GeneratorId, Placement, PlacementId, PlacementType, SamplePlacement, Track, TrackPlacement
+    PlacementId, PlacementType, SampleId
 };
-use shared::types::Beats;
 use state::{
-    Action, PlacementSelector, SampleSelector, Store, TrackSelector, TypeField, UintField,
+    DrumTrackSelector, Store
 };
 
 pub struct DrumRackView<'a> {
@@ -25,20 +20,38 @@ impl<'a> DrumRackView<'a> {
         Self { store, local_state }
     }
 
-    fn drum_rack_ui(
-        ui: &mut Ui,
-        placement_id: PlacementId,
-        placement: &Placement,
-        drum_placement: &DrumTrackPlacement,
-        sel: &PlacementSelector,
-        store: &Store,
-    ) {
-
+    fn drum_sub_track_ui(&self, ui: &mut Ui, sample_id: SampleId) {
+        ui.label(format!("Placeholder for {:?}", *sample_id));
     }
 }
 
 impl View for DrumRackView<'_> {
     fn ui(&mut self, ui: &mut Ui) {
+        let Some(placement_id): Option<PlacementId> = self.local_state.active_placement.get()
+        else {
+            return;
+        };
+        let Some(_drum_track_sel): Option<DrumTrackSelector> = self.local_state.active_drum_track.get() else {
+            return;
+        };
+        self.local_state.window_state.set_visible(WindowKind::DrumRack, true);
+        let title = format!("Drum Rack for Placement {:?}", *placement_id);
+        let placement = self.store.get().project.placements.get(&placement_id).unwrap();
+        if let PlacementType::DrumTrack(drum_track_placement) = &placement.kind {
+            let drum_sub_tracks = drum_track_placement.drum_track.drum_sub_tracks.keys().clone();
+            StateWindow::show_from_window_state(
+                ui,
+                &self.local_state.window_state,
+                WindowKind::DrumRack,
+                &title,
+                |ui| {
+                    ui.heading("PLACEHOLDER");
+                    for sample_id in drum_sub_tracks {
+                        self.drum_sub_track_ui(ui, *sample_id);
+                    }
+                }
+            );
+        }
 
     }
 }
