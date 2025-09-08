@@ -76,7 +76,7 @@ impl Project {
 mod tests {
     use crate::{
         model::{
-            AdsrEnvelope, AntiAliasingMode, DelayConfig, DrumSubTrack, Effect, EffectInstance,
+            AdsrEnvelope, AntiAliasingMode, Colour, DelayConfig, DrumSubTrack, Effect, EffectInstance,
             EffectMeta, EqConfig, EqType, Generator, GeneratorMeta, MixerChannel, MixerMatrix,
             ModDelayConfig, Note, PitchName, PlacedDrum, PlacedDrumId, PlacedNote, PlacementType,
             PolyphonyMode, ScaleValue, SimpleWaveConfig, TrackPlacement, WaveType,
@@ -118,7 +118,7 @@ mod tests {
                     offset: 2.5.into(),
                     clipped_duration: Some(5.2.into()),
                     visual_placement: 6,
-                    colour: [67, 206, 222],
+                    colour: Colour::from_8bit(67, 206, 222),
                 },
             )]),
             samples: HashMap::from([(

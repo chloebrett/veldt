@@ -1,8 +1,8 @@
+use crate::components::utils::ToEguiColour;
 use crate::view::View;
 use crate::widget::{StateWindow, get_set, int_slider, selectable_value, slider};
 use crate::window_state::WindowKind;
 use crate::{GetSet, LocalState};
-use egui::Color32;
 use egui::color_picker::Alpha;
 use egui::{Ui, widgets::color_picker::color_picker_color32};
 use mesic::samples_to_beats;
@@ -233,21 +233,18 @@ impl View for PlacementView<'_> {
                     on_release,
                 );
 
-                let rgb = placement.colour;
-                let mut initial_colour = Color32::from_rgb(rgb[0], rgb[1], rgb[2]);
+                let initial_colour = placement.colour.to_egui();
+                let mut new_colour = initial_colour;
 
                 ui.label("Placement Colour");
-                color_picker_color32(ui, &mut initial_colour, Alpha::Opaque);
+                color_picker_color32(ui, &mut new_colour, Alpha::Opaque);
 
-                let new_colour = [initial_colour.r(), initial_colour.g(), initial_colour.b()]; // initial colour gets modified by color picker
-                if rgb != new_colour {
-                    let mut new_rgb = [0; 3];
-                    for i in 0..3 {
-                        new_rgb[i] = new_colour[i] as u32;
-                    }
+                if new_colour != initial_colour {
                     store.dispatch(
                         &sel,
-                        Action::SetChildren(state::MultiTypeField::Colour(new_rgb)),
+                        Action::SetChild(state::TypeField::Colour(ToEguiColour::from_egui(
+                            new_colour,
+                        ))),
                     );
                 }
 
