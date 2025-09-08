@@ -20,7 +20,38 @@ pub struct Placement {
     pub visual_placement: u32,
 
     /// rgb colours
-    pub colour: [u8; 3],
+    pub colour: Colour,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Default, FromProto, IntoProto)]
+pub struct Colour {
+    pub r: f32,
+    pub g: f32,
+    pub b: f32,
+}
+
+impl Eq for Colour {}
+
+impl Colour {
+    pub const fn from_8bit(r: u8, g: u8, b: u8) -> Self {
+        Colour {
+            r: r as f32,
+            g: g as f32,
+            b: b as f32,
+        }
+    }
+
+    pub fn to_float_slice(&self) -> [f32; 3] {
+        [self.r, self.g, self.b]
+    }
+
+    pub const fn black() -> Self {
+        Colour::from_8bit(0, 0, 0)
+    }
+
+    pub const fn white() -> Self {
+        Colour::from_8bit(255, 255, 255)
+    }
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -120,12 +151,6 @@ impl Ord for Placement {
 
 impl From<PlacementProto> for Placement {
     fn from(item: PlacementProto) -> Self {
-        let colour_array: [u8; 3] = [
-            item.colour[0] as u8,
-            item.colour[1] as u8,
-            item.colour[2] as u8,
-        ];
-
         Self {
             kind: match item.kind.unwrap() {
                 PlacementTypeProto::Track(it) => PlacementType::Track(it.into()),
@@ -135,7 +160,7 @@ impl From<PlacementProto> for Placement {
             offset: item.offset.into(),
             clipped_duration: item.clipped_duration.map(OrderedFloat),
             visual_placement: item.visual_placement,
-            colour: colour_array,
+            colour: item.colour.unwrap().into(),
         }
     }
 }
@@ -151,11 +176,7 @@ impl From<Placement> for PlacementProto {
             offset: *item.offset,
             clipped_duration: item.clipped_duration.map(|it| *it),
             visual_placement: item.visual_placement,
-            colour: vec![
-                item.colour[0] as u32,
-                item.colour[1] as u32,
-                item.colour[2] as u32,
-            ],
+            colour: Some(item.colour.into()),
         }
     }
 }

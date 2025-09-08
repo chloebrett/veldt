@@ -2,7 +2,7 @@ use crate::receiver::ActionReceiver;
 use crate::{Action, Selector, SelectorTrait, reducer};
 use ordered_float::OrderedFloat;
 use shared::model::{
-    AdsrEnvelope, AntiAliasingMode, FileTreeConfig, FilenameTree, Generator, GeneratorId,
+    AdsrEnvelope, AntiAliasingMode, Colour, FileTreeConfig, FilenameTree, Generator, GeneratorId,
     GeneratorInstance, GeneratorMeta, Mixer, MixerChannel, MixerMatrix, NoiseConfig, Note,
     PitchName, PlacedNote, Placement, PlacementId, PlacementType, PolyphonyMode, Project, Scale,
     ScaleValue, SimpleWaveConfig, StingrayConfig, Track, TrackId, TrackPlacement, WaveType,
@@ -80,7 +80,7 @@ impl Default for StoreData {
                         offset: 0.0.into(),
                         clipped_duration: None,
                         visual_placement: 0,
-                        colour: [67, 206, 222],
+                        colour: Colour::from_8bit(67, 206, 222),
                     },
                 )]),
                 samples: HashMap::new(),
