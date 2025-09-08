@@ -57,10 +57,10 @@ impl Project {
 mod tests {
     use crate::{
         model::{
-            AdsrEnvelope, AntiAliasingMode, DelayConfig, Effect, EffectInstance, EffectMeta,
-            EqConfig, EqType, Generator, GeneratorMeta, MixerChannel, MixerMatrix, ModDelayConfig,
-            Note, PitchName, PlacedDrum, PlacedNote, PlacementType, PolyphonyMode, ScaleValue,
-            SimpleWaveConfig, WaveType,
+            AdsrEnvelope, AntiAliasingMode, Colour, DelayConfig, Effect, EffectInstance,
+            EffectMeta, EqConfig, EqType, Generator, GeneratorMeta, MixerChannel, MixerMatrix,
+            ModDelayConfig, Note, PitchName, PlacedDrum, PlacedNote, PlacementType, PolyphonyMode,
+            ScaleValue, SimpleWaveConfig, WaveType,
         },
         testing::proto::proto_testing::assert_proto_round_trip,
     };
@@ -99,7 +99,7 @@ mod tests {
                     offset: 2.5.into(),
                     clipped_duration: Some(5.2.into()),
                     visual_placement: 6,
-                    colour: [67, 206, 222],
+                    colour: Colour::from_8bit(67, 206, 222),
                 },
             )]),
             samples: HashMap::from([(
