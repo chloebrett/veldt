@@ -6,12 +6,12 @@ use egui::{Rect, Ui};
 use shared::model::{PlacementId, PlacementType, SampleId};
 use state::{DrumTrackSelector, Store};
 
-pub struct DrumRackView<'a> {
+pub struct DrumTrackView<'a> {
     store: &'a Store,
     local_state: &'a LocalState,
 }
 
-impl<'a> DrumRackView<'a> {
+impl<'a> DrumTrackView<'a> {
     pub fn new(store: &'a Store, local_state: &'a LocalState) -> Self {
         Self { store, local_state }
     }
@@ -25,7 +25,7 @@ impl<'a> DrumRackView<'a> {
     }
 }
 
-impl View for DrumRackView<'_> {
+impl View for DrumTrackView<'_> {
     fn ui(&mut self, ui: &mut Ui) {
         let Some(placement_id): Option<PlacementId> = self.local_state.active_placement.get()
         else {
@@ -37,10 +37,7 @@ impl View for DrumRackView<'_> {
             return;
         };
         let drum_track_id = drum_track_sel.0;
-        self.local_state
-            .window_state
-            .set_visible(WindowKind::DrumRack, true);
-        let title = format!("Drum Rack for Placement {:?}", *placement_id);
+        let title = format!("Drum Track {:?}", *drum_track_sel.0);
         let placement = self
             .store
             .get()

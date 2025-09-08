@@ -1,5 +1,5 @@
 mod app;
-mod drum_rack;
+mod drum_track;
 mod effect;
 mod frame_history;
 mod generator;
