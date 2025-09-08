@@ -2,7 +2,7 @@ use crate::WindowState;
 use egui::Pos2;
 use mesic::FFT_SAMPLE_SIZE;
 use ring_buffer_max::MaxDetector;
-use shared::model::{Generator, PlacementId, Sample, SampleId};
+use shared::model::{DrumTrackId, Generator, PlacementId, Sample, SampleId};
 use smart_default::SmartDefault;
 use state::{DrumTrackSelector, MixerSelector, TrackSelector};
 use std::cell::RefCell;
@@ -52,7 +52,10 @@ pub struct LocalState {
     pub active_drum_track: RcOption<DrumTrackSelector>,
 
     pub new_generator_type: Rc<RefCell<Generator>>,
+
     pub new_generator_name: Rc<RefCell<String>>,
+
+    pub empty_drum_sub_tracks: Rc<RefCell<HashMap<DrumTrackId, usize>>>,
 }
 
 pub trait GetSet<T: Clone> {

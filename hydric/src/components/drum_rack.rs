@@ -2,7 +2,7 @@ use crate::view::View;
 use crate::widget::StateWindow;
 use crate::window_state::WindowKind;
 use crate::{GetSet, LocalState};
-use egui::Ui;
+use egui::{Rect, Ui};
 use shared::model::{PlacementId, PlacementType, SampleId};
 use state::{DrumTrackSelector, Store};
 
@@ -19,6 +19,10 @@ impl<'a> DrumRackView<'a> {
     fn drum_sub_track_ui(&self, ui: &mut Ui, sample_id: SampleId) {
         ui.label(format!("Placeholder for {:?}", *sample_id));
     }
+
+    fn empty_drum_sub_track_ui(&self, ui: &mut Ui) {
+        ui.label(format!("This is empty"));
+    }
 }
 
 impl View for DrumRackView<'_> {
@@ -27,11 +31,12 @@ impl View for DrumRackView<'_> {
         else {
             return;
         };
-        let Some(_drum_track_sel): Option<DrumTrackSelector> =
+        let Some(drum_track_sel): Option<DrumTrackSelector> =
             self.local_state.active_drum_track.get()
         else {
             return;
         };
+        let drum_track_id = drum_track_sel.0;
         self.local_state
             .window_state
             .set_visible(WindowKind::DrumRack, true);
@@ -54,11 +59,27 @@ impl View for DrumRackView<'_> {
                 &self.local_state.window_state,
                 WindowKind::DrumRack,
                 &title,
-                |ui| {
-                    ui.heading("PLACEHOLDER");
-                    for sample_id in drum_sub_tracks {
-                        self.drum_sub_track_ui(ui, *sample_id);
+                |ui| {    
+                    let num_non_empty = drum_sub_tracks.len();                
+                    for &sample_id in drum_sub_tracks {
+                        self.drum_sub_track_ui(ui, sample_id);
                     }
+                    let mut empty_drum_sub_tracks = self.local_state.empty_drum_sub_tracks.borrow_mut();
+                    let num_empty_sub_tracks = empty_drum_sub_tracks.get(&drum_track_id).cloned().unwrap_or_else(|| {
+                        let num_empty = (4-num_non_empty).max(0);
+                        empty_drum_sub_tracks.insert(drum_track_id, num_empty);
+                        num_empty
+                    });
+
+                    for _ in 0..num_empty_sub_tracks {
+                        self.empty_drum_sub_track_ui(ui);
+                    }
+                    
+                    let add_drums_btn = ui.button("Add Drums");
+                    if add_drums_btn.clicked() {
+                        // until the new drum sub track has a sample set for it only add the drum sub track to local state
+                        empty_drum_sub_tracks.insert(drum_track_id, num_empty_sub_tracks + 1);
+                    };
                 },
             );
         }
