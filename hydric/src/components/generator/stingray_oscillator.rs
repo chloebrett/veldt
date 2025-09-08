@@ -70,13 +70,13 @@ impl<F: Fn(Action), G: Fn()> View for StingrayOscillatorView<'_, F, G> {
                                 );
                             }
                         });
-                    ui.add_space(24.0);
+                    ui.add_space(20.0);
                     let visualiser = SimpleWaveVisualiser::new(
                         config.wave,
                         line_colour,
                         fill_colour,
                         1.0,
-                        Vec2::new(130.0, 80.0),
+                        Vec2::new(130.0, 70.0),
                     );
 
                     visualiser.show(ui);

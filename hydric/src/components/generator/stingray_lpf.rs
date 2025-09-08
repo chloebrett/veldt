@@ -87,7 +87,7 @@ impl<F: Fn(Action), G: Fn(Action), H: Fn()> View for StingrayLpfView<'_, F, G, H
                     *lpf_on,
                     |it| gen_dispatch(Action::SetChild(TypeField::LpfOn(it))),
                 );
-                ui.add_space(35.0);
+                ui.add_space(25.0);
             });
         });
     }
