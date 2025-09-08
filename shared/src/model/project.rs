@@ -76,10 +76,10 @@ impl Project {
 mod tests {
     use crate::{
         model::{
-            AdsrEnvelope, AntiAliasingMode, Colour, DelayConfig, DrumSubTrack, Effect, EffectInstance,
-            EffectMeta, EqConfig, EqType, Generator, GeneratorMeta, MixerChannel, MixerMatrix,
-            ModDelayConfig, Note, PitchName, PlacedDrum, PlacedDrumId, PlacedNote, PlacementType,
-            PolyphonyMode, ScaleValue, SimpleWaveConfig, TrackPlacement, WaveType,
+            AdsrEnvelope, AntiAliasingMode, Colour, DelayConfig, DrumSubTrack, Effect,
+            EffectInstance, EffectMeta, EqConfig, EqType, Generator, GeneratorMeta, MixerChannel,
+            MixerMatrix, ModDelayConfig, Note, PitchName, PlacedDrum, PlacedDrumId, PlacedNote,
+            PlacementType, PolyphonyMode, ScaleValue, SimpleWaveConfig, TrackPlacement, WaveType,
         },
         testing::proto::proto_testing::assert_proto_round_trip,
     };
