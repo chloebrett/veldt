@@ -4,6 +4,7 @@ use crate::pmodel::{
 };
 use crate::types::{KnobPosition, Volume};
 use local_macro::{FromProto, IntoProto};
+use strum::EnumIter;
 
 mod alias;
 mod noise;
@@ -54,11 +55,17 @@ impl From<GeneratorProto> for Generator {
     }
 }
 
-#[derive(Clone, Debug, PartialEq)]
+#[derive(Clone, Debug, PartialEq, EnumIter)]
 pub enum Generator {
     SimpleWave(SimpleWaveConfig),
     Noise(NoiseConfig),
     Stingray(StingrayConfig),
+}
+
+impl Default for Generator {
+    fn default() -> Self {
+        Generator::Stingray(StingrayConfig::default())
+    }
 }
 
 #[derive(Clone, Debug, PartialEq, FromProto, IntoProto)]

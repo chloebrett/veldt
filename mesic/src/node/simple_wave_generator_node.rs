@@ -135,7 +135,6 @@ impl Node<ProcessContext> for SimpleWaveGeneratorNode {
                         let voice_key = note_event.pitch_name.to_string();
                         if let Some(voice_to_turn_off) = state.voices.get_mut(&voice_key) {
                             voice_to_turn_off.eg.note_off();
-                            state.voices.remove(&voice_key);
                         }
                     }
                 }
@@ -149,6 +148,22 @@ impl Node<ProcessContext> for SimpleWaveGeneratorNode {
             }
 
             buffer[i] = cumulative_wave_amp_product;
+
+            // Removing any voices that have finished playing
+            let keys_to_remove: Vec<String> = state
+                .voices
+                .iter()
+                .filter_map(|(voice_key, voice)| {
+                    if voice.eg.is_off() {
+                        Some(voice_key.clone())
+                    } else {
+                        None
+                    }
+                })
+                .collect();
+            for voice_key in keys_to_remove {
+                state.voices.remove(&voice_key);
+            }
         }
 
         for (channel_index, out_buf) in output.iter_mut().enumerate() {

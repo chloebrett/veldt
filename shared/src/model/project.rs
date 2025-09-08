@@ -1,6 +1,6 @@
 use crate::model::{
     DrumTrack, DrumTrackId, EffectId, EffectInstance, GeneratorId, GeneratorInstance, Mixer,
-    Placement, PlacementId, Sample, SampleId, Track, TrackId, TrackPlacement,
+    Placement, PlacementId, PlacementType, Sample, SampleId, Track, TrackId, samples_to_beats,
 };
 use crate::pmodel::*;
 use crate::types::Beats;
@@ -40,14 +40,33 @@ impl Project {
     pub fn duration(&self) -> OrderedFloat<f32> {
         let mut max = OrderedFloat(0.0);
         for placement in self.placements.values() {
-            if let &Ok(&TrackPlacement { track_id, .. }) = &placement.try_into() {
-                let track = &self.tracks[&track_id];
-                let offset = &placement.offset;
-                let duration = placement
-                    .clipped_duration
-                    .unwrap_or(track.unclipped_duration());
-                max = std::cmp::max(max, offset + duration);
-            }
+            let offset = &placement.offset;
+            let duration = match &placement.kind {
+                PlacementType::Track(track_placement) => {
+                    let track = &self.tracks[&track_placement.track_id];
+                    placement
+                        .clipped_duration
+                        .unwrap_or(track.unclipped_duration())
+                }
+                PlacementType::Sample(sample_placement) => {
+                    if let Some(sample) = self.samples.get(&sample_placement.sample_id) {
+                        placement
+                            .clipped_duration
+                            .unwrap_or(OrderedFloat(samples_to_beats(
+                                std::cmp::max(sample.left.len(), sample.right.len()),
+                                self.bpm,
+                            )))
+                    } else {
+                        OrderedFloat(0.0)
+                    }
+                }
+                PlacementType::DrumTrack(_) =>
+                //TODO DRUM TRACK TIME
+                {
+                    todo!()
+                }
+            };
+            max = std::cmp::max(max, offset + duration);
         }
         max
     }
@@ -57,10 +76,10 @@ impl Project {
 mod tests {
     use crate::{
         model::{
-            AdsrEnvelope, AntiAliasingMode, Colour, DelayConfig, Effect, EffectInstance,
-            EffectMeta, EqConfig, EqType, Generator, GeneratorMeta, MixerChannel, MixerMatrix,
-            ModDelayConfig, Note, PitchName, PlacedDrum, PlacedNote, PlacementType, PolyphonyMode,
-            ScaleValue, SimpleWaveConfig, WaveType,
+            AdsrEnvelope, AntiAliasingMode, Colour, DelayConfig, Effect, EffectInstance, EffectMeta,
+            EqConfig, EqType, Generator, GeneratorMeta, MixerChannel, MixerMatrix, ModDelayConfig,
+            Note, PitchName, PlacedDrum, PlacedNote, PlacementType, PolyphonyMode, ScaleValue,
+            SimpleWaveConfig, TrackPlacement, WaveType,
         },
         testing::proto::proto_testing::assert_proto_round_trip,
     };
