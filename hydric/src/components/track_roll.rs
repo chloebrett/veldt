@@ -10,6 +10,7 @@ use egui::{
 };
 use mesic::{beats_to_samples, samples_to_beats};
 use ordered_float::OrderedFloat;
+use shared::model::{DrumTrack, DrumTrackPlacement};
 use shared::{
     model::{
         PlacedNote, Placement, PlacementId, PlacementType, SampleId, SamplePlacement, Track,
@@ -19,7 +20,7 @@ use shared::{
 };
 use state::{
     Action, FloatField, MultiTypeField, PlacementSelector, SampleSelector, Store, TrackSelector,
-    TypeField, UintField,
+    TypeField, UintField, DrumTrackSelector
 };
 use std::cmp::{max, min};
 use std::collections::{HashMap, HashSet};
@@ -81,7 +82,14 @@ impl View for TrackRoll<'_> {
                                 local_state: self.local_state,
                             }
                         }
-                        PlacementType::DrumTrack(_) => todo!(),
+                        PlacementType::DrumTrack(DrumTrackPlacement {..}) => {
+                            PlacedTrack {
+                                unclipped_duration: OrderedFloat(8.0), // TODO: properly calculate unclipped duration
+                                placement: placement.clone(),
+                                store: self.store,
+                                local_state: self.local_state,
+                            }
+                        },
                     },
                 )
             })
@@ -122,15 +130,15 @@ impl View for TrackRoll<'_> {
                         })));
                     }
                     if ui.button("New drum").clicked() {
-                        store.dispatchr(Action::AddChild(TypeField::Track(Track::default())));
+                        store.dispatchr(Action::AddChild(TypeField::DrumTrack(DrumTrack::default())));
                     }
                     if ui.button("New drum placement").clicked() {
                         store.dispatchr(Action::AddChild(TypeField::Placement(Placement {
-                            kind: PlacementType::Sample(SamplePlacement::default()),
+                            kind: PlacementType::DrumTrack(DrumTrackPlacement::default()),
                             offset: 0.0.into(),
                             clipped_duration: None,
                             visual_placement: 0,
-                            colour: [225, 138, 9],
+                            colour: [112, 66, 0],
                         })));
                     }
                     if ui.button("New sample placement").clicked() {
@@ -249,7 +257,14 @@ impl<'a> PlacedTrack<'a> {
                     let sample_id = sample_placement.sample_id;
                     self.sample_shape(range, sample_id)
                 }
-                PlacementType::DrumTrack(_) => todo!(),
+                PlacementType::DrumTrack(_) => {
+                    // TODO implement drum track shape
+                    Shape::rect_filled(
+                        self.to_rect(range),
+                        CornerRadius::same(1),
+                        background_colour,
+                    )
+                },
             },
         ])
     }
@@ -414,7 +429,7 @@ impl<'a> PlacedTrack<'a> {
         let label_text = match &self.placement.kind {
             PlacementType::Track(track) => "Track: ".to_owned() + &track.track_id.to_string(),
             PlacementType::Sample(sample) => "Sample: ".to_owned() + &sample.sample_id.to_string(),
-            PlacementType::DrumTrack(_) => todo!(),
+            PlacementType::DrumTrack(drum) => "Drum: ".to_owned() + &drum.drum_track_id.to_string(),
         };
         let galley =
             ui.fonts(|fonts| fonts.layout_no_wrap(label_text, font_id.clone(), font_colour));
@@ -463,7 +478,10 @@ impl<'a> PlacedTrack<'a> {
                     ordered_float::OrderedFloat(1.0)
                 }
             }
-            PlacementType::DrumTrack(_) => todo!(),
+            PlacementType::DrumTrack(_) => {
+                // TODO calculate unclipped duration
+                OrderedFloat(8.0)
+            },
         };
 
         Some(PlacedTrack {
@@ -529,6 +547,7 @@ impl<'a> PlacedTrack<'a> {
 
     fn set_active(&self, local_state: &LocalState, id: PlacementId) {
         let track_placement: Option<&TrackPlacement> = (&self.placement).try_into().ok();
+        let drum_track_placement: Option<&DrumTrackPlacement> = (&self.placement).try_into().ok();
 
         local_state
             .window_state
@@ -539,6 +558,9 @@ impl<'a> PlacedTrack<'a> {
         local_state
             .active_track
             .set(track_placement.map(|it| TrackSelector(it.track_id)));
+        local_state
+            .active_drum_track
+            .set(drum_track_placement.map(|it| DrumTrackSelector(it.drum_track_id)));
         local_state.active_placement.set(Some(id));
     }
 
