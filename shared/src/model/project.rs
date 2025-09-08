@@ -1,7 +1,6 @@
 use crate::model::{
     DrumTrack, DrumTrackId, EffectId, EffectInstance, GeneratorId, GeneratorInstance, Mixer,
-    PlacedDrumId, Placement, PlacementId, PlacementType, Sample, SampleId, Track, TrackId,
-    TrackPlacement, samples_to_beats,
+    Placement, PlacementId, PlacementType, Sample, SampleId, Track, TrackId, samples_to_beats,
 };
 use crate::pmodel::*;
 use crate::types::Beats;
@@ -79,8 +78,8 @@ mod tests {
         model::{
             AdsrEnvelope, AntiAliasingMode, DelayConfig, DrumSubTrack, Effect, EffectInstance,
             EffectMeta, EqConfig, EqType, Generator, GeneratorMeta, MixerChannel, MixerMatrix,
-            ModDelayConfig, Note, PitchName, PlacedDrum, PlacedNote, PlacementType, PolyphonyMode,
-            ScaleValue, SimpleWaveConfig, TrackPlacement, WaveType,
+            ModDelayConfig, Note, PitchName, PlacedDrum, PlacedDrumId, PlacedNote, PlacementType,
+            PolyphonyMode, ScaleValue, SimpleWaveConfig, TrackPlacement, WaveType,
         },
         testing::proto::proto_testing::assert_proto_round_trip,
     };

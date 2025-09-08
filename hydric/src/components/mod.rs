@@ -16,7 +16,6 @@ mod track_roll;
 mod utils;
 
 pub use app::*;
-use drum_rack::*;
 use effect::*;
 use frame_history::*;
 use graph_view::*;
