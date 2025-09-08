@@ -281,7 +281,11 @@ impl Mixer {
                         .into_iter()
                         .map(|key| *key)
                         .collect();
-                    let next_id = *all_ids.iter().max().unwrap_or(&0) + 1;
+                    let next_id = if all_ids.is_empty() {
+                        0
+                    } else {
+                        *all_ids.iter().max().unwrap_or(&0) + 1
+                    };
                     let generator_info = GeneratorInfo::new(
                         &mut self.graph_manager,
                         gen_instance,
@@ -291,9 +295,15 @@ impl Mixer {
                     self.generator_ids.push(GeneratorId(next_id));
                     true
                 }
+                Action::DeleteChildById(TypeField::GeneratorId(gen_id)) => {
+                    for channel in self.channels.iter_mut() {
+                        channel.soft_delete_generator(GeneratorSelector(*gen_id));
+                    }
+                    self.generator_ids.retain(|id| id != gen_id);
+                    true
+                }
                 _ => false,
             },
-            // TODO: handle deleting generators (not just changing their mixer channel).
             _ => false,
         };
 

@@ -1,7 +1,7 @@
 use crate::model::{
     DrumTrack, DrumTrackId, EffectId, EffectInstance, GeneratorId, GeneratorInstance, Mixer,
-    Placement, PlacementId, PlacementType, Sample, SampleId, Track, TrackId, TrackPlacement, PlacedDrumId,
-    samples_to_beats,
+    PlacedDrumId, Placement, PlacementId, PlacementType, Sample, SampleId, Track, TrackId,
+    TrackPlacement, samples_to_beats,
 };
 use crate::pmodel::*;
 use crate::types::Beats;
@@ -77,7 +77,10 @@ impl Project {
 mod tests {
     use crate::{
         model::{
-            AdsrEnvelope, AntiAliasingMode, DelayConfig, DrumSubTrack, Effect, EffectInstance, EffectMeta, EqConfig, EqType, Generator, GeneratorMeta, MixerChannel, MixerMatrix, ModDelayConfig, Note, PitchName, PlacedDrum, PlacedNote, PlacementType, PolyphonyMode, ScaleValue, SimpleWaveConfig, WaveType
+            AdsrEnvelope, AntiAliasingMode, DelayConfig, DrumSubTrack, Effect, EffectInstance,
+            EffectMeta, EqConfig, EqType, Generator, GeneratorMeta, MixerChannel, MixerMatrix,
+            ModDelayConfig, Note, PitchName, PlacedDrum, PlacedNote, PlacementType, PolyphonyMode,
+            ScaleValue, SimpleWaveConfig, TrackPlacement, WaveType,
         },
         testing::proto::proto_testing::assert_proto_round_trip,
     };
@@ -215,9 +218,19 @@ mod tests {
                     drum_sub_tracks: HashMap::from([(
                         SampleId(0),
                         DrumSubTrack {
-                            placed_drums: HashMap::from([(PlacedDrumId(0), PlacedDrum {offset: 0.0.into(), clipped_duration: None, pitch_name: PitchName { scale_value: ScaleValue::C, octave: 5 }})])
-                        }
-                    )])
+                            placed_drums: HashMap::from([(
+                                PlacedDrumId(0),
+                                PlacedDrum {
+                                    offset: 0.0.into(),
+                                    clipped_duration: None,
+                                    pitch_name: PitchName {
+                                        scale_value: ScaleValue::C,
+                                        octave: 5,
+                                    },
+                                },
+                            )]),
+                        },
+                    )]),
                 },
             )]),
         };

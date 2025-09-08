@@ -17,9 +17,7 @@ impl From<DrumTrackProto> for DrumTrack {
         for (key, proto) in item.drum_sub_tracks {
             drum_sub_tracks.insert(SampleId(key as usize), proto.into());
         }
-        Self {
-            drum_sub_tracks
-        }
+        Self { drum_sub_tracks }
     }
 }
 
@@ -29,9 +27,7 @@ impl From<DrumTrack> for DrumTrackProto {
         for (key, sub_track) in item.drum_sub_tracks {
             drum_sub_tracks.insert(*key as u32, sub_track.into());
         }
-        Self {
-            drum_sub_tracks
-        }
+        Self { drum_sub_tracks }
     }
 }
 
@@ -81,7 +77,10 @@ impl From<PlacedDrumProto> for PlacedDrum {
         Self {
             offset: item.offset.into(),
             clipped_duration: item.clipped_duration.map(OrderedFloat),
-            pitch_name: PitchName { scale_value, octave },
+            pitch_name: PitchName {
+                scale_value,
+                octave,
+            },
         }
     }
 }
@@ -93,10 +92,12 @@ impl From<PlacedDrum> for PlacedDrumProto {
         Self {
             offset: *item.offset,
             clipped_duration: item.clipped_duration.map(|it| *it),
-            pitch_name: Some(PitchNameProto {scale_value, octave}),
+            pitch_name: Some(PitchNameProto {
+                scale_value,
+                octave,
+            }),
         }
     }
 }
 
-impl DrumTrack {
-}
+impl DrumTrack {}

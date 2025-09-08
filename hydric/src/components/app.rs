@@ -6,7 +6,7 @@ use super::{
     menu::MenuBar,
     play::{MicrophoneView, SampleTreeView, ToolbarView},
 };
-use crate::{components::{drum_rack::DrumRackView, play::MicState, FrameHistory}};
+use crate::components::{FrameHistory, drum_rack::DrumRackView, play::MicState};
 use crate::playback::Microphone;
 use crate::rpc::broadcast_actions;
 use crate::rpc::load_project_list;

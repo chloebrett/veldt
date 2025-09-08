@@ -8,7 +8,8 @@ use egui::{Ui, widgets::color_picker::color_picker_color32};
 use mesic::samples_to_beats;
 use ordered_float::OrderedFloat;
 use shared::model::{
-    DrumTrackPlacement, GeneratorId, Placement, PlacementId, PlacementType, SamplePlacement, Track, TrackPlacement
+    DrumTrackPlacement, GeneratorId, Placement, PlacementId, PlacementType, SamplePlacement, Track,
+    TrackPlacement,
 };
 use shared::types::Beats;
 use state::{
@@ -27,6 +28,7 @@ impl<'a> PlacementView<'a> {
     }
 
     fn track_placement_ui(
+        &self,
         ui: &mut Ui,
         placement_id: PlacementId,
         placement: &Placement,
@@ -50,23 +52,21 @@ impl<'a> PlacementView<'a> {
             });
 
         egui::ComboBox::from_id_salt(format!("placement_{:?}_generator", placement_id))
-            .selected_text(Self::get_generator_name(
-                store,
-                &track_placement.generator_id,
-            ))
+            .selected_text(self.get_generator_name(store, &track_placement.generator_id))
             .show_ui(ui, |ui| {
                 let mut generators: Vec<_> = store.get().project.generators.keys().collect();
-                generators.sort();
-
-                for generator_id in generators {
-                    selectable_value(
-                        ui,
-                        get_set(&track_placement.generator_id, |it| {
-                            store.dispatch(sel, Action::SetChild(TypeField::GeneratorId(*it)))
-                        }),
-                        generator_id,
-                        Self::get_generator_name(store, generator_id),
-                    );
+                if !generators.is_empty() {
+                    generators.sort();
+                    for generator_id in generators {
+                        selectable_value(
+                            ui,
+                            get_set(&track_placement.generator_id, |it| {
+                                store.dispatch(sel, Action::SetChild(TypeField::GeneratorId(*it)))
+                            }),
+                            generator_id,
+                            self.get_generator_name(store, generator_id),
+                        );
+                    }
                 }
             });
 
@@ -79,12 +79,15 @@ impl<'a> PlacementView<'a> {
         Self::duration_ui(ui, sel, duration, max_duration, store);
     }
 
-    fn get_generator_name(store: &Store, generator_id: &GeneratorId) -> String {
+    fn get_generator_name(&self, store: &Store, generator_id: &GeneratorId) -> String {
         let mut generator_name = format!("Generator ID {}", **generator_id);
         if let Some(generator_instance) = store.get().project.generators.get(generator_id) {
             if !generator_instance.meta.name.is_empty() {
                 generator_name = generator_instance.meta.name.clone();
             }
+        }
+        if self.store.get().project.generators.is_empty() {
+            generator_name = "There are currently no generators".to_string();
         }
         generator_name
     }
@@ -188,6 +191,7 @@ impl View for PlacementView<'_> {
                 match &placement.kind {
                     PlacementType::Track(track_placement) => {
                         Self::track_placement_ui(
+                            self,
                             ui,
                             placement_id,
                             placement,
@@ -215,7 +219,7 @@ impl View for PlacementView<'_> {
                             &sel,
                             store,
                         );
-                    },
+                    }
                 }
 
                 int_slider(

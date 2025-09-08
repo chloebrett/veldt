@@ -1,4 +1,5 @@
 mod app;
+mod drum_rack;
 mod effect;
 mod frame_history;
 mod generator;
@@ -13,9 +14,9 @@ mod placement_view;
 mod play;
 mod track_roll;
 mod utils;
-mod drum_rack;
 
 pub use app::*;
+use drum_rack::*;
 use effect::*;
 use frame_history::*;
 use graph_view::*;
@@ -27,4 +28,3 @@ use piano::*;
 use placement_view::*;
 use track_roll::*;
 use utils::*;
-use drum_rack::*;

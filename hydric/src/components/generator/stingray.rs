@@ -3,12 +3,13 @@ use crate::components::opacity_percentage_to_alpha;
 use crate::components::{ModMatrixView, Piano, PianoOrientation};
 use crate::playback::AudioPlayer;
 use crate::view::View;
+use crate::widget::outer_frame;
 use crate::{GetSet, LocalState};
 use egui::{Color32, Ui, Vec2};
 use lazy_static::lazy_static;
-use shared::model::{GeneratorInstance, GeneratorMeta};
+use shared::model::GeneratorMeta;
 use shared::{
-    model::{Generator, PitchName, ScaleValue, StingrayConfig},
+    model::{PitchName, ScaleValue, StingrayConfig},
     types::PitchValue,
 };
 use state::{Action, GeneratorSelector, Store, TypeField};
@@ -63,7 +64,7 @@ impl<'a, F: Fn(Action), G: Fn()> StingrayView<'a, F, G> {
             max_note + 1,
             min_note,
             PianoOrientation::Horizontal,
-            Vec2::new(1330.0, 100.0),
+            Vec2::new(1400.0, 80.0),
             Some(self.audio_player),
             Some(*self.generator_sel),
         )
@@ -155,29 +156,28 @@ impl<F: Fn(Action), G: Fn()> View for StingrayView<'_, F, G> {
                 )
                 .ui(ui);
 
-                let test = ui.button("Add new Stingray");
-                if test.clicked() {
-                    let new_gen = GeneratorInstance {
-                        it: Generator::Stingray(StingrayConfig::default()),
-                        meta: GeneratorMeta::default(),
-                    };
-                    self.store
-                        .dispatchr(Action::AddChild(state::TypeField::Generator(new_gen)));
-                }
-                ui.label("Instrument/Patch Name");
-                let mut name = self.meta.name.clone();
-                let response = ui.text_edit_singleline(&mut name);
-                if response.changed() {
-                    self.store.dispatch(
-                        gen_sel,
-                        Action::SetChild(TypeField::GeneratorName(name.to_string())),
-                    );
-                }
+                ui.add_space(10.0);
+
+                outer_frame().inner_margin(10.0).show(ui, |ui| {
+                    ui.horizontal(|ui| {
+                        ui.label("Rename Generator/Instrument Name");
+                        ui.add_space(125.0);
+                    });
+                    ui.add_space(3.0);
+                    let mut name = self.meta.name.clone();
+                    let response = ui.text_edit_singleline(&mut name);
+                    if response.changed() {
+                        self.store.dispatch(
+                            gen_sel,
+                            Action::SetChild(TypeField::GeneratorName(name.to_string())),
+                        );
+                    }
+                });
             });
             ui.add_space(1.0); //spacing btwn osc + lpf and right border
         });
 
-        ui.add_space(10.0); // spacing btwn elements and piano roll
+        ui.add_space(10.0); // spacing btwn elements and piano
 
         self.draw_piano(ui);
     }

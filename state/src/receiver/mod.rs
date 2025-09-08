@@ -1,6 +1,7 @@
 use crate::Action;
 use std::cmp::min;
 
+mod drums;
 mod effect;
 mod generator;
 mod matrix_cell;
@@ -11,7 +12,6 @@ mod project;
 mod sample;
 mod store_data;
 mod track;
-mod drums;
 
 /// A model object that can receive actions.
 pub trait ActionReceiver {

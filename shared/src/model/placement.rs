@@ -79,7 +79,7 @@ impl<'a> TryFrom<&'a Placement> for &'a SamplePlacement {
 pub struct DrumTrackPlacement {
     pub drum_track_id: DrumTrackId,
 
-    pub drum_track: DrumTrack
+    pub drum_track: DrumTrack,
 }
 
 impl Eq for DrumTrackPlacement {}
@@ -103,7 +103,7 @@ impl From<DrumTrackPlacementProto> for DrumTrackPlacement {
         }
         Self {
             drum_track_id: item.drum_track_id.into(),
-            drum_track: DrumTrack { drum_sub_tracks }
+            drum_track: DrumTrack { drum_sub_tracks },
         }
     }
 }
@@ -116,7 +116,7 @@ impl From<DrumTrackPlacement> for DrumTrackPlacementProto {
         }
         Self {
             drum_track_id: item.drum_track_id.into(),
-            drum_track: Some(DrumTrackProto { drum_sub_tracks })
+            drum_track: Some(DrumTrackProto { drum_sub_tracks }),
         }
     }
 }

@@ -1,6 +1,6 @@
 use crate::receiver::ActionReceiver;
 use crate::{Action, TypeField};
-use shared::model::{DrumTrack};
+use shared::model::DrumTrack;
 
 impl ActionReceiver for DrumTrack {
     fn apply(&mut self, action: &Action) -> Option<Action> {

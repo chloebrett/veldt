@@ -19,8 +19,8 @@ use shared::{
     types::Beats,
 };
 use state::{
-    Action, FloatField, MultiTypeField, PlacementSelector, SampleSelector, Store, TrackSelector,
-    TypeField, UintField, DrumTrackSelector
+    Action, DrumTrackSelector, FloatField, MultiTypeField, PlacementSelector, SampleSelector,
+    Store, TrackSelector, TypeField, UintField,
 };
 use std::cmp::{max, min};
 use std::collections::{HashMap, HashSet};
@@ -82,14 +82,14 @@ impl View for TrackRoll<'_> {
                                 local_state: self.local_state,
                             }
                         }
-                        PlacementType::DrumTrack(DrumTrackPlacement {..}) => {
+                        PlacementType::DrumTrack(DrumTrackPlacement { .. }) => {
                             PlacedTrack {
                                 unclipped_duration: OrderedFloat(8.0), // TODO: properly calculate unclipped duration
                                 placement: placement.clone(),
                                 store: self.store,
                                 local_state: self.local_state,
                             }
-                        },
+                        }
                     },
                 )
             })
@@ -130,7 +130,9 @@ impl View for TrackRoll<'_> {
                         })));
                     }
                     if ui.button("New drum").clicked() {
-                        store.dispatchr(Action::AddChild(TypeField::DrumTrack(DrumTrack::default())));
+                        store.dispatchr(Action::AddChild(TypeField::DrumTrack(
+                            DrumTrack::default(),
+                        )));
                     }
                     if ui.button("New drum placement").clicked() {
                         store.dispatchr(Action::AddChild(TypeField::Placement(Placement {
@@ -264,7 +266,7 @@ impl<'a> PlacedTrack<'a> {
                         CornerRadius::same(1),
                         background_colour,
                     )
-                },
+                }
             },
         ])
     }
@@ -481,7 +483,7 @@ impl<'a> PlacedTrack<'a> {
             PlacementType::DrumTrack(_) => {
                 // TODO calculate unclipped duration
                 OrderedFloat(8.0)
-            },
+            }
         };
 
         Some(PlacedTrack {

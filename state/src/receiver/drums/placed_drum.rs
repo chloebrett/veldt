@@ -1,6 +1,6 @@
-use crate::receiver::ActionReceiver;
 use crate::Action;
-use shared::model::{PlacedDrum};
+use crate::receiver::ActionReceiver;
+use shared::model::PlacedDrum;
 
 impl ActionReceiver for PlacedDrum {
     fn apply(&mut self, _action: &Action) -> Option<Action> {
