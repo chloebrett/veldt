@@ -13,6 +13,12 @@ impl ActionReceiver for DrumTrack {
                 self.drum_sub_tracks.remove(sample_id);
                 Action::AddChild(TypeField::SampleId(*sample_id))
             }
+            Action::UpdateChildId(TypeField::SampleId(from_id), TypeField::SampleId(to_id)) => {
+                if let Some(sub_track_placed_drums) = self.drum_sub_tracks.remove(from_id) {
+                    self.drum_sub_tracks.insert(*to_id, sub_track_placed_drums);
+                }
+                Action::UpdateChildId(TypeField::SampleId(*to_id), TypeField::SampleId(*from_id)) 
+            }
             _ => return None,
         })
     }
