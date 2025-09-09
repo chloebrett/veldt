@@ -14,6 +14,8 @@ mod placement_view;
 mod play;
 mod track_roll;
 mod utils;
+mod track_sequencer;
+mod placed_track;
 
 pub use app::*;
 use effect::*;
@@ -27,3 +29,5 @@ use piano::*;
 use placement_view::*;
 use track_roll::*;
 use utils::*;
+use track_sequencer::*;
+use placed_track::*;
