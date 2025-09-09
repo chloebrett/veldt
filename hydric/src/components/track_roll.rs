@@ -1,23 +1,15 @@
-use crate::components::{TrackSequencer, PlacedTrack};
+use crate::components::{PlacedTrack, TrackSequencer};
 use crate::playback::AudioPlayer;
 use crate::{GetSet, LocalState};
 use crate::{view::View, widget::StateWindow, window_state::WindowKind};
-use egui::{
-    Color32, Pos2, Rect, ScrollArea, Ui, pos2, vec2,
-};
+use egui::{Color32, Pos2, Rect, ScrollArea, Ui, pos2, vec2};
 use mesic::samples_to_beats;
 use ordered_float::OrderedFloat;
+use shared::model::{
+    Colour, Placement, PlacementId, PlacementType, SamplePlacement, Track, TrackPlacement,
+};
 use shared::model::{DrumTrack, DrumTrackPlacement};
-use shared::{
-    model::{
-        Colour, Placement, PlacementId, PlacementType, SamplePlacement,
-        Track, TrackPlacement,
-    }
-};
-use state::{
-    Action, SampleSelector,
-    Store, TypeField
-};
+use state::{Action, SampleSelector, Store, TypeField};
 use std::cmp::max;
 use std::collections::{HashMap, HashSet};
 
@@ -133,7 +125,7 @@ impl View for TrackRoll<'_> {
                             offset: 0.0.into(),
                             clipped_duration: None,
                             visual_placement: 0,
-                            colour: Colour::from_8bit(225, 138, 9),
+                            colour: Colour::from_8bit(102, 67, 0),
                         })));
                     }
                     if ui.button("New sample placement").clicked() {
@@ -186,5 +178,3 @@ impl View for TrackRoll<'_> {
         self.local_state.track_roll_select_enabled.set(select);
     }
 }
-
-

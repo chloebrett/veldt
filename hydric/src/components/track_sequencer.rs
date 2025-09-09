@@ -1,20 +1,23 @@
-use state::Store;
 use crate::LocalState;
-use egui::{Rect, Vec2, Shape, Color32, CornerRadius, Stroke, Ui, Response, Pos2, Sense, emath::RectTransform, CursorIcon, Widget, Frame};
-use std::collections::HashMap;
-use shared::model::PlacementId;
 use crate::components::PlacedTrack;
-use shared::types::Beats;
 use crate::playback::AudioPlayer;
-use egui::{vec2, pos2};
-use state::Action;
-use mesic::{beats_to_samples, samples_to_beats};
-use state::TypeField;
-use state::PlacementSelector;
-use state::{UintField, FloatField};
-use shared::model::{PlacementType, TrackPlacement, Placement, Colour};
-use egui::PointerButton;
 use crate::{GetSet, transform::Transform};
+use egui::PointerButton;
+use egui::{
+    Color32, CornerRadius, CursorIcon, Frame, Pos2, Rect, Response, Sense, Shape, Stroke, Ui, Vec2,
+    Widget, emath::RectTransform,
+};
+use egui::{pos2, vec2};
+use mesic::{beats_to_samples, samples_to_beats};
+use shared::model::PlacementId;
+use shared::model::{Colour, Placement, PlacementType, TrackPlacement};
+use shared::types::Beats;
+use state::Action;
+use state::PlacementSelector;
+use state::Store;
+use state::TypeField;
+use state::{FloatField, UintField};
+use std::collections::HashMap;
 
 pub struct TrackSequencer<'a> {
     store: &'a Store,

@@ -8,12 +8,13 @@ use egui::{Ui, widgets::color_picker::color_picker_color32};
 use mesic::samples_to_beats;
 use ordered_float::OrderedFloat;
 use shared::model::{
-    DrumTrackPlacement, GeneratorId, Placement, PlacementId, PlacementType, SamplePlacement, Track,
-    TrackPlacement, SampleId, DrumTrackId
+    DrumTrackId, DrumTrackPlacement, GeneratorId, Placement, PlacementId, PlacementType, SampleId,
+    SamplePlacement, Track, TrackPlacement,
 };
 use shared::types::Beats;
 use state::{
-    Action, DrumTrackSelector, PlacementSelector, SampleSelector, Store, TrackSelector, TypeField, UintField
+    Action, DrumTrackSelector, PlacementSelector, SampleSelector, Store, TrackSelector, TypeField,
+    UintField,
 };
 use std::cmp::max;
 
@@ -100,7 +101,10 @@ impl<'a> PlacementView<'a> {
         store: &Store,
     ) {
         egui::ComboBox::from_id_salt(format!("placement_{:?}", placement_id))
-            .selected_text(format!("{}", Self::get_sample_name(store, &sample_placement.sample_id)))
+            .selected_text(format!(
+                "{}",
+                Self::get_sample_name(store, &sample_placement.sample_id)
+            ))
             .show_ui(ui, |ui| {
                 for sample_id in store.get().project.samples.keys() {
                     selectable_value(
@@ -176,7 +180,7 @@ impl<'a> PlacementView<'a> {
         drum_placement: &DrumTrackPlacement,
         sel: &PlacementSelector,
         store: &Store,
-        local_state: &'a LocalState
+        local_state: &'a LocalState,
     ) {
         let drum_sel = DrumTrackSelector(drum_placement.drum_track_id);
         let Some(_drum_track) = store.try_select(&drum_sel) else {
@@ -184,13 +188,18 @@ impl<'a> PlacementView<'a> {
             return;
         };
         egui::ComboBox::from_id_salt(format!("placement_{:?}", placement_id))
-            .selected_text(format!("{}", Self::get_drum_track_name(store, &drum_placement.drum_track_id)))
+            .selected_text(format!(
+                "{}",
+                Self::get_drum_track_name(store, &drum_placement.drum_track_id)
+            ))
             .show_ui(ui, |ui| {
                 for drum_track_id in store.get().project.drum_tracks.keys() {
                     selectable_value(
                         ui,
                         get_set(&drum_placement.drum_track_id, |it| {
-                            local_state.active_drum_track.set(Some(DrumTrackSelector(*it)));
+                            local_state
+                                .active_drum_track
+                                .set(Some(DrumTrackSelector(*it)));
                             store.dispatch(sel, Action::SetChild(TypeField::DrumTrackId(*it)))
                         }),
                         drum_track_id,
@@ -256,7 +265,7 @@ impl View for PlacementView<'_> {
                             drum_placement,
                             &sel,
                             store,
-                            &self.local_state
+                            &self.local_state,
                         );
                     }
                 }

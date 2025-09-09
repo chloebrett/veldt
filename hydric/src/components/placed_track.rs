@@ -1,26 +1,23 @@
 use crate::components::utils::{ToEguiColour, choose_black_white_based_on_contrast};
-use crate::{GetSet, LocalState, transform::Transform};
 use crate::window_state::WindowKind;
+use crate::{GetSet, LocalState, transform::Transform};
 use egui::epaint::{RectShape, TextShape};
 use egui::{
-    Color32, CornerRadius, Pos2, Rect, Shape,
-    Stroke, StrokeKind, Ui, Vec2, emath::RectTransform, pos2, vec2,
+    Color32, CornerRadius, Pos2, Rect, Shape, Stroke, StrokeKind, Ui, Vec2, emath::RectTransform,
+    pos2, vec2,
 };
 use mesic::{beats_to_samples, samples_to_beats};
 use ordered_float::OrderedFloat;
 use shared::model::DrumTrackPlacement;
 use shared::{
-    model::{
-        PlacedNote, Placement, PlacementId, PlacementType, SampleId, TrackPlacement,
-    },
+    model::{PlacedNote, Placement, PlacementId, PlacementType, SampleId, TrackPlacement},
     types::Beats,
 };
 use state::{
-    Action, DrumTrackSelector, MultiTypeField, PlacementSelector,
-    Store, TrackSelector, TypeField
+    Action, DrumTrackSelector, MultiTypeField, PlacementSelector, Store, TrackSelector, TypeField,
 };
 use std::cmp::{max, min};
-use std::collections::{HashSet};
+use std::collections::HashSet;
 
 const PITCH_RANGE: f32 = 4131.0;
 const VISUAL_SAMPLING_RATE: usize = 120;
