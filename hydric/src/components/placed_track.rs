@@ -382,7 +382,7 @@ impl<'a> PlacedTrack<'a> {
             .set_visible(WindowKind::Placement, true);
         local_state
             .window_state
-            .set_visible(WindowKind::DrumRack, true);
+            .set_visible(WindowKind::DrumTrack, true);
         local_state
             .active_track
             .set(track_placement.map(|it| TrackSelector(it.track_id)));

@@ -85,14 +85,6 @@ impl Default for StoreData {
                     },
                 )]),
                 samples: HashMap::new(),
-                //     samples: HashMap::from([(SampleId(0),
-                //     Sample {
-                //         left: vec![0.0],
-                //         right: vec![0.0],
-                //         sample_rate: 0.0,
-                //         sample_name: "Empty Sample".to_string()
-                //     }
-                // )]),
                 generators: HashMap::from([
                     (
                         GeneratorId(0),

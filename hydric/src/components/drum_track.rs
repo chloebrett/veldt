@@ -163,7 +163,7 @@ impl View for DrumTrackView<'_> {
             StateWindow::show_from_window_state(
                 ui,
                 &self.local_state.window_state,
-                WindowKind::DrumRack,
+                WindowKind::DrumTrack,
                 &title,
                 |ui| {
                     let num_non_empty = drum_sub_tracks.len();
