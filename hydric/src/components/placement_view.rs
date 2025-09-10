@@ -106,7 +106,10 @@ impl<'a> PlacementView<'a> {
     ) {
         ui.vertical(|ui| {
             egui::ComboBox::from_id_salt(format!("placement_{:?}", placement_id))
-                .selected_text(format!("Sample {:?}", sample_placement.sample_id))
+                .selected_text(format!(
+                    "{}", 
+                    Self::get_sample_name(store, &sample_placement.sample_id)
+                ))
                 .show_ui(ui, |ui| {
                     for sample_id in store.get().project.samples.keys() {
                         selectable_value(
@@ -122,6 +125,8 @@ impl<'a> PlacementView<'a> {
             ui.add_space(3.0); 
             let sample_sel = SampleSelector(sample_placement.sample_id);
             let Some(sample) = store.try_select(&sample_sel) else {
+                ui.label("No samples loaded yet");
+                ui.add_space(3.0);
                 return;
             };
 
@@ -132,7 +137,6 @@ impl<'a> PlacementView<'a> {
             let duration = *placement
                 .clipped_duration
                 .unwrap_or(OrderedFloat(max_duration));
-            
             Self::duration_ui(ui, sel, duration, max_duration, store); 
         });
     }
@@ -146,7 +150,8 @@ impl<'a> PlacementView<'a> {
         }
         if store.get().project.samples.is_empty() {
             sample_name = "".to_string();
-        }   sample_name
+        }   
+        sample_name
     }
  
 
