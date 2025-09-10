@@ -14,7 +14,6 @@ pub enum MultiTypeField {
     Effect(Vec<EffectInstance>),
     Generator(Vec<GeneratorInstance>),
     PlacementId(Vec<PlacementId>),
-    Colour([u32; 3]),
 }
 
 impl From<MultiTypeFieldProto> for MultiTypeField {
@@ -53,7 +52,7 @@ impl From<MultiTypeFieldProto> for MultiTypeField {
                     .iter()
                     .filter_map(|value| {
                         if let Some(TypeFieldKind::Placement(placement)) = &value.kind {
-                            Some(placement.clone().into())
+                            Some((placement.clone()).into())
                         } else {
                             None
                         }
@@ -99,20 +98,6 @@ impl From<MultiTypeFieldProto> for MultiTypeField {
                     })
                     .collect(),
             ),
-            MultiTypeFieldKind::ColourTypeFieldKind => MultiTypeField::Colour({
-                let rgb: Vec<u32> = object
-                    .values
-                    .iter()
-                    .filter_map(|value| {
-                        if let Some(TypeFieldKind::Colour(colours)) = &value.kind {
-                            Some(colours.clone().into())
-                        } else {
-                            None
-                        }
-                    })
-                    .collect();
-                [rgb[0], rgb[1], rgb[2]]
-            }),
         }
     }
 }
@@ -171,15 +156,6 @@ impl From<MultiTypeField> for MultiTypeFieldProto {
                     .into_iter()
                     .map(|value| TypeFieldProto {
                         kind: Some(TypeFieldKind::PlacementId(value.into())),
-                    })
-                    .collect(),
-            },
-            MultiTypeField::Colour(colour) => Self {
-                kind: MultiTypeFieldKind::PlacementIdTypeFieldKind.into(),
-                values: colour
-                    .into_iter()
-                    .map(|value| TypeFieldProto {
-                        kind: Some(TypeFieldKind::Colour(value.into())),
                     })
                     .collect(),
             },

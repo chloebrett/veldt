@@ -1,4 +1,5 @@
 mod app;
+mod drum_track;
 mod effect;
 mod frame_history;
 mod generator;
@@ -9,9 +10,11 @@ mod mod_matrix;
 mod note_roll;
 mod note_view;
 mod piano;
+mod placed_track;
 mod placement_view;
 mod play;
 mod track_roll;
+mod track_sequencer;
 mod utils;
 
 pub use app::*;
@@ -23,6 +26,8 @@ use mod_matrix::*;
 use note_roll::*;
 use note_view::*;
 use piano::*;
+use placed_track::*;
 use placement_view::*;
 use track_roll::*;
+use track_sequencer::*;
 use utils::*;

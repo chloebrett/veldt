@@ -98,12 +98,7 @@ impl Mixer {
             graph_manager.add_node(make_node(BufferNode::default()), NodeLabel::Buffer);
         let main_sum = graph_manager.add_node(make_node(Sum), NodeLabel::Sum);
         let main_amp = graph_manager.add_node(make_node(AmpNode::new_main()), NodeLabel::Amp);
-        let generator_ids: Vec<GeneratorId> = project
-            .generators
-            .keys()
-            .into_iter()
-            .map(|key| key.clone())
-            .collect();
+        let generator_ids: Vec<GeneratorId> = project.generators.keys().copied().collect();
 
         Self {
             graph_manager,
@@ -244,10 +239,15 @@ impl Mixer {
                     _ => false,
                 }
             }
-            Selector::Placement(..) => {
+            Selector::Placement(placement_id) => match action {
                 // TODO: handle adding, deleting and updating nodes when sample placements change.
-                false
-            }
+                Action::SetChild(TypeField::SampleId(_)) => {
+                    self.channels[0]
+                        .soft_add_placement_sample(&mut self.graph_manager, *placement_id);
+                    true
+                }
+                _ => false,
+            },
             Selector::MixerMatrixCell(..) => match action {
                 // If the matrix changes, reset the routes for each node, then refresh the edges.
                 // NOTE: in future, consider what happens if the size of the matrix changes too.
@@ -281,7 +281,11 @@ impl Mixer {
                         .into_iter()
                         .map(|key| *key)
                         .collect();
-                    let next_id = all_ids.iter().max().unwrap_or(&0).clone() + 1;
+                    let next_id = if all_ids.is_empty() {
+                        0
+                    } else {
+                        *all_ids.iter().max().unwrap_or(&0) + 1
+                    };
                     let generator_info = GeneratorInfo::new(
                         &mut self.graph_manager,
                         gen_instance,
@@ -291,9 +295,15 @@ impl Mixer {
                     self.generator_ids.push(GeneratorId(next_id));
                     true
                 }
+                Action::DeleteChildById(TypeField::GeneratorId(gen_id)) => {
+                    for channel in self.channels.iter_mut() {
+                        channel.soft_delete_generator(GeneratorSelector(*gen_id));
+                    }
+                    self.generator_ids.retain(|id| id != gen_id);
+                    true
+                }
                 _ => false,
             },
-            // TODO: handle adding and deleting generators (not just changing their mixer channel).
             _ => false,
         };
 

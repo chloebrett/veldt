@@ -1,6 +1,6 @@
 use crate::receiver::ActionReceiver;
 use crate::{Action, TypeField};
-use shared::model::DrumTrackPlacement;
+use shared::model::{DrumSubTrack, DrumTrackPlacement};
 
 impl ActionReceiver for DrumTrackPlacement {
     fn apply(&mut self, action: &Action) -> Option<Action> {
@@ -12,5 +12,13 @@ impl ActionReceiver for DrumTrackPlacement {
             }
             _ => return None,
         })
+    }
+}
+
+impl ActionReceiver for DrumSubTrack {
+    fn apply(&mut self, action: &Action) -> Option<Action> {
+        match action {
+            _ => return None,
+        }
     }
 }

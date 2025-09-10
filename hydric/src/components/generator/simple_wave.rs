@@ -4,7 +4,8 @@ use crate::view::View;
 use crate::widget::{add_typable_knob, get_set, int_slider, selectable_value, styled_knob};
 use egui::{Button, Sense, Ui};
 use shared::model::{
-    AntiAliasingMode, PitchName, PolyphonyMode, ScaleValue, SimpleWaveConfig, WaveType,
+    AntiAliasingMode, GeneratorMeta, PitchName, PolyphonyMode, ScaleValue, SimpleWaveConfig,
+    WaveType,
 };
 use state::{Action, FloatField, GeneratorSelector, TypeField, UintField};
 use strum::IntoEnumIterator;
@@ -15,6 +16,7 @@ pub struct SimpleWaveView<'a, F: Fn(Action), G: Fn()> {
     player: &'a mut AudioPlayer,
     dispatch: F,
     on_release: G,
+    meta: &'a GeneratorMeta,
 }
 
 impl<'a, F: Fn(Action), G: Fn()> SimpleWaveView<'a, F, G> {
@@ -24,6 +26,7 @@ impl<'a, F: Fn(Action), G: Fn()> SimpleWaveView<'a, F, G> {
         player: &'a mut AudioPlayer,
         dispatch: F,
         on_release: G,
+        meta: &'a GeneratorMeta,
     ) -> Self {
         Self {
             selector,
@@ -31,6 +34,7 @@ impl<'a, F: Fn(Action), G: Fn()> SimpleWaveView<'a, F, G> {
             player,
             dispatch,
             on_release,
+            meta,
         }
     }
 
@@ -108,12 +112,23 @@ impl<'a, F: Fn(Action), G: Fn()> SimpleWaveView<'a, F, G> {
             );
         }
     }
+
+    fn generator_name(&self, ui: &mut Ui) {
+        ui.label("Rename Generator/Instrument Name");
+        ui.add_space(2.0);
+        let mut name = self.meta.name.clone();
+        let response = ui.text_edit_singleline(&mut name);
+        if response.changed() {
+            (self.dispatch)(Action::SetChild(TypeField::GeneratorName(name.to_string())));
+        }
+    }
 }
 
 impl<F: Fn(Action), G: Fn()> View for SimpleWaveView<'_, F, G> {
     fn ui(&mut self, ui: &mut Ui) {
         ui.horizontal(|ui| {
             ui.vertical(|ui| {
+                self.generator_name(ui);
                 self.wave_combo_box(ui);
                 int_slider(
                     ui,

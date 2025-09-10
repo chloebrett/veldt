@@ -1,7 +1,7 @@
 use shared::action_proto::{TypeFieldProto, type_field_proto::Kind as TypeFieldKind};
 use shared::model::{
-    AdsrEnvelope, AntiAliasingMode, DrumTrack, DrumTrackId, EffectId, EffectInstance, EqType,
-    FileTreeConfig, FilenameTree, GeneratorId, GeneratorInstance, MixerChannel, NoiseType,
+    AdsrEnvelope, AntiAliasingMode, Colour, DrumTrack, DrumTrackId, EffectId, EffectInstance,
+    EqType, FileTreeConfig, FilenameTree, GeneratorId, GeneratorInstance, MixerChannel, NoiseType,
     PitchName, PlacedNote, Placement, PlacementId, PolyphonyMode, Project, Sample, SampleId, Scale,
     ScaleValue, Track, TrackId, WaveType,
 };
@@ -56,7 +56,7 @@ pub enum TypeField {
     Octave(i32),
     LpfOn(bool),
     // Note: when you add a new type, make sure to configure its broadcast behaviour in broadcast.rs as well.
-    Colour(u32),
+    Colour(Colour),
     GeneratorName(String),
 }
 

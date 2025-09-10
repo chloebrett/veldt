@@ -1,6 +1,6 @@
 use crate::model::{
     DrumTrack, DrumTrackId, EffectId, EffectInstance, GeneratorId, GeneratorInstance, Mixer,
-    Placement, PlacementId, Sample, SampleId, Track, TrackId, TrackPlacement,
+    Placement, PlacementId, PlacementType, Sample, SampleId, Track, TrackId, samples_to_beats,
 };
 use crate::pmodel::*;
 use crate::types::Beats;
@@ -40,14 +40,33 @@ impl Project {
     pub fn duration(&self) -> OrderedFloat<f32> {
         let mut max = OrderedFloat(0.0);
         for placement in self.placements.values() {
-            if let &Ok(&TrackPlacement { track_id, .. }) = &placement.try_into() {
-                let track = &self.tracks[&track_id];
-                let offset = &placement.offset;
-                let duration = placement
-                    .clipped_duration
-                    .unwrap_or(track.unclipped_duration());
-                max = std::cmp::max(max, offset + duration);
-            }
+            let offset = &placement.offset;
+            let duration = match &placement.kind {
+                PlacementType::Track(track_placement) => {
+                    let track = &self.tracks[&track_placement.track_id];
+                    placement
+                        .clipped_duration
+                        .unwrap_or(track.unclipped_duration())
+                }
+                PlacementType::Sample(sample_placement) => {
+                    if let Some(sample) = self.samples.get(&sample_placement.sample_id) {
+                        placement
+                            .clipped_duration
+                            .unwrap_or(OrderedFloat(samples_to_beats(
+                                std::cmp::max(sample.left.len(), sample.right.len()),
+                                self.bpm,
+                            )))
+                    } else {
+                        OrderedFloat(0.0)
+                    }
+                }
+                PlacementType::DrumTrack(_) =>
+                //TODO DRUM TRACK TIME, hardcoded value for testing purposes
+                {
+                    OrderedFloat(8.0)
+                }
+            };
+            max = std::cmp::max(max, offset + duration);
         }
         max
     }
@@ -57,10 +76,10 @@ impl Project {
 mod tests {
     use crate::{
         model::{
-            AdsrEnvelope, AntiAliasingMode, DelayConfig, Effect, EffectInstance, EffectMeta,
-            EqConfig, EqType, Generator, GeneratorMeta, MixerChannel, MixerMatrix, ModDelayConfig,
-            Note, PitchName, PlacedDrum, PlacedNote, PlacementType, PolyphonyMode, ScaleValue,
-            SimpleWaveConfig, WaveType,
+            AdsrEnvelope, AntiAliasingMode, Colour, DelayConfig, DrumSubTrack, Effect,
+            EffectInstance, EffectMeta, EqConfig, EqType, Generator, GeneratorMeta, MixerChannel,
+            MixerMatrix, ModDelayConfig, Note, PitchName, PlacedDrum, PlacedDrumId, PlacedNote,
+            PlacementType, PolyphonyMode, ScaleValue, SimpleWaveConfig, TrackPlacement, WaveType,
         },
         testing::proto::proto_testing::assert_proto_round_trip,
     };
@@ -99,7 +118,7 @@ mod tests {
                     offset: 2.5.into(),
                     clipped_duration: Some(5.2.into()),
                     visual_placement: 6,
-                    colour: [67, 206, 222],
+                    colour: Colour::from_8bit(67, 206, 222),
                 },
             )]),
             samples: HashMap::from([(
@@ -195,12 +214,22 @@ mod tests {
             drum_tracks: HashMap::from([(
                 DrumTrackId(0),
                 DrumTrack {
-                    sample_id: SampleId(0),
-                    drums: vec![
-                        PlacedDrum { offset: 0.0.into() },
-                        PlacedDrum { offset: 1.0.into() },
-                        PlacedDrum { offset: 2.5.into() },
-                    ],
+                    drum_sub_tracks: HashMap::from([(
+                        SampleId(0),
+                        DrumSubTrack {
+                            placed_drums: HashMap::from([(
+                                PlacedDrumId(0),
+                                PlacedDrum {
+                                    offset: 0.0.into(),
+                                    clipped_duration: None,
+                                    pitch_name: PitchName {
+                                        scale_value: ScaleValue::C,
+                                        octave: 5,
+                                    },
+                                },
+                            )]),
+                        },
+                    )]),
                 },
             )]),
         };

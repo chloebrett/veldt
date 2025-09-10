@@ -23,9 +23,21 @@ pub struct EnvelopeGenerator {
 
 impl EnvelopeGenerator {
     pub fn new(envelope: AdsrEnvelope) -> Self {
-        let attack_per_sample = MS_PER_SECOND / (envelope.attack * SAMPLE_RATE as f32);
-        let decay_per_sample = MS_PER_SECOND / (envelope.decay * SAMPLE_RATE as f32);
-        let release_per_sample = MS_PER_SECOND / (envelope.release * SAMPLE_RATE as f32);
+        let attack_per_sample = if envelope.attack > 0.0 {
+            1.0 / (envelope.attack * SAMPLE_RATE as f32 / MS_PER_SECOND)
+        } else {
+            1.0
+        };
+        let decay_per_sample = if envelope.decay > 0.0 {
+            (1.0 - envelope.sustain) / (envelope.decay * SAMPLE_RATE as f32 / MS_PER_SECOND)
+        } else {
+            1.0 - envelope.sustain
+        };
+        let release_per_sample = if envelope.release > 0.0 {
+            envelope.sustain / (envelope.release * SAMPLE_RATE as f32 / MS_PER_SECOND)
+        } else {
+            1.0
+        };
 
         Self {
             state: EnvelopeState::Off,
@@ -96,6 +108,13 @@ impl EnvelopeGenerator {
 
     pub fn peek(&self) -> f32 {
         self.last_output
+    }
+
+    pub fn is_off(&self) -> bool {
+        match self.state {
+            EnvelopeState::Off => true,
+            _ => false,
+        }
     }
 }
 
@@ -177,13 +196,13 @@ mod tests {
         // Attack
         expected.extend([0.2, 0.4, 0.6, 0.8, 1.0]);
         // Decay
-        expected.extend([0.8, 0.6, 0.4]);
+        expected.extend([0.9, 0.8, 0.7, 0.6, 0.5]);
         // Sustain
-        expected.extend([0.5; 12]);
+        expected.extend([0.5; 10]);
         // Release
-        expected.extend([0.3, 0.1]);
+        expected.extend([0.4, 0.3, 0.2, 0.1, 0.0]);
         // Off
-        expected.extend([0.0; 8]);
+        expected.extend([0.0; 5]);
         assert_almost_equal(result, expected);
     }
 
