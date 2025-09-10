@@ -6,7 +6,7 @@ use super::{
     menu::MenuBar,
     play::{MicrophoneView, SampleTreeView, ToolbarView},
 };
-use crate::components::{FrameHistory, drum_rack::DrumRackView, play::MicState};
+use crate::components::{FrameHistory, drum_track::DrumTrackView, play::MicState};
 use crate::playback::Microphone;
 use crate::rpc::broadcast_actions;
 use crate::rpc::load_project_list;
@@ -190,6 +190,6 @@ impl View for App {
         .ui(ui);
         TrackRoll::new(&self.store, &self.local_state, &mut self.player).ui(ui);
         GraphView::new(&self.local_state, &mut self.snarl, &self.player).ui(ui);
-        DrumRackView::new(&self.store, &self.local_state).ui(ui);
+        DrumTrackView::new(&self.store, &self.local_state).ui(ui);
     }
 }

@@ -61,9 +61,9 @@ impl Project {
                     }
                 }
                 PlacementType::DrumTrack(_) =>
-                //TODO DRUM TRACK TIME
+                //TODO DRUM TRACK TIME, hardcoded value for testing purposes
                 {
-                    todo!()
+                    OrderedFloat(8.0)
                 }
             };
             max = std::cmp::max(max, offset + duration);

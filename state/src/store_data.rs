@@ -2,10 +2,11 @@ use crate::receiver::ActionReceiver;
 use crate::{Action, Selector, SelectorTrait, reducer};
 use ordered_float::OrderedFloat;
 use shared::model::{
-    AdsrEnvelope, AntiAliasingMode, Colour, FileTreeConfig, FilenameTree, Generator, GeneratorId,
-    GeneratorInstance, GeneratorMeta, Mixer, MixerChannel, MixerMatrix, NoiseConfig, Note,
-    PitchName, PlacedNote, Placement, PlacementId, PlacementType, PolyphonyMode, Project, Scale,
-    ScaleValue, SimpleWaveConfig, StingrayConfig, Track, TrackId, TrackPlacement, WaveType,
+    AdsrEnvelope, AntiAliasingMode, Colour, DrumTrack, DrumTrackId, FileTreeConfig, FilenameTree,
+    Generator, GeneratorId, GeneratorInstance, GeneratorMeta, Mixer, MixerChannel, MixerMatrix,
+    NoiseConfig, Note, PitchName, PlacedNote, Placement, PlacementId, PlacementType, PolyphonyMode,
+    Project, Scale, ScaleValue, SimpleWaveConfig, StingrayConfig, Track, TrackId, TrackPlacement,
+    WaveType,
 };
 use shared::types::Volume;
 use std::collections::HashMap;
@@ -145,7 +146,12 @@ impl Default for StoreData {
                 },
                 effects: HashMap::new(),
                 bpm: 120.0,
-                drum_tracks: HashMap::new(),
+                drum_tracks: HashMap::from([(
+                    DrumTrackId(0),
+                    DrumTrack {
+                        drum_sub_tracks: HashMap::new(),
+                    },
+                )]),
             },
             volume: 1.0,
             key: ScaleValue::A,

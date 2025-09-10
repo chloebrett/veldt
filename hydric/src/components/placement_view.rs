@@ -8,12 +8,13 @@ use egui::{Ui, widgets::color_picker::color_picker_color32};
 use mesic::samples_to_beats;
 use ordered_float::OrderedFloat;
 use shared::model::{
-    DrumTrackPlacement, GeneratorId, Placement, PlacementId, PlacementType, SamplePlacement, Track,
-    TrackPlacement,
+    DrumTrackId, DrumTrackPlacement, GeneratorId, Placement, PlacementId, PlacementType, SampleId,
+    SamplePlacement, Track, TrackPlacement,
 };
 use shared::types::Beats;
 use state::{
-    Action, PlacementSelector, SampleSelector, Store, TrackSelector, TypeField, UintField,
+    Action, DrumTrackSelector, PlacementSelector, SampleSelector, Store, TrackSelector, TypeField,
+    UintField,
 };
 use std::cmp::max;
 
@@ -100,7 +101,10 @@ impl<'a> PlacementView<'a> {
         store: &Store,
     ) {
         egui::ComboBox::from_id_salt(format!("placement_{:?}", placement_id))
-            .selected_text(format!("Sample {:?}", sample_placement.sample_id))
+            .selected_text(format!(
+                "{}",
+                Self::get_sample_name(store, &sample_placement.sample_id)
+            ))
             .show_ui(ui, |ui| {
                 for sample_id in store.get().project.samples.keys() {
                     selectable_value(
@@ -109,11 +113,10 @@ impl<'a> PlacementView<'a> {
                             store.dispatch(sel, Action::SetChild(TypeField::SampleId(*it)))
                         }),
                         sample_id,
-                        sample_id.to_string(),
+                        Self::get_sample_name(store, sample_id),
                     );
                 }
             });
-
         let sample_sel = SampleSelector(sample_placement.sample_id);
         let Some(sample) = store.try_select(&sample_sel) else {
             ui.label("No samples loaded yet.");
@@ -127,6 +130,17 @@ impl<'a> PlacementView<'a> {
             .clipped_duration
             .unwrap_or(OrderedFloat(max_duration));
         Self::duration_ui(ui, sel, duration, max_duration, store);
+    }
+
+    fn get_sample_name(store: &Store, sample_id: &SampleId) -> String {
+        let mut sample_name = format!("Sample ID {}", **sample_id);
+        if let Some(sample) = store.get().project.samples.get(sample_id) {
+            sample_name = sample.sample_name.clone();
+        }
+        if store.get().project.samples.is_empty() {
+            sample_name = "".to_string();
+        }
+        sample_name
     }
 
     fn duration_ui(
@@ -161,13 +175,46 @@ impl<'a> PlacementView<'a> {
 
     fn drum_placement_ui(
         ui: &mut Ui,
-        _placement_id: PlacementId,
+        placement_id: PlacementId,
         _placement: &Placement,
-        _drum_placement: &DrumTrackPlacement,
-        _sel: &PlacementSelector,
-        _store: &Store,
+        drum_placement: &DrumTrackPlacement,
+        sel: &PlacementSelector,
+        store: &Store,
+        local_state: &'a LocalState,
     ) {
-        ui.label("Placeholder for drum placement view");
+        let drum_sel = DrumTrackSelector(drum_placement.drum_track_id);
+        let Some(_drum_track) = store.try_select(&drum_sel) else {
+            ui.label("No drum tracks added yet");
+            return;
+        };
+        egui::ComboBox::from_id_salt(format!("placement_{:?}", placement_id))
+            .selected_text(format!(
+                "{}",
+                Self::get_drum_track_name(store, &drum_placement.drum_track_id)
+            ))
+            .show_ui(ui, |ui| {
+                for drum_track_id in store.get().project.drum_tracks.keys() {
+                    selectable_value(
+                        ui,
+                        get_set(&drum_placement.drum_track_id, |it| {
+                            local_state
+                                .active_drum_track
+                                .set(Some(DrumTrackSelector(*it)));
+                            store.dispatch(sel, Action::SetChild(TypeField::DrumTrackId(*it)))
+                        }),
+                        drum_track_id,
+                        Self::get_drum_track_name(store, drum_track_id),
+                    );
+                }
+            });
+    }
+
+    fn get_drum_track_name(store: &Store, drum_track_id: &DrumTrackId) -> String {
+        let mut drum_track_name = format!("Drum Track {}", **drum_track_id);
+        if store.get().project.drum_tracks.is_empty() {
+            drum_track_name = "".to_string();
+        }
+        drum_track_name
     }
 }
 
@@ -218,6 +265,7 @@ impl View for PlacementView<'_> {
                             drum_placement,
                             &sel,
                             store,
+                            &self.local_state,
                         );
                     }
                 }
