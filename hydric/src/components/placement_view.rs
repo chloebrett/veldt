@@ -104,36 +104,40 @@ impl<'a> PlacementView<'a> {
         sel: &PlacementSelector,
         store: &Store,
     ) {
-        egui::ComboBox::from_id_salt(format!("placement_{:?}", placement_id))
-            .selected_text(format!("Sample {:?}", sample_placement.sample_id))
-            .show_ui(ui, |ui| {
-                for sample_id in store.get().project.samples.keys() {
-                    selectable_value(
-                        ui,
-                        get_set(&sample_placement.sample_id, |it| {
-                            store.dispatch(sel, Action::SetChild(TypeField::SampleId(*it)))
-                        }),
-                        sample_id,
-                        sample_id.to_string(),
-                    );
-                }
-            });
+        ui.vertical(|ui| {
+            egui::ComboBox::from_id_salt(format!("placement_{:?}", placement_id))
+                .selected_text(format!("Sample {:?}", sample_placement.sample_id))
+                .show_ui(ui, |ui| {
+                    for sample_id in store.get().project.samples.keys() {
+                        selectable_value(
+                            ui,
+                            get_set(&sample_placement.sample_id, |it| {
+                                store.dispatch(sel, Action::SetChild(TypeField::SampleId(*it)))
+                            }),
+                            sample_id,
+                            Self::get_sample_name(store, sample_id),
+                        );
+                    }
+                });
+            ui.add_space(3.0); 
+            let sample_sel = SampleSelector(sample_placement.sample_id);
+            let Some(sample) = store.try_select(&sample_sel) else {
+                return;
+            };
 
-        let sample_sel = SampleSelector(sample_placement.sample_id);
-        let Some(sample) = store.try_select(&sample_sel) else {
-            return;
-        };
-        let max_duration = samples_to_beats(
-            max(sample.left.len(), sample.right.len()),
-            store.get().project.bpm,
-        );
-        let duration = *placement
-            .clipped_duration
-            .unwrap_or(OrderedFloat(max_duration));
-        Self::duration_ui(ui, sel, duration, max_duration, store);
-    });
-    
+            let max_duration = samples_to_beats(
+                max(sample.left.len(), sample.right.len()),
+                store.get().project.bpm,
+            );
+            let duration = *placement
+                .clipped_duration
+                .unwrap_or(OrderedFloat(max_duration));
+            
+            Self::duration_ui(ui, sel, duration, max_duration, store); 
+        });
     }
+        
+
 
     fn get_sample_name(store: &Store, sample_id: &SampleId) -> String {
         let mut sample_name = format!("Sample ID {}", **sample_id);
