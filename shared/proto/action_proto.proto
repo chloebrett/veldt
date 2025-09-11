@@ -19,13 +19,7 @@ message ActionProto {
     MultiTypeFieldProto add_children = 12;
     TypeFieldProto delete_child_by_id = 13;
     MultiTypeFieldProto delete_children_by_id = 14;
-    TypeFieldPairProto update_child_id = 16;
   }
-}
-
-message TypeFieldPairProto {
-  TypeFieldProto from_id = 1;
-  TypeFieldProto to_id = 2;
 }
 
 message ChildIndexPairProto {
@@ -91,8 +85,6 @@ message TypeFieldProto {
     pmodel.ColourProto colour = 28;
     bool lpf_on = 29;
     string generator_name = 30;
-    pmodel.DrumTrackProto drum_track = 31;
-    uint32 drum_track_id = 32;
   }
 }
 
@@ -146,8 +138,6 @@ message SelectorProto {
     IndexPair envelope = 12;
     IndexTriple mod_matrix_cell = 13;
     uint32 sample = 14;
-    IndexPair drum_sub_track = 15;
-    uint32 drum_track = 16;
   }
 
   message IndexPair {

@@ -1,6 +1,6 @@
 use crate::model::{
-    DrumTrack, DrumTrackId, EffectId, EffectInstance, GeneratorId, GeneratorInstance, Mixer,
-    Placement, PlacementId, PlacementType, Sample, SampleId, Track, TrackId, samples_to_beats,
+    EffectId, EffectInstance, GeneratorId, GeneratorInstance, Mixer, Placement, PlacementId,
+    PlacementType, Sample, SampleId, Track, TrackId, samples_to_beats,
 };
 use crate::pmodel::*;
 use crate::types::Beats;
@@ -31,9 +31,6 @@ pub struct Project {
     pub mixer: Mixer,
 
     pub bpm: Beats,
-
-    #[proto_hashmap]
-    pub drum_tracks: HashMap<DrumTrackId, DrumTrack>,
 }
 
 impl Project {
@@ -76,10 +73,10 @@ impl Project {
 mod tests {
     use crate::{
         model::{
-            AdsrEnvelope, AntiAliasingMode, Colour, DelayConfig, DrumSubTrack, Effect,
-            EffectInstance, EffectMeta, EqConfig, EqType, Generator, GeneratorMeta, MixerChannel,
-            MixerMatrix, ModDelayConfig, Note, PitchName, PlacedDrum, PlacedDrumId, PlacedNote,
-            PlacementType, PolyphonyMode, ScaleValue, SimpleWaveConfig, TrackPlacement, WaveType,
+            AdsrEnvelope, AntiAliasingMode, Colour, DelayConfig, Effect, EffectInstance,
+            EffectMeta, EqConfig, EqType, Generator, GeneratorMeta, MixerChannel, MixerMatrix,
+            ModDelayConfig, Note, PitchName, PlacedNote, PlacementType, PolyphonyMode, ScaleValue,
+            SimpleWaveConfig, TrackPlacement, WaveType,
         },
         testing::proto::proto_testing::assert_proto_round_trip,
     };
@@ -211,27 +208,6 @@ mod tests {
                 }],
             },
             bpm: 120.0,
-            drum_tracks: HashMap::from([(
-                DrumTrackId(0),
-                DrumTrack {
-                    drum_sub_tracks: HashMap::from([(
-                        SampleId(0),
-                        DrumSubTrack {
-                            placed_drums: HashMap::from([(
-                                PlacedDrumId(0),
-                                PlacedDrum {
-                                    offset: 0.0.into(),
-                                    clipped_duration: None,
-                                    pitch_name: PitchName {
-                                        scale_value: ScaleValue::C,
-                                        octave: 5,
-                                    },
-                                },
-                            )]),
-                        },
-                    )]),
-                },
-            )]),
         };
         assert_proto_round_trip::<Project, ProjectProto>(project);
     }

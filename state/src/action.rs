@@ -2,8 +2,7 @@ use crate::{
     FloatField, IndexField, MoveField, MultiIndexField, MultiTypeField, TypeField, UintField,
 };
 use shared::action_proto::{
-    ActionProto, ChildIndexPairProto, SetFloatProto, SetUintProto, TypeFieldPairProto,
-    action_proto::Kind as ActionKind,
+    ActionProto, ChildIndexPairProto, SetFloatProto, SetUintProto, action_proto::Kind as ActionKind,
 };
 use std::str::FromStr;
 
@@ -34,7 +33,6 @@ pub enum Action {
     AddChildren(MultiTypeField),
     SetChildren(MultiTypeField),
     MoveChild(MoveField),
-    UpdateChildId(TypeField, TypeField),
 
     /// Denotes that the mouse has been released from a UI element, finalizing its value.
     /// This is how we know to flatten (in the undo stack) actions that modify floats.
@@ -72,9 +70,6 @@ impl From<ActionProto> for Action {
             ActionKind::SetChild(child) => Action::SetChild(child.into()),
             ActionKind::SetChildren(children) => Action::SetChildren(children.into()),
             ActionKind::AddChildren(children) => Action::AddChildren(children.into()),
-            ActionKind::UpdateChildId(TypeFieldPairProto { from_id, to_id }) => {
-                Action::UpdateChildId(from_id.unwrap().into(), to_id.unwrap().into())
-            }
         }
     }
 }
@@ -107,10 +102,6 @@ impl From<Action> for ActionProto {
                 Action::MoveChild(it) => ActionKind::MoveChild(it.into()),
                 Action::SetChildren(it) => ActionKind::SetChildren(it.into()),
                 Action::AddChildren(it) => ActionKind::AddChildren(it.into()),
-                Action::UpdateChildId(from, to) => ActionKind::UpdateChildId(TypeFieldPairProto {
-                    from_id: Some(from.into()),
-                    to_id: Some(to.into()),
-                }),
 
                 // Non-serializable actions
                 Action::Release => panic!(),

@@ -7,14 +7,14 @@ use egui::color_picker::Alpha;
 use egui::{Ui, widgets::color_picker::color_picker_color32};
 use mesic::samples_to_beats;
 use ordered_float::OrderedFloat;
+use shared::model::TrackId;
 use shared::model::{
-    DrumTrackId, DrumTrackPlacement, GeneratorId, Placement, PlacementId, PlacementType, SampleId,
+    DrumTrackPlacement, GeneratorId, Placement, PlacementId, PlacementType, SampleId,
     SamplePlacement, Track, TrackPlacement,
 };
 use shared::types::Beats;
 use state::{
-    Action, DrumTrackSelector, PlacementSelector, SampleSelector, Store, TrackSelector, TypeField,
-    UintField,
+    Action, PlacementSelector, SampleSelector, Store, TrackSelector, TypeField, UintField,
 };
 use std::cmp::max;
 
@@ -176,42 +176,54 @@ impl<'a> PlacementView<'a> {
     fn drum_placement_ui(
         ui: &mut Ui,
         placement_id: PlacementId,
-        _placement: &Placement,
         drum_placement: &DrumTrackPlacement,
         sel: &PlacementSelector,
         store: &Store,
-        local_state: &'a LocalState,
     ) {
-        let drum_sel = DrumTrackSelector(drum_placement.drum_track_id);
-        let Some(_drum_track) = store.try_select(&drum_sel) else {
+        let track_sel = TrackSelector(drum_placement.track_id);
+        let Some(_drum_track) = store.try_select(&track_sel) else {
             ui.label("No drum tracks added yet");
             return;
         };
         egui::ComboBox::from_id_salt(format!("placement_{:?}", placement_id))
             .selected_text(format!(
                 "{}",
-                Self::get_drum_track_name(store, &drum_placement.drum_track_id)
+                Self::get_drum_track_name(store, &drum_placement.track_id)
             ))
             .show_ui(ui, |ui| {
-                for drum_track_id in store.get().project.drum_tracks.keys() {
+                for track_id in store.get().project.tracks.keys() {
                     selectable_value(
                         ui,
-                        get_set(&drum_placement.drum_track_id, |it| {
-                            local_state
-                                .active_drum_track
-                                .set(Some(DrumTrackSelector(*it)));
-                            store.dispatch(sel, Action::SetChild(TypeField::DrumTrackId(*it)))
+                        get_set(&drum_placement.track_id, |it| {
+                            store.dispatch(sel, Action::SetChild(TypeField::TrackId(*it)))
                         }),
-                        drum_track_id,
-                        Self::get_drum_track_name(store, drum_track_id),
+                        track_id,
+                        Self::get_drum_track_name(store, track_id),
+                    );
+                }
+            });
+        egui::ComboBox::from_id_salt(format!("drum_placement_sample{:?}", placement_id))
+            .selected_text(format!(
+                "{}",
+                Self::get_sample_name(store, &drum_placement.sample_id)
+            ))
+            .show_ui(ui, |ui| {
+                for sample_id in store.get().project.samples.keys() {
+                    selectable_value(
+                        ui,
+                        get_set(&drum_placement.sample_id, |it| {
+                            store.dispatch(sel, Action::SetChild(TypeField::SampleId(*it)))
+                        }),
+                        sample_id,
+                        Self::get_sample_name(store, sample_id),
                     );
                 }
             });
     }
 
-    fn get_drum_track_name(store: &Store, drum_track_id: &DrumTrackId) -> String {
-        let mut drum_track_name = format!("Drum Track {}", **drum_track_id);
-        if store.get().project.drum_tracks.is_empty() {
+    fn get_drum_track_name(store: &Store, track_id: &TrackId) -> String {
+        let mut drum_track_name = format!("Track ID {}", **track_id);
+        if store.get().project.tracks.is_empty() {
             drum_track_name = "".to_string();
         }
         drum_track_name
@@ -258,15 +270,7 @@ impl View for PlacementView<'_> {
                         );
                     }
                     PlacementType::DrumTrack(drum_placement) => {
-                        Self::drum_placement_ui(
-                            ui,
-                            placement_id,
-                            placement,
-                            drum_placement,
-                            &sel,
-                            store,
-                            &self.local_state,
-                        );
+                        Self::drum_placement_ui(ui, placement_id, drum_placement, &sel, store);
                     }
                 }
 

@@ -1,9 +1,9 @@
 use shared::action_proto::{TypeFieldProto, type_field_proto::Kind as TypeFieldKind};
 use shared::model::{
-    AdsrEnvelope, AntiAliasingMode, Colour, DrumTrack, DrumTrackId, EffectId, EffectInstance,
-    EqType, FileTreeConfig, FilenameTree, GeneratorId, GeneratorInstance, MixerChannel, NoiseType,
-    PitchName, PlacedNote, Placement, PlacementId, PolyphonyMode, Project, Sample, SampleId, Scale,
-    ScaleValue, Track, TrackId, WaveType,
+    AdsrEnvelope, AntiAliasingMode, Colour, EffectId, EffectInstance, EqType, FileTreeConfig,
+    FilenameTree, GeneratorId, GeneratorInstance, MixerChannel, NoiseType, PitchName, PlacedNote,
+    Placement, PlacementId, PolyphonyMode, Project, Sample, SampleId, Scale, ScaleValue, Track,
+    TrackId, WaveType,
 };
 use shared::pmodel::{
     AntiAliasingModeProto, EqTypeProto, NoiseTypeProto, PolyphonyModeProto, ScaleProto,
@@ -40,7 +40,6 @@ pub enum TypeField {
     MixerChannel(MixerChannel),
     PolyphonyMode(PolyphonyMode),
     NoiseType(NoiseType),
-    DrumTrack(DrumTrack),
 
     // ID types.
     GeneratorId(GeneratorId),
@@ -48,7 +47,6 @@ pub enum TypeField {
     SampleId(SampleId),
     TrackId(TrackId),
     EffectId(EffectId),
-    DrumTrackId(DrumTrackId),
 
     // Note: if we end up with more bools/primitives, make dedicated types for them so that we
     // don't have to keep expanding the proto.
@@ -103,8 +101,6 @@ impl From<TypeFieldProto> for TypeField {
             TypeFieldKind::Colour(it) => TypeField::Colour(it.into()),
             TypeFieldKind::LpfOn(it) => TypeField::LpfOn(it),
             TypeFieldKind::GeneratorName(it) => TypeField::GeneratorName(it),
-            TypeFieldKind::DrumTrack(it) => TypeField::DrumTrack(it.into()),
-            TypeFieldKind::DrumTrackId(it) => TypeField::DrumTrackId(it.into()),
         }
     }
 }
@@ -158,8 +154,6 @@ impl From<TypeField> for TypeFieldProto {
                 TypeField::Colour(it) => TypeFieldKind::Colour(it.into()),
                 TypeField::LpfOn(it) => TypeFieldKind::LpfOn(it),
                 TypeField::GeneratorName(it) => TypeFieldKind::GeneratorName(it),
-                TypeField::DrumTrack(it) => TypeFieldKind::DrumTrack(it.into()),
-                TypeField::DrumTrackId(it) => TypeFieldKind::DrumTrackId(it.into()),
             }),
         }
     }
