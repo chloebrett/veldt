@@ -1,5 +1,5 @@
 mod app;
-mod drum_track;
+mod channel_rack;
 mod effect;
 mod frame_history;
 mod generator;
@@ -16,6 +16,7 @@ mod play;
 mod track_roll;
 mod track_sequencer;
 mod utils;
+mod note_sequencer;
 
 pub use app::*;
 use effect::*;
@@ -31,3 +32,4 @@ use placement_view::*;
 use track_roll::*;
 use track_sequencer::*;
 use utils::*;
+use note_sequencer::*;
