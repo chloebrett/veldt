@@ -12,7 +12,8 @@ pub struct DrumTrackInfo {
 
 impl DrumTrackInfo {
     pub fn new(graph_manager: &mut GraphManager, selector: PlacementSelector) -> Self {
-        let node = graph_manager.add_node(make_node(DrumTrackNode::new(selector)), NodeLabel::Sample);
+        let node =
+            graph_manager.add_node(make_node(DrumTrackNode::new(selector)), NodeLabel::Sample);
 
         Self { node }
     }

@@ -1,7 +1,8 @@
 use std::collections::HashSet;
 
 use super::{
-    EdgeLabel, EffectInfo, GeneratorInfo, GraphManager, NodeLabel, SamplePlacementInfo, DrumTrackInfo, make_node,
+    DrumTrackInfo, EdgeLabel, EffectInfo, GeneratorInfo, GraphManager, NodeLabel,
+    SamplePlacementInfo, make_node,
 };
 use crate::node::AmpNode;
 use dasp_graph::node::Sum;

@@ -2,7 +2,7 @@ use super::extract_outputs;
 use crate::graph::ProcessContext;
 use crate::{beats_to_samples, samples_to_beats};
 use dasp_graph::{Buffer, Input, Node};
-use shared::model::{Placement, DrumTrack};
+use shared::model::{DrumTrack, Placement};
 use state::{PlacementSelector, SampleSelector};
 
 /// Node that plays a drum track.
