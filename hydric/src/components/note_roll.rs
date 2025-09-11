@@ -18,7 +18,6 @@ use state::{
 };
 use std::collections::HashSet;
 use crate::components::NoteSequencer;
-use state::Selector;
 
 // The max number of bars the NoteSequencer will allow placement on.
 // TODO: Where is the best place for this definition? Should it be user changeable?

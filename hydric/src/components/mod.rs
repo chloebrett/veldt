@@ -1,5 +1,4 @@
 mod app;
-mod channel_rack;
 mod effect;
 mod frame_history;
 mod generator;
