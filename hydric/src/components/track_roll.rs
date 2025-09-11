@@ -5,10 +5,10 @@ use crate::{view::View, widget::StateWindow, window_state::WindowKind};
 use egui::{Color32, Pos2, Rect, ScrollArea, Ui, pos2, vec2};
 use mesic::samples_to_beats;
 use ordered_float::OrderedFloat;
+use shared::model::DrumTrackPlacement;
 use shared::model::{
     Colour, Placement, PlacementId, PlacementType, SamplePlacement, Track, TrackPlacement,
 };
-use shared::model::{DrumTrack, DrumTrackPlacement};
 use state::{Action, SampleSelector, Store, TypeField};
 use std::cmp::max;
 use std::collections::{HashMap, HashSet};
@@ -102,7 +102,7 @@ impl View for TrackRoll<'_> {
             "Track Roll",
             |ui| {
                 ui.horizontal(|ui| {
-                    if ui.button("New track").clicked() {
+                    if ui.button("New track/drum sequence").clicked() {
                         store.dispatchr(Action::AddChild(TypeField::Track(Track::default())));
                     }
                     if ui.button("New track placement").clicked() {
@@ -113,11 +113,6 @@ impl View for TrackRoll<'_> {
                             visual_placement: 0,
                             colour: Colour::from_8bit(67, 206, 222),
                         })));
-                    }
-                    if ui.button("New drum").clicked() {
-                        store.dispatchr(Action::AddChild(TypeField::DrumTrack(
-                            DrumTrack::default(),
-                        )));
                     }
                     if ui.button("New drum placement").clicked() {
                         store.dispatchr(Action::AddChild(TypeField::Placement(Placement {
