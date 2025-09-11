@@ -99,25 +99,6 @@ impl View for NoteRoll<'_> {
         let Some(track_sel) = self.local_state.active_track.get() else {
             return;
         };
-        // let Some(placement_id) = self.local_state.active_placement.get() else { // TODO generalise to any sort of selector
-        //     return;
-        // };
-        // let placement = self.store.get().project.placements.get(&placement_id).unwrap();
-        // let selector = match &placement.kind {
-        //     PlacementType::Track(track_placement) => {
-        //         Selector::Track(track_placement.track_id)
-        //     }
-        //     PlacementType::DrumTrack(drum_placement) => {
-        //         Selector::DrumTrack(drum_placement.drum_track_id)
-        //     }
-        //     _ => return,
-        // };
-        // let notes = match selector {
-        //     Selector::DrumTrack(_) => {
-        //         //
-        //     }
-        //     Selector::Track()
-        // }
         let notes = store.select(&track_sel).notes.clone();
         let white_note_pattern = self.make_white_note_pattern(max_note);
         let range = Rect::from_min_max(
