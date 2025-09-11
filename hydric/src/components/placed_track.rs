@@ -8,7 +8,6 @@ use egui::{
 };
 use mesic::{beats_to_samples, samples_to_beats};
 use ordered_float::OrderedFloat;
-use shared::model::DrumTrackPlacement;
 use shared::{
     model::{PlacedNote, Placement, PlacementId, PlacementType, SampleId, TrackPlacement},
     types::Beats,
@@ -369,8 +368,19 @@ impl<'a> PlacedTrack<'a> {
     }
 
     pub fn set_active(&self, local_state: &LocalState, id: PlacementId) {
-        let track_placement: Option<&TrackPlacement> = (&self.placement).try_into().ok();
-        let drum_track_placement: Option<&DrumTrackPlacement> = (&self.placement).try_into().ok();
+        match &self.placement.kind {
+            PlacementType::DrumTrack(drum_track_placement) => {
+                local_state
+                    .active_track
+                    .set(Some(TrackSelector(drum_track_placement.track_id)));
+            }
+            PlacementType::Track(track_placement) => {
+                local_state
+                    .active_track
+                    .set(Some(TrackSelector(track_placement.track_id)));
+            }
+            _ => (),
+        }
 
         local_state
             .window_state
@@ -378,12 +388,7 @@ impl<'a> PlacedTrack<'a> {
         local_state
             .window_state
             .set_visible(WindowKind::Placement, true);
-        local_state
-            .active_track
-            .set(track_placement.map(|it| TrackSelector(it.track_id)));
-        local_state
-            .active_track
-            .set(drum_track_placement.map(|it| TrackSelector(it.track_id)));
+
         local_state.active_placement.set(Some(id));
     }
 
