@@ -15,12 +15,14 @@ mod effect_info;
 mod generator_info;
 mod graph_manager;
 mod sample_placement_info;
+mod drum_track_info;
 
 use channel_info::*;
 use effect_info::*;
 use generator_info::*;
 use graph_manager::*;
 use sample_placement_info::*;
+use drum_track_info::*;
 
 pub use graph_manager::{GraphDebugInfo, NodeLabel};
 

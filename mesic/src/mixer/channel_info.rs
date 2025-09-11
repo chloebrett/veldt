@@ -1,7 +1,7 @@
 use std::collections::HashSet;
 
 use super::{
-    EdgeLabel, EffectInfo, GeneratorInfo, GraphManager, NodeLabel, SamplePlacementInfo, make_node,
+    EdgeLabel, EffectInfo, GeneratorInfo, GraphManager, NodeLabel, SamplePlacementInfo, DrumTrackInfo, make_node,
 };
 use crate::node::AmpNode;
 use dasp_graph::node::Sum;
@@ -24,6 +24,7 @@ pub struct ChannelInfo {
     muted_generators: HashSet<GeneratorId>,
 
     samples: HashMap<PlacementId, SamplePlacementInfo>,
+    drum_tracks: HashMap<PlacementId, DrumTrackInfo>,
     // Input sum node for this mixer channel.
     // Sums together the generators.
     pub input_node: NodeIndex,
@@ -79,6 +80,20 @@ impl ChannelInfo {
                 });
         };
 
+        let mut drum_tracks: HashMap<PlacementId, DrumTrackInfo> = HashMap::new();
+        if channel_index == 0 {
+            let _ = project
+                .placements
+                .iter()
+                .filter(|(_, placement)| matches!(&placement.kind, PlacementType::DrumTrack(..)))
+                .map(|(id, _)| {
+                    drum_tracks.insert(
+                        *id,
+                        DrumTrackInfo::new(graph_manager, PlacementSelector(*id)),
+                    )
+                });
+        };
+
         let input_node = graph_manager.add_node(make_node(Sum), NodeLabel::Sum);
 
         let effects: Vec<EffectInfo> = project.mixer.channels[channel_index]
@@ -99,6 +114,7 @@ impl ChannelInfo {
             generators,
             muted_generators,
             samples,
+            drum_tracks,
             input_node,
             effects,
             output_node,
