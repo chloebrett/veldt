@@ -92,10 +92,6 @@ impl View for NoteRoll<'_> {
             local_state,
             ..
         } = *self;
-        log::info!(
-            "there should be an active track {:?}",
-            self.local_state.active_track.get()
-        );
         let Some(track_sel) = self.local_state.active_track.get() else {
             return;
         };
