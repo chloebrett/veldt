@@ -14,7 +14,7 @@ use shared::{
     types::Beats,
 };
 use state::{
-    Action, DrumTrackSelector, MultiTypeField, PlacementSelector, Store, TrackSelector, TypeField,
+    Action, MultiTypeField, PlacementSelector, Store, TrackSelector, TypeField,
 };
 use std::cmp::{max, min};
 use std::collections::HashSet;
@@ -254,7 +254,7 @@ impl<'a> PlacedTrack<'a> {
         let label_text = match &self.placement.kind {
             PlacementType::Track(track) => "Track: ".to_owned() + &track.track_id.to_string(),
             PlacementType::Sample(sample) => "Sample: ".to_owned() + &sample.sample_id.to_string(),
-            PlacementType::DrumTrack(drum) => "Drum: ".to_owned() + &drum.drum_track_id.to_string(),
+            PlacementType::DrumTrack(drum) => "Drum: ".to_owned() + &drum.track_id.to_string(),
         };
         let galley =
             ui.fonts(|fonts| fonts.layout_no_wrap(label_text, font_id.clone(), font_colour));
@@ -381,14 +381,11 @@ impl<'a> PlacedTrack<'a> {
             .window_state
             .set_visible(WindowKind::Placement, true);
         local_state
-            .window_state
-            .set_visible(WindowKind::DrumTrack, true);
-        local_state
             .active_track
             .set(track_placement.map(|it| TrackSelector(it.track_id)));
         local_state
-            .active_drum_track
-            .set(drum_track_placement.map(|it| DrumTrackSelector(it.drum_track_id)));
+            .active_track
+            .set(drum_track_placement.map(|it| TrackSelector(it.track_id)));
         local_state.active_placement.set(Some(id));
     }
 
