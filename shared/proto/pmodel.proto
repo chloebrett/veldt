@@ -18,8 +18,6 @@ message ProjectProto {
   float bpm = 7;
 
   map<uint32, EffectInstanceProto> effects = 8;
-
-  map<uint32, DrumTrackProto> drum_tracks = 9;
 }
 
 message MixerProto {
@@ -95,25 +93,9 @@ message SampleProto {
 }
 
 message DrumTrackPlacementProto {
-  uint32 drum_track_id = 1;
+  uint32 track_id = 1;
 
-  DrumTrackProto drum_track = 2;
-}
-
-message DrumTrackProto {
-  map<uint32, DrumSubTrackProto> drum_sub_tracks = 1;
-}
-
-message DrumSubTrackProto {
-  map<uint32, PlacedDrumProto> placed_drums = 1;
-}
-
-message PlacedDrumProto {
-  float offset = 1;
-
-  optional float clipped_duration = 2;
-
-  PitchNameProto pitch_name = 3;
+  uint32 sample_id = 2;
 }
 
 message MixerChannelProto {

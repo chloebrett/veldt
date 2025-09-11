@@ -1,5 +1,5 @@
 use crate::{
-    Action, DrumSubTrackSelector, DrumTrackSelector, EffectSelector, EnvelopeSelector,
+    Action, EffectSelector, EnvelopeSelector,
     GeneratorEffectSelector, GeneratorSelector, LfoSelector, MixerMatrixCellSelector,
     MixerSelector, ModMatrixCellSelector, NoteSelector, OscillatorSelector, PlacementSelector,
     RootSelector, SampleSelector, Selector, SelectorTrait, StoreData, TrackSelector,
@@ -36,7 +36,5 @@ pub fn reducer(data: &mut StoreData, selector: &Selector, action: &Action) -> Op
         Selector::ModMatrixCell(a, b, c) => {
             reducer_internal(ModMatrixCellSelector(a, b, c), data, action)
         }
-        Selector::DrumSubTrack(a, b) => reducer_internal(DrumSubTrackSelector(a, b), data, action),
-        Selector::DrumTrack(a) => reducer_internal(DrumTrackSelector(a), data, action),
     }
 }
