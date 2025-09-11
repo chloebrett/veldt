@@ -1,8 +1,6 @@
 use crate::receiver::ActionReceiver;
 use crate::{Action, FloatField, IndexField, MultiTypeField, TypeField};
-use shared::model::{
-    EffectId, GeneratorId, Placement, PlacementId, Project, SampleId, TrackId,
-};
+use shared::model::{EffectId, GeneratorId, Placement, PlacementId, Project, SampleId, TrackId};
 use std::collections::HashMap;
 
 impl ActionReceiver for Project {
@@ -154,15 +152,6 @@ impl ActionReceiver for Project {
                 self.generators.remove(id);
                 Action::AddChild(TypeField::Generator(prev))
             }
-            // Action::AddChild(TypeField::DrumTrack(drum_track)) => {
-            //     let id = if let Some(key) = self.drum_tracks.keys().max() {
-            //         DrumTrackId((**key) + 1)
-            //     } else {
-            //         DrumTrackId(0)
-            //     };
-            //     self.drum_tracks.insert(id, drum_track.clone());
-            //     Action::DeleteChildById(TypeField::DrumTrackId(id))
-            // }
             _ => return None,
         })
     }

@@ -1,9 +1,8 @@
 use crate::{
-    Action, EffectSelector, EnvelopeSelector,
-    GeneratorEffectSelector, GeneratorSelector, LfoSelector, MixerMatrixCellSelector,
-    MixerSelector, ModMatrixCellSelector, NoteSelector, OscillatorSelector, PlacementSelector,
-    RootSelector, SampleSelector, Selector, SelectorTrait, StoreData, TrackSelector,
-    receiver::ActionReceiver,
+    Action, EffectSelector, EnvelopeSelector, GeneratorEffectSelector, GeneratorSelector,
+    LfoSelector, MixerMatrixCellSelector, MixerSelector, ModMatrixCellSelector, NoteSelector,
+    OscillatorSelector, PlacementSelector, RootSelector, SampleSelector, Selector, SelectorTrait,
+    StoreData, TrackSelector, receiver::ActionReceiver,
 };
 
 fn reducer_internal<T: SelectorTrait>(

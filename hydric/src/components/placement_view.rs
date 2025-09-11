@@ -7,17 +7,16 @@ use egui::color_picker::Alpha;
 use egui::{Ui, widgets::color_picker::color_picker_color32};
 use mesic::samples_to_beats;
 use ordered_float::OrderedFloat;
+use shared::model::TrackId;
 use shared::model::{
     DrumTrackPlacement, GeneratorId, Placement, PlacementId, PlacementType, SampleId,
     SamplePlacement, Track, TrackPlacement,
 };
 use shared::types::Beats;
 use state::{
-    Action, PlacementSelector, SampleSelector, Store, TrackSelector, TypeField,
-    UintField,
+    Action, PlacementSelector, SampleSelector, Store, TrackSelector, TypeField, UintField,
 };
 use std::cmp::max;
-use shared::model::TrackId;
 
 pub struct PlacementView<'a> {
     store: &'a Store,
@@ -195,9 +194,9 @@ impl<'a> PlacementView<'a> {
                 for track_id in store.get().project.tracks.keys() {
                     selectable_value(
                         ui,
-                        get_set(&drum_placement.track_id, |it| 
+                        get_set(&drum_placement.track_id, |it| {
                             store.dispatch(sel, Action::SetChild(TypeField::TrackId(*it)))
-                        ),
+                        }),
                         track_id,
                         Self::get_drum_track_name(store, track_id),
                     );
@@ -223,7 +222,7 @@ impl<'a> PlacementView<'a> {
     }
 
     fn get_drum_track_name(store: &Store, track_id: &TrackId) -> String {
-        let mut drum_track_name = format!("Track {}", **track_id);
+        let mut drum_track_name = format!("Track ID {}", **track_id);
         if store.get().project.tracks.is_empty() {
             drum_track_name = "".to_string();
         }
@@ -271,13 +270,7 @@ impl View for PlacementView<'_> {
                         );
                     }
                     PlacementType::DrumTrack(drum_placement) => {
-                        Self::drum_placement_ui(
-                            ui,
-                            placement_id,
-                            drum_placement,
-                            &sel,
-                            store,
-                        );
+                        Self::drum_placement_ui(ui, placement_id, drum_placement, &sel, store);
                     }
                 }
 

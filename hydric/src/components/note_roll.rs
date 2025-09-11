@@ -1,11 +1,11 @@
 use super::{Piano, PianoOrientation};
+use crate::components::NoteSequencer;
 use crate::{GetSet, LocalState};
 use crate::{
     playback::AudioPlayer, transform::Yx, view::View, widget::StateWindow, window_state::WindowKind,
 };
 use egui::{
-    Color32, CornerRadius, Pos2, Rect, ScrollArea, Shape,
-    Stroke, StrokeKind, Ui, Vec2, pos2, vec2,
+    Color32, CornerRadius, Pos2, Rect, ScrollArea, Shape, Stroke, StrokeKind, Ui, Vec2, pos2, vec2,
 };
 use mesic::create_scale_values;
 use shared::{
@@ -17,7 +17,6 @@ use state::{
     TrackSelector, TypeField,
 };
 use std::collections::HashSet;
-use crate::components::NoteSequencer;
 
 // The max number of bars the NoteSequencer will allow placement on.
 // TODO: Where is the best place for this definition? Should it be user changeable?
@@ -93,7 +92,10 @@ impl View for NoteRoll<'_> {
             local_state,
             ..
         } = *self;
-        log::info!("there should be an active track {:?}", self.local_state.active_track.get());
+        log::info!(
+            "there should be an active track {:?}",
+            self.local_state.active_track.get()
+        );
         let Some(track_sel) = self.local_state.active_track.get() else {
             return;
         };
@@ -344,4 +346,3 @@ impl NoteSequencerObject {
         )
     }
 }
-

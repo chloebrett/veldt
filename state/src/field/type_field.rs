@@ -1,6 +1,9 @@
 use shared::action_proto::{TypeFieldProto, type_field_proto::Kind as TypeFieldKind};
 use shared::model::{
-    AdsrEnvelope, AntiAliasingMode, Colour, EffectId, EffectInstance, EqType, FileTreeConfig, FilenameTree, GeneratorId, GeneratorInstance, MixerChannel, NoiseType, PitchName, PlacedNote, Placement, PlacementId, PolyphonyMode, Project, Sample, SampleId, Scale, ScaleValue, Track, TrackId, WaveType
+    AdsrEnvelope, AntiAliasingMode, Colour, EffectId, EffectInstance, EqType, FileTreeConfig,
+    FilenameTree, GeneratorId, GeneratorInstance, MixerChannel, NoiseType, PitchName, PlacedNote,
+    Placement, PlacementId, PolyphonyMode, Project, Sample, SampleId, Scale, ScaleValue, Track,
+    TrackId, WaveType,
 };
 use shared::pmodel::{
     AntiAliasingModeProto, EqTypeProto, NoiseTypeProto, PolyphonyModeProto, ScaleProto,

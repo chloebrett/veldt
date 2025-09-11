@@ -13,9 +13,7 @@ use shared::{
     model::{PlacedNote, Placement, PlacementId, PlacementType, SampleId, TrackPlacement},
     types::Beats,
 };
-use state::{
-    Action, MultiTypeField, PlacementSelector, Store, TrackSelector, TypeField,
-};
+use state::{Action, MultiTypeField, PlacementSelector, Store, TrackSelector, TypeField};
 use std::cmp::{max, min};
 use std::collections::HashSet;
 

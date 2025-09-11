@@ -1,4 +1,4 @@
-use crate::model::{ GeneratorId, SampleId, TrackId};
+use crate::model::{GeneratorId, SampleId, TrackId};
 use crate::pmodel::{placement_proto::Kind as PlacementTypeProto, *};
 use crate::types::Beats;
 use local_macro::{FromProto, IntoProto};
@@ -109,7 +109,7 @@ impl<'a> TryFrom<&'a Placement> for &'a SamplePlacement {
 pub struct DrumTrackPlacement {
     pub track_id: TrackId,
 
-    pub sample_id: SampleId
+    pub sample_id: SampleId,
 }
 
 impl<'a> TryFrom<&'a Placement> for &'a DrumTrackPlacement {

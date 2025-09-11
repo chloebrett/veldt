@@ -5,10 +5,10 @@ use crate::{view::View, widget::StateWindow, window_state::WindowKind};
 use egui::{Color32, Pos2, Rect, ScrollArea, Ui, pos2, vec2};
 use mesic::samples_to_beats;
 use ordered_float::OrderedFloat;
+use shared::model::DrumTrackPlacement;
 use shared::model::{
     Colour, Placement, PlacementId, PlacementType, SamplePlacement, Track, TrackPlacement,
 };
-use shared::model::{DrumTrackPlacement};
 use state::{Action, SampleSelector, Store, TypeField};
 use std::cmp::max;
 use std::collections::{HashMap, HashSet};

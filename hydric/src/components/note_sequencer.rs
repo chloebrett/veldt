@@ -1,18 +1,15 @@
+use crate::components::NoteSequencerObject;
+use crate::window_state::WindowKind;
 use crate::{GetSet, LocalState, transform::Transform};
-use crate::{window_state::WindowKind,};
 use egui::PointerButton;
 use egui::{
-    Color32, CornerRadius, CursorIcon, Frame, Pos2, Rect, Response, Sense, Shape,
-    Stroke,  Ui, Vec2, Widget, emath::RectTransform, pos2, vec2,
+    Color32, CornerRadius, CursorIcon, Frame, Pos2, Rect, Response, Sense, Shape, Stroke, Ui, Vec2,
+    Widget, emath::RectTransform, pos2, vec2,
 };
 use egui::{Event, LayerId, Modifiers, Order};
+use shared::model::{PitchName, TrackId};
 use shared::types::Beats;
-use shared::{model::{PitchName, TrackId}};
-use state::{
-    Action, FloatField, NoteSelector, Store,TypeField,
-};
-use crate::components::NoteSequencerObject;
-
+use state::{Action, FloatField, NoteSelector, Store, TypeField};
 
 pub struct NoteSequencer<'a> {
     store: &'a Store,
