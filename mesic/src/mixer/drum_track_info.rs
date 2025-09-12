@@ -1,5 +1,5 @@
 use super::{GraphManager, NodeLabel, make_node};
-use crate::node::DrumTrackNode;
+use crate::node::DrumTrackPlacementNode;
 use petgraph::stable_graph::NodeIndex;
 use state::PlacementSelector;
 
@@ -13,7 +13,7 @@ pub struct DrumTrackInfo {
 impl DrumTrackInfo {
     pub fn new(graph_manager: &mut GraphManager, selector: PlacementSelector) -> Self {
         let node =
-            graph_manager.add_node(make_node(DrumTrackNode::new(selector)), NodeLabel::Sample);
+            graph_manager.add_node(make_node(DrumTrackPlacementNode::new(selector)), NodeLabel::Sample);
 
         Self { node }
     }

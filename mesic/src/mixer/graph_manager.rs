@@ -132,6 +132,7 @@ pub enum NodeLabel {
 pub enum EdgeLabel {
     GenToMixIn,
     SampleToMixIn,
+    DrumTrackToMixIn,
     MixInToEff,
     MixInToEffWetDry,
     EffToEffWetDry,
