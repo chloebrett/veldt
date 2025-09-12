@@ -33,8 +33,12 @@ impl Node<ProcessContext> for DrumTrackPlacementNode {
             return;
         };
 
-        let Some(drum_track_placement): &Option<&DrumTrackPlacement> = &placement.try_into().ok() else {
-            log::error!("Placement wasn't a drum track placement: {:?}", self.selector);
+        let Some(drum_track_placement): &Option<&DrumTrackPlacement> = &placement.try_into().ok()
+        else {
+            log::error!(
+                "Placement wasn't a drum track placement: {:?}",
+                self.selector
+            );
             return;
         };
 
@@ -44,9 +48,16 @@ impl Node<ProcessContext> for DrumTrackPlacementNode {
             return;
         };
 
-        let track_placement = store.project.placements.values()
+        let track_placement = store
+            .project
+            .placements
+            .values()
             .find_map(|placement| match &placement.kind {
-                PlacementType::Track(track_placement) if track_placement.track_id == drum_track_placement.track_id => Some(track_placement),
+                PlacementType::Track(track_placement)
+                    if track_placement.track_id == drum_track_placement.track_id =>
+                {
+                    Some(track_placement)
+                }
                 _ => None,
             })
             .expect("DrumTrackPlacement must have a corresponding TrackPlacement");

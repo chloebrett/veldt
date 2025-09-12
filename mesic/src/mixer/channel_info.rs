@@ -174,7 +174,11 @@ impl ChannelInfo {
         }
 
         for drum_track in self.drum_tracks.values() {
-            graph_manager.add_edge(drum_track.node(), self.input_node, EdgeLabel::DrumTrackToMixIn);
+            graph_manager.add_edge(
+                drum_track.node(),
+                self.input_node,
+                EdgeLabel::DrumTrackToMixIn,
+            );
         }
 
         let effects = &self.effects;
