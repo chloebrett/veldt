@@ -119,6 +119,7 @@ impl GraphManager {
 pub enum NodeLabel {
     Generator,
     Sample,
+    DrumTrack,
     Effect,
     WetDry,
     Sum,

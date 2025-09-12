@@ -14,8 +14,9 @@ impl DrumTrackInfo {
     pub fn new(graph_manager: &mut GraphManager, selector: PlacementSelector) -> Self {
         let node = graph_manager.add_node(
             make_node(DrumTrackPlacementNode::new(selector)),
-            NodeLabel::Sample,
+            NodeLabel::DrumTrack,
         );
+        log::info!("created drum");
 
         Self { node }
     }

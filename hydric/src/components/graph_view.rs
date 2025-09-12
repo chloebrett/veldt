@@ -87,7 +87,7 @@ impl SnarlViewer<GraphViewNode> for GraphViewer {
 
     fn inputs(&mut self, node: &GraphViewNode) -> usize {
         match node.label {
-            NodeLabel::Generator | NodeLabel::Sample | NodeLabel::Buffer => 0,
+            NodeLabel::Generator | NodeLabel::Sample | NodeLabel::DrumTrack | NodeLabel::Buffer => 0,
             _ => 1, // just use a single input, even if we technically allow multiple (e.g. sum
                     // node).
         }

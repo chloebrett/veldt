@@ -3,11 +3,10 @@ use crate::node::{AmpNode, BufferNode};
 use crossbeam_channel::Sender;
 use dasp_graph::{BoxedNodeSend, Buffer, Node, NodeData, node::Sum};
 use petgraph::stable_graph::NodeIndex;
-use shared::model::GeneratorId;
-use shared::model::Project;
+use shared::model::{GeneratorId, Project, PlacementType};
 use state::{
     Action, EffectSelector, FloatField, GeneratorSelector, IndexField, MoveField, Selector,
-    StoreData, TypeField,
+    StoreData, TypeField
 };
 
 mod channel_info;
@@ -247,6 +246,25 @@ impl Mixer {
                     self.channels[0]
                         .soft_add_placement_sample(&mut self.graph_manager, *placement_id);
                     true
+                }
+                Action::AddChild(TypeField::Placement(_)) => {
+                    let placement = &store.project.placements[placement_id];
+                    match &placement.kind {
+                        PlacementType::DrumTrack(drum) => {
+                            let channel_index = store
+                                .project
+                                .tracks
+                                .keys()
+                                .position(|id| id == &drum.track_id)
+                                .unwrap_or(0);
+
+                            self.channels[channel_index]
+                                .soft_add_placement_drum(&mut self.graph_manager, *placement_id);
+
+                            true
+                        }
+                        _ => false, 
+                    }
                 }
                 _ => false,
             },

@@ -1,5 +1,6 @@
 use super::extract_outputs;
 use crate::graph::{NoteEventType, ProcessContext};
+use crate::{beats_to_samples};
 use dasp_graph::{Buffer, Input, Node};
 use shared::model::{DrumTrackPlacement, PlacementType};
 use state::{PlacementSelector, SampleSelector};
@@ -22,6 +23,7 @@ impl DrumTrackPlacementNode {
 
 impl Node<ProcessContext> for DrumTrackPlacementNode {
     fn process(&mut self, _inputs: &[Input], output: &mut [Buffer], payload: &ProcessContext) {
+        log::info!("running drum {}", payload.playback_pos);
         let (out_left, out_right) = extract_outputs(output);
         *out_left = Buffer::SILENT;
         *out_right = Buffer::SILENT;
@@ -64,10 +66,13 @@ impl Node<ProcessContext> for DrumTrackPlacementNode {
 
         if let Some(events) = payload.note_events.get(&track_placement.generator_id) {
             for note_event in events {
-                if note_event.kind == NoteEventType::On {
-                    self.hits.push((drum_track_placement.sample_id.0, 0));
-                } else {
-                    self.hits.clear();
+                match note_event.kind {
+                    NoteEventType::On => {
+                        let placement_offset_samples = beats_to_samples(*placement.offset, store.project.bpm) as usize;
+                        let start_index = placement_offset_samples + note_event.sample_index;
+                        self.hits.push((drum_track_placement.sample_id.0, start_index));
+                    }
+                    NoteEventType::Off => self.hits.clear(),
                 }
             }
         }
@@ -79,18 +84,19 @@ impl Node<ProcessContext> for DrumTrackPlacementNode {
             let mut left_acc = 0.0;
             let mut right_acc = 0.0;
 
-            for (idx, (sample_id, playback_index)) in self.hits.iter_mut().enumerate() {
-                if *sample_id != drum_track_placement.sample_id.0 {
-                    continue;
+            for (idx, (_sample_id, start_index)) in self.hits.iter_mut().enumerate() {
+                let rel_index = payload.playback_pos as i32 + i as i32 - *start_index as i32;
+                if rel_index < 0 {
+                    continue; 
                 }
-                if *playback_index >= sample_len {
+                let rel_index = rel_index as usize;
+                if rel_index >= sample_len {
                     finished.push(idx);
                     continue;
                 }
 
-                left_acc += sample.left.get(*playback_index).copied().unwrap_or(0.0);
-                right_acc += sample.right.get(*playback_index).copied().unwrap_or(0.0);
-                *playback_index += 1;
+                left_acc += sample.left.get(rel_index).copied().unwrap_or(0.0);
+                right_acc += sample.right.get(rel_index).copied().unwrap_or(0.0);
             }
 
             out_left[i] += left_acc;
