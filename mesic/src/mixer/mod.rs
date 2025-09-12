@@ -3,10 +3,10 @@ use crate::node::{AmpNode, BufferNode};
 use crossbeam_channel::Sender;
 use dasp_graph::{BoxedNodeSend, Buffer, Node, NodeData, node::Sum};
 use petgraph::stable_graph::NodeIndex;
-use shared::model::{GeneratorId, Project, PlacementType};
+use shared::model::{GeneratorId, PlacementType, Project};
 use state::{
     Action, EffectSelector, FloatField, GeneratorSelector, IndexField, MoveField, Selector,
-    StoreData, TypeField
+    StoreData, TypeField,
 };
 
 mod channel_info;
@@ -263,7 +263,7 @@ impl Mixer {
 
                             true
                         }
-                        _ => false, 
+                        _ => false,
                     }
                 }
                 _ => false,

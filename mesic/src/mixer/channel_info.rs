@@ -84,9 +84,16 @@ impl ChannelInfo {
         let mut drum_tracks: HashMap<PlacementId, DrumTrackInfo> = HashMap::new();
         for (id, placement) in project.placements.iter() {
             if let PlacementType::DrumTrack(drum) = &placement.kind {
-                if let Some(track_index) = project.tracks.keys().position(|track_id| track_id == &drum.track_id) {
+                if let Some(track_index) = project
+                    .tracks
+                    .keys()
+                    .position(|track_id| track_id == &drum.track_id)
+                {
                     if track_index == channel_index {
-                        drum_tracks.insert(*id, DrumTrackInfo::new(graph_manager, PlacementSelector(*id)));
+                        drum_tracks.insert(
+                            *id,
+                            DrumTrackInfo::new(graph_manager, PlacementSelector(*id)),
+                        );
                         log::info!("drum track node created");
                     }
                 }
@@ -297,9 +304,7 @@ impl ChannelInfo {
     }
 
     pub fn soft_add_placement_drum(&mut self, graph_manager: &mut GraphManager, id: PlacementId) {
-        self.drum_tracks.insert(
-            id,
-            DrumTrackInfo::new(graph_manager, PlacementSelector(id)),
-        );
+        self.drum_tracks
+            .insert(id, DrumTrackInfo::new(graph_manager, PlacementSelector(id)));
     }
 }

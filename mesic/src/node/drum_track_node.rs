@@ -1,6 +1,6 @@
 use super::extract_outputs;
+use crate::beats_to_samples;
 use crate::graph::{NoteEventType, ProcessContext};
-use crate::{beats_to_samples};
 use dasp_graph::{Buffer, Input, Node};
 use shared::model::{DrumTrackPlacement, PlacementType};
 use state::{PlacementSelector, SampleSelector};
@@ -68,9 +68,11 @@ impl Node<ProcessContext> for DrumTrackPlacementNode {
             for note_event in events {
                 match note_event.kind {
                     NoteEventType::On => {
-                        let placement_offset_samples = beats_to_samples(*placement.offset, store.project.bpm) as usize;
+                        let placement_offset_samples =
+                            beats_to_samples(*placement.offset, store.project.bpm) as usize;
                         let start_index = placement_offset_samples + note_event.sample_index;
-                        self.hits.push((drum_track_placement.sample_id.0, start_index));
+                        self.hits
+                            .push((drum_track_placement.sample_id.0, start_index));
                     }
                     NoteEventType::Off => self.hits.clear(),
                 }
@@ -87,7 +89,7 @@ impl Node<ProcessContext> for DrumTrackPlacementNode {
             for (idx, (_sample_id, start_index)) in self.hits.iter_mut().enumerate() {
                 let rel_index = payload.playback_pos as i32 + i as i32 - *start_index as i32;
                 if rel_index < 0 {
-                    continue; 
+                    continue;
                 }
                 let rel_index = rel_index as usize;
                 if rel_index >= sample_len {
