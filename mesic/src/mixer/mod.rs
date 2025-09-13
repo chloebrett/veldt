@@ -305,24 +305,36 @@ impl Mixer {
                 }
                 // TODO: handle deleting and updating for drum track placements
                 Action::AddChild(TypeField::Placement(placement)) => {
-                    let placement_id =
-                        store.project.placements.iter().find_map(|(id, placement)| {
-                            if placement == placement {
-                                Some(*id)
-                            } else {
-                                None
+                    // Find the placement_id in the store.project
+                    let placement_id = store.project.placements.iter().find_map(|(id, p)| {
+                        if p == placement { Some(*id) } else { None }
+                    });
+
+                    if let Some(placement_id) = placement_id {
+                        match &placement.kind {
+                            PlacementType::DrumTrack(drum_track) => {
+                                if let Some(track_placement) = store
+                                    .project
+                                    .placements
+                                    .values()
+                                    .find(|p| matches!(&p.kind, PlacementType::Track(tp) if tp.track_id == drum_track.track_id))
+                                {
+                                    if let PlacementType::Track(track) = &track_placement.kind {
+                                        if let Some(generator) = store.project.generators.get(&track.generator_id) {
+                                            let channel_index = generator.meta.mixer_channel;
+                                            self.channels[channel_index].soft_add_placement_drum(
+                                                &mut self.graph_manager,
+                                                placement_id,
+                                            );
+                                        }
+                                    }
+                                }
+                                true
                             }
-                        });
-                    match &placement.kind {
-                        PlacementType::DrumTrack(_) => {
-                            // TODO: handle other channels
-                            self.channels[0].soft_add_placement_drum(
-                                &mut self.graph_manager,
-                                placement_id.unwrap(),
-                            );
-                            true
+                            _ => false,
                         }
-                        _ => false,
+                    } else {
+                        false
                     }
                 }
                 _ => false,

@@ -81,21 +81,24 @@ impl ChannelInfo {
                 });
         };
 
-        // TODO: same with samples, let each drum track placement choose which
-        // mixer channel it is on instead of 0
         let mut drum_tracks: HashMap<PlacementId, DrumTrackInfo> = HashMap::new();
-        if channel_index == 0 {
-            let _ = project
-                .placements
-                .iter()
-                .filter(|(_, placement)| matches!(&placement.kind, PlacementType::DrumTrack(..)))
-                .map(|(id, _)| {
-                    drum_tracks.insert(
-                        *id,
-                        DrumTrackInfo::new(graph_manager, PlacementSelector(*id)),
-                    )
-                });
-        };
+        for (id, placement) in &project.placements {
+            if let PlacementType::DrumTrack(drum_placement) = &placement.kind {
+                if let Some(track_placement) = project
+                    .placements
+                    .values()
+                    .find(|p| matches!(&p.kind, PlacementType::Track(tp) if tp.track_id == drum_placement.track_id))
+                {
+                    if let PlacementType::Track(track) = &track_placement.kind {
+                        if let Some(generator) = project.generators.get(&track.generator_id) {
+                            if generator.meta.mixer_channel == channel_index {
+                                drum_tracks.insert(*id, DrumTrackInfo::new(graph_manager, PlacementSelector(*id)));
+                            }
+                        }
+                    }
+                }
+            }
+        }
 
         let input_node = graph_manager.add_node(make_node(Sum), NodeLabel::Sum);
 
