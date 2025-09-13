@@ -80,7 +80,7 @@ impl ChannelInfo {
                     )
                 });
         };
-        
+
         let mut drum_tracks: HashMap<PlacementId, DrumTrackInfo> = HashMap::new();
         if channel_index == 0 {
             let _ = project

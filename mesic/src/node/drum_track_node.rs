@@ -1,6 +1,6 @@
 use super::extract_outputs;
-use crate::{beats_to_samples, samples_to_beats};
 use crate::graph::{NoteEventType, ProcessContext};
+use crate::{beats_to_samples, samples_to_beats};
 use dasp_graph::{Buffer, Input, Node};
 use shared::model::{DrumTrackPlacement, PlacementType};
 use state::{PlacementSelector, SampleSelector};

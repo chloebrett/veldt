@@ -304,15 +304,20 @@ impl Mixer {
                     true
                 }
                 Action::AddChild(TypeField::Placement(placement)) => {
-                    let placement_id = store
-                        .project
-                        .placements
-                        .iter()
-                        .find_map(|(id, placement)| if placement == placement { Some(*id) } else { None });
+                    let placement_id =
+                        store.project.placements.iter().find_map(|(id, placement)| {
+                            if placement == placement {
+                                Some(*id)
+                            } else {
+                                None
+                            }
+                        });
                     match &placement.kind {
                         PlacementType::DrumTrack(_) => {
-                            self.channels[0]
-                            .soft_add_placement_drum(&mut self.graph_manager, placement_id.unwrap());
+                            self.channels[0].soft_add_placement_drum(
+                                &mut self.graph_manager,
+                                placement_id.unwrap(),
+                            );
                             true
                         }
                         _ => false,
