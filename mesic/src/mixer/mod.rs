@@ -306,9 +306,11 @@ impl Mixer {
                 // TODO: handle deleting and updating for drum track placements
                 Action::AddChild(TypeField::Placement(placement)) => {
                     // Find the placement_id in the store.project
-                    let placement_id = store.project.placements.iter().find_map(|(id, p)| {
-                        if p == placement { Some(*id) } else { None }
-                    });
+                    let placement_id = store
+                        .project
+                        .placements
+                        .iter()
+                        .find_map(|(id, p)| if p == placement { Some(*id) } else { None });
 
                     if let Some(placement_id) = placement_id {
                         match &placement.kind {
