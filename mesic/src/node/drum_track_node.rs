@@ -9,7 +9,7 @@ use std::cmp::max;
 /// Node that plays a drum track.
 pub struct DrumTrackPlacementNode {
     selector: PlacementSelector,
-    hits: Vec<usize>,  // stores start index of pending hits
+    hits: Vec<usize>, // stores start index of pending hits
 }
 
 impl DrumTrackPlacementNode {
@@ -33,8 +33,12 @@ impl Node<ProcessContext> for DrumTrackPlacementNode {
             return;
         };
 
-        let Some(drum_track_placement): &Option<&DrumTrackPlacement> = &placement.try_into().ok() else {
-            log::error!("Placement wasn't a drum track placement: {:?}", self.selector);
+        let Some(drum_track_placement): &Option<&DrumTrackPlacement> = &placement.try_into().ok()
+        else {
+            log::error!(
+                "Placement wasn't a drum track placement: {:?}",
+                self.selector
+            );
             return;
         };
 
@@ -45,10 +49,16 @@ impl Node<ProcessContext> for DrumTrackPlacementNode {
         };
 
         if let Some(track_placement) =
-            store.project.placements.values().find_map(|p| match &p.kind {
-                PlacementType::Track(tp) if tp.track_id == drum_track_placement.track_id => Some(tp),
-                _ => None,
-            })
+            store
+                .project
+                .placements
+                .values()
+                .find_map(|p| match &p.kind {
+                    PlacementType::Track(tp) if tp.track_id == drum_track_placement.track_id => {
+                        Some(tp)
+                    }
+                    _ => None,
+                })
         {
             if let Some(events) = payload.note_events.get(&track_placement.generator_id) {
                 let placement_offset_samples =
@@ -56,7 +66,9 @@ impl Node<ProcessContext> for DrumTrackPlacementNode {
 
                 for note_event in events {
                     if note_event.kind == NoteEventType::On {
-                        let start_index = payload.playback_pos + placement_offset_samples + note_event.sample_index;
+                        let start_index = payload.playback_pos
+                            + placement_offset_samples
+                            + note_event.sample_index;
                         self.hits.push(start_index);
                     }
                 }
@@ -67,7 +79,7 @@ impl Node<ProcessContext> for DrumTrackPlacementNode {
         let playback_pos = payload.playback_pos;
         let buffer_len = out_left.len();
 
-        let mut remaining_hits = self
+        let remaining_hits = self
             .hits
             .iter()
             .copied()

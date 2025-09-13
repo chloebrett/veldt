@@ -81,7 +81,7 @@ impl ChannelInfo {
                 });
         };
 
-        // TODO: same with samples, let each drum track placement choose which 
+        // TODO: same with samples, let each drum track placement choose which
         // mixer channel it is on instead of 0
         let mut drum_tracks: HashMap<PlacementId, DrumTrackInfo> = HashMap::new();
         if channel_index == 0 {
