@@ -66,6 +66,7 @@ impl Default for StoreData {
                                 beats: 1.0,
                             },
                             offset: OrderedFloat(0.0),
+                            note_on: true,
                         }],
                         offset: OrderedFloat(0.0),
                     },

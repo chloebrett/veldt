@@ -65,7 +65,7 @@ impl NoteTracker {
                     let buf_range = 0..Buffer::LEN as isize;
 
                     let start_sample = note_start_sample as isize - global_sample_index as isize;
-                    if buf_range.contains(&start_sample) {
+                    if buf_range.contains(&start_sample) && note.note_on {
                         result.entry(*generator_id).or_default().push({
                             NoteEvent {
                                 kind: NoteEventType::On,

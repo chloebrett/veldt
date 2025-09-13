@@ -162,6 +162,9 @@ impl<'a> NoteSequencer<'a> {
         edit_object: &impl Fn(Action),
     ) -> bool {
         if response.dragged_by(PointerButton::Primary) {
+            // Disable the note and send note off while its being dragged.
+            edit_object(Action::SetChild(TypeField::NoteOn(false)));
+
             // Keep track of the delta between object and cursor position at drag start.
             let drag_pos = response.interact_pointer_pos().unwrap();
             let drag_delta = response.drag_delta();
@@ -193,6 +196,10 @@ impl<'a> NoteSequencer<'a> {
                     self.quantise(scaled_pos.x) - self.range.left(),
                 ))
             }
+        }
+        // Enable note after interaction complete.
+        if response.drag_stopped() || response.lost_focus() {
+            edit_object(Action::SetChild(TypeField::NoteOn(true)));
         }
         // Return true when interaction completed.
         response.lost_focus() || response.drag_stopped()

@@ -288,6 +288,7 @@ impl NoteSequencerObject {
                 beats: 1.0,
             },
             offset: offset.into(),
+            note_on: true,
         })
     }
 

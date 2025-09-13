@@ -110,6 +110,8 @@ message PlacedNoteProto {
   NoteProto note = 1;
 
   float offset = 2;
+
+  bool note_on = 3;
 }
 
 message NoteProto {

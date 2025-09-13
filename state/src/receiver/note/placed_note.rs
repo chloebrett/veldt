@@ -1,5 +1,5 @@
 use crate::receiver::ActionReceiver;
-use crate::{Action, FloatField};
+use crate::{Action, FloatField, TypeField};
 use ordered_float::OrderedFloat;
 use shared::model::PlacedNote;
 
@@ -14,6 +14,11 @@ impl ActionReceiver for PlacedNote {
                 let prev = self.offset;
                 self.offset = OrderedFloat(*offset);
                 Action::SetFloat(FloatField::Offset, *prev)
+            }
+            Action::SetChild(TypeField::NoteOn(note_on)) => {
+                let prev = self.note_on;
+                self.note_on = *note_on;
+                Action::SetChild(TypeField::NoteOn(prev))
             }
             _ => return None,
         })

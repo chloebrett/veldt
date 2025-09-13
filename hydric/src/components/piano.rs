@@ -67,6 +67,7 @@ impl<'a> Piano<'a> {
                     beats: 0.0,
                 },
                 offset: 0.0.into(),
+                note_on: false,
             })
             .collect()
     }

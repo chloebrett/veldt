@@ -85,6 +85,7 @@ message TypeFieldProto {
     pmodel.ColourProto colour = 28;
     bool lpf_on = 29;
     string generator_name = 30;
+    bool note_on = 31;
   }
 }
 
