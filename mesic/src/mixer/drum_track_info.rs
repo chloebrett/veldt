@@ -16,8 +16,6 @@ impl DrumTrackInfo {
             make_node(DrumTrackPlacementNode::new(selector)),
             NodeLabel::DrumTrack,
         );
-        log::info!("created drum");
-
         Self { node }
     }
 
