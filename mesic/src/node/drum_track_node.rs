@@ -1,5 +1,5 @@
 use super::extract_outputs;
-use crate::beats_to_samples;
+use crate::{beats_to_samples, samples_to_beats};
 use crate::graph::{NoteEventType, ProcessContext};
 use dasp_graph::{Buffer, Input, Node};
 use shared::model::{DrumTrackPlacement, PlacementType};
@@ -79,34 +79,58 @@ impl Node<ProcessContext> for DrumTrackPlacementNode {
             }
         }
 
-        let sample_len = max(sample.left.len(), sample.right.len());
-        let mut finished = vec![];
+        // let sample_len = max(sample.left.len(), sample.right.len());
+        // let mut finished = vec![];
+
+        // for i in 0..Buffer::LEN {
+        //     let mut left_acc = 0.0;
+        //     let mut right_acc = 0.0;
+
+        //     for (idx, (_sample_id, start_index)) in self.hits.iter_mut().enumerate() {
+        //         let rel_index = payload.playback_pos as i32 + i as i32 - *start_index as i32;
+        //         if rel_index < 0 {
+        //             continue;
+        //         }
+        //         let rel_index = rel_index as usize;
+        //         if rel_index >= sample_len {
+        //             finished.push(idx);
+        //             continue;
+        //         }
+
+        //         left_acc += sample.left.get(rel_index).copied().unwrap_or(0.0);
+        //         right_acc += sample.right.get(rel_index).copied().unwrap_or(0.0);
+        //     }
+
+        //     out_left[i] += left_acc;
+        //     out_right[i] += right_acc;
+        // }
+
+        // for &idx in finished.iter().rev() {
+        //     self.hits.remove(idx);
+        // }
+        let playback_pos = payload.playback_pos;
+
+        let unclipped_duration = samples_to_beats(
+            max(sample.left.len(), sample.right.len()),
+            store.project.bpm,
+        );
+        let duration = placement
+            .clipped_duration
+            .unwrap_or(unclipped_duration.into());
+        let duration_samples = beats_to_samples(*duration, store.project.bpm);
+
+        let sample_start_index = beats_to_samples(*placement.offset, store.project.bpm);
 
         for i in 0..Buffer::LEN {
-            let mut left_acc = 0.0;
-            let mut right_acc = 0.0;
+            let offset: i32 = i as i32 + playback_pos as i32 - sample_start_index as i32;
 
-            for (idx, (_sample_id, start_index)) in self.hits.iter_mut().enumerate() {
-                let rel_index = payload.playback_pos as i32 + i as i32 - *start_index as i32;
-                if rel_index < 0 {
-                    continue;
-                }
-                let rel_index = rel_index as usize;
-                if rel_index >= sample_len {
-                    finished.push(idx);
-                    continue;
-                }
-
-                left_acc += sample.left.get(rel_index).copied().unwrap_or(0.0);
-                right_acc += sample.right.get(rel_index).copied().unwrap_or(0.0);
+            if offset < 0 || offset > duration_samples as i32 {
+                continue;
             }
+            let offset = offset as usize;
 
-            out_left[i] += left_acc;
-            out_right[i] += right_acc;
-        }
-
-        for &idx in finished.iter().rev() {
-            self.hits.remove(idx);
+            out_left[i] = *sample.left.get(offset).unwrap_or(&0.0);
+            out_right[i] = *sample.right.get(offset).unwrap_or(&0.0);
         }
     }
 }

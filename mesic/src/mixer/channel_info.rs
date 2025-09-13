@@ -80,25 +80,20 @@ impl ChannelInfo {
                     )
                 });
         };
-
+        
         let mut drum_tracks: HashMap<PlacementId, DrumTrackInfo> = HashMap::new();
-        for (id, placement) in project.placements.iter() {
-            if let PlacementType::DrumTrack(drum) = &placement.kind {
-                if let Some(track_index) = project
-                    .tracks
-                    .keys()
-                    .position(|track_id| track_id == &drum.track_id)
-                {
-                    if track_index == channel_index {
-                        drum_tracks.insert(
-                            *id,
-                            DrumTrackInfo::new(graph_manager, PlacementSelector(*id)),
-                        );
-                        log::info!("drum track node created");
-                    }
-                }
-            }
-        }
+        if channel_index == 0 {
+            let _ = project
+                .placements
+                .iter()
+                .filter(|(_, placement)| matches!(&placement.kind, PlacementType::DrumTrack(..)))
+                .map(|(id, _)| {
+                    drum_tracks.insert(
+                        *id,
+                        DrumTrackInfo::new(graph_manager, PlacementSelector(*id)),
+                    )
+                });
+        };
 
         let input_node = graph_manager.add_node(make_node(Sum), NodeLabel::Sum);
 

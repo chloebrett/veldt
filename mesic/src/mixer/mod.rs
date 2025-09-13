@@ -247,25 +247,6 @@ impl Mixer {
                         .soft_add_placement_sample(&mut self.graph_manager, *placement_id);
                     true
                 }
-                Action::AddChild(TypeField::Placement(_)) => {
-                    let placement = &store.project.placements[placement_id];
-                    match &placement.kind {
-                        PlacementType::DrumTrack(drum) => {
-                            let channel_index = store
-                                .project
-                                .tracks
-                                .keys()
-                                .position(|id| id == &drum.track_id)
-                                .unwrap_or(0);
-
-                            self.channels[channel_index]
-                                .soft_add_placement_drum(&mut self.graph_manager, *placement_id);
-
-                            true
-                        }
-                        _ => false,
-                    }
-                }
                 _ => false,
             },
             Selector::MixerMatrixCell(..) => match action {
@@ -321,6 +302,21 @@ impl Mixer {
                     }
                     self.generator_ids.retain(|id| id != gen_id);
                     true
+                }
+                Action::AddChild(TypeField::Placement(placement)) => {
+                    let placement_id = store
+                        .project
+                        .placements
+                        .iter()
+                        .find_map(|(id, placement)| if placement == placement { Some(*id) } else { None });
+                    match &placement.kind {
+                        PlacementType::DrumTrack(_) => {
+                            self.channels[0]
+                            .soft_add_placement_drum(&mut self.graph_manager, placement_id.unwrap());
+                            true
+                        }
+                        _ => false,
+                    }
                 }
                 _ => false,
             },
