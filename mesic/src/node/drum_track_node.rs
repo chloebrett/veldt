@@ -1,6 +1,6 @@
 use super::extract_outputs;
 use crate::graph::{NoteEventType, ProcessContext};
-use crate::{beats_to_samples, samples_to_beats};
+use crate::{beats_to_samples};
 use dasp_graph::{Buffer, Input, Node};
 use shared::model::{DrumTrackPlacement, PlacementType};
 use state::{PlacementSelector, SampleSelector};
@@ -23,7 +23,6 @@ impl DrumTrackPlacementNode {
 
 impl Node<ProcessContext> for DrumTrackPlacementNode {
     fn process(&mut self, _inputs: &[Input], output: &mut [Buffer], payload: &ProcessContext) {
-        log::info!("running drum {}", payload.playback_pos);
         let (out_left, out_right) = extract_outputs(output);
         *out_left = Buffer::SILENT;
         *out_right = Buffer::SILENT;
@@ -35,12 +34,8 @@ impl Node<ProcessContext> for DrumTrackPlacementNode {
             return;
         };
 
-        let Some(drum_track_placement): &Option<&DrumTrackPlacement> = &placement.try_into().ok()
-        else {
-            log::error!(
-                "Placement wasn't a drum track placement: {:?}",
-                self.selector
-            );
+        let Some(drum_track_placement): &Option<&DrumTrackPlacement> = &placement.try_into().ok() else {
+            log::error!("Placement wasn't a drum track placement: {:?}", self.selector);
             return;
         };
 
@@ -50,87 +45,53 @@ impl Node<ProcessContext> for DrumTrackPlacementNode {
             return;
         };
 
-        let track_placement = store
-            .project
-            .placements
-            .values()
-            .find_map(|placement| match &placement.kind {
-                PlacementType::Track(track_placement)
-                    if track_placement.track_id == drum_track_placement.track_id =>
-                {
-                    Some(track_placement)
-                }
-                _ => None,
-            })
-            .expect("DrumTrackPlacement must have a corresponding TrackPlacement");
-
-        if let Some(events) = payload.note_events.get(&track_placement.generator_id) {
-            for note_event in events {
-                match note_event.kind {
-                    NoteEventType::On => {
+        if let Some(track_placement) = store.project.placements.values().find_map(|p| match &p.kind {
+            PlacementType::Track(tp) if tp.track_id == drum_track_placement.track_id => Some(tp),
+            _ => None,
+        }) {
+            if let Some(events) = payload.note_events.get(&track_placement.generator_id) {
+                for note_event in events {
+                    if note_event.kind == NoteEventType::On {
                         let placement_offset_samples =
                             beats_to_samples(*placement.offset, store.project.bpm) as usize;
                         let start_index = placement_offset_samples + note_event.sample_index;
-                        self.hits
-                            .push((drum_track_placement.sample_id.0, start_index));
+                        self.hits.push((drum_track_placement.sample_id.0, start_index));
                     }
-                    NoteEventType::Off => self.hits.clear(),
                 }
             }
         }
 
-        // let sample_len = max(sample.left.len(), sample.right.len());
-        // let mut finished = vec![];
-
-        // for i in 0..Buffer::LEN {
-        //     let mut left_acc = 0.0;
-        //     let mut right_acc = 0.0;
-
-        //     for (idx, (_sample_id, start_index)) in self.hits.iter_mut().enumerate() {
-        //         let rel_index = payload.playback_pos as i32 + i as i32 - *start_index as i32;
-        //         if rel_index < 0 {
-        //             continue;
-        //         }
-        //         let rel_index = rel_index as usize;
-        //         if rel_index >= sample_len {
-        //             finished.push(idx);
-        //             continue;
-        //         }
-
-        //         left_acc += sample.left.get(rel_index).copied().unwrap_or(0.0);
-        //         right_acc += sample.right.get(rel_index).copied().unwrap_or(0.0);
-        //     }
-
-        //     out_left[i] += left_acc;
-        //     out_right[i] += right_acc;
-        // }
-
-        // for &idx in finished.iter().rev() {
-        //     self.hits.remove(idx);
-        // }
         let playback_pos = payload.playback_pos;
-
-        let unclipped_duration = samples_to_beats(
-            max(sample.left.len(), sample.right.len()),
-            store.project.bpm,
-        );
-        let duration = placement
-            .clipped_duration
-            .unwrap_or(unclipped_duration.into());
-        let duration_samples = beats_to_samples(*duration, store.project.bpm);
-
-        let sample_start_index = beats_to_samples(*placement.offset, store.project.bpm);
+        let sample_len = max(sample.left.len(), sample.right.len());
+        let mut finished_hits = vec![];
 
         for i in 0..Buffer::LEN {
-            let offset: i32 = i as i32 + playback_pos as i32 - sample_start_index as i32;
+            let mut left_acc = 0.0;
+            let mut right_acc = 0.0;
 
-            if offset < 0 || offset > duration_samples as i32 {
-                continue;
+            for (idx, (_sample_id, start_index)) in self.hits.iter().enumerate() {
+                let offset = i as i32 + playback_pos as i32 - *start_index as i32;
+                if offset < 0 {
+                    continue;
+                }
+                let offset = offset as usize;
+                if offset >= sample_len {
+                    finished_hits.push(idx);
+                    continue;
+                }
+
+                left_acc += sample.left[offset];
+                right_acc += sample.right[offset];
             }
-            let offset = offset as usize;
 
-            out_left[i] = *sample.left.get(offset).unwrap_or(&0.0);
-            out_right[i] = *sample.right.get(offset).unwrap_or(&0.0);
+            out_left[i] = left_acc;
+            out_right[i] = right_acc;
+        }
+
+        for &idx in finished_hits.iter().rev() {
+            if idx < self.hits.len() {
+                self.hits.remove(idx);
+            }
         }
     }
 }
