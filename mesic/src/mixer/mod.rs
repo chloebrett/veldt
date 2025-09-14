@@ -305,7 +305,9 @@ impl Mixer {
                 }
                 // TODO: handle deleting and updating for drum track placements
                 Action::AddChild(TypeField::Placement(placement)) => {
-                    store.project.placements
+                    store
+                        .project
+                        .placements
                         .iter()
                         .find_map(|(id, p)| (p == placement).then_some(*id))
                         .filter(|_| matches!(placement.kind, PlacementType::DrumTrack(_)))
