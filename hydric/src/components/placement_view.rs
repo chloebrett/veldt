@@ -359,9 +359,7 @@ impl View for PlacementView<'_> {
 
                 ui.add_space(5.0);
                 if ui.button("Delete").clicked() {
-                    store.dispatchr(Action::DeleteChildById(TypeField::PlacementId(
-                        placement_id,
-                    )));
+                    store.dispatchr(Action::DeleteChildById(TypeField::PlacementId(placement_id)));
                     self.local_state
                         .window_state
                         .set_visible(WindowKind::Placement, false);
