@@ -2,9 +2,9 @@ use crate::WindowState;
 use egui::Pos2;
 use mesic::FFT_SAMPLE_SIZE;
 use ring_buffer_max::MaxDetector;
-use shared::model::{DrumTrackId, Generator, PlacementId, Sample, SampleId};
+use shared::model::{Generator, PlacementId, Sample, SampleId};
 use smart_default::SmartDefault;
-use state::{DrumTrackSelector, MixerSelector, TrackSelector};
+use state::{MixerSelector, TrackSelector};
 use std::cell::RefCell;
 use std::collections::{HashMap, HashSet};
 use std::rc::Rc;
@@ -49,13 +49,13 @@ pub struct LocalState {
 
     pub sample_visual_preview_cache: Rc<RefCell<HashMap<SampleId, Vec<Pos2>>>>,
 
-    pub active_drum_track: RcOption<DrumTrackSelector>,
-
     pub new_generator_type: Rc<RefCell<Generator>>,
 
     pub new_generator_name: Rc<RefCell<String>>,
 
-    pub empty_drum_sub_tracks: Rc<RefCell<HashMap<DrumTrackId, usize>>>,
+    pub empty_channel_rack_rows: Rc<RefCell<usize>>,
+
+    pub active_channel_rack_row: RcOption<PlacementId>,
 }
 
 pub trait GetSet<T: Clone> {

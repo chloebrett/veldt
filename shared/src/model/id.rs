@@ -93,29 +93,6 @@ impl Deref for TrackId {
 }
 
 #[derive(Hash, Default, PartialEq, Eq, Ord, PartialOrd, Debug, Clone, Copy)]
-pub struct DrumTrackId(pub usize);
-
-impl From<u32> for DrumTrackId {
-    fn from(other: u32) -> Self {
-        Self(other as usize)
-    }
-}
-
-impl From<DrumTrackId> for u32 {
-    fn from(other: DrumTrackId) -> Self {
-        *other as u32
-    }
-}
-
-impl Deref for DrumTrackId {
-    type Target = usize;
-
-    fn deref(&self) -> &usize {
-        &self.0
-    }
-}
-
-#[derive(Hash, Default, PartialEq, Eq, Ord, PartialOrd, Debug, Clone, Copy)]
 pub struct EffectId(pub usize);
 
 impl From<u32> for EffectId {
@@ -131,29 +108,6 @@ impl From<EffectId> for u32 {
 }
 
 impl Deref for EffectId {
-    type Target = usize;
-
-    fn deref(&self) -> &usize {
-        &self.0
-    }
-}
-
-#[derive(Hash, Default, PartialEq, Eq, Ord, PartialOrd, Debug, Clone, Copy)]
-pub struct PlacedDrumId(pub usize);
-
-impl From<u32> for PlacedDrumId {
-    fn from(other: u32) -> Self {
-        Self(other as usize)
-    }
-}
-
-impl From<PlacedDrumId> for u32 {
-    fn from(other: PlacedDrumId) -> Self {
-        *other as u32
-    }
-}
-
-impl Deref for PlacedDrumId {
     type Target = usize;
 
     fn deref(&self) -> &usize {
