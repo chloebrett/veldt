@@ -300,7 +300,9 @@ impl ChannelInfo {
     }
 
     pub fn soft_add_placement_drum(&mut self, graph_manager: &mut GraphManager, id: PlacementId) {
-        self.drum_tracks
-            .insert(id, DrumTrackPlacementInfo::new(graph_manager, PlacementSelector(id)));
+        self.drum_tracks.insert(
+            id,
+            DrumTrackPlacementInfo::new(graph_manager, PlacementSelector(id)),
+        );
     }
 }
