@@ -1,7 +1,7 @@
 use super::extract_outputs;
 use crate::graph::{NoteEventType, ProcessContext};
 use dasp_graph::{Buffer, Input, Node};
-use shared::model::{DrumTrackPlacement};
+use shared::model::DrumTrackPlacement;
 use state::{PlacementSelector, SampleSelector};
 use std::cmp::max;
 
@@ -46,13 +46,12 @@ impl Node<ProcessContext> for DrumTrackPlacementNode {
             log::error!("Sample doesn't exist: {:?}", drum_track_placement.sample_id);
             return;
         };
-        
+
         let placement_id = self.selector.0;
         if let Some(events) = payload.drum_note_events.get(&placement_id) {
             for note_event in events {
                 if note_event.kind == NoteEventType::On {
-                    let start_index = payload.playback_pos
-                        + note_event.sample_index;
+                    let start_index = payload.playback_pos + note_event.sample_index;
                     self.hits.push(start_index);
                 }
             }
