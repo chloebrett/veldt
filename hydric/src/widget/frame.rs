@@ -14,3 +14,10 @@ pub fn inner_frame() -> Frame {
         .corner_radius(8.0)
         .inner_margin(10.0)
 }
+
+pub fn inner_frame_dark() -> Frame {
+    Frame::new()
+        .fill(Color32::from_gray(20))
+        .corner_radius(5.0)
+        .inner_margin(10.0)
+}

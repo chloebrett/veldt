@@ -17,6 +17,7 @@ use state::{
     Action, PlacementSelector, SampleSelector, Store, TrackSelector, TypeField, UintField,
 };
 use std::cmp::max;
+use crate::widget::frame::{inner_frame_dark};
 
 pub struct PlacementView<'a> {
     store: &'a Store,
@@ -163,12 +164,7 @@ impl<'a> PlacementView<'a> {
         store: &Store,
     ) {
         let on_release = || store.dispatchr(Action::Release);
-        let frame = egui::Frame::NONE
-            .fill(Color32::from_gray(20))
-            .corner_radius(5.0)
-            .inner_margin(egui::Vec2::new(10.0, 5.0));
-
-        frame.show(ui, |ui| {
+        inner_frame_dark().show(ui, |ui| {
             ui.vertical(|ui| {
                 ui.horizontal(|ui| {
                     ui.label("Clipped duration");
@@ -297,12 +293,7 @@ impl View for PlacementView<'_> {
                         Self::drum_placement_ui(ui, placement_id, drum_placement, &sel, store);
                     }
                 }
-                let frame = egui::Frame::NONE
-                    .fill(Color32::from_gray(20))
-                    .corner_radius(5.0)
-                    .inner_margin(egui::Vec2::new(10.0, 5.0));
-                 
-                 frame.show(ui, |ui| {
+                inner_frame_dark().show(ui, |ui| {
                     ui.vertical(|ui| {
                         
                         ui.horizontal(|ui|{
@@ -325,10 +316,15 @@ impl View for PlacementView<'_> {
                 let initial_colour = placement.colour.to_egui();
                 let mut new_colour = initial_colour;
 
-                ui.add_space(15.0);
-                ui.label("Placement Colour"); 
-                ui.add_space(3.0);
-                color_picker_color32(ui, &mut new_colour, Alpha::Opaque);
+                ui.add_space(5.0);
+                inner_frame_dark().show(ui, |ui| {
+                    ui.vertical(|ui| {
+                        ui.label("Placement Colour"); 
+                        ui.add_space(3.0);
+                        color_picker_color32(ui, &mut new_colour, Alpha::Opaque)
+                    });
+                });
+
 
                 if new_colour != initial_colour {
                     store.dispatch(
@@ -339,7 +335,7 @@ impl View for PlacementView<'_> {
                     );
                 }
             
-                ui.add_space(2.0);
+                ui.add_space(5.0);
                 if ui.button("Delete").clicked() {
                     store.dispatchr(Action::DeleteChildById(TypeField::PlacementId(
                         placement_id,
