@@ -305,7 +305,6 @@ impl Mixer {
                 }
                 // TODO: handle deleting and updating for drum track placements
                 Action::AddChild(TypeField::Placement(placement)) => {
-                    // Find the placement_id in the store.project
                     let placement_id = store
                         .project
                         .placements
@@ -314,30 +313,13 @@ impl Mixer {
 
                     if let Some(placement_id) = placement_id {
                         match &placement.kind {
-                            PlacementType::DrumTrack(drum_track) => {
-                                if let Some(track_placement) = store
-                                    .project
-                                    .placements
-                                    .values()
-                                    .find(|p| matches!(&p.kind, PlacementType::Track(tp) if tp.track_id == drum_track.track_id))
-                                {
-                                    if let PlacementType::Track(track) = &track_placement.kind {
-                                        if let Some(generator) = store.project.generators.get(&track.generator_id) {
-                                            let channel_index = generator.meta.mixer_channel;
-                                            self.channels[channel_index].soft_add_placement_drum(
-                                                &mut self.graph_manager,
-                                                placement_id,
-                                            );
-                                        }
-                                    }
-                                }
-                                true
+                            PlacementType::DrumTrack(_) => {
+                                self.channels[0].soft_add_placement_drum(&mut self.graph_manager, placement_id);
                             }
-                            _ => false,
+                            _ => {},
                         }
-                    } else {
-                        false
                     }
+                    true
                 }
                 _ => false,
             },
