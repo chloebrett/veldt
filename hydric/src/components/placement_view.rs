@@ -17,6 +17,7 @@ use state::{
     Action, PlacementSelector, SampleSelector, Store, TrackSelector, TypeField, UintField,
 };
 use std::cmp::max;
+use crate::widget::frame::inner_frame_dark;
 
 pub struct PlacementView<'a> {
     store: &'a Store,
@@ -40,40 +41,40 @@ impl<'a> PlacementView<'a> {
         ui.horizontal(|ui| {
             ui.set_width(180.0);
             egui::ComboBox::from_id_salt(format!("placement_{:?}_track", placement_id))
-            .selected_text(format!("Track ID {}", *track_placement.track_id))
-            .show_ui(ui, |ui| {
-                for track_id in store.get().project.tracks.keys() {
-                    selectable_value(
-                        ui,
-                        get_set(&track_placement.track_id, |it| {
-                            store.dispatch(sel, Action::SetChild(TypeField::TrackId(*it)))
-                        }),
-                        track_id,
-                        track_id.to_string(),
-                    );
-                }
-            });
-
-        egui::ComboBox::from_id_salt(format!("placement_{:?}_generator", placement_id))
-            .selected_text(self.get_generator_name(store, &track_placement.generator_id))
-            .show_ui(ui, |ui| {
-                let mut generators: Vec<_> = store.get().project.generators.keys().collect();
-                if !generators.is_empty() {
-                    generators.sort();
-                    for generator_id in generators {
+                .selected_text(format!("Track ID {}", *track_placement.track_id))
+                .show_ui(ui, |ui| {
+                    for track_id in store.get().project.tracks.keys() {
                         selectable_value(
                             ui,
-                            get_set(&track_placement.generator_id, |it| {
-                                store.dispatch(sel, Action::SetChild(TypeField::GeneratorId(*it)))
+                            get_set(&track_placement.track_id, |it| {
+                                store.dispatch(sel, Action::SetChild(TypeField::TrackId(*it)))
                             }),
-                            generator_id,
-                            self.get_generator_name(store, generator_id),
+                            track_id,
+                            track_id.to_string(),
                         );
                     }
-                }
-            });
+                });
+
+            egui::ComboBox::from_id_salt(format!("placement_{:?}_generator", placement_id))
+                .selected_text(self.get_generator_name(store, &track_placement.generator_id))
+                .show_ui(ui, |ui| {
+                    let mut generators: Vec<_> = store.get().project.generators.keys().collect();
+                    if !generators.is_empty() {
+                        generators.sort();
+                        for generator_id in generators {
+                            selectable_value(
+                                ui,
+                                get_set(&track_placement.generator_id, |it| {
+                                    store.dispatch(sel, Action::SetChild(TypeField::GeneratorId(*it)))
+                                }),
+                                generator_id,
+                                self.get_generator_name(store, generator_id),
+                            );
+                        }
+                    }
+                });
         });
-        
+
         let track_sel = TrackSelector(track_placement.track_id);
         let track: &Track = store.select(&track_sel);
         let max_duration = *(track.unclipped_duration());
@@ -96,6 +97,7 @@ impl<'a> PlacementView<'a> {
         }
         generator_name
     }
+
     fn sample_placement_ui(
         ui: &mut Ui,
         placement_id: PlacementId,
@@ -105,43 +107,50 @@ impl<'a> PlacementView<'a> {
         store: &Store,
     ) {
         ui.vertical(|ui| {
-            egui::ComboBox::from_id_salt(format!("placement_{:?}", placement_id))
-                .selected_text(format!(
-                    "{}", 
-                    Self::get_sample_name(store, &sample_placement.sample_id)
-                ))
-                .show_ui(ui, |ui| {
-                    for sample_id in store.get().project.samples.keys() {
-                        selectable_value(
-                            ui,
-                            get_set(&sample_placement.sample_id, |it| {
-                                store.dispatch(sel, Action::SetChild(TypeField::SampleId(*it)))
-                            }),
-                            sample_id,
-                            Self::get_sample_name(store, sample_id),
-                        );
-                    }
-                });
-            ui.add_space(3.0); 
-            let sample_sel = SampleSelector(sample_placement.sample_id);
-            let Some(sample) = store.try_select(&sample_sel) else {
-                ui.label("No samples loaded yet");
-                ui.add_space(3.0);
-                return;
+            let samples_exist = !store.get().project.samples.is_empty();
+            let selected_text = if samples_exist {
+                Self::get_sample_name(store, &sample_placement.sample_id)
+            } else {
+                "No samples loaded yet".to_string()
             };
 
-            let max_duration = samples_to_beats(
-                max(sample.left.len(), sample.right.len()),
-                store.get().project.bpm,
-            );
-            let duration = *placement
-                .clipped_duration
-                .unwrap_or(OrderedFloat(max_duration));
-            Self::duration_ui(ui, sel, duration, max_duration, store); 
+            egui::ComboBox::from_id_salt(format!("placement_{:?}", placement_id))
+                .width(215.0)
+                .height(3.0)
+                .selected_text(selected_text)
+                .show_ui(ui, |ui| {
+                    if samples_exist{
+                        for sample_id in store.get().project.samples.keys() {
+                            selectable_value(
+                                ui,
+                                get_set(&sample_placement.sample_id, |it| {
+                                    store.dispatch(sel, Action::SetChild(TypeField::SampleId(*it)))
+                                }),
+                                sample_id,
+                                Self::get_sample_name(store, sample_id),
+                            );
+                        }
+                    } else {
+                        ui.label("No samples to select");
+                    }
+                });
         });
-    }
-        
 
+        ui.add_space(5.0);
+        let sample_sel = SampleSelector(sample_placement.sample_id);
+        let Some(sample) = store.try_select(&sample_sel) else {
+            return;
+        };
+
+        let max_duration = samples_to_beats(
+            max(sample.left.len(), sample.right.len()),
+            store.get().project.bpm,
+        );
+        let duration = *placement
+            .clipped_duration
+            .unwrap_or(OrderedFloat(max_duration));
+        Self::duration_ui(ui, sel, duration, max_duration, store);
+    }
 
     fn get_sample_name(store: &Store, sample_id: &SampleId) -> String {
         let mut sample_name = format!("Sample ID {}", **sample_id);
@@ -150,10 +159,9 @@ impl<'a> PlacementView<'a> {
         }
         if store.get().project.samples.is_empty() {
             sample_name = "".to_string();
-        }   
+        }
         sample_name
     }
- 
 
     fn duration_ui(
         ui: &mut Ui,
@@ -163,16 +171,11 @@ impl<'a> PlacementView<'a> {
         store: &Store,
     ) {
         let on_release = || store.dispatchr(Action::Release);
-        let frame = egui::Frame::NONE
-            .fill(Color32::from_gray(20))
-            .corner_radius(5.0)
-            .inner_margin(egui::Vec2::new(10.0, 5.0));
-
-        frame.show(ui, |ui| {
+        inner_frame_dark().show(ui, |ui| {
             ui.vertical(|ui| {
                 ui.horizontal(|ui| {
                     ui.label("Clipped duration");
-                    ui.add_space(90.0);
+                    ui.add_space(95.0);
                 });
                 slider(
                     ui,
@@ -207,41 +210,52 @@ impl<'a> PlacementView<'a> {
             ui.label("No drum tracks added yet");
             return;
         };
-        egui::ComboBox::from_id_salt(format!("placement_{:?}", placement_id))
-            .selected_text(format!(
-                "{}",
-                Self::get_drum_track_name(store, &drum_placement.track_id)
-            ))
-            .show_ui(ui, |ui| {
-                for track_id in store.get().project.tracks.keys() {
-                    selectable_value(
-                        ui,
-                        get_set(&drum_placement.track_id, |it| {
-                            store.dispatch(sel, Action::SetChild(TypeField::TrackId(*it)))
-                        }),
-                        track_id,
-                        Self::get_drum_track_name(store, track_id),
-                    );
-                }
+        
+        let samples_exist = !store.get().project.samples.is_empty();
+        let selected_text = if samples_exist {
+        Self::get_sample_name(store, &drum_placement.sample_id)
+        } else {
+            "No samples".to_string()
+        };
+        ui.horizontal(|ui| {
+            ui.set_width(185.0);
+                egui::ComboBox::from_id_salt(format!("placement_{:?}", placement_id))
+                    .selected_text(Self::get_drum_track_name(store, &drum_placement.track_id))
+                    .show_ui(ui, |ui| {
+                        for track_id in store.get().project.tracks.keys() {
+                            selectable_value(
+                                ui,
+                                get_set(&drum_placement.track_id, |it| {
+                                    store.dispatch(sel, Action::SetChild(TypeField::TrackId(*it)))
+                                }),
+                                track_id,
+                                Self::get_drum_track_name(store, track_id),
+                            );
+                        }
+                    });
+
+                egui::ComboBox::from_id_salt(format!("drum_placement_sample{:?}", placement_id))
+                    .selected_text(selected_text)
+                    .show_ui(ui, |ui| {
+                        if samples_exist {
+                            for sample_id in store.get().project.samples.keys() {
+                                selectable_value(
+                                    ui,
+                                    get_set(&drum_placement.sample_id, |it| {
+                                        store.dispatch(sel, Action::SetChild(TypeField::SampleId(*it)))
+                                    }),
+                                    sample_id,
+                                    Self::get_sample_name(store, sample_id),
+                                );
+                            }
+                        } else {
+                            ui.label("No samples to select");
+                        }
+
+                });
             });
-        egui::ComboBox::from_id_salt(format!("drum_placement_sample{:?}", placement_id))
-            .selected_text(format!(
-                "{}",
-                Self::get_sample_name(store, &drum_placement.sample_id)
-            ))
-            .show_ui(ui, |ui| {
-                for sample_id in store.get().project.samples.keys() {
-                    selectable_value(
-                        ui,
-                        get_set(&drum_placement.sample_id, |it| {
-                            store.dispatch(sel, Action::SetChild(TypeField::SampleId(*it)))
-                        }),
-                        sample_id,
-                        Self::get_sample_name(store, sample_id),
-                    );
-                }
-            });
-            ui.add_space(3.0);
+
+        ui.add_space(5.0);
     }
 
     fn get_drum_track_name(store: &Store, track_id: &TrackId) -> String {
@@ -260,17 +274,19 @@ impl View for PlacementView<'_> {
         else {
             return;
         };
+
         let on_release = || store.dispatchr(Action::Release);
         let placement = &store.get().project.placements[&placement_id];
         let sel = PlacementSelector(placement_id);
         let title = format!("Placement {:?}", *placement_id);
+
         StateWindow::show_from_window_state(
             ui,
             &self.local_state.window_state,
             WindowKind::Placement,
             &title,
             |ui| {
-                ui.add_space(3.0);
+                ui.add_space(5.0);
                 match &placement.kind {
                     PlacementType::Track(track_placement) => {
                         Self::track_placement_ui(
@@ -297,17 +313,12 @@ impl View for PlacementView<'_> {
                         Self::drum_placement_ui(ui, placement_id, drum_placement, &sel, store);
                     }
                 }
-                let frame = egui::Frame::NONE
-                    .fill(Color32::from_gray(20))
-                    .corner_radius(5.0)
-                    .inner_margin(egui::Vec2::new(10.0, 5.0));
-                 
-                 frame.show(ui, |ui| {
+
+                inner_frame_dark().show(ui, |ui| {
                     ui.vertical(|ui| {
-                        
-                        ui.horizontal(|ui|{
+                        ui.horizontal(|ui| {
                             ui.label("Visual placement");
-                            ui.add_space(90.0);
+                            ui.add_space(95.0);
                         });
                         int_slider(
                             ui,
@@ -325,10 +336,14 @@ impl View for PlacementView<'_> {
                 let initial_colour = placement.colour.to_egui();
                 let mut new_colour = initial_colour;
 
-                ui.add_space(15.0);
-                ui.label("Placement Colour"); 
-                ui.add_space(3.0);
-                color_picker_color32(ui, &mut new_colour, Alpha::Opaque);
+                ui.add_space(5.0);
+                inner_frame_dark().show(ui, |ui| {
+                    ui.vertical(|ui| {
+                        ui.label("Placement Colour");
+                        ui.add_space(5.0);
+                        color_picker_color32(ui, &mut new_colour, Alpha::Opaque);
+                    });
+                });
 
                 if new_colour != initial_colour {
                     store.dispatch(
@@ -338,12 +353,10 @@ impl View for PlacementView<'_> {
                         ))),
                     );
                 }
-            
-                ui.add_space(2.0);
+
+                ui.add_space(5.0);
                 if ui.button("Delete").clicked() {
-                    store.dispatchr(Action::DeleteChildById(TypeField::PlacementId(
-                        placement_id,
-                    )));
+                    store.dispatchr(Action::DeleteChildById(TypeField::PlacementId(placement_id)));
                     self.local_state
                         .window_state
                         .set_visible(WindowKind::Placement, false);
