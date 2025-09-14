@@ -3,14 +3,14 @@ use crate::node::DrumTrackPlacementNode;
 use petgraph::stable_graph::NodeIndex;
 use state::PlacementSelector;
 
-/// Describes a drum track from the viewpoint of the graph.
+/// Describes a drum track placement from the viewpoint of the graph.
 /// Contains a reference to the drum track node.
 #[derive(Clone)]
-pub struct DrumTrackInfo {
+pub struct DrumTrackPlacementInfo {
     node: NodeIndex,
 }
 
-impl DrumTrackInfo {
+impl DrumTrackPlacementInfo {
     pub fn new(graph_manager: &mut GraphManager, selector: PlacementSelector) -> Self {
         let node = graph_manager.add_node(
             make_node(DrumTrackPlacementNode::new(selector)),

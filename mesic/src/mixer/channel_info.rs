@@ -1,7 +1,7 @@
 use std::collections::HashSet;
 
 use super::{
-    DrumTrackInfo, EdgeLabel, EffectInfo, GeneratorInfo, GraphManager, NodeLabel,
+    DrumTrackPlacementInfo, EdgeLabel, EffectInfo, GeneratorInfo, GraphManager, NodeLabel,
     SamplePlacementInfo, make_node,
 };
 use crate::node::AmpNode;
@@ -25,7 +25,7 @@ pub struct ChannelInfo {
     muted_generators: HashSet<GeneratorId>,
 
     samples: HashMap<PlacementId, SamplePlacementInfo>,
-    drum_tracks: HashMap<PlacementId, DrumTrackInfo>,
+    drum_tracks: HashMap<PlacementId, DrumTrackPlacementInfo>,
     // Input sum node for this mixer channel.
     // Sums together the generators.
     pub input_node: NodeIndex,
@@ -82,19 +82,19 @@ impl ChannelInfo {
         };
 
         // TODO: same for drum track placements, let it choose which mixer channel it is on.
-        let mut drum_tracks: HashMap<PlacementId, DrumTrackInfo> = HashMap::new();
-        if channel_index == 0 {  
-            let _ = project  
-                .placements  
-                .iter()  
-                .filter(|(_, placement)| matches!(&placement.kind, PlacementType::DrumTrack(..)))  
-                .map(|(id, _)| {  
-                    drum_tracks.insert(  
-                        *id,  
-                        DrumTrackInfo::new(graph_manager, PlacementSelector(*id)),  
-                    )  
-                });  
-        };  
+        let mut drum_tracks: HashMap<PlacementId, DrumTrackPlacementInfo> = HashMap::new();
+        if channel_index == 0 {
+            let _ = project
+                .placements
+                .iter()
+                .filter(|(_, placement)| matches!(&placement.kind, PlacementType::DrumTrack(..)))
+                .map(|(id, _)| {
+                    drum_tracks.insert(
+                        *id,
+                        DrumTrackPlacementInfo::new(graph_manager, PlacementSelector(*id)),
+                    )
+                });
+        };
 
         let input_node = graph_manager.add_node(make_node(Sum), NodeLabel::Sum);
 
@@ -301,6 +301,6 @@ impl ChannelInfo {
 
     pub fn soft_add_placement_drum(&mut self, graph_manager: &mut GraphManager, id: PlacementId) {
         self.drum_tracks
-            .insert(id, DrumTrackInfo::new(graph_manager, PlacementSelector(id)));
+            .insert(id, DrumTrackPlacementInfo::new(graph_manager, PlacementSelector(id)));
     }
 }

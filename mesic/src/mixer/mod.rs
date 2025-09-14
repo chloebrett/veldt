@@ -10,14 +10,14 @@ use state::{
 };
 
 mod channel_info;
-mod drum_track_info;
+mod drum_track_placement_info;
 mod effect_info;
 mod generator_info;
 mod graph_manager;
 mod sample_placement_info;
 
 use channel_info::*;
-use drum_track_info::*;
+use drum_track_placement_info::*;
 use effect_info::*;
 use generator_info::*;
 use graph_manager::*;
@@ -314,9 +314,10 @@ impl Mixer {
                     if let Some(placement_id) = placement_id {
                         match &placement.kind {
                             PlacementType::DrumTrack(_) => {
-                                self.channels[0].soft_add_placement_drum(&mut self.graph_manager, placement_id);
+                                self.channels[0]
+                                    .soft_add_placement_drum(&mut self.graph_manager, placement_id);
                             }
-                            _ => {},
+                            _ => {}
                         }
                     }
                     true
