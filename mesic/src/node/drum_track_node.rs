@@ -1,8 +1,7 @@
 use super::extract_outputs;
-use crate::beats_to_samples;
 use crate::graph::{NoteEventType, ProcessContext};
 use dasp_graph::{Buffer, Input, Node};
-use shared::model::{DrumTrackPlacement, PlacementType};
+use shared::model::{DrumTrackPlacement};
 use state::{PlacementSelector, SampleSelector};
 use std::cmp::max;
 
@@ -47,30 +46,14 @@ impl Node<ProcessContext> for DrumTrackPlacementNode {
             log::error!("Sample doesn't exist: {:?}", drum_track_placement.sample_id);
             return;
         };
-
-        if let Some(track_placement) =
-            store
-                .project
-                .placements
-                .values()
-                .find_map(|p| match &p.kind {
-                    PlacementType::Track(tp) if tp.track_id == drum_track_placement.track_id => {
-                        Some(tp)
-                    }
-                    _ => None,
-                })
-        {
-            if let Some(events) = payload.note_events.get(&track_placement.generator_id) {
-                let placement_offset_samples =
-                    beats_to_samples(*placement.offset, store.project.bpm) as usize;
-
-                for note_event in events {
-                    if note_event.kind == NoteEventType::On {
-                        let start_index = payload.playback_pos
-                            + placement_offset_samples
-                            + note_event.sample_index;
-                        self.hits.push(start_index);
-                    }
+        
+        let placement_id = self.selector.0;
+        if let Some(events) = payload.drum_note_events.get(&placement_id) {
+            for note_event in events {
+                if note_event.kind == NoteEventType::On {
+                    let start_index = payload.playback_pos
+                        + note_event.sample_index;
+                    self.hits.push(start_index);
                 }
             }
         }
