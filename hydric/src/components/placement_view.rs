@@ -4,7 +4,7 @@ use crate::widget::{StateWindow, get_set, int_slider, selectable_value, slider};
 use crate::window_state::WindowKind;
 use crate::{GetSet, LocalState};
 use egui::color_picker::Alpha;
-use egui::{Ui, widgets::color_picker::color_picker_color32};
+use egui::{Ui, widgets::color_picker::color_picker_color32, Color32};
 use mesic::samples_to_beats;
 use ordered_float::OrderedFloat;
 use shared::model::TrackId;
@@ -37,7 +37,9 @@ impl<'a> PlacementView<'a> {
         sel: &PlacementSelector,
         store: &Store,
     ) {
-        egui::ComboBox::from_id_salt(format!("placement_{:?}_track", placement_id))
+        ui.horizontal(|ui| {
+            ui.set_width(180.0);
+            egui::ComboBox::from_id_salt(format!("placement_{:?}_track", placement_id))
             .selected_text(format!("Track ID {}", *track_placement.track_id))
             .show_ui(ui, |ui| {
                 for track_id in store.get().project.tracks.keys() {
@@ -70,13 +72,15 @@ impl<'a> PlacementView<'a> {
                     }
                 }
             });
-
+        });
+        
         let track_sel = TrackSelector(track_placement.track_id);
         let track: &Track = store.select(&track_sel);
         let max_duration = *(track.unclipped_duration());
         let duration = *placement
             .clipped_duration
             .unwrap_or(OrderedFloat(max_duration));
+        ui.add_space(5.0);
         Self::duration_ui(ui, sel, duration, max_duration, store);
     }
 
@@ -100,37 +104,44 @@ impl<'a> PlacementView<'a> {
         sel: &PlacementSelector,
         store: &Store,
     ) {
-        egui::ComboBox::from_id_salt(format!("placement_{:?}", placement_id))
-            .selected_text(format!(
-                "{}",
-                Self::get_sample_name(store, &sample_placement.sample_id)
-            ))
-            .show_ui(ui, |ui| {
-                for sample_id in store.get().project.samples.keys() {
-                    selectable_value(
-                        ui,
-                        get_set(&sample_placement.sample_id, |it| {
-                            store.dispatch(sel, Action::SetChild(TypeField::SampleId(*it)))
-                        }),
-                        sample_id,
-                        Self::get_sample_name(store, sample_id),
-                    );
-                }
-            });
-        let sample_sel = SampleSelector(sample_placement.sample_id);
-        let Some(sample) = store.try_select(&sample_sel) else {
-            ui.label("No samples loaded yet.");
-            return;
-        };
-        let max_duration = samples_to_beats(
-            max(sample.left.len(), sample.right.len()),
-            store.get().project.bpm,
-        );
-        let duration = *placement
-            .clipped_duration
-            .unwrap_or(OrderedFloat(max_duration));
-        Self::duration_ui(ui, sel, duration, max_duration, store);
+        ui.vertical(|ui| {
+            egui::ComboBox::from_id_salt(format!("placement_{:?}", placement_id))
+                .selected_text(format!(
+                    "{}", 
+                    Self::get_sample_name(store, &sample_placement.sample_id)
+                ))
+                .show_ui(ui, |ui| {
+                    for sample_id in store.get().project.samples.keys() {
+                        selectable_value(
+                            ui,
+                            get_set(&sample_placement.sample_id, |it| {
+                                store.dispatch(sel, Action::SetChild(TypeField::SampleId(*it)))
+                            }),
+                            sample_id,
+                            Self::get_sample_name(store, sample_id),
+                        );
+                    }
+                });
+            ui.add_space(3.0); 
+            let sample_sel = SampleSelector(sample_placement.sample_id);
+            let Some(sample) = store.try_select(&sample_sel) else {
+                ui.label("No samples loaded yet");
+                ui.add_space(3.0);
+                return;
+            };
+
+            let max_duration = samples_to_beats(
+                max(sample.left.len(), sample.right.len()),
+                store.get().project.bpm,
+            );
+            let duration = *placement
+                .clipped_duration
+                .unwrap_or(OrderedFloat(max_duration));
+            Self::duration_ui(ui, sel, duration, max_duration, store); 
+        });
     }
+        
+
 
     fn get_sample_name(store: &Store, sample_id: &SampleId) -> String {
         let mut sample_name = format!("Sample ID {}", **sample_id);
@@ -139,9 +150,10 @@ impl<'a> PlacementView<'a> {
         }
         if store.get().project.samples.is_empty() {
             sample_name = "".to_string();
-        }
+        }   
         sample_name
     }
+ 
 
     fn duration_ui(
         ui: &mut Ui,
@@ -151,25 +163,35 @@ impl<'a> PlacementView<'a> {
         store: &Store,
     ) {
         let on_release = || store.dispatchr(Action::Release);
+        let frame = egui::Frame::NONE
+            .fill(Color32::from_gray(20))
+            .corner_radius(5.0)
+            .inner_margin(egui::Vec2::new(10.0, 5.0));
 
-        ui.horizontal(|ui| {
-            slider(
-                ui,
-                "Clipped duration",
-                duration as f64,
-                |it| {
-                    store.dispatch(sel, {
-                        let clipped_duration = if it < max_duration as f64 {
-                            Some(it as Beats)
-                        } else {
-                            None
-                        };
-                        Action::SetChild(TypeField::ClippedDuration(clipped_duration))
-                    })
-                },
-                0.0..=max_duration as f64,
-                on_release,
-            );
+        frame.show(ui, |ui| {
+            ui.vertical(|ui| {
+                ui.horizontal(|ui| {
+                    ui.label("Clipped duration");
+                    ui.add_space(90.0);
+                });
+                slider(
+                    ui,
+                    "",
+                    duration as f64,
+                    |it| {
+                        store.dispatch(sel, {
+                            let clipped_duration = if it < max_duration as f64 {
+                                Some(it as Beats)
+                            } else {
+                                None
+                            };
+                            Action::SetChild(TypeField::ClippedDuration(clipped_duration))
+                        })
+                    },
+                    0.0..=max_duration as f64,
+                    on_release,
+                );
+            });
         });
     }
 
@@ -219,6 +241,7 @@ impl<'a> PlacementView<'a> {
                     );
                 }
             });
+            ui.add_space(3.0);
     }
 
     fn get_drum_track_name(store: &Store, track_id: &TrackId) -> String {
@@ -247,6 +270,7 @@ impl View for PlacementView<'_> {
             WindowKind::Placement,
             &title,
             |ui| {
+                ui.add_space(3.0);
                 match &placement.kind {
                     PlacementType::Track(track_placement) => {
                         Self::track_placement_ui(
@@ -273,22 +297,37 @@ impl View for PlacementView<'_> {
                         Self::drum_placement_ui(ui, placement_id, drum_placement, &sel, store);
                     }
                 }
-
-                int_slider(
-                    ui,
-                    "Visual placement",
-                    placement.visual_placement as f64,
-                    |it| {
-                        store.dispatch(&sel, Action::SetUint(UintField::VisualPlacement, it as u32))
-                    },
-                    0..=3,
-                    on_release,
-                );
+                let frame = egui::Frame::NONE
+                    .fill(Color32::from_gray(20))
+                    .corner_radius(5.0)
+                    .inner_margin(egui::Vec2::new(10.0, 5.0));
+                 
+                 frame.show(ui, |ui| {
+                    ui.vertical(|ui| {
+                        
+                        ui.horizontal(|ui|{
+                            ui.label("Visual placement");
+                            ui.add_space(90.0);
+                        });
+                        int_slider(
+                            ui,
+                            "",
+                            placement.visual_placement as f64,
+                            |it| {
+                                store.dispatch(&sel, Action::SetUint(UintField::VisualPlacement, it as u32))
+                            },
+                            0..=3,
+                            on_release,
+                        );
+                    });
+                });
 
                 let initial_colour = placement.colour.to_egui();
                 let mut new_colour = initial_colour;
 
-                ui.label("Placement Colour");
+                ui.add_space(15.0);
+                ui.label("Placement Colour"); 
+                ui.add_space(3.0);
                 color_picker_color32(ui, &mut new_colour, Alpha::Opaque);
 
                 if new_colour != initial_colour {
@@ -299,7 +338,8 @@ impl View for PlacementView<'_> {
                         ))),
                     );
                 }
-
+            
+                ui.add_space(2.0);
                 if ui.button("Delete").clicked() {
                     store.dispatchr(Action::DeleteChildById(TypeField::PlacementId(
                         placement_id,
@@ -313,6 +353,8 @@ impl View for PlacementView<'_> {
                         it
                     });
                 }
+
+                ui.add_space(2.0);
             },
         );
     }
