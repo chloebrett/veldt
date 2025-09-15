@@ -1,6 +1,6 @@
 use crate::convert::beats_to_samples;
 use dasp_graph::Buffer;
-use shared::model::{GeneratorId, PitchName, PlacementType, Project, TrackPlacement};
+use shared::model::{GeneratorId, PitchName, PlacementId, PlacementType, Project, TrackPlacement};
 use std::cmp::min;
 use std::collections::HashMap;
 
@@ -78,6 +78,67 @@ impl NoteTracker {
                     let end_sample = note_end_sample as isize - global_sample_index as isize;
                     if buf_range.contains(&end_sample) {
                         result.entry(*generator_id).or_default().push({
+                            NoteEvent {
+                                kind: NoteEventType::Off,
+                                sample_index: end_sample as usize,
+                                pitch_name: note.note.pitch_name,
+                            }
+                        });
+                    }
+                }
+            }
+        }
+        result
+    }
+}
+
+#[derive(Default)]
+pub struct DrumNoteTracker;
+
+impl DrumNoteTracker {
+    pub fn track(
+        project: &Project,
+        global_sample_index: usize,
+    ) -> HashMap<PlacementId, Vec<NoteEvent>> {
+        let mut result: HashMap<PlacementId, Vec<NoteEvent>> = HashMap::new();
+
+        let bpm = project.bpm;
+
+        for (placement_id, placement) in &project.placements {
+            if let PlacementType::DrumTrack(drum_track) = &placement.kind {
+                let track = &project.tracks[&drum_track.track_id];
+                let track_offset = *placement.offset;
+                let track_duration = *placement
+                    .clipped_duration
+                    .unwrap_or(track.unclipped_duration());
+                let track_end_sample = beats_to_samples(track_offset + track_duration, bpm);
+
+                // TODO: use some kind of tree to determine which notes are in range of the current
+                // buffer, instead of always iterating over all notes.
+                for note in &track.notes {
+                    let offset = beats_to_samples(track_offset + *note.offset, bpm);
+                    let note_start_sample = min(offset, track_end_sample) as usize;
+                    let note_end_sample = min(
+                        offset + beats_to_samples(note.note.beats, bpm),
+                        track_end_sample,
+                    ) as usize;
+
+                    let buf_range = 0..Buffer::LEN as isize;
+
+                    let start_sample = note_start_sample as isize - global_sample_index as isize;
+                    if buf_range.contains(&start_sample) {
+                        result.entry(*placement_id).or_default().push({
+                            NoteEvent {
+                                kind: NoteEventType::On,
+                                sample_index: start_sample as usize,
+                                pitch_name: note.note.pitch_name,
+                            }
+                        });
+                    }
+
+                    let end_sample = note_end_sample as isize - global_sample_index as isize;
+                    if buf_range.contains(&end_sample) {
+                        result.entry(*placement_id).or_default().push({
                             NoteEvent {
                                 kind: NoteEventType::Off,
                                 sample_index: end_sample as usize,
