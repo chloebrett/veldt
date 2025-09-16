@@ -1,4 +1,5 @@
 mod app;
+mod drum_placement_view;
 mod effect;
 mod frame_history;
 mod generator;
@@ -13,6 +14,8 @@ mod piano;
 mod placed_track;
 mod placement_view;
 mod play;
+mod sample_placement_view;
+mod track_placement_view;
 mod track_roll;
 mod track_sequencer;
 mod utils;
