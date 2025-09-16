@@ -15,6 +15,7 @@ use shared::{
 use state::{Action, MultiTypeField, PlacementSelector, Store, TrackSelector, TypeField};
 use std::cmp::{max, min};
 use std::collections::HashSet;
+use state::SampleSelector;
 
 const PITCH_RANGE: f32 = 4131.0;
 const VISUAL_SAMPLING_RATE: usize = 120;
@@ -84,13 +85,18 @@ impl<'a> PlacedTrack<'a> {
                     let sample_id = sample_placement.sample_id;
                     self.sample_shape(range, sample_id)
                 }
-                PlacementType::DrumTrack(_) => {
-                    // TODO implement drum track shape
-                    Shape::rect_filled(
-                        self.to_rect(range),
-                        CornerRadius::same(1),
-                        background_colour,
-                    )
+                PlacementType::DrumTrack(drum_track_placement) => {
+                    let track_id = drum_track_placement.track_id;
+                    if let Some(track) = self.store.get().project.tracks.get(&track_id) {
+                        let notes = &track.notes;
+                        self.map_notes_to_shapes(range, notes)
+                    } else {
+                        Shape::rect_filled(
+                            self.to_rect(range),
+                            CornerRadius::same(1),
+                            background_colour,
+                        )
+                    }
                 }
             },
         ])
@@ -291,7 +297,7 @@ impl<'a> PlacedTrack<'a> {
                 .select(&TrackSelector(track_placement.track_id))
                 .unclipped_duration(),
             PlacementType::Sample(sample_placement) => {
-                if let Some(sample) = store.get().project.samples.get(&sample_placement.sample_id) {
+                if let Some(sample) = store.try_select(&SampleSelector(sample_placement.sample_id)) {
                     ordered_float::OrderedFloat(samples_to_beats(
                         max(sample.left.len(), sample.right.len()),
                         store.get().project.bpm,
@@ -300,9 +306,24 @@ impl<'a> PlacedTrack<'a> {
                     ordered_float::OrderedFloat(1.0)
                 }
             }
-            PlacementType::DrumTrack(_) => {
-                // TODO calculate unclipped duration
-                OrderedFloat(8.0)
+            PlacementType::DrumTrack(drum_track_placement) => {
+                let max_offset = store.select(&TrackSelector(drum_track_placement.track_id)).notes
+                    .iter()
+                    .max_by_key(|placed_note| placed_note.offset)
+                    .map(|last_note| last_note.offset.into())
+                    .unwrap_or(0.0);
+                let sample_duration = store
+                    .try_select(&SampleSelector(drum_track_placement.sample_id))
+                    .map(|sample| {
+                        samples_to_beats(
+                            max(sample.left.len(), sample.right.len()),
+                            store.get().project.bpm,
+                        )
+                    })
+                    .unwrap_or(0.5);
+
+                // TODO: currently multiplying the sample duration by 2 to account for if the sample is pitched lower (assuming tuning approach will change duration), find a better way to do this
+                OrderedFloat(max_offset + sample_duration * 2.0)
             }
         };
 
