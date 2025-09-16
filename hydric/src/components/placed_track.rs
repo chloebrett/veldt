@@ -12,10 +12,10 @@ use shared::{
     model::{PlacedNote, Placement, PlacementId, PlacementType, SampleId, TrackPlacement},
     types::Beats,
 };
+use state::SampleSelector;
 use state::{Action, MultiTypeField, PlacementSelector, Store, TrackSelector, TypeField};
 use std::cmp::{max, min};
 use std::collections::HashSet;
-use state::SampleSelector;
 
 const PITCH_RANGE: f32 = 4131.0;
 const VISUAL_SAMPLING_RATE: usize = 120;
@@ -69,7 +69,10 @@ impl<'a> PlacedTrack<'a> {
             ),
             match &self.placement.kind {
                 PlacementType::Track(track_placement) => {
-                    if let Some(track) = self.store.try_select(&TrackSelector(track_placement.track_id)) {
+                    if let Some(track) = self
+                        .store
+                        .try_select(&TrackSelector(track_placement.track_id))
+                    {
                         let notes = &track.notes;
                         self.map_notes_to_shapes(range, notes, None)
                     } else {
@@ -85,7 +88,10 @@ impl<'a> PlacedTrack<'a> {
                     self.sample_shape(range, sample_id)
                 }
                 PlacementType::DrumTrack(drum_track_placement) => {
-                    if let Some(track) = self.store.try_select(&TrackSelector(drum_track_placement.track_id)){
+                    if let Some(track) = self
+                        .store
+                        .try_select(&TrackSelector(drum_track_placement.track_id))
+                    {
                         let notes = &track.notes;
                         self.map_notes_to_shapes(range, notes, Some(drum_track_placement.sample_id))
                     } else {
@@ -162,7 +168,12 @@ impl<'a> PlacedTrack<'a> {
         }
     }
 
-    fn map_notes_to_shapes(&self, range: Rect, notes: &[PlacedNote], sample_id: Option<SampleId>) -> Shape {
+    fn map_notes_to_shapes(
+        &self,
+        range: Rect,
+        notes: &[PlacedNote],
+        sample_id: Option<SampleId>,
+    ) -> Shape {
         let rgb_values = self.placement.colour;
         let note_positions: Vec<Pos2> = notes
             .iter()
@@ -185,13 +196,11 @@ impl<'a> PlacedTrack<'a> {
             ),
         );
         let sample_beats = sample_id.and_then(|id| {
-            self.store
-                .try_select(&SampleSelector(id))
-                .map(|sample| {
-                    let num_samples = max(sample.left.len(), sample.right.len());
-                    let bpm = self.store.get().project.bpm;
-                    samples_to_beats(num_samples, bpm)
-                })
+            self.store.try_select(&SampleSelector(id)).map(|sample| {
+                let num_samples = max(sample.left.len(), sample.right.len());
+                let bpm = self.store.get().project.bpm;
+                samples_to_beats(num_samples, bpm)
+            })
         });
 
         let note_rects: Vec<Rect> = notes
@@ -304,7 +313,8 @@ impl<'a> PlacedTrack<'a> {
                 .select(&TrackSelector(track_placement.track_id))
                 .unclipped_duration(),
             PlacementType::Sample(sample_placement) => {
-                if let Some(sample) = store.try_select(&SampleSelector(sample_placement.sample_id)) {
+                if let Some(sample) = store.try_select(&SampleSelector(sample_placement.sample_id))
+                {
                     ordered_float::OrderedFloat(samples_to_beats(
                         max(sample.left.len(), sample.right.len()),
                         store.get().project.bpm,

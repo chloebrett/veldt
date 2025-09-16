@@ -4,7 +4,6 @@ use crate::{GetSet, LocalState};
 use crate::{view::View, widget::StateWindow, window_state::WindowKind};
 use egui::{Color32, Pos2, Rect, ScrollArea, Ui, pos2, vec2};
 use mesic::samples_to_beats;
-use ordered_float::OrderedFloat;
 use shared::model::DrumTrackPlacement;
 use shared::model::{
     Colour, Placement, PlacementId, PlacementType, SamplePlacement, Track, TrackPlacement,
@@ -67,14 +66,13 @@ impl View for TrackRoll<'_> {
                                 local_state: self.local_state,
                             }
                         }
-                        PlacementType::DrumTrack(drum_track_placement) => {
-                            PlacedTrack {
-                                unclipped_duration: drum_track_placement.duration(&self.store.get().project),
-                                placement: placement.clone(),
-                                store: self.store,
-                                local_state: self.local_state,
-                            }
-                        }
+                        PlacementType::DrumTrack(drum_track_placement) => PlacedTrack {
+                            unclipped_duration: drum_track_placement
+                                .duration(&self.store.get().project),
+                            placement: placement.clone(),
+                            store: self.store,
+                            local_state: self.local_state,
+                        },
                     },
                 )
             })

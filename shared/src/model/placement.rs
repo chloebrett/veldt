@@ -1,11 +1,11 @@
+use crate::model::Project;
+use crate::model::samples_to_beats;
 use crate::model::{GeneratorId, SampleId, TrackId};
 use crate::pmodel::{placement_proto::Kind as PlacementTypeProto, *};
 use crate::types::Beats;
 use local_macro::{FromProto, IntoProto};
 use ordered_float::OrderedFloat;
-use crate::model::Project;
 use std::cmp::Ordering;
-use crate::model::samples_to_beats;
 use std::cmp::max;
 
 #[derive(Clone, Debug, PartialEq, Eq, Default)]
@@ -116,22 +116,20 @@ pub struct DrumTrackPlacement {
 }
 
 impl DrumTrackPlacement {
-    pub fn duration(&self, project: &Project)  -> OrderedFloat<f32> {
-        let max_offset = project.tracks[&self.track_id].notes
+    pub fn duration(&self, project: &Project) -> OrderedFloat<f32> {
+        let max_offset = project.tracks[&self.track_id]
+            .notes
             .iter()
             .max_by_key(|placed_note| placed_note.offset)
             .map(|last_note| last_note.offset.into())
             .unwrap_or(0.0);
-        let sample_duration = project.samples.get(&self.sample_id)
-            .map(|sample| {
-                samples_to_beats(
-                    max(sample.left.len(), sample.right.len()),
-                    project.bpm,
-                )
-            })
+        let sample_duration = project
+            .samples
+            .get(&self.sample_id)
+            .map(|sample| samples_to_beats(max(sample.left.len(), sample.right.len()), project.bpm))
             .unwrap_or(0.5);
 
-        // TODO: currently adding the sample duration multiplied by 2 to to the last offset to
+        // TODO: currently adding the sample duration multiplied by 2 to the last offset to
         // account for if the sample is pitched lower (assuming future tuning approach will change duration)
         // Find a better way to do this once tuning/re-pitching is implemented
         OrderedFloat(max_offset + sample_duration * 2.0)
