@@ -1,12 +1,10 @@
-use crate::components::utils::ToEguiColour;
 use crate::widget::{get_set, inner_frame_dark, selectable_value, slider};
 use egui::Ui;
 use ordered_float::OrderedFloat;
 use shared::model::Track;
-use shared::model::{GeneratorId, Placement, PlacementId, TrackId, TrackPlacement};
+use shared::model::{GeneratorId, Placement, PlacementId, TrackPlacement};
 use shared::types::Beats;
 use state::{Action, PlacementSelector, Store, TrackSelector, TypeField};
-use std::cmp::max;
 
 pub struct TrackPlacementView<'a> {
     store: &'a Store,
