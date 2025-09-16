@@ -58,25 +58,7 @@ impl Project {
                     }
                 }
                 PlacementType::DrumTrack(drum_track_placement) => {
-                    let max_offset = self.tracks[&drum_track_placement.track_id]
-                        .notes
-                        .iter()
-                        .max_by_key(|placed_note| placed_note.offset)
-                        .map(|last_note| last_note.offset.into())
-                        .unwrap_or(0.0);
-                    let sample_duration = self
-                        .samples
-                        .get(&drum_track_placement.sample_id)
-                        .map(|sample| {
-                            samples_to_beats(
-                                std::cmp::max(sample.left.len(), sample.right.len()),
-                                self.bpm,
-                            )
-                        })
-                        .unwrap_or(0.5);
-
-                    // TODO: currently multiplying the sample duration by 2 to account for if the sample is pitched lower (assuming tuning approach will change duration), find a better way to do this
-                    OrderedFloat(max_offset + sample_duration * 2.0)
+                    drum_track_placement.duration(self)
                 }
             };
             max = std::cmp::max(max, offset + duration);
