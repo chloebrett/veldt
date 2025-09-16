@@ -6,6 +6,7 @@ use crate::window_state::WindowKind;
 use crate::{GetSet, LocalState};
 use egui::color_picker::Alpha;
 use egui::{Color32, Ui, widgets::color_picker::color_picker_color32};
+use egui::{Color32, Ui, widgets::color_picker::color_picker_color32};
 use mesic::samples_to_beats;
 use ordered_float::OrderedFloat;
 use shared::model::TrackId;
@@ -54,6 +55,19 @@ impl<'a> PlacementView<'a> {
                         );
                     }
                 });
+                .selected_text(format!("Track ID {}", *track_placement.track_id))
+                .show_ui(ui, |ui| {
+                    for track_id in store.get().project.tracks.keys() {
+                        selectable_value(
+                            ui,
+                            get_set(&track_placement.track_id, |it| {
+                                store.dispatch(sel, Action::SetChild(TypeField::TrackId(*it)))
+                            }),
+                            track_id,
+                            track_id.to_string(),
+                        );
+                    }
+                });
 
             egui::ComboBox::from_id_salt(format!("placement_{:?}_generator", placement_id))
                 .selected_text(self.get_generator_name(store, &track_placement.generator_id))
@@ -76,7 +90,29 @@ impl<'a> PlacementView<'a> {
                         }
                     }
                 });
+            egui::ComboBox::from_id_salt(format!("placement_{:?}_generator", placement_id))
+                .selected_text(self.get_generator_name(store, &track_placement.generator_id))
+                .show_ui(ui, |ui| {
+                    let mut generators: Vec<_> = store.get().project.generators.keys().collect();
+                    if !generators.is_empty() {
+                        generators.sort();
+                        for generator_id in generators {
+                            selectable_value(
+                                ui,
+                                get_set(&track_placement.generator_id, |it| {
+                                    store.dispatch(
+                                        sel,
+                                        Action::SetChild(TypeField::GeneratorId(*it)),
+                                    )
+                                }),
+                                generator_id,
+                                self.get_generator_name(store, generator_id),
+                            );
+                        }
+                    }
+                });
         });
+
 
         let track_sel = TrackSelector(track_placement.track_id);
         let track: &Track = store.select(&track_sel);
@@ -162,6 +198,7 @@ impl<'a> PlacementView<'a> {
         }
         if store.get().project.samples.is_empty() {
             sample_name = "".to_string();
+        }
         }
         sample_name
     }
@@ -317,6 +354,7 @@ impl View for PlacementView<'_> {
                 inner_frame_dark().show(ui, |ui| {
                     ui.vertical(|ui| {
                         ui.horizontal(|ui| {
+                        ui.horizontal(|ui| {
                             ui.label("Visual placement");
                             ui.add_space(95.0);
                         });
@@ -325,6 +363,10 @@ impl View for PlacementView<'_> {
                             "",
                             placement.visual_placement as f64,
                             |it| {
+                                store.dispatch(
+                                    &sel,
+                                    Action::SetUint(UintField::VisualPlacement, it as u32),
+                                )
                                 store.dispatch(
                                     &sel,
                                     Action::SetUint(UintField::VisualPlacement, it as u32),

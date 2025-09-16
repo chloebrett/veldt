@@ -1,7 +1,8 @@
 use std::collections::HashSet;
 
 use super::{
-    EdgeLabel, EffectInfo, GeneratorInfo, GraphManager, NodeLabel, SamplePlacementInfo, make_node,
+    DrumTrackPlacementInfo, EdgeLabel, EffectInfo, GeneratorInfo, GraphManager, NodeLabel,
+    SamplePlacementInfo, make_node,
 };
 use crate::node::AmpNode;
 use dasp_graph::node::Sum;
@@ -24,6 +25,7 @@ pub struct ChannelInfo {
     muted_generators: HashSet<GeneratorId>,
 
     samples: HashMap<PlacementId, SamplePlacementInfo>,
+    drum_tracks: HashMap<PlacementId, DrumTrackPlacementInfo>,
     // Input sum node for this mixer channel.
     // Sums together the generators.
     pub input_node: NodeIndex,
@@ -79,6 +81,21 @@ impl ChannelInfo {
                 });
         };
 
+        // TODO: same for drum track placements, let it choose which mixer channel it is on.
+        let mut drum_tracks: HashMap<PlacementId, DrumTrackPlacementInfo> = HashMap::new();
+        if channel_index == 0 {
+            let _ = project
+                .placements
+                .iter()
+                .filter(|(_, placement)| matches!(&placement.kind, PlacementType::DrumTrack(..)))
+                .map(|(id, _)| {
+                    drum_tracks.insert(
+                        *id,
+                        DrumTrackPlacementInfo::new(graph_manager, PlacementSelector(*id)),
+                    )
+                });
+        };
+
         let input_node = graph_manager.add_node(make_node(Sum), NodeLabel::Sum);
 
         let effects: Vec<EffectInfo> = project.mixer.channels[channel_index]
@@ -99,6 +116,7 @@ impl ChannelInfo {
             generators,
             muted_generators,
             samples,
+            drum_tracks,
             input_node,
             effects,
             output_node,
@@ -154,6 +172,14 @@ impl ChannelInfo {
 
         for sample in self.samples.values() {
             graph_manager.add_edge(sample.node(), self.input_node, EdgeLabel::SampleToMixIn);
+        }
+
+        for drum_track in self.drum_tracks.values() {
+            graph_manager.add_edge(
+                drum_track.node(),
+                self.input_node,
+                EdgeLabel::DrumTrackToMixIn,
+            );
         }
 
         let effects = &self.effects;
@@ -270,6 +296,13 @@ impl ChannelInfo {
         self.samples.insert(
             id,
             SamplePlacementInfo::new(graph_manager, PlacementSelector(id)),
+        );
+    }
+
+    pub fn soft_add_placement_drum(&mut self, graph_manager: &mut GraphManager, id: PlacementId) {
+        self.drum_tracks.insert(
+            id,
+            DrumTrackPlacementInfo::new(graph_manager, PlacementSelector(id)),
         );
     }
 }

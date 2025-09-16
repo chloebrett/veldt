@@ -3,20 +3,21 @@ use crate::node::{AmpNode, BufferNode};
 use crossbeam_channel::Sender;
 use dasp_graph::{BoxedNodeSend, Buffer, Node, NodeData, node::Sum};
 use petgraph::stable_graph::NodeIndex;
-use shared::model::GeneratorId;
-use shared::model::Project;
+use shared::model::{GeneratorId, PlacementType, Project};
 use state::{
     Action, EffectSelector, FloatField, GeneratorSelector, IndexField, MoveField, Selector,
     StoreData, TypeField,
 };
 
 mod channel_info;
+mod drum_track_placement_info;
 mod effect_info;
 mod generator_info;
 mod graph_manager;
 mod sample_placement_info;
 
 use channel_info::*;
+use drum_track_placement_info::*;
 use effect_info::*;
 use generator_info::*;
 use graph_manager::*;
@@ -300,6 +301,20 @@ impl Mixer {
                         channel.soft_delete_generator(GeneratorSelector(*gen_id));
                     }
                     self.generator_ids.retain(|id| id != gen_id);
+                    true
+                }
+                // TODO: handle deleting and updating for drum track placements
+                Action::AddChild(TypeField::Placement(placement)) => {
+                    store
+                        .project
+                        .placements
+                        .iter()
+                        .find_map(|(id, p)| (p == placement).then_some(*id))
+                        .filter(|_| matches!(placement.kind, PlacementType::DrumTrack(_)))
+                        .map(|placement_id| {
+                            self.channels[0]
+                                .soft_add_placement_drum(&mut self.graph_manager, placement_id);
+                        });
                     true
                 }
                 _ => false,

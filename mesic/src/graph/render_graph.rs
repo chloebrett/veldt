@@ -1,5 +1,6 @@
 use super::{
-    NoteEvent, NoteEventType, NoteTracker, PlaybackMode, ProcessContext, Processor, make_processor,
+    DrumNoteTracker, NoteEvent, NoteEventType, NoteTracker, PlaybackMode, ProcessContext,
+    Processor, make_processor,
 };
 use crate::convert::beats_to_samples;
 use crate::mixer::{GraphDebugInfo, Mixer};
@@ -151,6 +152,11 @@ impl RenderGraph {
 
     fn update_notes(&mut self) {
         self.process_context.note_events = NoteTracker::track(
+            &self.process_context.store.project,
+            self.main_playback_index,
+        );
+
+        self.process_context.drum_note_events = DrumNoteTracker::track(
             &self.process_context.store.project,
             self.main_playback_index,
         );
