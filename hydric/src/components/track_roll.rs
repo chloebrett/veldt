@@ -67,9 +67,26 @@ impl View for TrackRoll<'_> {
                                 local_state: self.local_state,
                             }
                         }
-                        PlacementType::DrumTrack(DrumTrackPlacement { .. }) => {
+                        PlacementType::DrumTrack(DrumTrackPlacement { track_id, sample_id }) => {
+                            let max_offset = project.tracks[&track_id]
+                                .notes
+                                .iter()
+                                .max_by_key(|placed_note| placed_note.offset)
+                                .map(|last_note| last_note.offset.into())
+                                .unwrap_or(0.0);
+                            let sample_duration = store
+                                .try_select(&SampleSelector(sample_id))
+                                .map(|sample| {
+                                    samples_to_beats(
+                                        max(sample.left.len(), sample.right.len()),
+                                        store.get().project.bpm,
+                                    )
+                                })
+                                .unwrap_or(0.5);
+                             // TODO: currently multiplying the sample duration by 2 to account for if the sample is pitched lower (assuming tuning approach will change duration), find a better way to do this
+                            let duration = OrderedFloat(max_offset + sample_duration * 2.0);
                             PlacedTrack {
-                                unclipped_duration: OrderedFloat(8.0), // TODO: properly calculate unclipped duration
+                                unclipped_duration: duration,
                                 placement: placement.clone(),
                                 store: self.store,
                                 local_state: self.local_state,
