@@ -1,6 +1,6 @@
 mod checkbox;
 mod for_each_with_separator;
-mod frame;
+pub mod frame;
 mod frequency_plot;
 mod get_set;
 mod knob;
