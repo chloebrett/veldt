@@ -10,7 +10,7 @@ use mesic::samples_to_beats;
 use ordered_float::OrderedFloat;
 use shared::model::{
     DrumTrackPlacement, GeneratorId, Placement, PlacementId, PlacementType, SampleId,
-    SamplePlacement, Track, TrackPlacement, TrackId,
+    SamplePlacement, Track, TrackId, TrackPlacement,
 };
 use shared::types::Beats;
 use state::{
@@ -135,7 +135,9 @@ impl<'a> PlacementView<'a> {
 
         ui.add_space(5.0);
         let sample_sel = SampleSelector(sample_placement.sample_id);
-        let Some(sample) = store.try_select(&sample_sel) else { return; };
+        let Some(sample) = store.try_select(&sample_sel) else {
+            return;
+        };
 
         let max_duration = samples_to_beats(
             max(sample.left.len(), sample.right.len()),
@@ -263,7 +265,10 @@ impl<'a> PlacementView<'a> {
 impl View for PlacementView<'_> {
     fn ui(&mut self, ui: &mut Ui) {
         let store = &self.store;
-        let Some(placement_id): Option<PlacementId> = self.local_state.active_placement.get() else { return; };
+        let Some(placement_id): Option<PlacementId> = self.local_state.active_placement.get()
+        else {
+            return;
+        };
 
         let on_release = || store.dispatchr(Action::Release);
         let placement = &store.get().project.placements[&placement_id];
@@ -279,10 +284,25 @@ impl View for PlacementView<'_> {
                 ui.add_space(5.0);
                 match &placement.kind {
                     PlacementType::Track(track_placement) => {
-                        Self::track_placement_ui(self, ui, placement_id, placement, track_placement, &sel, store);
+                        Self::track_placement_ui(
+                            self,
+                            ui,
+                            placement_id,
+                            placement,
+                            track_placement,
+                            &sel,
+                            store,
+                        );
                     }
                     PlacementType::Sample(sample_placement) => {
-                        Self::sample_placement_ui(ui, placement_id, placement, sample_placement, &sel, store);
+                        Self::sample_placement_ui(
+                            ui,
+                            placement_id,
+                            placement,
+                            sample_placement,
+                            &sel,
+                            store,
+                        );
                     }
                     PlacementType::DrumTrack(drum_placement) => {
                         Self::drum_placement_ui(ui, placement_id, drum_placement, &sel, store);
@@ -301,7 +321,10 @@ impl View for PlacementView<'_> {
                             "",
                             placement.visual_placement as f64,
                             |it| {
-                                store.dispatch(&sel, Action::SetUint(UintField::VisualPlacement, it as u32))
+                                store.dispatch(
+                                    &sel,
+                                    Action::SetUint(UintField::VisualPlacement, it as u32),
+                                )
                             },
                             0..=3,
                             on_release,
@@ -330,8 +353,12 @@ impl View for PlacementView<'_> {
 
                 ui.add_space(5.0);
                 if ui.button("Delete").clicked() {
-                    store.dispatchr(Action::DeleteChildById(TypeField::PlacementId(placement_id)));
-                    self.local_state.window_state.set_visible(WindowKind::Placement, false);
+                    store.dispatchr(Action::DeleteChildById(TypeField::PlacementId(
+                        placement_id,
+                    )));
+                    self.local_state
+                        .window_state
+                        .set_visible(WindowKind::Placement, false);
                     self.local_state.active_placement.set(None);
                     self.local_state.selected_placements.update(|mut it| {
                         it.remove(&placement_id);
