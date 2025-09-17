@@ -1,15 +1,18 @@
 use super::extract_outputs;
 use crate::graph::{NoteEventType, ProcessContext};
 use dasp_graph::{Buffer, Input, Node};
-use shared::{model::{DrumTrackPlacement, SampleId}, types::PitchValue};
+use shared::model::Sample;
+use shared::{
+    model::{DrumTrackPlacement, SampleId},
+    types::PitchValue,
+};
 use state::{PlacementSelector, SampleSelector};
 use std::{cmp::max, collections::HashMap};
-use shared::model::Sample;
 
 #[derive(Clone, Copy)]
 pub struct Hit {
     hit_start: usize,
-    pitch: PitchValue
+    pitch: PitchValue,
 }
 
 /// Node that plays a drum track.
@@ -17,7 +20,7 @@ pub struct DrumTrackPlacementNode {
     selector: PlacementSelector,
     hits: Vec<Hit>, // stores start index of pending hits
     resample_cache: HashMap<PitchValue, Sample>,
-    current_sample: Option<SampleId>
+    current_sample: Option<SampleId>,
 }
 
 impl DrumTrackPlacementNode {
@@ -26,7 +29,7 @@ impl DrumTrackPlacementNode {
             selector: sel,
             hits: Vec::new(),
             resample_cache: HashMap::new(),
-            current_sample: None
+            current_sample: None,
         }
     }
 }
@@ -73,9 +76,13 @@ impl Node<ProcessContext> for DrumTrackPlacementNode {
                 if note_event.kind == NoteEventType::On {
                     let start_index = payload.playback_pos + note_event.sample_index;
                     let pitch_value: i32 = note_event.pitch_name.into();
-                    self.hits.push(Hit { hit_start: start_index, pitch: pitch_value });
+                    self.hits.push(Hit {
+                        hit_start: start_index,
+                        pitch: pitch_value,
+                    });
                     if !self.resample_cache.contains_key(&pitch_value) {
-                        self.resample_cache.insert(pitch_value, resample_to_pitch(sample, 60, pitch_value));
+                        self.resample_cache
+                            .insert(pitch_value, resample_to_pitch(sample, 60, pitch_value));
                     }
                 }
             }
@@ -91,7 +98,8 @@ impl Node<ProcessContext> for DrumTrackPlacementNode {
             .filter(|&hit| {
                 // TODO: sometimes there is a cache miss making the below check/recalculation necessary. Investigate.
                 if !self.resample_cache.contains_key(&hit.pitch) {
-                    self.resample_cache.insert(hit.pitch, resample_to_pitch(sample, 60, hit.pitch));
+                    self.resample_cache
+                        .insert(hit.pitch, resample_to_pitch(sample, 60, hit.pitch));
                 }
                 let sample = &self.resample_cache[&hit.pitch];
                 let sample_len = max(sample.left.len(), sample.right.len());
@@ -130,10 +138,15 @@ pub fn resample_to_pitch(sample: &Sample, from_note: PitchValue, to_note: PitchV
     let resampled_left = resample(&sample.left, sample.left.len(), ratio);
     let resampled_right = resample(&sample.right, sample.right.len(), ratio);
 
-    Sample {left: resampled_left, right: resampled_right, sample_rate: sample.sample_rate, sample_name: sample.sample_name.clone()}
+    Sample {
+        left: resampled_left,
+        right: resampled_right,
+        sample_rate: sample.sample_rate,
+        sample_name: sample.sample_name.clone(),
+    }
 }
 
-/// This function takes an audio sample and resamples it to a new playback rate.
+/// This function takes a sample and resamples it to a new playback rate.
 /// Resampling here means we generate a new sample at the new playback rate using linear interpolation.
 /// This is how we change the "pitch" of a drum hit or other short audio snippet: playing it faster raises the pitch and playing it
 /// slower lowers the pitch. For percussive sounds like drum hits the simplest and most authentic way to change pitch is just to play them faster or slower.
@@ -156,7 +169,7 @@ pub fn resample(sample: &Vec<f32>, sample_len: usize, ratio: f32) -> Vec<f32> {
         } else {
             resampled.push(sample[idx]);
         }
-    };
+    }
     resampled
 }
 
@@ -165,4 +178,3 @@ pub fn resample(sample: &Vec<f32>, sample_len: usize, ratio: f32) -> Vec<f32> {
 pub fn semitone_ratio(semitones: f32) -> f32 {
     2f32.powf(semitones / 12.0)
 }
-
