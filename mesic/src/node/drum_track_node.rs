@@ -99,6 +99,9 @@ impl Node<ProcessContext> for DrumTrackPlacementNode {
                 // TODO: sometimes there is a cache miss making the below check/recalculation necessary. Investigate.
                 if !self.resample_cache.contains_key(&hit.pitch) {
                     self.resample_cache
+                        // 60 is the MIDI value of C4 and is used below. The current code assumes that all drum samples are
+                        // C4 by default. In future can possibly investigate calculating original pitch of sample to use instead
+                        // or allowing user to adjust the root key.
                         .insert(hit.pitch, resample_to_pitch(sample, 60, hit.pitch));
                 }
                 let sample = &self.resample_cache[&hit.pitch];
