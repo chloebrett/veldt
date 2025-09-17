@@ -1,7 +1,7 @@
 use super::extract_outputs;
 use crate::graph::{NoteEventType, ProcessContext};
 use dasp_graph::{Buffer, Input, Node};
-use shared::{model::DrumTrackPlacement, types::PitchValue};
+use shared::{model::{DrumTrackPlacement, SampleId}, types::PitchValue};
 use state::{PlacementSelector, SampleSelector};
 use std::{cmp::max, collections::HashMap};
 use shared::model::Sample;
@@ -16,7 +16,8 @@ pub struct Hit {
 pub struct DrumTrackPlacementNode {
     selector: PlacementSelector,
     hits: Vec<Hit>, // stores start index of pending hits
-    resample_cache: HashMap<PitchValue, Sample>
+    resample_cache: HashMap<PitchValue, Sample>,
+    current_sample: Option<SampleId>
 }
 
 impl DrumTrackPlacementNode {
@@ -24,7 +25,8 @@ impl DrumTrackPlacementNode {
         Self {
             selector: sel,
             hits: Vec::new(),
-            resample_cache: HashMap::new()
+            resample_cache: HashMap::new(),
+            current_sample: None
         }
     }
 }
@@ -56,6 +58,15 @@ impl Node<ProcessContext> for DrumTrackPlacementNode {
             return;
         };
 
+        if let Some(current_sample) = self.current_sample {
+            if current_sample != drum_track_placement.sample_id {
+                self.current_sample = Some(drum_track_placement.sample_id);
+                self.resample_cache.clear(); // if the sample for the placement changes then resampled samples need to be reprocessed
+            }
+        } else {
+            self.current_sample = Some(drum_track_placement.sample_id);
+        }
+
         let placement_id = self.selector.0;
         if let Some(events) = payload.drum_note_events.get(&placement_id) {
             for note_event in events {
@@ -69,7 +80,7 @@ impl Node<ProcessContext> for DrumTrackPlacementNode {
                 }
             }
         }
-        
+
         let playback_pos = payload.playback_pos;
         let buffer_len = out_left.len();
 
