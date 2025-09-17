@@ -1,14 +1,22 @@
 use super::extract_outputs;
 use crate::graph::{NoteEventType, ProcessContext};
 use dasp_graph::{Buffer, Input, Node};
-use shared::model::DrumTrackPlacement;
+use shared::{model::DrumTrackPlacement, types::PitchValue};
 use state::{PlacementSelector, SampleSelector};
-use std::cmp::max;
+use std::{cmp::max, collections::HashMap};
+use shared::model::Sample;
+
+#[derive(Clone, Copy)]
+pub struct Hit {
+    hit_start: usize,
+    pitch: PitchValue
+}
 
 /// Node that plays a drum track.
 pub struct DrumTrackPlacementNode {
     selector: PlacementSelector,
-    hits: Vec<usize>, // stores start index of pending hits
+    hits: Vec<Hit>, // stores start index of pending hits
+    resample_cache: HashMap<PitchValue, Sample>
 }
 
 impl DrumTrackPlacementNode {
@@ -16,6 +24,7 @@ impl DrumTrackPlacementNode {
         Self {
             selector: sel,
             hits: Vec::new(),
+            resample_cache: HashMap::new()
         }
     }
 }
@@ -52,12 +61,15 @@ impl Node<ProcessContext> for DrumTrackPlacementNode {
             for note_event in events {
                 if note_event.kind == NoteEventType::On {
                     let start_index = payload.playback_pos + note_event.sample_index;
-                    self.hits.push(start_index);
+                    let pitch_value: i32 = note_event.pitch_name.into();
+                    self.hits.push(Hit { hit_start: start_index, pitch: pitch_value });
+                    if !self.resample_cache.contains_key(&pitch_value) {
+                        self.resample_cache.insert(pitch_value, resample_to_pitch(sample, 60, pitch_value));
+                    }
                 }
             }
         }
-
-        let sample_len = max(sample.left.len(), sample.right.len());
+        
         let playback_pos = payload.playback_pos;
         let buffer_len = out_left.len();
 
@@ -65,7 +77,11 @@ impl Node<ProcessContext> for DrumTrackPlacementNode {
             .hits
             .iter()
             .copied()
-            .filter(|&hit_start| hit_start + sample_len > playback_pos as usize)
+            .filter(|&hit| {
+                let sample = &self.resample_cache[&hit.pitch];
+                let sample_len = max(sample.left.len(), sample.right.len());
+                hit.hit_start + sample_len > playback_pos as usize
+            })
             .collect::<Vec<_>>();
 
         for i in 0..buffer_len {
@@ -73,10 +89,12 @@ impl Node<ProcessContext> for DrumTrackPlacementNode {
             let mut left_acc = 0.0;
             let mut right_acc = 0.0;
 
-            for &hit_start in &remaining_hits {
-                let hit_end = hit_start + sample_len;
-                if sample_index >= hit_start && sample_index < hit_end {
-                    let sample_offset = sample_index - hit_start;
+            for &hit in &remaining_hits {
+                let sample = &self.resample_cache[&hit.pitch];
+                let sample_len = max(sample.left.len(), sample.right.len());
+                let hit_end = hit.hit_start + sample_len;
+                if sample_index >= hit.hit_start && sample_index < hit_end {
+                    let sample_offset = sample_index - hit.hit_start;
                     left_acc += sample.left[sample_offset];
                     right_acc += sample.right[sample_offset];
                 }
@@ -89,3 +107,39 @@ impl Node<ProcessContext> for DrumTrackPlacementNode {
         self.hits = remaining_hits;
     }
 }
+
+pub fn resample_to_pitch(sample: &Sample, from_note: PitchValue, to_note: PitchValue) -> Sample {
+    let semitones = (to_note - from_note) as f32;
+    let ratio = semitone_ratio(semitones);
+
+    let resampled_left = resample(sample, sample.left.len(), ratio);
+    let resampled_right = resample(sample, sample.right.len(), ratio);
+
+    Sample {left: resampled_left, right: resampled_right, sample_rate: sample.sample_rate, sample_name: sample.sample_name.clone()}
+}
+
+pub fn resample(sample: &Sample, sample_len: usize, ratio: f32) -> Vec<f32> {
+    let new_len = (sample_len as f32 / ratio) as usize;
+    let mut resampled = Vec::with_capacity(new_len);
+
+    for i in 0..new_len {
+        let src_index = i as f32 * ratio;
+        let idx = src_index.floor() as usize;
+        let frac = src_index - idx as f32;
+
+        if idx + 1 < sample_len {
+            // Linear interpolation
+            let s0 = sample.left[idx];
+            let s1 = sample.left[idx + 1];
+            resampled.push(s0 + frac * (s1 - s0));
+        } else {
+            resampled.push(sample.left[idx]);
+        }
+    };
+    resampled
+}
+
+pub fn semitone_ratio(semitones: f32) -> f32 {
+    2f32.powf(semitones / 12.0)
+}
+
