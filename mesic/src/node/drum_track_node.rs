@@ -89,6 +89,10 @@ impl Node<ProcessContext> for DrumTrackPlacementNode {
             .iter()
             .copied()
             .filter(|&hit| {
+                // TODO: sometimes there is a cache miss making the below check/recalculation necessary. Investigate.
+                if !self.resample_cache.contains_key(&hit.pitch) {
+                    self.resample_cache.insert(hit.pitch, resample_to_pitch(sample, 60, hit.pitch));
+                }
                 let sample = &self.resample_cache[&hit.pitch];
                 let sample_len = max(sample.left.len(), sample.right.len());
                 hit.hit_start + sample_len > playback_pos as usize
@@ -123,33 +127,41 @@ pub fn resample_to_pitch(sample: &Sample, from_note: PitchValue, to_note: PitchV
     let semitones = (to_note - from_note) as f32;
     let ratio = semitone_ratio(semitones);
 
-    let resampled_left = resample(sample, sample.left.len(), ratio);
-    let resampled_right = resample(sample, sample.right.len(), ratio);
+    let resampled_left = resample(&sample.left, sample.left.len(), ratio);
+    let resampled_right = resample(&sample.right, sample.right.len(), ratio);
 
     Sample {left: resampled_left, right: resampled_right, sample_rate: sample.sample_rate, sample_name: sample.sample_name.clone()}
 }
 
-pub fn resample(sample: &Sample, sample_len: usize, ratio: f32) -> Vec<f32> {
+/// This function takes an audio sample and resamples it to a new playback rate.
+/// Resampling here means we generate a new sample at the new playback rate using linear interpolation.
+/// This is how we change the "pitch" of a drum hit or other short audio snippet: playing it faster raises the pitch and playing it
+/// slower lowers the pitch. For percussive sounds like drum hits the simplest and most authentic way to change pitch is just to play them faster or slower.
+/// More advanced algorithms (phase vocoder, elastique, etc.) can separate pitch from duration but they are heavier on CPU and often unnecessary for short samples.
+pub fn resample(sample: &Vec<f32>, sample_len: usize, ratio: f32) -> Vec<f32> {
     let new_len = (sample_len as f32 / ratio) as usize;
     let mut resampled = Vec::with_capacity(new_len);
 
     for i in 0..new_len {
-        let src_index = i as f32 * ratio;
-        let idx = src_index.floor() as usize;
-        let frac = src_index - idx as f32;
+        let src_index = i as f32 * ratio; // corresponding index in the original sample vec
+        let idx = src_index.floor() as usize; // index of nearest position in original sample vec
+        let frac = src_index - idx as f32; // offset used for interpolation
 
         if idx + 1 < sample_len {
-            // Linear interpolation
-            let s0 = sample.left[idx];
-            let s1 = sample.left[idx + 1];
+            // Linear interpolation: s0 + frac * (s1 - s0)
+            // This produces a smooth value between s0 and s1 which are the original sample values that get blended together
+            let s0 = sample[idx];
+            let s1 = sample[idx + 1];
             resampled.push(s0 + frac * (s1 - s0));
         } else {
-            resampled.push(sample.left[idx]);
+            resampled.push(sample[idx]);
         }
     };
     resampled
 }
 
+/// Converts a semitone offset to a playback speed ratio. 12.0 semitones (one octave) will
+/// double playback speed, -12.0 will halve it.
 pub fn semitone_ratio(semitones: f32) -> f32 {
     2f32.powf(semitones / 12.0)
 }
