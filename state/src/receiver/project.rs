@@ -128,11 +128,7 @@ impl ActionReceiver for Project {
                 Action::AddChild(TypeField::MixerChannel(prev))
             }
             Action::AddChild(TypeField::Generator(generator)) => {
-                let all_ids: Vec<usize> = self
-                    .generators
-                    .keys()
-                    .map(|key| **key)
-                    .collect();
+                let all_ids: Vec<usize> = self.generators.keys().map(|key| **key).collect();
                 let next_id = if all_ids.is_empty() {
                     0
                 } else {
