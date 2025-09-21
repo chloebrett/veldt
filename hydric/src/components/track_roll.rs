@@ -66,10 +66,10 @@ impl View for TrackRoll<'_> {
                                 local_state: self.local_state,
                             }
                         }
-                        PlacementType::DrumTrack(drum_track_placement) => PlacedTrack {
+                        PlacementType::DrumTrack(ref drum_track_placement) => PlacedTrack {
                             unclipped_duration: drum_track_placement
                                 .duration(&self.store.get().project),
-                            placement: placement.clone(),
+                            placement: placement,
                             store: self.store,
                             local_state: self.local_state,
                         },
