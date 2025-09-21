@@ -112,6 +112,8 @@ message PlacedNoteProto {
   NoteProto note = 1;
 
   float offset = 2;
+
+  uint32 pitch_offset = 3;
 }
 
 message NoteProto {
