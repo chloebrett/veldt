@@ -55,7 +55,24 @@ impl AudioProcessor {
 
             if self.state == PlaybackState::Play && self.audio_tx.is_empty() {
                 self.process_chunk();
-            } else if self.state != PlaybackState::Play {
+            } else {
+                // 10ms is chosen because:
+                // We send 2048 samples at a time (BUFFER_SIZE).
+                // This takes 2048 / 44100 seconds = 46ms to play.
+                // At some point every 46ms (assuming perfect playback), the playback thread is likely to consume the
+                // next buffer content. Therefore we can choose any value up to almost 46ms as the
+                // sleep duration. We choose 10ms just in case things end up out of sync somehow,
+                // so we still poll several times to see if the audio thread wants more data.
+                // This sleep call is necessary - if we don't have one, the processing thread
+                // busy-waits and consumes all the CPU, making the app unusable.
+                // This could also happen if we made the sleep time too low (e.g. 100
+                // microseconds).
+                // Note: when we sleep, we're not listening for playback events (pause, seek etc)
+                // either. But 10ms is an acceptable interactive lag, and is shorter than the
+                // framerate (16.7ms) anyway.
+                // TODO: consider replacing this sleep call with a mutex wait that somehow listens
+                // both for "audio player is ready to receive" and also "playback_rx has a new
+                // message".
                 sleep_ms(10);
             }
             self.update_tx
@@ -142,6 +159,7 @@ impl AudioProcessor {
 }
 
 fn sleep_ms(ms: u32) {
+    log::info!("Sleeping {} ms", ms);
     let secs = 0;
     let nanos = ms * 1000 * 1000;
     wasm_thread::sleep(std::time::Duration::new(secs, nanos));
