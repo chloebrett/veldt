@@ -59,6 +59,7 @@ impl AudioProcessor {
                 // 10ms is chosen because:
                 // We send 2048 samples at a time (BUFFER_SIZE).
                 // This takes 2048 / 44100 seconds = 46ms to play.
+                // (44100 samples/sec is the app-wide sample rate).
                 // At some point every 46ms (assuming perfect playback), the playback thread is likely to consume the
                 // next buffer content. Therefore we can choose any value up to almost 46ms as the
                 // sleep duration. We choose 10ms just in case things end up out of sync somehow,
