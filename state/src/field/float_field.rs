@@ -29,5 +29,5 @@ pub enum FloatField {
     AdsrDecay,
     AdsrSustain,
     AdsrRelease,
-    Semitones
+    Semitones,
 }

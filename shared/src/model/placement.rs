@@ -115,9 +115,9 @@ pub struct DrumTrackPlacement {
     pub track_id: TrackId,
 
     pub sample_id: SampleId,
-    
+
     #[proto_hashmap]
-    pub pitch_sample_map: HashMap<PitchValue, SampleId>
+    pub pitch_sample_map: HashMap<PitchValue, SampleId>,
 }
 
 impl DrumTrackPlacement {

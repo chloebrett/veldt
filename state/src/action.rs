@@ -2,7 +2,8 @@ use crate::{
     FloatField, IndexField, MoveField, MultiIndexField, MultiTypeField, TypeField, UintField,
 };
 use shared::action_proto::{
-    action_proto::Kind as ActionKind, ActionProto, ChildIdPairProto, ChildIndexPairProto, SetFloatProto, SetUintProto
+    ActionProto, ChildIdPairProto, ChildIndexPairProto, SetFloatProto, SetUintProto,
+    action_proto::Kind as ActionKind,
 };
 use std::str::FromStr;
 
@@ -71,7 +72,7 @@ impl From<ActionProto> for Action {
             ActionKind::SetChild(child) => Action::SetChild(child.into()),
             ActionKind::SetChildren(children) => Action::SetChildren(children.into()),
             ActionKind::AddChildren(children) => Action::AddChildren(children.into()),
-            ActionKind::SetChildById(ChildIdPairProto {parent, child}) => {
+            ActionKind::SetChildById(ChildIdPairProto { parent, child }) => {
                 Action::SetChildById(parent.unwrap().into(), child.unwrap().into())
             }
         }
@@ -106,8 +107,10 @@ impl From<Action> for ActionProto {
                 Action::MoveChild(it) => ActionKind::MoveChild(it.into()),
                 Action::SetChildren(it) => ActionKind::SetChildren(it.into()),
                 Action::AddChildren(it) => ActionKind::AddChildren(it.into()),
-                Action::SetChildById(parent, child) => ActionKind::SetChildById(ChildIdPairProto
-                    { parent: Some(parent.into()), child: Some(child.into()) }),
+                Action::SetChildById(parent, child) => ActionKind::SetChildById(ChildIdPairProto {
+                    parent: Some(parent.into()),
+                    child: Some(child.into()),
+                }),
 
                 // Non-serializable actions
                 Action::Release => panic!(),

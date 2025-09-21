@@ -24,7 +24,7 @@ impl<'a> DrumPlacementView<'a> {
             ui.label("No drum tracks added yet");
             return;
         };
-        
+
         ui.horizontal(|ui| {
             ui.set_width(185.0);
 
