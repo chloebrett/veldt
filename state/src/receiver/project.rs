@@ -131,7 +131,6 @@ impl ActionReceiver for Project {
                 let all_ids: Vec<usize> = self
                     .generators
                     .keys()
-                    .into_iter()
                     .map(|key| **key)
                     .collect();
                 let next_id = if all_ids.is_empty() {
