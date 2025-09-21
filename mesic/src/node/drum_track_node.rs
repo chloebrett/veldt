@@ -34,6 +34,11 @@ impl DrumTrackPlacementNode {
     }
 }
 
+// 60 is the MIDI value of C4 and is used below. The current code assumes that all drum samples are
+// C4 by default. In future can possibly investigate calculating original pitch of sample to use instead
+// or allowing user to adjust the root key.
+const C4_MIDI: i32 = 60;
+
 impl Node<ProcessContext> for DrumTrackPlacementNode {
     fn process(&mut self, _inputs: &[Input], output: &mut [Buffer], payload: &ProcessContext) {
         let (out_left, out_right) = extract_outputs(output);
@@ -80,10 +85,9 @@ impl Node<ProcessContext> for DrumTrackPlacementNode {
                         hit_start: start_index,
                         pitch: pitch_value,
                     });
-                    if !self.resample_cache.contains_key(&pitch_value) {
-                        self.resample_cache
-                            .insert(pitch_value, resample_to_pitch(sample, 60, pitch_value));
-                    }
+                    self.resample_cache
+                        .entry(pitch_value)
+                        .or_insert_with(|| resample_to_pitch(sample, C4_MIDI, pitch_value));
                 }
             }
         }
@@ -97,21 +101,17 @@ impl Node<ProcessContext> for DrumTrackPlacementNode {
             .copied()
             .filter(|&hit| {
                 // TODO: sometimes there is a cache miss making the below check/recalculation necessary. Investigate.
-                if !self.resample_cache.contains_key(&hit.pitch) {
-                    self.resample_cache
-                        // 60 is the MIDI value of C4 and is used below. The current code assumes that all drum samples are
-                        // C4 by default. In future can possibly investigate calculating original pitch of sample to use instead
-                        // or allowing user to adjust the root key.
-                        .insert(hit.pitch, resample_to_pitch(sample, 60, hit.pitch));
-                }
+                self.resample_cache
+                    .entry(hit.pitch)
+                    .or_insert_with(|| resample_to_pitch(sample, C4_MIDI, hit.pitch));
                 let sample = &self.resample_cache[&hit.pitch];
                 let sample_len = max(sample.left.len(), sample.right.len());
-                hit.hit_start + sample_len > playback_pos as usize
+                hit.hit_start + sample_len > playback_pos
             })
             .collect::<Vec<_>>();
 
         for i in 0..buffer_len {
-            let sample_index: usize = playback_pos as usize + i;
+            let sample_index = playback_pos + i;
             let mut left_acc = 0.0;
             let mut right_acc = 0.0;
 
@@ -154,7 +154,7 @@ pub fn resample_to_pitch(sample: &Sample, from_note: PitchValue, to_note: PitchV
 /// This is how we change the "pitch" of a drum hit or other short audio snippet: playing it faster raises the pitch and playing it
 /// slower lowers the pitch. For percussive sounds like drum hits the simplest and most authentic way to change pitch is just to play them faster or slower.
 /// More advanced algorithms (phase vocoder, elastique, etc.) can separate pitch from duration but they are heavier on CPU and often unnecessary for short samples.
-pub fn resample(sample: &Vec<f32>, sample_len: usize, ratio: f32) -> Vec<f32> {
+pub fn resample(sample: &[f32], sample_len: usize, ratio: f32) -> Vec<f32> {
     let new_len = (sample_len as f32 / ratio) as usize;
     let mut resampled = Vec::with_capacity(new_len);
 
