@@ -350,7 +350,7 @@ mod tests {
             scale_value: ScaleValue::A,
             octave: 4,
         };
-        (0..samples as usize)
+        (0..samples)
             .map(|it| {
                 let freq: Freq = pitch.into();
                 let value = (it as f32 / SAMPLE_RATE as f32 * freq).sin();

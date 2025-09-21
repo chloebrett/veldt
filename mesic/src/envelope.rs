@@ -111,10 +111,7 @@ impl EnvelopeGenerator {
     }
 
     pub fn is_off(&self) -> bool {
-        match self.state {
-            EnvelopeState::Off => true,
-            _ => false,
-        }
+        matches!(self.state, EnvelopeState::Off)
     }
 }
 

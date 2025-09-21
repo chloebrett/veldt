@@ -52,10 +52,6 @@ pub struct LocalState {
     pub new_generator_type: Rc<RefCell<Generator>>,
 
     pub new_generator_name: Rc<RefCell<String>>,
-
-    pub empty_channel_rack_rows: Rc<RefCell<usize>>,
-
-    pub active_channel_rack_row: RcOption<PlacementId>,
 }
 
 pub trait GetSet<T: Clone> {
