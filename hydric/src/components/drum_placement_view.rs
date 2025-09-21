@@ -26,7 +26,7 @@ impl<'a> DrumPlacementView<'a> {
         };
         let samples_exist = !self.store.get().project.samples.is_empty();
         let selected_text = if samples_exist {
-            self.get_sample_name(&drum_placement.sample_id)
+            get_sample_name(self.store, &drum_placement.sample_id)
         } else {
             "No samples".to_string()
         };
@@ -61,7 +61,7 @@ impl<'a> DrumPlacementView<'a> {
                                         .dispatch(sel, Action::SetChild(TypeField::SampleId(*it)))
                                 }),
                                 sample_id,
-                                self.get_sample_name(sample_id),
+                                get_sample_name(self.store, &drum_placement.sample_id),
                             );
                         }
                     } else {
@@ -72,17 +72,6 @@ impl<'a> DrumPlacementView<'a> {
         ui.add_space(5.0);
     }
 
-    fn get_sample_name(&self, sample_id: &SampleId) -> String {
-        let mut sample_name = format!("Sample ID {}", **sample_id);
-        if let Some(sample) = self.store.get().project.samples.get(sample_id) {
-            sample_name = sample.sample_name.clone();
-        }
-        if self.store.get().project.samples.is_empty() {
-            sample_name = "".to_string();
-        }
-        sample_name
-    }
-
     fn get_drum_track_name(&self, track_id: &TrackId) -> String {
         if self.store.get().project.tracks.is_empty() {
             "".to_string()
@@ -90,4 +79,15 @@ impl<'a> DrumPlacementView<'a> {
             format!("Track ID {}", **track_id)
         }
     }
+}
+
+pub fn get_sample_name(store: &Store, sample_id: &SampleId) -> String {
+    let mut sample_name = format!("Sample ID {}", **sample_id);
+    if let Some(sample) = store.get().project.samples.get(sample_id) {
+        sample_name = sample.sample_name.clone();
+    }
+    if store.get().project.samples.is_empty() {
+        sample_name = "".to_string();
+    }
+    sample_name
 }
