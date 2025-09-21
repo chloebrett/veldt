@@ -29,6 +29,7 @@ pub struct PlacedNote {
     #[proto_optional]
     pub note: Note,
     pub offset: OrderedFloat<Beats>,
+    pub pitch_offset: i32,
 }
 
 impl PartialOrd for PlacedNote {

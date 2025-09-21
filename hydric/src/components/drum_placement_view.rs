@@ -24,12 +24,7 @@ impl<'a> DrumPlacementView<'a> {
             ui.label("No drum tracks added yet");
             return;
         };
-        let samples_exist = !self.store.get().project.samples.is_empty();
-        let selected_text = if samples_exist {
-            self.get_sample_name(&drum_placement.sample_id)
-        } else {
-            "No samples".to_string()
-        };
+
         ui.horizontal(|ui| {
             ui.set_width(185.0);
 
@@ -48,39 +43,8 @@ impl<'a> DrumPlacementView<'a> {
                         );
                     }
                 });
-
-            egui::ComboBox::from_id_salt(format!("drum_placement_sample{:?}", placement_id))
-                .selected_text(selected_text)
-                .show_ui(ui, |ui| {
-                    if samples_exist {
-                        for sample_id in self.store.get().project.samples.keys() {
-                            selectable_value(
-                                ui,
-                                get_set(&drum_placement.sample_id, |it| {
-                                    self.store
-                                        .dispatch(sel, Action::SetChild(TypeField::SampleId(*it)))
-                                }),
-                                sample_id,
-                                self.get_sample_name(sample_id),
-                            );
-                        }
-                    } else {
-                        ui.label("No samples to select");
-                    }
-                });
         });
         ui.add_space(5.0);
-    }
-
-    fn get_sample_name(&self, sample_id: &SampleId) -> String {
-        let mut sample_name = format!("Sample ID {}", **sample_id);
-        if let Some(sample) = self.store.get().project.samples.get(sample_id) {
-            sample_name = sample.sample_name.clone();
-        }
-        if self.store.get().project.samples.is_empty() {
-            sample_name = "".to_string();
-        }
-        sample_name
     }
 
     fn get_drum_track_name(&self, track_id: &TrackId) -> String {
@@ -90,4 +54,15 @@ impl<'a> DrumPlacementView<'a> {
             format!("Track ID {}", **track_id)
         }
     }
+}
+
+pub fn get_sample_name(store: &Store, sample_id: &SampleId) -> String {
+    let mut sample_name = format!("Sample ID {}", **sample_id);
+    if let Some(sample) = store.get().project.samples.get(sample_id) {
+        sample_name = sample.sample_name.clone();
+    }
+    if store.get().project.samples.is_empty() {
+        sample_name = "".to_string();
+    }
+    sample_name
 }

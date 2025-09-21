@@ -3,10 +3,12 @@ use crate::model::samples_to_beats;
 use crate::model::{GeneratorId, SampleId, TrackId};
 use crate::pmodel::{placement_proto::Kind as PlacementTypeProto, *};
 use crate::types::Beats;
+use crate::types::PitchValue;
 use local_macro::{FromProto, IntoProto};
 use ordered_float::OrderedFloat;
 use std::cmp::Ordering;
 use std::cmp::max;
+use std::collections::HashMap;
 
 #[derive(Clone, Debug, PartialEq, Eq, Default)]
 pub struct Placement {
@@ -108,11 +110,14 @@ impl<'a> TryFrom<&'a Placement> for &'a SamplePlacement {
     }
 }
 
-#[derive(Clone, Copy, Debug, Eq, Default, PartialEq, FromProto, IntoProto)]
+#[derive(Clone, Debug, Eq, Default, PartialEq, FromProto, IntoProto)]
 pub struct DrumTrackPlacement {
     pub track_id: TrackId,
 
     pub sample_id: SampleId,
+
+    #[proto_hashmap]
+    pub pitch_sample_map: HashMap<PitchValue, SampleId>,
 }
 
 impl DrumTrackPlacement {

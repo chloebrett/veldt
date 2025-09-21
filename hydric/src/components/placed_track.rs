@@ -395,18 +395,21 @@ impl<'a> PlacedTrack<'a> {
                 local_state
                     .active_track
                     .set(Some(TrackSelector(drum_track_placement.track_id)));
+                local_state
+                    .window_state
+                    .set_visible(WindowKind::NoteRoll, true);
             }
             PlacementType::Track(track_placement) => {
                 local_state
                     .active_track
                     .set(Some(TrackSelector(track_placement.track_id)));
+                local_state
+                    .window_state
+                    .set_visible(WindowKind::NoteRoll, true);
             }
             _ => (),
         }
 
-        local_state
-            .window_state
-            .set_visible(WindowKind::NoteRoll, true);
         local_state
             .window_state
             .set_visible(WindowKind::Placement, true);
