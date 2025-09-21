@@ -305,16 +305,16 @@ impl Mixer {
                 }
                 // TODO: handle deleting and updating for drum track placements
                 Action::AddChild(TypeField::Placement(placement)) => {
-                    store
+                    if let Some(placement_id) = store
                         .project
                         .placements
                         .iter()
                         .find_map(|(id, p)| (p == placement).then_some(*id))
                         .filter(|_| matches!(placement.kind, PlacementType::DrumTrack(_)))
-                        .map(|placement_id| {
-                            self.channels[0]
-                                .soft_add_placement_drum(&mut self.graph_manager, placement_id);
-                        });
+                    {
+                        self.channels[0]
+                            .soft_add_placement_drum(&mut self.graph_manager, placement_id);
+                    }
                     true
                 }
                 _ => false,

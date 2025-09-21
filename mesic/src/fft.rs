@@ -73,7 +73,7 @@ mod tests {
 
     fn index_of_max<T: Ord>(vec: &Vec<T>) -> usize {
         let (max_index, _) = vec
-            .into_iter()
+            .iter()
             .enumerate()
             .max_by_key(|(_index, it)| *it)
             .unwrap();
