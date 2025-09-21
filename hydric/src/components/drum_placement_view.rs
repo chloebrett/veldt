@@ -24,12 +24,7 @@ impl<'a> DrumPlacementView<'a> {
             ui.label("No drum tracks added yet");
             return;
         };
-        let samples_exist = !self.store.get().project.samples.is_empty();
-        let selected_text = if samples_exist {
-            get_sample_name(self.store, &drum_placement.sample_id)
-        } else {
-            "No samples".to_string()
-        };
+        
         ui.horizontal(|ui| {
             ui.set_width(185.0);
 
@@ -46,26 +41,6 @@ impl<'a> DrumPlacementView<'a> {
                             track_id,
                             self.get_drum_track_name(track_id),
                         );
-                    }
-                });
-
-            egui::ComboBox::from_id_salt(format!("drum_placement_sample{:?}", placement_id))
-                .selected_text(selected_text)
-                .show_ui(ui, |ui| {
-                    if samples_exist {
-                        for sample_id in self.store.get().project.samples.keys() {
-                            selectable_value(
-                                ui,
-                                get_set(&drum_placement.sample_id, |it| {
-                                    self.store
-                                        .dispatch(sel, Action::SetChild(TypeField::SampleId(*it)))
-                                }),
-                                sample_id,
-                                get_sample_name(self.store, &drum_placement.sample_id),
-                            );
-                        }
-                    } else {
-                        ui.label("No samples to select");
                     }
                 });
         });
