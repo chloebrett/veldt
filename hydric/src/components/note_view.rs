@@ -116,6 +116,14 @@ impl View for NoteView<'_> {
                                     ui.label("No samples to select");
                                 }
                             });
+                        slider(
+                            ui,
+                            "Pitch offset (semitones)",
+                            note.pitch_offset as f64,
+                            |it| store.dispatch(&sel, Action::SetFloat(FloatField::Semitones, it as f32)),
+                            -24.0..=24.0, // can repitch plus or minus two octaves
+                            on_release,
+                );
                     }
                     _ => {}
                 }

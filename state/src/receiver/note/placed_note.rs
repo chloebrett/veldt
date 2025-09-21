@@ -15,6 +15,11 @@ impl ActionReceiver for PlacedNote {
                 self.offset = OrderedFloat(*offset);
                 Action::SetFloat(FloatField::Offset, *prev)
             }
+            Action::SetFloat(FloatField::Semitones, pitch_offset) => {
+                let prev = self.pitch_offset;
+                self.pitch_offset = *pitch_offset as i32;
+                Action::SetFloat(FloatField::Semitones, prev as f32)
+            }
             _ => return None,
         })
     }
