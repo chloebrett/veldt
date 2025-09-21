@@ -113,7 +113,7 @@ message PlacedNoteProto {
 
   float offset = 2;
 
-  uint32 pitch_offset = 3;
+  int32 pitch_offset = 3;
 }
 
 message NoteProto {
