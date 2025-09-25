@@ -1,10 +1,10 @@
 use super::extract_outputs;
 use crate::graph::{NoteEventType, ProcessContext};
 use dasp_graph::{Buffer, Input, Node};
+use ordered_float::OrderedFloat;
 use shared::model::Sample;
 use shared::{
     model::{DrumTrackPlacement, SampleId},
-    types::PitchValue,
 };
 use state::{PlacementSelector, SampleSelector};
 use std::{cmp::max, collections::HashMap};
@@ -12,15 +12,16 @@ use std::{cmp::max, collections::HashMap};
 #[derive(Clone, Copy)]
 pub struct Hit {
     hit_start: usize,
-    pitch: PitchValue,
+    sample: SampleId,
+    pitch_offset: f32
 }
 
 /// Node that plays a drum track.
 pub struct DrumTrackPlacementNode {
     selector: PlacementSelector,
     hits: Vec<Hit>, // stores start index of pending hits
-    resample_cache: HashMap<PitchValue, Sample>,
-    current_sample: Option<SampleId>,
+    sample_cache: HashMap<(SampleId, OrderedFloat<f32>), Sample>
+
 }
 
 impl DrumTrackPlacementNode {
@@ -28,8 +29,7 @@ impl DrumTrackPlacementNode {
         Self {
             selector: sel,
             hits: Vec::new(),
-            resample_cache: HashMap::new(),
-            current_sample: None,
+            sample_cache: HashMap::new(),
         }
     }
 }
@@ -37,7 +37,7 @@ impl DrumTrackPlacementNode {
 // 60 is the MIDI value of C4 and is used below. The current code assumes that all drum samples are
 // C4 by default. In future can possibly investigate calculating original pitch of sample to use instead
 // or allowing user to adjust the root key.
-const C4_MIDI: i32 = 60;
+const C4_MIDI: f32 = 60.0;
 
 impl Node<ProcessContext> for DrumTrackPlacementNode {
     fn process(&mut self, _inputs: &[Input], output: &mut [Buffer], payload: &ProcessContext) {
@@ -60,34 +60,19 @@ impl Node<ProcessContext> for DrumTrackPlacementNode {
             return;
         };
 
-        let sample_sel = SampleSelector(drum_track_placement.sample_id);
-        let Some(sample) = store.try_select(&sample_sel) else {
-            log::error!("Sample doesn't exist: {:?}", drum_track_placement.sample_id);
-            return;
-        };
-
-        if let Some(current_sample) = self.current_sample {
-            if current_sample != drum_track_placement.sample_id {
-                self.current_sample = Some(drum_track_placement.sample_id);
-                self.resample_cache.clear(); // if the sample for the placement changes then resampled samples need to be reprocessed
-            }
-        } else {
-            self.current_sample = Some(drum_track_placement.sample_id);
-        }
-
         let placement_id = self.selector.0;
         if let Some(events) = payload.drum_note_events.get(&placement_id) {
             for note_event in events {
                 if note_event.kind == NoteEventType::On {
                     let start_index = payload.playback_pos + note_event.sample_index;
                     let pitch_value: i32 = note_event.pitch_name.into();
-                    self.hits.push(Hit {
-                        hit_start: start_index,
-                        pitch: pitch_value,
-                    });
-                    self.resample_cache
-                        .entry(pitch_value)
-                        .or_insert_with(|| resample_to_pitch(sample, C4_MIDI, pitch_value));
+                    if let Some(sample_id) = drum_track_placement.pitch_sample_map.get(&pitch_value) {
+                        self.hits.push(Hit {
+                            hit_start: start_index,
+                            sample: *sample_id,
+                            pitch_offset: note_event.pitch_offset
+                        });
+                    }
                 }
             }
         }
@@ -100,12 +85,18 @@ impl Node<ProcessContext> for DrumTrackPlacementNode {
             .iter()
             .copied()
             .filter(|&hit| {
-                // TODO: sometimes there is a cache miss making the below check/recalculation necessary. Investigate.
-                self.resample_cache
-                    .entry(hit.pitch)
-                    .or_insert_with(|| resample_to_pitch(sample, C4_MIDI, hit.pitch));
-                let sample = &self.resample_cache[&hit.pitch];
+                let sample_sel = SampleSelector(hit.sample);
+                let Some(orig_sample) = store.try_select(&sample_sel) else {
+                    log::error!("Sample doesn't exist: {:?}", hit.sample);
+                    return false;
+                };
+                let sample = if hit.pitch_offset != 0.0 {
+                    resample_to_pitch(orig_sample, C4_MIDI, C4_MIDI + hit.pitch_offset)
+                } else {
+                    orig_sample.clone()
+                };
                 let sample_len = max(sample.left.len(), sample.right.len());
+                self.sample_cache.insert((hit.sample, OrderedFloat(hit.pitch_offset)), sample);
                 hit.hit_start + sample_len > playback_pos
             })
             .collect::<Vec<_>>();
@@ -116,7 +107,7 @@ impl Node<ProcessContext> for DrumTrackPlacementNode {
             let mut right_acc = 0.0;
 
             for &hit in &remaining_hits {
-                let sample = &self.resample_cache[&hit.pitch];
+                let sample = self.sample_cache.get(&(hit.sample, OrderedFloat(hit.pitch_offset))).unwrap();
                 let sample_len = max(sample.left.len(), sample.right.len());
                 let hit_end = hit.hit_start + sample_len;
                 if sample_index >= hit.hit_start && sample_index < hit_end {
@@ -134,8 +125,8 @@ impl Node<ProcessContext> for DrumTrackPlacementNode {
     }
 }
 
-pub fn resample_to_pitch(sample: &Sample, from_note: PitchValue, to_note: PitchValue) -> Sample {
-    let semitones = (to_note - from_note) as f32;
+pub fn resample_to_pitch(sample: &Sample, from_note: f32, to_note: f32) -> Sample {
+    let semitones = to_note - from_note;
     let ratio = semitone_ratio(semitones);
 
     let resampled_left = resample(&sample.left, sample.left.len(), ratio);
