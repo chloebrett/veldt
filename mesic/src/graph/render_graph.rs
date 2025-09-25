@@ -188,7 +188,7 @@ impl RenderGraph {
                 kind,
                 sample_index: 0,
                 pitch_name,
-                pitch_offset: 0.0
+                pitch_offset: 0.0,
             });
         log::info!("Pending: {:?}", self.pending_note_events);
     }

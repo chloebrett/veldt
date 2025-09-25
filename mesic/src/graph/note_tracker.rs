@@ -72,7 +72,7 @@ impl NoteTracker {
                                 kind: NoteEventType::On,
                                 sample_index: start_sample as usize,
                                 pitch_name: note.note.pitch_name,
-                                pitch_offset: 0.0
+                                pitch_offset: 0.0,
                             }
                         });
                     }
@@ -84,7 +84,7 @@ impl NoteTracker {
                                 kind: NoteEventType::Off,
                                 sample_index: end_sample as usize,
                                 pitch_name: note.note.pitch_name,
-                                pitch_offset: 0.0
+                                pitch_offset: 0.0,
                             }
                         });
                     }
@@ -135,7 +135,7 @@ impl DrumNoteTracker {
                                 kind: NoteEventType::On,
                                 sample_index: start_sample as usize,
                                 pitch_name: note.note.pitch_name,
-                                pitch_offset: note.pitch_offset
+                                pitch_offset: note.pitch_offset,
                             }
                         });
                     }
@@ -147,7 +147,7 @@ impl DrumNoteTracker {
                                 kind: NoteEventType::Off,
                                 sample_index: end_sample as usize,
                                 pitch_name: note.note.pitch_name,
-                                pitch_offset: note.pitch_offset
+                                pitch_offset: note.pitch_offset,
                             }
                         });
                     }

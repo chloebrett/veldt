@@ -120,7 +120,8 @@ pub struct DrumTrackPlacement {
 
 impl DrumTrackPlacement {
     pub fn duration(&self, project: &Project) -> OrderedFloat<f32> {
-        let offset_sample_pairs: Vec<(OrderedFloat<Beats>, SampleId)> = project.tracks[&self.track_id]
+        let offset_sample_pairs: Vec<(OrderedFloat<Beats>, SampleId)> = project.tracks
+            [&self.track_id]
             .notes
             .iter()
             // only keep notes that have a pitch mapping
@@ -128,18 +129,21 @@ impl DrumTrackPlacement {
                 self.pitch_sample_map
                     .get(&placed_note.note.pitch_name.into())
                     .map(|&sample_id| (placed_note.offset, sample_id))
-            }).collect();
+            })
+            .collect();
 
         if let Some(max_pair) = offset_sample_pairs.iter().max_by_key(|(beats, _)| *beats) {
             let sample_duration = project
                 .samples
                 .get(&max_pair.1)
-                .map(|sample| samples_to_beats(max(sample.left.len(), sample.right.len()), project.bpm))
+                .map(|sample| {
+                    samples_to_beats(max(sample.left.len(), sample.right.len()), project.bpm)
+                })
                 .unwrap_or(0.5);
-        // TODO: currently adding the sample duration multiplied by 2 to the last offset to
-        // account for if the sample is pitched lower (assuming future tuning approach will change duration)
-        // Find a better way to do this once tuning/re-pitching is implemented
-        return OrderedFloat(*max_pair.0 + sample_duration * 2.0)
+            // TODO: currently adding the sample duration multiplied by 2 to the last offset to
+            // account for if the sample is pitched lower (assuming future tuning approach will change duration)
+            // Find a better way to do this once tuning/re-pitching is implemented
+            return OrderedFloat(*max_pair.0 + sample_duration * 2.0);
         }
         OrderedFloat(1.0)
     }

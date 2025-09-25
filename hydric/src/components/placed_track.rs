@@ -168,11 +168,7 @@ impl<'a> PlacedTrack<'a> {
         }
     }
 
-    fn map_notes_to_shapes(
-        &self,
-        range: Rect,
-        notes: &[PlacedNote],
-    ) -> Shape {
+    fn map_notes_to_shapes(&self, range: Rect, notes: &[PlacedNote]) -> Shape {
         let rgb_values = self.placement.colour;
         let note_positions: Vec<Pos2> = notes
             .iter()

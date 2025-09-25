@@ -3,9 +3,7 @@ use crate::graph::{NoteEventType, ProcessContext};
 use dasp_graph::{Buffer, Input, Node};
 use ordered_float::OrderedFloat;
 use shared::model::Sample;
-use shared::{
-    model::{DrumTrackPlacement, SampleId},
-};
+use shared::model::{DrumTrackPlacement, SampleId};
 use state::{PlacementSelector, SampleSelector};
 use std::{cmp::max, collections::HashMap};
 
@@ -13,15 +11,14 @@ use std::{cmp::max, collections::HashMap};
 pub struct Hit {
     hit_start: usize,
     sample: SampleId,
-    pitch_offset: f32
+    pitch_offset: f32,
 }
 
 /// Node that plays a drum track.
 pub struct DrumTrackPlacementNode {
     selector: PlacementSelector,
     hits: Vec<Hit>, // stores start index of pending hits
-    sample_cache: HashMap<(SampleId, OrderedFloat<f32>), Sample>
-
+    sample_cache: HashMap<(SampleId, OrderedFloat<f32>), Sample>,
 }
 
 impl DrumTrackPlacementNode {
@@ -66,11 +63,12 @@ impl Node<ProcessContext> for DrumTrackPlacementNode {
                 if note_event.kind == NoteEventType::On {
                     let start_index = payload.playback_pos + note_event.sample_index;
                     let pitch_value: i32 = note_event.pitch_name.into();
-                    if let Some(sample_id) = drum_track_placement.pitch_sample_map.get(&pitch_value) {
+                    if let Some(sample_id) = drum_track_placement.pitch_sample_map.get(&pitch_value)
+                    {
                         self.hits.push(Hit {
                             hit_start: start_index,
                             sample: *sample_id,
-                            pitch_offset: note_event.pitch_offset
+                            pitch_offset: note_event.pitch_offset,
                         });
                     }
                 }
@@ -91,13 +89,21 @@ impl Node<ProcessContext> for DrumTrackPlacementNode {
                     return false;
                 };
                 let mut sample_len = max(orig_sample.left.len(), orig_sample.right.len());
-                if !self.sample_cache.contains_key(&(hit.sample, OrderedFloat(hit.pitch_offset))) {
+                if !self
+                    .sample_cache
+                    .contains_key(&(hit.sample, OrderedFloat(hit.pitch_offset)))
+                {
                     if hit.pitch_offset != 0.0 {
-                        let sample = resample_to_pitch(orig_sample, C4_MIDI, C4_MIDI + hit.pitch_offset);
+                        let sample =
+                            resample_to_pitch(orig_sample, C4_MIDI, C4_MIDI + hit.pitch_offset);
                         sample_len = max(sample.left.len(), sample.right.len());
-                        self.sample_cache.insert((hit.sample, OrderedFloat(hit.pitch_offset)), sample);
+                        self.sample_cache
+                            .insert((hit.sample, OrderedFloat(hit.pitch_offset)), sample);
                     } else {
-                        self.sample_cache.insert((hit.sample, OrderedFloat(hit.pitch_offset)), orig_sample.clone());
+                        self.sample_cache.insert(
+                            (hit.sample, OrderedFloat(hit.pitch_offset)),
+                            orig_sample.clone(),
+                        );
                     }
                 }
 
@@ -111,7 +117,10 @@ impl Node<ProcessContext> for DrumTrackPlacementNode {
             let mut right_acc = 0.0;
 
             for &hit in &remaining_hits {
-                let sample = self.sample_cache.get(&(hit.sample, OrderedFloat(hit.pitch_offset))).unwrap();
+                let sample = self
+                    .sample_cache
+                    .get(&(hit.sample, OrderedFloat(hit.pitch_offset)))
+                    .unwrap();
                 let sample_len = max(sample.left.len(), sample.right.len());
                 let hit_end = hit.hit_start + sample_len;
                 if sample_index >= hit.hit_start && sample_index < hit_end {
