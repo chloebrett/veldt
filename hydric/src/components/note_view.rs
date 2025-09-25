@@ -135,7 +135,7 @@ impl View for NoteView<'_> {
                                         Action::SetFloat(FloatField::Semitones, it as f32),
                                     )
                                 },
-                                -24.0..=24.0, // can repitch plus or minus two octaves
+                                -24.0..=24.0, // allow repitching plus or minus two octaves (could allow more, needs testing)
                                 on_release,
                             );
                         }
