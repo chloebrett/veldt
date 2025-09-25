@@ -74,7 +74,7 @@ impl<'a> PlacedTrack<'a> {
                         .try_select(&TrackSelector(track_placement.track_id))
                     {
                         let notes = &track.notes;
-                        self.map_notes_to_shapes(range, notes, None)
+                        self.map_notes_to_shapes(range, notes)
                     } else {
                         Shape::rect_filled(
                             self.to_rect(range),
@@ -93,7 +93,7 @@ impl<'a> PlacedTrack<'a> {
                         .try_select(&TrackSelector(drum_track_placement.track_id))
                     {
                         let notes = &track.notes;
-                        self.map_notes_to_shapes(range, notes, Some(drum_track_placement.sample_id))
+                        self.map_notes_to_shapes(range, notes)
                     } else {
                         Shape::rect_filled(
                             self.to_rect(range),
@@ -172,7 +172,6 @@ impl<'a> PlacedTrack<'a> {
         &self,
         range: Rect,
         notes: &[PlacedNote],
-        sample_id: Option<SampleId>,
     ) -> Shape {
         let rgb_values = self.placement.colour;
         let note_positions: Vec<Pos2> = notes
@@ -195,20 +194,13 @@ impl<'a> PlacedTrack<'a> {
                 PITCH_RANGE,
             ),
         );
-        let sample_beats = sample_id.and_then(|id| {
-            self.store.try_select(&SampleSelector(id)).map(|sample| {
-                let num_samples = max(sample.left.len(), sample.right.len());
-                let bpm = self.store.get().project.bpm;
-                samples_to_beats(num_samples, bpm)
-            })
-        });
 
         let note_rects: Vec<Rect> = notes
             .iter()
             .enumerate()
             .map(|(i, note)| {
                 let mut note_rect = Rect::from_pos(note_positions[i]);
-                note_rect.set_width(sample_beats.unwrap_or(note.note.beats));
+                note_rect.set_width(note.note.beats);
                 note_rect.set_height(150.0);
                 note_rect
             })

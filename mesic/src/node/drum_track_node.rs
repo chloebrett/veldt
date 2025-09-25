@@ -9,7 +9,7 @@ use shared::{
 use state::{PlacementSelector, SampleSelector};
 use std::{cmp::max, collections::HashMap};
 
-#[derive(Clone, Copy)]
+#[derive(Clone, Copy, Debug)]
 pub struct Hit {
     hit_start: usize,
     sample: SampleId,
@@ -90,13 +90,17 @@ impl Node<ProcessContext> for DrumTrackPlacementNode {
                     log::error!("Sample doesn't exist: {:?}", hit.sample);
                     return false;
                 };
-                let sample = if hit.pitch_offset != 0.0 {
-                    resample_to_pitch(orig_sample, C4_MIDI, C4_MIDI + hit.pitch_offset)
-                } else {
-                    orig_sample.clone()
-                };
-                let sample_len = max(sample.left.len(), sample.right.len());
-                self.sample_cache.insert((hit.sample, OrderedFloat(hit.pitch_offset)), sample);
+                let mut sample_len = max(orig_sample.left.len(), orig_sample.right.len());
+                if !self.sample_cache.contains_key(&(hit.sample, OrderedFloat(hit.pitch_offset))) {
+                    if hit.pitch_offset != 0.0 {
+                        let sample = resample_to_pitch(orig_sample, C4_MIDI, C4_MIDI + hit.pitch_offset);
+                        sample_len = max(sample.left.len(), sample.right.len());
+                        self.sample_cache.insert((hit.sample, OrderedFloat(hit.pitch_offset)), sample);
+                    } else {
+                        self.sample_cache.insert((hit.sample, OrderedFloat(hit.pitch_offset)), orig_sample.clone());
+                    }
+                }
+
                 hit.hit_start + sample_len > playback_pos
             })
             .collect::<Vec<_>>();
