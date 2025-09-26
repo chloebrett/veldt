@@ -10,11 +10,6 @@ impl ActionReceiver for DrumTrackPlacement {
                 self.track_id = *track_id;
                 Action::SetChild(TypeField::TrackId(prev))
             }
-            Action::SetChild(TypeField::SampleId(sample_id)) => {
-                let prev = self.sample_id;
-                self.sample_id = *sample_id;
-                Action::SetChild(TypeField::SampleId(prev))
-            }
             Action::SetChildById(
                 TypeField::PitchName(pitch_name),
                 TypeField::SampleId(sample_id),
