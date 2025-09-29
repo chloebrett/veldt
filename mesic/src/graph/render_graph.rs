@@ -189,6 +189,7 @@ impl RenderGraph {
                 sample_index: 0,
                 pitch_name,
                 pitch_offset: 0.0,
+                global_start_sample_index: 0,
             });
         log::info!("Pending: {:?}", self.pending_note_events);
     }
