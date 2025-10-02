@@ -10,6 +10,7 @@ pub struct NoteEvent {
     pub sample_index: usize,
     pub pitch_name: PitchName,
     pub pitch_offset: f32,
+    pub global_start_sample_index: usize,
 }
 
 #[derive(Clone, Debug, PartialEq)]
@@ -73,6 +74,7 @@ impl NoteTracker {
                                 sample_index: start_sample as usize,
                                 pitch_name: note.note.pitch_name,
                                 pitch_offset: 0.0,
+                                global_start_sample_index: note_start_sample,
                             }
                         });
                     }
@@ -85,6 +87,7 @@ impl NoteTracker {
                                 sample_index: end_sample as usize,
                                 pitch_name: note.note.pitch_name,
                                 pitch_offset: 0.0,
+                                global_start_sample_index: note_start_sample,
                             }
                         });
                     }
@@ -136,6 +139,7 @@ impl DrumNoteTracker {
                                 sample_index: start_sample as usize,
                                 pitch_name: note.note.pitch_name,
                                 pitch_offset: note.pitch_offset,
+                                global_start_sample_index: note_start_sample,
                             }
                         });
                     }
@@ -148,6 +152,7 @@ impl DrumNoteTracker {
                                 sample_index: end_sample as usize,
                                 pitch_name: note.note.pitch_name,
                                 pitch_offset: note.pitch_offset,
+                                global_start_sample_index: note_start_sample,
                             }
                         });
                     }
