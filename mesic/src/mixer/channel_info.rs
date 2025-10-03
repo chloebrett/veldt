@@ -299,7 +299,10 @@ impl ChannelInfo {
         );
     }
 
-    pub fn soft_delete_placement_sample(&mut self, selector: PlacementSelector) -> Option<SamplePlacementInfo> {
+    pub fn soft_delete_placement_sample(
+        &mut self,
+        selector: PlacementSelector,
+    ) -> Option<SamplePlacementInfo> {
         let PlacementSelector(placement_id) = selector;
         self.samples.remove(&placement_id)
     }
@@ -311,7 +314,10 @@ impl ChannelInfo {
         );
     }
 
-    pub fn soft_delete_placement_drum(&mut self, selector: PlacementSelector) -> Option<DrumTrackPlacementInfo> {
+    pub fn soft_delete_placement_drum(
+        &mut self,
+        selector: PlacementSelector,
+    ) -> Option<DrumTrackPlacementInfo> {
         let PlacementSelector(placement_id) = selector;
         self.drum_tracks.remove(&placement_id)
     }
