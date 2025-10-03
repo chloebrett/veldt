@@ -299,10 +299,20 @@ impl ChannelInfo {
         );
     }
 
+    pub fn soft_delete_placement_sample(&mut self, selector: PlacementSelector) -> Option<SamplePlacementInfo> {
+        let PlacementSelector(placement_id) = selector;
+        self.samples.remove(&placement_id)
+    }
+
     pub fn soft_add_placement_drum(&mut self, graph_manager: &mut GraphManager, id: PlacementId) {
         self.drum_tracks.insert(
             id,
             DrumTrackPlacementInfo::new(graph_manager, PlacementSelector(id)),
         );
+    }
+
+    pub fn soft_delete_placement_drum(&mut self, selector: PlacementSelector) -> Option<DrumTrackPlacementInfo> {
+        let PlacementSelector(placement_id) = selector;
+        self.drum_tracks.remove(&placement_id)
     }
 }
