@@ -55,7 +55,7 @@ pub struct LocalState {
 
     pub visual_placement_rows: Rc<RefCell<u32>>,
 
-    pub extra_track_roll_beats: Rc<RefCell<f32>>
+    pub extra_track_roll_beats: Rc<RefCell<f32>>,
 }
 
 pub trait GetSet<T: Clone> {
