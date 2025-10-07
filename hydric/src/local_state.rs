@@ -53,7 +53,9 @@ pub struct LocalState {
 
     pub new_generator_name: Rc<RefCell<String>>,
 
-    pub visual_placement_rows: Rc<RefCell<u32>>
+    pub visual_placement_rows: Rc<RefCell<u32>>,
+
+    pub extra_track_roll_beats: Rc<RefCell<f32>>
 }
 
 pub trait GetSet<T: Clone> {

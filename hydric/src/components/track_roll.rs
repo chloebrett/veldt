@@ -4,6 +4,7 @@ use crate::{GetSet, LocalState};
 use crate::{view::View, widget::StateWindow, window_state::WindowKind};
 use egui::{Color32, Pos2, Rect, ScrollArea, Ui, pos2, vec2};
 use mesic::samples_to_beats;
+use ordered_float::OrderedFloat;
 use shared::model::DrumTrackPlacement;
 use shared::model::{
     Colour, Placement, PlacementId, PlacementType, SamplePlacement, Track, TrackPlacement,
@@ -77,19 +78,27 @@ impl View for TrackRoll<'_> {
                 )
             })
             .collect();
-        let min_rows =  if self.local_state.visual_placement_rows.get() == 0 { 4 } else { self.local_state.visual_placement_rows.get() };
 
-        let max_visual_placement = max(
+        // determine how many rows need to be displayed
+        let max_visual_placement =  if self.local_state.visual_placement_rows.get() == 0 { 
+            max(
             project
                 .placements
                 .values()
                 .map(|it| it.visual_placement)
                 .max()
                 .unwrap_or(0) + 1,
-            min_rows,
-        );
-
+            4,
+        )
+        } else { self.local_state.visual_placement_rows.get() };
         self.local_state.visual_placement_rows.set(max_visual_placement);
+
+        // calculate how wide the track sequencer needs to be
+        const MINIMUM_BEATS: OrderedFloat<f32> = OrderedFloat(20.0);
+        const EXTRA_BEATS_FOR_PADDING: OrderedFloat<f32> = OrderedFloat(2.0);
+
+        let extra_beats = self.local_state.extra_track_roll_beats.get();
+        let beats_to_display = placed_tracks.values().map(|it| it.unclipped_duration + it.placement.offset + EXTRA_BEATS_FOR_PADDING).max().unwrap_or(MINIMUM_BEATS) + OrderedFloat(extra_beats);
 
         let mut select = self.local_state.track_roll_select_enabled.get();
         if !select {
@@ -136,18 +145,21 @@ impl View for TrackRoll<'_> {
                         let num_curr_rows = self.local_state.visual_placement_rows.get();
                         self.local_state.visual_placement_rows.set(num_curr_rows + 1);
                     }
+                    if ui.button("Add Bar").clicked() {
+                        let num_curr_extra_beats = self.local_state.extra_track_roll_beats.get();
+                        self.local_state.extra_track_roll_beats.set(num_curr_extra_beats + 4.0);
+                    }
                     ui.checkbox(&mut select, "Select")
                 });
                 ui.separator();
                 let window_size = ui.available_size();
                 const PADDING_AROUND_TRACK_SQUENCER: f32 = 6.0;
                 const MINIMUM_SIZE: f32 = 600.0;
-                const INCREMENT_SIZE: f32 = 37.5;
+                const BEAT_INCREMENT_SIZE: f32 = 37.5;
                 let range = Rect::from_min_max(
                     Pos2::ZERO,
                     pos2(
-                        (window_size.x - PADDING_AROUND_TRACK_SQUENCER).max(MINIMUM_SIZE)
-                            / INCREMENT_SIZE,
+                        (((window_size.x - PADDING_AROUND_TRACK_SQUENCER) / BEAT_INCREMENT_SIZE) + extra_beats).max(*beats_to_display),
                         max_visual_placement as f32,
                     ),
                 );
@@ -159,7 +171,7 @@ impl View for TrackRoll<'_> {
                             TrackSequencer::new(store, self.local_state, range, self.player)
                                 .objects(placed_tracks)
                                 .size(vec2(
-                                    (window_size.x - 6.0).max(600.0),
+                                    (window_size.x - PADDING_AROUND_TRACK_SQUENCER + extra_beats * BEAT_INCREMENT_SIZE).max(*beats_to_display * BEAT_INCREMENT_SIZE),
                                     100.0 * max_visual_placement as f32,
                                 ))
                                 .select(select)
