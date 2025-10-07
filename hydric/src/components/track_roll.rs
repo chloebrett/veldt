@@ -146,9 +146,8 @@ impl View for TrackRoll<'_> {
                 let range = Rect::from_min_max(
                     Pos2::ZERO,
                     pos2(
-                        ((window_size.x - PADDING_AROUND_TRACK_SQUENCER).max(MINIMUM_SIZE)
-                            / INCREMENT_SIZE)
-                            .ceil(),
+                        (window_size.x - PADDING_AROUND_TRACK_SQUENCER).max(MINIMUM_SIZE)
+                            / INCREMENT_SIZE,
                         max_visual_placement as f32,
                     ),
                 );
