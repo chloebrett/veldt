@@ -2,7 +2,7 @@ use crate::LocalState;
 use crate::components::PlacedTrack;
 use crate::playback::AudioPlayer;
 use crate::{GetSet, transform::Transform};
-use egui::PointerButton;
+use egui::{PointerButton, ScrollArea};
 use egui::{
     Color32, CornerRadius, CursorIcon, Frame, Pos2, Rect, Response, Sense, Shape, Stroke, Ui, Vec2,
     Widget, emath::RectTransform,
@@ -254,6 +254,7 @@ impl Widget for TrackSequencer<'_> {
         let project = &store.get().project;
 
         Frame::canvas(ui.style()).show(ui, |ui| {
+            ScrollArea::horizontal().min_scrolled_width(200.0).show(ui, |ui| {
             let Self {
                 store,
                 range,
@@ -353,6 +354,7 @@ impl Widget for TrackSequencer<'_> {
                 }
             }
             res = Some(response.clone());
+            });
         });
 
         res.unwrap()
