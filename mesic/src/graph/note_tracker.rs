@@ -25,6 +25,7 @@ impl NoteTracker {
     pub fn track(
         project: &Project,
         global_sample_index: usize,
+        ignore_events: bool,
     ) -> HashMap<GeneratorId, Vec<NoteEvent>> {
         let mut result: HashMap<GeneratorId, Vec<NoteEvent>> = HashMap::new();
 
@@ -55,38 +56,42 @@ impl NoteTracker {
                 // TODO: use some kind of tree to determine which notes are in range of the current
                 // buffer, instead of always iterating over all notes.
                 // Then apply the same idea to tracks.
-                for note in &track.notes {
-                    let offset = beats_to_samples(track_offset + *note.offset, bpm);
-                    let note_start_sample = min(offset, track_end_sample) as usize;
-                    let note_end_sample = min(
-                        offset + beats_to_samples(note.note.beats, bpm),
-                        track_end_sample,
-                    ) as usize;
+                if !ignore_events {
+                    for note in &track.notes {
+                        let offset = beats_to_samples(track_offset + *note.offset, bpm);
+                        let note_start_sample = min(offset, track_end_sample) as usize;
+                        let note_end_sample = min(
+                            offset + beats_to_samples(note.note.beats, bpm),
+                            track_end_sample,
+                        ) as usize;
 
-                    let buf_range = 0..Buffer::LEN as isize;
+                        let buf_range = 0..Buffer::LEN as isize;
 
-                    let start_sample = note_start_sample as isize - global_sample_index as isize;
-                    if buf_range.contains(&start_sample) {
-                        result.entry(*generator_id).or_default().push({
-                            NoteEvent {
-                                kind: NoteEventType::On,
-                                sample_index: start_sample as usize,
-                                pitch_name: note.note.pitch_name,
-                                pitch_offset: 0.0,
-                            }
-                        });
-                    }
+                        let start_sample =
+                            note_start_sample as isize - global_sample_index as isize;
 
-                    let end_sample = note_end_sample as isize - global_sample_index as isize;
-                    if buf_range.contains(&end_sample) {
-                        result.entry(*generator_id).or_default().push({
-                            NoteEvent {
-                                kind: NoteEventType::Off,
-                                sample_index: end_sample as usize,
-                                pitch_name: note.note.pitch_name,
-                                pitch_offset: 0.0,
-                            }
-                        });
+                        if buf_range.contains(&start_sample) {
+                            result.entry(*generator_id).or_default().push({
+                                NoteEvent {
+                                    kind: NoteEventType::On,
+                                    sample_index: start_sample as usize,
+                                    pitch_name: note.note.pitch_name,
+                                    pitch_offset: 0.0,
+                                }
+                            });
+                        }
+
+                        let end_sample = note_end_sample as isize - global_sample_index as isize;
+                        if buf_range.contains(&end_sample) {
+                            result.entry(*generator_id).or_default().push({
+                                NoteEvent {
+                                    kind: NoteEventType::Off,
+                                    sample_index: end_sample as usize,
+                                    pitch_name: note.note.pitch_name,
+                                    pitch_offset: 0.0,
+                                }
+                            });
+                        }
                     }
                 }
             }
@@ -129,6 +134,7 @@ impl DrumNoteTracker {
                     let buf_range = 0..Buffer::LEN as isize;
 
                     let start_sample = note_start_sample as isize - global_sample_index as isize;
+
                     if buf_range.contains(&start_sample) {
                         result.entry(*placement_id).or_default().push({
                             NoteEvent {
