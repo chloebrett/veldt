@@ -10,6 +10,7 @@ pub struct NoteEvent {
     pub sample_index: usize,
     pub pitch_name: PitchName,
     pub pitch_offset: f32,
+    pub global_start_sample_index: usize,
 }
 
 #[derive(Clone, Debug, PartialEq)]
@@ -25,7 +26,7 @@ impl NoteTracker {
     pub fn track(
         project: &Project,
         global_sample_index: usize,
-        ignore_events: bool,
+        ignore_on_events: bool,
     ) -> HashMap<GeneratorId, Vec<NoteEvent>> {
         let mut result: HashMap<GeneratorId, Vec<NoteEvent>> = HashMap::new();
 
@@ -56,7 +57,7 @@ impl NoteTracker {
                 // TODO: use some kind of tree to determine which notes are in range of the current
                 // buffer, instead of always iterating over all notes.
                 // Then apply the same idea to tracks.
-                if !ignore_events {
+
                     for note in &track.notes {
                         let offset = beats_to_samples(track_offset + *note.offset, bpm);
                         let note_start_sample = min(offset, track_end_sample) as usize;
@@ -67,9 +68,8 @@ impl NoteTracker {
 
                         let buf_range = 0..Buffer::LEN as isize;
 
-                        let start_sample =
-                            note_start_sample as isize - global_sample_index as isize;
-
+                    let start_sample = note_start_sample as isize - global_sample_index as isize;
+                    if !ignore_on_events {
                         if buf_range.contains(&start_sample) {
                             result.entry(*generator_id).or_default().push({
                                 NoteEvent {
@@ -77,28 +77,31 @@ impl NoteTracker {
                                     sample_index: start_sample as usize,
                                     pitch_name: note.note.pitch_name,
                                     pitch_offset: 0.0,
-                                }
-                            });
-                        }
-
-                        let end_sample = note_end_sample as isize - global_sample_index as isize;
-                        if buf_range.contains(&end_sample) {
-                            result.entry(*generator_id).or_default().push({
-                                NoteEvent {
-                                    kind: NoteEventType::Off,
-                                    sample_index: end_sample as usize,
-                                    pitch_name: note.note.pitch_name,
-                                    pitch_offset: 0.0,
+                                    global_start_sample_index: note_start_sample,
                                 }
                             });
                         }
                     }
-                }
+
+                    let end_sample = note_end_sample as isize - global_sample_index as isize;
+                    if buf_range.contains(&end_sample) {
+                        result.entry(*generator_id).or_default().push({
+                            NoteEvent {
+                                kind: NoteEventType::Off,
+                                sample_index: end_sample as usize,
+                                pitch_name: note.note.pitch_name,
+                                pitch_offset: 0.0,
+                                global_start_sample_index: note_start_sample,
+                            }
+                        });
+                    }
             }
         }
-        result
+    }
+    result
     }
 }
+
 
 #[derive(Default)]
 pub struct DrumNoteTracker;
@@ -142,6 +145,7 @@ impl DrumNoteTracker {
                                 sample_index: start_sample as usize,
                                 pitch_name: note.note.pitch_name,
                                 pitch_offset: note.pitch_offset,
+                                global_start_sample_index: note_start_sample,
                             }
                         });
                     }
@@ -154,6 +158,7 @@ impl DrumNoteTracker {
                                 sample_index: end_sample as usize,
                                 pitch_name: note.note.pitch_name,
                                 pitch_offset: note.pitch_offset,
+                                global_start_sample_index: note_start_sample,
                             }
                         });
                     }

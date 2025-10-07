@@ -167,7 +167,7 @@ impl RenderGraph {
     }
 
     fn update_notes(&mut self) {
-        let ignore_events = if self.process_context.playback_mode == PlaybackMode::Notes {
+        let ignore_on_events = if self.process_context.playback_mode == PlaybackMode::Notes {
             true
         } else {
             false
@@ -176,7 +176,7 @@ impl RenderGraph {
         self.process_context.note_events = NoteTracker::track(
             &self.process_context.store.project,
             self.main_playback_index,
-            ignore_events,
+            ignore_on_events,
         );
 
         self.process_context.drum_note_events = DrumNoteTracker::track(
@@ -212,6 +212,7 @@ impl RenderGraph {
                 sample_index: 0,
                 pitch_name,
                 pitch_offset: 0.0,
+                global_start_sample_index: 0,
             });
         log::info!("Pending: {:?}", self.pending_note_events);
     }
