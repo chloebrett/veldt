@@ -77,17 +77,19 @@ impl View for TrackRoll<'_> {
                 )
             })
             .collect();
+        let min_rows =  if self.local_state.visual_placement_rows.get() == 0 { 4 } else { self.local_state.visual_placement_rows.get() };
 
-        let min_rows = 4;
         let max_visual_placement = max(
             project
                 .placements
                 .values()
                 .map(|it| it.visual_placement)
                 .max()
-                .unwrap_or(0),
+                .unwrap_or(0) + 1,
             min_rows,
         );
+
+        self.local_state.visual_placement_rows.set(max_visual_placement);
 
         let mut select = self.local_state.track_roll_select_enabled.get();
         if !select {
@@ -129,6 +131,10 @@ impl View for TrackRoll<'_> {
                             visual_placement: 0,
                             colour: Colour::from_8bit(71, 44, 114),
                         })));
+                    }
+                    if ui.button("Add Row").clicked() {
+                        let num_curr_rows = self.local_state.visual_placement_rows.get();
+                        self.local_state.visual_placement_rows.set(num_curr_rows + 1);
                     }
                     ui.checkbox(&mut select, "Select")
                 });
