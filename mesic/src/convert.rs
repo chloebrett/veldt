@@ -13,6 +13,11 @@ pub fn samples_to_beats(samples: usize, bpm: Beats) -> Beats {
     seconds * bpm / SECONDS_PER_MINUTE
 }
 
+pub fn samples_to_ms(samples: usize) -> f32 {
+    let seconds = samples as f32 / SAMPLE_RATE as f32;
+    seconds * 1000.0
+}
+
 /// Zip left and right audio into a single stereo signal vector.
 pub fn interleave_stereo(left: Vec<f32>, right: Vec<f32>) -> Vec<Stereo<f32>> {
     left.iter()
