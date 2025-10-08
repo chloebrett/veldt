@@ -109,6 +109,7 @@ impl View for TrackRoll<'_> {
             .max()
             .unwrap_or(MINIMUM_BEATS)
             + OrderedFloat(extra_beats);
+        log::info!("ignore");
 
         let mut select = self.local_state.track_roll_select_enabled.get();
         if !select {
