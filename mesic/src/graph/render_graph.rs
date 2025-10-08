@@ -4,6 +4,7 @@ use super::{
 };
 use crate::convert::beats_to_samples;
 use crate::mixer::{GraphDebugInfo, Mixer};
+use crate::samples_to_ms;
 use crossbeam_channel::Sender;
 use dasp_frame::Stereo;
 use dasp_graph::Buffer;
@@ -33,6 +34,13 @@ pub struct RenderGraph {
     main_playback_index: usize,
     preview_playback_len: usize,
     preview_playback_index: usize,
+    note_playback_index: usize,
+
+    // This boolean represents if a note from a piano interaction is being played/processed
+    note_on: bool,
+    // This tracks the number of samples elapsed after the user stops pressing a note on the piano.
+    // We use this to track how long before we switch from the "Notes" playback mode back to the "Main" playback mode
+    elapsed_samples_during_note_release: usize,
 }
 
 impl RenderGraph {
@@ -50,6 +58,9 @@ impl RenderGraph {
             main_playback_index: 0,
             preview_playback_len: 0,
             preview_playback_index: 0,
+            note_playback_index: 0,
+            note_on: false,
+            elapsed_samples_during_note_release: 0,
         }
     }
 
@@ -69,6 +80,7 @@ impl RenderGraph {
         match self.process_context.playback_mode {
             PlaybackMode::Main => self.main_playback_index,
             PlaybackMode::Preview => self.preview_playback_index,
+            PlaybackMode::Notes => self.note_playback_index,
         }
     }
 
@@ -81,6 +93,10 @@ impl RenderGraph {
             PlaybackMode::Preview => {
                 self.preview_playback_index = samples;
                 self.process_context.preview_seek_pos = Some(samples);
+            }
+            PlaybackMode::Notes => {
+                self.note_playback_index = samples;
+                self.process_context.note_seek_pos = Some(samples);
             }
         }
     }
@@ -151,9 +167,16 @@ impl RenderGraph {
     }
 
     fn update_notes(&mut self) {
+        let ignore_on_events = if self.process_context.playback_mode == PlaybackMode::Notes {
+            true
+        } else {
+            false
+        };
+
         self.process_context.note_events = NoteTracker::track(
             &self.process_context.store.project,
             self.main_playback_index,
+            ignore_on_events,
         );
 
         self.process_context.drum_note_events = DrumNoteTracker::track(
@@ -195,10 +218,14 @@ impl RenderGraph {
     }
 
     pub fn note_on(&mut self, generator: GeneratorSelector, pitch_name: PitchName) {
+        self.process_context.playback_mode = PlaybackMode::Notes;
+        self.note_on = true;
         self.note_event(generator, pitch_name, NoteEventType::On);
     }
 
     pub fn note_off(&mut self, generator: GeneratorSelector, pitch_name: PitchName) {
+        self.note_on = false;
+        self.elapsed_samples_during_note_release = 0;
         self.note_event(generator, pitch_name, NoteEventType::Off);
     }
 
@@ -206,6 +233,7 @@ impl RenderGraph {
         match self.process_context.playback_mode {
             PlaybackMode::Main => &mut self.main_playback_index,
             PlaybackMode::Preview => &mut self.preview_playback_index,
+            PlaybackMode::Notes => &mut self.note_playback_index,
         }
     }
 
@@ -249,6 +277,18 @@ impl Iterator for RenderGraph {
                 if index >= self.preview_playback_len {
                     self.process_context.playback_mode = PlaybackMode::Main;
                     return None;
+                }
+            }
+            PlaybackMode::Notes => {
+                // Once note has finished (accounting for release), set the playback mode back to main
+                // code below assumes all notes have the maximum release which is 1000ms
+                if !self.note_on {
+                    if samples_to_ms(self.elapsed_samples_during_note_release) > 1000.0 {
+                        self.process_context.playback_mode = PlaybackMode::Main;
+                        return None;
+                    } else {
+                        self.elapsed_samples_during_note_release += 1;
+                    }
                 }
             }
         }
