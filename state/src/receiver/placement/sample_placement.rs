@@ -1,5 +1,5 @@
 use crate::receiver::ActionReceiver;
-use crate::{Action, TypeField};
+use crate::{Action, TypeField, IndexField};
 use shared::model::SamplePlacement;
 
 impl ActionReceiver for SamplePlacement {
@@ -9,6 +9,11 @@ impl ActionReceiver for SamplePlacement {
                 let prev = self.sample_id;
                 self.sample_id = *sample_id;
                 Action::SetChild(TypeField::SampleId(prev))
+            }
+            Action::SetIndex(IndexField::Mixer(mixer_channel)) => {
+                let prev = self.mixer_channel;
+                self.mixer_channel = *mixer_channel;
+                Action::SetIndex(IndexField::Mixer(prev))
             }
             _ => return None,
         })

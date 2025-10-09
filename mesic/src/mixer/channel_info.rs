@@ -65,36 +65,37 @@ impl ChannelInfo {
             })
             .collect();
 
-        // TODO: let each sample placement choose which mixer channel it is on, instead of putting
-        // all sample placements on channel 0.
-        let mut samples: HashMap<PlacementId, SamplePlacementInfo> = HashMap::new();
-        if channel_index == 0 {
-            let _ = project
-                .placements
-                .iter()
-                .filter(|(_, placement)| matches!(&placement.kind, PlacementType::Sample(..)))
-                .map(|(id, _)| {
-                    samples.insert(
-                        *id,
-                        SamplePlacementInfo::new(graph_manager, PlacementSelector(*id)),
-                    )
-                });
-        };
+        let samples: HashMap<PlacementId, SamplePlacementInfo> = project
+            .placements
+            .iter()
+            .filter_map(|(id, placement)| {
+                if let PlacementType::Sample(sample) = &placement.kind {
+                    if sample.mixer_channel == channel_index {
+                        Some((*id, SamplePlacementInfo::new(graph_manager, PlacementSelector(*id))))
+                    } else {
+                        None
+                    }
+                } else {
+                    None
+                }
+            })
+            .collect();
 
-        // TODO: same for drum track placements, let it choose which mixer channel it is on.
-        let mut drum_tracks: HashMap<PlacementId, DrumTrackPlacementInfo> = HashMap::new();
-        if channel_index == 0 {
-            let _ = project
-                .placements
-                .iter()
-                .filter(|(_, placement)| matches!(&placement.kind, PlacementType::DrumTrack(..)))
-                .map(|(id, _)| {
-                    drum_tracks.insert(
-                        *id,
-                        DrumTrackPlacementInfo::new(graph_manager, PlacementSelector(*id)),
-                    )
-                });
-        };
+        let drum_tracks: HashMap<PlacementId, DrumTrackPlacementInfo> = project
+            .placements
+            .iter()
+            .filter_map(|(id, placement)| {
+                if let PlacementType::DrumTrack(drum) = &placement.kind {
+                    if drum.mixer_channel == channel_index {
+                        Some((*id, DrumTrackPlacementInfo::new(graph_manager, PlacementSelector(*id))))
+                    } else {
+                        None
+                    }
+                } else {
+                    None
+                }
+            })
+            .collect();
 
         let input_node = graph_manager.add_node(make_node(Sum), NodeLabel::Sum);
 

@@ -1,10 +1,11 @@
 use crate::widget::{get_set, inner_frame_dark, selectable_value, slider};
+use crate::components::effect::channel_name;
 use egui::Ui;
 use mesic::samples_to_beats;
 use ordered_float::OrderedFloat;
 use shared::model::{Placement, PlacementId, SampleId, SamplePlacement};
 use shared::types::Beats;
-use state::{Action, PlacementSelector, SampleSelector, Store, TypeField};
+use state::{Action, PlacementSelector, SampleSelector, Store, TypeField, IndexField};
 use std::cmp::max;
 
 pub struct SamplePlacementView<'a> {
@@ -53,6 +54,23 @@ impl<'a> SamplePlacementView<'a> {
                     }
                 });
         });
+
+        ui.add_space(5.0);
+        egui::ComboBox::from_id_salt(format!("placement_{:?}_channel", placement_id))
+            .selected_text(channel_name(sample_placement.mixer_channel))
+            .show_ui(ui, |ui| {
+                for channel in 0..self.store.get().project.mixer.channels.len() {
+                    selectable_value(
+                        ui,
+                        get_set(sample_placement.mixer_channel, |it| {
+                            self.store
+                                .dispatch(sel, Action::SetIndex(IndexField::Mixer(it)))
+                        }),
+                        channel,
+                        channel_name(channel),
+                    );
+                }
+            });
 
         ui.add_space(5.0);
         let sample_sel = SampleSelector(sample_placement.sample_id);

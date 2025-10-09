@@ -1,5 +1,5 @@
 use crate::receiver::ActionReceiver;
-use crate::{Action, TypeField};
+use crate::{Action, TypeField, IndexField};
 use shared::model::DrumTrackPlacement;
 
 impl ActionReceiver for DrumTrackPlacement {
@@ -33,6 +33,11 @@ impl ActionReceiver for DrumTrackPlacement {
                     TypeField::PitchName(*pitch_name),
                     TypeField::SampleId(sample_id),
                 )
+            }
+            Action::SetIndex(IndexField::Mixer(mixer_channel)) => {
+                let prev = self.mixer_channel;
+                self.mixer_channel = *mixer_channel;
+                Action::SetIndex(IndexField::Mixer(prev))
             }
             _ => return None,
         })
