@@ -80,6 +80,8 @@ message TrackPlacementProto {
 
 message SamplePlacementProto {
   uint32 sample_id = 1;
+
+  uint32 mixer_channel = 2;
 }
 
 message SampleProto {
@@ -96,6 +98,8 @@ message DrumTrackPlacementProto {
   uint32 track_id = 1;
 
   map<int32, uint32> pitch_sample_map = 2;
+
+  uint32 mixer_channel = 3;
 }
 
 message MixerChannelProto {
