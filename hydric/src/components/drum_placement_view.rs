@@ -1,8 +1,8 @@
-use crate::widget::{get_set, selectable_value};
 use crate::components::effect::channel_name;
+use crate::widget::{get_set, selectable_value};
 use egui::Ui;
 use shared::model::{DrumTrackPlacement, PlacementId, SampleId, TrackId};
-use state::{Action, PlacementSelector, Store, TypeField, IndexField};
+use state::{Action, IndexField, PlacementSelector, Store, TypeField};
 
 pub struct DrumPlacementView<'a> {
     store: &'a Store,
@@ -44,7 +44,7 @@ impl<'a> DrumPlacementView<'a> {
                         );
                     }
                 });
-            
+
             ui.add_space(5.0);
             egui::ComboBox::from_id_salt(format!("placement_{:?}_channel", placement_id))
                 .selected_text(channel_name(drum_placement.mixer_channel))

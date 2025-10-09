@@ -1,11 +1,11 @@
-use crate::widget::{get_set, inner_frame_dark, selectable_value, slider};
 use crate::components::effect::channel_name;
+use crate::widget::{get_set, inner_frame_dark, selectable_value, slider};
 use egui::Ui;
 use mesic::samples_to_beats;
 use ordered_float::OrderedFloat;
 use shared::model::{Placement, PlacementId, SampleId, SamplePlacement};
 use shared::types::Beats;
-use state::{Action, PlacementSelector, SampleSelector, Store, TypeField, IndexField};
+use state::{Action, IndexField, PlacementSelector, SampleSelector, Store, TypeField};
 use std::cmp::max;
 
 pub struct SamplePlacementView<'a> {

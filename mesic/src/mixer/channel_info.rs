@@ -71,7 +71,10 @@ impl ChannelInfo {
             .filter_map(|(id, placement)| {
                 if let PlacementType::Sample(sample) = &placement.kind {
                     if sample.mixer_channel == channel_index {
-                        Some((*id, SamplePlacementInfo::new(graph_manager, PlacementSelector(*id))))
+                        Some((
+                            *id,
+                            SamplePlacementInfo::new(graph_manager, PlacementSelector(*id)),
+                        ))
                     } else {
                         None
                     }
@@ -87,7 +90,10 @@ impl ChannelInfo {
             .filter_map(|(id, placement)| {
                 if let PlacementType::DrumTrack(drum) = &placement.kind {
                     if drum.mixer_channel == channel_index {
-                        Some((*id, DrumTrackPlacementInfo::new(graph_manager, PlacementSelector(*id))))
+                        Some((
+                            *id,
+                            DrumTrackPlacementInfo::new(graph_manager, PlacementSelector(*id)),
+                        ))
                     } else {
                         None
                     }

@@ -1,5 +1,5 @@
 use crate::receiver::ActionReceiver;
-use crate::{Action, TypeField, IndexField};
+use crate::{Action, IndexField, TypeField};
 use shared::model::SamplePlacement;
 
 impl ActionReceiver for SamplePlacement {
