@@ -321,7 +321,7 @@ impl NoteSequencerObject {
         // TODO: correctly handle the active note.
         // Currently if the deleted note index is less than the active note index, the active note
         // will either change or the index will be out of bounds and panic.
-        
+
         // Maybe don't delete the note right now and delete it later after the note is complete?
         local_state.active_note.update(|_| None);
 

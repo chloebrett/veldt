@@ -112,7 +112,6 @@ impl NoteTracker {
                     //     });
                     // }
                 }
-
             }
         }
         result
