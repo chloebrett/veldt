@@ -1,8 +1,8 @@
-use crate::{MultiIndexField, TrackSelector};
 use crate::{
     Action, ReversibleAction, RootSelector, Selector, SelectorTrait, StoreData, UndoStack,
     receiver::ActionReceiver,
 };
+use crate::{MultiIndexField, TrackSelector};
 use log::info;
 use shared::model::TrackId;
 use std::cell::RefCell;
