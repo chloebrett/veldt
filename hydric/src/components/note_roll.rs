@@ -345,11 +345,12 @@ impl NoteSequencerObject {
 
         // Marking the note for deletion instead of deleting it outright
         // Allows us to send note shutdown to the voice in note tracker
-        // log::info!("Note Deletion sent 1");
+        log::info!("Note Deletion sent 1");
         store.dispatch(
             &NoteSelector(track_id, note_index),
             Action::SetChild(TypeField::NoteDeleted(true)),
         );
+
         // store.dispatch(
         //     &TrackSelector(track_id),
         //     Action::DeleteChild(IndexField::PlacedNote(note_index)),

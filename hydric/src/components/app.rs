@@ -92,6 +92,12 @@ impl eframe::App for App {
             .on_new_frame(ctx.input(|i| i.time), frame.info().cpu_usage);
 
         self.player.maybe_update();
+
+        // Clean up any deleted notes from the project
+        for track in &self.store.get().project.tracks {
+            self.store.cleanup_deleted_notes(*track.0);
+        }
+
         self.mic.update_mic_recording();
 
         self.local_state.window_state.update(&self.store);

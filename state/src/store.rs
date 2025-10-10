@@ -1,8 +1,10 @@
+use crate::{MultiIndexField, TrackSelector};
 use crate::{
     Action, ReversibleAction, RootSelector, Selector, SelectorTrait, StoreData, UndoStack,
     receiver::ActionReceiver,
 };
 use log::info;
+use shared::model::TrackId;
 use std::cell::RefCell;
 use std::sync::mpsc::Sender;
 
@@ -97,6 +99,24 @@ impl Store {
         selector: &'a S,
     ) -> &'a T {
         selector.select(self.get())
+    }
+
+    pub fn cleanup_deleted_notes(&self, track_id: TrackId) {
+        let notes = self.select(&TrackSelector(track_id)).notes.clone();
+        let mut to_delete = Vec::new();
+
+        for (i, note) in notes.iter().enumerate() {
+            if note.note_deleted {
+                to_delete.push(i);
+            }
+        }
+
+        if !to_delete.is_empty() {
+            self.dispatch(
+                &TrackSelector(track_id),
+                Action::DeleteChildren(MultiIndexField::PlacedNote(to_delete)),
+            );
+        }
     }
 
     // Dispatching is allowed with only an immutable reference.
