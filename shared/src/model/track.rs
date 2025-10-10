@@ -1,4 +1,4 @@
-use crate::model::Note;
+use crate::model::{Note, PitchName};
 use crate::pmodel::{PlacedNoteProto, TrackProto};
 use crate::types::*;
 use local_macro::{FromProto, IntoProto};
@@ -11,6 +11,8 @@ pub struct Track {
     #[proto_repeated]
     pub notes: Vec<PlacedNote>,
     pub offset: OrderedFloat<Beats>,
+    #[proto_repeated]
+    pub delete_pitches: Vec<PitchName>,
 }
 
 impl Track {
@@ -30,6 +32,7 @@ pub struct PlacedNote {
     pub note: Note,
     pub offset: OrderedFloat<Beats>,
     pub note_on: bool,
+    pub note_deleted: bool,
 }
 
 impl PartialOrd for PlacedNote {

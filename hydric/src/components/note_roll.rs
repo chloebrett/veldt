@@ -143,23 +143,26 @@ impl View for NoteRoll<'_> {
                                 .min_scrolled_width(400.0)
                                 .show(ui, |ui| {
                                     ui.add(
-                                        NoteSequencer::new(store, local_state, range, track_sel.0)
-                                            .objects(
-                                                notes
-                                                    .into_iter()
-                                                    .map(NoteSequencerObject)
-                                                    .collect(),
-                                            )
-                                            .horizontal_rects(
-                                                white_note_pattern,
-                                                Color32::from_white_alpha(4),
-                                            )
-                                            .vertical_bars(bar_length, Color32::from_white_alpha(6))
-                                            .vertical_bars(1.0, Color32::from_white_alpha(3))
-                                            .vertical_bars(
-                                                1.0 / bar_length,
-                                                Color32::from_white_alpha(1),
-                                            ),
+                                        NoteSequencer::new(
+                                            store,
+                                            local_state,
+                                            range,
+                                            track_sel.0,
+                                            Some(self.audio_player),
+                                        )
+                                        .objects(
+                                            notes.into_iter().map(NoteSequencerObject).collect(),
+                                        )
+                                        .horizontal_rects(
+                                            white_note_pattern,
+                                            Color32::from_white_alpha(4),
+                                        )
+                                        .vertical_bars(bar_length, Color32::from_white_alpha(6))
+                                        .vertical_bars(1.0, Color32::from_white_alpha(3))
+                                        .vertical_bars(
+                                            1.0 / bar_length,
+                                            Color32::from_white_alpha(1),
+                                        ),
                                     );
                                 });
                         });
@@ -289,6 +292,7 @@ impl NoteSequencerObject {
             },
             offset: offset.into(),
             note_on: true,
+            note_deleted: false,
         })
     }
 
@@ -317,10 +321,37 @@ impl NoteSequencerObject {
         // TODO: correctly handle the active note.
         // Currently if the deleted note index is less than the active note index, the active note
         // will either change or the index will be out of bounds and panic.
+        
+        // Maybe don't delete the note right now and delete it later after the note is complete?
         local_state.active_note.update(|_| None);
+
+        // store.dispatch(
+        //     &TrackSelector(track_id),
+        //     Action::AddChild(TypeField::PlacedNote(PlacedNote {
+        //         note: self.0.note.clone(),
+        //         offset: self.0.offset,
+        //         note_on: false,
+        //         note_deleted: true,
+        //     }))
+        // );
+
+        // store.dispatch(
+        //     &TrackSelector(track_id),
+        //     Action::AddChild(TypeField::PitchName(
+        //         self.0.note.pitch_name.clone(),
+        //     )),
+        // );
+
+        // Marking the note for deletion instead of deleting it outright
+        // Allows us to send note shutdown to the voice in note tracker
+        // log::info!("Note Deletion sent 1");
         store.dispatch(
-            &TrackSelector(track_id),
-            Action::DeleteChild(IndexField::PlacedNote(note_index)),
-        )
+            &NoteSelector(track_id, note_index),
+            Action::SetChild(TypeField::NoteDeleted(true)),
+        );
+        // store.dispatch(
+        //     &TrackSelector(track_id),
+        //     Action::DeleteChild(IndexField::PlacedNote(note_index)),
+        // );
     }
 }

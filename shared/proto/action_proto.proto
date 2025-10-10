@@ -86,6 +86,7 @@ message TypeFieldProto {
     bool lpf_on = 29;
     string generator_name = 30;
     bool note_on = 31;
+    bool note_deleted = 32;
   }
 }
 

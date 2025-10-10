@@ -20,6 +20,11 @@ impl ActionReceiver for PlacedNote {
                 self.note_on = *note_on;
                 Action::SetChild(TypeField::NoteOn(prev))
             }
+            Action::SetChild(TypeField::NoteDeleted(note_deleted)) => {
+                let prev = self.note_deleted;
+                self.note_deleted = *note_deleted;
+                Action::SetChild(TypeField::NoteDeleted(prev))
+            }
             _ => return None,
         })
     }

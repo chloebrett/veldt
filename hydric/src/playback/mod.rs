@@ -40,6 +40,7 @@ enum PlaybackMessage {
     Loop(bool),
     NoteOn(GeneratorSelector, PitchName),
     NoteOff(GeneratorSelector, PitchName),
+    NoteShutdown(GeneratorSelector, PitchName),
 }
 
 // Messages that can be received from the processor thread.

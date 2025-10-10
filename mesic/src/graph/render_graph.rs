@@ -194,6 +194,10 @@ impl RenderGraph {
         self.note_event(generator, pitch_name, NoteEventType::Off);
     }
 
+    pub fn note_shutdown(&mut self, generator: GeneratorSelector, pitch_name: PitchName) {
+        self.note_event(generator, pitch_name, NoteEventType::Shutdown);
+    }
+
     fn pos_mut(&mut self) -> &mut usize {
         match self.process_context.playback_mode {
             PlaybackMode::Main => &mut self.main_playback_index,

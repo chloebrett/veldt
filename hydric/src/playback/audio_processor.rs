@@ -96,6 +96,9 @@ impl AudioProcessor {
             PlaybackMessage::NoteOff(generator, pitch_name) => {
                 self.graph.note_off(generator, pitch_name);
             }
+            PlaybackMessage::NoteShutdown(generator, pitch_name) => {
+                self.graph.note_shutdown(generator, pitch_name);
+            }
         }
     }
 

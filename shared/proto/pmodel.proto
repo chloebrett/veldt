@@ -44,6 +44,8 @@ message TrackProto {
   repeated PlacedNoteProto notes = 1;
 
   float offset = 2;
+
+  repeated PitchNameProto delete_pitches = 3;
 }
 
 message PlacementProto {
@@ -112,6 +114,8 @@ message PlacedNoteProto {
   float offset = 2;
 
   bool note_on = 3;
+
+  bool note_deleted = 4;
 }
 
 message NoteProto {

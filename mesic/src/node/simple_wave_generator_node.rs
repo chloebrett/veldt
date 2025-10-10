@@ -137,6 +137,16 @@ impl Node<ProcessContext> for SimpleWaveGeneratorNode {
                             voice_to_turn_off.eg.note_off();
                         }
                     }
+                    NoteEventType::Shutdown => {
+                        log::info!(
+                            "Note shutdown event! {:?} {:?}",
+                            note_event.pitch_name,
+                            state.config
+                        );
+                        // Immediately stop the voice without going through the release phase of the envelope.
+                        let voice_key = note_event.pitch_name.to_string();
+                        state.voices.remove(&voice_key);
+                    }
                 }
             }
 

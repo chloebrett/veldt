@@ -102,8 +102,10 @@ mod tests {
                         },
                         offset: OrderedFloat(0.0),
                         note_on: true,
+                        note_deleted: false,
                     }],
                     offset: OrderedFloat(0.0),
+                    delete_pitches: vec![],
                 },
             )]),
             placements: HashMap::from([(

@@ -2,7 +2,7 @@ use crate::WindowState;
 use egui::Pos2;
 use mesic::FFT_SAMPLE_SIZE;
 use ring_buffer_max::MaxDetector;
-use shared::model::{Generator, PlacementId, Sample, SampleId};
+use shared::model::{Generator, PlacedNote, PlacementId, Sample, SampleId};
 use smart_default::SmartDefault;
 use state::{MixerSelector, TrackSelector};
 use std::cell::RefCell;

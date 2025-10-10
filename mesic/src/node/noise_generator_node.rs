@@ -117,6 +117,9 @@ impl Node<ProcessContext> for NoiseGeneratorNode {
                 match note_event.kind {
                     NoteEventType::On => self.state.playing = true,
                     NoteEventType::Off => self.state.playing = false,
+                    NoteEventType::Shutdown => {
+                        self.state.playing = false;
+                    }
                 }
             }
 

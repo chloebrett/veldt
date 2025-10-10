@@ -1,4 +1,5 @@
 use crate::components::NoteSequencerObject;
+use crate::playback::AudioPlayer;
 use crate::window_state::WindowKind;
 use crate::{GetSet, LocalState, transform::Transform};
 use egui::PointerButton;
@@ -7,9 +8,9 @@ use egui::{
     Widget, emath::RectTransform, pos2, vec2,
 };
 use egui::{Event, LayerId, Modifiers, Order};
-use shared::model::{PitchName, TrackId};
+use shared::model::{PitchName, PlacementType, TrackId};
 use shared::types::Beats;
-use state::{Action, FloatField, NoteSelector, Store, TypeField};
+use state::{Action, FloatField, GeneratorSelector, NoteSelector, Store, TypeField};
 
 pub struct NoteSequencer<'a> {
     store: &'a Store,
@@ -20,6 +21,7 @@ pub struct NoteSequencer<'a> {
     quantise_level: Beats,
     background_shapes: Vec<Shape>,
     track_id: TrackId,
+    audio_player: Option<&'a mut AudioPlayer>,
 }
 
 impl<'a> NoteSequencer<'a> {
@@ -28,6 +30,7 @@ impl<'a> NoteSequencer<'a> {
         local_state: &'a LocalState,
         range: Rect,
         track_id: TrackId,
+        audio_player: Option<&'a mut AudioPlayer>,
     ) -> Self {
         let x_size = 4000.0 * 2f32.powf(local_state.note_roll_zoom.get());
         NoteSequencer {
@@ -39,6 +42,7 @@ impl<'a> NoteSequencer<'a> {
             quantise_level: 0.125,
             background_shapes: vec![],
             track_id,
+            audio_player,
         }
     }
 
@@ -127,6 +131,7 @@ impl<'a> NoteSequencer<'a> {
                 object.set_active(self.local_state, index);
             } else if movable_resp.interact(Sense::click()).secondary_clicked() {
                 // Delete note
+                // self.send_note_off(object);
                 NoteSequencerObject::set_selected(self.local_state, None);
                 object.delete_self(self.store, self.local_state, self.track_id, index);
             }
@@ -163,6 +168,7 @@ impl<'a> NoteSequencer<'a> {
     ) -> bool {
         if response.dragged_by(PointerButton::Primary) {
             // Disable the note and send note off while its being dragged.
+            // This deletes the initial note sound.
             edit_object(Action::SetChild(TypeField::NoteOn(false)));
 
             // Keep track of the delta between object and cursor position at drag start.
@@ -233,6 +239,30 @@ impl<'a> NoteSequencer<'a> {
                 .map(|object| object.shape(self.range))
                 .collect(),
         )
+    }
+
+    fn send_note_off(&mut self, object: &NoteSequencerObject) {
+        // Find the generator for this track
+        let gen_sel = self
+            .store
+            .get()
+            .project
+            .placements
+            .values()
+            .filter_map(|placement| match &placement.kind {
+                PlacementType::Track(it) if it.track_id == self.track_id => Some(it.generator_id),
+                _ => None,
+            })
+            .next()
+            .map(GeneratorSelector);
+
+        // Send note off event before deleting
+        if let Some(generator) = gen_sel {
+            let pitch_name = object.0.note.pitch_name;
+            if let Some(player) = self.audio_player.as_mut() {
+                player.send_note_off(generator, pitch_name);
+            }
+        }
     }
 }
 

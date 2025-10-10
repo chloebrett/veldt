@@ -15,6 +15,7 @@ pub struct NoteEvent {
 pub enum NoteEventType {
     On,
     Off,
+    Shutdown,
 }
 
 #[derive(Default)]
@@ -54,7 +55,7 @@ impl NoteTracker {
                 // TODO: use some kind of tree to determine which notes are in range of the current
                 // buffer, instead of always iterating over all notes.
                 // Then apply the same idea to tracks.
-                for note in &track.notes {
+                for (i, note) in track.notes.iter().enumerate() {
                     let offset = beats_to_samples(track_offset + *note.offset, bpm);
                     let note_start_sample = min(offset, track_end_sample) as usize;
                     let note_end_sample = min(
@@ -85,7 +86,33 @@ impl NoteTracker {
                             }
                         });
                     }
+
+                    if note.note_deleted {
+                        log::info!("Note Deletion sent 2");
+                        result.entry(*generator_id).or_default().push({
+                            NoteEvent {
+                                kind: NoteEventType::Shutdown,
+                                sample_index: 0,
+                                pitch_name: note.note.pitch_name,
+                            }
+                        });
+                    }
+
+                    // Works only sometimes and is very inconsistent.
+                    // Also screws over the playing if you're moving the note as the playhead passes the note start.
+                    // let mid_sample = global_sample_index as isize - note_start_sample as isize;
+                    // if !note.note_on && mid_sample > 0 && mid_sample < (note_end_sample - note_start_sample) as isize {
+                    //     // Note is currently active, so add a shutdown event at the start of the buffer.
+                    //     result.entry(*generator_id).or_default().push({
+                    //         NoteEvent {
+                    //             kind: NoteEventType::Off,
+                    //             sample_index: 0,
+                    //             pitch_name: note.note.pitch_name,
+                    //         }
+                    //     });
+                    // }
                 }
+
             }
         }
         result

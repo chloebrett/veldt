@@ -54,6 +54,7 @@ pub enum TypeField {
     Octave(i32),
     LpfOn(bool),
     NoteOn(bool),
+    NoteDeleted(bool),
     // Note: when you add a new type, make sure to configure its broadcast behaviour in broadcast.rs as well.
     Colour(Colour),
     GeneratorName(String),
@@ -103,6 +104,7 @@ impl From<TypeFieldProto> for TypeField {
             TypeFieldKind::LpfOn(it) => TypeField::LpfOn(it),
             TypeFieldKind::GeneratorName(it) => TypeField::GeneratorName(it),
             TypeFieldKind::NoteOn(it) => TypeField::NoteOn(it),
+            TypeFieldKind::NoteDeleted(it) => TypeField::NoteDeleted(it),
         }
     }
 }
@@ -157,6 +159,7 @@ impl From<TypeField> for TypeFieldProto {
                 TypeField::LpfOn(it) => TypeFieldKind::LpfOn(it),
                 TypeField::GeneratorName(it) => TypeFieldKind::GeneratorName(it),
                 TypeField::NoteOn(it) => TypeFieldKind::NoteOn(it),
+                TypeField::NoteDeleted(it) => TypeFieldKind::NoteDeleted(it),
             }),
         }
     }
