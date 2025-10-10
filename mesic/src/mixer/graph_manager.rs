@@ -119,6 +119,7 @@ impl GraphManager {
 pub enum NodeLabel {
     Generator,
     Sample,
+    DrumTrack,
     Effect,
     WetDry,
     Sum,
@@ -132,6 +133,7 @@ pub enum NodeLabel {
 pub enum EdgeLabel {
     GenToMixIn,
     SampleToMixIn,
+    DrumTrackToMixIn,
     MixInToEff,
     MixInToEffWetDry,
     EffToEffWetDry,

@@ -1,7 +1,7 @@
 use dasp_frame::Stereo;
 use dasp_graph::{BoxedNodeSend, NodeData};
 use petgraph::stable_graph::StableGraph;
-use shared::model::GeneratorId;
+use shared::model::{GeneratorId, PlacementId};
 use state::StoreData;
 use std::collections::HashMap;
 
@@ -19,6 +19,10 @@ pub enum PlaybackMode {
     // Plays the preview buffer.
     // Switches back to Main and pauses once done.
     Preview,
+
+    // Plays notes from user interactions such as the piano.
+    // Switches back to Main and pauses once done.
+    Notes,
 }
 
 pub struct ProcessContext {
@@ -29,12 +33,14 @@ pub struct ProcessContext {
     pub store: StoreData,
     pub main_seek_pos: Option<usize>,
     pub preview_seek_pos: Option<usize>,
+    pub note_seek_pos: Option<usize>,
 
     // Current playback position.
     pub playback_pos: usize,
 
     pub playback_mode: PlaybackMode,
     pub note_events: HashMap<GeneratorId, Vec<NoteEvent>>,
+    pub drum_note_events: HashMap<PlacementId, Vec<NoteEvent>>,
 
     // Tracks which generators, if any, should be stopped. Used when a track has its generator
     // changed - we stop the previous generator.
@@ -52,9 +58,11 @@ impl ProcessContext {
             store,
             main_seek_pos: None,
             preview_seek_pos: None,
+            note_seek_pos: None,
             playback_pos: 0,
             playback_mode: PlaybackMode::Main,
             note_events: HashMap::new(),
+            drum_note_events: HashMap::new(),
             stop_generators: HashMap::new(),
             preview_buffer: vec![],
         }

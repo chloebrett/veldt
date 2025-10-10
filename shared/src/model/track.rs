@@ -31,6 +31,7 @@ pub struct PlacedNote {
     #[proto_optional]
     pub note: Note,
     pub offset: OrderedFloat<Beats>,
+    pub pitch_offset: f32,
     pub note_on: bool,
     pub note_deleted: bool,
 }

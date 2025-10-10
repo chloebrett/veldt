@@ -12,6 +12,7 @@ use shared::{
     model::{PlacedNote, Placement, PlacementId, PlacementType, SampleId, TrackPlacement},
     types::Beats,
 };
+use state::SampleSelector;
 use state::{Action, MultiTypeField, PlacementSelector, Store, TrackSelector, TypeField};
 use std::cmp::{max, min};
 use std::collections::HashSet;
@@ -68,8 +69,10 @@ impl<'a> PlacedTrack<'a> {
             ),
             match &self.placement.kind {
                 PlacementType::Track(track_placement) => {
-                    let track_id = track_placement.track_id;
-                    if let Some(track) = self.store.get().project.tracks.get(&track_id) {
+                    if let Some(track) = self
+                        .store
+                        .try_select(&TrackSelector(track_placement.track_id))
+                    {
                         let notes = &track.notes;
                         self.map_notes_to_shapes(range, notes)
                     } else {
@@ -84,13 +87,20 @@ impl<'a> PlacedTrack<'a> {
                     let sample_id = sample_placement.sample_id;
                     self.sample_shape(range, sample_id)
                 }
-                PlacementType::DrumTrack(_) => {
-                    // TODO implement drum track shape
-                    Shape::rect_filled(
-                        self.to_rect(range),
-                        CornerRadius::same(1),
-                        background_colour,
-                    )
+                PlacementType::DrumTrack(drum_track_placement) => {
+                    if let Some(track) = self
+                        .store
+                        .try_select(&TrackSelector(drum_track_placement.track_id))
+                    {
+                        let notes = &track.notes;
+                        self.map_notes_to_shapes(range, notes)
+                    } else {
+                        Shape::rect_filled(
+                            self.to_rect(range),
+                            CornerRadius::same(1),
+                            background_colour,
+                        )
+                    }
                 }
             },
         ])
@@ -291,7 +301,8 @@ impl<'a> PlacedTrack<'a> {
                 .select(&TrackSelector(track_placement.track_id))
                 .unclipped_duration(),
             PlacementType::Sample(sample_placement) => {
-                if let Some(sample) = store.get().project.samples.get(&sample_placement.sample_id) {
+                if let Some(sample) = store.try_select(&SampleSelector(sample_placement.sample_id))
+                {
                     ordered_float::OrderedFloat(samples_to_beats(
                         max(sample.left.len(), sample.right.len()),
                         store.get().project.bpm,
@@ -300,9 +311,8 @@ impl<'a> PlacedTrack<'a> {
                     ordered_float::OrderedFloat(1.0)
                 }
             }
-            PlacementType::DrumTrack(_) => {
-                // TODO calculate unclipped duration
-                OrderedFloat(8.0)
+            PlacementType::DrumTrack(drum_track_placement) => {
+                drum_track_placement.duration(&store.get().project)
             }
         };
 
@@ -373,18 +383,21 @@ impl<'a> PlacedTrack<'a> {
                 local_state
                     .active_track
                     .set(Some(TrackSelector(drum_track_placement.track_id)));
+                local_state
+                    .window_state
+                    .set_visible(WindowKind::NoteRoll, true);
             }
             PlacementType::Track(track_placement) => {
                 local_state
                     .active_track
                     .set(Some(TrackSelector(track_placement.track_id)));
+                local_state
+                    .window_state
+                    .set_visible(WindowKind::NoteRoll, true);
             }
             _ => (),
         }
 
-        local_state
-            .window_state
-            .set_visible(WindowKind::NoteRoll, true);
         local_state
             .window_state
             .set_visible(WindowKind::Placement, true);

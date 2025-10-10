@@ -30,7 +30,7 @@ pub struct StingrayNode {
 struct NodeState {
     config: StingrayConfig,
     meta: GeneratorMeta,
-    voices: HashMap<String, Voice>,
+    voices: HashMap<(i32, usize), Voice>, // the key for each voice is the pitch value and the global sample index for when the note starts
     filter_left: Filter,
     filter_right: Filter,
 }
@@ -188,7 +188,10 @@ impl Node<ProcessContext> for StingrayNode {
                             eg.note_on();
                         }
 
-                        let new_voice_key = note_event.pitch_name.to_string();
+                        let new_voice_key = (
+                            note_event.pitch_name.into(),
+                            note_event.global_start_sample_index,
+                        );
                         state.voices.insert(new_voice_key, new_voice);
                     }
                     NoteEventType::Off => {
@@ -198,7 +201,10 @@ impl Node<ProcessContext> for StingrayNode {
                             state.config
                         );
                         // TODO: check against start/stop time too?
-                        let voice_key = note_event.pitch_name.to_string();
+                        let voice_key = (
+                            note_event.pitch_name.into(),
+                            note_event.global_start_sample_index,
+                        );
                         if let Some(voice_to_turn_off) = state.voices.get_mut(&voice_key) {
                             for eg in voice_to_turn_off.egs.iter_mut() {
                                 eg.note_off();
@@ -212,7 +218,10 @@ impl Node<ProcessContext> for StingrayNode {
                             state.config
                         );
                         // Immediately stop the voice without going through the release phase of the envelope.
-                        let voice_key = note_event.pitch_name.to_string();
+                        let voice_key = (
+                            note_event.pitch_name.into(),
+                            note_event.global_start_sample_index,
+                        );
                         state.voices.remove(&voice_key);
                     }
                 }
@@ -297,7 +306,7 @@ impl Node<ProcessContext> for StingrayNode {
             state.filter_right.update_config(new_eq_config.clone());
 
             // Removing any voices that have finished playing
-            let finished_keys: Vec<String> = state
+            let finished_keys: Vec<(i32, usize)> = state
                 .voices
                 .iter()
                 .filter(|(_key, voice)| voice.egs.iter().all(|eg| eg.is_off()))

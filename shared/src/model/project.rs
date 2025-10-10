@@ -57,10 +57,8 @@ impl Project {
                         OrderedFloat(0.0)
                     }
                 }
-                PlacementType::DrumTrack(_) =>
-                //TODO DRUM TRACK TIME, hardcoded value for testing purposes
-                {
-                    OrderedFloat(8.0)
+                PlacementType::DrumTrack(drum_track_placement) => {
+                    drum_track_placement.duration(self)
                 }
             };
             max = std::cmp::max(max, offset + duration);
@@ -101,6 +99,7 @@ mod tests {
                             beats: 1.0,
                         },
                         offset: OrderedFloat(0.0),
+                        pitch_offset: 0.0,
                         note_on: true,
                         note_deleted: false,
                     }],

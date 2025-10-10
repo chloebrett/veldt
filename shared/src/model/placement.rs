@@ -1,9 +1,14 @@
+use crate::model::Project;
+use crate::model::samples_to_beats;
 use crate::model::{GeneratorId, SampleId, TrackId};
 use crate::pmodel::{placement_proto::Kind as PlacementTypeProto, *};
 use crate::types::Beats;
+use crate::types::PitchValue;
 use local_macro::{FromProto, IntoProto};
 use ordered_float::OrderedFloat;
 use std::cmp::Ordering;
+use std::cmp::max;
+use std::collections::HashMap;
 
 #[derive(Clone, Debug, PartialEq, Eq, Default)]
 pub struct Placement {
@@ -109,7 +114,39 @@ impl<'a> TryFrom<&'a Placement> for &'a SamplePlacement {
 pub struct DrumTrackPlacement {
     pub track_id: TrackId,
 
-    pub sample_id: SampleId,
+    #[proto_hashmap]
+    pub pitch_sample_map: HashMap<PitchValue, SampleId>,
+}
+
+impl DrumTrackPlacement {
+    pub fn duration(&self, project: &Project) -> OrderedFloat<f32> {
+        let offset_sample_pairs: Vec<(OrderedFloat<Beats>, SampleId)> = project.tracks
+            [&self.track_id]
+            .notes
+            .iter()
+            // only keep notes that have a pitch mapping
+            .filter_map(|placed_note| {
+                self.pitch_sample_map
+                    .get(&placed_note.note.pitch_name.into())
+                    .map(|&sample_id| (placed_note.offset, sample_id))
+            })
+            .collect();
+
+        if let Some(max_pair) = offset_sample_pairs.iter().max_by_key(|(beats, _)| *beats) {
+            let sample_duration = project
+                .samples
+                .get(&max_pair.1)
+                .map(|sample| {
+                    samples_to_beats(max(sample.left.len(), sample.right.len()), project.bpm)
+                })
+                .unwrap_or(0.5);
+            // TODO: currently adding the sample duration multiplied by 2 to the last offset to
+            // account for if the sample is pitched lower (assuming future tuning approach will change duration)
+            // Find a better way to do this once tuning/re-pitching is implemented
+            return OrderedFloat(*max_pair.0 + sample_duration * 2.0);
+        }
+        OrderedFloat(1.0)
+    }
 }
 
 impl<'a> TryFrom<&'a Placement> for &'a DrumTrackPlacement {
