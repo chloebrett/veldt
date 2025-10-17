@@ -58,15 +58,15 @@ impl NoteTracker {
                 // buffer, instead of always iterating over all notes.
                 // Then apply the same idea to tracks.
 
-                    for note in &track.notes {
-                        let offset = beats_to_samples(track_offset + *note.offset, bpm);
-                        let note_start_sample = min(offset, track_end_sample) as usize;
-                        let note_end_sample = min(
-                            offset + beats_to_samples(note.note.beats, bpm),
-                            track_end_sample,
-                        ) as usize;
+                for note in &track.notes {
+                    let offset = beats_to_samples(track_offset + *note.offset, bpm);
+                    let note_start_sample = min(offset, track_end_sample) as usize;
+                    let note_end_sample = min(
+                        offset + beats_to_samples(note.note.beats, bpm),
+                        track_end_sample,
+                    ) as usize;
 
-                        let buf_range = 0..Buffer::LEN as isize;
+                    let buf_range = 0..Buffer::LEN as isize;
 
                     let start_sample = note_start_sample as isize - global_sample_index as isize;
                     if !ignore_on_events {
@@ -95,13 +95,12 @@ impl NoteTracker {
                             }
                         });
                     }
+                }
             }
         }
-    }
-    result
+        result
     }
 }
-
 
 #[derive(Default)]
 pub struct DrumNoteTracker;

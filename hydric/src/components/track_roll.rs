@@ -50,7 +50,7 @@ impl View for TrackRoll<'_> {
                             store: self.store,
                             local_state: self.local_state,
                         },
-                        PlacementType::Sample(SamplePlacement { sample_id }) => {
+                        PlacementType::Sample(SamplePlacement { sample_id, .. }) => {
                             let duration = store
                                 .try_select(&SampleSelector(sample_id))
                                 .map(|sample| {
