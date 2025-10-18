@@ -72,7 +72,7 @@ impl Upload for UploadContext {
                 .arg("-ar")
                 .arg("44100") // Need to downsample from 48k.
                 .arg("-ac")
-                .arg("2")// Chrome produces mono, so convert to stereo.
+                .arg("2") // Chrome produces mono, so convert to stereo.
                 .arg(&output_path)
                 .arg("-y") // Overwrite output file.
                 .status()
