@@ -84,7 +84,7 @@ impl View for PlacementView<'_> {
                                     Action::SetUint(UintField::VisualPlacement, it as u32),
                                 )
                             },
-                            0..=3,
+                            0..=self.local_state.visual_placement_rows.get() as i32 - 1,
                             on_release,
                         );
                     });

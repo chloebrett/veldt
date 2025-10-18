@@ -5,8 +5,8 @@ use dasp_graph::{BoxedNodeSend, Buffer, Node, NodeData, node::Sum};
 use petgraph::stable_graph::NodeIndex;
 use shared::model::{GeneratorId, PlacementType, Project};
 use state::{
-    Action, EffectSelector, FloatField, GeneratorSelector, IndexField, MoveField, Selector,
-    StoreData, TypeField,
+    Action, EffectSelector, FloatField, GeneratorSelector, IndexField, MoveField,
+    PlacementSelector, Selector, StoreData, TypeField,
 };
 
 mod channel_info;
@@ -301,6 +301,28 @@ impl Mixer {
                         channel.soft_delete_generator(GeneratorSelector(*gen_id));
                     }
                     self.generator_ids.retain(|id| id != gen_id);
+                    true
+                }
+                Action::DeleteChildById(TypeField::PlacementId(placement_id)) => {
+                    if let Some(placement) = store.project.placements.get(placement_id) {
+                        match placement.kind {
+                            PlacementType::DrumTrack(_) => {
+                                for channel in self.channels.iter_mut() {
+                                    channel.soft_delete_placement_drum(PlacementSelector(
+                                        *placement_id,
+                                    ));
+                                }
+                            }
+                            PlacementType::Sample(_) => {
+                                for channel in self.channels.iter_mut() {
+                                    channel.soft_delete_placement_sample(PlacementSelector(
+                                        *placement_id,
+                                    ));
+                                }
+                            }
+                            _ => {}
+                        }
+                    }
                     true
                 }
                 // TODO: handle deleting and updating for drum track placements

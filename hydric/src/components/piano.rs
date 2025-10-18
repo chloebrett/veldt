@@ -280,6 +280,7 @@ impl View for Piano<'_> {
                 if let Some(player) = self.audio_player.as_mut() {
                     if response.drag_started() {
                         player.send_note_on(sel, clicked_note.note.pitch_name);
+                        player.play();
                     } else if response.drag_stopped() {
                         player.send_note_off(sel, clicked_note.note.pitch_name);
                     }

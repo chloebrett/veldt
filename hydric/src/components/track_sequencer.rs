@@ -2,11 +2,11 @@ use crate::LocalState;
 use crate::components::PlacedTrack;
 use crate::playback::AudioPlayer;
 use crate::{GetSet, transform::Transform};
-use egui::PointerButton;
 use egui::{
     Color32, CornerRadius, CursorIcon, Frame, Pos2, Rect, Response, Sense, Shape, Stroke, Ui, Vec2,
     Widget, emath::RectTransform,
 };
+use egui::{PointerButton, ScrollArea};
 use egui::{pos2, vec2};
 use mesic::{beats_to_samples, samples_to_beats};
 use shared::model::PlacementId;
@@ -254,105 +254,110 @@ impl Widget for TrackSequencer<'_> {
         let project = &store.get().project;
 
         Frame::canvas(ui.style()).show(ui, |ui| {
-            let Self {
-                store,
-                range,
-                size,
-                select,
-                ..
-            } = self;
-            let (response, painter) = ui.allocate_painter(size, Sense::empty());
-            let to_screen = RectTransform::from_to(
-                Rect::from_min_size(Pos2::ZERO, range.size()),
-                response.rect,
-            );
+            ScrollArea::horizontal()
+                .min_scrolled_width(200.0)
+                .show(ui, |ui| {
+                    let Self {
+                        store,
+                        range,
+                        size,
+                        select,
+                        ..
+                    } = self;
+                    let (response, painter) = ui.allocate_painter(size, Sense::empty());
+                    let to_screen = RectTransform::from_to(
+                        Rect::from_min_size(Pos2::ZERO, range.size()),
+                        response.rect,
+                    );
 
-            // If user double clicks outside of an object remove all objects from selection.
-            // This is for clicks directly on the track roll
-            if select {
-                if response.interact(Sense::click()).double_clicked() {
-                    PlacedTrack::set_selected(self.local_state, None);
-                }
-                if ui.input(|input| {
-                    input.key_pressed(egui::Key::Delete) || input.key_pressed(egui::Key::Backspace)
-                }) {
-                    PlacedTrack::delete_selected(store, self.local_state);
-                    PlacedTrack::set_selected(self.local_state, None);
-                }
-            } else if response.interact(Sense::click()).clicked() {
-                let pos = response
-                    .interact_pointer_pos()
-                    .unwrap()
-                    .transform(to_screen.inverse());
+                    // If user double clicks outside of an object remove all objects from selection.
+                    // This is for clicks directly on the track roll
+                    if select {
+                        if response.interact(Sense::click()).double_clicked() {
+                            PlacedTrack::set_selected(self.local_state, None);
+                        }
+                        if ui.input(|input| {
+                            input.key_pressed(egui::Key::Delete)
+                                || input.key_pressed(egui::Key::Backspace)
+                        }) {
+                            PlacedTrack::delete_selected(store, self.local_state);
+                            PlacedTrack::set_selected(self.local_state, None);
+                        }
+                    } else if response.interact(Sense::click()).clicked() {
+                        let pos = response
+                            .interact_pointer_pos()
+                            .unwrap()
+                            .transform(to_screen.inverse());
 
-                let offset = range.left() + pos.x;
+                        let offset = range.left() + pos.x;
 
-                // Add a new track of No.1 to the track roll
-                let placement = Placement {
-                    kind: PlacementType::Track(TrackPlacement {
-                        track_id: 0.into(),
-                        generator_id: 0.into(),
-                    }),
-                    offset: offset.into(),
-                    clipped_duration: None,
-                    visual_placement: pos.y as u32,
-                    colour: Colour::from_8bit(67, 206, 222),
-                };
-                store.dispatchr(Action::AddChild(TypeField::Placement(placement)));
-            }
+                        // Add a new track of No.1 to the track roll
+                        let placement = Placement {
+                            kind: PlacementType::Track(TrackPlacement {
+                                track_id: 0.into(),
+                                generator_id: 0.into(),
+                            }),
+                            offset: offset.into(),
+                            clipped_duration: None,
+                            visual_placement: pos.y as u32,
+                            colour: Colour::from_8bit(67, 206, 222),
+                        };
+                        store.dispatchr(Action::AddChild(TypeField::Placement(placement)));
+                    }
 
-            // Interactions with the track rectangles
-            self.interact(ui, &response);
+                    // Interactions with the track rectangles
+                    self.interact(ui, &response);
 
-            painter.extend(self.background_shapes.clone().transform(to_screen));
-            painter.add(self.object_shapes().transform(to_screen));
-            painter.add(self.object_labels(ui).transform(to_screen));
+                    painter.extend(self.background_shapes.clone().transform(to_screen));
+                    painter.add(self.object_shapes().transform(to_screen));
+                    painter.add(self.object_labels(ui).transform(to_screen));
 
-            if let Some(object) = PlacedTrack::get_active(self.store, self.local_state) {
-                painter.add(object.active_shape(range).transform(to_screen));
-            }
+                    if let Some(object) = PlacedTrack::get_active(self.store, self.local_state) {
+                        painter.add(object.active_shape(range).transform(to_screen));
+                    }
 
-            let objects = PlacedTrack::get_selected(self.store, self.local_state);
-            if !objects.is_empty() {
-                painter.extend(
-                    objects
-                        .into_iter()
-                        .map(|object| object.selected_shape(range).transform(to_screen)),
-                );
-            }
+                    let objects = PlacedTrack::get_selected(self.store, self.local_state);
+                    if !objects.is_empty() {
+                        painter.extend(
+                            objects
+                                .into_iter()
+                                .map(|object| object.selected_shape(range).transform(to_screen)),
+                        );
+                    }
 
-            // Playhead visualisation and interaction
-            let playhead_samples = self.audio_player.effective_pos();
-            let playhead_beats = samples_to_beats(playhead_samples, project.bpm);
-            let playhead_x = playhead_beats - range.left();
+                    // Playhead visualisation and interaction
+                    let playhead_samples = self.audio_player.effective_pos();
+                    let playhead_beats = samples_to_beats(playhead_samples, project.bpm);
+                    let playhead_x = playhead_beats - range.left();
 
-            let playhead_shape = Shape::line_segment(
-                [pos2(playhead_x, 0.0), pos2(playhead_x, range.size().y)],
-                Stroke::new(2.0, Color32::RED),
-            );
-            let playhead_dragger = Rect::from_min_max(
-                pos2(playhead_x - 0.3, 0.0),
-                pos2(playhead_x + 0.3, range.size().y),
-            );
-            let playhead_id = ui.id().with("playhead_dragger");
-            let playhead_response = ui.interact(
-                playhead_dragger.transform(to_screen),
-                playhead_id,
-                Sense::drag(),
-            );
+                    let playhead_shape = Shape::line_segment(
+                        [pos2(playhead_x, 0.0), pos2(playhead_x, range.size().y)],
+                        Stroke::new(2.0, Color32::RED),
+                    );
+                    let playhead_dragger = Rect::from_min_max(
+                        pos2(playhead_x - 0.3, 0.0),
+                        pos2(playhead_x + 0.3, range.size().y),
+                    );
+                    let playhead_id = ui.id().with("playhead_dragger");
+                    let playhead_response = ui.interact(
+                        playhead_dragger.transform(to_screen),
+                        playhead_id,
+                        Sense::drag(),
+                    );
 
-            painter.add(playhead_shape.transform(to_screen));
+                    painter.add(playhead_shape.transform(to_screen));
 
-            if playhead_response.dragged() {
-                if let Some(drag_pos) = playhead_response.interact_pointer_pos() {
-                    let local_pos = drag_pos.transform(to_screen.inverse());
-                    let new_playhead_x = local_pos.x.clamp(0.0, range.size().x);
-                    let new_playhead_beats = range.left() + new_playhead_x;
-                    let new_samples = beats_to_samples(new_playhead_beats, project.bpm);
-                    self.audio_player.seek(new_samples as usize);
-                }
-            }
-            res = Some(response.clone());
+                    if playhead_response.dragged() {
+                        if let Some(drag_pos) = playhead_response.interact_pointer_pos() {
+                            let local_pos = drag_pos.transform(to_screen.inverse());
+                            let new_playhead_x = local_pos.x.clamp(0.0, range.size().x);
+                            let new_playhead_beats = range.left() + new_playhead_x;
+                            let new_samples = beats_to_samples(new_playhead_beats, project.bpm);
+                            self.audio_player.seek(new_samples as usize);
+                        }
+                    }
+                    res = Some(response.clone());
+                });
         });
 
         res.unwrap()

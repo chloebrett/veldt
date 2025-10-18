@@ -22,7 +22,7 @@ pub struct SimpleWaveGeneratorNode {
 struct NodeState {
     config: SimpleWaveConfig,
     meta: GeneratorMeta,
-    voices: HashMap<String, Voice>,
+    voices: HashMap<(i32, usize), Voice>,
 }
 
 struct Voice {
@@ -113,7 +113,10 @@ impl Node<ProcessContext> for SimpleWaveGeneratorNode {
                             state.config
                         );
                         // TODO: update config dynamically, not just when starting a new note.
-                        let new_voice_key = note_event.pitch_name.to_string();
+                        let new_voice_key = (
+                            note_event.pitch_name.into(),
+                            note_event.global_start_sample_index,
+                        );
                         let mut new_voice = Voice {
                             eg: EnvelopeGenerator::new(state.config.envelope.clone()),
                             source: SimpleWaveSource::new(
@@ -132,7 +135,10 @@ impl Node<ProcessContext> for SimpleWaveGeneratorNode {
                         );
                         // TODO: check against start/stop time too.
                         // TODO: Right now if you delete a note on the note roll before it finishes playing, the note off event won't be processed so the deleted note will play forever
-                        let voice_key = note_event.pitch_name.to_string();
+                        let voice_key = (
+                            note_event.pitch_name.into(),
+                            note_event.global_start_sample_index,
+                        );
                         if let Some(voice_to_turn_off) = state.voices.get_mut(&voice_key) {
                             voice_to_turn_off.eg.note_off();
                         }
@@ -150,12 +156,12 @@ impl Node<ProcessContext> for SimpleWaveGeneratorNode {
             buffer[i] = cumulative_wave_amp_product;
 
             // Removing any voices that have finished playing
-            let keys_to_remove: Vec<String> = state
+            let keys_to_remove: Vec<(i32, usize)> = state
                 .voices
                 .iter()
                 .filter_map(|(voice_key, voice)| {
                     if voice.eg.is_off() {
-                        Some(voice_key.clone())
+                        Some(*voice_key)
                     } else {
                         None
                     }

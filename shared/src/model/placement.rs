@@ -97,6 +97,9 @@ impl<'a> TryFrom<&'a Placement> for &'a TrackPlacement {
 pub struct SamplePlacement {
     #[proto_into]
     pub sample_id: SampleId,
+
+    #[proto_type_u32]
+    pub mixer_channel: usize,
 }
 
 impl<'a> TryFrom<&'a Placement> for &'a SamplePlacement {
@@ -116,6 +119,9 @@ pub struct DrumTrackPlacement {
 
     #[proto_hashmap]
     pub pitch_sample_map: HashMap<PitchValue, SampleId>,
+
+    #[proto_type_u32]
+    pub mixer_channel: usize,
 }
 
 impl DrumTrackPlacement {

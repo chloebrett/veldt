@@ -19,6 +19,10 @@ pub enum PlaybackMode {
     // Plays the preview buffer.
     // Switches back to Main and pauses once done.
     Preview,
+
+    // Plays notes from user interactions such as the piano.
+    // Switches back to Main and pauses once done.
+    Notes,
 }
 
 pub struct ProcessContext {
@@ -29,6 +33,7 @@ pub struct ProcessContext {
     pub store: StoreData,
     pub main_seek_pos: Option<usize>,
     pub preview_seek_pos: Option<usize>,
+    pub note_seek_pos: Option<usize>,
 
     // Current playback position.
     pub playback_pos: usize,
@@ -53,6 +58,7 @@ impl ProcessContext {
             store,
             main_seek_pos: None,
             preview_seek_pos: None,
+            note_seek_pos: None,
             playback_pos: 0,
             playback_mode: PlaybackMode::Main,
             note_events: HashMap::new(),

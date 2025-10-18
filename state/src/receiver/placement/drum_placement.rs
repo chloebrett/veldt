@@ -1,5 +1,5 @@
 use crate::receiver::ActionReceiver;
-use crate::{Action, TypeField};
+use crate::{Action, IndexField, TypeField};
 use shared::model::DrumTrackPlacement;
 
 impl ActionReceiver for DrumTrackPlacement {
@@ -14,7 +14,7 @@ impl ActionReceiver for DrumTrackPlacement {
                 TypeField::PitchName(pitch_name),
                 TypeField::SampleId(sample_id),
             ) => {
-                let pitch_value: i32 = pitch_name.clone().into();
+                let pitch_value: i32 = (*pitch_name).into();
                 self.pitch_sample_map.insert(pitch_value, *sample_id);
                 if let Some(prev_sample_id) = self.pitch_sample_map.get(&pitch_value) {
                     Action::SetChildById(
@@ -26,13 +26,18 @@ impl ActionReceiver for DrumTrackPlacement {
                 }
             }
             Action::DeleteChildById(TypeField::PitchName(pitch_name)) => {
-                let pitch_value: i32 = pitch_name.clone().into();
+                let pitch_value: i32 = (*pitch_name).into();
                 // This action is only used as an undo function for the action above, so should be safe to directly unwrap in the line below
                 let sample_id = self.pitch_sample_map.remove(&pitch_value).unwrap();
                 Action::SetChildById(
                     TypeField::PitchName(*pitch_name),
                     TypeField::SampleId(sample_id),
                 )
+            }
+            Action::SetIndex(IndexField::Mixer(mixer_channel)) => {
+                let prev = self.mixer_channel;
+                self.mixer_channel = *mixer_channel;
+                Action::SetIndex(IndexField::Mixer(prev))
             }
             _ => return None,
         })

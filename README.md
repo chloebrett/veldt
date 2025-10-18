@@ -1,7 +1,8 @@
 # veldt
-Collaborative, self-hosted, web-based digital audio workstation built in Rust
 
-![Screenshot](assets/Screenshot-2025-04-13.png)
+Web-based digital audio workstation built in Rust
+
+![Screenshot](assets/veldt-2025-october.png)
 
 ## Structure
 
@@ -12,7 +13,7 @@ Collaborative, self-hosted, web-based digital audio workstation built in Rust
 ...yes, the three app layers are named after [habitat classifications](https://en.wikipedia.org/wiki/Mesic_habitat) :)
 
 * `shared/` contains the data model
-* `state/` contains the state store, which contains all of the application state that is relevant to undo/redo and collaborative editing. This includes all of the project state, but excludes things like window states.
+* `state/` contains the state store, which contains all of the application state that is relevant to undo/redo. This includes all of the project state, but excludes things like window states.
 
 ## Architecture
 
@@ -20,13 +21,7 @@ Hydric is a egui web app, which runs in Wasm. This means it's single threaded, l
 
 Mesic needs to run in both a Wasm context - when it's running directly in a browser and talking to hydric - as well as generic server context when it's communicating with xeric, the server. It is therefore agnostic as to the specific build target.
 
-Mesic encapsulates all of the audio processing logic needed by the app. The data model is symmetrically used by both the server and client - so mesic running on the server can handle rendering out audio just as it can on the client. This opens us up to all sorts of fancy features and optimisations, like:
-
-* The client can start rendering a track, and then at the same time, also tell the server (which already has the entire project context) to render the same track. Whichever finishes first will send its results to the other.
-* By tracking dependencies between tracks, instruments, samples, effects and so on at a granular level, we can make use of multi-threaded processing on the server. Therefore, the server often has an advantage in its processing time and can help the client along to make rendering faster.
-* Once a particular audio sequence is rendered, it then gets pushed to all clients. Client-rendered audio can be shared back with the server in a similar fashion. Therefore, when working on a collaborative session, repeated rendering work is minimized.
-* The client can choose to render audio out at a lower quality (to reduce latency), while the server works in the background to produce and ship over higher-quality renderings. The end result is a hybrid of both without straining the client.
-* The client only has access to 4 GB of memory - a major limitation of Wasm and one reason that web-based clients have historically been less powerful than desktop ones. Veldt however, can happily evict rendering data on the client to free up space because it knows that the server still has a copy.
+Mesic encapsulates all of the audio processing logic needed by the app. The data model is symmetrically used by both the server and client - so mesic running on the server can handle rendering out audio just as it can on the client.
 
 There are some limitations to be aware of when working with Wasm:
 * Tokio doesn't work. Anything multi-threaded *especially* doesn't work.
