@@ -70,7 +70,7 @@ impl View for TrackRoll<'_> {
                         PlacementType::DrumTrack(ref drum_track_placement) => PlacedTrack {
                             unclipped_duration: drum_track_placement
                                 .duration(&self.store.get().project),
-                            placement: placement,
+                            placement,
                             store: self.store,
                             local_state: self.local_state,
                         },
@@ -168,7 +168,6 @@ impl View for TrackRoll<'_> {
                 ui.separator();
                 let window_size = ui.available_size();
                 const PADDING_AROUND_TRACK_SQUENCER: f32 = 6.0;
-                const MINIMUM_SIZE: f32 = 600.0;
                 const BEAT_INCREMENT_SIZE: f32 = 37.5;
                 let range = Rect::from_min_max(
                     Pos2::ZERO,

@@ -69,18 +69,16 @@ impl NoteTracker {
                     let buf_range = 0..Buffer::LEN as isize;
 
                     let start_sample = note_start_sample as isize - global_sample_index as isize;
-                    if !ignore_on_events {
-                        if buf_range.contains(&start_sample) {
-                            result.entry(*generator_id).or_default().push({
-                                NoteEvent {
-                                    kind: NoteEventType::On,
-                                    sample_index: start_sample as usize,
-                                    pitch_name: note.note.pitch_name,
-                                    pitch_offset: 0.0,
-                                    global_start_sample_index: note_start_sample,
-                                }
-                            });
-                        }
+                    if !ignore_on_events && buf_range.contains(&start_sample) {
+                        result.entry(*generator_id).or_default().push({
+                            NoteEvent {
+                                kind: NoteEventType::On,
+                                sample_index: start_sample as usize,
+                                pitch_name: note.note.pitch_name,
+                                pitch_offset: 0.0,
+                                global_start_sample_index: note_start_sample,
+                            }
+                        });
                     }
 
                     let end_sample = note_end_sample as isize - global_sample_index as isize;

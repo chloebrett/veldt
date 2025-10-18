@@ -297,7 +297,7 @@ impl Node<ProcessContext> for StingrayNode {
                 .voices
                 .iter()
                 .filter(|(_key, voice)| voice.egs.iter().all(|eg| eg.is_off()))
-                .map(|(key, _voice)| key.clone())
+                .map(|(key, _voice)| *key)
                 .collect();
             for key in finished_keys {
                 state.voices.remove(&key);
