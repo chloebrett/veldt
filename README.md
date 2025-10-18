@@ -2,7 +2,7 @@
 
 Web-based digital audio workstation built in Rust
 
-![Screenshot](assets/Screenshot-2025-04-13.png)
+![Screenshot](assets/veldt-2025-october.png)
 
 ## Structure
 
