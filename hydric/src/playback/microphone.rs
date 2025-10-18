@@ -99,9 +99,9 @@ impl Microphone {
             Err("Can not start recording if already recording, or if a recording already exists.")?;
         }
 
-        // Currently using ogg for browser compatibility, however wav would be better in future as it is lossless.
+        // Currently using webm for browser compatibility. Note, produces an mka file.
         let options = MediaRecorderOptions::new();
-        options.set_mime_type("audio/ogg");
+        options.set_mime_type("audio/webm;codecs=pcm");
 
         // We now add listener to continuously grab audio from mic.
         let tx = self.tx.clone();
@@ -185,13 +185,11 @@ impl Microphone {
         }
 
         // Handling in the case we want to resume not play from start.
-        if let Some(ctx) = self.audio_ctx.borrow().as_ref() {
-            if ctx.state() == AudioContextState::Suspended {
-                let _ = ctx.resume()?;
-                *self.playing_status.lock().unwrap() = true;
+        if let Some(ctx) = self.audio_ctx.borrow().as_ref() && ctx.state() == AudioContextState::Suspended {
+            let _ = ctx.resume()?;
+            *self.playing_status.lock().unwrap() = true;
 
-                return Ok(());
-            }
+            return Ok(());
         }
 
         // Create our audio context.
@@ -263,11 +261,9 @@ impl Microphone {
         }
 
         let mut playing_status_clone = self.playing_status.lock().unwrap();
-        if *playing_status_clone {
-            if let Some(ctx) = self.audio_ctx.borrow().as_ref() {
+        if *playing_status_clone && let Some(ctx) = self.audio_ctx.borrow().as_ref() {
                 let _ = ctx.suspend()?;
                 *playing_status_clone = false;
-            }
         }
         Ok(())
     }
