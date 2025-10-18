@@ -1,9 +1,9 @@
 use crate::load_sample::sample_dir_path;
 use log::info;
 use shared::upload::{UploadChunkRequest, UploadSampleReply, upload_server::Upload};
+use std::process::Command;
 use tokio::io::AsyncWriteExt;
 use tonic::{Request, Response, Status, Streaming, async_trait};
-use std::process::Command;
 
 pub struct UploadContext;
 
@@ -59,13 +59,13 @@ impl Upload for UploadContext {
         // Check for the mka file created by the mic input, convert it to wav.
         if !file_name.is_empty() && file_name.ends_with(".mka") {
             let input_path = {
-                    let mut p = sample_dir_path();
-                    p.push(file_name);
-                    p
+                let mut p = sample_dir_path();
+                p.push(file_name);
+                p
             };
-                
+
             let output_path = input_path.with_extension("wav");
-            
+
             let status = Command::new("ffmpeg")
                 .arg("-i")
                 .arg(&input_path)
@@ -74,9 +74,7 @@ impl Upload for UploadContext {
                 .arg(&output_path)
                 .arg("-y") // Overwrite output file.
                 .status()
-                .map_err(|e| {
-                    tonic::Status::internal(format!("Failed to run ffmpeg: {}", e))
-                })?;
+                .map_err(|e| tonic::Status::internal(format!("Failed to run ffmpeg: {}", e)))?;
 
             if !status.success() {
                 return Err(tonic::Status::internal("FFmpeg conversion failed"));

@@ -185,7 +185,9 @@ impl Microphone {
         }
 
         // Handling in the case we want to resume not play from start.
-        if let Some(ctx) = self.audio_ctx.borrow().as_ref() && ctx.state() == AudioContextState::Suspended {
+        if let Some(ctx) = self.audio_ctx.borrow().as_ref()
+            && ctx.state() == AudioContextState::Suspended
+        {
             let _ = ctx.resume()?;
             *self.playing_status.lock().unwrap() = true;
 
@@ -262,8 +264,8 @@ impl Microphone {
 
         let mut playing_status_clone = self.playing_status.lock().unwrap();
         if *playing_status_clone && let Some(ctx) = self.audio_ctx.borrow().as_ref() {
-                let _ = ctx.suspend()?;
-                *playing_status_clone = false;
+            let _ = ctx.suspend()?;
+            *playing_status_clone = false;
         }
         Ok(())
     }

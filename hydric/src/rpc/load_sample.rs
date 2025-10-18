@@ -7,7 +7,9 @@ use tonic_web_wasm_client::Client;
 
 pub async fn load_sample(filename: String) -> Result<Sample, tonic::Status> {
     let client = Client::new(XERIC_URL.to_string());
-    let mut grpc = LoadSampleClient::new(client).max_decoding_message_size(256 * 1024 * 1024).max_encoding_message_size(256 * 1024 * 1024);
+    let mut grpc = LoadSampleClient::new(client)
+        .max_decoding_message_size(256 * 1024 * 1024)
+        .max_encoding_message_size(256 * 1024 * 1024);
 
     let result = grpc.load_sample(LoadSampleRequest { filename }).await;
 
