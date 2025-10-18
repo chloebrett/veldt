@@ -74,8 +74,7 @@ impl View for NoteView<'_> {
                     .get()
                     .and_then(|id| self.store.get().project.placements.get(&id))
                 {
-                    match &placement.kind {
-                        PlacementType::DrumTrack(drum_placement) => {
+                    if let PlacementType::DrumTrack(drum_placement) = &placement.kind {
                             let placement_id = local_state.active_placement.get().unwrap();
                             let samples_exist = !self.store.get().project.samples.is_empty();
                             let pitch_value: i32 = note.note.pitch_name.into();
@@ -83,7 +82,7 @@ impl View for NoteView<'_> {
                                 if let Some(sample_id) =
                                     &drum_placement.pitch_sample_map.get(&pitch_value)
                                 {
-                                    get_sample_name(self.store, *sample_id)
+                                    get_sample_name(self.store, sample_id)
                                 } else {
                                     "No sample set for this pitch".to_string()
                                 }
@@ -102,7 +101,7 @@ impl View for NoteView<'_> {
                                         let is_selected = drum_placement
                                             .pitch_sample_map
                                             .get(&pitch_value)
-                                            .map_or(false, |selected_sample| {
+                                            .is_some_and(|selected_sample| {
                                                 *sample_id == *selected_sample
                                             });
 
@@ -139,9 +138,7 @@ impl View for NoteView<'_> {
                                 on_release,
                             );
                         }
-                        _ => {}
                     }
-                }
 
                 let octave = note.note.pitch_name.octave as f64;
                 int_slider(

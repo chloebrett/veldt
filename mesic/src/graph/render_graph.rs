@@ -167,11 +167,7 @@ impl RenderGraph {
     }
 
     fn update_notes(&mut self) {
-        let ignore_on_events = if self.process_context.playback_mode == PlaybackMode::Notes {
-            true
-        } else {
-            false
-        };
+        let ignore_on_events = self.process_context.playback_mode == PlaybackMode::Notes;
 
         self.process_context.note_events = NoteTracker::track(
             &self.process_context.store.project,

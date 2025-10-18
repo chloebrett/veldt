@@ -304,7 +304,7 @@ impl Mixer {
                     true
                 }
                 Action::DeleteChildById(TypeField::PlacementId(placement_id)) => {
-                    if let Some(placement) = store.project.placements.get(&placement_id) {
+                    if let Some(placement) = store.project.placements.get(placement_id) {
                         match placement.kind {
                             PlacementType::DrumTrack(_) => {
                                 for channel in self.channels.iter_mut() {

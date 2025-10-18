@@ -161,7 +161,7 @@ impl Node<ProcessContext> for SimpleWaveGeneratorNode {
                 .iter()
                 .filter_map(|(voice_key, voice)| {
                     if voice.eg.is_off() {
-                        Some(voice_key.clone())
+                        Some(*voice_key)
                     } else {
                         None
                     }
