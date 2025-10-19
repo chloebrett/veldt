@@ -132,8 +132,8 @@ impl View for MicrophoneView<'_> {
                         if !mic_sample_name_copy.chars().all(|x| x.is_alphanumeric()) {
                             error!("No Special Characters thank you.");
                         } else {
-                            // Add file extension. Hardcoded for now, while ogg is the only compatible option.
-                            mic_sample_name_copy += ".ogg";
+                            // Add file extension. Hardcoded for now, while webm is the only compatible option for both firefox and chrome.
+                            mic_sample_name_copy += ".mka";
 
                             // Call hydric upload method with bytes + file name.
                             spawn(&mut self.async_state.upload_mic_sample, async move {

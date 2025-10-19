@@ -123,7 +123,8 @@ impl LoadSample for LoadSampleContext {
         })?;
 
         // Now using rodio library, it has support for wav, mp3, flac and ogg vorbis (Built on top of the previously used Hound).
-        let decoder = Decoder::try_from(file).map_err(|_| {
+        let decoder = Decoder::try_from(file).map_err(|e| {
+            log::error!("Decoder error: {e}");
             tonic::Status::invalid_argument(format!(
                 "File {filename} could not be decoded. Ensure format is mp3, flac, wav or ogg."
             ))
@@ -131,19 +132,13 @@ impl LoadSample for LoadSampleContext {
 
         let sample_rate = decoder.sample_rate() as f32;
 
-        info!("Load sample 1");
-        let mut i = 1;
-        let mut left: Vec<f32> = vec![];
-        let mut right: Vec<f32> = vec![];
+        let mut left = Vec::new();
+        let mut right = Vec::new();
+        let mut decoder_iter = decoder.into_iter();
 
-        // Split samples, assumes stereo audio.
-        for sample in decoder {
-            if i % 2 != 0 {
-                left.push(sample);
-            } else if i % 2 == 0 {
-                right.push(sample);
-            }
-            i += 1;
+        while let (Some(l), Some(r)) = (decoder_iter.next(), decoder_iter.next()) {
+            left.push(l);
+            right.push(r);
         }
 
         info!("Load sample 2");

@@ -75,70 +75,70 @@ impl View for NoteView<'_> {
                     .and_then(|id| self.store.get().project.placements.get(&id))
                 {
                     if let PlacementType::DrumTrack(drum_placement) = &placement.kind {
-                            let placement_id = local_state.active_placement.get().unwrap();
-                            let samples_exist = !self.store.get().project.samples.is_empty();
-                            let pitch_value: i32 = note.note.pitch_name.into();
-                            let selected_text = if samples_exist {
-                                if let Some(sample_id) =
-                                    &drum_placement.pitch_sample_map.get(&pitch_value)
-                                {
-                                    get_sample_name(self.store, sample_id)
-                                } else {
-                                    "No sample set for this pitch".to_string()
+                        let placement_id = local_state.active_placement.get().unwrap();
+                        let samples_exist = !self.store.get().project.samples.is_empty();
+                        let pitch_value: i32 = note.note.pitch_name.into();
+                        let selected_text = if samples_exist {
+                            if let Some(sample_id) =
+                                &drum_placement.pitch_sample_map.get(&pitch_value)
+                            {
+                                get_sample_name(self.store, sample_id)
+                            } else {
+                                "No sample set for this pitch".to_string()
+                            }
+                        } else {
+                            "No samples".to_string()
+                        };
+                        egui::ComboBox::from_id_salt(format!(
+                            "drum_placement_pitch_sample{:?}-{}",
+                            placement_id, note.note.pitch_name
+                        ))
+                        .selected_text(selected_text)
+                        .show_ui(ui, |ui| {
+                            if samples_exist {
+                                let drum_placement_sel = PlacementSelector(placement_id);
+                                for sample_id in self.store.get().project.samples.keys() {
+                                    let is_selected = drum_placement
+                                        .pitch_sample_map
+                                        .get(&pitch_value)
+                                        .is_some_and(|selected_sample| {
+                                            *sample_id == *selected_sample
+                                        });
+
+                                    let response = ui.selectable_label(
+                                        is_selected,
+                                        get_sample_name(store, sample_id),
+                                    );
+
+                                    if response.clicked() {
+                                        self.store.dispatch(
+                                            &drum_placement_sel,
+                                            Action::SetChildById(
+                                                TypeField::PitchName(note.note.pitch_name),
+                                                TypeField::SampleId(*sample_id),
+                                            ),
+                                        );
+                                    }
                                 }
                             } else {
-                                "No samples".to_string()
-                            };
-                            egui::ComboBox::from_id_salt(format!(
-                                "drum_placement_pitch_sample{:?}-{}",
-                                placement_id, note.note.pitch_name
-                            ))
-                            .selected_text(selected_text)
-                            .show_ui(ui, |ui| {
-                                if samples_exist {
-                                    let drum_placement_sel = PlacementSelector(placement_id);
-                                    for sample_id in self.store.get().project.samples.keys() {
-                                        let is_selected = drum_placement
-                                            .pitch_sample_map
-                                            .get(&pitch_value)
-                                            .is_some_and(|selected_sample| {
-                                                *sample_id == *selected_sample
-                                            });
-
-                                        let response = ui.selectable_label(
-                                            is_selected,
-                                            get_sample_name(store, sample_id),
-                                        );
-
-                                        if response.clicked() {
-                                            self.store.dispatch(
-                                                &drum_placement_sel,
-                                                Action::SetChildById(
-                                                    TypeField::PitchName(note.note.pitch_name),
-                                                    TypeField::SampleId(*sample_id),
-                                                ),
-                                            );
-                                        }
-                                    }
-                                } else {
-                                    ui.label("No samples to select");
-                                }
-                            });
-                            slider(
-                                ui,
-                                "Pitch offset (semitones)",
-                                note.pitch_offset as f64,
-                                |it| {
-                                    store.dispatch(
-                                        &sel,
-                                        Action::SetFloat(FloatField::Semitones, it as f32),
-                                    )
-                                },
-                                -24.0..=24.0, // allow repitching plus or minus two octaves (could allow more, needs testing)
-                                on_release,
-                            );
-                        }
+                                ui.label("No samples to select");
+                            }
+                        });
+                        slider(
+                            ui,
+                            "Pitch offset (semitones)",
+                            note.pitch_offset as f64,
+                            |it| {
+                                store.dispatch(
+                                    &sel,
+                                    Action::SetFloat(FloatField::Semitones, it as f32),
+                                )
+                            },
+                            -24.0..=24.0, // allow repitching plus or minus two octaves (could allow more, needs testing)
+                            on_release,
+                        );
                     }
+                }
 
                 let octave = note.note.pitch_name.octave as f64;
                 int_slider(
