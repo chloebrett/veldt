@@ -101,7 +101,7 @@ impl Microphone {
 
         // Currently using webm for browser compatibility. Note, produces an mka file.
         let options = MediaRecorderOptions::new();
-        options.set_mime_type("audio/webm;codecs=pcm");
+        options.set_mime_type("audio/webm;codecs=opus");
 
         // We now add listener to continuously grab audio from mic.
         let tx = self.tx.clone();
